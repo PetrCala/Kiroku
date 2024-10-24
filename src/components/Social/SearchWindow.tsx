@@ -1,18 +1,19 @@
 import {
   Image,
   Keyboard,
+  StyleProp,
   StyleSheet,
   Text,
   TextInput,
   TouchableOpacity,
   View,
+  ViewStyle,
 } from 'react-native';
 import {useState, forwardRef, useEffect, useRef} from 'react';
 import type {Database} from 'firebase/database';
 import {useFirebase} from '@src/context/global/FirebaseContext';
 import type {SearchWindowRef} from '@src/types/various/Search';
 import KeyboardFocusHandler from '@components/Keyboard/KeyboardFocusHandler';
-import DismissKeyboard from '@components/Keyboard/DismissKeyboard';
 import * as KirokuIcons from '@components/Icon/KirokuIcons';
 
 type SearchWindowProps = {
@@ -20,10 +21,14 @@ type SearchWindowProps = {
   onSearch: (searchText: string, db?: Database) => void;
   onResetSearch: () => void;
   searchOnTextChange?: boolean;
+  styles?: StyleProp<ViewStyle>;
 };
 
 const SearchWindow = forwardRef<SearchWindowRef, SearchWindowProps>(
-  ({windowText, onSearch, onResetSearch, searchOnTextChange}, parentRef) => {
+  (
+    {windowText, onSearch, onResetSearch, searchOnTextChange, styles},
+    parentRef,
+  ) => {
     const db = useFirebase().db;
     const [searchText, setSearchText] = useState<string>('');
     const [searchCount, setSearchCount] = useState<number>(0);
@@ -56,12 +61,12 @@ const SearchWindow = forwardRef<SearchWindowRef, SearchWindowProps>(
     // }));
 
     return (
-      <View style={styles.mainContainer}>
+      <View style={localStyles.mainContainer}>
         <View
           style={
             searchOnTextChange
-              ? [styles.textContainer, styles.responsiveTextContainer]
-              : styles.textContainer
+              ? [localStyles.textContainer, localStyles.responsiveTextContainer]
+              : localStyles.textContainer
           }>
           <KeyboardFocusHandler>
             <TextInput
@@ -70,7 +75,7 @@ const SearchWindow = forwardRef<SearchWindowRef, SearchWindowProps>(
               placeholderTextColor={'#a8a8a8'}
               value={searchText}
               onChangeText={text => setSearchText(text)}
-              style={styles.searchText}
+              style={localStyles.searchText}
               keyboardType="default"
               textContentType="nickname"
               ref={textInputRef}
@@ -80,21 +85,21 @@ const SearchWindow = forwardRef<SearchWindowRef, SearchWindowProps>(
             <TouchableOpacity
               accessibilityRole="button"
               onPress={handleResetSearch}
-              style={styles.searchTextResetContainer}>
+              style={localStyles.searchTextResetContainer}>
               <Image
-                style={styles.searchTextResetImage}
+                style={localStyles.searchTextResetImage}
                 source={KirokuIcons.ThinX}
               />
             </TouchableOpacity>
           ) : null}
         </View>
         {searchOnTextChange ? null : (
-          <View style={styles.searchButtonContainer}>
+          <View style={localStyles.searchButtonContainer}>
             <TouchableOpacity
               accessibilityRole="button"
-              style={styles.searchButton}
+              style={localStyles.searchButton}
               onPress={() => handleDoSearch(searchText, db)}>
-              <Text style={styles.searchButtonText}>Search</Text>
+              <Text style={localStyles.searchButtonText}>Search</Text>
             </TouchableOpacity>
           </View>
         )}
@@ -103,14 +108,14 @@ const SearchWindow = forwardRef<SearchWindowRef, SearchWindowProps>(
   },
 );
 
-const styles = StyleSheet.create({
+const localStyles = StyleSheet.create({
   mainContainer: {
-    width: '95%',
-    height: 50,
+    height: 62,
     alignSelf: 'center',
     flexDirection: 'row',
-    marginTop: 10,
-    marginBottom: 5,
+    paddingTop: 10,
+    padding: 5,
+    backgroundColor: '#ffff99',
   },
   textContainer: {
     width: '80%',

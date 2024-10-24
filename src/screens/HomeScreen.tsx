@@ -1,4 +1,10 @@
-﻿import React, {useEffect, useMemo, useReducer} from 'react';
+﻿import React, {
+  useCallback,
+  useEffect,
+  useMemo,
+  useReducer,
+  useState,
+} from 'react';
 import {
   Alert,
   Dimensions,
@@ -8,12 +14,12 @@ import {
   StyleSheet,
   Text,
   TouchableOpacity,
+  useWindowDimensions,
   View,
 } from 'react-native';
-import {useOnyx} from 'react-native-onyx';
+import Onyx, {useOnyx} from 'react-native-onyx';
 import MenuIcon from '@components/Buttons/MenuIcon';
 import SessionsCalendar from '@components/Calendar';
-import LoadingData from '@components/LoadingData';
 import type {DateObject} from '@src/types/time';
 import * as KirokuIcons from '@components/Icon/KirokuIcons';
 import {
@@ -47,7 +53,6 @@ import type {BottomTabNavigatorParamList} from '@libs/Navigation/types';
 import type SCREENS from '@src/SCREENS';
 import {useDatabaseData} from '@context/global/DatabaseDataContext';
 import type {DateData} from 'react-native-calendars';
-import {getEmptySession} from '@libs/DrinkingSessionUtils';
 import DBPATHS from '@database/DBPATHS';
 import type {StatData} from '@components/Items/StatOverview';
 import {StatsOverview} from '@components/Items/StatOverview';
@@ -61,6 +66,8 @@ import useLocalize from '@hooks/useLocalize';
 import useThemeStyles from '@hooks/useThemeStyles';
 import ONYXKEYS from '@src/ONYXKEYS';
 import getPlatform from '@libs/getPlatform';
+import FullScreenLoadingIndicator from '@components/FullscreenLoadingIndicator';
+import DSUtils from '@libs/DrinkingSessionUtils';
 
 type State = {
   visibleDateObject: DateObject;
@@ -70,6 +77,7 @@ type State = {
   initializingSession: boolean;
   ongoingSessionId: DrinkingSessionId | undefined;
   verifyEmailModalVisible: boolean;
+  shouldNavigateToTzFix: boolean;
 };
 
 type Action = {
@@ -85,6 +93,7 @@ const initialState: State = {
   initializingSession: false,
   ongoingSessionId: undefined,
   verifyEmailModalVisible: false,
+  shouldNavigateToTzFix: false,
 };
 
 const reducer = (state: State, action: Action): State => {
@@ -103,6 +112,8 @@ const reducer = (state: State, action: Action): State => {
       return {...state, ongoingSessionId: action.payload};
     case 'SET_VERIFY_EMAIL_MODAL_VISIBLE':
       return {...state, verifyEmailModalVisible: action.payload};
+    case 'SET_SHOULD_NAVIGATE_TO_TZ_FIX':
+      return {...state, shouldNavigateToTzFix: action.payload};
     default:
       return state;
   }
@@ -154,7 +165,7 @@ function HomeScreen({route}: HomeScreenProps) {
     }
     dispatch({type: 'SET_INITIALIZING_SESSION', payload: true});
     // The user is not in an active session
-    const newSessionData: DrinkingSession = getEmptySession(
+    const newSessionData: DrinkingSession = DSUtils.getEmptySession(
       CONST.SESSION_TYPES.LIVE,
       true,
       true,
@@ -234,6 +245,20 @@ function HomeScreen({route}: HomeScreenProps) {
     dispatch({type: 'SET_UNITS_CONSUMED', payload: thisMonthUnits});
   }, [drinkingSessionData, state.visibleDateObject, preferences]);
 
+  useMemo(() => {
+    const sessionsAreMissingTz =
+      !DSUtils.allSessionsContainTimezone(drinkingSessionData);
+
+    // Only navigate in case the user is setting up TZ for the first time
+    const shouldNavigateToTzFix =
+      sessionsAreMissingTz && !!!userData?.private_data?.timezone;
+
+    dispatch({
+      type: 'SET_SHOULD_NAVIGATE_TO_TZ_FIX',
+      payload: shouldNavigateToTzFix,
+    });
+  }, [drinkingSessionData]);
+
   useEffect(() => {
     if (!userStatusData) {
       return;
@@ -269,6 +294,10 @@ function HomeScreen({route}: HomeScreenProps) {
           'Could not update user online status:' + error.message,
         );
       }
+      // TZFIX (09-2024) - Redirect to TZ_FIX_INTRODUCTION if user has not set timezone
+      if (!state.shouldNavigateToTzFix) {
+        Navigation.navigate(ROUTES.TZ_FIX_INTRODUCTION);
+      }
     }, [userData, preferences, drinkingSessionData]),
   );
 
@@ -287,9 +316,9 @@ function HomeScreen({route}: HomeScreenProps) {
     !userStatusData
   ) {
     return (
-      <LoadingData
+      <FullScreenLoadingIndicator
         loadingText={
-          state.initializingSession ? 'Starting a new session...' : ''
+          (state.initializingSession && 'Starting a new session...') || ''
         }
       />
     );
@@ -317,7 +346,9 @@ function HomeScreen({route}: HomeScreenProps) {
                 // refreshTrigger={refreshCounter}
                 refreshTrigger={0}
               />
-              <Text style={localStyles.headerUsername}>{user.displayName}</Text>
+              <Text style={[styles.headerText, styles.textLarge, styles.ml3]}>
+                {user.displayName}
+              </Text>
             </TouchableOpacity>
           </View>
         )}
@@ -350,6 +381,7 @@ function HomeScreen({route}: HomeScreenProps) {
         <View style={localStyles.statsOverviewHolder}>
           <StatsOverview statsData={statsData} />
         </View>
+
         <SessionsCalendar
           drinkingSessionData={drinkingSessionData}
           preferences={preferences}
@@ -398,18 +430,18 @@ function HomeScreen({route}: HomeScreenProps) {
             localStyles.mainScreenFooterRightContainer,
           ]}>
           <MenuIcon
-            iconId="main-menu-popup-icon"
+            iconId="settings-popup-icon"
             iconSource={KirokuIcons.Statistics}
             containerStyle={localStyles.menuIconContainer}
             iconStyle={localStyles.menuIcon}
             onPress={() => Navigation.navigate(ROUTES.STATISTICS)}
           />
           <MenuIcon
-            iconId="main-menu-popup-icon"
+            iconId="settings-popup-icon"
             iconSource={KirokuIcons.BarMenu}
             containerStyle={localStyles.menuIconContainer}
             iconStyle={localStyles.menuIcon}
-            onPress={() => Navigation.navigate(ROUTES.MAIN_MENU)}
+            onPress={() => Navigation.navigate(ROUTES.SETTINGS)}
           />
         </View>
       </View>
@@ -451,6 +483,7 @@ const localStyles = StyleSheet.create({
   profileButton: {
     flexDirection: 'row',
     justifyContent: 'flex-start',
+    alignItems: 'center',
   },
   profileImage: {
     width: 50,
@@ -504,7 +537,6 @@ const localStyles = StyleSheet.create({
     flexShrink: 1,
     backgroundColor: '#ffff99',
   },
-  ///
   userInSessionWarningContainer: {
     backgroundColor: '#ff5d54',
     padding: 16,

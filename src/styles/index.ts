@@ -1,12 +1,13 @@
 /* eslint-disable @typescript-eslint/naming-convention */
 import lodashClamp from 'lodash/clamp';
 import type {LineLayer} from 'react-map-gl';
-import type {
-  AnimatableNumericValue,
-  Animated,
-  ImageStyle,
-  TextStyle,
-  ViewStyle,
+import {
+  Platform,
+  type AnimatableNumericValue,
+  type Animated,
+  type ImageStyle,
+  type TextStyle,
+  type ViewStyle,
 } from 'react-native';
 import type {PickerStyle} from 'react-native-picker-select';
 import type {CustomAnimation} from 'react-native-animatable';
@@ -95,6 +96,7 @@ type Translation =
 type OfflineFeedbackStyle = Record<
   | 'deleted'
   | 'pending'
+  | 'default'
   | 'error'
   | 'container'
   | 'textContainer'
@@ -297,6 +299,10 @@ const styles = (theme: ThemeColors) =>
     // ...textDecorationLine,
     editedLabelStyles,
 
+    accountSettingsSectionTitle: {
+      ...FontUtils.fontFamily.platform.EXP_NEUE_BOLD,
+    },
+
     accountSettingsSectionContainer: {
       borderBottomWidth: 1,
       borderBottomColor: theme.border,
@@ -305,8 +311,10 @@ const styles = (theme: ThemeColors) =>
       ...spacing.pt0,
     },
 
-    accountSettingsSectionTitle: {
-      ...FontUtils.fontFamily.platform.EXP_NEUE_BOLD,
+    generalSettingsSectionContainer: {
+      borderBottomWidth: 1,
+      borderBottomColor: theme.border,
+      ...spacing.pt4,
     },
 
     activeComponentBG: {
@@ -404,6 +412,20 @@ const styles = (theme: ThemeColors) =>
       backgroundColor: theme.inverse,
     },
 
+    border: {
+      borderWidth: 1,
+      borderRadius: variables.componentBorderRadius,
+      borderColor: theme.border,
+    },
+
+    borderColorFocus: {
+      borderColor: theme.borderFocus,
+    },
+
+    borderColorDanger: {
+      borderColor: theme.danger,
+    },
+
     borderRadiusNormal: {
       borderRadius: variables.buttonBorderRadius,
     },
@@ -478,7 +500,6 @@ const styles = (theme: ThemeColors) =>
     },
 
     buttonContainer: {
-      padding: 1,
       borderRadius: variables.buttonBorderRadius,
     },
 
@@ -572,7 +593,7 @@ const styles = (theme: ThemeColors) =>
     },
 
     buttonSuccessText: {
-      color: theme.textLight,
+      color: theme.textDark,
     },
 
     buttonDangerText: {
@@ -675,6 +696,10 @@ const styles = (theme: ThemeColors) =>
 
     colorSchemeStyle: (colorScheme: ColorScheme) => ({colorScheme}),
 
+    checkedContainer: {
+      backgroundColor: theme.checkBox,
+    },
+
     colorMutedReversed: {
       color: theme.textMutedReversed,
     },
@@ -708,6 +733,12 @@ const styles = (theme: ThemeColors) =>
       opacity: 0,
       right: 0,
       bottom: 0,
+    },
+
+    dotIndicatorMessage: {
+      display: 'flex',
+      flexDirection: 'row',
+      alignItems: 'center',
     },
 
     draggableTopBar: {
@@ -780,6 +811,18 @@ const styles = (theme: ThemeColors) =>
     flipUpsideDown: {
       // transform: `rotate(180deg)`,
       transform: [{rotate: '180deg'}],
+    },
+
+    highlightBG: {
+      backgroundColor: theme.highlightBG,
+    },
+
+    appBG: {
+      backgroundColor: theme.appBG,
+    },
+
+    fontSizeLabel: {
+      fontSize: variables.fontSizeLabel,
     },
 
     fontWeightNormal: {
@@ -879,10 +922,27 @@ const styles = (theme: ThemeColors) =>
       left: -9999,
     },
 
+    makeSlideInTranslation: (translationType: Translation, fromValue: number) =>
+      ({
+        from: {
+          [translationType]: fromValue,
+        },
+        to: {
+          [translationType]: 0,
+        },
+      }) satisfies CustomAnimation,
+
     headerText: {
       color: theme.heading,
       ...FontUtils.fontFamily.platform.EXP_NEUE_BOLD,
       fontSize: variables.fontSizeNormal,
+    },
+
+    hiddenElementOutsideOfWindow: {
+      position: 'absolute',
+      top: -10000,
+      left: 0,
+      opacity: 0,
     },
 
     hoveredComponentBG: {
@@ -949,6 +1009,10 @@ const styles = (theme: ThemeColors) =>
       height: '100%',
     },
 
+    componentHeightLarge: {
+      height: variables.inputHeight,
+    },
+
     offlineFeedback: {
       deleted: {
         textDecorationLine: 'line-through',
@@ -956,6 +1020,12 @@ const styles = (theme: ThemeColors) =>
       },
       pending: {
         opacity: 0.5,
+      },
+      default: {
+        // fixes a crash on iOS when we attempt to remove already unmounted children
+        // see https://github.com/Expensify/App/issues/48197 for more details
+        // it's a temporary solution while we are working on a permanent fix
+        opacity: Platform.OS === 'ios' ? 0.99 : undefined,
       },
       error: {
         flexDirection: 'row',
@@ -1012,6 +1082,20 @@ const styles = (theme: ThemeColors) =>
       padding: 20,
     },
 
+    peopleRow: {
+      width: '100%',
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      alignItems: 'center',
+      ...spacing.ph5,
+    },
+
+    peopleRowBorderBottom: {
+      borderColor: theme.border,
+      borderBottomWidth: 1,
+      ...spacing.pb2,
+    },
+
     pointerEventsNone,
 
     pointerEventsAuto,
@@ -1057,10 +1141,43 @@ const styles = (theme: ThemeColors) =>
         flex: 1,
       }) satisfies ViewStyle,
 
+    onboardingNavigatorOuterView: {
+      flex: 1,
+      justifyContent: 'center',
+      alignItems: 'center',
+    },
+
+    OnboardingNavigatorInnerView: (shouldUseNarrowLayout: boolean) =>
+      ({
+        width: shouldUseNarrowLayout ? variables.onboardingModalWidth : '100%',
+        height: shouldUseNarrowLayout ? 732 : '100%',
+        maxHeight: '100%',
+        borderRadius: shouldUseNarrowLayout ? 16 : 0,
+        overflow: 'hidden',
+      }) satisfies ViewStyle,
+
     sectionMenuItemTopDescription: {
       ...spacing.ph8,
       ...spacing.mhn8,
       width: 'auto',
+    },
+
+    sectionTitle: {
+      ...spacing.pt2,
+      ...spacing.pr3,
+      ...spacing.pb4,
+      paddingLeft: 13,
+      fontSize: 13,
+      ...FontUtils.fontFamily.platform.EXP_NEUE,
+      lineHeight: 16,
+      color: theme.textSupporting,
+    },
+
+    sectionMenuItem: {
+      borderRadius: 8,
+      paddingHorizontal: 8,
+      height: 56,
+      alignItems: 'center',
     },
 
     singleAvatar: {
@@ -1082,6 +1199,10 @@ const styles = (theme: ThemeColors) =>
       width: 52,
       backgroundColor: theme.icon,
       borderRadius: 52,
+    },
+
+    searchTableHeaderActive: {
+      fontWeight: FontUtils.fontWeight.bold,
     },
 
     secondAvatar: {
@@ -1150,14 +1271,90 @@ const styles = (theme: ThemeColors) =>
       marginLeft: 8,
     },
 
+    selectionListPressableItemWrapper: {
+      alignItems: 'center',
+      flexDirection: 'row',
+      paddingHorizontal: 16,
+      paddingVertical: 16,
+      marginHorizontal: 20,
+      backgroundColor: theme.highlightBG,
+      borderRadius: 8,
+    },
+
+    selectionListStickyHeader: {
+      backgroundColor: theme.appBG,
+    },
+
     optionAlternateText: {
       minHeight: variables.alternateTextHeight,
       lineHeight: variables.lineHeightXLarge,
     },
 
+    optionsListSectionHeader: {
+      marginTop: 8,
+      marginBottom: 4,
+    },
+
     optionSelectCircle: {
       borderRadius: variables.componentSizeSmall / 2 + 1,
       padding: 1,
+    },
+
+    optionRow: {
+      minHeight: variables.optionRowHeight,
+      paddingTop: 12,
+      paddingBottom: 12,
+    },
+
+    optionRowSelected: {
+      backgroundColor: theme.activeComponentBG,
+    },
+
+    optionRowDisabled: {
+      color: theme.textSupporting,
+    },
+
+    optionRowCompact: {
+      height: variables.optionRowHeightCompact,
+      paddingTop: 12,
+      paddingBottom: 12,
+    },
+
+    optionDisplayName: {
+      ...FontUtils.fontFamily.platform.EXP_NEUE,
+      minHeight: variables.alternateTextHeight,
+      lineHeight: variables.lineHeightXLarge,
+      ...whiteSpace.noWrap,
+    },
+
+    optionDisplayNameCompact: {
+      minWidth: 'auto',
+      flexBasis: 'auto',
+      flexGrow: 0,
+      flexShrink: 1,
+    },
+
+    shortTermsBorder: {
+      borderWidth: 1,
+      borderColor: theme.border,
+      borderRadius: variables.componentBorderRadius,
+    },
+
+    shortTermsHorizontalRule: {
+      borderBottomWidth: 1,
+      borderColor: theme.border,
+      ...spacing.mh3,
+    },
+
+    shortTermsLargeHorizontalRule: {
+      borderWidth: 1,
+      borderColor: theme.border,
+      ...spacing.mh3,
+    },
+
+    shortTermsRow: {
+      flexDirection: 'row',
+      padding: 12,
     },
 
     sidebarLink: {
@@ -1251,10 +1448,56 @@ const styles = (theme: ThemeColors) =>
       color: theme.textError,
     },
 
+    switchTrack: {
+      width: 50,
+      height: 28,
+      justifyContent: 'center',
+      borderRadius: 20,
+      padding: 15,
+      backgroundColor: theme.success,
+    },
+
+    switchInactive: {
+      backgroundColor: theme.icon,
+    },
+
+    switchThumb: {
+      width: 22,
+      height: 22,
+      borderRadius: 11,
+      position: 'absolute',
+      left: 4,
+      justifyContent: 'center',
+      alignItems: 'center',
+      backgroundColor: theme.appBG,
+    },
+
+    switchThumbTransformation: (translateX: AnimatableNumericValue) =>
+      ({
+        transform: [{translateX}],
+      }) satisfies ViewStyle,
+
     furtherDetailsText: {
       ...FontUtils.fontFamily.platform.EXP_NEUE,
       fontSize: variables.fontSizeSmall,
       color: theme.textSupporting,
+    },
+
+    toggleSwitchLockIcon: {
+      width: variables.iconSizeExtraSmall,
+      height: variables.iconSizeExtraSmall,
+    },
+
+    lh14: {
+      lineHeight: variables.lineHeightSmall,
+    },
+
+    lh16: {
+      lineHeight: 16,
+    },
+
+    lh20: {
+      lineHeight: 20,
     },
 
     mutedTextLabel: {
@@ -1289,6 +1532,10 @@ const styles = (theme: ThemeColors) =>
       fontSize: variables.fontSizeExtraSmall,
     },
 
+    textPlainColor: {
+      color: theme.text,
+    },
+
     textNormal: {
       fontSize: variables.fontSizeNormal,
     },
@@ -1300,6 +1547,10 @@ const styles = (theme: ThemeColors) =>
 
     textLarge: {
       fontSize: variables.fontSizeLarge,
+    },
+
+    textXLarge: {
+      fontSize: variables.fontSizeXLarge,
     },
 
     textXXLarge: {
@@ -1324,6 +1575,10 @@ const styles = (theme: ThemeColors) =>
       color: theme.danger,
     },
 
+    textSupporting: {
+      color: theme.textSupporting,
+    },
+
     baseTextInput: {
       ...FontUtils.fontFamily.platform.EXP_NEUE,
       fontSize: variables.fontSizeNormal,
@@ -1336,6 +1591,76 @@ const styles = (theme: ThemeColors) =>
     },
 
     textInputDesktop: addOutlineWidth(theme, {}, 0),
+
+    textInputIconContainer: {
+      paddingHorizontal: 11,
+      justifyContent: 'center',
+      margin: 1,
+    },
+
+    textInputLeftIconContainer: {
+      justifyContent: 'center',
+      paddingRight: 8,
+    },
+
+    secureInput: {
+      borderTopRightRadius: 0,
+      borderBottomRightRadius: 0,
+    },
+
+    textInput: {
+      backgroundColor: 'transparent',
+      borderRadius: variables.componentBorderRadiusNormal,
+      height: variables.inputComponentSizeNormal,
+      borderColor: theme.border,
+      borderWidth: 1,
+      color: theme.text,
+      ...FontUtils.fontFamily.platform.EXP_NEUE,
+      fontSize: variables.fontSizeNormal,
+      paddingLeft: 12,
+      paddingRight: 12,
+      paddingTop: 10,
+      paddingBottom: 10,
+      verticalAlign: 'middle',
+    },
+
+    textInputPrefixWrapper: {
+      position: 'absolute',
+      left: 0,
+      top: 0,
+      height: variables.inputHeight,
+      display: 'flex',
+      flexDirection: 'row',
+      alignItems: 'center',
+      paddingTop: 23,
+      paddingBottom: 8,
+    },
+
+    textInputSuffixWrapper: {
+      position: 'absolute',
+      right: 0,
+      top: 0,
+      height: variables.inputHeight,
+      display: 'flex',
+      flexDirection: 'row',
+      alignItems: 'center',
+      paddingTop: 23,
+      paddingBottom: 8,
+    },
+
+    textInputPrefix: {
+      color: theme.text,
+      ...FontUtils.fontFamily.platform.EXP_NEUE,
+      fontSize: variables.fontSizeNormal,
+      verticalAlign: 'middle',
+    },
+
+    textInputSuffix: {
+      color: theme.text,
+      ...FontUtils.fontFamily.platform.EXP_NEUE,
+      fontSize: variables.fontSizeNormal,
+      verticalAlign: 'middle',
+    },
 
     // Be extremely careful when editing the compose styles, as it is easy to introduce regressions.
     textInputCompose: addOutlineWidth(
@@ -1412,8 +1737,56 @@ const styles = (theme: ThemeColors) =>
       flexDirection: 'row',
     },
 
+    textInputLabel: {
+      position: 'absolute',
+      left: 0,
+      top: 0,
+      fontSize: variables.fontSizeNormal,
+      color: theme.textSupporting,
+      ...FontUtils.fontFamily.platform.EXP_NEUE,
+      width: '100%',
+      zIndex: 1,
+    },
+
+    textInputLabelBackground: {
+      position: 'absolute',
+      top: 0,
+      width: '100%',
+      height: 23,
+      backgroundColor: theme.componentBG,
+    },
+
+    textInputLabelDesktop: {
+      transformOrigin: 'left center',
+    },
+
+    textInputLabelTransformation: (
+      translateY: AnimatableNumericValue,
+      translateX: AnimatableNumericValue,
+      scale: AnimatableNumericValue,
+    ) =>
+      ({
+        transform: [{translateY}, {translateX}, {scale}],
+      }) satisfies TextStyle,
+
     textAlignCenter: {
       textAlign: 'center',
+    },
+
+    textInputDisabled: {
+      // Adding disabled color theme to indicate user that the field is not editable.
+      backgroundColor: theme.highlightBG,
+      borderBottomWidth: 2,
+      borderColor: theme.borderLighter,
+      // Adding browser specefic style to bring consistency between Safari and other platforms.
+      // Applying the Webkit styles only to browsers as it is not available in native.
+      ...(Browser.getBrowser()
+        ? {
+            WebkitTextFillColor: theme.textSupporting,
+            WebkitOpacity: 1,
+          }
+        : {}),
+      color: theme.textSupporting,
     },
 
     textAlignRight: {
@@ -1464,6 +1837,12 @@ const styles = (theme: ThemeColors) =>
       ...FontUtils.fontFamily.platform.EXP_NEUE,
       fontSize: variables.fontSizeLabel,
       color: theme.textSupporting,
+    },
+
+    textLoading: {
+      ...FontUtils.fontFamily.platform.EXP_NEUE_BOLD,
+      fontSize: variables.fontSizeXLarge,
+      color: theme.text,
     },
 
     textWhite: {

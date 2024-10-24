@@ -1,5 +1,4 @@
 ﻿import {View, ActivityIndicator, StyleSheet, Text} from 'react-native';
-import {LoadingDataProps} from './LoadingData';
 
 const WelcomeScreen = () => {
   return (

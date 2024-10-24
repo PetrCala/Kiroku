@@ -7,9 +7,9 @@ import React, {
   useState,
 } from 'react';
 import type {NativeEventSubscription} from 'react-native';
-import {AppState, Linking} from 'react-native';
+import {AppState, Linking, Platform} from 'react-native';
 import type {OnyxEntry} from 'react-native-onyx';
-import Onyx, {withOnyx} from 'react-native-onyx';
+import Onyx, {useOnyx, withOnyx} from 'react-native-onyx';
 import Navigation from '@navigation/Navigation';
 import NavigationRoot from '@navigation/NavigationRoot';
 import NetworkConnection from '@libs/NetworkConnection';
@@ -27,6 +27,9 @@ import ONYXKEYS from '@src/ONYXKEYS';
 import type {Route} from '@src/ROUTES';
 import ForceUpdateModal from '@components/Modals/ForceUpdateModal';
 import type {Session} from '@src/types/onyx';
+import CONFIG from './CONFIG';
+import {updateLastRoute} from '@libs/actions/App';
+import setCrashlyticsUserId from '@libs/setCrashlyticsUserId';
 
 Onyx.registerLogger(({level, message}) => {
   if (level === 'alert') {
@@ -76,6 +79,9 @@ function Kiroku({
   const [initialUrl, setInitialUrl] = useState<string | null>(null);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [authenticationChecked, setAuthenticationChecked] = useState(false);
+  const [lastRoute] = useOnyx(ONYXKEYS.LAST_ROUTE);
+  // const [session] = useOnyx(ONYXKEYS.SESSION);
+  // const [account] = useOnyx(ONYXKEYS.ACCOUNT);
 
   // const isAuthenticated = useMemo(() => !!(auth.currentUser ?? null), [auth]);
   // const autoAuthState = useMemo(() => session?.autoAuthState ?? '', [session]);
@@ -128,6 +134,11 @@ function Kiroku({
     // NetworkConnection.subscribeToNetInfo(); // TODO enable this
   }, []);
 
+  // Log the platform and config to debug .env issues
+  useEffect(() => {
+    Log.info('App launched', false, {Platform});
+  }, []);
+
   useEffect(() => {
     setTimeout(() => {
       BootSplash.getVisibilityStatus().then(status => {
@@ -137,24 +148,24 @@ function Kiroku({
           status,
         });
 
-        // if (status === 'visible') {
-        //   const propsToLog: Omit<
-        //     KirokuProps & {isAuthenticated: boolean},
-        //     'children' | 'session'
-        //   > = {
-        //     updateRequired,
-        //     updateAvailable,
-        //     isSidebarLoaded,
-        //     focusModeNotification,
-        //     isAuthenticated,
-        //     lastVisitedPath,
-        //   };
-        //   Log.alert(
-        //     '[BootSplash] splash screen is still visible',
-        //     {propsToLog},
-        //     false,
-        //   );
-        // }
+        if (status === 'visible') {
+          const propsToLog: Omit<
+            KirokuProps & {isAuthenticated: boolean},
+            'children' | 'session'
+          > = {
+            updateRequired,
+            updateAvailable,
+            isSidebarLoaded,
+            focusModeNotification,
+            isAuthenticated,
+            lastVisitedPath,
+          };
+          Log.alert(
+            '[BootSplash] splash screen is still visible',
+            {propsToLog},
+            false,
+          );
+        }
       });
     }, 30 * 1000);
 
@@ -196,6 +207,23 @@ function Kiroku({
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps -- we don't want this effect to run again
   }, []);
+
+  useLayoutEffect(() => {
+    if (!isNavigationReady || !lastRoute) {
+      return;
+    }
+    updateLastRoute('');
+    Navigation.navigate(lastRoute as Route);
+    // Disabling this rule because we only want it to run on the first render.
+    // eslint-disable-next-line react-compiler/react-compiler, react-hooks/exhaustive-deps
+  }, [isNavigationReady]);
+
+  useEffect(() => {
+    if (!isAuthenticated) {
+      return;
+    }
+    setCrashlyticsUserId(auth?.currentUser?.uid ?? '-1');
+  }, [isAuthenticated, auth?.currentUser?.uid]);
 
   // Display a blank page until the onyx migration completes
   if (!isOnyxMigrated) {

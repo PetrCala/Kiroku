@@ -119,7 +119,29 @@
             ".validate": "newData.isString()"
           },
           "display_name": {
-            ".validate": "newData.isString()"
+            ".validate": "newData.isString() && newData.val().length > 0"
+          },
+          "first_name": {
+            ".validate": "newData.val() === null || (newData.isString() && newData.val().length > 0)"
+          },
+          "last_name": {
+            ".validate": "newData.val() === null || newData.isString()"
+          }
+        },
+        "private_data": {
+          ".read": "auth != null && auth.uid === $uid",
+          ".write": "auth != null && auth.uid === $uid",
+          "gender": {
+            ".validate": "newData.val() === null || newData.isString()"
+          },
+          "timezone": {
+            ".validate": "newData.val() === null || newData.hasChildren(['selected', 'automatic'])",
+            "selected": {
+              ".validate": "newData.val() === null || newData.isString()"
+            },
+            "automatic": {
+              ".validate": "newData.val() === null || newData.isBoolean()"
+            }
           }
         }
       }

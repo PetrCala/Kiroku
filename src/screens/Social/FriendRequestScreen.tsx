@@ -19,7 +19,6 @@ import {useEffect, useMemo, useReducer, useState} from 'react';
 import * as KirokuIcons from '@components/Icon/KirokuIcons';
 import {useFirebase} from '@context/global/FirebaseContext';
 import {acceptFriendRequest, deleteFriendRequest} from '@database/friends';
-import LoadingData from '@components/LoadingData';
 import type {Database} from 'firebase/database';
 import NoFriendUserOverview from '@components/Social/NoFriendUserOverview';
 import {fetchUserProfiles} from '@database/profile';
@@ -33,6 +32,7 @@ import ROUTES from '@src/ROUTES';
 import NoFriendInfo from '@components/Social/NoFriendInfo';
 import {isEmptyObject} from '@src/types/utils/EmptyObject';
 import FillerView from '@components/FillerView';
+import FlexibleLoadingIndicator from '@components/FlexibleLoadingIndicator';
 
 type RequestIdProps = {
   requestId: string;
@@ -133,7 +133,9 @@ const FriendRequestPending: React.FC<RequestIdProps> = ({requestId}) => {
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const user = auth.currentUser;
 
-  if (!user) {return;}
+  if (!user) {
+    return;
+  }
 
   return (
     <View style={styles.friendRequestPendingContainer}>
@@ -144,7 +146,9 @@ const FriendRequestPending: React.FC<RequestIdProps> = ({requestId}) => {
           handleRejectFriendRequest(db, user.uid, requestId, setIsLoading)
         }>
         {isLoading ? (
-          <ActivityIndicator size="small" color="#0000ff" />
+          <FlexibleLoadingIndicator
+            size={CONST.ACTIVITY_INDICATOR_SIZE.SMALL}
+          />
         ) : (
           <Text style={styles.handleRequestButtonText}>Cancel</Text>
         )}
@@ -176,7 +180,9 @@ const FriendRequestItem: React.FC<FriendRequestItemProps> = ({
   friendRequests,
   displayData,
 }) => {
-  if (!friendRequests || !displayData) {return null;}
+  if (!friendRequests || !displayData) {
+    return null;
+  }
   const profileData = displayData[requestId];
   const requestStatus = friendRequests[requestId];
 
@@ -278,7 +284,9 @@ function FriendRequestScreen() {
     const newRequestsReceived: string[] = [];
     if (!isEmptyObject(state.friendRequests)) {
       Object.keys(state.friendRequests).forEach(requestId => {
-        if (!state.friendRequests) {return;}
+        if (!state.friendRequests) {
+          return;
+        }
         if (
           state.friendRequests[requestId] === CONST.FRIEND_REQUEST_STATUS.SENT
         ) {
@@ -310,7 +318,7 @@ function FriendRequestScreen() {
         onScrollBeginDrag={Keyboard.dismiss}
         keyboardShouldPersistTaps="handled">
         {state.isLoading || isLoading ? (
-          <LoadingData style={styles.loadingData} />
+          <FlexibleLoadingIndicator style={styles.loadingData} />
         ) : !isEmptyObject(state.friendRequests) ? (
           <View style={styles.friendList}>
             <GrayHeader

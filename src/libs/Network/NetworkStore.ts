@@ -105,7 +105,8 @@ function isSupportRequest(command: string): boolean {
   return [
     WRITE_COMMANDS.OPEN_APP,
     SIDE_EFFECT_REQUEST_COMMANDS.RECONNECT_APP,
-    // READ_COMMANDS.SEARCH, // TODO validate this
+    // SIDE_EFFECT_REQUEST_COMMANDS.OPEN_REPORT,
+    // READ_COMMANDS.SEARCH,
   ].some(cmd => cmd === command);
 }
 

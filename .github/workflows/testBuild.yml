@@ -168,6 +168,10 @@ jobs:
           max_attempts: 5
           command: cd ios && bundle exec pod install
 
+      - name: Reset pods
+        run: |
+          npm run ios:pod:reset
+
       - name: Set up environment for Xcode
         run: |
           echo "export NODE_BINARY=$(which node)" >> "$HOME/.bash_profile"

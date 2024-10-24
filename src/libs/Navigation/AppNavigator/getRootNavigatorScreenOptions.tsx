@@ -17,6 +17,7 @@ type GetOnboardingModalNavigatorOptions = (
 type ScreenOptions = {
   rightModalNavigator: StackNavigationOptions;
   onboardingModalNavigator: GetOnboardingModalNavigatorOptions;
+  tzFixModalNavigator: GetOnboardingModalNavigatorOptions;
   leftModalNavigator: StackNavigationOptions;
   homeScreen: StackNavigationOptions;
   fullScreen: StackNavigationOptions;
@@ -84,6 +85,27 @@ const getRootNavigatorScreenOptions: GetRootNavigatorScreenOptions = (
         left: 0,
         // We need to guarantee that it covers BottomTabBar on web, but fixed position is not supported in react native.
         position: 'fixed' as ViewStyle['position'],
+      },
+    }),
+    tzFixModalNavigator: (shouldUseNarrowLayout: boolean) => ({
+      cardStyleInterpolator: (props: StackCardInterpolationProps) =>
+        modalCardStyleInterpolator(
+          isSmallScreenWidth,
+          false,
+          shouldUseNarrowLayout,
+          props,
+        ),
+
+      headerShown: false,
+      animationEnabled: true,
+      cardOverlayEnabled: false,
+      presentation: 'transparentModal',
+      cardStyle: {
+        ...StyleUtils.getNavigationModalCardStyle(),
+        backgroundColor: 'transparent',
+        width: '100%',
+        top: 0,
+        left: 0,
       },
     }),
     leftModalNavigator: {

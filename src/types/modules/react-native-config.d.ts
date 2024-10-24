@@ -14,6 +14,8 @@ declare module 'react-native-config' {
     MEASUREMENT_ID: string;
     PUSHER_APP_KEY: string;
     PUSHER_DEV_SUFFIX: string;
+    USE_WEB_PROXY?: string;
+    SEND_CRASH_REPORTS?: string;
   };
 
   export const Config: NativeConfig;

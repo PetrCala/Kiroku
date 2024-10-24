@@ -5,10 +5,9 @@ import {ref, get, set} from 'firebase/database';
 import type {FirebaseApp} from 'firebase/app';
 import {
   createMockConfig,
-  createMockMaintenance,
   createMockSession,
   createMockUserStatus,
-} from '../../utils/mockDatabase';
+} from '../../../src/database/MockDatabase';
 import {isConnectedToDatabaseEmulator} from '@src/libs/Firebase/FirebaseUtils';
 import type {
   FriendRequestList,
@@ -17,7 +16,6 @@ import type {
   DrinkingSession,
 } from '@src/types/onyx';
 import type {Database} from 'firebase/database';
-import {describeWithEmulator} from '../../utils/emulators/emulatorUtils';
 import {
   saveDrinkingSessionData,
   savePlaceholderSessionData,
@@ -26,11 +24,7 @@ import {
 import {MOCK_USER_IDS} from '../../utils/testsStatic';
 import {readDataOnce} from '@database/baseFunctions';
 import {setupGlobalMocks} from '../../utils/testUtils';
-import {
-  fillDatabaseWithMockData,
-  setupRealtimeDatabaseTestEnv,
-  teardownRealtimeDatabaseTestEnv,
-} from '../../utils/emulators/realtimeDatabaseSetup';
+import DatabaseEmulator from '../../emulators/database';
 import {
   changeDisplayName,
   deleteUserData,
@@ -49,18 +43,8 @@ import {
 } from '@database/friends';
 import DBPATHS from '@database/DBPATHS';
 import CONST from '@src/CONST';
-import {getEmptySession} from '@libs/DrinkingSessionUtils';
-import {
-  Auth,
-  connectAuthEmulator,
-  getReactNativePersistence,
-  initializeAuth,
-} from 'firebase/auth';
-import ReactNativeAsyncStorage from '@react-native-async-storage/async-storage';
-import {
-  createMockAuthUsers,
-  setupAuthTestEnv,
-} from '../../utils/emulators/authSetup';
+import DSUtils from '@libs/DrinkingSessionUtils';
+import {describeWithEmulator} from '../../emulators/utils';
 
 const testUserID: string = MOCK_USER_IDS[0];
 const testUserDisplayName = 'mock-user';
@@ -91,12 +75,12 @@ describeWithEmulator(
     setupGlobalMocks();
 
     beforeAll(async () => {
-      ({testApp, db} = setupRealtimeDatabaseTestEnv());
+      ({testApp, db} = DatabaseEmulator.setup());
     });
 
     // Set up the database before each test
     beforeEach(async () => {
-      await fillDatabaseWithMockData(db);
+      await DatabaseEmulator.fillWithMockData(db);
     });
 
     // Write null to clear the database.
@@ -105,7 +89,7 @@ describeWithEmulator(
     });
 
     afterAll(async () => {
-      await teardownRealtimeDatabaseTestEnv(testApp, db);
+      await DatabaseEmulator.teardown(testApp, db);
     });
 
     it('should connect to the emulator realtime database', async () => {
@@ -121,11 +105,11 @@ describeWithEmulator('Test realtime database emulator', () => {
   setupGlobalMocks();
 
   beforeAll(async () => {
-    ({testApp, db} = setupRealtimeDatabaseTestEnv());
+    ({testApp, db} = DatabaseEmulator.setup());
   });
 
   beforeEach(async () => {
-    await fillDatabaseWithMockData(db);
+    await DatabaseEmulator.fillWithMockData(db);
   });
 
   afterEach(async () => {
@@ -133,7 +117,7 @@ describeWithEmulator('Test realtime database emulator', () => {
   });
 
   afterAll(async () => {
-    await teardownRealtimeDatabaseTestEnv(testApp, db);
+    await DatabaseEmulator.teardown(testApp, db);
   });
 
   it('should write non-empty mock data', async () => {
@@ -154,11 +138,11 @@ describeWithEmulator('Test config functionality', () => {
   setupGlobalMocks();
 
   beforeAll(async () => {
-    ({testApp, db} = setupRealtimeDatabaseTestEnv());
+    ({testApp, db} = DatabaseEmulator.setup());
   });
 
   beforeEach(async () => {
-    await fillDatabaseWithMockData(db);
+    await DatabaseEmulator.fillWithMockData(db);
   });
 
   afterEach(async () => {
@@ -166,7 +150,7 @@ describeWithEmulator('Test config functionality', () => {
   });
 
   afterAll(async () => {
-    await teardownRealtimeDatabaseTestEnv(testApp, db);
+    await DatabaseEmulator.teardown(testApp, db);
   });
 
   it('should correctly read the config', async () => {
@@ -183,11 +167,11 @@ describeWithEmulator('Test drinking session functionality', () => {
   setupGlobalMocks();
 
   beforeAll(async () => {
-    ({testApp, db} = setupRealtimeDatabaseTestEnv());
+    ({testApp, db} = DatabaseEmulator.setup());
   });
 
   beforeEach(async () => {
-    await fillDatabaseWithMockData(db);
+    await DatabaseEmulator.fillWithMockData(db);
   });
 
   afterEach(async () => {
@@ -195,7 +179,7 @@ describeWithEmulator('Test drinking session functionality', () => {
   });
 
   afterAll(async () => {
-    await teardownRealtimeDatabaseTestEnv(testApp, db);
+    await DatabaseEmulator.teardown(testApp, db);
   });
 
   it('should correctly save user status info', async () => {
@@ -225,7 +209,7 @@ describeWithEmulator('Test drinking session functionality', () => {
   });
 
   it('should save a placeholder session', async () => {
-    const mockPlaceholderSession: DrinkingSession = getEmptySession(
+    const mockPlaceholderSession: DrinkingSession = DSUtils.getEmptySession(
       CONST.SESSION_TYPES.EDIT,
       true,
       false,
@@ -252,11 +236,11 @@ describeWithEmulator('Test pushing new user info into the database', () => {
   setupGlobalMocks();
 
   beforeAll(async () => {
-    ({testApp, db} = setupRealtimeDatabaseTestEnv());
+    ({testApp, db} = DatabaseEmulator.setup());
   });
 
   beforeEach(async () => {
-    await fillDatabaseWithMockData(db);
+    await DatabaseEmulator.fillWithMockData(db);
 
     const userStatusList = await readDataOnce(db, DBPATHS.USER_STATUS); // Arbitrary node with all user ids in top level
     const userKeys = Object.keys(userStatusList);
@@ -270,7 +254,7 @@ describeWithEmulator('Test pushing new user info into the database', () => {
   });
 
   afterAll(async () => {
-    await teardownRealtimeDatabaseTestEnv(testApp, db);
+    await DatabaseEmulator.teardown(testApp, db);
   });
 
   it('pushes the account creation data into the database', async () => {
@@ -331,11 +315,11 @@ describeWithEmulator('Test deleting data from the database', () => {
   setupGlobalMocks();
 
   beforeAll(async () => {
-    ({testApp, db} = setupRealtimeDatabaseTestEnv());
+    ({testApp, db} = DatabaseEmulator.setup());
   });
 
   beforeEach(async () => {
-    await fillDatabaseWithMockData(db);
+    await DatabaseEmulator.fillWithMockData(db);
     await deleteUserData(
       db,
       testUserID,
@@ -350,7 +334,7 @@ describeWithEmulator('Test deleting data from the database', () => {
   });
 
   afterAll(async () => {
-    await teardownRealtimeDatabaseTestEnv(testApp, db);
+    await DatabaseEmulator.teardown(testApp, db);
   });
 
   it('deletes the user nickname ID data from the database', async () => {
@@ -400,11 +384,11 @@ describeWithEmulator('Test friend request functionality', () => {
   setupGlobalMocks();
 
   beforeAll(async () => {
-    ({testApp, db} = setupRealtimeDatabaseTestEnv());
+    ({testApp, db} = DatabaseEmulator.setup());
   });
 
   beforeEach(async () => {
-    await fillDatabaseWithMockData(db, true); // No friends
+    await DatabaseEmulator.fillWithMockData(db, true); // No friends
     await deleteUserData(
       db,
       testUserID,
@@ -426,7 +410,7 @@ describeWithEmulator('Test friend request functionality', () => {
   });
 
   afterAll(async () => {
-    await teardownRealtimeDatabaseTestEnv(testApp, db);
+    await DatabaseEmulator.teardown(testApp, db);
   });
 
   it('should correctly determine friends', async () => {
@@ -545,12 +529,12 @@ describeWithEmulator('Test friend request functionality', () => {
 
 //   beforeAll(async () => {
 //     ({testApp, auth} = setupAuthTestEnv());
-//     ({testApp, db} = setupRealtimeDatabaseTestEnv()); // Overrides the testApp
+//     ({testApp, db} = DatabaseEmulator.setup()); // Overrides the testApp
 //   });
 
 //   beforeEach(async () => {
-//     await fillDatabaseWithMockData(db, true); // No friends
-//     await createMockAuthUsers(auth);
+//     await DatabaseEmulator.fillWithMockData(db, true); // No friends
+//     await DatabaseEmulator.create(auth);
 //   });
 
 //   afterEach(async () => {
@@ -558,7 +542,7 @@ describeWithEmulator('Test friend request functionality', () => {
 //   });
 
 //   afterAll(async () => {
-//     await teardownRealtimeDatabaseTestEnv(testApp, db);
+//     await DatabaseEmulator.teardown(testApp, db);
 //   });
 
 //   it("should correctly modify a user's display name", async () => {

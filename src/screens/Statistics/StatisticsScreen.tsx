@@ -1,15 +1,18 @@
-﻿import React, {useState} from 'react';
+﻿import React from 'react';
 import {StyleSheet, Text, View} from 'react-native';
-import MainHeader from '@components/Header/MainHeader';
 import Navigation from '@libs/Navigation/Navigation';
 import ScreenWrapper from '@components/ScreenWrapper';
+import HeaderWithBackButton from '@components/HeaderWithBackButton';
+import useLocalize from '@hooks/useLocalize';
 
 function StatisticsScreen() {
+  const {translate} = useLocalize();
+
   return (
     <ScreenWrapper testID={StatisticsScreen.displayName}>
-      <MainHeader
-        headerText="Statistics"
-        onGoBack={() => Navigation.goBack()}
+      <HeaderWithBackButton
+        title={translate('statisticsScreen.title')}
+        onBackButtonPress={Navigation.goBack}
       />
       <View style={styles.mainContainer}>
         <Text style={styles.sectionText}>Coming soon...</Text>

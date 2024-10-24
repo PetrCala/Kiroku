@@ -7,6 +7,7 @@ import type {Screen} from '@src/SCREENS';
 import SCREENS from '@src/SCREENS';
 import type {RouteConfig} from './createNormalizedConfigs';
 import createNormalizedConfigs from './createNormalizedConfigs';
+import {exact} from 'prop-types';
 
 // Moved to a separate file to avoid cyclic dependencies.
 const config: LinkingOptions<RootStackParamList>['config'] = {
@@ -42,6 +43,33 @@ const config: LinkingOptions<RootStackParamList>['config'] = {
         // ...
       },
     },
+
+    [NAVIGATORS.TZ_FIX_NAVIGATOR]: {
+      path: ROUTES.TZ_FIX_INTRODUCTION,
+      initialRouteName: SCREENS.TZ_FIX.INTRODUCTION,
+      screens: {
+        [SCREENS.TZ_FIX.INTRODUCTION]: {
+          path: ROUTES.TZ_FIX_INTRODUCTION,
+          exact: true,
+        },
+        [SCREENS.TZ_FIX.DETECTION]: {
+          path: ROUTES.TZ_FIX_DETECTION,
+          exact: true,
+        },
+        [SCREENS.TZ_FIX.SELECTION]: {
+          path: ROUTES.TZ_FIX_SELECTION,
+          exact: true,
+        },
+        [SCREENS.TZ_FIX.CONFIRMATION]: {
+          path: ROUTES.TZ_FIX_CONFIRMATION,
+          exact: true,
+        },
+        [SCREENS.TZ_FIX.SUCCESS]: {
+          path: ROUTES.TZ_FIX_SUCCESS,
+          exact: true,
+        },
+      },
+    },
     [NAVIGATORS.RIGHT_MODAL_NAVIGATOR]: {
       screens: {
         [SCREENS.RIGHT_MODAL.ACHIEVEMENTS]: {
@@ -69,15 +97,61 @@ const config: LinkingOptions<RootStackParamList>['config'] = {
             },
           },
         },
-        [SCREENS.RIGHT_MODAL.MAIN_MENU]: {
+        [SCREENS.RIGHT_MODAL.SETTINGS]: {
           screens: {
-            [SCREENS.MAIN_MENU.ROOT]: ROUTES.MAIN_MENU,
-            [SCREENS.MAIN_MENU.APP_SHARE]: ROUTES.MAIN_MENU_APP_SHARE,
-            [SCREENS.MAIN_MENU.PREFERENCES]: ROUTES.MAIN_MENU_PREFERENCES,
-            [SCREENS.MAIN_MENU.POLICIES.PRIVACY_POLICY]:
-              ROUTES.MAIN_MENU_POLICIES_PRIVACY_POLICY,
-            [SCREENS.MAIN_MENU.POLICIES.TERMS_OF_SERVICE]:
-              ROUTES.MAIN_MENU_POLICIES_TERMS_OF_SERVICE,
+            [SCREENS.SETTINGS.ROOT]: {
+              path: ROUTES.SETTINGS,
+              exact: true,
+            },
+            [SCREENS.SETTINGS.ACCOUNT.ROOT]: {
+              path: ROUTES.SETTINGS_ACCOUNT,
+              exact: true,
+            },
+            [SCREENS.SETTINGS.PREFERENCES.ROOT]: {
+              path: ROUTES.SETTINGS_PREFERENCES,
+              exact: true,
+            },
+            [SCREENS.SETTINGS.PREFERENCES.LANGUAGE]: {
+              path: ROUTES.SETTINGS_LANGUAGE,
+              exact: true,
+            },
+            [SCREENS.SETTINGS.PREFERENCES.THEME]: {
+              path: ROUTES.SETTINGS_THEME,
+              exact: true,
+            },
+            [SCREENS.SETTINGS.ACCOUNT.USER_NAME]: {
+              path: ROUTES.SETTINGS_USER_NAME,
+              exact: true,
+            },
+            [SCREENS.SETTINGS.ACCOUNT.DISPLAY_NAME]: {
+              path: ROUTES.SETTINGS_DISPLAY_NAME,
+              exact: true,
+            },
+            [SCREENS.SETTINGS.ACCOUNT.EMAIL]: {
+              path: ROUTES.SETTINGS_EMAIL,
+              exact: true,
+            },
+            [SCREENS.SETTINGS.ACCOUNT.PASSWORD]: {
+              path: ROUTES.SETTINGS_PASSWORD,
+              exact: true,
+            },
+            [SCREENS.SETTINGS.ACCOUNT.TIMEZONE]: {
+              path: ROUTES.SETTINGS_TIMEZONE,
+              exact: true,
+            },
+            [SCREENS.SETTINGS.ACCOUNT.TIMEZONE_SELECT]: {
+              path: ROUTES.SETTINGS_TIMEZONE_SELECT,
+              exact: true,
+            },
+            [SCREENS.SETTINGS.APP_SHARE]: ROUTES.SETTINGS_APP_SHARE,
+            [SCREENS.SETTINGS.PRIVACY_POLICY]: ROUTES.SETTINGS_PRIVACY_POLICY,
+            [SCREENS.SETTINGS.TERMS_OF_SERVICE]:
+              ROUTES.SETTINGS_TERMS_OF_SERVICE,
+            [SCREENS.SETTINGS.FEEDBACK]: ROUTES.SETTINGS_FEEDBACK,
+            [SCREENS.SETTINGS.DELETE]: {
+              path: ROUTES.SETTINGS_DELETE,
+              exact: true,
+            },
           },
         },
         [SCREENS.RIGHT_MODAL.PROFILE]: {
@@ -85,17 +159,9 @@ const config: LinkingOptions<RootStackParamList>['config'] = {
             [SCREENS.PROFILE.ROOT]: {
               path: ROUTES.PROFILE.route,
             },
-            [SCREENS.PROFILE.EDIT]: {
-              path: ROUTES.PROFILE_EDIT.route,
-            },
             [SCREENS.PROFILE.FRIENDS_FRIENDS]: {
               path: ROUTES.PROFILE_FRIENDS_FRIENDS.route,
             },
-          },
-        },
-        [SCREENS.RIGHT_MODAL.SETTINGS]: {
-          screens: {
-            [SCREENS.SETTINGS.ROOT]: ROUTES.SETTINGS,
           },
         },
         [SCREENS.RIGHT_MODAL.SOCIAL]: {

@@ -99,6 +99,9 @@ type HeaderWithBackButtonProps = Partial<ChildrenProps> & {
   /** Whether we should enable detail page navigation */
   shouldEnableDetailPageNavigation?: boolean;
 
+  /** A custom React component to render on the right hand side */
+  customRightButton?: ReactNode;
+
   /** Whether we should overlay the 3 dots menu */
   shouldOverlayDots?: boolean;
 

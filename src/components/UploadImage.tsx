@@ -153,7 +153,6 @@ const UploadImageComponent: React.FC<UploadImageComponentProps> = ({
         dispatch({type: 'SET_IMAGE_SOURCE', payload: null});
         dispatch({type: 'SET_UPLOAD_MODAL_VISIBLE', payload: false});
         Alert.alert('Image upload error', error.message);
-        // handleErrors(error, 'Error uploading image', error.message, dispatch); // Use after popup alerts have been implemented
       }
     };
 

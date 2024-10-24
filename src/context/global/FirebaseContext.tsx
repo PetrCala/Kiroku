@@ -1,17 +1,11 @@
 ﻿import type {ReactNode} from 'react';
 import {createContext, useContext} from 'react';
 import type {Auth} from 'firebase/auth';
-import {
-  initializeAuth,
-  getReactNativePersistence,
-  connectAuthEmulator,
-  getAuth,
-} from 'firebase/auth';
+import {connectAuthEmulator} from 'firebase/auth';
 import type {Database} from 'firebase/database';
 import {connectDatabaseEmulator, getDatabase} from 'firebase/database';
 import type {FirebaseStorage} from 'firebase/storage';
 import {getStorage, connectStorageEmulator} from 'firebase/storage';
-import ReactNativeAsyncStorage from '@react-native-async-storage/async-storage';
 import {isConnectedToAuthEmulator} from '@src/libs/Firebase/FirebaseUtils';
 import {FirebaseApp, auth} from '@libs/Firebase/FirebaseApp';
 import FirebaseConfig from '@libs/Firebase/FirebaseConfig';
@@ -20,7 +14,6 @@ import {
   isConnectedToStorageEmulator,
 } from '@src/libs/Firebase/FirebaseUtils';
 import CONFIG from '@src/CONFIG';
-import CONST from '@src/CONST';
 
 type FirebaseContextProps = {
   auth: Auth;
@@ -58,7 +51,11 @@ export const FirebaseProvider: React.FC<FirebaseProviderProps> = ({
   const storage = getStorage(FirebaseApp);
 
   // Check if emulators should be used
-  if (CONFIG.IS_IN_TEST) {
+  if (CONFIG.IS_USING_EMULATORS) {
+    console.debug('The app is running in testing mode.');
+
+    console.debug('Connecting to Firebase Emulators...');
+
     if (!FirebaseConfig.authDomain) {
       throw new Error('Auth URL not defined in FirebaseConfig');
     }
@@ -70,7 +67,8 @@ export const FirebaseProvider: React.FC<FirebaseProviderProps> = ({
     }
 
     if (!isConnectedToAuthEmulator(auth)) {
-      connectAuthEmulator(auth, FirebaseConfig.authDomain);
+      const authUrl = `http://${CONFIG.TEST_HOST}:${CONFIG.TEST_AUTH_PORT}`;
+      connectAuthEmulator(auth, authUrl);
     }
 
     // Safety check to connect to emulators only if they are not already running

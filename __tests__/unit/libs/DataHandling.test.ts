@@ -35,7 +35,7 @@ import {
   createMockPreferences,
   createMockSession,
   createMockDrinksList,
-} from '../../utils/mockDatabase';
+} from '../../../src/database/MockDatabase';
 import type {
   DrinkingSession,
   DrinkingSessionArray,

@@ -3,21 +3,15 @@
 require('dotenv').config(); // Use .env variables in this file - CONFIG does not work here
 import type {RulesTestEnvironment} from '@firebase/rules-unit-testing';
 import {assertFails, assertSucceeds} from '@firebase/rules-unit-testing';
-import {
-  describeWithEmulator,
-  makeFriends,
-} from '../../utils/emulators/emulatorUtils';
-import {
-  setupFirebaseRulesTestEnv,
-  teardownFirebaseRulesTestEnv,
-} from '../../utils/emulators/firebaseRulesSetup';
+import {describeWithEmulator, makeFriends} from '../../emulators/utils';
+import FBRules from '../../emulators/fbRules';
 import type {Feedback} from '@src/types/onyx';
 import {setupGlobalMocks} from '../../utils/testUtils';
 import {
   createMockSession,
   createMockUserData,
   createMockUserStatus,
-} from '../../utils/mockDatabase';
+} from '../../../src/database/MockDatabase';
 import {getDefaultPreferences} from '@database/users';
 import {
   SAMPLE_UNITS_TO_COLORS,
@@ -56,7 +50,7 @@ describeWithEmulator('Test account creations rules', () => {
   setupGlobalMocks(); // Silence permission denied warnings
 
   beforeAll(async () => {
-    ({testEnv, authDb, unauthDb, adminDb} = await setupFirebaseRulesTestEnv());
+    ({testEnv, authDb, unauthDb, adminDb} = await FBRules.setup());
   });
 
   afterEach(async () => {
@@ -64,7 +58,7 @@ describeWithEmulator('Test account creations rules', () => {
   });
 
   afterAll(async () => {
-    await teardownFirebaseRulesTestEnv(testEnv);
+    await FBRules.teardown(testEnv);
   });
 
   it('should allow an authenticated user to write into their own account creations node', async () => {
@@ -97,7 +91,7 @@ describeWithEmulator('Test drinking session rules', () => {
   setupGlobalMocks(); // Silence permission denied warnings
 
   beforeAll(async () => {
-    ({testEnv, authDb, unauthDb, adminDb} = await setupFirebaseRulesTestEnv());
+    ({testEnv, authDb, unauthDb, adminDb} = await FBRules.setup());
   });
 
   afterEach(async () => {
@@ -105,7 +99,7 @@ describeWithEmulator('Test drinking session rules', () => {
   });
 
   afterAll(async () => {
-    await teardownFirebaseRulesTestEnv(testEnv);
+    await FBRules.teardown(testEnv);
   });
 
   it('should allow admins to write into the drinking sessions node', async () => {
@@ -185,7 +179,7 @@ describeWithEmulator('Test user preferences rules', () => {
   setupGlobalMocks(); // Silence permission denied warnings
 
   beforeAll(async () => {
-    ({testEnv, authDb, unauthDb, adminDb} = await setupFirebaseRulesTestEnv());
+    ({testEnv, authDb, unauthDb, adminDb} = await FBRules.setup());
   });
 
   afterEach(async () => {
@@ -193,7 +187,7 @@ describeWithEmulator('Test user preferences rules', () => {
   });
 
   afterAll(async () => {
-    await teardownFirebaseRulesTestEnv(testEnv);
+    await FBRules.teardown(testEnv);
   });
 
   it('should allow an authenticated user to set default preferences', async () => {
@@ -250,7 +244,7 @@ describeWithEmulator('Test feedback rules', () => {
   setupGlobalMocks(); // Silence permission denied warnings
 
   beforeAll(async () => {
-    ({testEnv, authDb, unauthDb, adminDb} = await setupFirebaseRulesTestEnv());
+    ({testEnv, authDb, unauthDb, adminDb} = await FBRules.setup());
   });
 
   afterEach(async () => {
@@ -258,7 +252,7 @@ describeWithEmulator('Test feedback rules', () => {
   });
 
   afterAll(async () => {
-    await teardownFirebaseRulesTestEnv(testEnv);
+    await FBRules.teardown(testEnv);
   });
 
   it('should write feedback when authorized', async () => {
@@ -295,7 +289,7 @@ describeWithEmulator('Test user session placeholder rules', () => {
   setupGlobalMocks(); // Silence permission denied warnings
 
   beforeAll(async () => {
-    ({testEnv, authDb, unauthDb, adminDb} = await setupFirebaseRulesTestEnv());
+    ({testEnv, authDb, unauthDb, adminDb} = await FBRules.setup());
   });
 
   afterEach(async () => {
@@ -303,7 +297,7 @@ describeWithEmulator('Test user session placeholder rules', () => {
   });
 
   afterAll(async () => {
-    await teardownFirebaseRulesTestEnv(testEnv);
+    await FBRules.teardown(testEnv);
   });
 
   it('should allow reading user session placeholder node when admin is true', async () => {
@@ -362,7 +356,7 @@ describeWithEmulator('Test user status rules', () => {
   setupGlobalMocks(); // Silence permission denied warnings
 
   beforeAll(async () => {
-    ({testEnv, authDb, unauthDb, adminDb} = await setupFirebaseRulesTestEnv());
+    ({testEnv, authDb, unauthDb, adminDb} = await FBRules.setup());
   });
 
   afterEach(async () => {
@@ -370,7 +364,7 @@ describeWithEmulator('Test user status rules', () => {
   });
 
   afterAll(async () => {
-    await teardownFirebaseRulesTestEnv(testEnv);
+    await FBRules.teardown(testEnv);
   });
 
   it('should allow reading user user status node when admin is true', async () => {
@@ -451,7 +445,7 @@ describeWithEmulator('Test user last online rules', () => {
   setupGlobalMocks(); // Silence permission denied warnings
 
   beforeAll(async () => {
-    ({testEnv, authDb, unauthDb, adminDb} = await setupFirebaseRulesTestEnv());
+    ({testEnv, authDb, unauthDb, adminDb} = await FBRules.setup());
   });
 
   afterEach(async () => {
@@ -459,7 +453,7 @@ describeWithEmulator('Test user last online rules', () => {
   });
 
   afterAll(async () => {
-    await teardownFirebaseRulesTestEnv(testEnv);
+    await FBRules.teardown(testEnv);
   });
 
   it('should allow an authenticated user to write into their own user last online node', async () => {
@@ -521,7 +515,7 @@ describeWithEmulator('Test friend rules', () => {
   setupGlobalMocks(); // Silence permission denied warnings
 
   beforeAll(async () => {
-    ({testEnv, authDb, unauthDb, adminDb} = await setupFirebaseRulesTestEnv());
+    ({testEnv, authDb, unauthDb, adminDb} = await FBRules.setup());
   });
 
   afterEach(async () => {
@@ -529,7 +523,7 @@ describeWithEmulator('Test friend rules', () => {
   });
 
   afterAll(async () => {
-    await teardownFirebaseRulesTestEnv(testEnv);
+    await FBRules.teardown(testEnv);
   });
 
   it('should allow a user to write valid values into their own friend list', async () => {
@@ -591,7 +585,7 @@ describeWithEmulator('Test friend request rules', () => {
   const fromAuthToAuthRef = setupGlobalMocks(); // Silence permission denied warnings
 
   beforeAll(async () => {
-    ({testEnv, authDb, unauthDb, adminDb} = await setupFirebaseRulesTestEnv());
+    ({testEnv, authDb, unauthDb, adminDb} = await FBRules.setup());
   });
 
   afterEach(async () => {
@@ -599,7 +593,7 @@ describeWithEmulator('Test friend request rules', () => {
   });
 
   afterAll(async () => {
-    await teardownFirebaseRulesTestEnv(testEnv);
+    await FBRules.teardown(testEnv);
   });
 
   it('should allow authenticated user to write into their own friend_requests with valid values', async () => {

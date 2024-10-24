@@ -25,9 +25,7 @@ import {
 } from '@libs/DataHandling';
 import type {DateObject} from '@src/types/time';
 import SessionsCalendar from '@components/Calendar';
-import LoadingData from '@components/LoadingData';
 import {getCommonFriendsCount} from '@libs/FriendUtils';
-import MainHeader from '@components/Header/MainHeader';
 import ManageFriendPopup from '@components/Popups/Profile/ManageFriendPopup';
 import type {DrinkingSessionArray} from '@src/types/onyx';
 import type {UserList} from '@src/types/onyx/OnyxCommon';
@@ -42,6 +40,9 @@ import useFetchData from '@hooks/useFetchData';
 import {getPlural} from '@libs/StringUtilsKiroku';
 import ScreenWrapper from '@components/ScreenWrapper';
 import type {FetchDataKeys} from '@hooks/useFetchData/types';
+import HeaderWithBackButton from '@components/HeaderWithBackButton';
+import useLocalize from '@hooks/useLocalize';
+import FullScreenLoadingIndicator from '@components/FullscreenLoadingIndicator';
 
 type State = {
   selfFriends: UserList | undefined;
@@ -108,6 +109,7 @@ function ProfileScreen({route}: ProfileScreenProps) {
     'preferences',
   ]; //
   const [state, dispatch] = useReducer(reducer, initialState);
+  const {translate} = useLocalize();
   const {data: fetchedData, isLoading} = useFetchData(userID, relevantDataKeys);
   let userData = fetchedData?.userData;
   let drinkingSessionData = fetchedData?.drinkingSessionData;
@@ -182,7 +184,7 @@ function ProfileScreen({route}: ProfileScreenProps) {
   }, [drinkingSessionData, preferences, state.visibleDateObject]);
 
   if (isLoading) {
-    return <LoadingData />;
+    return <FullScreenLoadingIndicator />;
   }
   if (!profileData || !preferences || !userData) {
     return;
@@ -190,9 +192,13 @@ function ProfileScreen({route}: ProfileScreenProps) {
 
   return (
     <ScreenWrapper testID={ProfileScreen.displayName}>
-      <MainHeader
-        headerText={user?.uid === userID ? 'Profile' : 'Friend Overview'}
-        onGoBack={() => Navigation.goBack()}
+      <HeaderWithBackButton
+        title={
+          user?.uid === userID
+            ? translate('profileScreen.title')
+            : translate('profileScreen.titleNotSelf')
+        }
+        onBackButtonPress={Navigation.goBack}
       />
       <ScrollView
         style={localStyles.scrollView}

@@ -8,4 +8,5 @@ export default {
   LEFT_MODAL_NAVIGATOR: 'LeftModalNavigator',
   RIGHT_MODAL_NAVIGATOR: 'RightModalNavigator',
   FULL_SCREEN_NAVIGATOR: 'FullScreenNavigator',
+  TZ_FIX_NAVIGATOR: 'TZFixNavigator',
 } as const;

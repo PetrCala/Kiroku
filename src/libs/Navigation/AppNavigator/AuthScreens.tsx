@@ -15,6 +15,7 @@ import type {AuthScreensParamList} from '@libs/Navigation/types';
 import NetworkConnection from '@libs/NetworkConnection';
 import * as Pusher from '@libs/Pusher/pusher';
 // import PusherConnectionManager from '@libs/PusherConnectionManager';
+import getTzFixModalScreenOptions from '@libs/Navigation/getTzFixModalScreenOptions';
 import * as SessionUtils from '@libs/SessionUtils';
 // import NotFoundPage from '@pages/ErrorPage/NotFoundPage';
 import NotFoundScreen from '@screens/ErrorScreen/NotFoundScreen';
@@ -44,6 +45,7 @@ import BottomTabNavigator from './Navigators/BottomTabNavigator';
 // import FullScreenNavigator from './Navigators/FullScreenNavigator';
 // import LeftModalNavigator from './Navigators/LeftModalNavigator';
 // import OnboardingModalNavigator from './Navigators/OnboardingModalNavigator';
+import TzFixModalNavigator from './Navigators/TzFixModalNavigator';
 import RightModalNavigator from './Navigators/RightModalNavigator';
 // import WelcomeVideoModalNavigator from './Navigators/WelcomeVideoModalNavigator';
 
@@ -159,6 +161,11 @@ function AuthScreens({
     StyleUtils,
   );
   const isInitialRender = useRef(true);
+
+  const tzFixModalScreenOptions = useMemo(
+    () => getTzFixModalScreenOptions(isSmallScreenWidth, styles, StyleUtils),
+    [StyleUtils, isSmallScreenWidth, styles],
+  );
 
   if (isInitialRender.current) {
     Timing.start(CONST.TIMING.HOMEPAGE_INITIAL_RENDER);
@@ -300,6 +307,17 @@ function AuthScreens({
             options={screenOptions.rightModalNavigator}
             component={RightModalNavigator}
             listeners={modalScreenListeners}
+          />
+          <RootStack.Screen
+            name={NAVIGATORS.TZ_FIX_NAVIGATOR}
+            options={tzFixModalScreenOptions}
+            component={TzFixModalNavigator}
+            listeners={{
+              focus: () => {
+                Modal.setDisableDismissOnEscape(true);
+              },
+              beforeRemove: () => Modal.setDisableDismissOnEscape(false),
+            }}
           />
           {/* <RootStack.Screen
           name={NAVIGATORS.FULL_SCREEN_NAVIGATOR}

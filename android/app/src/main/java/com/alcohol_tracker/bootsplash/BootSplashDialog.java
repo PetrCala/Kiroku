@@ -23,16 +23,18 @@ public class BootSplashDialog extends Dialog {
 
   @Override
   protected void onCreate(Bundle savedInstanceState) {
+    super.onCreate(savedInstanceState);
+
     final Window window = this.getWindow();
 
     if (window != null) {
       window.setLayout(LayoutParams.MATCH_PARENT, LayoutParams.MATCH_PARENT);
 
-      if (BootSplashModule.isSamsungOneUI4()) {
-        window.setBackgroundDrawableResource(R.drawable.bootsplash_samsung_oneui_4);
-      }
-    }
+      int backgroundDrawableRes = BootSplashModule.isSamsungOneUI4()
+        ? R.drawable.bootsplash_samsung_oneui_4
+        : R.drawable.bootsplash;
 
-    super.onCreate(savedInstanceState);
+      window.setBackgroundDrawableResource(backgroundDrawableRes);
+    }
   }
 }

@@ -5,6 +5,7 @@ import type {
   FriendRequestList,
   Preferences,
   Profile,
+  UserPrivateData,
   UserProps,
   UserStatus,
 } from '@src/types/onyx';
@@ -14,17 +15,17 @@ import {
   EmailAuthProvider,
   reauthenticateWithCredential,
   updateProfile,
+  updateEmail as fbUpdateEmail,
+  verifyBeforeUpdateEmail,
 } from 'firebase/auth';
 import {getUniqueId} from 'react-native-device-info';
 import {Alert} from 'react-native';
 import {cleanStringForFirebaseKey} from '../libs/StringUtilsKiroku';
 import DBPATHS from './DBPATHS';
 import {readDataOnce} from './baseFunctions';
-import {
-  getLastStartedSession,
-  getLastStartedSessionId,
-} from '@libs/DataHandling';
+import {getLastStartedSessionId} from '@libs/DataHandling';
 import _ from 'lodash';
+import {SelectedTimezone, Timezone} from '@src/types/onyx/PersonalDetails';
 
 const getDefaultPreferences = (): Preferences => {
   return {
@@ -47,9 +48,18 @@ const getDefaultPreferences = (): Preferences => {
 
 const getDefaultUserData = (profileData: Profile): UserProps => {
   const userRole = 'open_beta_user';
+  const timezone: Timezone = {
+    selected: Intl.DateTimeFormat().resolvedOptions()
+      .timeZone as SelectedTimezone,
+    automatic: true,
+  };
+  const defaultPrivateData: UserPrivateData = {
+    timezone: timezone,
+  };
   return {
     profile: profileData,
     role: userRole,
+    private_data: defaultPrivateData,
   };
 };
 
@@ -185,6 +195,35 @@ async function synchronizeUserStatus(
   await update(ref(db), updates);
 }
 
+/**
+ * Send an email to the user with a link to update their email.
+ *
+ * @param user The user to send the email to
+ * @param newEmail The new email
+ */
+async function sendUpdateEmailLink(
+  user: User | null,
+  newEmail: string,
+): Promise<void> {
+  if (!user) {
+    throw new Error('User is null');
+  }
+  await verifyBeforeUpdateEmail(user, newEmail);
+}
+
+/**
+ * Update the email for a user.
+ *
+ * @param user The user to update the email for
+ * @param newEmail The new email
+ */
+async function updateEmail(user: User | null, newEmail: string): Promise<void> {
+  if (!user) {
+    throw new Error('User is null');
+  }
+  await fbUpdateEmail(user, newEmail);
+}
+
 /** Reauthentificate a user using the User object and a password
  * Necessary before important operations such as deleting a user
  * or changing a password.
@@ -218,18 +257,26 @@ async function reauthentificateUser(
  *
  * @param db Database to change the display name in
  * @param user User to change the display name for
+ * @param oldDisplayName The old display name
  * @param newDisplayName The new display name
  * @returns An empty promise
  */
 async function changeDisplayName(
   db: Database,
   user: User | null,
+  oldDisplayName: string | undefined,
   newDisplayName: string,
 ): Promise<void> {
   if (!user) {
     throw new Error('User is null');
   }
+  if (!oldDisplayName) {
+    throw new Error(
+      'Could not identify the old display name. Try reloading the app.',
+    );
+  }
   const userID = user.uid;
+  const oldNicknameKey = cleanStringForFirebaseKey(oldDisplayName);
   const nicknameKey = cleanStringForFirebaseKey(newDisplayName);
   const nicknameRef = DBPATHS.NICKNAME_TO_ID_NICKNAME_KEY_USER_ID;
   const displayNameRef = DBPATHS.USERS_USER_ID_PROFILE_DISPLAY_NAME;
@@ -242,23 +289,118 @@ async function changeDisplayName(
     return;
   }
 
-  const updates: Record<string, string> = {};
+  const updates: Record<string, string | null> = {};
+  updates[nicknameRef.getRoute(oldNicknameKey, userID)] = null;
   updates[nicknameRef.getRoute(nicknameKey, userID)] = newDisplayName;
   updates[displayNameRef.getRoute(userID)] = newDisplayName;
+
   // TODO possibly rewrite these into a transaction
   await update(ref(db), updates);
   await updateProfile(user, {displayName: newDisplayName});
-  return;
+}
+
+/**
+ * Change a user name for a user.
+ *
+ * @param db Database to change the display name in
+ * @param user User to change the display name for
+ * @param firstName The new first name
+ * @param lastName The new last name
+ * @returns An empty promise
+ */
+async function changeUserName(
+  db: Database,
+  user: User | null,
+  firstName: string,
+  lastName: string,
+): Promise<void> {
+  if (!user) {
+    throw new Error('User is null');
+  }
+
+  const userID = user.uid;
+  const firstNameRef = DBPATHS.USERS_USER_ID_PROFILE_FIRST_NAME;
+  const lastNameRef = DBPATHS.USERS_USER_ID_PROFILE_LAST_NAME;
+
+  const updates: Record<string, string> = {};
+  updates[firstNameRef.getRoute(userID)] = firstName;
+  updates[lastNameRef.getRoute(userID)] = lastName;
+
+  await update(ref(db), updates);
+}
+
+/**
+ * Change a user's automatic timezone setting.
+ *
+ * @param db Database to change the display name in
+ * @param user User to change the display name for
+ * @param isAutomatic Whether the timezone is automatic
+ * @param newTimezone A new timezone
+ * @returns An empty promise
+ */
+async function updateAutomaticTimezone(
+  db: Database,
+  user: User | null,
+  isAutomatic: boolean,
+  selectedTimezone: SelectedTimezone,
+): Promise<void> {
+  if (!user) {
+    throw new Error('User is null');
+  }
+
+  const userID = user.uid;
+  const timezoneRef = DBPATHS.USERS_USER_ID_PRIVATE_DATA_TIMEZONE;
+
+  const newData: Timezone = {
+    selected: selectedTimezone,
+    automatic: isAutomatic,
+  };
+
+  const updates: Record<string, Timezone> = {};
+  updates[timezoneRef.getRoute(userID)] = newData;
+
+  await update(ref(db), updates);
+}
+
+/**
+ * Change a user's selected timezone
+ *
+ * @param db Database to change the display name in
+ * @param user User to change the display name for
+ * @param selectedTimezone The selected timezone
+ * @returns An empty promise
+ */
+async function saveSelectedTimezone(
+  db: Database,
+  user: User | null,
+  selectedTimezone: SelectedTimezone,
+): Promise<void> {
+  if (!user) {
+    throw new Error('User is null');
+  }
+
+  const userID = user.uid;
+  const timezoneRef = DBPATHS.USERS_USER_ID_PRIVATE_DATA_TIMEZONE_SELECTED;
+
+  const updates: Record<string, SelectedTimezone> = {};
+  updates[timezoneRef.getRoute(userID)] = selectedTimezone;
+
+  await update(ref(db), updates);
 }
 
 export {
+  changeDisplayName,
+  changeUserName,
+  deleteUserData,
   getDefaultPreferences,
   getDefaultUserData,
   getDefaultUserStatus,
-  userExistsInDatabase,
   pushNewUserInfo,
-  deleteUserData,
-  synchronizeUserStatus,
   reauthentificateUser,
-  changeDisplayName,
+  saveSelectedTimezone,
+  sendUpdateEmailLink,
+  synchronizeUserStatus,
+  updateAutomaticTimezone,
+  updateEmail,
+  userExistsInDatabase,
 };

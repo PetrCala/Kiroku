@@ -19,6 +19,8 @@ type OfflineFeedback<TKey extends string> = {
   /** Field-specific pending states for offline updates */
   pendingFields?: PendingFields<TKey>;
 };
+
+/** Onyx data with offline properties that store information about data that was written while the app was offline */
 type OnyxValueWithOfflineFeedback<
   TOnyx,
   TKey extends string = never,
@@ -26,12 +28,14 @@ type OnyxValueWithOfflineFeedback<
   ? TOnyx & OfflineFeedback<keyof TOnyx | TKey>
   : never;
 
+/** Mapping of form fields with errors */
 type ErrorFields<TKey extends string = string> = Record<
   TKey,
   Errors | null | undefined
 >;
 
-type Errors = Record<string, MaybePhraseKey | null>;
+/** Mapping of form fields with error translation keys and variables */
+type Errors = Record<string, string | null>;
 
 type AvatarType = typeof CONST.ICON_TYPE_AVATAR;
 

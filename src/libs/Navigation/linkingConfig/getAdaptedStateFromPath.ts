@@ -179,6 +179,10 @@ function getAdaptedState(
   const lhpNavigator = state.routes.find(
     route => route.name === NAVIGATORS.LEFT_MODAL_NAVIGATOR,
   );
+  const tzFixNavigator = state.routes.find(
+    route => route.name === NAVIGATORS.TZ_FIX_NAVIGATOR,
+  );
+  // const onboardingModalNavigator = state.routes.find((route) => route.name === NAVIGATORS.ONBOARDING_MODAL_NAVIGATOR);
 
   if (rhpNavigator) {
     // Routes
@@ -220,7 +224,8 @@ function getAdaptedState(
       metainfo,
     };
   }
-  if (lhpNavigator) {
+  if (lhpNavigator ?? tzFixNavigator) {
+    // ?OnboardingNavigator
     // Routes
     // - default bottom tab
     // - default central pane on desktop layout
@@ -240,6 +245,14 @@ function getAdaptedState(
     if (lhpNavigator) {
       routes.push(lhpNavigator);
     }
+
+    if (tzFixNavigator) {
+      routes.push(tzFixNavigator);
+    }
+
+    // if (onboardingModalNavigator) {
+    //     routes.push(onboardingModalNavigator);
+    // }
 
     return {
       adaptedState: getRoutesWithIndex(routes),

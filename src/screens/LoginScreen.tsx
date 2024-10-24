@@ -1,5 +1,6 @@
 ﻿import React, {useReducer} from 'react';
 import {
+  Alert,
   Dimensions,
   Image,
   StyleSheet,
@@ -9,13 +10,12 @@ import {
   View,
 } from 'react-native';
 import * as KirokuIcons from '@components/Icon/KirokuIcons';
+import * as ErrorUtils from '@libs/ErrorUtils';
 import {useFocusEffect} from '@react-navigation/native';
 import {sendPasswordResetEmail, signOut} from 'firebase/auth';
 import {signInUserWithEmailAndPassword} from '@libs/auth/auth';
 import commonStyles from '@styles/commonStyles';
-import LoadingData from '@components/LoadingData';
 import InputTextPopup from '@components/Popups/InputTextPopup';
-import {handleErrors} from '@libs/ErrorHandling';
 import WarningMessage from '@components/Info/WarningMessage';
 import SuccessMessage from '@components/Info/SuccessMessage';
 import DismissKeyboard from '@components/Keyboard/DismissKeyboard';
@@ -24,6 +24,7 @@ import Navigation from '@navigation/Navigation';
 import {useFirebase} from '@context/global/FirebaseContext';
 import ScreenWrapper from '@components/ScreenWrapper';
 import useTheme from '@hooks/useTheme';
+import FullScreenLoadingIndicator from '@components/FullscreenLoadingIndicator';
 
 type State = {
   email: string;
@@ -116,9 +117,8 @@ function LoginScreen() {
       dispatch({type: 'SET_LOADING_USER', payload: true});
       await signInUserWithEmailAndPassword(auth, state.email, state.password);
     } catch (error: any) {
-      const errorHeading = 'Failed to log in';
-      const errorMessage = 'There was an error trying to log in: ';
-      handleErrors(error, errorHeading, errorMessage, dispatch);
+      const errorMessage = ErrorUtils.getErrorMessage(error);
+      dispatch({type: 'SET_WARNING', payload: errorMessage});
     } finally {
       dispatch({type: 'SET_LOADING_USER', payload: false});
     }
@@ -126,14 +126,12 @@ function LoginScreen() {
   };
 
   const handleResetPassword = async (mail: string) => {
-    // reset the user password
     try {
       await sendPasswordResetEmail(auth, mail);
       dispatch({type: 'SET_SUCCESS', payload: 'Password reset link sent'});
     } catch (error: any) {
-      const errorHeading = 'Error When Resetting Password';
-      const errorMessage = 'There was an error when resetting your password: ';
-      return handleErrors(error, errorHeading, errorMessage, dispatch);
+      const errorMessage = ErrorUtils.getErrorMessage(error);
+      dispatch({type: 'SET_WARNING', payload: errorMessage});
     } finally {
       dispatch({type: 'SET_RESET_PASSWORD_MODAL_VISIBLE', payload: false});
     }
@@ -142,7 +140,7 @@ function LoginScreen() {
   // Wait to see whether there already is an authentificated user
   // Possibly here display the app logo instead of the loading screen
   if (state.loadingUser) {
-    return <LoadingData loadingText="Signing in..." />;
+    return <FullScreenLoadingIndicator loadingText="Signing in..." />;
   }
 
   return (
@@ -158,6 +156,7 @@ function LoginScreen() {
             accessibilityLabel="Text input field"
             placeholder="Email"
             placeholderTextColor={'#a8a8a8'}
+            selectionColor={'gray'}
             keyboardType="email-address"
             textContentType="emailAddress"
             value={state.email}
@@ -170,6 +169,7 @@ function LoginScreen() {
             accessibilityLabel="Text input field"
             placeholder="Password"
             placeholderTextColor={'#a8a8a8'}
+            selectionColor={'gray'}
             textContentType="password"
             value={state.password}
             onChangeText={text =>

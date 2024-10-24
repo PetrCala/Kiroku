@@ -16,7 +16,7 @@ import withCurrentUserPersonalDetails from './withCurrentUserPersonalDetails';
 type Locale = ValueOf<typeof CONST.LOCALES>;
 
 type LocaleContextProviderOnyxProps = {
-  /** The user's preferred locale e.g. 'en', 'es-ES' */
+  /** The user's preferred locale e.g. 'en', 'cs-CZ' */
   preferredLocale: OnyxEntry<Locale>;
 };
 

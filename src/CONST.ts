@@ -1,8 +1,5 @@
-// Source: https://github.com/Expensify/App/blob/main/src/CONST.ts
-
 import dateAdd from 'date-fns/add';
 import dateSubtract from 'date-fns/sub';
-import Config from 'react-native-config';
 import * as KeyCommand from 'react-native-key-command';
 import SCREENS from './SCREENS';
 
@@ -43,34 +40,6 @@ const KEYBOARD_SHORTCUT_NAVIGATION_TYPE = 'NAVIGATION_SHORTCUT';
 
 const CONST = {
   ACCOUNT_CREATION_LIMIT: 3,
-
-  ACCOUNT_ID: {
-    ACCOUNTING: Number(Config?.EXPENSIFY_ACCOUNT_ID_ACCOUNTING ?? 9645353),
-    ADMIN: Number(Config?.EXPENSIFY_ACCOUNT_ID_ADMIN ?? -1),
-    BILLS: Number(Config?.EXPENSIFY_ACCOUNT_ID_BILLS ?? 1371),
-    CHRONOS: Number(Config?.EXPENSIFY_ACCOUNT_ID_CHRONOS ?? 10027416),
-    CONCIERGE: Number(Config?.EXPENSIFY_ACCOUNT_ID_CONCIERGE ?? 8392101),
-    CONTRIBUTORS: Number(Config?.EXPENSIFY_ACCOUNT_ID_CONTRIBUTORS ?? 9675014),
-    FIRST_RESPONDER: Number(
-      Config?.EXPENSIFY_ACCOUNT_ID_FIRST_RESPONDER ?? 9375152,
-    ),
-    HELP: Number(Config?.EXPENSIFY_ACCOUNT_ID_HELP ?? -1),
-    INTEGRATION_TESTING_CREDS: Number(
-      Config?.EXPENSIFY_ACCOUNT_ID_INTEGRATION_TESTING_CREDS ?? -1,
-    ),
-    NOTIFICATIONS: Number(
-      Config?.EXPENSIFY_ACCOUNT_ID_NOTIFICATIONS ?? 11665625,
-    ),
-    PAYROLL: Number(Config?.EXPENSIFY_ACCOUNT_ID_PAYROLL ?? 9679724),
-    QA: Number(Config?.EXPENSIFY_ACCOUNT_ID_QA ?? 3126513),
-    QA_TRAVIS: Number(Config?.EXPENSIFY_ACCOUNT_ID_QA_TRAVIS ?? 8595733),
-    RECEIPTS: Number(Config?.EXPENSIFY_ACCOUNT_ID_RECEIPTS ?? -1),
-    REWARDS: Number(Config?.EXPENSIFY_ACCOUNT_ID_REWARDS ?? 11023767), // rewards@expensify.com
-    STUDENT_AMBASSADOR: Number(
-      Config?.EXPENSIFY_ACCOUNT_ID_STUDENT_AMBASSADOR ?? 10476956,
-    ),
-    SVFG: Number(Config?.EXPENSIFY_ACCOUNT_ID_SVFG ?? 2012843),
-  },
   ANDROID_PACKAGE_NAME,
   ANIMATED_TRANSITION: 300,
   ANIMATED_TRANSITION_FROM_VALUE: 100,
@@ -81,6 +50,14 @@ const CONST = {
   },
   APP_DOWNLOAD_LINK: `${GH_PAGES_URL}/assets/html/qr-link.html`,
   APP_QR_CODE_LINK: `${GH_PAGES_URL}/assets/images/kiroku-qr-code-with-logo.png`,
+  APP_URLS: {
+    DEV: 'https://dev.kiroku.com',
+    STAGING: 'https://staging.kiroku.com',
+    PROD: 'https://kiroku.com',
+    ADHOC: 'https://adhoc.kiroku.com',
+    TEST: 'https://test.kiroku.com',
+  },
+  KIROKU_URL: 'https://kiroku.com',
   PRIVACY_POLICY_URL: `${GH_PAGES_URL}/assets/html/privacy-policy.html`,
   TERMS_OF_SERVICE_URL: `${GH_PAGES_URL}/assets/html/terms-of-service.html`,
   API_REQUEST_TYPE: {
@@ -105,6 +82,10 @@ const CONST = {
     SUPPORT: 'support',
   },
   AVAILABLE_PLATFORMS: ['ios', 'android'],
+  ACTIVITY_INDICATOR_SIZE: {
+    SMALL: 'small',
+    LARGE: 'large',
+  },
   AVATAR_SIZE: {
     XLARGE: 'xlarge',
     LARGE: 'large',
@@ -151,10 +132,13 @@ const CONST = {
     MAX_DATE,
     MIN_DATE,
   },
-
   COLOR_SCHEME: {
     LIGHT: 'light',
     DARK: 'dark',
+  },
+  CONFIRM_CONTENT_SVG_SIZE: {
+    HEIGHT: 220,
+    WIDTH: 130,
   },
   COUNTRY: {
     US: 'US',
@@ -208,7 +192,6 @@ const CONST = {
     RIGHT: 'right',
   },
   DISPLAY_NAME: {
-    MAX_LENGTH: 50,
     RESERVED_NAMES: ['Kiroku'],
   },
   DROPDOWN_BUTTON_SIZE: {
@@ -222,6 +205,8 @@ const CONST = {
     STAGING: 'staging',
     TEST: 'test',
   },
+  LHN_SKELETON_VIEW_ITEM_HEIGHT: 64,
+  SEARCH_SKELETON_VIEW_ITEM_HEIGHT: 108,
   EMAIL: {
     KIROKU: 'kiroku.alcohol.tracker@gmail.com',
   },
@@ -245,7 +230,7 @@ const CONST = {
     IOS_LOAD_FAILED: 'Load failed',
     SAFARI_CANNOT_PARSE_RESPONSE: 'cannot parse response',
     GATEWAY_TIMEOUT: 'Gateway Timeout',
-    EXPENSIFY_SERVICE_INTERRUPTED: 'Expensify service interrupted',
+    KIROKU_SERVICE_INTERRUPTED: 'Kiroku service interrupted',
     DUPLICATE_RECORD: 'A record already exists with this ID',
 
     // The "Upgrade" is intentional as the 426 HTTP code means "Upgrade Required" and sent by the API. We use the "Update" language everywhere else in the front end when this gets returned.
@@ -260,6 +245,16 @@ const CONST = {
     // SCREENS.SAML_SIGN_IN,
     // SCREENS.VALIDATE_LOGIN,
   ] as string[],
+
+  // Character Limits
+  FORM_CHARACTER_LIMIT: 50,
+  LEGAL_NAMES_CHARACTER_LIMIT: 150,
+  LOGIN_CHARACTER_LIMIT: 254,
+  CATEGORY_NAME_LIMIT: 256,
+  TAG_NAME_LIMIT: 256,
+  TITLE_CHARACTER_LIMIT: 100,
+  DESCRIPTION_LIMIT: 1000,
+  SESSION_NAME_CHARACTER_LIMIT: 80,
 
   FIREBASE_STORAGE_URL: 'https://firebasestorage.googleapis.com',
   FRIEND_REQUEST_STATUS: {
@@ -277,6 +272,63 @@ const CONST = {
     GATEWAY_TIMEOUT: 504,
     UNKNOWN_ERROR: 520,
   },
+
+  SEARCH: {
+    RESULTS_PAGE_SIZE: 50,
+    DATA_TYPES: {
+      SESSION: 'session',
+    },
+    ACTION_TYPES: {
+      VIEW: 'view',
+    },
+    SORT_ORDER: {
+      ASC: 'asc',
+      DESC: 'desc',
+    },
+    STATUS: {
+      SESSION: {
+        ALL: 'all',
+        FINISHED: 'finished',
+      },
+    },
+    TABLE_COLUMNS: {
+      DATE: 'date',
+      DESCRIPTION: 'description',
+      FROM: 'from',
+      TO: 'to',
+      CATEGORY: 'category',
+      TAG: 'tag',
+      TYPE: 'type',
+      ACTION: 'action',
+    },
+    SYNTAX_OPERATORS: {
+      AND: 'and',
+      OR: 'or',
+      EQUAL_TO: 'eq',
+      NOT_EQUAL_TO: 'neq',
+      GREATER_THAN: 'gt',
+      GREATER_THAN_OR_EQUAL_TO: 'gte',
+      LOWER_THAN: 'lt',
+      LOWER_THAN_OR_EQUAL_TO: 'lte',
+    },
+    SYNTAX_ROOT_KEYS: {
+      TYPE: 'type',
+      STATUS: 'status',
+      SORT_BY: 'sortBy',
+      SORT_ORDER: 'sortOrder',
+    },
+    SYNTAX_FILTER_KEYS: {
+      DATE: 'date',
+      AMOUNT: 'amount',
+      FROM: 'from',
+      TO: 'to',
+      CATEGORY: 'category',
+      TAG: 'tag',
+      KEYWORD: 'keyword',
+      IN: 'in',
+    },
+  },
+
   ICON_TYPE_ICON: 'icon',
   ICON_TYPE_AVATAR: 'avatar',
   INVALID_CHARS: ['.', '#', '$', '[', ']'],
@@ -449,11 +501,29 @@ const CONST = {
   },
   MAX_ALLOWED_UNITS: 100,
 
+  /**
+   * Constants for maxToRenderPerBatch parameter that is used for FlatList or SectionList. This controls the amount of items rendered per batch, which is the next chunk of items
+   * rendered on every scroll.
+   */
+  MAX_TO_RENDER_PER_BATCH: {
+    DEFAULT: 5,
+    CAROUSEL: 3,
+  },
+
+  /**
+   * The maximum count of items per page for SelectionList.
+   * When paginate, it multiplies by page number.
+   */
+  MAX_SELECTION_LIST_PAGE_LENGTH: 500,
+
   // These split the maximum decimal value of a signed 64-bit number (9,223,372,036,854,775,807) into parts where none of them are too big to fit into a 32-bit number, so that we can
   // generate them each with a random number generator with only 32-bits of precision.
   MAX_64BIT_LEFT_PART: 92233,
   MAX_64BIT_MIDDLE_PART: 7203685,
   MAX_64BIT_RIGHT_PART: 4775807,
+
+  // Max email length
+  EMAIL_MAX_LENGTH: 254,
 
   // When generating a random value to fit in 7 digits (for the `middle` or `right` parts above), this is the maximum value to multiply by Math.random().
   MAX_INT_FOR_RANDOM_7_DIGIT_VALUE: 10000000,
@@ -467,6 +537,7 @@ const CONST = {
       BOTTOM_DOCKED: 'bottom_docked',
       POPOVER: 'popover',
       RIGHT_DOCKED: 'right_docked',
+      ONBOARDING: 'onboarding',
     },
     ANCHOR_ORIGIN_VERTICAL: {
       TOP: 'top',
@@ -479,6 +550,11 @@ const CONST = {
       RIGHT: 'right',
     },
     POPOVER_MENU_PADDING: 8,
+    RESTORE_FOCUS_TYPE: {
+      DEFAULT: 'default',
+      DELETE: 'delete',
+      PRESERVE: 'preserve',
+    },
   },
   MONTHS: [
     'January',
@@ -541,6 +617,16 @@ const CONST = {
     // RESEND_VALIDATE_CODE_FORM: 'ResendValidateCodeForm',
   },
 
+  // at least 8 characters, 1 capital letter, 1 lowercase number, 1 number
+  PASSWORD_COMPLEXITY_REGEX_STRING: '^(?=.*[A-Z])(?=.*[0-9])(?=.*[a-z]).{8,}$',
+
+  KEYBOARD_TYPE: {
+    VISIBLE_PASSWORD: 'visible-password',
+    ASCII_CAPABLE: 'ascii-capable',
+    NUMBER_PAD: 'number-pad',
+    DECIMAL_PAD: 'decimal-pad',
+  },
+
   INPUT_MODE: {
     NONE: 'none',
     TEXT: 'text',
@@ -567,11 +653,17 @@ const CONST = {
     MAX_RETRY_WAIT_TIME_MS: 10 * 1000,
     PROCESS_REQUEST_DELAY_MS: 1000,
     MAX_PENDING_TIME_MS: 10 * 1000,
+    RECHECK_INTERVAL_MS: 60 * 1000,
     MAX_REQUEST_RETRIES: 10,
+    NETWORK_STATUS: {
+      ONLINE: 'online',
+      OFFLINE: 'offline',
+      UNKNOWN: 'unknown',
+    },
   },
   DEFAULT_TIME_ZONE: {automatic: true, selected: 'Europe/Prague'},
   DEFAULT_ACCOUNT_DATA: {errors: null, success: '', isLoading: false},
-  DEFAULT_CLOSE_ACCOUNT_DATA: {errors: null, success: '', isLoading: false},
+  DEFAULT_DELETE_ACCOUNT_DATA: {errors: null, success: '', isLoading: false},
   DEFAULT_NETWORK_DATA: {isOffline: false},
 
   MICROSECONDS_PER_MS: 1000,
@@ -626,7 +718,8 @@ const CONST = {
     NON_ALPHABETIC_AND_NON_LATIN_CHARS: /[^\p{Script=Latin}]/gu,
     ACCENT_LATIN_CHARS: /[\u00C0-\u017F]/g,
     INVISIBLE_CHARACTERS_GROUPS: /[\p{C}\p{Z}]/gu,
-
+    EMAIL:
+      /^(([^<>()[\]\\.,;:\s@"]+(\.[^<>()[\]\\.,;:\s@"]+)*)|.(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/,
     OTHER_INVISIBLE_CHARACTERS: /[\u3164]/g,
     POSITIVE_INTEGER: /^\d+$/,
     ROUTES: {
@@ -736,8 +829,8 @@ const CONST = {
   },
   TOOLTIP_MAX_LINES: 3,
   THEME: {
-    DEFAULT: 'system',
-    FALLBACK: 'dark',
+    DEFAULT: 'light', // was 'system'
+    FALLBACK: 'light', // was 'dark
     DARK: 'dark',
     LIGHT: 'light',
     SYSTEM: 'system',
@@ -760,6 +853,7 @@ const CONST = {
     AM: 'AM',
     PM: 'PM',
   },
+  INDENTS: '    ',
   TWO_FACTOR_AUTH_STEPS: {
     CODES: 'CODES',
     VERIFY: 'VERIFY',

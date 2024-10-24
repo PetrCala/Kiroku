@@ -4,13 +4,12 @@ import type {StyleProp, ViewStyle} from 'react-native';
 import {View} from 'react-native';
 import useLocalize from '@hooks/useLocalize';
 import useThemeStyles from '@hooks/useThemeStyles';
-import type {MaybePhraseKey} from '@libs/Localize';
 import type Network from '@src/types/onyx/Network';
 import FormHelpMessage from './FormHelpMessage';
 import {withNetwork} from './OnyxProvider';
 import RenderHTML from './RenderHTML';
 import Text from './Text';
-// import TextLink from './TextLink';
+import TextLink from './TextLink';
 
 type FormAlertWrapperProps = {
   /** Wrapped child components */
@@ -29,7 +28,7 @@ type FormAlertWrapperProps = {
   isMessageHtml?: boolean;
 
   /** Error message to display above button */
-  message?: MaybePhraseKey;
+  message?: string;
 
   /** Props to detect online status */
   network: Network;
@@ -60,9 +59,9 @@ function FormAlertWrapper({
     content = (
       <Text style={[styles.formError, styles.mb0]}>
         {`${translate('common.please')} `}
-        {/* <TextLink style={styles.label} onPress={onFixTheErrorsLinkPressed}> */}
         {translate('common.fixTheErrors')}
-        {/* </TextLink> */}
+        {/* <TextLink style={styles.label} onPress={onFixTheErrorsLinkPressed}>
+        </TextLink> TODO enable this*/}
         {` ${translate('common.inTheFormBeforeContinuing')}.`}
       </Text>
     );

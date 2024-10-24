@@ -18,7 +18,6 @@ import getButtonState from '@libs/getButtonState';
 import Navigation from '@libs/Navigation/Navigation';
 import variables from '@styles/variables';
 import CONST from '@src/CONST';
-import ROUTES from '@src/ROUTES';
 import type HeaderWithBackButtonProps from './types';
 
 function HeaderWithBackButton({
@@ -49,6 +48,7 @@ function HeaderWithBackButton({
   threeDotsMenuItems = [],
   shouldEnableDetailPageNavigation = false,
   children = null,
+  customRightButton = null,
   shouldOverlayDots = false,
   shouldOverlay = false,
   shouldNavigateToTopMostReport = false,
@@ -96,6 +96,7 @@ function HeaderWithBackButton({
           titleColor ? StyleUtils.getTextColorStyle(titleColor) : {},
           isCentralPaneSettings && styles.textHeadlineH2,
         ]}
+        containerStyles={styles.justifyContentEnd}
       />
     );
   }, [
@@ -152,7 +153,7 @@ function HeaderWithBackButton({
               role="button"
               accessibilityLabel={translate('common.back')}
               nativeID={CONST.BACK_BUTTON_NATIVE_ID}>
-              <Icon src={KirokuIcons.ArrowBack} fill={iconFill ?? theme.icon} />
+              <Icon src={KirokuIcons.BackArrow} fill={iconFill ?? theme.icon} />
             </PressableWithoutFeedback>
           </Tooltip>
         )}
@@ -259,6 +260,7 @@ function HeaderWithBackButton({
               </PressableWithoutFeedback>
             </Tooltip>
           )}
+          {customRightButton && customRightButton}
         </View>
       </View>
     </View>

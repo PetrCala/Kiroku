@@ -1,9 +1,11 @@
 import type {ElementRef, ForwardedRef, RefObject} from 'react';
+// eslint-disable-next-line no-restricted-imports
 import type {
   GestureResponderEvent,
   HostComponent,
   PressableStateCallbackType,
   PressableProps as RNPressableProps,
+  Text as RNText,
   StyleProp,
   View,
   ViewStyle,
@@ -149,9 +151,20 @@ type PressableProps = RNPressableProps &
 
     /** Turns off drag area for the component */
     noDragArea?: boolean;
+
+    /**
+     * Specifies if the pressable responder should be disabled
+     */
+    fullDisabled?: boolean;
+
+    /**
+     * Whether the menu item should be interactive at all
+     * e.g., show disabled cursor when disabled
+     */
+    interactive?: boolean;
   };
 
-type PressableRef = ForwardedRef<HTMLDivElement | View>;
+type PressableRef = ForwardedRef<HTMLDivElement | View | RNText | undefined>;
 
 export default PressableProps;
 export type {PressableRef};

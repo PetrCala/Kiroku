@@ -136,10 +136,47 @@ const DBPATHS = {
     getRoute: (user_id: UserID) =>
       `users/${user_id}/profile/photo_url` as const,
   },
+  USERS_USER_ID_PROFILE_FIRST_NAME: {
+    route: '/users/:user_id/profile/first_name',
+    getRoute: (user_id: UserID) =>
+      `users/${user_id}/profile/first_name` as const,
+  },
+  USERS_USER_ID_PROFILE_LAST_NAME: {
+    route: '/users/:user_id/profile/last_name',
+    getRoute: (user_id: UserID) =>
+      `users/${user_id}/profile/last_name` as const,
+  },
   USERS_USER_ID_PROFILE_DISPLAY_NAME: {
     route: '/users/:user_id/profile/display_name',
     getRoute: (user_id: UserID) =>
       `users/${user_id}/profile/display_name` as const,
+  },
+
+  USERS_USER_ID_PRIVATE_DATA: {
+    route: '/users/:user_id/private_data',
+    getRoute: (user_id: UserID) =>
+      `users/${user_id}/profile/private_data` as const,
+  },
+
+  USERS_USER_ID_PRIVATE_DATA_TIMEZONE: {
+    route: '/users/:user_id/private_data/timezone',
+    getRoute: (user_id: UserID) =>
+      `users/${user_id}/private_data/timezone` as const,
+  },
+  USERS_USER_ID_PRIVATE_DATA_TIMEZONE_SELECTED: {
+    route: '/users/:user_id/private_data/timezone/selected',
+    getRoute: (user_id: UserID) =>
+      `users/${user_id}/private_data/timezone/selected` as const,
+  },
+  USERS_USER_ID_PRIVATE_DATA_TIMEZONE_AUTOMATIC: {
+    route: '/users/:user_id/private_data/timezone/automatic',
+    getRoute: (user_id: UserID) =>
+      `users/${user_id}/private_data/timezone/automatic` as const,
+  },
+
+  USERS_USER_ID_PUBLIC_DATA: {
+    route: '/users/:user_id/public_data',
+    getRoute: (user_id: UserID) => `users/${user_id}/public_data` as const,
   },
 } as const;
 

@@ -10,7 +10,7 @@
   createMockDatabase,
   createMockMaintenance,
   createMockAppSettings,
-} from '../utils/mockDatabase';
+} from '../../src/database/MockDatabase';
 import type {
   DatabaseProps,
   Config,

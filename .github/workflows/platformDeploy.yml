@@ -103,23 +103,11 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ github.token }}
 
-      # - name: Warn deployers if Android production deploy failed
-      #   if: ${{ failure() && fromJSON(env.SHOULD_DEPLOY_PRODUCTION) }}
-      #   uses: 8398a7/action-slack@v3
-      #   with:
-      #     status: custom
-      #     custom_payload: |
-      #       {
-      #         channel: '#deployer',
-      #         attachments: [{
-      #           color: "#DB4545",
-      #           pretext: `<!subteam^S4TJJ3PSL>`,
-      #           text: `💥 Android production deploy failed. Please manually submit ${{ github.event.release.tag_name }} in the <https://play.google.com/console/u/0/developers/8765590895836334604/app/4973041797096886180/releases/overview|Google Play Store>. 💥`,
-      #         }]
-      #       }
-      #   env:
-      #     GITHUB_TOKEN: ${{ github.token }}
-      #     SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK }}
+      - name: Warn deployers if Android production deploy failed
+        #   if: ${{ failure() && fromJSON(env.SHOULD_DEPLOY_PRODUCTION) }}
+        uses: ./.github/actions/composite/announceFailedWorkflowInDiscord
+        with:
+          DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_URL }}
 
   iOS:
     # WARNING: getDeployPullRequestList depends on this job name. do not change job name without adjusting that action accordingly
@@ -206,70 +194,65 @@ jobs:
           GITHUB_TOKEN: ${{ github.token }}
 
       - name: Upload iOS build to GitHub Release
-        if:  ${{ !fromJSON(env.SHOULD_DEPLOY_PRODUCTION) }}
+        if: ${{ !fromJSON(env.SHOULD_DEPLOY_PRODUCTION) }}
         run: gh release upload ${{ github.event.release.tag_name }} /Users/runner/work/App/App/kiroku.ipa
         env:
           GITHUB_TOKEN: ${{ github.token }}
 
-      # - name: Warn deployers if iOS production deploy failed
-      #   if: ${{ failure() && fromJSON(env.SHOULD_DEPLOY_PRODUCTION) }}
-      #   uses: 8398a7/action-slack@v3
-      #   with:
-      #     status: custom
-      #     custom_payload: |
-      #       {
-      #         channel: '#deployer',
-      #         attachments: [{
-      #           color: "#DB4545",
-      #           pretext: `<!subteam^S4TJJ3PSL>`,
-      #           text: `💥 iOS production deploy failed. Please manually submit ${{ env.IOS_VERSION }} in the <https://appstoreconnect.apple.com/apps/1530278510/appstore|App Store>. 💥`,
-      #         }]
-      #       }
-      #   env:
-      #     GITHUB_TOKEN: ${{ github.token }}
-      #     SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK }}
+      - name: Warn deployers if iOS production deploy failed
+        #   if: ${{ failure() && fromJSON(env.SHOULD_DEPLOY_PRODUCTION) }}
+        uses: ./.github/actions/composite/announceFailedWorkflowInDiscord
+        with:
+          DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_URL }}
 
-  # postSlackMessageOnFailure:
-  #   name: Post a Slack message when any platform fails to build or deploy
-  #   runs-on: ubuntu-latest
-  #   if: ${{ failure() }}
-  #   needs: [android, desktop, iOS, web]
-  #   steps:
-  #     - name: Checkout
-  #       uses: actions/checkout@v4
+  postDiscordMessageOnFailure:
+    name: Post a Discord message when any platform fails to build or deploy
+    runs-on: ubuntu-latest
+    if: ${{ failure() }}
+    needs: [android, iOS]
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
 
-  #     - name: Post Slack message on failure
-  #       uses: ./.github/actions/composite/announceFailedWorkflowInSlack
-  #       with:
-  #         SLACK_WEBHOOK: ${{ secrets.SLACK_WEBHOOK }}
+      - name: Warn deployers if staging deploy failed
+        uses: ./.github/actions/composite/announceFailedWorkflowInDiscord
+        with:
+          DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_URL }}
 
-  # postSlackMessageOnSuccess:
-  #   name: Post a Slack message when all platforms deploy successfully
-  #   runs-on: ubuntu-latest
-  #   if: ${{ success() }}
-  #   needs: [android, iOS]
-  #   steps:
-  #     - name: Checkout
-  #       uses: actions/checkout@v4
+  postDiscordMessageOnSuccess:
+    name: PDiscord Slack message when all platforms deploy successfully
+    runs-on: ubuntu-latest
+    if: ${{ success() }}
+    needs: [android, iOS]
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
 
-  #     - name: Set version
-  #       run: echo "VERSION=$(npm run print-version --silent)" >> "$GITHUB_ENV"
+      - name: Set version
+        run: echo "VERSION=$(npm run print-version --silent)" >> "$GITHUB_ENV"
 
-  #     - name: 'Announces the deploy in the #announce Slack room'
-  #       uses: 8398a7/action-slack@v3
-  #       with:
-  #         status: custom
-  #         custom_payload: |
-  #           {
-  #             channel: '#announce',
-  #             attachments: [{
-  #               color: 'good',
-  #               text: `🎉️ Successfully deployed ${process.env.AS_REPO} <https://github.com/PetrCala/Kiroku/releases/tag/${{ env.VERSION }}|${{ env.VERSION }}> to ${{ fromJSON(env.SHOULD_DEPLOY_PRODUCTION) && 'production' || 'staging' }} 🎉️`,
-  #             }]
-  #           }
-  #       env:
-  #         GITHUB_TOKEN: ${{ github.token }}
-  #         SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK }}
+      - name: 'Announces the deploy in the #announce Discord channel'
+        uses: peter-evans/webhook-action@v2
+        with:
+          url: ${{ secrets.DISCORD_WEBHOOK_URL }}
+          content-type: 'json'
+          payload: |
+            {
+              "content": "",
+              "embeds": [{
+                "title": "🎉 Deploy Successful",
+                "color": "good",
+                "description": `🎉️ Successfully deployed ${process.env.AS_REPO} <https://github.com/PetrCala/Kiroku/releases/tag/${{ env.VERSION }}|${{ env.VERSION }}> to ${{ fromJSON(env.SHOULD_DEPLOY_PRODUCTION) && 'production' || 'staging' }} 🎉️`,
+                "timestamp": "${{ github.event.workflow_run.updated_at }}",
+                "footer": {
+                  "text": "GitHub Actions",
+                  "icon_url": "https://github.githubassets.com/images/modules/logos_page/GitHub-Mark.png"
+                }
+              }]
+            }
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+          DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_URL }}
 
   #     - name: 'Announces the deploy in the #deployer Slack room'
   #       uses: 8398a7/action-slack@v3
@@ -280,24 +263,24 @@ jobs:
   #             channel: '#deployer',
   #             attachments: [{
   #               color: 'good',
-  #               text: `🎉️ Successfully deployed ${process.env.AS_REPO} <https://github.com/Expensify/App/releases/tag/${{ env.VERSION }}|${{ env.VERSION }}> to ${{ fromJSON(env.SHOULD_DEPLOY_PRODUCTION) && 'production' || 'staging' }} 🎉️`,
+  #               text: `🎉️ Successfully deployed ${process.env.AS_REPO} <https://github.com/PetrCala/Kiroku/releases/tag/${{ env.VERSION }}|${{ env.VERSION }}> to ${{ fromJSON(env.SHOULD_DEPLOY_PRODUCTION) && 'production' || 'staging' }} 🎉️`,
   #             }]
   #           }
   #       env:
   #         GITHUB_TOKEN: ${{ github.token }}
   #         SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK }}
 
-  #     - name: 'Announces a production deploy in the #expensify-open-source Slack room'
+  #     - name: 'Announces a production deploy in the #kiroku-open-source Slack room'
   #       uses: 8398a7/action-slack@v3
   #       if: ${{ fromJSON(env.SHOULD_DEPLOY_PRODUCTION) }}
   #       with:
   #         status: custom
   #         custom_payload: |
   #           {
-  #             channel: '#expensify-open-source',
+  #             channel: '#kiroku-open-source',
   #             attachments: [{
   #               color: 'good',
-  #               text: `🎉️ Successfully deployed ${process.env.AS_REPO} <https://github.com/Expensify/App/releases/tag/${{ env.VERSION }}|${{ env.VERSION }}> to production 🎉️`,
+  #               text: `🎉️ Successfully deployed ${process.env.AS_REPO} <https://github.com/PetrCala/Kiroku/releases/tag/${{ env.VERSION }}|${{ env.VERSION }}> to production 🎉️`,
   #             }]
   #           }
   #       env:

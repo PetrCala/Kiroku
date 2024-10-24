@@ -16,7 +16,6 @@ import type NAVIGATORS from '@src/NAVIGATORS';
 import type SCREENS from '@src/SCREENS';
 import type {Route as Routes} from '@src/ROUTES';
 import type {DrinkingSessionId} from '@src/types/onyx';
-import {DrinkingSession, Profile} from '@src/types/onyx';
 import type DeepValueOf from '@src/types/utils/DeepValueOf';
 import type {DateString} from '@src/types/time';
 
@@ -63,33 +62,12 @@ type State<TParamList extends ParamListBase = ParamListBase> =
 
 type CentralPaneScreensParamList = {
   [SCREENS.HOME]: undefined;
-  //   [SCREENS.REPORT]: {
-  //     reportActionID: string;
-  //     reportID: string;
-  //     openOnAdminRoom?: boolean;
-  //   };
-  //   [SCREENS.SETTINGS.WORKSPACES]: undefined;
-  //   [SCREENS.WORKSPACE.PROFILE]: {
-  //     policyID: string;
-  //   };
-  //   [SCREENS.WORKSPACE.CARD]: {
-  //     policyID: string;
-  //   };
-  //   [SCREENS.WORKSPACE.REIMBURSE]: {
-  //     policyID: string;
-  //   };
-  //   [SCREENS.WORKSPACE.BILLS]: {
-  //     policyID: string;
-  //   };
-  //   [SCREENS.WORKSPACE.INVOICES]: {
-  //     policyID: string;
-  //   };
-  //   [SCREENS.WORKSPACE.TRAVEL]: {
-  //     policyID: string;
-  //   };
-  //   [SCREENS.WORKSPACE.MEMBERS]: {
-  //     policyID: string;
-  //   };
+  [SCREENS.SETTINGS.ACCOUNT.ROOT]: undefined;
+  [SCREENS.SETTINGS.PREFERENCES.ROOT]: undefined;
+};
+
+type BackToParams = {
+  backTo?: Routes;
 };
 
 type AchievementsNavigatorParamList = {
@@ -112,28 +90,32 @@ type DrinkingSessionNavigatorParamList = {
   };
 };
 
-type MainMenuNavigatorParamList = {
-  [SCREENS.MAIN_MENU.ROOT]: undefined;
-  [SCREENS.MAIN_MENU.APP_SHARE]: undefined;
-  [SCREENS.MAIN_MENU.PREFERENCES]: undefined;
-  [SCREENS.MAIN_MENU.POLICIES.TERMS_OF_SERVICE]: undefined;
-  [SCREENS.MAIN_MENU.POLICIES.PRIVACY_POLICY]: undefined;
+type SettingsNavigatorParamList = {
+  [SCREENS.SETTINGS.ROOT]: undefined;
+  [SCREENS.SETTINGS.ACCOUNT.ROOT]: undefined;
+  [SCREENS.SETTINGS.ACCOUNT.USER_NAME]: undefined;
+  [SCREENS.SETTINGS.ACCOUNT.DISPLAY_NAME]: undefined;
+  [SCREENS.SETTINGS.ACCOUNT.EMAIL]: undefined;
+  [SCREENS.SETTINGS.ACCOUNT.PASSWORD]: undefined;
+  [SCREENS.SETTINGS.ACCOUNT.TIMEZONE]: undefined;
+  [SCREENS.SETTINGS.ACCOUNT.TIMEZONE_SELECT]: undefined;
+  [SCREENS.SETTINGS.PREFERENCES.ROOT]: undefined;
+  [SCREENS.SETTINGS.PREFERENCES.LANGUAGE]: undefined;
+  [SCREENS.SETTINGS.PREFERENCES.THEME]: undefined;
+  [SCREENS.SETTINGS.APP_SHARE]: undefined;
+  [SCREENS.SETTINGS.TERMS_OF_SERVICE]: undefined;
+  [SCREENS.SETTINGS.PRIVACY_POLICY]: undefined;
+  [SCREENS.SETTINGS.FEEDBACK]: undefined;
+  [SCREENS.SETTINGS.DELETE]: undefined;
 };
 
 type ProfileNavigatorParamList = {
   [SCREENS.PROFILE.ROOT]: {
     userID: string;
   };
-  [SCREENS.PROFILE.EDIT]: {
-    userID: string;
-  };
   [SCREENS.PROFILE.FRIENDS_FRIENDS]: {
     userID: string;
   };
-};
-
-type SettingsNavigatorParamList = {
-  [SCREENS.SETTINGS.ROOT]: undefined;
 };
 
 type SocialNavigatorParamList = {
@@ -157,8 +139,6 @@ type RightModalNavigatorParamList = {
   [SCREENS.RIGHT_MODAL
     .DRINKING_SESSION]: NavigatorScreenParams<DrinkingSessionNavigatorParamList>;
   [SCREENS.RIGHT_MODAL
-    .MAIN_MENU]: NavigatorScreenParams<MainMenuNavigatorParamList>;
-  [SCREENS.RIGHT_MODAL
     .PROFILE]: NavigatorScreenParams<ProfileNavigatorParamList>;
   [SCREENS.RIGHT_MODAL.SOCIAL]: NavigatorScreenParams<SocialNavigatorParamList>;
   [SCREENS.RIGHT_MODAL
@@ -172,17 +152,18 @@ type LeftModalNavigatorParamList = {
   // [SCREENS.LEFT_MODAL.WORKSPACE_SWITCHER]: NavigatorScreenParams<WorkspaceSwitcherNavigatorParamList>;
 };
 
-type SettingsCentralPaneNavigatorParamList = {
-  // [SCREENS.SETTINGS.SHARE_CODE]: undefined;
-  // [SCREENS.SETTINGS.PROFILE.ROOT]: undefined;
-  // [SCREENS.SETTINGS.PREFERENCES.ROOT]: undefined;
-  // [SCREENS.SETTINGS.ABOUT]: undefined;
-};
-
 // type FullScreenNavigatorParamList = {
 //   [SCREENS.SETTINGS.ROOT]: undefined;
 //   [SCREENS.SETTINGS_CENTRAL_PANE]: NavigatorScreenParams<SettingsCentralPaneNavigatorParamList>;
 // };
+
+type TzFixModalNavigatorParamList = {
+  [SCREENS.TZ_FIX.INTRODUCTION]: undefined;
+  [SCREENS.TZ_FIX.DETECTION]: undefined;
+  [SCREENS.TZ_FIX.SELECTION]: undefined;
+  [SCREENS.TZ_FIX.CONFIRMATION]: undefined;
+  [SCREENS.TZ_FIX.SUCCESS]: undefined;
+};
 
 type BottomTabNavigatorParamList = {
   [SCREENS.HOME]: undefined;
@@ -229,6 +210,7 @@ type AuthScreensParamList = CentralPaneScreensParamList &
     [SCREENS.NOT_FOUND]: undefined;
     [NAVIGATORS.LEFT_MODAL_NAVIGATOR]: NavigatorScreenParams<LeftModalNavigatorParamList>;
     [NAVIGATORS.RIGHT_MODAL_NAVIGATOR]: NavigatorScreenParams<RightModalNavigatorParamList>;
+    [NAVIGATORS.TZ_FIX_NAVIGATOR]: NavigatorScreenParams<TzFixModalNavigatorParamList>;
     // [NAVIGATORS.FULL_SCREEN_NAVIGATOR]: NavigatorScreenParams<FullScreenNavigatorParamList>;
   };
 
@@ -247,6 +229,7 @@ export type {
   AuthScreensParamList,
   BottomTabName,
   BottomTabNavigatorParamList,
+  BackToParams,
   CentralPaneScreensParamList,
   CentralPaneName,
   DayOverviewNavigatorParamList,
@@ -254,7 +237,6 @@ export type {
   // FullScreenName,
   // FullScreenNavigatorParamList,
   LeftModalNavigatorParamList,
-  MainMenuNavigatorParamList,
   NavigationStateRoute,
   NavigationPartialRoute,
   NavigationRef,
@@ -269,4 +251,5 @@ export type {
   State,
   StateOrRoute,
   StatisticsNavigatorParamList,
+  TzFixModalNavigatorParamList,
 };

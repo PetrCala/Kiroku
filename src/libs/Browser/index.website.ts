@@ -3,9 +3,11 @@ import CONST from '@src/CONST';
 import ROUTES from '@src/ROUTES';
 import type {
   GetBrowser,
+  IsChromeIOS,
   IsMobile,
   IsMobileChrome,
   IsMobileSafari,
+  IsMobileWebKit,
   IsSafari,
   OpenRouteInDesktopApp,
 } from './types';
@@ -73,6 +75,22 @@ const isMobileChrome: IsMobileChrome = () => {
   return /Android/i.test(userAgent) && /chrome|chromium|crios/i.test(userAgent);
 };
 
+/**
+ * Checks if the requesting user agent is a WebKit-based browser on an iOS mobile device.
+ */
+const isMobileWebKit: IsMobileWebKit = () => {
+  const userAgent = navigator.userAgent;
+  return /iP(ad|od|hone)/i.test(userAgent) && /WebKit/i.test(userAgent);
+};
+
+/**
+ * Checks if the requesting user agent is a Chrome browser on an iOS mobile device.
+ */
+const isChromeIOS: IsChromeIOS = () => {
+  const userAgent = navigator.userAgent;
+  return /iP(ad|od|hone)/i.test(userAgent) && /CriOS/i.test(userAgent);
+};
+
 const isSafari: IsSafari = () => getBrowser() === 'safari' || isMobileSafari();
 
 /**
@@ -81,6 +99,7 @@ const isSafari: IsSafari = () => getBrowser() === 'safari' || isMobileSafari();
 const openRouteInDesktopApp: OpenRouteInDesktopApp = (
   shortLivedAuthToken = '',
   email = '',
+  initialRoute = '',
 ) => {
   const params = new URLSearchParams();
   // If the user is opening the desktop app through a third party signin flow, we need to manually add the exitTo param
@@ -89,7 +108,7 @@ const openRouteInDesktopApp: OpenRouteInDesktopApp = (
     window.location.pathname === `/${ROUTES.DESKTOP_SIGN_IN_REDIRECT}`;
   params.set(
     'exitTo',
-    `${openingFromDesktopRedirect ? '/r' : window.location.pathname}${window.location.search}${window.location.hash}`,
+    `${openingFromDesktopRedirect ? '/r' : initialRoute || window.location.pathname}${window.location.search}${window.location.hash}`,
   );
   if (email && shortLivedAuthToken) {
     params.set('email', email);
@@ -101,7 +120,7 @@ const openRouteInDesktopApp: OpenRouteInDesktopApp = (
   const browser = getBrowser();
 
   // This check is necessary for Safari, otherwise, if the user
-  // does NOT have the kiroku desktop app installed, it's gonna
+  // does NOT have the Expensify desktop app installed, it's gonna
   // show an error in the page saying that the address is invalid.
   // It is also necessary for Firefox, otherwise the window.location.href redirect
   // will abort the fetch request from NetInfo, which will cause the app to go offline temporarily.
@@ -127,7 +146,9 @@ export {
   getBrowser,
   isMobile,
   isMobileSafari,
+  isMobileWebKit,
   isSafari,
   isMobileChrome,
+  isChromeIOS,
   openRouteInDesktopApp,
 };

@@ -119,16 +119,16 @@ const Logging: Middleware = (response, request) => {
         //     // This is common to see if we are subscribing to a bad channel related to something the user shouldn't be able to access. There's no additional information
         //     // we can get about these requests.
         //     Log.hmmm('[Network] API request error: AuthenticatePusher', logParams);
-      } else if (error.message === CONST.ERROR.EXPENSIFY_SERVICE_INTERRUPTED) {
-        // Expensify site is down completely OR
+      } else if (error.message === CONST.ERROR.KIROKU_SERVICE_INTERRUPTED) {
+        // Kiroku site is down completely OR
         // Auth (database connection) is down / bedrock has timed out while making a request. We currently can't tell the difference between Auth down and bedrock timing out.
         Log.hmmm(
-          '[Network] API request error: Expensify service interrupted or timed out',
+          '[Network] API request error: Kiroku service interrupted or timed out',
           logParams,
         );
       } else if (error.message === CONST.ERROR.THROTTLED) {
         Log.hmmm(
-          '[Network] API request error: Expensify API throttled the request',
+          '[Network] API request error: Kiroku API throttled the request',
           logParams,
         );
       } else if (error.message === CONST.ERROR.DUPLICATE_RECORD) {

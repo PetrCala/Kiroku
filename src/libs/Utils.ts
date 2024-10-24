@@ -1,3 +1,8 @@
+import type {ValueOf} from 'type-fest';
+import CONST from '@src/CONST';
+
+type BrickRoad = ValueOf<typeof CONST.BRICK_ROAD_INDICATOR_STATUS> | undefined;
+
 function isObject(item: any): boolean {
   return item && typeof item === 'object' && !Array.isArray(item);
 }
@@ -61,3 +66,4 @@ function arrayDifference<TItem>(array1: TItem[], array2: TItem[]): TItem[] {
 }
 
 export {isObject, objectsAreEqual, arrayItemsAreEqual, arrayDifference};
+export type {BrickRoad};

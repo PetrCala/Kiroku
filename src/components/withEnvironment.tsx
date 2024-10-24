@@ -28,10 +28,14 @@ type EnvironmentValue = ValueOf<typeof CONST.ENVIRONMENT>;
 type EnvironmentContextValue = {
   /** The string value representing the current environment */
   environment: EnvironmentValue;
+
+  /** The string value representing the URL of the current environment */
+  environmentURL: string;
 };
 
 const EnvironmentContext = createContext<EnvironmentContextValue>({
   environment: CONST.ENVIRONMENT.PROD,
+  environmentURL: CONST.KIROKU_URL,
 });
 
 function EnvironmentProvider({
@@ -40,16 +44,19 @@ function EnvironmentProvider({
   const [environment, setEnvironment] = useState<EnvironmentValue>(
     CONST.ENVIRONMENT.PROD,
   );
+  const [environmentURL, setEnvironmentURL] = useState(CONST.KIROKU_URL);
 
   useEffect(() => {
     Environment.getEnvironment().then(setEnvironment);
+    // Environment.getEnvironmentURL().then(setEnvironmentURL); // TODO enable this
   }, []);
 
   const contextValue = useMemo(
     (): EnvironmentContextValue => ({
       environment,
+      environmentURL,
     }),
-    [environment],
+    [environment, environmentURL],
   );
 
   return (
@@ -74,20 +81,21 @@ export default function withEnvironment<
     props: Omit<TProps, keyof EnvironmentContextValue>,
     ref: ForwardedRef<TRef>,
   ): ReactElement {
-    const {environment} = useContext(EnvironmentContext);
+    const {environment, environmentURL} = useContext(EnvironmentContext);
     return (
       <WrappedComponent
         // eslint-disable-next-line react/jsx-props-no-spreading
         {...(props as TProps)}
         ref={ref}
         environment={environment}
+        environmentURL={environmentURL}
       />
     );
   }
 
   WithEnvironment.displayName = `withEnvironment(${getComponentDisplayName(WrappedComponent)})`;
 
-  return forwardRef(WithEnvironment) as any;
+  return forwardRef(WithEnvironment);
 }
 
 export {EnvironmentContext, EnvironmentProvider};

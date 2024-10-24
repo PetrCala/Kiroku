@@ -11,7 +11,7 @@ import pkg from '../../package.json';
 import {addLog} from './actions/Console';
 import {shouldAttachLog} from './Console';
 import getPlatform from './getPlatform';
-import * as Network from './Network';
+// import * as Network from './Network'; // causing a circular dependency
 import requireParameters from './requireParameters';
 
 let timeout: NodeJS.Timeout;
@@ -33,20 +33,21 @@ type LogCommandParameters = {
   logPacket: string;
 };
 
-function LogCommand(
-  parameters: LogCommandParameters,
-): Promise<{requestID: string}> {
-  const commandName = 'Log';
-  requireParameters(['logPacket', 'appVersion'], parameters, commandName);
+// TODO: Enable this after the API has been set-up
+// function LogCommand(
+//   parameters: LogCommandParameters,
+// ): Promise<{requestID: string}> {
+//   const commandName = 'Log';
+//   requireParameters(['logPacket', 'appVersion'], parameters, commandName);
 
-  // Note: We are forcing Log to run since it requires no authToken and should only be queued when we are offline.
-  // Non-cancellable request: during logout, when requests are cancelled, we don't want to cancel any remaining logs
-  return Network.post(commandName, {
-    ...parameters,
-    forceNetworkRequest: true,
-    canCancel: false,
-  }) as Promise<{requestID: string}>;
-}
+//   // Note: We are forcing Log to run since it requires no authToken and should only be queued when we are offline.
+//   // Non-cancellable request: during logout, when requests are cancelled, we don't want to cancel any remaining logs
+//   return Network.post(commandName, {
+//     ...parameters,
+//     forceNetworkRequest: true,
+//     canCancel: false,
+//   }) as Promise<{requestID: string}>;
+// }
 
 // eslint-disable-next-line
 type ServerLoggingCallbackOptions = {api_setCookie: boolean; logPacket: string};
@@ -80,7 +81,8 @@ function serverLoggingCallback(
     () => logger.info('Flushing logs older than 10 minutes', true, {}, true),
     10 * 60 * 1000,
   );
-  return LogCommand(requestParams);
+  // return LogCommand(requestParams); // TODO re-enable this
+  return Promise.resolve({requestID: ''});
 }
 
 // Note: We are importing Logger from expensify-common because it is used by other platforms. The server and client logging

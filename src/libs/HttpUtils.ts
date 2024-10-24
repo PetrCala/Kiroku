@@ -104,9 +104,9 @@ function processHTTPRequest(
           ) > -1
         ) {
           throw new HttpsError({
-            message: CONST.ERROR.EXPENSIFY_SERVICE_INTERRUPTED,
+            message: CONST.ERROR.KIROKU_SERVICE_INTERRUPTED,
             status: response.status.toString(),
-            title: 'Issue connecting to Expensify site',
+            title: 'Issue connecting to Kiroku site',
           });
         }
         if (response.status === CONST.HTTP_STATUS.TOO_MANY_REQUESTS) {
@@ -145,7 +145,7 @@ function processHTTPRequest(
         response.type === CONST.ERROR_TYPE.SOCKET
       ) {
         throw new HttpsError({
-          message: CONST.ERROR.EXPENSIFY_SERVICE_INTERRUPTED,
+          message: CONST.ERROR.KIROKU_SERVICE_INTERRUPTED,
           status: CONST.JSON_CODE.EXP_ERROR.toString(),
           title: CONST.ERROR_TITLE.SOCKET,
         });

@@ -1,6 +1,3 @@
-// Taken and modified form the Expensify GitHub
-// Source: https://github.com/Expensify/App/blob/main/src/CONFIG.ts
-
 import type {NativeConfig} from 'react-native-config';
 import Config from 'react-native-config';
 import CONST from './CONST';
@@ -30,15 +27,15 @@ export default {
     appId: get(Config, 'APP_ID', ''),
     measurementId: get(Config, 'MEASUREMENT_ID', ''),
   },
-  IS_IN_PRODUCTION:
-    // Platform.OS === 'web' ? process.env.NODE_ENV === 'production' : !__DEV__,
-    process.env.NODE_ENV === 'production' && !__DEV__,
+  IS_IN_PRODUCTION: process.env.NODE_ENV === 'production' && !__DEV__,
   IS_IN_ADHOC: ENVIRONMENT === CONST.ENVIRONMENT.ADHOC,
   IS_IN_STAGING: ENVIRONMENT === CONST.ENVIRONMENT.STAGING,
   IS_IN_DEVELOPMENT: ENVIRONMENT === CONST.ENVIRONMENT.DEV,
   IS_IN_TEST:
     process.env.NODE_ENV === 'test' || ENVIRONMENT === CONST.ENVIRONMENT.TEST,
   IS_USING_WEB_PROXY: getPlatform() === CONST.PLATFORM.WEB && useWebProxy,
+  IS_USING_LOCAL_WEB: false, // Disabled for now
+  DEV_PORT: process.env.PORT ?? 8082,
   KIROKU: {
     DEFAULT_API_ROOT: '',
     DEFAULT_SECURE_API_ROOT: '',
@@ -51,6 +48,7 @@ export default {
     SUFFIX: get(Config, 'PUSHER_DEV_SUFFIX', ''),
     CLUSTER: 'mt1',
   },
+  SEND_CRASH_REPORTS: get(Config, 'SEND_CRASH_REPORTS', 'false') === 'true',
   IS_USING_EMULATORS: get(Config, 'USE_EMULATORS', 'false') === 'true',
   TEST_PROJECT_ID: 'alcohol-tracker-db',
   TEST_HOST: 'localhost',

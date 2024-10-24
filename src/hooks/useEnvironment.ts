@@ -9,9 +9,10 @@ type UseEnvironment = EnvironmentContextValue & {
 };
 
 export default function useEnvironment(): UseEnvironment {
-  const {environment} = useContext(EnvironmentContext);
+  const {environment, environmentURL} = useContext(EnvironmentContext);
   return {
     environment,
+    environmentURL,
     isProduction: environment === CONST.ENVIRONMENT.PROD,
     isDevelopment: environment === CONST.ENVIRONMENT.DEV,
   };

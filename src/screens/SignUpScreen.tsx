@@ -24,7 +24,6 @@ import {
   validateSignInInput,
 } from '@libs/Validation';
 import {deleteUserData, pushNewUserInfo} from '@database/users';
-import {handleErrors} from '@libs/ErrorHandling';
 import WarningMessage from '@components/Info/WarningMessage';
 import type {Profile} from '@src/types/onyx';
 import DBPATHS from '@database/DBPATHS';
@@ -33,8 +32,8 @@ import Navigation from '@navigation/Navigation';
 import ROUTES from '@src/ROUTES';
 import useTheme from '@hooks/useTheme';
 import {checkAccountCreationLimit} from '@database/protection';
-import LoadingData from '@components/LoadingData';
 import DismissKeyboard from '@components/Keyboard/DismissKeyboard';
+import FullScreenLoadingIndicator from '@components/FullscreenLoadingIndicator';
 
 type State = {
   email: string;
@@ -241,7 +240,7 @@ function SignUpScreen() {
     } catch (error: any) {
       const errorHeading = 'Sign-up failed';
       const errorMessage = 'There was an error during sign-up: ';
-      handleErrors(error, errorHeading, errorMessage, dispatch);
+      Alert.alert(errorHeading, errorMessage + error.message);
 
       // Attempt to rollback any changes made
       try {
@@ -249,7 +248,7 @@ function SignUpScreen() {
       } catch (rollbackError: any) {
         const errorHeading = 'Rollback error';
         const errorMessage = 'Error during sign-up rollback:';
-        handleErrors(rollbackError, errorHeading, errorMessage, dispatch);
+        Alert.alert(errorHeading, errorMessage + rollbackError.message);
       }
       return;
     } finally {
@@ -262,7 +261,7 @@ function SignUpScreen() {
       } catch (error: any) {
         const errorHeading = 'User profile update failed';
         const errorMessage = 'There was an error during sign-up: ';
-        handleErrors(error, errorHeading, errorMessage, dispatch);
+        Alert.alert(errorHeading, errorMessage + error.message);
         return;
       } finally {
         dispatch({type: 'SET_LOADING', payload: false});
@@ -292,7 +291,9 @@ function SignUpScreen() {
   }, [state.password, state.passwordConfirm]);
 
   if (state.isLoading) {
-    return <LoadingData loadingText="Creating your account..." />;
+    return (
+      <FullScreenLoadingIndicator loadingText="Creating your account..." />
+    );
   }
 
   return (
@@ -308,6 +309,7 @@ function SignUpScreen() {
               accessibilityLabel="Text input field"
               placeholder="Email"
               placeholderTextColor={'#a8a8a8'}
+              selectionColor={'gray'}
               keyboardType="email-address"
               textContentType="emailAddress"
               value={state.email}
@@ -322,6 +324,7 @@ function SignUpScreen() {
               accessibilityLabel="Text input field"
               placeholder="Username"
               placeholderTextColor={'#a8a8a8'}
+              selectionColor={'gray'}
               textContentType="username"
               value={state.username}
               onChangeText={text =>
@@ -335,6 +338,7 @@ function SignUpScreen() {
               accessibilityLabel="Text input field"
               placeholder="Password"
               placeholderTextColor={'#a8a8a8'}
+              selectionColor={'gray'}
               textContentType="password"
               value={state.password}
               onChangeText={text =>
@@ -352,6 +356,7 @@ function SignUpScreen() {
               accessibilityLabel="Text input field"
               placeholder="Confirm your password"
               placeholderTextColor={'#a8a8a8'}
+              selectionColor={'grey'}
               textContentType="password"
               value={state.passwordConfirm}
               onChangeText={text =>

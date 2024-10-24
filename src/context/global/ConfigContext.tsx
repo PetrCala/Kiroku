@@ -1,10 +1,8 @@
 ﻿import type {ReactNode} from 'react';
 import {useEffect, useReducer} from 'react';
-
 import {useUserConnection} from './UserConnectionContext';
 import UserOffline from '@components/UserOffline';
 import {listenForDataChanges} from '@database/baseFunctions';
-import LoadingData from '@components/LoadingData';
 import {useFirebase} from './FirebaseContext';
 import {validateAppVersion} from '@libs/Validation';
 import type {Config} from '@src/types/onyx';
@@ -12,6 +10,7 @@ import ForceUpdateModal from '@components/Modals/ForceUpdateModal';
 import DBPATHS from '@database/DBPATHS';
 import UnderMaintenanceModal from '@components/Modals/UnderMaintenanceModal';
 import {isUnderMaintenance} from '@libs/Maintenance';
+import FullScreenLoadingIndicator from '@components/FullscreenLoadingIndicator';
 
 const initialState = {
   isLoading: true,
@@ -80,7 +79,7 @@ export const ConfigProvider: React.FC<ConfigProviderProps> = ({children}) => {
     return <UserOffline />;
   }
   if (state.isLoading) {
-    return <LoadingData />;
+    return <FullScreenLoadingIndicator />;
   }
   if (state.underMaintenance) {
     return <UnderMaintenanceModal config={state.config} />;

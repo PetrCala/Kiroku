@@ -553,6 +553,10 @@ function updateLastVisitedPath(path: string) {
   Onyx.merge(ONYXKEYS.LAST_VISITED_PATH, path);
 }
 
+function updateLastRoute(screen: string) {
+  Onyx.set(ONYXKEYS.LAST_ROUTE, screen);
+}
+
 export {
   setLocale,
   setLocaleAndNavigate,
@@ -571,4 +575,5 @@ export {
   // savePolicyDraftByNewWorkspace,
   // createWorkspaceWithPolicyDraftAndNavigateToIt,
   updateLastVisitedPath,
+  updateLastRoute,
 };

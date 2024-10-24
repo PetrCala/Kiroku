@@ -5,25 +5,25 @@ import {
   NavigationContainer,
 } from '@react-navigation/native';
 import React, {useContext, useEffect, useMemo, useRef} from 'react';
-// import {ScrollOffsetContext} from '@components/ScrollOffsetContextProvider';
 import useTheme from '@hooks/useTheme';
 import useWindowDimensions from '@hooks/useWindowDimensions';
 import Log from '@libs/Log';
 import {getPathFromURL} from '@libs/Url';
 import {updateLastVisitedPath} from '@userActions/App';
 import type {Route} from '@src/ROUTES';
-import SCREENS from '@src/SCREENS';
 import AppNavigator from './AppNavigator';
 import linkingConfig from './linkingConfig';
 import customGetPathFromState from './linkingConfig/customGetPathFromState';
 import getAdaptedStateFromPath from './linkingConfig/getAdaptedStateFromPath';
 import Navigation, {navigationRef} from './Navigation';
-import type {RootStackParamList} from './types';
 import CONST from '@src/CONST';
 import {ScrollOffsetContext} from '@components/ScrollOffsetContextProvider';
 import {useOnyx} from 'react-native-onyx';
 import ONYXKEYS from '@src/ONYXKEYS';
 import setupCustomAndroidBackHandler from './setupCustomAndroidBackHandler';
+import hasCompletedGuidedSetupFlowSelector from '@libs/hasCompletedGuidedSetupFlowSelector';
+import ROUTES from '@src/ROUTES';
+import {useFirebase} from '@context/global/FirebaseContext';
 
 type NavigationRootProps = {
   /** Whether the current user is logged in with an authToken */
@@ -86,7 +86,9 @@ function NavigationRoot({
   const theme = useTheme();
   const {cleanStaleScrollOffsets} = useContext(ScrollOffsetContext);
   const {isSmallScreenWidth} = useWindowDimensions();
-  const [user] = useOnyx(ONYXKEYS.USER);
+  const {auth} = useFirebase();
+  const user = auth.currentUser;
+  // const [user] = useOnyx(ONYXKEYS.USER);
 
   // const [hasCompletedGuidedSetupFlow] = useOnyx(ONYXKEYS.NVP_ONBOARDING, {
   //     selector: hasCompletedGuidedSetupFlowSelector,
@@ -94,11 +96,10 @@ function NavigationRoot({
 
   const initialState = useMemo(
     () => {
-      if (!user || user.isFromPublicDomain) {
+      if (!user) {
         Log.info('User is not authenticated, skipping initial state setup');
         return;
       }
-
       // TODO enable this
       // // If the user haven't completed the flow, we want to always redirect them to the onboarding flow.
       // // We also make sure that the user is authenticated.

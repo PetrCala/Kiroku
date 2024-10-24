@@ -1,11 +1,7 @@
 import type {ParamListBase} from '@react-navigation/routers';
 import type {StackNavigationOptions} from '@react-navigation/stack';
-import {
-  CardStyleInterpolators,
-  createStackNavigator,
-} from '@react-navigation/stack';
-import React, {useMemo} from 'react';
-import useThemeStyles from '@hooks/useThemeStyles';
+import {createStackNavigator} from '@react-navigation/stack';
+import React from 'react';
 import type {ThemeStyles} from '@styles/index';
 import type {Screen} from '@src/SCREENS';
 import SCREENS from '@src/SCREENS';
@@ -13,9 +9,13 @@ import type {
   AchievementsNavigatorParamList,
   DayOverviewNavigatorParamList,
   DrinkingSessionNavigatorParamList,
-  MainMenuNavigatorParamList,
+  ProfileNavigatorParamList,
+  SettingsNavigatorParamList,
+  SocialNavigatorParamList,
+  StatisticsNavigatorParamList,
 } from '@navigation/types';
 import useModalScreenOptions from './useModalScreenOptions';
+import ReactComponentModule from '@src/types/utils/ReactComponentModule';
 
 type Screens = Partial<Record<Screen, () => React.ComponentType>>;
 
@@ -55,94 +55,113 @@ function createModalStackNavigator<TStackParams extends ParamListBase>(
 const AchievementsModalStackNavigator =
   createModalStackNavigator<AchievementsNavigatorParamList>({
     [SCREENS.ACHIEVEMENTS.ROOT]: () =>
-      require('@screens/Achievements/AchievementsScreen')
-        .default as React.ComponentType,
+      require<ReactComponentModule>('@screens/Achievements/AchievementsScreen')
+        .default,
   });
 
 const DayOverviewModalStackNavigator =
   createModalStackNavigator<DayOverviewNavigatorParamList>({
     [SCREENS.DAY_OVERVIEW.ROOT]: () =>
-      require('@screens/DayOverview/DayOverviewScreen')
-        .default as React.ComponentType,
+      require<ReactComponentModule>('@screens/DayOverview/DayOverviewScreen')
+        .default,
   });
 
 const DrinkingSessionModalStackNavigator =
   createModalStackNavigator<DrinkingSessionNavigatorParamList>({
     [SCREENS.DRINKING_SESSION.ROOT]: () =>
-      require('@screens/DrinkingSession/DrinkingSessionScreen')
-        .default as React.ComponentType,
+      require<ReactComponentModule>('@screens/DrinkingSession/DrinkingSessionScreen')
+        .default,
     [SCREENS.DRINKING_SESSION.LIVE]: () =>
-      require('@screens/DrinkingSession/LiveSessionScreen')
-        .default as React.ComponentType,
+      require<ReactComponentModule>('@screens/DrinkingSession/LiveSessionScreen')
+        .default,
     [SCREENS.DRINKING_SESSION.SUMMARY]: () =>
-      require('@screens/DrinkingSession/SessionSummaryScreen')
-        .default as React.ComponentType,
-  });
-
-const MainMenuModalStackNavigator =
-  createModalStackNavigator<MainMenuNavigatorParamList>({
-    [SCREENS.MAIN_MENU.ROOT]: () =>
-      require('@screens/MainMenu/MainMenuScreen')
-        .default as React.ComponentType,
-    [SCREENS.MAIN_MENU.APP_SHARE]: () =>
-      require('@screens/MainMenu/AppShareScreen')
-        .default as React.ComponentType,
-    [SCREENS.MAIN_MENU.PREFERENCES]: () =>
-      require('@screens/MainMenu/PreferencesScreen')
-        .default as React.ComponentType,
-    [SCREENS.MAIN_MENU.POLICIES.TERMS_OF_SERVICE]: () =>
-      require('@screens/MainMenu/Policies/TermsOfServiceScreen')
-        .default as React.ComponentType,
-    [SCREENS.MAIN_MENU.POLICIES.PRIVACY_POLICY]: () =>
-      require('@screens/MainMenu/Policies/PrivacyPolicyScreen')
-        .default as React.ComponentType,
-  });
-
-const ProfileModalStackNavigator =
-  createModalStackNavigator<MainMenuNavigatorParamList>({
-    [SCREENS.PROFILE.ROOT]: () =>
-      require('@screens/Profile/ProfileScreen').default as React.ComponentType,
-    [SCREENS.PROFILE.EDIT]: () =>
-      require('@screens/Profile/EditScreen').default as React.ComponentType,
-    [SCREENS.PROFILE.FRIENDS_FRIENDS]: () =>
-      require('@screens/Profile/FriendsFriendsScreen')
-        .default as React.ComponentType,
+      require<ReactComponentModule>('@screens/DrinkingSession/SessionSummaryScreen')
+        .default,
   });
 
 const SettingsModalStackNavigator =
-  createModalStackNavigator<MainMenuNavigatorParamList>({
+  createModalStackNavigator<SettingsNavigatorParamList>({
     [SCREENS.SETTINGS.ROOT]: () =>
-      require('@screens/Settings/SettingsScreen')
-        .default as React.ComponentType,
+      require<ReactComponentModule>('@screens/Settings/SettingsScreen').default,
+    [SCREENS.SETTINGS.ACCOUNT.ROOT]: () =>
+      require<ReactComponentModule>('@screens/Settings/Account/AccountScreen')
+        .default,
+    [SCREENS.SETTINGS.ACCOUNT.USER_NAME]: () =>
+      require<ReactComponentModule>('@screens/Settings/Account/UserNameScreen')
+        .default,
+    [SCREENS.SETTINGS.ACCOUNT.DISPLAY_NAME]: () =>
+      require<ReactComponentModule>('@screens/Settings/Account/DisplayNameScreen')
+        .default,
+    [SCREENS.SETTINGS.ACCOUNT.EMAIL]: () =>
+      require<ReactComponentModule>('@screens/Settings/Account/EmailScreen')
+        .default,
+    [SCREENS.SETTINGS.ACCOUNT.PASSWORD]: () =>
+      require<ReactComponentModule>('@screens/Settings/Account/PasswordScreen')
+        .default,
+    [SCREENS.SETTINGS.ACCOUNT.TIMEZONE]: () =>
+      require<ReactComponentModule>('@screens/Settings/Account/TimezoneInitialScreen')
+        .default,
+    [SCREENS.SETTINGS.ACCOUNT.TIMEZONE_SELECT]: () =>
+      require<ReactComponentModule>('@screens/Settings/Account/TimezoneSelectScreen')
+        .default,
+    [SCREENS.SETTINGS.PREFERENCES.ROOT]: () =>
+      require<ReactComponentModule>('@screens/Settings/Preferences/PreferencesScreen')
+        .default,
+    [SCREENS.SETTINGS.PREFERENCES.LANGUAGE]: () =>
+      require<ReactComponentModule>('@screens/Settings/Preferences/LanguageScreen')
+        .default,
+    [SCREENS.SETTINGS.PREFERENCES.THEME]: () =>
+      require<ReactComponentModule>('@screens/Settings/Preferences/ThemeScreen')
+        .default,
+    [SCREENS.SETTINGS.APP_SHARE]: () =>
+      require<ReactComponentModule>('@screens/Settings/AppShareScreen').default,
+    [SCREENS.SETTINGS.TERMS_OF_SERVICE]: () =>
+      require<ReactComponentModule>('@screens/Settings/TermsOfServiceScreen')
+        .default,
+    [SCREENS.SETTINGS.PRIVACY_POLICY]: () =>
+      require<ReactComponentModule>('@screens/Settings/PrivacyPolicyScreen')
+        .default,
+    [SCREENS.SETTINGS.FEEDBACK]: () =>
+      require<ReactComponentModule>('@screens/Settings/FeedbackScreen').default,
+    [SCREENS.SETTINGS.DELETE]: () =>
+      require<ReactComponentModule>('@screens/Settings/DeleteAccountScreen')
+        .default,
+  });
+
+const ProfileModalStackNavigator =
+  createModalStackNavigator<ProfileNavigatorParamList>({
+    [SCREENS.PROFILE.ROOT]: () =>
+      require('@screens/Profile/ProfileScreen').default as React.ComponentType,
+    [SCREENS.PROFILE.FRIENDS_FRIENDS]: () =>
+      require<ReactComponentModule>('@screens/Profile/FriendsFriendsScreen')
+        .default,
   });
 
 const SocialModalStackNavigator =
-  createModalStackNavigator<MainMenuNavigatorParamList>({
+  createModalStackNavigator<SocialNavigatorParamList>({
     [SCREENS.SOCIAL.ROOT]: () =>
       require('@screens/Social/SocialScreen').default as React.ComponentType,
     [SCREENS.SOCIAL.FRIEND_LIST]: () =>
-      require('@screens/Social/FriendListScreen')
-        .default as React.ComponentType,
+      require<ReactComponentModule>('@screens/Social/FriendListScreen').default,
     [SCREENS.SOCIAL.FRIEND_REQUESTS]: () =>
-      require('@screens/Social/FriendRequestScreen')
-        .default as React.ComponentType,
+      require<ReactComponentModule>('@screens/Social/FriendRequestScreen')
+        .default,
     [SCREENS.SOCIAL.FRIEND_SEARCH]: () =>
-      require('@screens/Social/FriendSearchScreen')
-        .default as React.ComponentType,
+      require<ReactComponentModule>('@screens/Social/FriendSearchScreen')
+        .default,
   });
 
 const StatisticsModalStackNavigator =
-  createModalStackNavigator<MainMenuNavigatorParamList>({
+  createModalStackNavigator<StatisticsNavigatorParamList>({
     [SCREENS.STATISTICS.ROOT]: () =>
-      require('@screens/Statistics/StatisticsScreen')
-        .default as React.ComponentType,
+      require<ReactComponentModule>('@screens/Statistics/StatisticsScreen')
+        .default,
   });
 
 export {
   AchievementsModalStackNavigator,
   DayOverviewModalStackNavigator,
   DrinkingSessionModalStackNavigator,
-  MainMenuModalStackNavigator,
   ProfileModalStackNavigator,
   SettingsModalStackNavigator,
   SocialModalStackNavigator,

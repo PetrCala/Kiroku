@@ -1,4 +1,4 @@
-import * as ActiveClientManager from '@libs/ActiveClientManager/index';
+import * as ActiveClientManager from '@libs/ActiveClientManager';
 import CONST from '@src/CONST';
 import type {Request} from '@src/types/onyx';
 import type Response from '@src/types/onyx/Response';

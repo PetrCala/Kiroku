@@ -28,7 +28,7 @@ source "$SCRIPTS_DIR/shellUtils.sh"
 # function setup_git_as_kirokuadmin {
 #     info "Switching to KirokuAdmin git user"
 #     git config --local user.name KirokuAdmin
-#     git config --local user.email infra+kirokuadmin@expensify.com
+#     git config --local user.email kiroku.alcohol.tracker@gmail.com
 # }
 
 # function print_version {
@@ -129,7 +129,7 @@ source "$SCRIPTS_DIR/shellUtils.sh"
 # function merge_pr {
 #     info "Merging PR #$1 to main"
 #     git switch main
-#     git merge "pr-$1" --no-ff -m "Merge pull request #$1 from Expensify/pr-$1"
+#     git merge "pr-$1" --no-ff -m "Merge pull request #$1 from Kiroku/pr-$1"
 #     git push origin main
 #     git branch -d "pr-$1"
 #     success "Merged PR #$1 to main"
@@ -156,7 +156,7 @@ source "$SCRIPTS_DIR/shellUtils.sh"
 #     setup_git_as_kirokuadmin
 
 #     git switch staging
-#     git merge cherry-pick-staging --no-ff -m "Merge pull request #$(($1 + 1)) from Expensify/cherry-pick-staging"
+#     git merge cherry-pick-staging --no-ff -m "Merge pull request #$(($1 + 1)) from Kiroku/cherry-pick-staging"
 #     git branch -d cherry-pick-staging
 #     git push origin staging
 #     info "Merged PR #$(($1 + 1)) into staging"

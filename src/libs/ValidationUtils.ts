@@ -26,8 +26,10 @@ import CONST from '@src/CONST';
 // import * as CardUtils from './CardUtils';
 import DateUtils from './DateUtils';
 import type {MaybePhraseKey} from './Localize';
+import * as Localize from './Localize';
 // import * as LoginUtils from './LoginUtils';
 import StringUtils from './StringUtils';
+import {OnyxFormKey} from '@src/ONYXKEYS';
 
 /**
  * Implements the Luhn Algorithm, a checksum formula used to validate credit card
@@ -62,6 +64,10 @@ function validateCardNumber(value: string): boolean {
 
 //   return !CONST.REGEX.PO_BOX.test(value);
 // }
+
+function isValidEmail(email: string): boolean {
+  return CONST.REGEX.EMAIL.test(email);
+}
 
 /**
  * Validate date fields
@@ -127,23 +133,22 @@ function isRequiredFulfilled(
  * @param values - all form values
  * @param requiredFields - required fields for particular form
  */
-// TODO re-enable this
-// function getFieldRequiredErrors<TFormID extends OnyxFormKey>(
-//   values: FormOnyxValues<TFormID>,
-//   requiredFields: Array<FormOnyxKeys<TFormID>>,
-// ): FormInputErrors<TFormID> {
-//   const errors: FormInputErrors<TFormID> = {};
+function getFieldRequiredErrors<TFormID extends OnyxFormKey>(
+  values: FormOnyxValues<TFormID>,
+  requiredFields: Array<FormOnyxKeys<TFormID>>,
+): FormInputErrors<TFormID> {
+  const errors: FormInputErrors<TFormID> = {};
 
-//   requiredFields.forEach(fieldKey => {
-//     if (isRequiredFulfilled(values[fieldKey] as FormValue)) {
-//       return;
-//     }
+  requiredFields.forEach(fieldKey => {
+    if (isRequiredFulfilled(values[fieldKey] as FormValue)) {
+      return;
+    }
 
-//     errors[fieldKey] = 'common.error.fieldRequired';
-//   });
+    errors[fieldKey] = Localize.translateLocal('common.error.fieldRequired');
+  });
 
-//   return errors;
-// }
+  return errors;
+}
 
 /**
  * Validates that this is a valid security code
@@ -443,6 +448,7 @@ export {
   meetsMinimumAgeRequirement,
   meetsMaximumAgeRequirement,
   getAgeRequirementError,
+  isValidEmail,
   //   isValidAddress,
   isValidDate,
   isValidPastDate,
@@ -450,7 +456,7 @@ export {
   //   isValidExpirationDate,
   isValidDebitCard,
   isRequiredFulfilled,
-  // getFieldRequiredErrors,
+  getFieldRequiredErrors,
   isValidWebsite,
   isValidTwoFactorCode,
   //   isNumericWithSpecialChars,

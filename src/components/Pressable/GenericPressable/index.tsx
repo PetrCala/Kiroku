@@ -22,14 +22,13 @@ function WebGenericPressable(
       focusable={focusable}
       tabIndex={props.tabIndex ?? (!accessible || !focusable) ? -1 : 0}
       role={(props.accessibilityRole ?? props.role) as Role}
-      id={props.nativeID}
+      id={props.id}
       aria-label={props.accessibilityLabel}
       aria-labelledby={props.accessibilityLabelledBy}
       aria-valuenow={props.accessibilityValue?.now}
       aria-valuemin={props.accessibilityValue?.min}
       aria-valuemax={props.accessibilityValue?.max}
       aria-valuetext={props.accessibilityValue?.text}
-      nativeID={props.nativeID}
       dataSet={{
         tag: 'pressable',
         ...(props.noDragArea && {dragArea: false}),

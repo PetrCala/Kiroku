@@ -59,9 +59,16 @@ import type User from './User';
 import type {DrinkKey, DrinkName, DrinksList, DrinksTimestamp} from './Drinks';
 import type UserIsTyping from './UserIsTyping';
 import type UserProps from './UserProps';
-import type {UserPropsList, Profile, ProfileList} from './UserProps';
+import type {
+  UserPropsList,
+  UserPrivateData,
+  UserPublicData,
+  Profile,
+  ProfileList,
+} from './UserProps';
 import type UserStatus from './UserStatus';
 import type {UserStatusList} from './UserStatus';
+import TzFix from './TzFix';
 
 export type {
   Account,
@@ -118,11 +125,14 @@ export type {
   Session,
   SessionPlaceholder,
   SessionPlaceholderList,
+  TzFix,
   UnconfirmedDayKey,
   UnconfirmedDays,
   UnconfirmedDaysList,
   UnitsToColors,
   User,
+  UserPublicData,
+  UserPrivateData,
   UserProps,
   UserDrinkingSessionsList,
   UserIsTyping,

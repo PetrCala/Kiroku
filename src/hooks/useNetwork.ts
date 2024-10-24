@@ -1,11 +1,12 @@
-import {useEffect, useRef} from 'react';
-import {useUserConnection} from '@context/global/UserConnectionContext';
+import {useContext, useEffect, useRef} from 'react';
+import {NetworkContext} from '@components/OnyxProvider';
+import CONST from '@src/CONST';
 
 type UseNetworkProps = {
   onReconnect?: () => void;
 };
 
-type UseNetwork = {isOnline?: boolean};
+type UseNetwork = {isOffline: boolean};
 
 export default function useNetwork({
   onReconnect = () => {},
@@ -13,22 +14,31 @@ export default function useNetwork({
   const callback = useRef(onReconnect);
   callback.current = onReconnect;
 
-  const {isOnline} = useUserConnection();
-  const previousOnlineStatusRef = useRef(isOnline);
+  const {isOffline, networkStatus} = useContext(NetworkContext) ?? {
+    ...CONST.DEFAULT_NETWORK_DATA,
+    networkStatus: CONST.NETWORK.NETWORK_STATUS.UNKNOWN,
+  };
+  const prevOfflineStatusRef = useRef(isOffline);
   useEffect(() => {
     // If we were offline before and now we are not offline then we just reconnected
-    const didReconnect = previousOnlineStatusRef.current && isOnline;
+    const didReconnect = prevOfflineStatusRef.current && !isOffline;
     if (!didReconnect) {
       return;
     }
 
     callback.current();
-  }, [isOnline]);
+  }, [isOffline]);
 
   useEffect(() => {
     // Used to store previous prop values to compare on next render
-    previousOnlineStatusRef.current = isOnline;
-  }, [isOnline]);
+    prevOfflineStatusRef.current = isOffline;
+  }, [isOffline]);
 
-  return {isOnline};
+  // If the network status is undefined, we don't treat it as offline. Otherwise, we utilize the isOffline prop.
+  return {
+    isOffline:
+      networkStatus === CONST.NETWORK.NETWORK_STATUS.UNKNOWN
+        ? false
+        : isOffline,
+  };
 }

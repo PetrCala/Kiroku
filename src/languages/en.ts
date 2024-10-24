@@ -6,6 +6,8 @@ import type {
   UntilTimeParams,
 } from './types';
 import LiveSessionScreen from '@screens/DrinkingSession/LiveSessionScreen';
+import FriendSearchScreen from '@screens/Social/FriendSearchScreen';
+import {title} from 'process';
 
 type AllCountries = Record<Country, string>;
 
@@ -44,12 +46,15 @@ export default {
     chats: 'Chats',
     group: 'Group',
     profile: 'Profile',
+    account: 'Account',
     referral: 'Referral',
     payments: 'Payments',
     wallet: 'Wallet',
+    clear: 'Clear',
     preferences: 'Preferences',
     view: 'View',
     not: 'Not',
+    authentication: 'Authentication',
     signIn: 'Sign in',
     signInWithGoogle: 'Sign in with Google',
     signInWithApple: 'Sign in with Apple',
@@ -57,6 +62,8 @@ export default {
     continue: 'Continue',
     firstName: 'First name',
     lastName: 'Last name',
+    displayName: 'Display name',
+    nickname: 'Nickname',
     phone: 'Phone',
     phoneNumber: 'Phone number',
     phoneNumberPlaceholder: '(xxx) xxx-xxx-xxx',
@@ -81,11 +88,14 @@ export default {
     settings: 'Settings',
     termsOfService: 'Terms of Service',
     kirokuTermsOfService: 'Kiroku Terms of Service',
+    privacyPolicy: 'Privacy Policy',
     members: 'Members',
     invite: 'Invite',
     here: 'here',
     date: 'Date',
     dob: 'Date of birth',
+    gender: 'Gender',
+    weight: 'Weight',
     currentYear: 'Current year',
     currentMonth: 'Current month',
     city: 'City',
@@ -217,6 +227,13 @@ export default {
     untilTomorrow: 'Until tomorrow',
     untilTime: ({time}: UntilTimeParams) => `Until ${time}`,
   },
+  session: {
+    people: {
+      selectAll: 'Select all',
+    },
+    offlineMessageRetry:
+      "Looks like you're offline. Please check your connection and try again.",
+  },
   location: {
     useCurrent: 'Use current location',
     notFound:
@@ -227,17 +244,184 @@ export default {
     allowPermission: 'allow location permission in settings',
     tryAgain: 'and then try again.',
   },
-  profileScreen: {
-    editProfile: 'Edit Your Profile',
-    publicSection: {
-      title: 'Public Section',
-      subtitle: 'This information will be visible to other members.',
+  personalDetails: {
+    error: {
+      hasInvalidCharacter: 'Invalid character',
+      containsReservedWord: 'This name contains a reserved word.',
+      characterLimitExceedCounter: ({length, limit}) =>
+        `Character limit exceeded (${length}/${limit})`,
+      characterLimit: ({limit}: CharacterLimitParams) =>
+        `Exceeds the maximum length of ${limit} characters`,
+      requiredFirstName: 'First name cannot be empty',
+      requiredLastName: 'Last name cannot be empty',
+      requiredDisplayName: 'Nickname cannot be empty',
     },
   },
-  mainMenuScreen: {
+  socialScreen: {
+    title: 'Friends',
+  },
+  friendsFriendsScreen: {
+    title: 'Find Friends of Friends',
+  },
+  friendSearchScreen: {
+    title: 'Search For New Friends',
+  },
+  notFoundScreen: {
+    title: 'Not Found',
+  },
+  preferencesScreen: {
+    title: 'Preferences',
+  },
+  appShareScreen: {
+    title: 'Share the App',
+  },
+  settingsScreen: {
+    title: 'Settings',
     deleteAccount: 'Delete account',
-    deleteConfirmation: 'Are you sure that you want to delete this account?',
     improvementThoughts: 'What would you like us to improve?',
+    general: 'General',
+    giveFeedback: 'Give use a feedback',
+    signOut: 'Sign out',
+    shareTheApp: 'Share the app',
+    // signOutConfirmationText: "You'll lose any offline changes if you sign out.",
+    signOutConfirmationText: 'Do you really want to sign out?',
+    signingOut: 'Signing out...',
+    error: {},
+  },
+  accountScreen: {
+    title: 'Profile Details',
+    generalOptions: {
+      title: 'General',
+    },
+    personalDetails: {
+      title: 'Personal Details',
+      subtitle:
+        'These details help us provide you with the best user experience.',
+    },
+  },
+  userNameScreen: {
+    headerTitle: 'User name',
+    explanation:
+      'Displaying your name helps your friends easily find and recognize you on your profile.',
+    updatingUserName: 'Updating your name...',
+    error: {
+      generic: 'Error updating your name',
+    },
+  },
+  displayNameScreen: {
+    headerTitle: 'Nickname',
+    isShownOnProfile: 'Your nickname is shown on your profile.',
+    updatingDisplayName: 'Updating your nickname...',
+    error: {
+      generic: 'Error updating nickname',
+    },
+  },
+  tzFix: {
+    introduction: {
+      title: 'Important!',
+      text1:
+        'Hello! We want to inform you about an important update regarding how your data is handled in our app.',
+      troubleWithTimezones: 'Trouble with timezones',
+      text2:
+        "Until now, the data we've collected hasn't included timezone information, which can affect the accuracy and consistency of your data across different regions.",
+      whatDoesThisMean: 'What does this mean?',
+      text3:
+        "To enhance your experience and ensure all your data is accurately timestamped, we need to synchronize your existing data to Coordinated Universal Time (UTC). In the following steps, we'll determine your current timezone and ask for your permission to proceed with the synchronization.",
+      confirmButtonText: 'Okay, got it!',
+    },
+    detection: {
+      title: "Let's get started!",
+      isTimezoneCorrect:
+        'We have automatically detected your timezone as the following. Is this correct?',
+      correct: 'Yes, this is correct',
+      incorrect: 'No, my timezone is different',
+    },
+    confirmation: {
+      title: 'Ready to sync?',
+      text: 'Do you wish to proceed with syncing all your existing data to UTC using your selected timezone?',
+      cancelPrompt:
+        'Failing to synchronize your data may result in inaccurate timestamps.',
+      cancel: "I'll do this later",
+      resume: 'I changed my mind, let’s do this!',
+      syncNow: "Yeah, let's do it!",
+      syncLater: 'No, not now',
+      syncing: 'Syncing your data...',
+      error: {
+        generic: 'Error synchronizing your data',
+      },
+    },
+    success: {
+      title: 'Success!',
+      text1:
+        "Your data has been successfully synchronized to Coordinated Universal Time (UTC). You're all set!",
+      finishButton: 'Awesome!',
+    },
+  },
+  timezoneScreen: {
+    timezone: 'Timezone',
+    isShownOnProfile: 'Your timezone is shown on your profile.',
+    getLocationAutomatically: 'Automatically determine your location',
+    saving: 'Saving your timezone...',
+    error: {
+      generic: 'Error updating your timezone',
+    },
+  },
+  emailScreen: {
+    title: 'Update Email',
+    prompt: 'Your email is used to log in and receive important notifications.',
+    enterEmail: 'Enter your email here',
+    submit: 'Submit email',
+    sent: 'Email updated successfully!',
+    sending: 'Updating email...',
+    error: {
+      invalidEmail: 'Invalid email',
+      sameEmail: 'This is the same email as your current one',
+      emailTooLong: 'Email is too long',
+      emailRequired: 'Email is required',
+      generic: 'There was an error updating your email.',
+    },
+  },
+  passwordScreen: {
+    changePassword: 'Change password',
+    changingYourPasswordPrompt: 'Do not use this',
+    currentPassword: 'Current password',
+    newPassword: 'New password',
+    newPasswordPrompt:
+      'Your new password must be different from your old password and contain at least 8 characters, 1 capital letter, 1 lowercase letter, and 1 number.',
+  },
+  feedbackScreen: {
+    title: 'Feedback',
+    prompt: 'What would you like us to improve?',
+    enterFeedback: 'Enter your feedback here',
+    submit: 'Submit feedback',
+    sent: 'Feedback sent!',
+    sending: 'Sending feedback...',
+    error: 'There was an error sending your feedback. Please try again.',
+  },
+  deleteAccountScreen: {
+    deleteAccount: 'Delete account',
+    reasonForLeavingPrompt:
+      'We’d hate to see you go! Would you kindly tell us why, so we can improve?',
+    enterMessageHere: 'Enter message here',
+    deleteAccountWarning: 'Deleting your account cannot be undone.',
+    deleteAccountPermanentlyDeleteData:
+      'Are you sure you want to delete your account? This will permanently delete all of your data.',
+    enterPasswordToConfirm: 'Please enter your password to confirm deletion.',
+    enterPassword: 'Enter your password',
+    deletingAccount: 'Deleting account...',
+    error: {
+      generic: 'Error deleting your account',
+    },
+  },
+  profileScreen: {
+    title: 'Profile',
+    titleNotSelf: 'Friend Overview',
+  },
+  statisticsScreen: {
+    title: 'Statistics',
+  },
+  achievementsScreen: {
+    title: 'Achievements',
   },
   LiveSessionScreen: {
     saving: 'Saving your session...',
@@ -272,10 +456,6 @@ export default {
         'Your account has been locked after too many unsuccessful attempts. Please try again after 1 hour.',
       fallback: 'Something went wrong. Please try again later.',
     },
-  },
-  session: {
-    offlineMessageRetry:
-      "Looks like you're offline. Please check your connection and try again.",
   },
 } satisfies TranslationBase;
 

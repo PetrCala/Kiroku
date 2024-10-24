@@ -1,7 +1,8 @@
 import throttle from 'lodash/throttle';
 // import type {ChannelAuthorizationData} from 'pusher-js/types/src/core/auth/options';
 // import type {ChannelAuthorizationCallback} from 'pusher-js/with-encryption';
-import {InteractionManager, Linking, NativeModules} from 'react-native';
+import {Auth, signOut as fbSignOut} from 'firebase/auth';
+import {Alert, InteractionManager, Linking, NativeModules} from 'react-native';
 import type {OnyxEntry, OnyxUpdate} from 'react-native-onyx';
 import Onyx from 'react-native-onyx';
 import type {ValueOf} from 'type-fest';
@@ -184,6 +185,22 @@ import clearCache from './clearCache';
 
 //   API.write(WRITE_COMMANDS.LOG_OUT, params);
 // }
+
+/**
+ * Signs out the user from the app.
+ *
+ * @param auth Auth object from firebase
+ */
+const signOut = async (auth: Auth) => {
+  try {
+    await fbSignOut(auth);
+  } catch (error: any) {
+    Alert.alert(
+      'User sign out error',
+      'There was an error signing out: ' + error.message,
+    );
+  }
+};
 
 // /**
 //  * Checks if the account is an anonymous account.
@@ -1118,7 +1135,7 @@ export {
   //   initAutoAuthState,
   //   signInWithShortLivedAuthToken,
   cleanupSession,
-  //   signOut,
+  signOut,
   //   signOutAndRedirectToSignIn,
   //   resendValidationLink,
   //   resendValidateCode,

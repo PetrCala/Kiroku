@@ -1,12 +1,8 @@
 ﻿import {toPercentageVerbose} from '@libs/DataHandling';
-import {handleErrors} from '@libs/ErrorHandling';
-import type {
-  FirebaseStorage} from 'firebase/storage';
-import {
-  StorageReference,
-  ref,
-  uploadBytesResumable,
-} from 'firebase/storage';
+import * as ErrorUtils from '@libs/ErrorUtils';
+import type {FirebaseStorage} from 'firebase/storage';
+import {ref, uploadBytesResumable} from 'firebase/storage';
+import {Alert} from 'react-native';
 
 /**
  * Uploads an image to Firebase storage.
@@ -52,8 +48,7 @@ export async function uploadImageToFirebase(
           }
         },
         (error: any) => {
-          handleErrors(error, 'Error uploading image', error.message, dispatch);
-          reject(error);
+          ErrorUtils.raiseAlert(error, 'Error uploading image');
         },
         () => {
           dispatch({type: 'SET_UPLOAD_PROGRESS', payload: 0});

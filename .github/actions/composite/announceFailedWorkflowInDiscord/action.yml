@@ -1,0 +1,30 @@
+name: 'Announce Failed Workflow in Discord'
+description: 'Post failed workflow in Discord #announce channel'
+
+inputs:
+  DISCORD_WEBHOOK_URL:
+    description: 'URL of the Discord webhook'
+    required: true
+
+runs:
+  using: composite
+  steps:
+    - name: Send Discord Notification
+      uses: peter-evans/webhook-action@v2
+      with:
+        url: ${{ secrets.DISCORD_WEBHOOK_URL }}
+        content-type: 'json'
+        payload: |
+          {
+            "content": "",
+            "embeds": [{
+              "title": "🚨 Workflow Failed",
+              "color": 13632027,
+              "description": `💥 **${{ github.repository }}** failed on [${{ github.workflow }}](https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}) workflow 💥`,
+              "timestamp": "${{ github.event.workflow_run.updated_at }}",
+              "footer": {
+                "text": "GitHub Actions",
+                "icon_url": "https://github.githubassets.com/images/modules/logos_page/GitHub-Mark.png"
+              }
+            }]
+          }

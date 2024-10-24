@@ -37,12 +37,10 @@ import {useUserConnection} from '@context/global/UserConnectionContext';
 import UserOffline from '@components/UserOffline';
 import DrinkTypesView from '@components/DrinkTypesView';
 import SessionDetailsSlider from '@components/SessionDetailsSlider';
-import LoadingData from '@components/LoadingData';
 import SuccessIndicator from '@components/SuccessIndicator';
 import commonStyles from '@styles/commonStyles';
 import FillerView from '@components/FillerView';
 import CONST from '@src/CONST';
-import MainHeader from '@components/Header/MainHeader';
 import MainHeaderButton from '@components/Header/MainHeaderButton';
 import Navigation from '@navigation/Navigation';
 import type {StackScreenProps} from '@react-navigation/stack';
@@ -58,6 +56,8 @@ import type DeepValueOf from '@src/types/utils/DeepValueOf';
 import ScreenWrapper from '@components/ScreenWrapper';
 import DrinkData from '@libs/DrinkData';
 import useLocalize from '@hooks/useLocalize';
+import HeaderWithBackButton from '@components/HeaderWithBackButton';
+import FullScreenLoadingIndicator from '@components/FullscreenLoadingIndicator';
 
 type LiveSessionScreenProps = StackScreenProps<
   DrinkingSessionNavigatorParamList,
@@ -419,7 +419,7 @@ function LiveSessionScreen({route}: LiveSessionScreenProps) {
     return <UserOffline />;
   }
   if (openingSession || loadingText) {
-    return <LoadingData loadingText={loadingText} />;
+    return <FullScreenLoadingIndicator loadingText={loadingText} />;
   }
   if (!user) {
     Navigation.navigate(ROUTES.LOGIN);
@@ -435,10 +435,9 @@ function LiveSessionScreen({route}: LiveSessionScreenProps) {
 
   return (
     <ScreenWrapper testID={LiveSessionScreen.displayName}>
-      <MainHeader
-        headerText=""
-        onGoBack={handleBackPress}
-        rightSideComponent={
+      <HeaderWithBackButton
+        onBackButtonPress={handleBackPress}
+        customRightButton={
           <MainHeaderButton
             buttonOn={monkeMode}
             textOn="Exit Monke Mode"

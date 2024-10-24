@@ -5,7 +5,7 @@ import type {ValueOf} from 'type-fest';
 import useStyleUtils from '@hooks/useStyleUtils';
 import useTheme from '@hooks/useTheme';
 import useThemeStyles from '@hooks/useThemeStyles';
-import * as DrinkingSessionUtils from '@libs/DrinkingSessionUtils';
+import DrinkingSessionUtils from '@libs/DrinkingSessionUtils';
 import type {AvatarSource} from '@libs/UserUtils';
 import variables from '@styles/variables';
 import CONST from '@src/CONST';

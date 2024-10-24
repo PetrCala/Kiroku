@@ -1,6 +1,6 @@
-import {determineSessionMostCommonDrink} from '@libs/DrinkingSessionUtils';
+import DSUtils from '@libs/DrinkingSessionUtils';
 import type {DrinkingSession} from '@src/types/onyx';
-import {createMockSession} from '../../utils/mockDatabase';
+import {createMockSession} from '../../../src/database/MockDatabase';
 import CONST from '@src/CONST';
 import {getZeroDrinksList} from '@libs/DataHandling';
 
@@ -15,7 +15,7 @@ describe('determineSessionMostCommonDrink', () => {
     session.drinks = {
       1588412400000: {beer: 3},
     };
-    expect(determineSessionMostCommonDrink(session)).toBe(
+    expect(DSUtils.determineSessionMostCommonDrink(session)).toBe(
       CONST.DRINKS.KEYS.BEER,
     );
   });
@@ -25,18 +25,18 @@ describe('determineSessionMostCommonDrink', () => {
       1588412400000: {beer: 2, wine: 1},
       1588498800000: {beer: 1, cocktail: 3},
     };
-    expect(determineSessionMostCommonDrink(session)).toBe(
+    expect(DSUtils.determineSessionMostCommonDrink(session)).toBe(
       CONST.DRINKS.KEYS.OTHER,
     );
   });
 
   it('returns null in case all units are set to 0', () => {
     session.drinks = getZeroDrinksList();
-    expect(determineSessionMostCommonDrink(session)).toBeNull();
+    expect(DSUtils.determineSessionMostCommonDrink(session)).toBeNull();
   });
 
   it('returns null for a session with no drinks', () => {
     session.drinks = {};
-    expect(determineSessionMostCommonDrink(session)).toBeNull();
+    expect(DSUtils.determineSessionMostCommonDrink(session)).toBeNull();
   });
 });

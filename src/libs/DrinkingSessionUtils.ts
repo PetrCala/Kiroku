@@ -7,10 +7,14 @@ import type {
   DrinkingSessionType,
   DrinksList,
 } from '@src/types/onyx';
+import {ref, update, type Database} from 'firebase/database';
 import {isEmptyObject} from '@src/types/utils/EmptyObject';
 import {getTimestampAge, numberToVerboseString} from './TimeUtils';
 import type {UserID} from '@src/types/onyx/OnyxCommon';
 import * as Localize from './Localize';
+import {SelectedTimezone} from '@src/types/onyx/PersonalDetails';
+import {utcToZonedTime, zonedTimeToUtc} from 'date-fns-tz';
+import DBPATHS from '@database/DBPATHS';
 
 const PlaceholderDrinks: DrinksList = {[Date.now()]: {other: 0}};
 
@@ -203,14 +207,137 @@ function getUserDetailTooltipText(
   return displayNameForParticipant || fallbackUserDisplayName;
 }
 
-export {
+/**
+ * Check if all sessions contain a timezone.
+ *
+ * @param sessions The list of drinking sessions to check
+ * @returns Whether all sessions contain a timezone
+ */
+function allSessionsContainTimezone(sessions?: DrinkingSessionList): boolean {
+  if (isEmptyObject(sessions)) {
+    return true; // No session to fix
+  }
+
+  return Object.values(sessions).every(
+    session => 'timezone' in session && session.timezone,
+  );
+}
+
+/** Modify a timestamp so that it points to the same day in UTC midday.
+ */
+function fixEditSessionTimestamp(
+  timestamp: number,
+  timezone: SelectedTimezone,
+): number {
+  const utcTimestamp = zonedTimeToUtc(timestamp, timezone).getTime();
+  const utcDate = new Date(utcTimestamp);
+
+  const localizedDate = utcToZonedTime(utcDate, timezone);
+
+  return Date.UTC(
+    localizedDate.getFullYear(),
+    localizedDate.getMonth(),
+    localizedDate.getDay(),
+    12,
+    0,
+    0,
+    0,
+  );
+}
+
+// A temporary function to convert all sessions to UTC
+function convertSessionsToUtc(
+  sessions: DrinkingSessionList,
+  timezone: SelectedTimezone,
+): DrinkingSessionList {
+  const convertedSessions: DrinkingSessionList = {};
+  Object.entries(sessions).forEach(([sessionId, session]) => {
+    const convertedSession = {...session};
+    if (!convertedSession.timezone) {
+      convertedSession.timezone = timezone;
+    }
+    const convertedDrinks: DrinksList = {};
+    const existingTimestamps = new Set<number>();
+
+    if (!isEmptyObject(session.drinks)) {
+      Object.entries(session.drinks).forEach(
+        ([timestamp, drinksAtTimestamp]) => {
+          let newTimestamp = zonedTimeToUtc(
+            Number(timestamp),
+            timezone,
+          ).getTime();
+
+          // Ensure the new timestamp is unique by checking for collisions
+          while (existingTimestamps.has(newTimestamp)) {
+            newTimestamp += 1; // Increment timestamp slightly to avoid collision
+          }
+
+          existingTimestamps.add(newTimestamp);
+          convertedDrinks[newTimestamp] = drinksAtTimestamp;
+        },
+      );
+
+      convertedSession.drinks = convertedDrinks;
+    }
+
+    if ('session_type' in session) {
+      convertedSession.type = session.session_type as DrinkingSessionType;
+      delete convertedSession.session_type;
+    }
+
+    const shouldFixTimestamp =
+      session.type === 'edit' || session?.session_type === 'edit'; // @ts-ignore
+
+    const newStartTime = shouldFixTimestamp
+      ? fixEditSessionTimestamp(session.start_time, timezone)
+      : zonedTimeToUtc(session.start_time, timezone).getTime();
+    const newEndTime = shouldFixTimestamp
+      ? fixEditSessionTimestamp(session.end_time, timezone)
+      : zonedTimeToUtc(session.end_time, timezone).getTime();
+
+    convertedSession.start_time = newStartTime;
+    convertedSession.end_time = newEndTime;
+
+    convertedSessions[sessionId] = convertedSession;
+  });
+  return convertedSessions;
+}
+
+async function fixTimezoneSessions(
+  db: Database,
+  userID: UserID | undefined,
+  sessions: DrinkingSessionList | undefined,
+  timezone: SelectedTimezone,
+) {
+  if (!userID) {
+    throw new Error('Invalid user. Try reloading the app.');
+  }
+  if (isEmptyObject(sessions)) {
+    return;
+  }
+  const convertedSessions = convertSessionsToUtc(sessions, timezone);
+
+  const sessionsRef = DBPATHS.USER_DRINKING_SESSIONS_USER_ID;
+
+  const updates: Record<string, DrinkingSessionList> = {};
+  updates[sessionsRef.getRoute(userID)] = convertedSessions;
+
+  await update(ref(db), updates);
+}
+
+const DSUtils = {
   PlaceholderDrinks,
-  determineSessionMostCommonDrink,
+  allSessionsContainTimezone,
   calculateSessionLength,
+  determineSessionMostCommonDrink,
   extractSessionOrEmpty,
-  sessionIsExpired,
-  getEmptySession,
-  isEmptySession,
+  fixEditSessionTimestamp,
   getDisplayNameForParticipant,
+  getEmptySession,
   getUserDetailTooltipText,
+  isEmptySession,
+  sessionIsExpired,
+  fixTimezoneSessions,
 };
+
+export default DSUtils;

@@ -111,12 +111,6 @@ function ProfileImage(props: ProfileImageProps) {
         dispatch({type: 'SET_IMAGE_URL', payload: downloadUrl});
       } catch (error: any) {
         Alert.alert('Error fetching the image', error.message);
-        // handleErrors(
-        //   error,
-        //   'Error fetching the image',
-        //   error.message,
-        //   dispatch,
-        // );
       } finally {
         dispatch({type: 'SET_LOADING_IMAGE', payload: false});
       }

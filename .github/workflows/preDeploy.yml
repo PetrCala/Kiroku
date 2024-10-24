@@ -24,11 +24,11 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      # - name: Announce failed workflow in Slack
+      # - name: Announce failed workflow in Discord
       #   if: ${{ needs.typecheck.result == 'failure' || needs.lint.result == 'failure' || needs.test.result == 'failure' }}
-      #   uses: ./.github/actions/composite/announceFailedWorkflowInSlack
+      #   uses: ./.github/actions/composite/announceFailedWorkflowInDiscord
       #   with:
-      #     SLACK_WEBHOOK: ${{ secrets.SLACK_WEBHOOK }}
+      #     DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_URL }}
 
       # - name: Exit failed workflow
       #   if: ${{ needs.typecheck.result == 'failure' || needs.lint.result == 'failure' || needs.test.result == 'failure' }}
@@ -111,11 +111,11 @@ jobs:
           # Force-update the remote staging branch
           git push --force origin staging
 
-      # - name: Announce failed workflow in Slack
-      #   if: ${{ failure() }}
-      #   uses: ./.github/actions/composite/announceFailedWorkflowInSlack
-      #   with:
-      #     SLACK_WEBHOOK: ${{ secrets.SLACK_WEBHOOK }}
+      - name: Announce failed workflow in Discord
+        if: ${{ failure() }}
+        uses: ./.github/actions/composite/announceFailedWorkflowInDiscord
+        with:
+          DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_URL }}
 
   # e2ePerformanceTests:
   #   needs: [chooseDeployActions]

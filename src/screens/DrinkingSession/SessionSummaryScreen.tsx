@@ -12,20 +12,17 @@ import {
 } from '@libs/DataHandling';
 import * as KirokuIcons from '@components/Icon/KirokuIcons';
 import BasicButton from '@components/Buttons/BasicButton';
-import MainHeader from '@components/Header/MainHeader';
 import type {DrinkingSession} from '@src/types/onyx';
 import {useDatabaseData} from '@context/global/DatabaseDataContext';
 import type {StackScreenProps} from '@react-navigation/stack';
 import SCREENS from '@src/SCREENS';
 import type {DrinkingSessionNavigatorParamList} from '@libs/Navigation/types';
 import {useEffect, useState} from 'react';
-import {
-  calculateSessionLength,
-  extractSessionOrEmpty,
-} from '@libs/DrinkingSessionUtils';
+import DSUtils from '@libs/DrinkingSessionUtils';
 import Navigation from '@libs/Navigation/Navigation';
 import ROUTES from '@src/ROUTES';
 import ScreenWrapper from '@components/ScreenWrapper';
+import HeaderWithBackButton from '@components/HeaderWithBackButton';
 
 const SessionDataItem = ({
   heading,
@@ -68,7 +65,7 @@ function SessionSummaryScreen({route}: SessionSummaryScreenProps) {
     return null;
   } // Careful when writing hooks after this line
   const [session, setSession] = useState<DrinkingSession>(
-    extractSessionOrEmpty(sessionId, drinkingSessionData),
+    DSUtils.extractSessionOrEmpty(sessionId, drinkingSessionData),
   );
   // Drinks info
   const totalDrinks = sumAllDrinks(session.drinks);
@@ -88,7 +85,7 @@ function SessionSummaryScreen({route}: SessionSummaryScreenProps) {
   const sessionDay = formatDateToDay(sessionStartDate);
   const sessionStartTime = formatDateToTime(sessionStartDate);
   const sessionEndTime = formatDateToTime(sessionEndDate);
-  const sessionLength = calculateSessionLength(session, false);
+  const sessionLength = DSUtils.calculateSessionLength(session, false);
   // Figure out last drink added
   let lastDrinkAdded: string;
   const lastDrinkEditTimestamp = getLastDrinkAddedTime(session);
@@ -147,16 +144,18 @@ function SessionSummaryScreen({route}: SessionSummaryScreenProps) {
     : unitsToColors(totalUnits, preferences.units_to_colors);
 
   useEffect(() => {
-    const newSession = extractSessionOrEmpty(sessionId, drinkingSessionData);
+    const newSession = DSUtils.extractSessionOrEmpty(
+      sessionId,
+      drinkingSessionData,
+    );
     setSession(newSession);
   }, [drinkingSessionData]);
 
   return (
     <ScreenWrapper testID={SessionSummaryScreen.displayName}>
-      <MainHeader
-        headerText=""
-        onGoBack={handleBackPress}
-        rightSideComponent={
+      <HeaderWithBackButton
+        onBackButtonPress={handleBackPress}
+        customRightButton={
           session.ongoing ? null : (
             <MenuIcon
               iconId="edit-session-icon"
@@ -237,7 +236,6 @@ const styles = StyleSheet.create({
     borderRadius: 20,
     justifyContent: 'center',
     alignItems: 'center',
-    marginRight: 10,
   },
   menuIcon: {
     width: 25,

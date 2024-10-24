@@ -13,6 +13,7 @@ import {
 import {format as tzFormat, utcToZonedTime} from 'date-fns-tz';
 import Onyx from 'react-native-onyx';
 import DateUtils from '@libs/DateUtils';
+import DSUtils from '@libs/DrinkingSessionUtils';
 import CONST from '@src/CONST';
 import ONYXKEYS from '@src/ONYXKEYS';
 import type {SelectedTimezone} from '@src/types/onyx/PersonalDetails';
@@ -356,3 +357,17 @@ describe('DateUtils', () => {
     );
   });
 });
+
+// describe('DrinkingSessionUtils', () => {
+//   // TZFIX - remove this later
+//   describe('fixEditSessionTimestamp', () => {
+//     it('Should leave a UTC time as is', () => {
+//       const utcTimestamp = 1728038964;
+//       const fixedTimestamp = DSUtils.fixEditSessionTimestamp(
+//         utcTimestamp,
+//         'Europe/London',
+//       );
+//       expect(fixedTimestamp).toBe(utcTimestamp);
+//     });
+//   });
+// });

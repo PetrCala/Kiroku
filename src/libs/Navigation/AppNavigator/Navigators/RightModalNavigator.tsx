@@ -31,7 +31,7 @@ function RightModalNavigator({navigation}: RightModalNavigatorProps) {
   );
   // const screenOptions = useMemo(() => {
   //     const options = ModalNavigatorScreenOptions(styles);
-  //     // The .forHorizontalIOS interpolator from `@react-navigation` is misbehaving on Safari, so we override it with Expensify custom interpolator
+  //     // The .forHorizontalIOS interpolator from `@react-navigation` is misbehaving on Safari, so we override it with Kiroku custom interpolator
   //     if (isSafari()) {
   //         const customInterpolator = createModalCardStyleInterpolator(styleUtils);
   //         options.cardStyleInterpolator = (props: StackCardInterpolationProps) => customInterpolator(isSmallScreenWidth, false, false, props);
@@ -67,10 +67,6 @@ function RightModalNavigator({navigation}: RightModalNavigatorProps) {
         <Stack.Screen
           name={SCREENS.RIGHT_MODAL.DRINKING_SESSION}
           component={ModalStackNavigators.DrinkingSessionModalStackNavigator}
-        />
-        <Stack.Screen
-          name={SCREENS.RIGHT_MODAL.MAIN_MENU}
-          component={ModalStackNavigators.MainMenuModalStackNavigator}
         />
         <Stack.Screen
           name={SCREENS.RIGHT_MODAL.PROFILE}

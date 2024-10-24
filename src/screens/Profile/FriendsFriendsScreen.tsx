@@ -1,4 +1,5 @@
 import {
+  ActivityIndicator,
   Alert,
   Keyboard,
   ScrollView,
@@ -15,12 +16,10 @@ import type {UserList} from '@src/types/onyx/OnyxCommon';
 import {useEffect, useMemo, useReducer} from 'react';
 import {useFirebase} from '@context/global/FirebaseContext';
 import {isNonEmptyArray} from '@libs/Validation';
-import LoadingData from '@components/LoadingData';
 import {searchArrayByText} from '@libs/Search';
 import {fetchUserProfiles} from '@database/profile';
 import SearchResult from '@components/Social/SearchResult';
 import SearchWindow from '@components/Social/SearchWindow';
-import MainHeader from '@components/Header/MainHeader';
 import GrayHeader from '@components/Header/GrayHeader';
 import {getCommonFriends, getCommonFriendsCount} from '@libs/FriendUtils';
 import type {
@@ -42,6 +41,12 @@ import ROUTES from '@src/ROUTES';
 import DBPATHS from '@database/DBPATHS';
 import {readDataOnce} from '@database/baseFunctions';
 import ScreenWrapper from '@components/ScreenWrapper';
+import HeaderWithBackButton from '@components/HeaderWithBackButton';
+import useLocalize from '@hooks/useLocalize';
+import CONST from '@src/CONST';
+import useTheme from '@hooks/useTheme';
+import useThemeStyles from '@hooks/useThemeStyles';
+import FlexibleLoadingIndicator from '@components/FlexibleLoadingIndicator';
 
 type State = {
   searching: boolean;
@@ -98,10 +103,13 @@ type FriendsFriendsScreenProps = StackScreenProps<
 >;
 
 function FriendsFriendsScreen({route}: FriendsFriendsScreenProps) {
+  const theme = useTheme();
+  const styles = useThemeStyles();
   const {userID} = route.params;
   const {auth, db, storage} = useFirebase();
   const {userData} = useDatabaseData();
   const user = auth.currentUser;
+  const {translate} = useLocalize();
   const [state, dispatch] = useReducer(reducer, initialState);
 
   const localSearch = async (searchText: string): Promise<void> => {
@@ -253,61 +261,55 @@ function FriendsFriendsScreen({route}: FriendsFriendsScreenProps) {
 
   return (
     <ScreenWrapper testID={FriendsFriendsScreen.displayName}>
-      <View style={styles.mainContainer}>
-        <MainHeader
-          headerText="Find Friends of Friends"
-          onGoBack={() => Navigation.goBack()}
-        />
-        <SearchWindow
-          windowText="Search this user's friends"
-          onSearch={localSearch}
-          onResetSearch={resetSearch}
-          searchOnTextChange={true}
-        />
-        <ScrollView
-          style={styles.scrollViewContainer}
-          onScrollBeginDrag={Keyboard.dismiss}
-          keyboardShouldPersistTaps="handled">
-          <View style={styles.searchResultsContainer}>
-            {state.searching ? (
-              <LoadingData style={styles.loadingData} />
-            ) : isNonEmptyArray(state.displayedFriends) ? (
-              <>
-                <GrayHeader
-                  headerText={`Common Friends (${getCommonFriendsCount(
-                    state.commonFriends,
-                    state.displayedFriends,
-                  )})`}
-                />
-                {renderSearchResults(true)}
-                <GrayHeader
-                  headerText={`Other Friends (${getCommonFriendsCount(
-                    state.otherFriends,
-                    state.displayedFriends,
-                  )})`}
-                />
-                {renderSearchResults(false)}
-              </>
-            ) : state.noUsersFound ? (
-              <Text style={commonStyles.noUsersFoundText}>
-                {objKeys(state.friends).length > 0
-                  ? 'No friends found.\n\nTry searching for other users.'
-                  : 'This user has not added any friends yet.'}
-              </Text>
-            ) : null}
-          </View>
-          <FillerView height={100} />
-        </ScrollView>
-      </View>
+      <HeaderWithBackButton
+        title={translate('friendsFriendsScreen.title')}
+        onBackButtonPress={Navigation.goBack}
+      />
+      <SearchWindow
+        windowText="Search this user's friends"
+        onSearch={localSearch}
+        onResetSearch={resetSearch}
+        searchOnTextChange={true}
+      />
+      <ScrollView
+        style={localStyles.scrollViewContainer}
+        onScrollBeginDrag={Keyboard.dismiss}
+        keyboardShouldPersistTaps="handled">
+        <View style={localStyles.searchResultsContainer}>
+          {state.searching ? (
+            <FlexibleLoadingIndicator />
+          ) : isNonEmptyArray(state.displayedFriends) ? (
+            <>
+              <GrayHeader
+                headerText={`Common Friends (${getCommonFriendsCount(
+                  state.commonFriends,
+                  state.displayedFriends,
+                )})`}
+              />
+              {renderSearchResults(true)}
+              <GrayHeader
+                headerText={`Other Friends (${getCommonFriendsCount(
+                  state.otherFriends,
+                  state.displayedFriends,
+                )})`}
+              />
+              {renderSearchResults(false)}
+            </>
+          ) : state.noUsersFound ? (
+            <Text style={commonStyles.noUsersFoundText}>
+              {objKeys(state.friends).length > 0
+                ? 'No friends found.\n\nTry searching for other users.'
+                : 'This user has not added any friends yet.'}
+            </Text>
+          ) : null}
+        </View>
+        <FillerView height={100} />
+      </ScrollView>
     </ScreenWrapper>
   );
 }
 
-const styles = StyleSheet.create({
-  mainContainer: {
-    flex: 1,
-    backgroundColor: '#ffff99',
-  },
+const localStyles = StyleSheet.create({
   scrollViewContainer: {
     flex: 1,
     backgroundColor: '#ffff99',
@@ -354,11 +356,6 @@ const styles = StyleSheet.create({
   searchResultsContainer: {
     width: '100%',
     flexDirection: 'column',
-  },
-  loadingData: {
-    width: '100%',
-    height: 50,
-    margin: 5,
   },
 });
 

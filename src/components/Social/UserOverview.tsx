@@ -5,10 +5,7 @@ import {getTimestampAge} from '@libs/TimeUtils';
 import commonStyles from '@src/styles/commonStyles';
 import {formatDateToTime, timestampToDate} from '@libs/DataHandling';
 import type {Profile, UserStatus} from '@src/types/onyx';
-import {
-  determineSessionMostCommonDrink,
-  sessionIsExpired,
-} from '@libs/DrinkingSessionUtils';
+import DSUtils from '@libs/DrinkingSessionUtils';
 import DrinkData from '@libs/DrinkData';
 import _, {get} from 'lodash';
 
@@ -34,12 +31,13 @@ const UserOverview: React.FC<UserOverviewProps> = ({
     true,
   );
   const shouldDisplaySessionInfo =
-    inSession && !sessionIsExpired(latest_session);
+    inSession && !DSUtils.sessionIsExpired(latest_session);
   // const sessionLength = calculateSessionLength(latest_session, true);
   const sessionStartTime = latest_session?.start_time
     ? formatDateToTime(timestampToDate(latest_session?.start_time))
     : null;
-  const mostCommonDrink = determineSessionMostCommonDrink(latest_session);
+  const mostCommonDrink =
+    DSUtils.determineSessionMostCommonDrink(latest_session);
   const mostCommonDrinkIcon = DrinkData.find(
     drink => drink.key === mostCommonDrink,
   )?.icon;

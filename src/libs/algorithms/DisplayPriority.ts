@@ -5,7 +5,7 @@ import type {
 import type {UserStatus, UserStatusList} from '@src/types/onyx';
 import type {UserID} from '@src/types/onyx/OnyxCommon';
 import {sumAllDrinks} from '@libs/DataHandling';
-import {sessionIsExpired} from '@libs/DrinkingSessionUtils';
+import DSUtils from '@libs/DrinkingSessionUtils';
 import _, {get} from 'lodash';
 
 /**
@@ -44,7 +44,7 @@ function calculateUserPriority(userStatusData: UserStatus): number {
   const timeSinceLastSession = latestSessionTime
     ? new Date().getTime() - latestSessionTime
     : 1e15;
-  const expired = sessionIsExpired(latestSession);
+  const expired = DSUtils.sessionIsExpired(latestSession);
   // The older the last session, the lower the priority
   const timeCoefficient = Math.log(timeSinceLastSession) * 50 * -1;
   if (expired) {

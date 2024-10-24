@@ -38,6 +38,7 @@
 - [Setting up the local environment](#setting-up-the-local-environment)
 - [Building for Android](#building-for-android)
 - [Fixing dependencies](#fixing-dependencies)
+- [Using emulators](#using-emulators)
 - [Formatting](#formatting)
 - [Platform-Specific File Extensions](#platform-specific-file-extensions)
 - [Working with Firebase](#working-with-firebase)
@@ -166,6 +167,22 @@ curl -fsSL https://bun.sh/install | bash
 # Fixing dependencies
 
 To fix expo invalid dependencies, try running `npx expo install --fix`.
+
+# Using emulators
+
+You can connect the app in a development environment to local emulators if you wish to not use the Firebase connection. To do so, add the following line to the `.env.development` file:
+
+```bash
+# .env.development
+USE_EMULATORS=true
+```
+
+Then, run the following:
+
+```bash
+bun run emulators
+bun run ios # or andorid
+```
 
 # Formatting
 

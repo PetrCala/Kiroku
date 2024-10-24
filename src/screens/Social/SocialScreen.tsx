@@ -12,7 +12,6 @@ import {TabView} from 'react-native-tab-view';
 import FriendListScreen from './FriendListScreen';
 import FriendRequestScreen from './FriendRequestScreen';
 import * as KirokuIcons from '@components/Icon/KirokuIcons';
-import MainHeader from '@components/Header/MainHeader';
 import {getReceivedRequestsCount} from '@libs/FriendUtils';
 import type {UserProps} from '@src/types/onyx';
 import type {StackScreenProps} from '@react-navigation/stack';
@@ -22,6 +21,8 @@ import Navigation from '@libs/Navigation/Navigation';
 import {useDatabaseData} from '@context/global/DatabaseDataContext';
 import FriendRequestCounter from '@components/Social/FriendRequestCounter';
 import ScreenWrapper from '@components/ScreenWrapper';
+import HeaderWithBackButton from '@components/HeaderWithBackButton';
+import useLocalize from '@hooks/useLocalize';
 
 type SocialFooterButtonProps = {
   index: number;
@@ -77,6 +78,7 @@ type RouteType = {
 
 function SocialScreen({route}: SocialScreenProps) {
   const {userData} = useDatabaseData();
+  const {translate} = useLocalize();
   const [routes] = useState([
     {key: 'friendList', title: 'Friend List', userData: userData},
     // {key: 'friendSearch', title: 'Friend Search', userData: userData},
@@ -122,7 +124,10 @@ function SocialScreen({route}: SocialScreenProps) {
 
   return (
     <ScreenWrapper testID={SocialScreen.displayName}>
-      <MainHeader headerText="Friends" onGoBack={() => Navigation.goBack()} />
+      <HeaderWithBackButton
+        title={translate('socialScreen.title')}
+        onBackButtonPress={Navigation.goBack}
+      />
       <TabView
         navigationState={{index, routes}}
         renderScene={renderScene}

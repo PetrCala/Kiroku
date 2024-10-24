@@ -65,7 +65,7 @@ const createModalStyleUtils: StyleUtilGenerator<GetModalStylesStyleUtil> = ({
     innerContainerStyle = {},
     outerStyle = {},
   ): GetModalStyles => {
-    const {isSmallScreenWidth, windowWidth} = windowDimensions;
+    const {windowWidth, isSmallScreenWidth} = windowDimensions;
 
     let modalStyle: GetModalStyles['modalStyle'] = {
       margin: 0,
@@ -94,7 +94,7 @@ const createModalStyleUtils: StyleUtilGenerator<GetModalStylesStyleUtil> = ({
         };
         modalContainerStyle = {
           boxShadow: '0px 0px 5px 5px rgba(0, 0, 0, 0.1)',
-          borderRadius: 12,
+          borderRadius: variables.componentBorderRadiusLarge,
           overflow: 'hidden',
           width: variables.sideBarWidth,
         };
@@ -121,7 +121,9 @@ const createModalStyleUtils: StyleUtilGenerator<GetModalStylesStyleUtil> = ({
           flex: 1,
           marginTop: isSmallScreenWidth ? 0 : 20,
           marginBottom: isSmallScreenWidth ? 0 : 20,
-          borderRadius: isSmallScreenWidth ? 0 : 12,
+          borderRadius: isSmallScreenWidth
+            ? 0
+            : variables.componentBorderRadiusLarge,
           overflow: 'hidden',
           ...getCenteredModalStyles(styles, windowWidth, isSmallScreenWidth),
         };
@@ -148,7 +150,9 @@ const createModalStyleUtils: StyleUtilGenerator<GetModalStylesStyleUtil> = ({
           flex: 1,
           marginTop: isSmallScreenWidth ? 0 : 20,
           marginBottom: isSmallScreenWidth ? 0 : 20,
-          borderRadius: isSmallScreenWidth ? 0 : 12,
+          borderRadius: isSmallScreenWidth
+            ? 0
+            : variables.componentBorderRadiusLarge,
           overflow: 'hidden',
           ...getCenteredModalStyles(
             styles,
@@ -175,7 +179,7 @@ const createModalStyleUtils: StyleUtilGenerator<GetModalStylesStyleUtil> = ({
         };
         modalContainerStyle = {
           boxShadow: '0px 0px 5px 5px rgba(0, 0, 0, 0.1)',
-          borderRadius: 12,
+          borderRadius: variables.componentBorderRadiusLarge,
           borderWidth: 0,
         };
 
@@ -198,9 +202,9 @@ const createModalStyleUtils: StyleUtilGenerator<GetModalStylesStyleUtil> = ({
         };
         modalContainerStyle = {
           width: '100%',
-          borderTopLeftRadius: 20,
-          borderTopRightRadius: 20,
-          paddingTop: 12,
+          borderTopLeftRadius: variables.componentBorderRadiusLarge,
+          borderTopRightRadius: variables.componentBorderRadiusLarge,
+          paddingTop: variables.componentBorderRadiusLarge,
           justifyContent: 'center',
           overflow: 'hidden',
         };
@@ -221,7 +225,7 @@ const createModalStyleUtils: StyleUtilGenerator<GetModalStylesStyleUtil> = ({
           },
         };
         modalContainerStyle = {
-          borderRadius: 12,
+          borderRadius: variables.componentBorderRadiusLarge,
           borderWidth: 1,
           borderColor: theme.border,
           justifyContent: 'center',

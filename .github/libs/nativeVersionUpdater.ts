@@ -19,10 +19,10 @@ const PLIST_PATH_TEST = './ios/kirokuTests/Info.plist';
  * Pad a number to be two digits (with leading zeros if necessary).
  */
 function padToTwoDigits(value: number): string {
-    if (value >= 10) {
-        return value.toString();
-    }
-    return `0${value.toString()}`;
+  if (value >= 10) {
+    return value.toString();
+  }
+  return `0${value.toString()}`;
 }
 
 /**
@@ -31,29 +31,39 @@ function padToTwoDigits(value: number): string {
  * As a result, our max version is 99.99.99-99.
  */
 function generateAndroidVersionCode(npmVersion: string | SemVer): string {
-    // All Android versions will be prefixed with '10' due to previous versioning
-    const prefix = '10';
-    return ''.concat(
-        prefix,
-        padToTwoDigits(getMajorVersion(npmVersion) ?? 0),
-        padToTwoDigits(getMinorVersion(npmVersion) ?? 0),
-        padToTwoDigits(getPatchVersion(npmVersion) ?? 0),
-        padToTwoDigits(Number(getBuildVersion(npmVersion)) ?? 0),
-    );
+  // All Android versions will be prefixed with '10' due to previous versioning
+  const prefix = '10';
+  return ''.concat(
+    prefix,
+    padToTwoDigits(getMajorVersion(npmVersion) ?? 0),
+    padToTwoDigits(getMinorVersion(npmVersion) ?? 0),
+    padToTwoDigits(getPatchVersion(npmVersion) ?? 0),
+    padToTwoDigits(Number(getBuildVersion(npmVersion)) ?? 0),
+  );
 }
 
 /**
  * Update the Android app versionName and versionCode.
  */
-function updateAndroidVersion(versionName: string, versionCode: string): Promise<void> {
-    console.log('Updating android:', `versionName: ${versionName}`, `versionCode: ${versionCode}`);
-    return fs
-        .readFile(BUILD_GRADLE_PATH, {encoding: 'utf8'})
-        .then((content) => {
-            let updatedContent = content.toString().replace(/versionName "([0-9.-]*)"/, `versionName "${versionName}"`);
-            return (updatedContent = updatedContent.replace(/versionCode ([0-9]*)/, `versionCode ${versionCode}`));
-        })
-        .then((updatedContent) => fs.writeFile(BUILD_GRADLE_PATH, updatedContent, {encoding: 'utf8'}));
+function updateAndroidVersion(
+  versionName: string,
+  versionCode: string,
+): Promise<void> {
+  // console.log('Updating android:', `versionName: ${versionName}`, `versionCode: ${versionCode}`);
+  return fs
+    .readFile(BUILD_GRADLE_PATH, {encoding: 'utf8'})
+    .then(content => {
+      let updatedContent = content
+        .toString()
+        .replace(/versionName "([0-9.-]*)"/, `versionName "${versionName}"`);
+      return (updatedContent = updatedContent.replace(
+        /versionCode ([0-9]*)/,
+        `versionCode ${versionCode}`,
+      ));
+    })
+    .then(updatedContent =>
+      fs.writeFile(BUILD_GRADLE_PATH, updatedContent, {encoding: 'utf8'}),
+    );
 }
 
 /**
@@ -61,18 +71,35 @@ function updateAndroidVersion(versionName: string, versionCode: string): Promise
  * Updates the CFBundleShortVersionString and the CFBundleVersion.
  */
 function updateiOSVersion(version: string): string {
-    const shortVersion = version.split('-')[0];
-    const cfVersion = version.includes('-') ? version.replace('-', '.') : `${version}.0`;
-    console.log('Updating iOS', `CFBundleShortVersionString: ${shortVersion}`, `CFBundleVersion: ${cfVersion}`);
+  const shortVersion = version.split('-')[0];
+  const cfVersion = version.includes('-')
+    ? version.replace('-', '.')
+    : `${version}.0`;
+  // console.log('Updating iOS', `CFBundleShortVersionString: ${shortVersion}`, `CFBundleVersion: ${cfVersion}`);
 
-    // Update Plists
-    execSync(`/usr/libexec/PlistBuddy -c "Set :CFBundleShortVersionString ${shortVersion}" ${PLIST_PATH}`);
-    execSync(`/usr/libexec/PlistBuddy -c "Set :CFBundleShortVersionString ${shortVersion}" ${PLIST_PATH_TEST}`);
-    execSync(`/usr/libexec/PlistBuddy -c "Set :CFBundleVersion ${cfVersion}" ${PLIST_PATH}`);
-    execSync(`/usr/libexec/PlistBuddy -c "Set :CFBundleVersion ${cfVersion}" ${PLIST_PATH_TEST}`);
+  // Update Plists
+  execSync(
+    `/usr/libexec/PlistBuddy -c "Set :CFBundleShortVersionString ${shortVersion}" ${PLIST_PATH}`,
+  );
+  execSync(
+    `/usr/libexec/PlistBuddy -c "Set :CFBundleShortVersionString ${shortVersion}" ${PLIST_PATH_TEST}`,
+  );
+  execSync(
+    `/usr/libexec/PlistBuddy -c "Set :CFBundleVersion ${cfVersion}" ${PLIST_PATH}`,
+  );
+  execSync(
+    `/usr/libexec/PlistBuddy -c "Set :CFBundleVersion ${cfVersion}" ${PLIST_PATH_TEST}`,
+  );
 
-    // Return the cfVersion so we can set the NEW_IOS_VERSION in ios.yml
-    return cfVersion;
+  // Return the cfVersion so we can set the NEW_IOS_VERSION in ios.yml
+  return cfVersion;
 }
 
-export {updateiOSVersion, updateAndroidVersion, generateAndroidVersionCode, BUILD_GRADLE_PATH, PLIST_PATH, PLIST_PATH_TEST};
+export {
+  updateiOSVersion,
+  updateAndroidVersion,
+  generateAndroidVersionCode,
+  BUILD_GRADLE_PATH,
+  PLIST_PATH,
+  PLIST_PATH_TEST,
+};

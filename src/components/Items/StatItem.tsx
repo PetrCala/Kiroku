@@ -3,7 +3,7 @@ import {StyleSheet, Text, View} from 'react-native';
 type StatItemProps = {
   header: string;
   content: string;
-}
+};
 
 // StatItem component with types
 const StatItem: React.FC<StatItemProps> = ({header, content}) => (
@@ -30,12 +30,16 @@ const styles = StyleSheet.create({
   },
   overviewStatsContents: {
     textAlign: 'center',
-    fontSize: 23,
+    fontSize: 28,
     color: 'black',
+    // fontSize: 25,
+    // fontWeight: '800',
+    // color: '#f2be1c',
   },
   overviewStatsHeader: {
     textAlign: 'center',
     fontSize: 15,
+    fontWeight: '400',
     paddingRight: 3,
     paddingLeft: 3,
     color: 'black',
