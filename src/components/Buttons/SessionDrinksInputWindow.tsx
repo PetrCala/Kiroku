@@ -1,17 +1,11 @@
 import React, {useState, useRef, useMemo, useEffect} from 'react';
-import {
-  Keyboard,
-  StyleSheet,
-  TextInput,
-  TouchableOpacity,
-  View,
-} from 'react-native';
+import {Keyboard, TextInput, View} from 'react-native';
 import {sumDrinksOfSingleType} from '@libs/DataHandling';
 import * as DSUtils from '@src/libs/DrinkingSessionUtils';
 import * as DS from '@userActions/DrinkingSession';
 import type {DrinkingSessionId, DrinkKey, DrinksList} from '@src/types/onyx';
 import useThemeStyles from '@hooks/useThemeStyles';
-import useTheme from '@hooks/useTheme';
+import {PressableWithoutFeedback} from '@components/Pressable';
 import {useDatabaseData} from '@context/global/DatabaseDataContext';
 import Log from '@libs/Log';
 import CONST from '@src/CONST';
@@ -33,13 +27,46 @@ function SessionDrinksInputWindow({
   sessionId,
 }: SessionDrinksInputWindowProps) {
   const styles = useThemeStyles();
-  const theme = useTheme();
   const {preferences} = useDatabaseData();
   const [shouldHighlight, setShouldHighlight] = useState<boolean>(false);
   const [inputValue, setInputValue] = useState<string>(
     sumDrinksOfSingleType(drinks, drinkKey).toString(),
   );
   const inputRef = useRef<TextInput>(null);
+
+  /** Given a new numeric value, update the necessary hooks upstream.
+   *
+   * @param numericValue The value to handle.
+   * @returnsvoid, the upstream hooks get updated
+   */
+  const handleNewNumericValue = (numericValue: number): void => {
+    if (!preferences) {
+      Log.warn('SessionDrinksInputWindow', 'No preferences');
+      return;
+    }
+    let newValue: number = numericValue;
+    if (Number.isNaN(newValue)) {
+      newValue = 0;
+    }
+    const typeSum = parseFloat(inputValue);
+
+    if (newValue === typeSum) {
+      return;
+    } // Do nothing if the value is the same
+
+    const shouldAdd = newValue > typeSum;
+    const numberToModify = Math.abs(newValue - typeSum);
+    const action = shouldAdd
+      ? CONST.DRINKS.ACTIONS.ADD
+      : CONST.DRINKS.ACTIONS.REMOVE;
+    DS.updateDrinks(
+      sessionId,
+      drinkKey,
+      numberToModify,
+      action,
+      preferences.drinks_to_units,
+    );
+  };
 
   const handleKeyPress = (event: {nativeEvent: {key: string}}): void => {
     if (!preferences) {
@@ -59,7 +86,7 @@ function SessionDrinksInputWindow({
       if (inputValue !== '0') {
         setInputValue(updatedValue);
       }
-    } else if (!isNaN(Number(key))) {
+    } else if (!Number.isNaN(Number(key))) {
       if (inputValue === '0') {
         updatedValue = key;
       } else if (inputValue.length < 2) {
@@ -70,7 +97,7 @@ function SessionDrinksInputWindow({
 
       // Check that updatedValue is not greater than availableDrinks
       let numericValue = parseFloat(updatedValue);
-      if (isNaN(numericValue)) {
+      if (Number.isNaN(numericValue)) {
         numericValue = 0;
       }
 
@@ -94,47 +121,14 @@ function SessionDrinksInputWindow({
     handleNewNumericValue(numericValue);
   };
 
-  /** Given a new numeric value, update the necessary hooks upstream.
-   *
-   * @param numericValue The value to handle.
-   * @returnsvoid, the upstream hooks get updated
-   */
-  const handleNewNumericValue = (numericValue: number): void => {
-    if (!preferences) {
-      Log.warn('SessionDrinksInputWindow', 'No preferences');
-      return;
-    }
-    if (isNaN(numericValue)) {
-      numericValue = 0;
-    }
-    const typeSum = parseFloat(inputValue);
-
-    if (numericValue == typeSum) {
-      return;
-    } // Do nothing if the value is the same
-
-    const shouldAdd = numericValue > typeSum;
-    const numberToModify = Math.abs(numericValue - typeSum);
-    const action = shouldAdd
-      ? CONST.DRINKS.ACTIONS.ADD
-      : CONST.DRINKS.ACTIONS.REMOVE;
-    DS.updateDrinks(
-      sessionId,
-      drinkKey,
-      numberToModify,
-      action,
-      preferences.drinks_to_units,
-    );
-  };
-
   const handleContainerPress = () => {
-    if (inputRef.current && inputRef.current.isFocused()) {
+    if (inputRef.current?.isFocused()) {
       // Hide keyboard
       Keyboard.dismiss();
       inputRef.current.blur();
     } else {
       // Focus keyboard
-      inputRef.current && inputRef.current.focus();
+      inputRef.current?.focus();
     }
   };
 
@@ -157,17 +151,11 @@ function SessionDrinksInputWindow({
   }
 
   return (
-    <View style={localStyles.drinksInputContainer}>
-      <TouchableOpacity
-        accessibilityRole="button"
-        activeOpacity={1}
+    <View style={[styles.alignItemsCenter, styles.justifyContentCenter]}>
+      <PressableWithoutFeedback
+        accessibilityLabel="button"
         onPress={handleContainerPress}
-        style={[
-          localStyles.drinksInputButton,
-          {
-            backgroundColor: shouldHighlight ? theme.appColor : theme.cardBG,
-          },
-        ]}>
+        style={styles.sessionDrinksInputContainer(shouldHighlight)}>
         <TextInput
           accessibilityLabel="Text input field"
           ref={inputRef}
@@ -185,24 +173,9 @@ function SessionDrinksInputWindow({
           onSubmitEditing={() => inputRef.current && inputRef.current.blur()} // Hide keyboard
           maxLength={2}
         />
-      </TouchableOpacity>
+      </PressableWithoutFeedback>
     </View>
   );
 }
 
 export default SessionDrinksInputWindow;
-
-// eslint-disable-next-line @typescript-eslint/no-use-before-define
-const localStyles = StyleSheet.create({
-  drinksInputContainer: {
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  drinksInputButton: {
-    width: 43,
-    height: 43,
-    borderRadius: 5,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-});
