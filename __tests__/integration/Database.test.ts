@@ -3,7 +3,7 @@ import fs from 'fs';
 import path from 'path';
 import type {DatabaseProps} from '@src/types/onyx';
 import {createMockDatabase} from '../utils/mockDatabase';
-import CONFIG from './config';
+import CONFIG from '../utils/integrationConfig';
 
 const writeDbFile = (db: DatabaseProps) => {
   const dbDir = path.dirname(CONFIG.OUTPUT_FILE_DB);

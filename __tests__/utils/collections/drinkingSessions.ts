@@ -10,14 +10,15 @@ import CONST from '@src/CONST';
 import {addMilliseconds} from 'date-fns';
 import type {DrinkingSession, DrinkingSessionList} from '@src/types/onyx';
 import type {SelectedTimezone} from '@src/types/onyx/UserData';
+import type {Timestamp} from '@src/types/onyx/OnyxCommon';
 import {randDrinksList} from './drinks';
 import createCollection from './createCollection';
 
 export default function randDrinkingSession(
-  index: number,
+  index: Timestamp,
   isOngoing?: boolean,
 ): DrinkingSession {
-  const startTime = randPastDate().getTime();
+  const startTime = index;
   const endTime = addMilliseconds(
     startTime,
     randNumber({min: 0, max: 8 * 60 * 60 * 1000}), // Up to 8 hours
@@ -67,10 +68,11 @@ const randDrinkingSessionList = ({
   return createCollection<DrinkingSession>(
     item => item.id ?? '',
     index => {
+      const sessionStart = randPastDate().getTime();
       if (shouldIncludeOngoing && index === ongoingIndex) {
-        return randDrinkingSession(index, true);
+        return randDrinkingSession(sessionStart, true);
       }
-      return randDrinkingSession(index);
+      return randDrinkingSession(sessionStart);
     },
     length,
   );
