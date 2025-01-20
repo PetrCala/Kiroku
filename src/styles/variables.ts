@@ -219,6 +219,7 @@ export default {
   sessionOverviewTabHeight: 85,
   statItemTextMaxWidth: 150,
   sessionUnitCountFontSize: 90,
+  sessionDrinksTabHeight: 50,
   sessionDrinksInputWindowSize: 44,
   statOverviewHeight: 120,
   sessionColorMarkerSize: 20,
