@@ -23,8 +23,7 @@ jobs:
       - name: Setup Node
         uses: ./.github/actions/composite/setupNode
 
-      # TODO enable this
-      # - name: Lint JavaScript and Typescript with ESLint
-      #   run: npm run lint
-      #   env:
-      #     CI: true
+      - name: Lint JavaScript and Typescript with ESLint
+        run: npm run lint
+        env:
+          CI: true
