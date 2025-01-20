@@ -3,6 +3,14 @@ import {Alert} from 'react-native';
 import {mergeUpdates} from '@database/updates';
 import useLocalize from './useLocalize';
 
+// This module is a temporary one, so we choose to skip over typescript for now until the API is fully in-place
+/* eslint-disable 
+@typescript-eslint/no-unsafe-assignment, 
+@typescript-eslint/no-explicit-any,
+@typescript-eslint/no-unsafe-member-access, 
+@typescript-eslint/no-unsafe-argument,
+*/
+
 /**
  * Custom React hook for batching and processing updates with a specified delay.
  *
@@ -101,9 +109,10 @@ const useBatchedUpdates = (
 
             // Remove processed updates from the pool only if they haven't changed during synchronization, meaning if a new update to that key was enqueued
             Object.keys(updatesToProcess).forEach(key => {
-              if (updatesRef.current[key] === updatesToProcess[key]) {
-                delete updatesRef.current[key];
+              if (updatesRef.current[key] !== updatesToProcess[key]) {
+                return;
               }
+              delete updatesRef.current[key];
             });
             retriesRef.current = 0;
           } catch (error) {
@@ -124,15 +133,16 @@ const useBatchedUpdates = (
         })();
       }, delay);
     },
-    [processUpdates, delay],
+    [processUpdates, delay, translate],
   );
 
   // Clean up the timer when the component unmounts
   useEffect(() => {
     return () => {
-      if (timerRef.current) {
-        clearTimeout(timerRef.current);
+      if (!timerRef.current) {
+        return;
       }
+      clearTimeout(timerRef.current);
     };
   }, []);
 
