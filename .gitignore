@@ -68,8 +68,9 @@ workflow_tests/**.log
 .jest/
 .jest-cache
 
-# E2E test reports
+# Test reports and results
 __tests__/e2e/results/
+__tests__/integration/results/
 .reassure
 
 # Bun
