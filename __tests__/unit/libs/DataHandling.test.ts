@@ -21,7 +21,6 @@ import {
   timestampToDate,
   convertUnitsToColors,
 } from '@libs/DataHandling';
-import {createMockSession} from '@src/database/MockDatabase';
 import type {
   DrinkingSession,
   DrinksList,
@@ -29,6 +28,7 @@ import type {
   UnitsToColors,
 } from '@src/types/onyx';
 import CONST from '@src/CONST';
+import {randDrinkingSession} from '../../utils/collections/drinkingSessions';
 
 describe('formatDate function', () => {
   function checkFormattedDate(date: Date, expectedFormattedDate: string) {
@@ -443,20 +443,19 @@ describe('sumDrinkTypes', () => {
 });
 
 describe('getLastDrinkAddedTime', () => {
-  const dateNow: Date = new Date();
   let mockSession: DrinkingSession;
 
   beforeEach(() => {
-    mockSession = createMockSession(dateNow);
+    mockSession = randDrinkingSession(new Date().getTime());
   });
 
   it('should correctly identify last added drink timestamp', () => {
-    const now = dateNow.getTime();
+    const sessionStart = mockSession.start_time;
     const testDrinks: DrinksList = {
-      [now + 10]: {
+      [sessionStart + 10]: {
         beer: 2,
       },
-      [now + 20]: {
+      [sessionStart + 20]: {
         wine: 3,
         other: 1,
       },
@@ -464,7 +463,7 @@ describe('getLastDrinkAddedTime', () => {
     mockSession.drinks = testDrinks;
 
     const lastDrinkAddedTime = getLastDrinkAddedTime(mockSession);
-    expect(lastDrinkAddedTime).toBe(now + 20);
+    expect(lastDrinkAddedTime).toBe(sessionStart + 20);
   });
 
   it('should return null for an empty units object', () => {

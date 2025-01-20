@@ -1,4 +1,3 @@
-// import {randDrinkingSessionList} from './collections/drinkingSessions';
 import fs from 'fs';
 import {rand} from '@ngneat/falso';
 import type {
@@ -32,20 +31,10 @@ import {
 } from '@libs/DataHandling';
 import {cleanStringForFirebaseKey} from '@libs/StringUtilsKiroku';
 import CONST from '@src/CONST';
-import type {UserID} from '@src/types/onyx/OnyxCommon';
 import {addDays, subDays} from 'date-fns';
 import DateUtils from '@libs/DateUtils';
 import {randDrinkingSessionList} from './collections/drinkingSessions';
-
-function getMockUserIDs(): UserID[] {
-  return [
-    'mock-user-1',
-    'mock-user-2',
-    'mock-user-3',
-    'mock-user-4',
-    'mock-user-5',
-  ];
-}
+import {randUserIDs} from './collections/userAccount';
 
 /**
  * Creates a mock app settings object.
@@ -274,7 +263,7 @@ function createMockFriendRequests(userID: string): FriendRequestList {
   const statuses: FriendRequestStatus[] = Object.values(
     CONST.FRIEND_REQUEST_STATUS,
   );
-  const mockUserIDs = getMockUserIDs();
+  const mockUserIDs = randUserIDs({length: 10});
   for (const mockId of mockUserIDs) {
     if (mockId !== userID) {
       const randomIndex = Math.floor(Math.random() * statuses.length);
@@ -320,7 +309,7 @@ function createMockDatabase(noFriends = false): DatabaseProps {
   db.config = createMockConfig();
 
   // Data that varies across users
-  const mockUserIDs = getMockUserIDs();
+  const mockUserIDs = randUserIDs({length: 150});
 
   mockUserIDs.forEach(userID => {
     const userDrinkingSessions = randDrinkingSessionList({
@@ -356,7 +345,6 @@ function exportMockDatabase(): string {
 }
 
 export {
-  getMockUserIDs,
   createMockAppSettings,
   createMockMaintenance,
   initializeEmptyMockDatabase,

@@ -2,7 +2,7 @@ import * as DSUtils from '@libs/DrinkingSessionUtils';
 import type {DrinkingSession, DrinksList, DrinksToUnits} from '@src/types/onyx';
 import CONST from '@src/CONST';
 import {getZeroDrinksList} from '@libs/DataHandling';
-import {createMockSession} from '@src/database/MockDatabase';
+import {randDrinkingSession} from '../../utils/collections/drinkingSessions';
 
 /* eslint-disable @typescript-eslint/naming-convention */
 
@@ -10,7 +10,7 @@ describe('determineSessionMostCommonDrink', () => {
   let session: DrinkingSession;
 
   beforeEach(() => {
-    session = createMockSession(new Date());
+    session = randDrinkingSession(new Date().getTime());
   });
 
   it('identifies the most common drink with a single type', () => {
