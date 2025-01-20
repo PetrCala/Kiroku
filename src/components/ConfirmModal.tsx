@@ -132,7 +132,7 @@ function ConfirmModal({
   shouldEnableNewFocusManagement,
   restoreFocusType,
 }: ConfirmModalProps) {
-  const {isSmallScreenWidth} = useResponsiveLayout();
+  const {shouldUseNarrowLayout} = useResponsiveLayout();
   const styles = useThemeStyles();
 
   return (
@@ -143,7 +143,7 @@ function ConfirmModal({
       shouldSetModalVisibility={shouldSetModalVisibility}
       onModalHide={onModalHide}
       type={
-        isSmallScreenWidth
+        shouldUseNarrowLayout
           ? CONST.MODAL.MODAL_TYPE.BOTTOM_DOCKED
           : CONST.MODAL.MODAL_TYPE.CONFIRM
       }
@@ -168,7 +168,9 @@ function ConfirmModal({
         shouldCenterContent={shouldCenterContent}
         iconSource={iconSource}
         contentStyles={
-          isSmallScreenWidth && shouldShowDismissIcon ? styles.mt2 : undefined
+          shouldUseNarrowLayout && shouldShowDismissIcon
+            ? styles.mt2
+            : undefined
         }
         iconFill={iconFill}
         iconHeight={iconHeight}
