@@ -31,13 +31,6 @@
       "@userActions/*": ["./src/libs/actions/*"]
     }
   },
-  "exclude": [
-    "**/node_modules/*",
-    "**/dist/*",
-    ".github/actions/**/index.js",
-    "**/docs/*",
-    "**/local/*"
-  ],
   "include": [
     "__mocks__",
     "__tests__",
@@ -50,10 +43,18 @@
     "**/*.jsx",
     "**/*.ts",
     "**/*.tsx",
+    "scripts",
     "app.json",
     "package.json", // Application version import
     "firebase.json",
     "react-native.config.js",
     "local/tests/integration"
+  ],
+  "exclude": [
+    "**/node_modules/*",
+    "**/dist/*",
+    ".github/actions/**/index.js",
+    "**/docs/*",
+    "**/local/*"
   ]
 }
