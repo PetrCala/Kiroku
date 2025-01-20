@@ -158,12 +158,12 @@ const ONYXKEYS = {
   //   /** Collection Keys */
   COLLECTION: {
     DOWNLOAD: 'download_',
+    DRINKS: 'drinks_',
+    DRINKING_SESSION: 'drinkingSession_',
     //     POLICY: 'policy_',
     //     POLICY_TAGS: 'policyTags_',
     //     POLICY_RECENTLY_USED_TAGS: 'nvp_recentlyUsedTags_',
     //     REPORT: 'report_',
-    //     // REPORT_METADATA is a perf optimization used to hold loading states (isLoadingInitialReportActions, isLoadingOlderReportActions, isLoadingNewerReportActions).
-    //     REPORT_DRAFT_COMMENT: 'reportDraftComment_',
   },
 
   //   /** List of Form ids */
@@ -238,8 +238,9 @@ type OnyxFormDraftValuesMapping = {
 };
 
 type OnyxCollectionValuesMapping = {
-  //   [ONYXKEYS.COLLECTION.TEST_ITEM_IN_COLLECTION]: number;
   [ONYXKEYS.COLLECTION.DOWNLOAD]: OnyxTypes.Download;
+  [ONYXKEYS.COLLECTION.DRINKS]: OnyxTypes.Drinks;
+  [ONYXKEYS.COLLECTION.DRINKING_SESSION]: OnyxTypes.DrinkingSession;
   //   [ONYXKEYS.COLLECTION.POLICY]: OnyxTypes.Policy;
   //   [ONYXKEYS.COLLECTION.POLICY_DRAFTS]: OnyxTypes.Policy;
   //     .POLICY_RECENTLY_USED_CATEGORIES]: OnyxTypes.RecentlyUsedCategories;
