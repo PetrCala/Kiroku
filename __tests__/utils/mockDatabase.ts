@@ -36,6 +36,8 @@ import DateUtils from '@libs/DateUtils';
 import {randDrinkingSessionList} from './collections/drinkingSessions';
 import {randUserIDs} from './collections/userAccount';
 
+const N_MOCK_USERS = 150;
+
 /**
  * Creates a mock app settings object.
  * @returns The mock app settings object.
@@ -309,7 +311,7 @@ function createMockDatabase(noFriends = false): DatabaseProps {
   db.config = createMockConfig();
 
   // Data that varies across users
-  const mockUserIDs = randUserIDs({length: 150});
+  const mockUserIDs = randUserIDs({length: N_MOCK_USERS});
 
   mockUserIDs.forEach(userID => {
     const userDrinkingSessions = randDrinkingSessionList({
