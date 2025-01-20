@@ -284,7 +284,6 @@ function FormProvider(
     onSubmit,
     onValidate,
     shouldTrimValues,
-    includeSafeAreaPaddingBottom,
   ]);
 
   // Keep track of the focus state of the current screen.

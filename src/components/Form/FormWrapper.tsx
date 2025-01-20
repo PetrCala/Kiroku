@@ -8,7 +8,7 @@ import type {
   ViewStyle,
 } from 'react-native';
 import {Keyboard} from 'react-native';
-import type {OnyxEntry} from 'react-native-onyx';
+import {useOnyx} from 'react-native-onyx';
 import FormAlertWithSubmitButton from '@components/FormAlertWithSubmitButton';
 import FormElement from '@components/FormElement';
 import SafeAreaConsumer from '@components/SafeAreaConsumer';
@@ -17,18 +17,13 @@ import ScrollView from '@components/ScrollView';
 import ScrollViewWithContext from '@components/ScrollViewWithContext';
 import useThemeStyles from '@hooks/useThemeStyles';
 import * as ErrorUtils from '@libs/ErrorUtils';
+import type {OnyxFormKey} from '@src/ONYXKEYS';
 import type {Form} from '@src/types/form';
 import type ChildrenProps from '@src/types/utils/ChildrenProps';
 import {isEmptyObject} from '@src/types/utils/EmptyObject';
 import type {FormInputErrors, FormProps, InputRefs} from './types';
 
-type FormWrapperOnyxProps = {
-  /** Contains the form state that must be accessed outside the component */
-  formState: OnyxEntry<Form>;
-};
-
 type FormWrapperProps = ChildrenProps &
-  FormWrapperOnyxProps &
   FormProps & {
     /** Submit button styles */
     submitButtonStyles?: StyleProp<ViewStyle>;
@@ -55,7 +50,6 @@ type FormWrapperProps = ChildrenProps &
 function FormWrapper({
   onSubmit,
   children,
-  formState,
   errors,
   inputRefs,
   submitButtonText,
@@ -77,6 +71,7 @@ function FormWrapper({
   const styles = useThemeStyles();
   const formRef = useRef<RNScrollView>(null);
   const formContentRef = useRef<View>(null);
+  const [formState] = useOnyx<OnyxFormKey, Form>(`${formID}`);
   const errorMessage = useMemo(
     () => (formState ? ErrorUtils.getLatestErrorMessage(formState) : undefined),
     [formState],

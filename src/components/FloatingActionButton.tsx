@@ -17,9 +17,7 @@ import Svg, {Path} from 'react-native-svg';
 import useTheme from '@hooks/useTheme';
 import useThemeStyles from '@hooks/useThemeStyles';
 import variables from '@styles/variables';
-import * as KirokuIcons from './Icon/KirokuIcons';
 import {PressableWithoutFeedback} from './Pressable';
-import Icon from './Icon';
 
 const AnimatedPath = Animated.createAnimatedComponent(Path);
 AnimatedPath.displayName = 'AnimatedPath';
@@ -74,6 +72,7 @@ function FloatingActionButton(
   const buttonRef = ref;
 
   useEffect(() => {
+    // eslint-disable-next-line react-compiler/react-compiler
     sharedValue.value = withTiming(isActive ? 1 : 0, {
       duration: 340,
       easing: Easing.inOut(Easing.ease),
