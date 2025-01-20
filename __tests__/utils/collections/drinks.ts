@@ -36,7 +36,15 @@ type RandDrinksListParams = {
  *
  * randDrinksList({from: 1737379183, length: 20})
  */
-function randDrinksList({from, to, length}: RandDrinksListParams): DrinksList {
+function randDrinksList({
+  from,
+  to,
+  length = 5,
+}: RandDrinksListParams): DrinksList {
+  if (length <= 0) {
+    return {};
+  }
+
   const timestampFrom = from ?? randPastDate().getTime();
   const timestampTo = to ?? new Date().getTime();
 
