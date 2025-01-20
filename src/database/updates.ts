@@ -1,7 +1,15 @@
 import type {Diff, DiffArray} from 'deep-diff';
 import {diff} from 'deep-diff';
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
+// This module is a temporary one, so we choose to skip over typescript for now until the API is fully in-place
+/* eslint-disable 
+@typescript-eslint/no-unsafe-assignment, 
+@typescript-eslint/no-explicit-any, 
+@typescript-eslint/no-unsafe-member-access, 
+@typescript-eslint/no-unsafe-argument,
+no-continue
+*/
+
 type FirebaseUpdates<T = any> = Record<string, T>;
 
 /**
@@ -22,7 +30,7 @@ function differencesToUpdates<T>(differences: Array<Diff<T, T>>): Partial<T> {
       return;
     }
 
-    let current: any = updates;
+    let current: FirebaseUpdates = updates;
 
     for (let i = 0; i < path.length - 1; i++) {
       const key = path[i];
@@ -36,13 +44,18 @@ function differencesToUpdates<T>(differences: Array<Diff<T, T>>): Partial<T> {
 
     switch (difference.kind) {
       case 'N': // New property added
-      case 'E': // Property edited
+      case 'E': {
+        // Property edited
         current[lastKey] = difference.rhs;
         break;
-      case 'D': // Property deleted
+      }
+      case 'D': {
+        // Property deleted
         current[lastKey] = null; // Or handle deletion as needed
         break;
-      case 'A': // Array change
+      }
+      case 'A': {
+        // Array change
         if (!current[lastKey]) {
           current[lastKey] = [];
         }
@@ -56,6 +69,7 @@ function differencesToUpdates<T>(differences: Array<Diff<T, T>>): Partial<T> {
           current[lastKey][arrayIndex] = null; // Or remove the element
         }
         break;
+      }
       default:
         break;
     }
@@ -125,6 +139,7 @@ function computeFirebaseUpdates<T>(
   rhs: T,
   basePath = '',
 ): FirebaseUpdates {
+  // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
   const differences = diff(lhs, rhs)!;
   if (!differences) {
     return {};
