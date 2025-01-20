@@ -14,7 +14,7 @@ import createCollection from './createCollection';
  */
 function randDrinks(): Drinks {
   return {
-    [rand(Object.keys(CONST.DRINKS.KEYS))]: randNumber({min: 1, max: 3}),
+    [rand(Object.values(CONST.DRINKS.KEYS))]: randNumber({min: 1, max: 3}),
   };
 }
 
