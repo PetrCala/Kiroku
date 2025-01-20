@@ -886,6 +886,22 @@ const styles = (theme: ThemeColors) =>
       backgroundColor: theme.cardBG,
     },
 
+    drinkTypesViewTab: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'center',
+      height: variables.sessionDrinksTabHeight,
+      ...spacing.mh3,
+    },
+
+    drinkTypesViewIconContainer: {
+      alignItems: 'center',
+      justifyContent: 'center',
+      width: variables.componentSizeSmall,
+      height: variables.componentSizeSmall,
+      ...spacing.mh1,
+    },
+
     defaultModalContainer: {
       backgroundColor: theme.componentBG,
       borderColor: theme.transparent,

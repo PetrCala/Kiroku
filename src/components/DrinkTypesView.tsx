@@ -1,4 +1,4 @@
-import {StyleSheet, View} from 'react-native';
+import {View} from 'react-native';
 import type {DrinkingSession, DrinkKey} from '@src/types/onyx';
 import useThemeStyles from '@hooks/useThemeStyles';
 import useLocalize from '@hooks/useLocalize';
@@ -14,7 +14,7 @@ import SessionDrinksInputWindow from './Buttons/SessionDrinksInputWindow';
 import Button from './Button';
 import Text from './Text';
 
-export type DrinkTypesViewProps = {
+type DrinkTypesViewProps = {
   /** The session to render */
   session: DrinkingSession;
 };
@@ -46,8 +46,13 @@ function DrinkTypesView({session}: DrinkTypesViewProps) {
   };
 
   return (
-    <View style={localStyles.mainContainer}>
-      <View style={[localStyles.tab, styles.borderColorTheme]}>
+    <View style={[styles.w100, styles.pb1]}>
+      <View
+        style={[
+          styles.drinkTypesViewTab,
+          styles.borderTop,
+          styles.borderColorTheme,
+        ]}>
         <Text style={styles.headerText}>
           {translate('liveSessionScreen.drinksConsumed')}
         </Text>
@@ -60,8 +65,16 @@ function DrinkTypesView({session}: DrinkTypesViewProps) {
           const iconSize = drinkKey === CONST.DRINKS.KEYS.SMALL_BEER ? 22 : 28;
 
           return (
-            <View key={drink.key} style={localStyles.sessionDrinkContainer}>
-              <View style={localStyles.iconContainer}>
+            <View
+              key={drink.key}
+              style={[
+                styles.pv1,
+                styles.mh3,
+                styles.flexRow,
+                styles.justifyContentCenter,
+                styles.alignItemsCenter,
+              ]}>
+              <View style={styles.drinkTypesViewIconContainer}>
                 <Icon
                   fill={theme.text}
                   src={iconSource}
@@ -96,36 +109,4 @@ function DrinkTypesView({session}: DrinkTypesViewProps) {
 }
 
 export default DrinkTypesView;
-
-// eslint-disable-next-line @typescript-eslint/no-use-before-define
-const localStyles = StyleSheet.create({
-  mainContainer: {
-    width: '100%',
-    paddingBottom: 4,
-  },
-  tab: {
-    flexDirection: 'row',
-    justifyContent: 'center',
-    alignItems: 'center',
-    height: 50,
-    borderTopWidth: 1,
-    marginHorizontal: 12,
-  },
-  sessionDrinkContainer: {
-    paddingTop: 4,
-    paddingBottom: 4,
-    marginLeft: 12,
-    marginRight: 12,
-    flexDirection: 'row',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  iconContainer: {
-    width: 32,
-    height: 32,
-    marginLeft: 4,
-    marginRight: 4,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-});
+export type {DrinkTypesViewProps};
