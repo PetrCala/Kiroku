@@ -1,6 +1,6 @@
 import {useState, useRef, useCallback, useEffect} from 'react';
 import {Alert} from 'react-native';
-import {mergeUpdates} from '@database/baseFunctions';
+import {mergeUpdates} from '@database/updates';
 import useLocalize from './useLocalize';
 
 /**
