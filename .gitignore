@@ -68,6 +68,10 @@ workflow_tests/**.log
 .jest/
 .jest-cache
 
+# E2E test reports
+__tests__/e2e/results/
+.reassure
+
 # Bun
 #
 bun.lockb
