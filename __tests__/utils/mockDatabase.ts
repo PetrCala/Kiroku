@@ -1,5 +1,6 @@
 // import {randDrinkingSessionList} from './collections/drinkingSessions';
 import fs from 'fs';
+import {rand} from '@ngneat/falso';
 import type {
   AppSettings,
   Config,
@@ -18,13 +19,14 @@ import type {
   UserData,
   UserStatus,
   DrinksList,
-  DrinkingSessionList,
-  DrinkingSessionId,
   DrinksToUnits,
+  DrinkingSessionList,
 } from '@src/types/onyx';
 import {getRandomChoice, getRandomInt} from '@libs/Choice';
 import {
   formatDate,
+  getLastStartedSession,
+  getLastStartedSessionId,
   getRandomDrinksList,
   getZeroDrinksList,
 } from '@libs/DataHandling';
@@ -33,10 +35,7 @@ import CONST from '@src/CONST';
 import type {UserID} from '@src/types/onyx/OnyxCommon';
 import {addDays, subDays} from 'date-fns';
 import DateUtils from '@libs/DateUtils';
-
-function getMockSessionIDs(): string[] {
-  return ['mock-session-1', 'mock-session-2', 'mock-session-3'];
-}
+import {randDrinkingSessionList} from './collections/drinkingSessions';
 
 function getMockUserIDs(): UserID[] {
   return [
@@ -130,12 +129,14 @@ function createMockFeedback(): Feedback {
 }
 
 function createMockUserStatus(
-  latestSessionId?: string,
-  latestSession?: DrinkingSession,
+  drinkingSessions: DrinkingSessionList,
 ): UserStatus {
   const mockUserStatus: UserStatus = {
     last_online: Date.now(),
   };
+  const latestSessionId = getLastStartedSessionId(drinkingSessions);
+  const latestSession = getLastStartedSession(drinkingSessions);
+
   if (latestSessionId && latestSession) {
     mockUserStatus.latest_session_id = latestSessionId;
     mockUserStatus.latest_session = latestSession;
@@ -320,42 +321,22 @@ function createMockDatabase(noFriends = false): DatabaseProps {
 
   // Data that varies across users
   const mockUserIDs = getMockUserIDs();
-  const mockSessionIDs = getMockSessionIDs();
 
   mockUserIDs.forEach(userID => {
-    // Feedback
-    db.feedback[userID] = createMockFeedback();
-
-    // Drinking sessions
-    const mockSessionData: DrinkingSessionList = {};
-    let latestSessionId = '';
-    mockSessionIDs.forEach(sessionId => {
-      const fullSessionId: DrinkingSessionId = `${userID}-${sessionId}`;
-      const mockSession = createMockSession(new Date(), true);
-      mockSessionData[fullSessionId] = mockSession;
-      latestSessionId = fullSessionId;
+    const userDrinkingSessions = randDrinkingSessionList({
+      length: rand([0, 5, 10, 100, 500]),
+      shouldIncludeOngoing: true,
     });
-    mockSessionData[latestSessionId].ongoing = true;
-    db.user_drinking_sessions[userID] = mockSessionData;
-
-    // User status
-    db.user_status[userID] = createMockUserStatus(
-      latestSessionId,
-      mockSessionData[latestSessionId],
-    );
-
-    // User preferences
-    db.user_preferences[userID] = createMockPreferences();
-
-    // User unconfirmed data
-    db.user_unconfirmed_days[userID] = createMockUnconfirmedDays();
-
-    // User data
-    db.users[userID] = createMockUserData(userID, noFriends);
-
-    // Nicknames to user ids
-    const nickname = db.users[userID].profile.display_name;
+    const userData = createMockUserData(userID, noFriends);
+    const nickname = userData.profile.display_name;
     const nickname_key = cleanStringForFirebaseKey(nickname);
+
+    db.feedback[userID] = createMockFeedback();
+    db.user_drinking_sessions[userID] = userDrinkingSessions;
+    db.user_status[userID] = createMockUserStatus(userDrinkingSessions);
+    db.user_preferences[userID] = createMockPreferences();
+    db.user_unconfirmed_days[userID] = createMockUnconfirmedDays();
+    db.users[userID] = userData;
     db.nickname_to_id[nickname_key] = createMockNicknameToId(userID);
   });
 
@@ -375,7 +356,6 @@ function exportMockDatabase(): string {
 }
 
 export {
-  getMockSessionIDs,
   getMockUserIDs,
   createMockAppSettings,
   createMockMaintenance,
