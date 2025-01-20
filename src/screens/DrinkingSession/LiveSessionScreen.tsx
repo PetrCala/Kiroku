@@ -15,7 +15,7 @@ import useBatchedUpdates from '@hooks/useBatchedUpdates';
 import ScreenWrapper from '@components/ScreenWrapper';
 import FullScreenLoadingIndicator from '@components/FullscreenLoadingIndicator';
 import UserOfflineModal from '@components/UserOfflineModal';
-import {computeFirebaseUpdates} from '@database/baseFunctions';
+import {computeFirebaseUpdates} from '@database/updates';
 import type DeepValueOf from '@src/types/utils/DeepValueOf';
 import Navigation from '@libs/Navigation/Navigation';
 import type {Route} from '@src/ROUTES';

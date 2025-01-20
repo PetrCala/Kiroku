@@ -28,7 +28,7 @@ import {getUniqueId} from 'react-native-device-info';
 import {cleanStringForFirebaseKey} from '@libs/StringUtilsKiroku';
 import DBPATHS from '@src/DBPATHS';
 import {readDataOnce} from '@database/baseFunctions';
-import type {FirebaseUpdates} from '@database/baseFunctions';
+import type {FirebaseUpdates} from '@database/updates';
 import {getLastStartedSessionId} from '@libs/DataHandling';
 import * as Localize from '@libs/Localize';
 import type {SelectedTimezone, Timezone} from '@src/types/onyx/UserData';

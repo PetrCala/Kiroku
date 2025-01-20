@@ -13,7 +13,7 @@ import * as DSUtils from '@libs/DrinkingSessionUtils';
 import type {UserID} from '@src/types/onyx/OnyxCommon';
 import type {User} from 'firebase/auth';
 import CONST from '@src/CONST';
-import type {FirebaseUpdates} from '@database/baseFunctions';
+import type {FirebaseUpdates} from '@database/updates';
 import {generateDatabaseKey} from '@database/baseFunctions';
 import Onyx from 'react-native-onyx';
 import type {OnyxKey} from '@src/ONYXKEYS';
