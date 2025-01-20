@@ -1,24 +1,33 @@
-import {rand, randTimeZone, randBoolean, randText} from '@ngneat/falso';
+import {
+  rand,
+  randNumber,
+  randTimeZone,
+  randBoolean,
+  randText,
+  randPastDate,
+} from '@ngneat/falso';
 import CONST from '@src/CONST';
+import {addMilliseconds} from 'date-fns';
 import type {DrinkingSession, DrinkingSessionList} from '@src/types/onyx';
-import type {Timestamp} from '@src/types/onyx/OnyxCommon';
 import type {SelectedTimezone} from '@src/types/onyx/UserData';
 import {randDrinksList} from './drinks';
 import createCollection from './createCollection';
-import {getRandomTimestamp} from './timestamp';
 
 export default function randDrinkingSession(
-  index: Timestamp,
+  index: number,
   isOngoing?: boolean,
 ): DrinkingSession {
-  const startTime = index;
-  const endTime = getRandomTimestamp(startTime, new Date().getTime()); // between start and now
+  const startTime = randPastDate().getTime();
+  const endTime = addMilliseconds(
+    startTime,
+    randNumber({min: 0, max: 8 * 60 * 60 * 1000}), // Up to 8 hours
+  ).getTime();
   const sessionType = isOngoing
     ? CONST.SESSION.TYPES.LIVE
     : rand(Object.values(CONST.SESSION.TYPES));
 
   return {
-    id: index.toString(),
+    id: startTime.toString(),
     ...(isOngoing
       ? {
           ongoing: true,
