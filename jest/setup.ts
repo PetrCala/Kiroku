@@ -9,6 +9,8 @@ import setupMockImages from './setupMockImages';
 mockConsole();
 setupMockImages();
 
+/* eslint-disable @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access */
+
 // Fix missing encoders in the node environment
 global.TextEncoder = require('util').TextEncoder;
 global.TextDecoder = require('util').TextDecoder;
@@ -40,8 +42,8 @@ jest.mock('react-native-onyx/dist/storage', () => mockStorage);
 jest.mock('react-native/Libraries/EventEmitter/NativeEventEmitter');
 
 // Turn off the console logs for timing events. They are not relevant for unit tests and create a lot of noise
-jest.spyOn(console, 'debug').mockImplementation((...params) => {
-  if (params[0].indexOf('Timing:') === 0) {
+jest.spyOn(console, 'debug').mockImplementation((...params: string[]) => {
+  if (params.at(0)?.startsWith('Timing:')) {
     return;
   }
 

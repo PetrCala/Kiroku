@@ -118,8 +118,8 @@ function CustomStatusBarAndBackground({
           currentRoute.params.backgroundColor;
 
         // It's possible for backgroundColorFromRoute to be empty string, so we must use "||" to fallback to backgroundColorFallback.
-        // eslint-disable-next-line @typescript-eslint/prefer-nullish-coalescing
         currentScreenBackgroundColor =
+          // eslint-disable-next-line @typescript-eslint/prefer-nullish-coalescing
           backgroundColorFromRoute || pageTheme.backgroundColor;
       }
 
