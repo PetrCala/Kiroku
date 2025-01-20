@@ -1,4 +1,3 @@
-import PressableWithAnimation from '@components/Buttons/PressableWithAnimation';
 import {useFirebase} from '@context/global/FirebaseContext';
 import * as Profile from '@userActions/Profile';
 import useProfileList from '@hooks/useProfileList';
@@ -17,6 +16,7 @@ import {isEmptyObject} from '@src/types/utils/EmptyObject';
 import {sleep} from '@libs/TimeUtils';
 import useThemeStyles from '@hooks/useThemeStyles';
 import FlatList from '@components/FlatList';
+import {PressableWithFeedback} from '@components/Pressable';
 import FlexibleLoadingIndicator from '@components/FlexibleLoadingIndicator';
 import {useDatabaseData} from '@context/global/DatabaseDataContext';
 import useLocalize from '@hooks/useLocalize';
@@ -164,9 +164,9 @@ function UserListComponent({
       }
 
       return (
-        <PressableWithAnimation
+        <PressableWithFeedback
           key={`${index}-user-button`}
-          style={[]}
+          accessibilityLabel={`${index}-user-button`}
           onPress={() => navigateToProfile(userID)}>
           <UserOverview
             key={`${index}-user-overview`}
@@ -175,7 +175,7 @@ function UserListComponent({
             userStatusData={userStatusData}
             timezone={userData?.timezone}
           />
-        </PressableWithAnimation>
+        </PressableWithFeedback>
       );
     },
     [profileList, userStatusList, userData?.timezone],
