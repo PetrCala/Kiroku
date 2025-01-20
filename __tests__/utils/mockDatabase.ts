@@ -1,3 +1,4 @@
+// import {randDrinkingSessionList} from './collections/drinkingSessions';
 import fs from 'fs';
 import type {
   AppSettings,
