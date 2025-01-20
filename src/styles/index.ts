@@ -1843,6 +1843,16 @@ const styles = (theme: ThemeColors) =>
           direction === CONST.DIRECTION.LEFT ? 'flex-start' : 'flex-end',
       }) satisfies ViewStyle,
 
+    sessionDrinksInputContainer: (shouldHighlight: boolean) =>
+      ({
+        backgroundColor: shouldHighlight ? theme.appColor : theme.cardBG,
+        alignItems: 'center',
+        justifyContent: 'center',
+        borderRadius: variables.borderRadiusSmall,
+        width: variables.sessionDrinksInputWindowSize,
+        height: variables.sessionDrinksInputWindowSize,
+      }) satisfies ViewStyle,
+
     shortTermsBorder: {
       borderWidth: 1,
       borderColor: theme.border,
