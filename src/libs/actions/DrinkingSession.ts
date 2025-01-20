@@ -61,11 +61,17 @@ Onyx.connect({
  * @param newData The new data to set
  */
 async function updateLocalData(
-  sessionId: DrinkingSessionId,
-  newData: DrinkingSession | null,
   onyxKey: OnyxKey,
+  newData: DrinkingSession | null,
+  sessionId?: DrinkingSessionId,
 ): Promise<void> {
-  const dataToSet = newData ? {id: sessionId, ...newData} : null;
+  let dataToSet: DrinkingSession | null = null;
+  if (newData) {
+    if (!sessionId) {
+      throw new Error('You must specify the session ID.');
+    }
+    dataToSet = {id: sessionId, ...newData};
+  }
   await Onyx.set(onyxKey, dataToSet);
 }
 
@@ -121,9 +127,9 @@ async function syncLocalLiveSessionData(
     const newData = drinkingSessionData[ongoingSessionId];
     if (newData) {
       await updateLocalData(
-        ongoingSessionId,
-        newData,
         ONYXKEYS.ONGOING_SESSION_DATA,
+        newData,
+        ongoingSessionId,
       );
     }
   } else {
@@ -369,7 +375,7 @@ async function updateSessionDate(
   const onyxKey = shouldUpdateLiveSessionData
     ? ONYXKEYS.ONGOING_SESSION_DATA
     : ONYXKEYS.EDIT_SESSION_DATA;
-  await updateLocalData(sessionId, modifiedSession, onyxKey);
+  await updateLocalData(onyxKey, modifiedSession, sessionId);
 }
 
 /** Generate a new key for a drinking session */
@@ -411,7 +417,7 @@ async function getNewSessionToEdit(
   });
 
   if (shouldUpdateLocalData) {
-    await updateLocalData(newSessionId, newSession, ONYXKEYS.EDIT_SESSION_DATA);
+    await updateLocalData(ONYXKEYS.EDIT_SESSION_DATA, newSession, newSessionId);
   }
 
   return newSession;
@@ -450,7 +456,7 @@ async function updateLocalSessionDataAndNavigate(
     throw new Error(Localize.translateLocal('drinkingSession.error.missingId'));
   }
   if (session) {
-    await updateLocalData(sessionId, session, onyxKey);
+    await updateLocalData(onyxKey, session, sessionId);
   }
   Navigation.navigate(route);
 }

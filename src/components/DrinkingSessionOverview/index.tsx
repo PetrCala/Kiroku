@@ -14,7 +14,6 @@ import useLocalize from '@hooks/useLocalize';
 import useThemeStyles from '@hooks/useThemeStyles';
 import Text from '@components/Text';
 import DateUtils from '@libs/DateUtils';
-import Onyx from 'react-native-onyx';
 import ONYXKEYS from '@src/ONYXKEYS';
 import {PressableWithFeedback} from '@components/Pressable';
 import type DrinkingSessionOverviewProps from './types';
@@ -41,8 +40,14 @@ function DrinkingSessionOverview({
         );
         return;
       }
-      await Onyx.set(ONYXKEYS.ONGOING_SESSION_DATA, session);
+      await DS.updateLocalData(ONYXKEYS.ONGOING_SESSION_DATA, session);
       DS.navigateToOngoingSessionScreen();
+    })();
+  };
+
+  const onNavigateToEditSession = () => {
+    (async () => {
+      await DS.navigateToEditSessionScreen(sessionId, session);
     })();
   };
 
@@ -66,7 +71,7 @@ function DrinkingSessionOverview({
         sessionId,
       })}
       style={[styles.flexRow, styles.border, styles.mh1, styles.mt1]}
-      onPress={() => onSessionButtonPress(sessionId, session)}>
+      onPress={() => onSessionButtonPress()}>
       <View
         style={[styles.drinkingSessionOverviewTabIndicator(sessionColor)]}
       />
@@ -90,7 +95,7 @@ function DrinkingSessionOverview({
         {session?.ongoing ? (
           <Button
             danger
-            onPress={() => onSessionButtonPress(sessionId, session)}
+            onPress={() => onSessionButtonPress()}
             text={translate('dayOverviewScreen.ongoing')}
           />
         ) : (
@@ -99,7 +104,7 @@ function DrinkingSessionOverview({
               large
               style={styles.bgTransparent}
               icon={KirokuIcons.Edit}
-              onPress={() => DS.navigateToEditSessionScreen(sessionId, session)} // Use keyextractor to load id here
+              onPress={onNavigateToEditSession}
             />
           )
         )}
