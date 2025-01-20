@@ -39,7 +39,7 @@ export default function randDrinkingSession(
     start_time: startTime,
     drinks: randDrinksList({from: startTime, length: rand([1, 2, 3, 4, 5])}),
     blackout: randChanceBoolean({chanceTrue: 0.05}),
-    note: randParagraph(),
+    note: randChanceBoolean({chanceTrue: 0.8}) ? randParagraph() : '',
     timezone: randTimeZone() as SelectedTimezone,
     type: sessionType,
   };
