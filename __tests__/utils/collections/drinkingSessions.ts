@@ -2,8 +2,8 @@ import {
   rand,
   randNumber,
   randTimeZone,
-  randBoolean,
-  randText,
+  randChanceBoolean,
+  randParagraph,
   randPastDate,
 } from '@ngneat/falso';
 import CONST from '@src/CONST';
@@ -36,9 +36,9 @@ export default function randDrinkingSession(
           end_time: endTime,
         }),
     start_time: startTime,
-    drinks: randDrinksList({from: startTime, length: rand([1, 3, 5])}),
-    blackout: randBoolean(),
-    note: randText(),
+    drinks: randDrinksList({from: startTime, length: rand([1, 2, 3, 4, 5])}),
+    blackout: randChanceBoolean({chanceTrue: 0.05}),
+    note: randParagraph(),
     timezone: randTimeZone() as SelectedTimezone,
     type: sessionType,
   };
