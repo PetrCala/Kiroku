@@ -17,6 +17,10 @@ function DayComponent({
   const StyleUtils = useStyleUtils();
   const isDisabled = state === 'disabled';
   const isToday = state === 'today';
+  const unitsText =
+    !isDisabled && units !== undefined && units > 0
+      ? (Number.isInteger(units) ? units : units.toFixed(1)).toString()
+      : '';
 
   return (
     <PressableWithoutFeedback
@@ -41,7 +45,7 @@ function DayComponent({
         )}>
         <Text
           style={StyleUtils.getSessionsCalendarDayMarkingTextStyle(marking)}>
-          {!isDisabled ? units : ''}
+          {unitsText}
         </Text>
       </View>
     </PressableWithoutFeedback>
