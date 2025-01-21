@@ -40,11 +40,12 @@ function FullScreenModal({
 
   return (
     <Modal
-      type={CONST.MODAL.MODAL_TYPE.CENTERED_UNSWIPEABLE}
+      type={CONST.MODAL.MODAL_TYPE.CENTERED}
       onClose={handleCloseModal}
       isVisible={modalVisible}
-      shouldUseModalPaddingStyle={false}
       fullscreen
+      shouldUseModalPaddingStyle={false}
+      swipeDirection={['up', 'down']}
       animationIn="fadeIn"
       animationOut="fadeOut">
       <View style={[styles.fullScreenCenteredContent, style]}>
