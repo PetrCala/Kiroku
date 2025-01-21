@@ -201,6 +201,7 @@ function UserListComponent({
       data={displayUserArray}
       renderItem={renderItem}
       style={[]}
+      keyboardShouldPersistTaps="always"
       contentContainerStyle={[styles.pt1]}
       onEndReached={onEndReached}
       onEndReachedThreshold={0.75}
