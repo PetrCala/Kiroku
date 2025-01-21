@@ -802,7 +802,7 @@ export default {
   },
   dayOverviewScreen: {
     enterEditMode: 'Režim úprav',
-    exitEditMode: 'Ukončit úpravy',
+    exitEditMode: 'Ukončit úprav',
     noDrinkingSessions: 'Žádné alkoholové relace',
     addSessionExplained: 'Přidat relaci (plovoucí tlačítko)',
     sessionWindow: ({sessionId}: SessionWindowIdParams) =>
