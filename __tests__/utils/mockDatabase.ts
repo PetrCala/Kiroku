@@ -26,6 +26,7 @@ import {randDrinkingSessionList} from './collections/drinkingSessions';
 import {randUserData} from './collections/user';
 import {randUserIDs} from './rand';
 import {randFeedbackList} from './collections/feedback';
+// import {randConnections} from './connections';
 
 const N_MOCK_USERS = 150;
 
@@ -184,6 +185,7 @@ function createMockFriendRequests(userID: string): FriendRequestList {
 function createMockDatabase(): DatabaseProps {
   const db = initializeEmptyMockDatabase();
   const mockUserIDs = randUserIDs({length: N_MOCK_USERS});
+  // const mockConnections = randConnections({userIds: mockUserIDs});
 
   db.config = createMockConfig();
   db.feedback = randFeedbackList({
