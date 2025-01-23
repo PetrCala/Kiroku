@@ -4,7 +4,6 @@ import type {
   AppSettings,
   Config,
   DatabaseProps,
-  Feedback,
   FriendRequestList,
   FriendRequestStatus,
   Maintenance,
@@ -98,18 +97,6 @@ function createMockConfig(): Config {
     maintenance: createMockMaintenance(),
   };
   return mockConfig;
-}
-
-/** Create a mock feedback object
- *
- * @returns Feedback object.
- */
-function createMockFeedback(): Feedback {
-  return {
-    submit_time: Date.now(),
-    text: 'Mock feedback',
-    user_id: 'mock-user-id',
-  };
 }
 
 function createMockUserStatus(
@@ -263,7 +250,6 @@ export {
   createMockMaintenance,
   initializeEmptyMockDatabase,
   createMockConfig,
-  createMockFeedback,
   createMockUserStatus,
   createMockNicknameToId,
   createMockPreferences,
