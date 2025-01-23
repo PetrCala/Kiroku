@@ -11,16 +11,14 @@ import type {
   NicknameToId,
   Preferences,
   Profile,
-  UnconfirmedDays,
   UnitsToColors,
   UserData,
   UserStatus,
   DrinksToUnits,
   DrinkingSessionList,
 } from '@src/types/onyx';
-import {getRandomChoice, getRandomInt} from '@libs/Choice';
+import {getRandomInt} from '@libs/Choice';
 import {
-  formatDate,
   getLastStartedSession,
   getLastStartedSessionId,
 } from '@libs/DataHandling';
@@ -160,35 +158,12 @@ function createMockPreferences(): Preferences {
     wine: 1,
   };
   const mockPreferences: Preferences = {
-    first_day_of_week: getRandomChoice(['Monday', 'Sunday']),
+    first_day_of_week: rand(['Monday', 'Sunday']),
     units_to_colors: mockUnitsToColors,
     drinks_to_units: mockDrinksToUnitsData,
-    theme: getRandomChoice([CONST.THEME.DARK, CONST.THEME.LIGHT]),
+    theme: rand([CONST.THEME.DARK, CONST.THEME.LIGHT]),
   };
   return mockPreferences;
-}
-
-/** Create and return an unconfirmed days type object.
- *
- * @returns Unconfirmed days object
- */
-function createMockUnconfirmedDays(): UnconfirmedDays {
-  const data: UnconfirmedDays = {};
-  const today = new Date();
-
-  // Randomly choose the number of entries to generate
-  const numberOfEntries = getRandomInt(1, 10);
-
-  for (let i = 0; i < numberOfEntries; i++) {
-    // Get a random date between today and 365 days ago (1 year ago).
-    const randomPastDate = new Date(
-      today.getTime() - getRandomInt(0, 365) * 24 * 60 * 60 * 1000,
-    );
-    const dateKey = formatDate(randomPastDate);
-    data[dateKey] = true;
-  }
-
-  return data;
 }
 
 /** Create and return mock friend request data. Is created at random.
@@ -264,7 +239,6 @@ function createMockDatabase(noFriends = false): DatabaseProps {
     db.user_drinking_sessions[userID] = userDrinkingSessions;
     db.user_status[userID] = createMockUserStatus(userDrinkingSessions);
     db.user_preferences[userID] = createMockPreferences();
-    db.user_unconfirmed_days[userID] = createMockUnconfirmedDays();
     db.users[userID] = userData;
     db.nickname_to_id[nickname_key] = createMockNicknameToId(userID);
   });
@@ -293,7 +267,6 @@ export {
   createMockUserStatus,
   createMockNicknameToId,
   createMockPreferences,
-  createMockUnconfirmedDays,
   createMockFriendRequests,
   createMockUserData,
   createMockDatabase,
