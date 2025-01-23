@@ -9,9 +9,7 @@ import type {
   Maintenance,
   NicknameToId,
   Preferences,
-  Profile,
   UnitsToColors,
-  UserData,
   UserStatus,
   DrinksToUnits,
   DrinkingSessionList,
@@ -25,7 +23,7 @@ import {cleanStringForFirebaseKey} from '@libs/StringUtilsKiroku';
 import CONST from '@src/CONST';
 import INTEGRATION_CONFIG from './integrationConfig';
 import {randDrinkingSessionList} from './collections/drinkingSessions';
-import {randUserIDs} from './collections/userAccount';
+import {randUserData, randUserIDs} from './collections/user';
 import {randFeedbackList} from './collections/feedback';
 
 const N_MOCK_USERS = 150;
@@ -175,28 +173,6 @@ function createMockFriendRequests(userID: string): FriendRequestList {
   return mockRequestData;
 }
 
-/** Create and return a mock user data object
- * @param userID ID of the mock user
- * @param index Index of the mock user
- * @param noFriends If set to true, no friends or friend requests will be created.
- * @returns Mock user data
- */
-function createMockUserData(userID: string, noFriends = false): UserData {
-  const mockProfile: Profile = {
-    display_name: 'mock-user',
-    photo_url: '',
-  };
-  const mockUserData: UserData = {
-    profile: mockProfile,
-    role: 'mock-user',
-  };
-  if (!noFriends) {
-    // mockUserData['friends'] = // TODO
-    mockUserData.friend_requests = createMockFriendRequests(userID);
-  }
-  return mockUserData;
-}
-
 /** Create and return an object that will mock
  * the firebase database. This object has the
  * type Database.
@@ -204,7 +180,7 @@ function createMockUserData(userID: string, noFriends = false): UserData {
  * @param noFriends If set to true, no friends or friend requests will be created.
  * @returns A mock object of the firebase database
  */
-function createMockDatabase(noFriends = false): DatabaseProps {
+function createMockDatabase(): DatabaseProps {
   const db = initializeEmptyMockDatabase();
   const mockUserIDs = randUserIDs({length: N_MOCK_USERS});
 
@@ -219,7 +195,7 @@ function createMockDatabase(noFriends = false): DatabaseProps {
       length: rand([0, 5, 10, 100, 500]),
       shouldIncludeOngoing: true,
     });
-    const userData = createMockUserData(userID, noFriends);
+    const userData = randUserData();
     const nickname = userData.profile.display_name;
     const nickname_key = cleanStringForFirebaseKey(nickname);
 
@@ -254,7 +230,6 @@ export {
   createMockNicknameToId,
   createMockPreferences,
   createMockFriendRequests,
-  createMockUserData,
   createMockDatabase,
   exportMockDatabase,
 };
