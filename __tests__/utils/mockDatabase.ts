@@ -33,6 +33,7 @@ import {cleanStringForFirebaseKey} from '@libs/StringUtilsKiroku';
 import CONST from '@src/CONST';
 import {addDays, subDays} from 'date-fns';
 import DateUtils from '@libs/DateUtils';
+import INTEGRATION_CONFIG from './integrationConfig';
 import {randDrinkingSessionList} from './collections/drinkingSessions';
 import {randUserIDs} from './collections/userAccount';
 
@@ -341,7 +342,7 @@ function createMockDatabase(noFriends = false): DatabaseProps {
  */
 function exportMockDatabase(): string {
   const mockDatabase = createMockDatabase();
-  const filePath = './mockDatabase.json';
+  const filePath = INTEGRATION_CONFIG.OUTPUT_FILE_DB;
   fs.writeFileSync(filePath, JSON.stringify(mockDatabase));
   return filePath;
 }
