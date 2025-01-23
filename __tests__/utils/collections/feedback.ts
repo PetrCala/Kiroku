@@ -2,8 +2,7 @@ import {rand, randParagraph, randPastDate} from '@ngneat/falso';
 import ONYXKEYS from '@src/ONYXKEYS';
 import type {Feedback, FeedbackList} from '@src/types/onyx';
 import type {UserID} from '@src/types/onyx/OnyxCommon';
-import {randUserID, randUserIDs} from './user';
-import {randDbKey} from '../rand';
+import {randDbKey, randUserID, randUserIDs} from '../rand';
 import createCollection from './createCollection';
 
 type RandFeedbackParams = {
