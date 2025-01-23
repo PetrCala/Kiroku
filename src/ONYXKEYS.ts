@@ -160,6 +160,8 @@ const ONYXKEYS = {
     DOWNLOAD: 'download_',
     DRINKS: 'drinks_',
     DRINKING_SESSION: 'drinkingSession_',
+    FEEDBACK: 'feedback_',
+    BUG: 'bug_',
     //     POLICY: 'policy_',
     //     POLICY_TAGS: 'policyTags_',
     //     POLICY_RECENTLY_USED_TAGS: 'nvp_recentlyUsedTags_',
@@ -241,6 +243,8 @@ type OnyxCollectionValuesMapping = {
   [ONYXKEYS.COLLECTION.DOWNLOAD]: OnyxTypes.Download;
   [ONYXKEYS.COLLECTION.DRINKS]: OnyxTypes.Drinks;
   [ONYXKEYS.COLLECTION.DRINKING_SESSION]: OnyxTypes.DrinkingSession;
+  [ONYXKEYS.COLLECTION.FEEDBACK]: OnyxTypes.Feedback;
+  [ONYXKEYS.COLLECTION.BUG]: OnyxTypes.Bug;
   //   [ONYXKEYS.COLLECTION.POLICY]: OnyxTypes.Policy;
   //   [ONYXKEYS.COLLECTION.POLICY_DRAFTS]: OnyxTypes.Policy;
   //     .POLICY_RECENTLY_USED_CATEGORIES]: OnyxTypes.RecentlyUsedCategories;
