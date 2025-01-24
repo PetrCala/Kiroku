@@ -22,24 +22,30 @@ function SendFriendRequestButton({
   const {translate} = useLocalize();
   const styles = useThemeStyles();
 
-  const handleSendRequestPress = async (): Promise<void> => {
-    try {
-      setIsLoading(true);
-      await sendFriendRequest(db, userFrom, userTo);
-      setIsLoading(false);
-    } catch (error) {
-      ErrorUtils.raiseAppError(ERRORS.USER.FRIEND_REQUEST_SEND_FAILED, error);
-    }
+  const handleSendRequestPress = () => {
+    (async (): Promise<void> => {
+      try {
+        setIsLoading(true);
+        await sendFriendRequest(db, userFrom, userTo);
+      } catch (error) {
+        ErrorUtils.raiseAppError(ERRORS.USER.FRIEND_REQUEST_SEND_FAILED, error);
+      } finally {
+        setIsLoading(false);
+      }
+    })();
   };
 
-  const handleAcceptFriendRequestPress = async (): Promise<void> => {
-    try {
-      setIsLoading(true);
-      await acceptFriendRequest(db, userFrom, userTo);
-      setIsLoading(false);
-    } catch (error) {
-      ErrorUtils.raiseAppError(ERRORS.USER.FRIEND_REQUEST_SEND_FAILED, error);
-    }
+  const handleAcceptFriendRequestPress = () => {
+    (async (): Promise<void> => {
+      try {
+        setIsLoading(true);
+        await acceptFriendRequest(db, userFrom, userTo);
+      } catch (error) {
+        ErrorUtils.raiseAppError(ERRORS.USER.FRIEND_REQUEST_SEND_FAILED, error);
+      } finally {
+        setIsLoading(false);
+      }
+    })();
   };
 
   const renderText = (translationKey: TranslationPaths) => {
@@ -52,12 +58,12 @@ function SendFriendRequestButton({
 
   const renderButton = (
     translationKey: TranslationPaths,
-    onPress: () => Promise<void>,
+    onPress: () => void,
   ) => {
     return (
       <Button
         add
-        onPress={() => onPress}
+        onPress={onPress}
         text={translate(translationKey)}
         isLoading={isLoading}
       />
@@ -65,20 +71,22 @@ function SendFriendRequestButton({
   };
 
   const renderContents = () => {
-    switch (true) {
-      case userFrom === userTo:
-        return renderText('searchResult.self');
-      case alreadyAFriend:
-        return renderText('searchResult.friend');
-      case requestStatus === CONST.FRIEND_REQUEST_STATUS.SENT:
-        return renderText('searchResult.sent');
-      case requestStatus === CONST.FRIEND_REQUEST_STATUS.RECEIVED:
-        return renderButton('searchResult.accept', () =>
-          handleAcceptFriendRequestPress(),
-        );
-      default:
-        return renderButton('searchResult.add', () => handleSendRequestPress());
+    if (userFrom === userTo) {
+      return renderText('searchResult.self');
     }
+    if (alreadyAFriend) {
+      return renderText('searchResult.friend');
+    }
+    if (requestStatus === CONST.FRIEND_REQUEST_STATUS.SENT) {
+      return renderText('searchResult.sent');
+    }
+    if (requestStatus === CONST.FRIEND_REQUEST_STATUS.RECEIVED) {
+      return renderButton(
+        'searchResult.accept',
+        handleAcceptFriendRequestPress,
+      );
+    }
+    return renderButton('searchResult.add', handleSendRequestPress);
   };
 
   return (
