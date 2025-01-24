@@ -103,7 +103,10 @@ function UserListComponent({
   useEffect(() => {
     async function fetchUsers() {
       if (!isNonEmptyArray(fullUserArray)) {
-        setUserStatusList({});
+        // Avoid infinite updates
+        if (!isEmptyObject(userStatusList)) {
+          setUserStatusList({});
+        }
         return;
       }
       const newUsers = fullUserArray.filter(userID => !userStatusList[userID]);
@@ -114,6 +117,7 @@ function UserListComponent({
       }
     }
     fetchUsers();
+    // }, [db, initialLoadSize, fullUserArray, userStatusList]);
   }, [db, initialLoadSize, fullUserArray, userStatusList]);
 
   // Update the display list when the user status list changes
