@@ -3,8 +3,8 @@ import {
   randNumber,
   randTimeZone,
   randChanceBoolean,
-  randParagraph,
   randPastDate,
+  randPhrase,
 } from '@ngneat/falso';
 import CONST from '@src/CONST';
 import {addMilliseconds} from 'date-fns';
@@ -39,7 +39,7 @@ export default function randDrinkingSession(
     start_time: startTime,
     drinks: randDrinksList({from: startTime, length: rand([1, 2, 3, 4, 5])}),
     blackout: randChanceBoolean({chanceTrue: 0.05}),
-    note: randChanceBoolean({chanceTrue: 0.8}) ? randParagraph() : '',
+    note: randChanceBoolean({chanceTrue: 0.8}) ? randPhrase() : '',
     timezone: randTimeZone() as SelectedTimezone,
     type: sessionType,
   };

@@ -206,7 +206,7 @@ function createMockDatabase({
 
   mockUserIDs.forEach(userID => {
     const userDrinkingSessions = randDrinkingSessionList({
-      length: rand([0, 5, 10, 100, 500]),
+      length: rand([0, 5, 10, 50, 100]),
       shouldIncludeOngoing: true,
     });
     const userData = randUserData();
