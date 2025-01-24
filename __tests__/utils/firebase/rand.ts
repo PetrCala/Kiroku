@@ -18,7 +18,7 @@ type RandUserIDParams = {
 };
 
 /** Generate a random user ID */
-function randUserID({chars = 20}: RandUserIDParams = {}): UserID {
+function randUserID({chars = 28}: RandUserIDParams = {}): UserID {
   return Array.from({length: chars}, () =>
     Math.floor(Math.random() * 36).toString(36),
   ).join('');
