@@ -4,7 +4,6 @@ import {
   randEmail,
   randPassword,
   randPastDate,
-  randUserName,
 } from '@ngneat/falso';
 import {randUserID} from './rand';
 
@@ -15,8 +14,7 @@ type FbUserAccount = {
   emailVerified: boolean;
   passwordHash: string;
   salt: string;
-  displayName: string;
-  photoUrl?: string;
+  displayName?: string;
   lastSignedInAt: string;
   createdAt: string;
   disabled?: boolean;
@@ -83,9 +81,6 @@ type RandUserAccountParams = {
 
   /** User password */
   password?: string;
-
-  /** Url of the user's photo */
-  photoUrl?: string;
 };
 
 /**
@@ -98,7 +93,6 @@ type RandUserAccountParams = {
 function randUserAccount({
   email,
   password,
-  photoUrl,
 }: RandUserAccountParams = {}): FbUserAccount {
   const fbHash = hashFirebasePassword(password ?? randPassword());
 
@@ -108,8 +102,6 @@ function randUserAccount({
     emailVerified: randBoolean(),
     passwordHash: fbHash.passwordHash,
     salt: fbHash.salt,
-    displayName: randUserName(),
-    photoUrl,
     lastSignedInAt: randPastDate().getTime().toString(),
     createdAt: randPastDate().getTime().toString(),
     disabled: false,
