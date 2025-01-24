@@ -120,9 +120,12 @@ function createMockUserStatus(
  *
  * @returns The mock object.
  */
-function createMockNicknameToId(userID: string): NicknameToId {
+function createMockNicknameToId(
+  userID: string,
+  nickname: string,
+): NicknameToId {
   const returnObject: NicknameToId = {
-    [userID]: 'mock nickname',
+    [userID]: nickname,
   };
   return returnObject;
 }
@@ -214,7 +217,7 @@ function createMockDatabase({
     db.user_status[userID] = createMockUserStatus(userDrinkingSessions);
     db.user_preferences[userID] = createMockPreferences();
     db.users[userID] = userData;
-    db.nickname_to_id[nickname_key] = createMockNicknameToId(userID);
+    db.nickname_to_id[nickname_key] = createMockNicknameToId(userID, nickname);
   });
 
   return db;
