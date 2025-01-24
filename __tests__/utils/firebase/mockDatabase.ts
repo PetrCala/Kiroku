@@ -21,11 +21,11 @@ import {
 } from '@libs/DataHandling';
 import {cleanStringForFirebaseKey} from '@libs/StringUtilsKiroku';
 import CONST from '@src/CONST';
-import INTEGRATION_CONFIG from './integrationConfig';
-import {randDrinkingSessionList} from './collections/drinkingSessions';
-import {randUserData} from './collections/user';
+import INTEGRATION_CONFIG from '../integrationConfig';
+import {randDrinkingSessionList} from '../collections/drinkingSessions';
+import {randUserData} from '../collections/user';
 import {randUserIDs} from './rand';
-import {randFeedbackList} from './collections/feedback';
+import {randFeedbackList} from '../collections/feedback';
 // import {randConnections} from './connections';
 
 const N_MOCK_USERS = 150;

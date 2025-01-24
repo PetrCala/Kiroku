@@ -1,5 +1,5 @@
-import {randUserIDs} from '../utils/rand';
-import {randConnections} from '../utils/connections';
+import {randUserIDs} from '../utils/firebase/rand';
+import {randConnections} from '../utils/firebase/connections';
 
 describe('randConnections', () => {
   it('throws if userIds array has fewer than 2 elements', () => {
