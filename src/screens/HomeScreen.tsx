@@ -189,7 +189,7 @@ function HomeScreen({route}: HomeScreenProps) {
             refreshTrigger={0}
           />
           <Text style={[styles.headerText, styles.textLarge, styles.ml3]}>
-            {user.displayName}
+            {userData?.profile?.display_name ?? ''}
           </Text>
         </Button>
       </View>
