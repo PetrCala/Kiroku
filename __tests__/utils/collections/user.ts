@@ -1,9 +1,4 @@
-import {
-  rand,
-  randChanceBoolean,
-  randPastDate,
-  randUserName,
-} from '@ngneat/falso';
+import {rand, randChanceBoolean, randPastDate, randUser} from '@ngneat/falso';
 import TIMEZONES from '@src/TIMEZONES';
 import type {Profile, UserData} from '@src/types/onyx';
 
@@ -15,9 +10,10 @@ import type {Profile, UserData} from '@src/types/onyx';
  * randProfile() // {display_name: "John Doe",...}
  */
 function randProfile(): Profile {
+  const user = randUser();
   return {
-    display_name: randUserName(),
-    photo_url: '',
+    display_name: user.username,
+    photo_url: user.img,
   };
 }
 
