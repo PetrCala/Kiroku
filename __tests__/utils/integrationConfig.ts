@@ -6,4 +6,5 @@ export default {
   OUTPUT_DIR,
 
   OUTPUT_FILE_DB: `${OUTPUT_DIR}/mockDb.json`,
+  OUTPUT_FILE_AUTH: `${OUTPUT_DIR}/mockAuth.json`,
 };
