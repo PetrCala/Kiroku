@@ -21,6 +21,7 @@ import {
 } from '@libs/DataHandling';
 import {cleanStringForFirebaseKey} from '@libs/StringUtilsKiroku';
 import CONST from '@src/CONST';
+import type {UserID} from '@src/types/onyx/OnyxCommon';
 import INTEGRATION_CONFIG from '../integrationConfig';
 import {randDrinkingSessionList} from '../collections/drinkingSessions';
 import {randUserData} from '../collections/user';
@@ -175,6 +176,11 @@ function createMockFriendRequests(userID: string): FriendRequestList {
   return mockRequestData;
 }
 
+type CreateMockDatabaseProps = {
+  /** An array of user IDs to use */
+  userIDs?: UserID[];
+};
+
 /** Create and return an object that will mock
  * the firebase database. This object has the
  * type Database.
@@ -182,9 +188,11 @@ function createMockFriendRequests(userID: string): FriendRequestList {
  * @param noFriends If set to true, no friends or friend requests will be created.
  * @returns A mock object of the firebase database
  */
-function createMockDatabase(): DatabaseProps {
+function createMockDatabase({
+  userIDs,
+}: CreateMockDatabaseProps = {}): DatabaseProps {
   const db = initializeEmptyMockDatabase();
-  const mockUserIDs = randUserIDs({length: N_MOCK_USERS});
+  const mockUserIDs = userIDs ?? randUserIDs({length: N_MOCK_USERS});
   // const mockConnections = randConnections({userIds: mockUserIDs});
 
   db.config = createMockConfig();
