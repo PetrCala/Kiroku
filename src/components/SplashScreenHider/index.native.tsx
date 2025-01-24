@@ -12,6 +12,7 @@ import * as KirokuIcons from '@components/Icon/KirokuIcons';
 import ImageSVG from '@components/ImageSVG';
 import useThemeStyles from '@hooks/useThemeStyles';
 import BootSplash from '@libs/BootSplash';
+import colors from '@src/styles/theme/colors';
 import type {
   SplashScreenHiderProps,
   SplashScreenHiderReturnType,
@@ -78,6 +79,7 @@ function SplashScreenHider({
         <ImageSVG
           contentFit="fill"
           style={{width: 100 * logoSizeRatio, height: 100 * logoSizeRatio}}
+          fill={colors.white}
           src={KirokuIcons.Logo}
         />
       </Reanimated.View>
