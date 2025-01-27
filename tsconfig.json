@@ -10,6 +10,7 @@
     "strict": true,
     "allowSyntheticDefaultImports": true,
     "incremental": true,
+    "noEmit": false,
     "baseUrl": ".",
     "rootDir": ".",
     "outDir": "dist",
