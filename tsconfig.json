@@ -11,6 +11,8 @@
     "allowSyntheticDefaultImports": true,
     "incremental": true,
     "baseUrl": ".",
+    "rootDir": ".",
+    "outDir": "dist",
     "paths": {
       "@assets/*": ["./assets/*"],
       "@auth/*": ["src/libs/auth/*"],

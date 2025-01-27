@@ -94,6 +94,7 @@ bun.lockb
 
 # Bundle artifact
 *.jsbundle
+tsconfig.tsbuildinfo
 
 # Ruby / CocoaPods
 **/Pods/
