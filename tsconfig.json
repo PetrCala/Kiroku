@@ -10,7 +10,7 @@
     "strict": true,
     "allowSyntheticDefaultImports": true,
     "incremental": true,
-    "noEmit": false,
+    "noEmit": false, // Allow CLI to read the compiled package
     "baseUrl": ".",
     "rootDir": ".",
     "outDir": "dist",
