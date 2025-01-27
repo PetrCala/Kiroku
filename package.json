@@ -41,7 +41,8 @@
     "transpile": "npx tsc --build functions",
     "deploy-functions": "firebase deploy --only functions --debug",
     "workflow-test": "./workflow_tests/scripts/runWorkflowTests.sh",
-    "bump": "./scripts/bumpVersion.sh"
+    "bump": "./scripts/bumpVersion.sh",
+    "build": "tsc"
   },
   "dependencies": {
     "@babel/plugin-proposal-private-methods": "^7.18.6",
@@ -230,6 +231,11 @@
     "react": "18.3.1",
     "react-dom": "18.3.1"
   },
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "files": [
+    "dist/**/*"
+  ],
   "expo": {
     "autolinking": {
       "exclude": [

@@ -11,6 +11,7 @@
     "allowSyntheticDefaultImports": true,
     "incremental": true,
     "noEmit": false, // Allow CLI to read the compiled package
+    "sourceMap": true,
     "baseUrl": ".",
     "rootDir": ".",
     "outDir": "dist",

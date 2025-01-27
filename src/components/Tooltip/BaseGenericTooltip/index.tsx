@@ -35,7 +35,7 @@ function BaseGenericTooltip({
   },
   shouldUseOverlay = false,
   onPressOverlay = () => {},
-}: BaseGenericTooltipProps) {
+}: BaseGenericTooltipProps): React.ReactNode {
   // The width of tooltip's inner content. Has to be undefined in the beginning
   // as a width of 0 will cause the content to be rendered of a width of 0,
   // which prevents us from measuring it correctly.
