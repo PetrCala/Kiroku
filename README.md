@@ -20,7 +20,7 @@
 - You can either [**download the app here**][qr link] or scan the QR code below:
 
 <div align="center">
-    <img src="https://petrcala.github.io/Kiroku/assets/images/kiroku-qr-code-with-logo.png" width="128" height="128" alt="image">
+    <img src="https://petrcala.github.io/Kiroku/assets/images/kiroku-qr-code.png" width="128" height="128" alt="image">
 </div>
 
 - [Deploying](#deploying)

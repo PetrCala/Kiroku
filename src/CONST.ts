@@ -58,7 +58,7 @@ const CONST = {
     OUT: 'out',
   },
   APP_DOWNLOAD_LINK: `${GH_PAGES_URL}/assets/html/qr-link.html`,
-  APP_QR_CODE_LINK: `${GH_PAGES_URL}/assets/images/kiroku-qr-code-with-logo.png`,
+  APP_QR_CODE_LINK: `${GH_PAGES_URL}/assets/images/kiroku-qr-code.png`,
   APP_URLS: {
     DEV: 'https://dev.kiroku.com',
     STAGING: 'https://staging.kiroku.com',
