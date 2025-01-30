@@ -123,7 +123,7 @@ function AppShareScreen({route}: AppShareScreenProps) {
             ]}>
             <View style={[styles.flexGrow1, styles.justifyContentCenter]}>
               <Image
-                source={KirokuIcons.QrCodeWithLogo}
+                source={KirokuIcons.KirokuQrCode}
                 style={[
                   StyleUtils.getQrCodeSizeStyle(
                     shouldUseNarrowLayout,
