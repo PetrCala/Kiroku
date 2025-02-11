@@ -11,6 +11,7 @@ import Navigation from '@libs/Navigation/Navigation';
 import {PressableWithFeedback} from '@components/Pressable';
 import {useDatabaseData} from '@context/global/DatabaseDataContext';
 import ScreenWrapper from '@components/ScreenWrapper';
+import useWindowDimensions from '@hooks/useWindowDimensions';
 import HeaderWithBackButton from '@components/HeaderWithBackButton';
 import useLocalize from '@hooks/useLocalize';
 import useTheme from '@hooks/useTheme';
@@ -92,6 +93,7 @@ function SocialScreen(_: SocialScreenProps) {
   const {userData} = useDatabaseData();
   const {translate} = useLocalize();
   const styles = useThemeStyles();
+  const {windowHeight, windowWidth} = useWindowDimensions();
   const [routes] = useState([
     {key: 'friendList', title: translate('socialScreen.friendList'), userData},
     // {key: 'friendSearch', translate('socialScreen.friendSearch'), userData: userData},
@@ -149,11 +151,12 @@ function SocialScreen(_: SocialScreenProps) {
         navigationState={{index, routes}}
         renderScene={renderScene}
         onIndexChange={setIndex}
-        initialLayout={{width: Dimensions.get('window').width}}
+        initialLayout={{width: windowWidth}}
         swipeEnabled
         tabBarPosition="bottom"
         renderTabBar={() => null} // Do not render the default tab bar
       />
+      <View style={styles.backSwipeArea(windowHeight)} />
       <View style={styles.bottomTabBarContainer}>
         {footerButtons.map(button => (
           <SocialFooterButton
