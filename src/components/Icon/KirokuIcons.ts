@@ -37,6 +37,7 @@ import FileDocument from '@assets/images/file-document.svg';
 import FriendList from '@assets/images/friend-list.png';
 import Idea from '@assets/images/idea.png';
 import Info from '@assets/images/info.svg';
+import KirokuQrCode from '@assets/images/kiroku-qr-code.png';
 import Link from '@assets/images/link.svg';
 import Lock from '@assets/images/lock.svg';
 import Logo from '@assets/images/app-logo.svg';
@@ -48,9 +49,6 @@ import Pencil from '@assets/images/pencil.png';
 import Plus from '@assets/images/plus.svg';
 import Gear from '@assets/images/gear.svg';
 import QrCode from '@assets/images/qrcode.svg';
-import QrCodeFullColor from '@assets/images/kiroku-qr-code-full-color.png';
-import QrCodePlain from '@assets/images/kiroku-qr-code-plain.png';
-import QrCodeWithLogo from '@assets/images/kiroku-qr-code-with-logo.png';
 import Profile from '@assets/images/profile.svg';
 import Remove from '@assets/images/remove.png';
 import RemoveUser from '@assets/images/remove-user.svg';
@@ -110,6 +108,7 @@ export {
   Gear,
   Idea,
   Info,
+  KirokuQrCode,
   Link,
   Lock,
   Logo,
@@ -121,9 +120,6 @@ export {
   Plus,
   Profile,
   QrCode,
-  QrCodeFullColor,
-  QrCodePlain,
-  QrCodeWithLogo,
   Remove,
   RemoveUser,
   Search,

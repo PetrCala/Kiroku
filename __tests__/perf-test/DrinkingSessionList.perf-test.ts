@@ -20,7 +20,7 @@ describe('DrinkingSessionList', () => {
   test('[DrinkingSessionList] valid drinking session collection generation', async () => {
     await measureFunction(
       () =>
-        randDrinkingSessionList(1000) as Record<
+        randDrinkingSessionList({length: 1000}) as Record<
           `${typeof ONYXKEYS.COLLECTION.DRINKING_SESSION}`,
           DrinkingSession
         >,

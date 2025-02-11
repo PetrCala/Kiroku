@@ -41,7 +41,8 @@
     "transpile": "npx tsc --build functions",
     "deploy-functions": "firebase deploy --only functions --debug",
     "workflow-test": "./workflow_tests/scripts/runWorkflowTests.sh",
-    "bump": "./scripts/bumpVersion.sh"
+    "bump": "./scripts/bumpVersion.sh",
+    "build": "tsc"
   },
   "dependencies": {
     "@babel/plugin-proposal-private-methods": "^7.18.6",
