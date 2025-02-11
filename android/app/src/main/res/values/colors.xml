@@ -1,10 +1,10 @@
 <resources>
     <!-- If these colors are changed, we must add them to HybridApp also -->
-    <color name="bootsplash_background">#FFFF99</color>
+    <color name="bootsplash_background">#F5C400</color>
     <color name="white">#FFFFFF</color>
-    <color name="accent">#FCFC49</color>
-    <color name="dark">#0b1b34</color>
-    <color name="gray4">#7D8B8F</color>
-    <color name="card_highlight_bg">#4E513E</color>
+    <color name="accent">#FFC457</color>
+    <color name="dark">#34260b</color>
+    <color name="gray4">#8f8b7d</color>
+    <color name="card_highlight_bg">#50514e</color>
     <color name="card_alternate_bg">#686868</color>
 </resources>

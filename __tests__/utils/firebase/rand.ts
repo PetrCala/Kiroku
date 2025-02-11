@@ -1,4 +1,16 @@
+import {randUuid} from '@ngneat/falso';
 import type {UserID} from '@src/types/onyx/OnyxCommon';
+
+/**
+ * Generate a random key that can be used to index database items
+ *
+ * @example
+ *
+ * randDbKey()
+ */
+function randDbKey(): string {
+  return randUuid();
+}
 
 type RandUserIDParams = {
   /** The ID length */
@@ -6,7 +18,7 @@ type RandUserIDParams = {
 };
 
 /** Generate a random user ID */
-function randUserID({chars = 20}: RandUserIDParams = {}): UserID {
+function randUserID({chars = 28}: RandUserIDParams = {}): UserID {
   return Array.from({length: chars}, () =>
     Math.floor(Math.random() * 36).toString(36),
   ).join('');
@@ -14,7 +26,7 @@ function randUserID({chars = 20}: RandUserIDParams = {}): UserID {
 
 type RandUserIDsParams = {
   /** Number of random user IDs to create */
-  length: number;
+  length?: number;
 };
 
 /**
@@ -28,11 +40,11 @@ type RandUserIDsParams = {
  *
  * randUserIds({length: 5})
  */
-function randUserIDs({length = 50}: RandUserIDsParams): UserID[] {
+function randUserIDs({length = 50}: RandUserIDsParams = {}): UserID[] {
   if (length <= 0) {
     return [];
   }
   return Array.from({length}, () => randUserID());
 }
 
-export {randUserID, randUserIDs};
+export {randDbKey, randUserID, randUserIDs};

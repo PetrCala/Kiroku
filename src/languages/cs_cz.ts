@@ -723,9 +723,9 @@ export default {
     enterPassword: 'Zadejte heslo',
   },
   verifyEmailScreen: {
-    youAreNotVerified: 'Ověřme váš e-mail!',
+    youAreNotVerified: 'Ověřte svůj e-mail!',
     wouldYouLikeToVerify: ({email}: VerifyEmailScreenEmailParmas) =>
-      `Chcete nyní ověřit e-mail ${email ?? 'vaši adresu'}?`,
+      `Chcete ověřit e-mail ${email ?? 'vaši adresu'} rovnou?`,
     illDoItLater: 'Udělám to později',
     verifyEmail: 'Ověřit e-mail',
     changeEmail: 'Změnit e-mail',

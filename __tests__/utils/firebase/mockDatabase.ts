@@ -4,37 +4,30 @@ import type {
   AppSettings,
   Config,
   DatabaseProps,
-  DrinkingSession,
-  Feedback,
   FriendRequestList,
   FriendRequestStatus,
   Maintenance,
   NicknameToId,
   Preferences,
-  Profile,
-  UnconfirmedDays,
-  Drinks,
   UnitsToColors,
-  UserData,
   UserStatus,
-  DrinksList,
   DrinksToUnits,
   DrinkingSessionList,
 } from '@src/types/onyx';
-import {getRandomChoice, getRandomInt} from '@libs/Choice';
+import {getRandomInt} from '@libs/Choice';
 import {
-  formatDate,
   getLastStartedSession,
   getLastStartedSessionId,
-  getRandomDrinksList,
-  getZeroDrinksList,
 } from '@libs/DataHandling';
 import {cleanStringForFirebaseKey} from '@libs/StringUtilsKiroku';
 import CONST from '@src/CONST';
-import {addDays, subDays} from 'date-fns';
-import DateUtils from '@libs/DateUtils';
-import {randDrinkingSessionList} from './collections/drinkingSessions';
-import {randUserIDs} from './collections/userAccount';
+import type {UserID} from '@src/types/onyx/OnyxCommon';
+import INTEGRATION_CONFIG from '../integrationConfig';
+import {randDrinkingSessionList} from '../collections/drinkingSessions';
+import {randUserData} from '../collections/user';
+import {randUserIDs} from './rand';
+import {randFeedbackList} from '../collections/feedback';
+// import {randConnections} from './connections';
 
 const N_MOCK_USERS = 150;
 
@@ -84,10 +77,10 @@ function initializeEmptyMockDatabase(): DatabaseProps {
     feedback: {},
     nickname_to_id: {},
     reasons_for_leaving: {},
-    user_status: {},
     user_drinking_sessions: {},
     user_preferences: {},
     user_session_placeholder: {},
+    user_status: {},
     user_unconfirmed_days: {},
     users: {},
   };
@@ -105,18 +98,6 @@ function createMockConfig(): Config {
     maintenance: createMockMaintenance(),
   };
   return mockConfig;
-}
-
-/** Create a mock feedback object
- *
- * @returns Feedback object.
- */
-function createMockFeedback(): Feedback {
-  return {
-    submit_time: Date.now(),
-    text: 'Mock feedback',
-    user_id: 'mock-user-id',
-  };
 }
 
 function createMockUserStatus(
@@ -139,69 +120,14 @@ function createMockUserStatus(
  *
  * @returns The mock object.
  */
-function createMockNicknameToId(userID: string): NicknameToId {
+function createMockNicknameToId(
+  userID: string,
+  nickname: string,
+): NicknameToId {
   const returnObject: NicknameToId = {
-    [userID]: 'mock nickname',
+    [userID]: nickname,
   };
   return returnObject;
-}
-
-/** Generate a mock object of drinks
- *
- * @usage const onlyWine = generateMockDrinksList({ wine: 5 });
- */
-function createMockDrinksList(drinks: Drinks = {}): DrinksList {
-  if (Object.keys(drinks).length === 0) {
-    // If drinks are unspecified
-    return getRandomDrinksList();
-  }
-  const timestampNow = new Date().getTime();
-  return {
-    [timestampNow]: drinks,
-  };
-}
-
-/**
- * Generates a DrinkingSession for a specified offset relative to a given date.
- *
- * @param baseDate Date around which sessions are created.
- * @param shouldOffetDays Whether or not the date should be randomly offset
- * @param drinks Drinks consumed during the session
- * @param ongoing Whether the session is ongoing or not
- * @returns A DrinkingSession object.
- */
-function createMockSession(
-  baseDate: Date,
-  shouldOffetDays?: boolean,
-  drinks?: DrinksList,
-  ongoing?: boolean,
-): DrinkingSession {
-  const sessionDrinks: DrinksList = drinks ?? getZeroDrinksList();
-  let sessionDate = new Date(baseDate);
-
-  if (shouldOffetDays) {
-    // Randomize between -7 and 7 days
-    const daysOffset = Math.floor(Math.random() * 15) - 7;
-    sessionDate =
-      daysOffset > 0
-        ? addDays(sessionDate, daysOffset)
-        : subDays(sessionDate, daysOffset);
-  }
-
-  const newSession: DrinkingSession = {
-    start_time: sessionDate.getTime(),
-    end_time: sessionDate.getTime() + 2 * 60 * 60 * 1000, // +2 hours
-    blackout: false,
-    note: '',
-    drinks: sessionDrinks,
-    type: getRandomChoice(Object.values(CONST.SESSION.TYPES)),
-    timezone: DateUtils.getCurrentTimezone().selected,
-  };
-  if (ongoing) {
-    newSession.ongoing = true;
-  }
-
-  return newSession;
 }
 
 /** Create an object of mock preferences for a user.
@@ -223,35 +149,12 @@ function createMockPreferences(): Preferences {
     wine: 1,
   };
   const mockPreferences: Preferences = {
-    first_day_of_week: getRandomChoice(['Monday', 'Sunday']),
+    first_day_of_week: rand(['Monday', 'Sunday']),
     units_to_colors: mockUnitsToColors,
     drinks_to_units: mockDrinksToUnitsData,
-    theme: getRandomChoice([CONST.THEME.DARK, CONST.THEME.LIGHT]),
+    theme: rand([CONST.THEME.DARK, CONST.THEME.LIGHT]),
   };
   return mockPreferences;
-}
-
-/** Create and return an unconfirmed days type object.
- *
- * @returns Unconfirmed days object
- */
-function createMockUnconfirmedDays(): UnconfirmedDays {
-  const data: UnconfirmedDays = {};
-  const today = new Date();
-
-  // Randomly choose the number of entries to generate
-  const numberOfEntries = getRandomInt(1, 10);
-
-  for (let i = 0; i < numberOfEntries; i++) {
-    // Get a random date between today and 365 days ago (1 year ago).
-    const randomPastDate = new Date(
-      today.getTime() - getRandomInt(0, 365) * 24 * 60 * 60 * 1000,
-    );
-    const dateKey = formatDate(randomPastDate);
-    data[dateKey] = true;
-  }
-
-  return data;
 }
 
 /** Create and return mock friend request data. Is created at random.
@@ -276,27 +179,10 @@ function createMockFriendRequests(userID: string): FriendRequestList {
   return mockRequestData;
 }
 
-/** Create and return a mock user data object
- * @param userID ID of the mock user
- * @param index Index of the mock user
- * @param noFriends If set to true, no friends or friend requests will be created.
- * @returns Mock user data
- */
-function createMockUserData(userID: string, noFriends = false): UserData {
-  const mockProfile: Profile = {
-    display_name: 'mock-user',
-    photo_url: '',
-  };
-  const mockUserData: UserData = {
-    profile: mockProfile,
-    role: 'mock-user',
-  };
-  if (!noFriends) {
-    // mockUserData['friends'] = // TODO
-    mockUserData.friend_requests = createMockFriendRequests(userID);
-  }
-  return mockUserData;
-}
+type CreateMockDatabaseProps = {
+  /** An array of user IDs to use */
+  userIDs?: UserID[];
+};
 
 /** Create and return an object that will mock
  * the firebase database. This object has the
@@ -305,30 +191,33 @@ function createMockUserData(userID: string, noFriends = false): UserData {
  * @param noFriends If set to true, no friends or friend requests will be created.
  * @returns A mock object of the firebase database
  */
-function createMockDatabase(noFriends = false): DatabaseProps {
+function createMockDatabase({
+  userIDs,
+}: CreateMockDatabaseProps = {}): DatabaseProps {
   const db = initializeEmptyMockDatabase();
-  // Configuration
-  db.config = createMockConfig();
+  const mockUserIDs = userIDs ?? randUserIDs({length: N_MOCK_USERS});
+  // const mockConnections = randConnections({userIds: mockUserIDs});
 
-  // Data that varies across users
-  const mockUserIDs = randUserIDs({length: N_MOCK_USERS});
+  db.config = createMockConfig();
+  db.feedback = randFeedbackList({
+    userIDs: mockUserIDs,
+    length: mockUserIDs.length * 2,
+  });
 
   mockUserIDs.forEach(userID => {
     const userDrinkingSessions = randDrinkingSessionList({
-      length: rand([0, 5, 10, 100, 500]),
+      length: rand([0, 5, 10, 50, 100]),
       shouldIncludeOngoing: true,
     });
-    const userData = createMockUserData(userID, noFriends);
+    const userData = randUserData();
     const nickname = userData.profile.display_name;
     const nickname_key = cleanStringForFirebaseKey(nickname);
 
-    db.feedback[userID] = createMockFeedback();
     db.user_drinking_sessions[userID] = userDrinkingSessions;
     db.user_status[userID] = createMockUserStatus(userDrinkingSessions);
     db.user_preferences[userID] = createMockPreferences();
-    db.user_unconfirmed_days[userID] = createMockUnconfirmedDays();
     db.users[userID] = userData;
-    db.nickname_to_id[nickname_key] = createMockNicknameToId(userID);
+    db.nickname_to_id[nickname_key] = createMockNicknameToId(userID, nickname);
   });
 
   return db;
@@ -341,7 +230,7 @@ function createMockDatabase(noFriends = false): DatabaseProps {
  */
 function exportMockDatabase(): string {
   const mockDatabase = createMockDatabase();
-  const filePath = './mockDatabase.json';
+  const filePath = INTEGRATION_CONFIG.OUTPUT_FILE_DB;
   fs.writeFileSync(filePath, JSON.stringify(mockDatabase));
   return filePath;
 }
@@ -351,15 +240,10 @@ export {
   createMockMaintenance,
   initializeEmptyMockDatabase,
   createMockConfig,
-  createMockFeedback,
   createMockUserStatus,
   createMockNicknameToId,
-  createMockDrinksList,
-  createMockSession,
   createMockPreferences,
-  createMockUnconfirmedDays,
   createMockFriendRequests,
-  createMockUserData,
   createMockDatabase,
   exportMockDatabase,
 };
