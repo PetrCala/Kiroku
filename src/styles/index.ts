@@ -1724,6 +1724,17 @@ const styles = (theme: ThemeColors) =>
       flex: 1,
     },
 
+    backSwipeArea: (windowHeight: number) =>
+      ({
+        // This component add a swipeable area to the left edge of the screen to circumvent an issue where TabView takes precedence over any swipes, such as the iOS back swipe
+        position: 'absolute',
+        height: windowHeight,
+        width: 25,
+        left: 0,
+        top: variables.contentHeaderHeight,
+        zIndex: 999,
+      }) satisfies ViewStyle,
+
     lhnSuccessText: {
       color: theme.success,
       fontWeight: FontUtils.fontWeight.bold,
