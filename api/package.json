@@ -10,7 +10,7 @@
     "deploy": "firebase deploy --only functions",
     "logs": "firebase functions:log"
   },
-  "main": "lib/index.js",
+  "main": "dist/index.js",
   "dependencies": {
     "cors": "^2.8.5",
     "express": "^4.21.2",
