@@ -1,5 +1,5 @@
 // import {onRequest, onCall} from 'firebase-functions/v2/https';
-// import * as logger from 'firebase-functions/logger';
+import * as logger from 'firebase-functions/logger';
 import * as functions from 'firebase-functions';
 import * as admin from 'firebase-admin';
 import express = require('express');
@@ -45,7 +45,7 @@ const authenticate = async (
     req.user = decodedToken;
     next();
   } catch (error) {
-    console.error('Authentication error:', error);
+    logger.error('Authentication error:', error);
     res.status(401).send('Unauthorized: Invalid token');
   }
 };
