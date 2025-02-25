@@ -4,7 +4,8 @@ import functions from 'firebase-functions';
 import admin from 'firebase-admin';
 import express from 'express';
 import cors from 'cors';
-import type {Request, Response, NextFunction} from 'express';
+import type {Response, NextFunction} from 'express';
+import type {AuthenticatedRequest} from './types';
 
 if (!admin.app.length) {
   // Initialize Firebase Admin SDK
@@ -28,7 +29,7 @@ app.get('/public', (req, res) => {
 
 // Authentication middleware
 const authenticate = async (
-  req: Request,
+  req: AuthenticatedRequest,
   res: Response,
   next: NextFunction,
 ): Promise<void> => {
@@ -41,7 +42,7 @@ const authenticate = async (
 
   try {
     const decodedToken = await admin.auth().verifyIdToken(token);
-    (req as any).user = decodedToken;
+    req.user = decodedToken;
     next();
   } catch (error) {
     console.error('Authentication error:', error);
@@ -50,11 +51,16 @@ const authenticate = async (
 };
 
 // Protected route (requires authentication)
-app.get('/protected', authenticate, (req, res) => {
-  res.send(
-    `Hello ${(req as any).user.uid}, you have accessed a protected endpoint!`,
-  );
-});
+app.get(
+  '/protected',
+  authenticate,
+  (req: AuthenticatedRequest, res: Response) => {
+    res.send(
+      `Hello ${req.user?.uid ?? ''}, you have accessed a protected endpoint!`,
+    );
+  },
+);
 
-// Export the Express app as a Firebase Function
-exports.api = functions.https.onRequest(app);
+const api = functions.https.onRequest(app);
+
+export default api;
