@@ -1,9 +1,9 @@
 // import {onRequest, onCall} from 'firebase-functions/v2/https';
 // import * as logger from 'firebase-functions/logger';
-import functions from 'firebase-functions';
-import admin from 'firebase-admin';
-import express from 'express';
-import cors from 'cors';
+import * as functions from 'firebase-functions';
+import * as admin from 'firebase-admin';
+import express = require('express');
+import cors = require('cors');
 import type {Response, NextFunction} from 'express';
 import type {AuthenticatedRequest} from './types';
 
