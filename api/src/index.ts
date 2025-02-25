@@ -59,4 +59,4 @@ app.get(
   },
 );
 
-export default functions.https.onRequest(app);
+export const api = functions.https.onRequest(app);
