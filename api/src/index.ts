@@ -1,19 +1,50 @@
-/**
- * Import function triggers from their respective submodules:
- *
- * import {onCall} from "firebase-functions/v2/https";
- * import {onDocumentWritten} from "firebase-functions/v2/firestore";
- *
- * See a full list of supported triggers at https://firebase.google.com/docs/functions
- */
+// import {onRequest, onCall} from 'firebase-functions/v2/https';
+// import * as logger from 'firebase-functions/logger';
+import functions from 'firebase-functions';
+import admin from 'firebase-admin';
+import express from 'express';
+import cors from 'cors';
 
-import {onRequest} from "firebase-functions/v2/https";
-import * as logger from "firebase-functions/logger";
+// Initialize Firebase Admin SDK
+admin.initializeApp();
 
-// Start writing functions
-// https://firebase.google.com/docs/functions/typescript
+const app = express();
 
-// export const helloWorld = onRequest((request, response) => {
-//   logger.info("Hello logs!", {structuredData: true});
-//   response.send("Hello from Firebase!");
-// });
+// Enable CORS (Cross-Origin Resource Sharing)
+app.use(cors({origin: true}));
+
+// Parse incoming JSON requests
+app.use(express.json());
+
+// Public route (accessible without authentication)
+app.get('/public', (req, res) => {
+  res.send('Hello from the public endpoint!');
+});
+
+// app.use(myMiddleware);
+
+// Authentication middleware
+const authenticate = async (req, res, next) => {
+  const idToken = req.headers.authorization?.split('Bearer ')[1];
+
+  if (!idToken) {
+    return res.status(401).send('Unauthorized: No token provided');
+  }
+
+  try {
+    const decodedToken = await admin.auth().verifyIdToken(idToken);
+    req.user = decodedToken;
+    next();
+  } catch (error) {
+    console.error('Authentication error:', error);
+    res.status(401).send('Unauthorized: Invalid token');
+  }
+};
+
+// Protected route (requires authentication)
+app.get('/protected', authenticate, (req, res) => {
+  res.send(`Hello ${req.user.uid}, you have accessed a protected endpoint!`);
+});
+
+// Export the Express app as a Firebase Function
+exports.api = functions.https.onRequest(app);
