@@ -19,7 +19,7 @@ app.use(cors({origin: true}));
 app.use(express.json());
 
 // Public route (accessible without authentication)
-app.get('/public', (req, res) => {
+app.get('/api/public', (req, res) => {
   res.send('Hello from the public endpoint!');
 });
 
@@ -50,7 +50,7 @@ const authenticate = async (
 
 // Protected route (requires authentication)
 app.get(
-  '/protected',
+  '/api/protected',
   authenticate,
   (req: AuthenticatedRequest, res: Response) => {
     res.send(
