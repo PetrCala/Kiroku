@@ -1,3 +1,8 @@
+const path = require('path');
+
+const restrictedImportPaths = [];
+const restrictedImportPatterns = [];
+
 module.exports = {
   extends: [
     'expensify',
