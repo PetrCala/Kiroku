@@ -46,12 +46,11 @@
   ],
   "hosting": [
     {
-      "target": "api",
       "ignore": ["firebase.json", "**/.*", "**/node_modules/**"],
       "rewrites": [
         {
-          "source": "/api/**",
-          "function": "app"
+          "source": "/api/v1/**",
+          "function": "api"
         }
       ]
     }
