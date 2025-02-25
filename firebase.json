@@ -46,9 +46,10 @@
   ],
   "hosting": [
     {
+      "ignore": ["firebase.json", "**/.*", "**/node_modules/**"],
       "rewrites": [
         {
-          "source": "**",
+          "source": "/api/**",
           "function": "api"
         }
       ]

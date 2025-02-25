@@ -61,6 +61,4 @@ app.get(
   },
 );
 
-const api = functions.https.onRequest(app);
-
-export default api;
+export default functions.https.onRequest(app);
