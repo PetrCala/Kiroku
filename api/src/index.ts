@@ -7,10 +7,8 @@ import cors = require('cors');
 import type {Response, NextFunction} from 'express';
 import type {AuthenticatedRequest} from './types';
 
-if (!admin.app.length) {
-  // Initialize Firebase Admin SDK
-  admin.initializeApp();
-}
+// Initialize Firebase Admin SDK
+admin.initializeApp();
 
 const app = express();
 
