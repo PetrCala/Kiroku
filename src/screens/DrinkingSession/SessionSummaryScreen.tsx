@@ -236,15 +236,19 @@ function SessionSummaryScreen({route}: SessionSummaryScreenProps) {
                     title={detail.titleKey && translate(detail.titleKey)}
                     titleStyle={styles.plainSectionTitle}
                     description={detail.description}
-                    descriptionTextStyle={styles.textNormalThemeText}
+                    descriptionTextStyle={[
+                      styles.textNormalThemeText,
+                      styles.mw75,
+                      styles.textAlignRight,
+                    ]}
+                    numberOfLinesDescription={5}
                     wrapperStyle={styles.sectionMenuItemTopDescription}
                     style={[
                       styles.pt0,
-                      styles.pb0,
+                      index !== menuItemsData.items.length - 1 && styles.pb0,
                       // Enable the following to add borders in between items
                       // styles.borderBottomRounded,
                       // {borderBottomLeftRadius: 35, borderBottomRightRadius: 35},
-                      // index === menuItemsData.items.length - 1 && styles.borderNone,
                     ]}
                     disabled
                     shouldGreyOutWhenDisabled={false}
