@@ -6,7 +6,7 @@ import SCREENS from '@src/SCREENS';
 const darkTheme = {
   // Figma keys
   appBG: colors.productDark100,
-  splashBG: colors.yellow,
+  splashBG: colors.yellowStrong,
   highlightBG: colors.productDark200,
   darkBG: colors.productLight900,
   appColor: colors.yellowStrong,
