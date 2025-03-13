@@ -37,6 +37,7 @@
     "test:emulators": "USE_EMULATORS=true firebase emulators:exec --only auth,database,storage 'npm test __tests__/integration/emulators'",
     "perf-test": "NODE_OPTIONS=--experimental-vm-modules npx reassure",
     "emulators": "firebase emulators:start",
+    "emulators:api": "cd api && npm run serve",
     "emulators-with-setup": "./scripts/setupEmulators.sh",
     "transpile": "npx tsc --build functions",
     "deploy-functions": "firebase deploy --only functions --debug",
