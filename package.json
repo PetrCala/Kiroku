@@ -30,6 +30,7 @@
     "symbolicate:ios": "npx metro-symbolicate main.jsbundle.map",
     "symbolicate-release:ios": "scripts/release-profile.ts --platform=ios",
     "symbolicate-release:android": "scripts/release-profile.ts --platform=android",
+    "submodules:update": "./scripts/updateSubmodules.sh",
     "jsbundle": "react-native bundle --platform ios --dev false --entry-file index.js --bundle-output ios/main.jsbundle --assets-dest ios",
     "encrypt": "./scripts/encrypt.sh",
     "test": "TZ=utc jest",
