@@ -17,35 +17,8 @@
     "database": {
       "port": 9001
     },
-    "hosting": {
-      "port": 8080
-    },
-    "functions": {
-      "port": 5001
-    },
     "storage": {
       "port": 9199
     }
-  },
-  "functions": {
-    "source": "api",
-    "ignore": [
-      "node_modules",
-      ".git",
-      "firebase-debug.log",
-      "firebase-debug.*.log",
-      "*.local"
-    ],
-    "predeploy": ["npm --prefix ./api run lint", "npm --prefix ./api run build"]
-  },
-  "hosting": {
-    "public": "public",
-    "ignore": ["firebase.json", "**/.*", "**/node_modules/**"],
-    "rewrites": [
-      {
-        "source": "/api/v1/**",
-        "function": "api"
-      }
-    ]
   }
 }
