@@ -37,7 +37,7 @@ runs:
     - name: Set up git for KirokuAdmin
       shell: bash
       run: |
-        git config user.signingkey 310CF3A451D9BC83
+        git config user.signingkey D45D37A131E8F2B6
         git config commit.gpgsign true
         git config user.name KirokuAdmin
         git config user.email kiroku.alcohol.tracker@gmail.com
