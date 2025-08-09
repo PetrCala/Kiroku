@@ -267,6 +267,8 @@ function SessionSummaryScreen({route}: SessionSummaryScreenProps) {
       styles.plainSectionTitle,
       styles.pt0,
       styles.pt3,
+      styles.mw75,
+      styles.textAlignRight,
       styles.sectionMenuItemTopDescription,
       styles.sectionTitleSimple,
       styles.textNormalThemeText,
