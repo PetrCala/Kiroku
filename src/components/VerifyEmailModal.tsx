@@ -56,6 +56,9 @@ function VerifyEmailModal() {
       if (user) {
         await user.reload();
         setEmailVerified(user.emailVerified);
+        if (!user.emailVerified) {
+          setErrorText(translate('verifyEmailScreen.error.emailNotVerified'));
+        }
       } else {
         setErrorText(translate('verifyEmailScreen.error.emailNotVerified'));
       }
@@ -159,24 +162,32 @@ function VerifyEmailModal() {
                   )}
                   <Button
                     success
-                    isLoading={isLoading}
+                    isLoading={isLoading && !emailSent}
                     style={styles.mt1}
                     text={translate(
                       emailSent
-                        ? 'verifyEmailScreen.resendEmail'
+                        ? 'verifyEmailScreen.iHaveVerified'
                         : 'verifyEmailScreen.verifyEmail',
                     )}
-                    onPress={onVerifyEmailButtonPress}
+                    onPress={
+                      emailSent
+                        ? onChangeEmailButtonPress
+                        : onVerifyEmailButtonPress
+                    }
                     large
                   />
                   <Button
                     style={[styles.mt1]}
                     text={translate(
                       emailSent
-                        ? 'verifyEmailScreen.iHaveVerified'
+                        ? 'verifyEmailScreen.resendEmail'
                         : 'verifyEmailScreen.changeEmail',
                     )}
-                    onPress={onChangeEmailButtonPress}
+                    onPress={
+                      emailSent
+                        ? onVerifyEmailButtonPress
+                        : onChangeEmailButtonPress
+                    }
                     large
                   />
                   <Button
