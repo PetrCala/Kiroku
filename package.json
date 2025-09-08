@@ -36,6 +36,8 @@
     "test:debug": "node --inspect-brk ./node_modules/jest/bin/jest.js --runInBand",
     "test:emulators": "USE_EMULATORS=true firebase emulators:exec --only auth,database,storage 'npm test __tests__/integration/emulators'",
     "perf-test": "NODE_OPTIONS=--experimental-vm-modules npx reassure",
+    "mergePR": "./scripts/mergePR.sh",
+    "openPR": "./scripts/openPR.sh",
     "emulators": "firebase emulators:start",
     "emulators-with-setup": "./scripts/setupEmulators.sh",
     "transpile": "npx tsc --build functions",
