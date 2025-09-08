@@ -288,7 +288,7 @@ function Kiroku() {
 
       {shouldInit && (
         <>
-          {!shouldShowVerifyEmailModal && <VerifyEmailModal />}
+          {shouldShowVerifyEmailModal && <VerifyEmailModal />}
           {shouldShowUpdateModal && <UpdateAppModal />}
           {shouldShowAgreeToTermsModal && <AgreeToTermsModal />}
           {/* // TODO show shared session invites here */}
