@@ -284,6 +284,7 @@ module.exports = {
       'warn',
       {
         alias: {
+          '@analytics': './src/libs/Analytics',
           '@assets': './assets',
           '@components': './src/components',
           '@hooks': './src/hooks',
