@@ -13,6 +13,7 @@
     "sourceMap": true,
     "baseUrl": ".",
     "paths": {
+      "@analytics/*": ["src/libs/Analytics/*"],
       "@assets/*": ["./assets/*"],
       "@auth/*": ["src/libs/auth/*"],
       "@components/*": ["./src/components/*"],
