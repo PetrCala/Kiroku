@@ -885,6 +885,36 @@ function getSessionTypeDescription(
   }
 }
 
+/**
+ * Transforms drinking session data into a DrinksList format.
+ *
+ * @param drinkingSessions - The drinking sessions data.
+ * @returns A DrinksList object with all drinks from all sessions.
+ */
+function transformDrinkingSessionsToDrinksList(
+  drinkingSessions: DrinkingSessionList | undefined,
+): DrinksList {
+  if (!drinkingSessions) {
+    return {};
+  }
+
+  const drinksList: DrinksList = {};
+
+  Object.values(drinkingSessions).forEach(session => {
+    if (!session.drinks) {
+      return;
+    }
+
+    Object.entries(session.drinks).forEach(([timestamp, drinks]) => {
+      // Use the session's start_time if available, otherwise use the timestamp
+      const sessionTimestamp = session.start_time || Number(timestamp);
+      drinksList[sessionTimestamp] = drinks;
+    });
+  });
+
+  return drinksList;
+}
+
 export {
   PlaceholderDrinks,
   addDrinksToList,
@@ -919,4 +949,5 @@ export {
   removeDrinksFromList,
   sessionIsExpired,
   shiftSessionTimestamps,
+  transformDrinkingSessionsToDrinksList,
 };

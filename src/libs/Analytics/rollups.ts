@@ -1,5 +1,7 @@
 import type {DrinkKey, DrinksList, DrinksToUnits} from '@src/types/onyx';
 import type {UserID} from '@src/types/onyx/OnyxCommon';
+import type {DrinkingSessionList} from '@src/types/onyx/DrinkingSession';
+import * as DSUtils from '@libs/DrinkingSessionUtils';
 import CONST from '@src/CONST';
 import DateUtils from '@libs/DateUtils';
 import type {DayRollup} from './types';
@@ -64,5 +66,23 @@ function buildDayRollups(
   }));
 }
 
-// eslint-disable-next-line import/prefer-default-export
-export {buildDayRollups};
+/**
+ * Builds day rollups from drinking session data.
+ * This is a convenience function that combines data transformation and rollup building.
+ *
+ * @param drinkingSessions - The drinking sessions data.
+ * @param drinksToUnits - The drinks to units mapping.
+ * @param userId - The user ID to build rollups for.
+ * @returns The day rollups.
+ */
+function buildDayRollupsFromSessions(
+  drinkingSessions: DrinkingSessionList | undefined,
+  drinksToUnits: DrinksToUnits,
+  userId: UserID,
+): DayRollup[] {
+  const drinksList =
+    DSUtils.transformDrinkingSessionsToDrinksList(drinkingSessions);
+  return buildDayRollups(drinksList, drinksToUnits, userId);
+}
+
+export {buildDayRollups, buildDayRollupsFromSessions};
