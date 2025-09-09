@@ -166,6 +166,25 @@ function getOngoingSessionId(
 }
 
 /**
+ * Calculate the units of a Drinks object based on a DrinksToUnits mapping.
+ *
+ * @param drinks - The Drinks object containing drink counts.
+ * @param drinksToUnits - A mapping from DrinkKey to unit conversion factors.
+ * @returns The units calculated.
+ */
+function calculateDrinksUnits(
+  drinks: Drinks,
+  drinksToUnits: DrinksToUnits,
+): number {
+  return Object.keys(drinks).reduce(
+    (acc, drinkKey) =>
+      acc +
+      drinksToUnits[drinkKey as DrinkKey] * (drinks[drinkKey as DrinkKey] ?? 0),
+    0,
+  );
+}
+
+/**
  * Calculates the total units of a Drinks object based on a DrinksToUnits mapping.
  *
  * @param drinks - The Drinks object containing drink counts.
@@ -182,18 +201,10 @@ function calculateTotalUnits(
     return 0;
   }
 
-  let totalUnits = 0;
-  // Iterate over each timestamp in drinksObject
-  Object.values(drinks).forEach(drinkTypes => {
-    Object.keys(drinkTypes).forEach(DrinkKey => {
-      if (!isDrinkTypeKey(DrinkKey)) {
-        return;
-      }
-      const typeDrinks = drinkTypes[DrinkKey] ?? 0;
-      const typeUnits = drinksToUnits[DrinkKey] ?? 0;
-      totalUnits += typeDrinks * typeUnits;
-    });
-  });
+  const totalUnits = Object.values(drinks).reduce(
+    (acc, drinkTypes) => acc + calculateDrinksUnits(drinkTypes, drinksToUnits),
+    0,
+  );
 
   if (roundUp) {
     return roundToTwoDecimalPlaces(totalUnits);
@@ -865,6 +876,7 @@ export {
   allSessionsContainTimezone,
   calculateAvailableUnits,
   calculateSessionLength,
+  calculateDrinksUnits,
   calculateTotalUnits,
   determineSessionMostCommonDrink,
   extractSessionOrEmpty,
