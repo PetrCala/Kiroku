@@ -96,6 +96,21 @@ function getEmptySession(session: Partial<DrinkingSession>): DrinkingSession {
 }
 
 /**
+ * Creates an empty drinks object with all drink types set to 0.
+ */
+function getEmptyDrinks(): Drinks {
+  return {
+    [CONST.DRINKS.KEYS.SMALL_BEER]: 0,
+    [CONST.DRINKS.KEYS.BEER]: 0,
+    [CONST.DRINKS.KEYS.COCKTAIL]: 0,
+    [CONST.DRINKS.KEYS.OTHER]: 0,
+    [CONST.DRINKS.KEYS.STRONG_SHOT]: 0,
+    [CONST.DRINKS.KEYS.WEAK_SHOT]: 0,
+    [CONST.DRINKS.KEYS.WINE]: 0,
+  };
+}
+
+/**
  * Check whether a drinking session is empty.
  */
 function isEmptySession(session: DrinkingSession): boolean {
@@ -884,6 +899,7 @@ export {
   getDisplayNameForParticipant,
   getDrinkingSessionData,
   getDrinkingSessionOnyxKey,
+  getEmptyDrinks,
   getEmptySession,
   getIconForSession,
   getOngoingSessionId,
