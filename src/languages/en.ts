@@ -310,6 +310,14 @@ export default {
     cocktail: 'Cocktail',
     other: 'Other',
   },
+  charts: {
+    target: 'Target',
+    heatmap: 'Heatmap',
+    trend: 'Trend',
+    legend: 'Legend',
+    noData: 'No data available',
+    units: 'units',
+  },
   units: {
     yellow: 'Yellow',
     orange: 'Orange',
