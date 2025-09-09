@@ -45,52 +45,63 @@ function buildDayRollups(
   for (const [tsStr, drinksObject] of Object.entries(drinks)) {
     const tsNum = Number(tsStr);
     if (Number.isNaN(tsNum)) {
-      // invalid timestamp, skip
+      // invalid timestamp key; skip
     } else {
-      const dayKey = DateUtils.getLocalizedDay(
-        tsNum,
-        timezone.selected,
-        CONST.DATE.FNS_FORMAT_STRING,
-      );
-
-      if (dayKey && dayKey !== 'unknown') {
-        const localTs = DateUtils.getLocalizedTime(
+      const isValidDrinksObject =
+        drinksObject !== null && typeof drinksObject === 'object';
+      if (isValidDrinksObject) {
+        const dayKey = DateUtils.getLocalizedDay(
           tsNum,
           timezone.selected,
-          CONST.DATE.FNS_TIMEZONE_FORMAT_STRING,
+          CONST.DATE.FNS_FORMAT_STRING,
         );
-        const hasLocalTs = !!localTs && localTs !== 'unknown';
 
-        const key = `${userId}__${dayKey}`;
-        let row = byKey.get(key);
-        if (!row) {
-          row = {
-            userId,
-            dateKey: dayKey,
-            totalSdu: 0,
-            drinksCount: 0,
-            byType: {},
-          };
-          byKey.set(key, row);
-        }
+        if (dayKey && dayKey !== 'unknown') {
+          const localTs = DateUtils.getLocalizedTime(
+            tsNum,
+            timezone.selected,
+            CONST.DATE.FNS_TIMEZONE_FORMAT_STRING,
+          );
+          const hasLocalTs = !!localTs && localTs !== 'unknown';
 
-        for (const [drinkKey, rawValue] of Object.entries(drinksObject)) {
-          const amount = Number(rawValue);
-          const unitMultiplier = drinksToUnits[drinkKey as DrinkKey];
+          const key = `${userId}__${dayKey}`;
+          let row = byKey.get(key);
 
-          if (Number.isFinite(amount) && amount > 0 && unitMultiplier != null) {
-            const sdu = unitMultiplier * amount;
+          // Iterate drinks safely now that drinksObject is a plain object
+          for (const [drinkKey, rawValue] of Object.entries(drinksObject)) {
+            const amount = Number(rawValue);
+            const unitMultiplier = drinksToUnits[drinkKey as DrinkKey];
 
-            row.totalSdu += sdu;
-            row.drinksCount += 1;
-            row.byType[drinkKey as DrinkKey] =
-              (row.byType[drinkKey as DrinkKey] ?? 0) + sdu;
+            if (
+              Number.isFinite(amount) &&
+              amount > 0 &&
+              unitMultiplier != null
+            ) {
+              // Lazy-init row on first valid contribution
+              if (!row) {
+                row = {
+                  userId,
+                  dateKey: dayKey,
+                  totalSdu: 0,
+                  drinksCount: 0,
+                  byType: {},
+                };
+                byKey.set(key, row);
+              }
 
-            if (hasLocalTs) {
-              row.firstTs =
-                row.firstTs && row.firstTs < localTs ? row.firstTs : localTs;
-              row.lastTs =
-                row.lastTs && row.lastTs > localTs ? row.lastTs : localTs;
+              const sdu = unitMultiplier * amount;
+
+              row.totalSdu += sdu;
+              row.drinksCount += 1;
+              row.byType[drinkKey as DrinkKey] =
+                (row.byType[drinkKey as DrinkKey] ?? 0) + sdu;
+
+              if (hasLocalTs) {
+                row.firstTs =
+                  row.firstTs && row.firstTs < localTs ? row.firstTs : localTs;
+                row.lastTs =
+                  row.lastTs && row.lastTs > localTs ? row.lastTs : localTs;
+              }
             }
           }
         }

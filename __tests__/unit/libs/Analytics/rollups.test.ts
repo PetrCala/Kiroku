@@ -496,8 +496,9 @@ describe('buildDayRollupsFromSessions', () => {
     };
 
     // Mock the transform function
+    const ts = new Date('2024-01-15T10:30:00.000Z').getTime();
     const mockDrinksList = {
-      '2024-01-15T10:30:00.000Z': {
+      [ts]: {
         [CONST.DRINKS.KEYS.BEER]: 2,
       },
     };
