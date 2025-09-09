@@ -14,25 +14,34 @@ function getByTypeStackedWeekly(
   dayRows: DayRollup[],
   weeks = 8,
 ): StackedPoint[] {
+  // Handle empty or invalid input
+  if (!Array.isArray(dayRows) || dayRows.length === 0) {
+    return [];
+  }
+
   const bucket = new Map<string, Drinks>();
 
   for (const r of dayRows) {
     const d = parse(r.dateKey, CONST.DATE.FNS_FORMAT_STRING, new Date());
-    const weekNumber = getWeekNumber(d);
-    const year = d.getFullYear();
-    const wKey = `${weekNumber}-${year}`;
 
-    const acc = bucket.get(wKey) ?? {};
-    for (const [k, v] of Object.entries(r.byType)) {
-      const drinkKey = k as DrinkKey;
-      const value = v ?? 0;
+    // Skip invalid dates
+    if (!Number.isNaN(d.getTime())) {
+      const weekNumber = getWeekNumber(d);
+      const year = d.getFullYear();
+      const wKey = `${weekNumber}-${year}`;
 
-      // Only add the drink key if it has a non-zero value
-      if (value > 0) {
-        acc[drinkKey] = (acc[drinkKey] ?? 0) + value;
+      const acc = bucket.get(wKey) ?? {};
+      for (const [k, v] of Object.entries(r.byType)) {
+        const drinkKey = k as DrinkKey;
+        const value = v ?? 0;
+
+        // Only add the drink key if it has a non-zero value
+        if (value > 0) {
+          acc[drinkKey] = (acc[drinkKey] ?? 0) + value;
+        }
       }
+      bucket.set(wKey, acc);
     }
-    bucket.set(wKey, acc);
   }
 
   const now = new Date();
@@ -41,9 +50,20 @@ function getByTypeStackedWeekly(
 
   for (let i = weeks - 1; i >= 0; i--) {
     const d = subDays(endWeek, i * 7);
-    const weekNumber = getWeekNumber(d);
-    const year = d.getFullYear();
-    keys.push(`${weekNumber}-${year}`);
+
+    // Validate generated date
+    if (!Number.isNaN(d.getTime())) {
+      const weekNumber = getWeekNumber(d);
+      const year = d.getFullYear();
+      keys.push(`${weekNumber}-${year}`);
+    }
+  }
+
+  // If no valid keys were generated, create a fallback
+  if (keys.length === 0) {
+    const currentWeek = getWeekNumber(now);
+    const currentYear = now.getFullYear();
+    keys.push(`${currentWeek}-${currentYear}`);
   }
 
   return keys.map(k => {
@@ -70,6 +90,11 @@ function getByTypeStackedWeekly(
  * Gets the week number for a given date.
  */
 function getWeekNumber(date: Date): number {
+  // Validate date before processing
+  if (Number.isNaN(date.getTime())) {
+    return 1; // Return week 1 as fallback
+  }
+
   const startOfYear = new Date(date.getFullYear(), 0, 1);
   const days = Math.floor(
     (date.getTime() - startOfYear.getTime()) / (24 * 60 * 60 * 1000),

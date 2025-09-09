@@ -77,15 +77,7 @@ function StatisticsScreen() {
 
         <LineTrend data={trend} />
 
-        <StackedBarsByType
-          data={stacked}
-          legend={[
-            {id: 'beer', label: 'Beer'},
-            {id: 'wine', label: 'Wine'},
-            {id: 'strong_shot', label: 'Spirits'},
-            {id: 'other', label: 'Other'},
-          ]}
-        />
+        <StackedBarsByType data={stacked} />
 
         <HeatmapCalendar days={heat} scale="count" />
       </ScrollView>
