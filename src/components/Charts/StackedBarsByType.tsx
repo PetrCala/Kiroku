@@ -8,10 +8,9 @@ import StackedBars from './StackedBars';
 
 type Props = {
   data: Array<StackedBarDatum<DrinkKey>>; // same shape as generic
-  legend: Array<LegendItem<DrinkKey>>;
 };
 
-function StackedBarsByType({data, legend}: Props) {
+function StackedBarsByType({data}: Props) {
   const {translate} = useLocalize();
 
   // Convert legend items to use translated labels
@@ -29,11 +28,11 @@ function StackedBarsByType({data, legend}: Props) {
       return keyMap[drinkKey];
     };
 
-    return legend.map(item => ({
-      ...item,
-      label: translate(getDrinkTranslationKey(item.id)),
+    return Object.values(CONST.DRINKS.KEYS).map(item => ({
+      id: item,
+      label: translate(getDrinkTranslationKey(item)),
     }));
-  }, [legend, translate]);
+  }, [translate]);
 
   return (
     <StackedBars<DrinkKey>
