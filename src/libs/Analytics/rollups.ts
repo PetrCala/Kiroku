@@ -3,8 +3,29 @@ import type {UserID} from '@src/types/onyx/OnyxCommon';
 import type {DrinkingSessionList} from '@src/types/onyx/DrinkingSession';
 import * as DSUtils from '@libs/DrinkingSessionUtils';
 import CONST from '@src/CONST';
+import ONYXKEYS from '@src/ONYXKEYS';
 import DateUtils from '@libs/DateUtils';
+import Onyx from 'react-native-onyx';
+import type {Timezone} from '@src/types/onyx/UserData';
+import {auth} from '@libs/Firebase/FirebaseApp';
 import type {DayRollup} from './types';
+
+let timezone: Required<Timezone> = CONST.DEFAULT_TIME_ZONE;
+Onyx.connect({
+  key: ONYXKEYS.USER_DATA_LIST,
+  callback: value => {
+    if (!auth?.currentUser) {
+      return;
+    }
+    const currentUserID = auth?.currentUser?.uid;
+    const userDataTimezone = value?.[currentUserID]?.timezone;
+    timezone = {
+      selected: userDataTimezone?.selected ?? CONST.DEFAULT_TIME_ZONE.selected,
+      automatic:
+        userDataTimezone?.automatic ?? CONST.DEFAULT_TIME_ZONE.automatic,
+    };
+  },
+});
 
 /**
  * Builds day rollups for a given drinks list and drinks to units mapping.
@@ -21,64 +42,55 @@ function buildDayRollups(
 ): DayRollup[] {
   const byKey = new Map<string, DayRollup>();
 
-  for (const [timestamp, drinksObject] of Object.entries(drinks)) {
-    // Validate timestamp before processing
-    const timestampDate = new Date(timestamp);
-    if (!Number.isNaN(timestampDate.getTime())) {
+  for (const [tsStr, drinksObject] of Object.entries(drinks)) {
+    const tsNum = Number(tsStr);
+    if (Number.isNaN(tsNum)) {
+      // invalid timestamp, skip
+    } else {
       const dayKey = DateUtils.getLocalizedDay(
-        timestamp,
-        undefined,
+        tsNum,
+        timezone.selected,
         CONST.DATE.FNS_FORMAT_STRING,
       );
 
-      // Validate the generated dayKey
-      if (dayKey !== 'unknown' && dayKey) {
+      if (dayKey && dayKey !== 'unknown') {
+        const localTs = DateUtils.getLocalizedTime(
+          tsNum,
+          timezone.selected,
+          CONST.DATE.FNS_TIMEZONE_FORMAT_STRING,
+        );
+        const hasLocalTs = !!localTs && localTs !== 'unknown';
+
         const key = `${userId}__${dayKey}`;
+        let row = byKey.get(key);
+        if (!row) {
+          row = {
+            userId,
+            dateKey: dayKey,
+            totalSdu: 0,
+            drinksCount: 0,
+            byType: {},
+          };
+          byKey.set(key, row);
+        }
 
-        // Validate drinksObject
-        if (drinksObject && typeof drinksObject === 'object') {
-          for (const [drinkKey, drinkValue] of Object.entries(drinksObject)) {
-            // Validate drinkValue
-            const numericValue = Number(drinkValue);
-            if (!Number.isNaN(numericValue) && numericValue > 0) {
-              // Check if drink key exists in drinksToUnits
-              const drinkKeyTyped = drinkKey as DrinkKey;
-              const unitMultiplier = drinksToUnits[drinkKeyTyped];
-              if (unitMultiplier !== undefined) {
-                // Could use sduFrom here
-                const sdu = unitMultiplier * numericValue;
+        for (const [drinkKey, rawValue] of Object.entries(drinksObject)) {
+          const amount = Number(rawValue);
+          const unitMultiplier = drinksToUnits[drinkKey as DrinkKey];
 
-                let row = byKey.get(key);
-                if (!row) {
-                  row = {
-                    userId,
-                    dateKey: dayKey,
-                    totalSdu: 0,
-                    drinksCount: 0,
-                    byType: {},
-                  };
-                  byKey.set(key, row);
-                }
+          if (Number.isFinite(amount) && amount > 0 && unitMultiplier != null) {
+            const sdu = unitMultiplier * amount;
 
-                row.totalSdu += sdu;
-                row.drinksCount += 1;
-                row.byType[drinkKey as DrinkKey] =
-                  (row.byType[drinkKey as DrinkKey] ?? 0) + sdu;
+            row.totalSdu += sdu;
+            row.drinksCount += 1;
+            row.byType[drinkKey as DrinkKey] =
+              (row.byType[drinkKey as DrinkKey] ?? 0) + sdu;
 
-                const localTs = DateUtils.getLocalizedTime(
-                  timestamp,
-                  undefined,
-                  CONST.DATE.FNS_TIMEZONE_FORMAT_STRING,
-                );
-
-                // Only update timestamps if localTs is valid
-                if (localTs && localTs !== 'unknown') {
-                  row.firstTs =
-                    (row.firstTs ?? localTs) < localTs ? row.firstTs : localTs;
-                  row.lastTs =
-                    (row.lastTs ?? localTs) > localTs ? row.lastTs : localTs;
-                }
-              }
+            if (hasLocalTs) {
+              row.firstTs =
+                row.firstTs && row.firstTs < localTs ? row.firstTs : localTs;
+              row.lastTs =
+                row.lastTs && row.lastTs > localTs ? row.lastTs : localTs;
             }
           }
         }
@@ -88,7 +100,7 @@ function buildDayRollups(
 
   return [...byKey.values()].map(r => ({
     ...r,
-    totalSdu: +r.totalSdu.toFixed(2),
+    totalSdu: Number(r.totalSdu.toFixed(2)),
   }));
 }
 
