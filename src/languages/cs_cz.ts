@@ -311,6 +311,14 @@ export default {
     cocktail: 'Koktejl',
     other: 'Ostatní',
   },
+  charts: {
+    target: 'Cíl',
+    heatmap: 'Heatmapa',
+    trend: 'Trend',
+    legend: 'Legenda',
+    noData: 'Žádná data k dispozici',
+    units: 'jednotky',
+  },
   units: {
     yellow: 'Žlutá',
     orange: 'Oranžová',

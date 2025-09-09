@@ -43,24 +43,31 @@ function StackedBarsByType({data, legend}: Props) {
           </Text>
         ))}
       </View>
-      {data.map(row => (
-        <View key={row.x} style={[styles.mb2]}>
-          <Text style={[styles.textHeadline, styles.mb1]}>{row.x}:</Text>
-          <View style={[styles.flexRow, styles.flexWrap, styles.gap2]}>
-            {drinkKeys.map(drinkKey => {
-              const value = row.segments[drinkKey] ?? 0;
-              const translationKey = getDrinkTranslationKey(drinkKey);
-              const drinkName = translate(translationKey as TranslationPaths);
+      {data.length === 0 ? (
+        <Text style={styles.textSupporting}>
+          {translate('charts.noData' as TranslationPaths)}
+        </Text>
+      ) : (
+        data.map(row => (
+          <View key={row.x} style={[styles.mb2]}>
+            <Text style={[styles.textHeadline, styles.mb1]}>{row.x}:</Text>
+            <View style={[styles.flexRow, styles.flexWrap, styles.gap2]}>
+              {drinkKeys.map(drinkKey => {
+                const value = row.segments[drinkKey] ?? 0;
+                const translationKey = getDrinkTranslationKey(drinkKey);
+                const drinkName = translate(translationKey as TranslationPaths);
 
-              return (
-                <Text key={drinkKey} style={styles.textSupporting}>
-                  {drinkName} {value}
-                </Text>
-              );
-            })}
+                return (
+                  <Text key={drinkKey} style={styles.textSupporting}>
+                    {drinkName} {value}{' '}
+                    {translate('charts.units' as TranslationPaths)}
+                  </Text>
+                );
+              })}
+            </View>
           </View>
-        </View>
-      ))}
+        ))
+      )}
     </View>
   );
 }
