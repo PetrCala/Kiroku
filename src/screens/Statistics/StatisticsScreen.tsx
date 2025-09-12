@@ -22,6 +22,8 @@ import {getRollingTrend} from '@libs/Analytics/selectors/rollingTrend';
 import {getByTypeStackedWeekly} from '@libs/Analytics/selectors/composition';
 import {getHeatmapDays} from '@libs/Analytics/selectors/heatmap';
 
+const SHOULD_SHOW_STATISTICS = false;
+
 function StatisticsScreen() {
   const {translate} = useLocalize();
   const styles = useThemeStyles();
@@ -57,29 +59,33 @@ function StatisticsScreen() {
         onBackButtonPress={Navigation.goBack}
       />
       <ScrollView style={[styles.flex1]}>
-        <View style={{flexDirection: 'row', gap: 12}}>
-          <KpiTile label="Today" value={kpi.todaySdu} unit="SDU" />
-          <KpiTile
-            label="This Week"
-            value={kpi.weekSdu}
-            unit="SDU"
-            deltaPct={kpi.weekVsPrevPct}
-          />
-          <KpiTile label="Drinks" value={kpi.drinksToday} />
-        </View>
+        {SHOULD_SHOW_STATISTICS && (
+          <>
+            <View style={{flexDirection: 'row', gap: 12}}>
+              <KpiTile label="Today" value={kpi.todaySdu} unit="SDU" />
+              <KpiTile
+                label="This Week"
+                value={kpi.weekSdu}
+                unit="SDU"
+                deltaPct={kpi.weekVsPrevPct}
+              />
+              <KpiTile label="Drinks" value={kpi.drinksToday} />
+            </View>
 
-        <BarsWeekly
-          data={weekly}
-          formatX={x => x}
-          formatY={y => y.toFixed(1)}
-          targetLine={undefined}
-        />
+            <BarsWeekly
+              data={weekly}
+              formatX={x => x}
+              formatY={y => y.toFixed(1)}
+              targetLine={undefined}
+            />
 
-        <LineTrend data={trend} />
+            <LineTrend data={trend} />
 
-        <StackedBarsByType data={stacked} />
+            <StackedBarsByType data={stacked} />
 
-        <HeatmapCalendar days={heat} scale="count" />
+            <HeatmapCalendar days={heat} scale="count" />
+          </>
+        )}
       </ScrollView>
     </ScreenWrapper>
   );
