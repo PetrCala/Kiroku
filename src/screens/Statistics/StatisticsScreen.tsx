@@ -21,6 +21,7 @@ import {getWeeklyBars} from '@libs/Analytics/selectors/weeklyBars';
 import {getRollingTrend} from '@libs/Analytics/selectors/rollingTrend';
 import {getByTypeStackedWeekly} from '@libs/Analytics/selectors/composition';
 import {getHeatmapDays} from '@libs/Analytics/selectors/heatmap';
+import Text from '@components/Text';
 
 const SHOULD_SHOW_STATISTICS = false;
 
@@ -59,7 +60,7 @@ function StatisticsScreen() {
         onBackButtonPress={Navigation.goBack}
       />
       <ScrollView style={[styles.flex1]}>
-        {SHOULD_SHOW_STATISTICS && (
+        {SHOULD_SHOW_STATISTICS ? (
           <>
             <View style={{flexDirection: 'row', gap: 12}}>
               <KpiTile label="Today" value={kpi.todaySdu} unit="SDU" />
@@ -85,6 +86,10 @@ function StatisticsScreen() {
 
             <HeatmapCalendar days={heat} scale="count" />
           </>
+        ) : (
+          <View style={styles.flex1}>
+            <Text>{translate('statisticsScreen.comingSoon')}</Text>
+          </View>
         )}
       </ScrollView>
     </ScreenWrapper>
