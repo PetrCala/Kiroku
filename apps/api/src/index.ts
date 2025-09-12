@@ -141,5 +141,6 @@ app.post('/friends/remove', authenticate, async (req: AuthenticatedRequest, res:
   }
 });
 
+const FUNCTIONS_REGION = process.env.FUNCTIONS_REGION || 'us-central1';
 // eslint-disable-next-line
-export const api = functions.region('us-central1').https.onRequest(app);
+export const api = functions.region(FUNCTIONS_REGION).https.onRequest(app);
