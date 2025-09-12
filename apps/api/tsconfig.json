@@ -4,7 +4,7 @@
     "target": "ES2019",
     "module": "commonjs",
     "outDir": "dist",
-    "rootDir": "src",
+    "rootDir": ".",
     "baseUrl": ".",
     "paths": {
       "@kiroku/common": ["../../packages/kiroku-common/src/index.ts"],
@@ -14,6 +14,6 @@
     "esModuleInterop": true,
     "skipLibCheck": true
   },
-  "include": ["src"],
+  "include": ["src", "../../packages/kiroku-common/src"],
   "exclude": ["node_modules"]
 }
