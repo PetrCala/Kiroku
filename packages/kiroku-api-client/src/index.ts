@@ -43,6 +43,18 @@ function createApiClient({baseUrl, getToken}: ClientConfig) {
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
         return res.json();
       },
+      async deleteRequest(otherUserId: string) {
+        const res = await fetch(withBase('/friends/delete-request'), {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            ...(await authHeaders(getToken)),
+          },
+          body: JSON.stringify({otherUserId}),
+        });
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        return res.json();
+      },
       async accept(fromUserId: string) {
         const res = await fetch(withBase('/friends/accept'), {
           method: 'POST',
@@ -55,14 +67,14 @@ function createApiClient({baseUrl, getToken}: ClientConfig) {
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
         return res.json();
       },
-      async remove(userId: string) {
+      async remove(otherUserId: string) {
         const res = await fetch(withBase('/friends/remove'), {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
             ...(await authHeaders(getToken)),
           },
-          body: JSON.stringify({userId}),
+          body: JSON.stringify({otherUserId}),
         });
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
         return res.json();
@@ -73,4 +85,3 @@ function createApiClient({baseUrl, getToken}: ClientConfig) {
 
 export type {ClientConfig};
 export {createApiClient};
-
