@@ -4,8 +4,8 @@ import * as admin from 'firebase-admin';
 import express = require('express');
 import cors = require('cors');
 import type {Response, NextFunction} from 'express';
-import type {AuthenticatedRequest} from './types';
 import {DBPATHS} from '@kiroku/common';
+import type {AuthenticatedRequest} from './types';
 
 // Initialize Firebase Admin SDK
 admin.initializeApp();
@@ -206,7 +206,7 @@ app.post(
   },
 );
 
-const FUNCTIONS_REGION = process.env.FUNCTIONS_REGION || 'us-central1';
+const FUNCTIONS_REGION = process.env.FUNCTIONS_REGION || 'europe-west1';
 // eslint-disable-next-line
 export const api = onRequest(
   {

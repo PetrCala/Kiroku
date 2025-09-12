@@ -67,7 +67,7 @@ const TEST_HOST = '127.0.0.1';
 const TEST_AUTH_PORT = 9099;
 const TEST_REALTIME_DATABASE_PORT = 9001;
 const TEST_STORAGE_BUCKET_PORT = 9199;
-const FUNCTIONS_REGION = get(Config, 'FUNCTIONS_REGION', 'us-central1');
+const FUNCTIONS_REGION = get(Config, 'FUNCTIONS_REGION', 'europe-west1');
 const FUNCTIONS_URL_OVERRIDE = get(Config, 'FUNCTIONS_URL', '');
 const FUNCTIONS_EMULATOR_PORT = Number(get(Config, 'FUNCTIONS_PORT', '5001'));
 

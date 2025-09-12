@@ -11,7 +11,7 @@ function getFunctionsApiBaseUrl(): string {
     return stripTrailingSlash(override);
   }
 
-  const region = CONFIG.FUNCTIONS.REGION || 'us-central1';
+  const region = CONFIG.FUNCTIONS.REGION || 'europe-west1';
   const projectId = CONFIG.FIREBASE_CONFIG.projectId || CONFIG.TEST_PROJECT_ID;
 
   // Emulators
@@ -26,4 +26,3 @@ function getFunctionsApiBaseUrl(): string {
 }
 
 export {getFunctionsApiBaseUrl};
-
