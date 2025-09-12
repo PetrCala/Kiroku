@@ -6,6 +6,7 @@ import express = require('express');
 import cors = require('cors');
 import type {Response, NextFunction} from 'express';
 import type {AuthenticatedRequest} from './types';
+import {DBPATHS} from '@kiroku/common';
 
 // Initialize Firebase Admin SDK
 admin.initializeApp();
@@ -57,6 +58,88 @@ app.get(
   },
 );
 
+// Friends routes
+app.post('/friends/request', authenticate, async (req: AuthenticatedRequest, res: Response) => {
+  try {
+    const fromUserId = req.user?.uid;
+    const {toUserId} = req.body ?? {};
+    if (!fromUserId || !toUserId || typeof toUserId !== 'string') {
+      res.status(400).json({error: 'Invalid payload'});
+      return;
+    }
+    if (fromUserId === toUserId) {
+      res.status(400).json({error: 'Cannot send request to self'});
+      return;
+    }
+    const updates: Record<string, string> = {};
+    updates[DBPATHS.USERS_USER_ID_FRIEND_REQUESTS_REQUEST_ID.getRoute(fromUserId, toUserId)] = 'sent';
+    updates[DBPATHS.USERS_USER_ID_FRIEND_REQUESTS_REQUEST_ID.getRoute(toUserId, fromUserId)] = 'received';
+    await admin.database().ref().update(updates);
+    res.json({ok: true});
+  } catch (e) {
+    logger.error('friends/request error', e);
+    res.status(500).json({error: 'Internal error'});
+  }
+});
+
+app.post('/friends/delete-request', authenticate, async (req: AuthenticatedRequest, res: Response) => {
+  try {
+    const currentUserId = req.user?.uid;
+    const {otherUserId} = req.body ?? {};
+    if (!currentUserId || !otherUserId || typeof otherUserId !== 'string') {
+      res.status(400).json({error: 'Invalid payload'});
+      return;
+    }
+    const updates: Record<string, null> = {};
+    updates[DBPATHS.USERS_USER_ID_FRIEND_REQUESTS_REQUEST_ID.getRoute(currentUserId, otherUserId)] = null;
+    updates[DBPATHS.USERS_USER_ID_FRIEND_REQUESTS_REQUEST_ID.getRoute(otherUserId, currentUserId)] = null;
+    await admin.database().ref().update(updates);
+    res.json({ok: true});
+  } catch (e) {
+    logger.error('friends/delete-request error', e);
+    res.status(500).json({error: 'Internal error'});
+  }
+});
+
+app.post('/friends/accept', authenticate, async (req: AuthenticatedRequest, res: Response) => {
+  try {
+    const currentUserId = req.user?.uid;
+    const {fromUserId} = req.body ?? {};
+    if (!currentUserId || !fromUserId || typeof fromUserId !== 'string') {
+      res.status(400).json({error: 'Invalid payload'});
+      return;
+    }
+    const updates: Record<string, boolean | null> = {};
+    updates[DBPATHS.USERS_USER_ID_FRIEND_REQUESTS_REQUEST_ID.getRoute(currentUserId, fromUserId)] = null;
+    updates[DBPATHS.USERS_USER_ID_FRIEND_REQUESTS_REQUEST_ID.getRoute(fromUserId, currentUserId)] = null;
+    updates[DBPATHS.USERS_USER_ID_FRIENDS_FRIEND_ID.getRoute(currentUserId, fromUserId)] = true;
+    updates[DBPATHS.USERS_USER_ID_FRIENDS_FRIEND_ID.getRoute(fromUserId, currentUserId)] = true;
+    await admin.database().ref().update(updates);
+    res.json({ok: true});
+  } catch (e) {
+    logger.error('friends/accept error', e);
+    res.status(500).json({error: 'Internal error'});
+  }
+});
+
+app.post('/friends/remove', authenticate, async (req: AuthenticatedRequest, res: Response) => {
+  try {
+    const currentUserId = req.user?.uid;
+    const {otherUserId} = req.body ?? {};
+    if (!currentUserId || !otherUserId || typeof otherUserId !== 'string') {
+      res.status(400).json({error: 'Invalid payload'});
+      return;
+    }
+    const updates: Record<string, null> = {};
+    updates[DBPATHS.USERS_USER_ID_FRIENDS_FRIEND_ID.getRoute(currentUserId, otherUserId)] = null;
+    updates[DBPATHS.USERS_USER_ID_FRIENDS_FRIEND_ID.getRoute(otherUserId, currentUserId)] = null;
+    await admin.database().ref().update(updates);
+    res.json({ok: true});
+  } catch (e) {
+    logger.error('friends/remove error', e);
+    res.status(500).json({error: 'Internal error'});
+  }
+});
+
 // eslint-disable-next-line
 export const api = functions.https.onRequest(app);
-

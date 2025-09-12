@@ -1,8 +1,10 @@
 import type {FriendRequestStatus} from '@src/types/onyx';
 import type {Database} from 'firebase/database';
-import {ref, get, update} from 'firebase/database';
+import {ref, get} from 'firebase/database';
 import DBPATHS from '@src/DBPATHS';
-import CONST from '@src/CONST';
+import CONFIG from '@src/CONFIG';
+import {auth} from '@libs/Firebase/FirebaseApp';
+import {createApiClient} from '@kiroku/api-client';
 
 const friendRef = DBPATHS.USERS_USER_ID_FRIENDS_FRIEND_ID;
 const friendRequestRef = DBPATHS.USERS_USER_ID_FRIEND_REQUESTS_REQUEST_ID;
@@ -43,12 +45,12 @@ async function sendFriendRequest(
   userFrom: string,
   userTo: string,
 ): Promise<void> {
-  const updates: Record<string, FriendRequestStatus> = {};
-  updates[friendRequestRef.getRoute(userFrom, userTo)] =
-    CONST.FRIEND_REQUEST_STATUS.SENT;
-  updates[friendRequestRef.getRoute(userTo, userFrom)] =
-    CONST.FRIEND_REQUEST_STATUS.RECEIVED;
-  await update(ref(db), updates);
+  const baseUrl = getApiBaseUrl();
+  const client = createApiClient({
+    baseUrl,
+    getToken: () => auth.currentUser?.getIdToken(),
+  });
+  await client.friends.request(userTo);
 }
 
 /**
@@ -66,10 +68,13 @@ async function deleteFriendRequest(
   userFrom: string,
   userTo: string,
 ): Promise<void> {
-  const updates: Record<string, null> = {};
-  updates[friendRequestRef.getRoute(userFrom, userTo)] = null;
-  updates[friendRequestRef.getRoute(userTo, userFrom)] = null;
-  await update(ref(db), updates);
+  const baseUrl = getApiBaseUrl();
+  const client = createApiClient({
+    baseUrl,
+    getToken: () => auth.currentUser?.getIdToken(),
+  });
+  // userFrom is the current user; server derives it from token.
+  await client.friends.deleteRequest(userTo);
 }
 
 /**
@@ -87,12 +92,13 @@ async function acceptFriendRequest(
   userFrom: string,
   userTo: string,
 ): Promise<void> {
-  const updates: Record<string, boolean | null> = {};
-  updates[friendRequestRef.getRoute(userFrom, userTo)] = null;
-  updates[friendRequestRef.getRoute(userTo, userFrom)] = null;
-  updates[friendRef.getRoute(userFrom, userTo)] = true;
-  updates[friendRef.getRoute(userTo, userFrom)] = true;
-  await update(ref(db), updates);
+  const baseUrl = getApiBaseUrl();
+  const client = createApiClient({
+    baseUrl,
+    getToken: () => auth.currentUser?.getIdToken(),
+  });
+  // In current signature, userTo is the original sender of the request.
+  await client.friends.accept(userTo);
 }
 
 /**
@@ -109,10 +115,12 @@ async function unfriend(
   userFrom: string,
   userTo: string,
 ): Promise<void> {
-  const updates: Record<string, null> = {};
-  updates[friendRef.getRoute(userFrom, userTo)] = null;
-  updates[friendRef.getRoute(userTo, userFrom)] = null;
-  await update(ref(db), updates);
+  const baseUrl = getApiBaseUrl();
+  const client = createApiClient({
+    baseUrl,
+    getToken: () => auth.currentUser?.getIdToken(),
+  });
+  await client.friends.remove(userTo);
 }
 
 export {
@@ -122,3 +130,15 @@ export {
   sendFriendRequest,
   unfriend,
 };
+
+function getApiBaseUrl(): string {
+  // Prefer Functions emulator when enabled
+  if (CONFIG.IS_USING_EMULATORS) {
+    const host = CONFIG.EMULATORS.HOST;
+    const projectId = CONFIG.TEST_PROJECT_ID;
+    // Functions emulator default port is 5001; region assumed us-central1
+    return `http://${host}:5001/${projectId}/us-central1/api`;
+  }
+  // Default to secure API root with /api path; hosting rewrites are expected to proxy to functions
+  return `${CONFIG.KIROKU.DEFAULT_SECURE_API_ROOT}api`;
+}
