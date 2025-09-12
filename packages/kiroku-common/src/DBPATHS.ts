@@ -236,4 +236,3 @@ type PathIsPlainString = IsEqual<AllPaths, string>;
 type Path = PathIsPlainString extends true ? never : AllPaths;
 
 export type {Path};
-
