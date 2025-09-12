@@ -4,7 +4,9 @@ import * as admin from 'firebase-admin';
 import express = require('express');
 import cors = require('cors');
 import type {Response, NextFunction} from 'express';
-import {DBPATHS} from '@kiroku/common';
+// Import DBPATHS from the local common package source to bundle it into dist
+// eslint-disable-next-line import/no-relative-packages
+import DBPATHS from '../../../packages/kiroku-common/src/DBPATHS';
 import type {AuthenticatedRequest} from './types';
 
 // Initialize Firebase Admin SDK

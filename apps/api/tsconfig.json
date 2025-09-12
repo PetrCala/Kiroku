@@ -5,6 +5,11 @@
     "module": "commonjs",
     "outDir": "dist",
     "rootDir": "src",
+    "baseUrl": ".",
+    "paths": {
+      "@kiroku/common": ["../../packages/kiroku-common/src/index.ts"],
+      "@kiroku/common/*": ["../../packages/kiroku-common/src/*"]
+    },
     "strict": true,
     "esModuleInterop": true,
     "skipLibCheck": true
@@ -12,4 +17,3 @@
   "include": ["src"],
   "exclude": ["node_modules"]
 }
-
