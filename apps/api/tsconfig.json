@@ -1,19 +1,18 @@
 {
-  "$schema": "https://json.schemastore.org/tsconfig",
   "compilerOptions": {
     "target": "ES2019",
     "module": "commonjs",
     "outDir": "dist",
-    "rootDir": ".",
+    "rootDir": "../../",
     "baseUrl": ".",
     "paths": {
       "@kiroku/common": ["../../packages/kiroku-common/src/index.ts"],
-      "@kiroku/common/*": ["../../packages/kiroku-common/src/*"]
+      "@kiroku/common/": ["../../packages/kiroku-common/src/"]
     },
     "strict": true,
     "esModuleInterop": true,
     "skipLibCheck": true
   },
   "include": ["src", "../../packages/kiroku-common/src"],
-  "exclude": ["node_modules"]
+  "exclude": ["node_modules", "dist"]
 }
