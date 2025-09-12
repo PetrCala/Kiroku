@@ -364,7 +364,7 @@ module.exports = {
             paths: [],
             patterns: [
               {
-                group: ['react-native', 'expo', 'expo-*', 'firebase', 'firebase/*:not(firebase-admin)'],
+                group: ['react-native', 'expo', 'expo-*', 'firebase', 'firebase/*'],
                 message:
                   'API must not import react-native, expo, or client firebase SDKs. Use firebase-admin only.',
               },
