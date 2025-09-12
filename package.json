@@ -143,7 +143,8 @@
     "type-fest": "^4.10.2",
     "ua-parser-js": "^1.0.37",
     "underscore": "^1.13.6",
-    "yargs": "^17.7.2"
+    "yargs": "^17.7.2",
+    "@kiroku/api-client": "workspace:*"
   },
   "devDependencies": {
     "@actions/core": "1.10.0",
@@ -268,4 +269,3 @@
     "npm": "10.7.0"
   }
 }
-    "@kiroku/api-client": "workspace:*",
