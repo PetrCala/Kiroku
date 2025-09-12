@@ -1,5 +1,9 @@
 {
   "projects": {
-    "default": "alcohol-tracker-db"
-  }
+    "default": "alcohol-tracker-db",
+    "prod": "alcohol-tracker-db",
+    "dev": "dev-alcohol-tracker-db"
+  },
+  "targets": {},
+  "etags": {}
 }
