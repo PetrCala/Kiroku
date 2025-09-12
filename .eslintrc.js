@@ -152,7 +152,17 @@ module.exports = {
     'testing-library',
     'eslint-plugin-react-compiler',
   ],
-  ignorePatterns: ['lib/**', 'src/libs/common/**', 'local/**'],
+  ignorePatterns: [
+    'lib/**',
+    'src/libs/common/**',
+    'local/**',
+    // Ignore built artifacts in workspaces
+    'packages/**/dist/**',
+    'apps/**/dist/**',
+    // Ignore per-workspace eslint configs from being linted with typed rules
+    'packages/**/.eslintrc.js',
+    'apps/**/.eslintrc.js',
+  ],
   parser: '@typescript-eslint/parser',
   parserOptions: {
     project: path.resolve(__dirname, './tsconfig.json'),
@@ -346,7 +356,14 @@ module.exports = {
             paths: [],
             patterns: [
               {
-                group: ['react-native', 'expo', 'expo-*', 'firebase', 'firebase/*', 'firebase-admin'],
+                group: [
+                  'react-native',
+                  'expo',
+                  'expo-*',
+                  'firebase',
+                  'firebase/*',
+                  'firebase-admin',
+                ],
                 message:
                   'Common package must remain platform-agnostic and SDK-free. No react-native, expo, firebase or firebase-admin imports.',
               },
@@ -364,7 +381,13 @@ module.exports = {
             paths: [],
             patterns: [
               {
-                group: ['react-native', 'expo', 'expo-*', 'firebase', 'firebase/*'],
+                group: [
+                  'react-native',
+                  'expo',
+                  'expo-*',
+                  'firebase',
+                  'firebase/*',
+                ],
                 message:
                   'API must not import react-native, expo, or client firebase SDKs. Use firebase-admin only.',
               },
@@ -382,7 +405,14 @@ module.exports = {
             paths: [],
             patterns: [
               {
-                group: ['react-native', 'expo', 'expo-*', 'firebase', 'firebase/*', 'firebase-admin'],
+                group: [
+                  'react-native',
+                  'expo',
+                  'expo-*',
+                  'firebase',
+                  'firebase/*',
+                  'firebase-admin',
+                ],
                 message:
                   'API client should remain transport-only. Do not couple to RN or Firebase SDKs.',
               },
