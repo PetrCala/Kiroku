@@ -57,6 +57,8 @@
     "**/dist/*",
     ".github/actions/**/index.js",
     "**/docs/*",
-    "**/local/*"
+    "**/local/*",
+    "packages/**",
+    "apps/**"
   ]
 }

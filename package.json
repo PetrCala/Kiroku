@@ -4,6 +4,10 @@
   "private": true,
   "type": "commonjs",
   "license": "MIT",
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
   "scripts": {
     "android": "npx react-native run-android --mode=developmentDebug --appId=com.alcohol_tracker.dev --active-arch-only",
     "ios": "npx react-native run-ios --simulator=\"iPhone 16 Pro\" --scheme \"Kiroku (development)\" --mode=\"DebugDevelopment\"",
@@ -44,7 +48,10 @@
     "deploy-functions": "firebase deploy --only functions --debug",
     "workflow-test": "./workflow_tests/scripts/runWorkflowTests.sh",
     "bump": "./scripts/bumpVersion.sh",
-    "build": "tsc"
+    "build": "tsc",
+    "ws:build": "npm run -w @kiroku/common build && npm run -w @kiroku/api-client build && npm run -w @kiroku/api build",
+    "ws:lint": "npm run -w @kiroku/common lint || true && npm run -w @kiroku/api-client lint || true && npm run -w @kiroku/api lint || true",
+    "ws:api": "npm run -w @kiroku/api serve"
   },
   "dependencies": {
     "@babel/plugin-proposal-private-methods": "^7.18.6",

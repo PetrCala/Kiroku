@@ -1,5 +1,29 @@
 # Repository Guidelines
 
+## Monorepo Layout (workspaces)
+- Root is a workspace manager for:
+  - `apps/mobile` (current app remains at repo root for now; migration optional later)
+  - `apps/api` (Firebase Functions + Express)
+  - `packages/kiroku-common` (pure TS: DBPATHS, shared types, update builders)
+  - `packages/kiroku-api-client` (typed HTTP client for calling the API)
+
+### Package Boundaries
+- `packages/kiroku-common` must be pure: no imports from `react-native`, `firebase/*`, or `firebase-admin`.
+- `apps/api` can import `firebase-admin` and `@kiroku/common`; it must not import `react-native`.
+- Mobile app should eventually import shared logic from `@kiroku/common` and use `@kiroku/api-client` for mutations (reads/listeners may stay on client Firebase initially).
+
+### Dev Commands
+- Install workspaces: `bun i` (preferred) or `npm ci` at the repo root.
+- Build packages: `npm run ws:build`.
+- Start API emulators: `npm run ws:api` (requires firebase-tools).
+
+### Migration Plan (high-level)
+1) Extract shared: move DBPATHS, update builders, and minimal ID types to `@kiroku/common`.
+2) Define contracts (later) and expand common types as needed.
+3) Implement API routes in `apps/api` for write operations.
+4) Add `@kiroku/api-client` and refactor app mutations to use it.
+5) Keep realtime reads in app; phase out direct writes.
+
 ## Project Structure & Module Organization
 - `src/` — React Native app code (TypeScript). Uses path aliases like `@components/*`, `@hooks/*`, `@libs/*`, `@src/*` (see `tsconfig.json`).
 - `__tests__/` — tests grouped by `unit/`, `integration/`, `e2e/`, plus shared `utils/`.
@@ -42,4 +66,3 @@
 - Do not commit secrets. Use `.env.development`, `.env.staging`, `.env.production` with `react-native-config`.
 - Example: `USE_EMULATORS=true` to run against local Firebase emulators.
 - Android builds require local SDK in `android/local.properties`; run `cd ios && pod install` for iOS.
-
