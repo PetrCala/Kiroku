@@ -27,13 +27,13 @@ describe('getFunctionsApiBaseUrl', () => {
     mockConfig({
       USE_EMULATORS: 'true',
       PROJECT_ID: 'local-project',
-      FUNCTIONS_REGION: 'us-central1',
+      FUNCTIONS_REGION: 'europe-west1',
       FUNCTIONS_PORT: '5001',
     });
     const {getFunctionsApiBaseUrl} = require('@src/libs/ApiConfig');
     // Defaults HOST to 127.0.0.1 from CONFIG
     expect(getFunctionsApiBaseUrl()).toBe(
-      'http://127.0.0.1:5001/local-project/us-central1/api',
+      'http://127.0.0.1:5001/local-project/europe-west1/api',
     );
   });
 
@@ -49,4 +49,3 @@ describe('getFunctionsApiBaseUrl', () => {
     );
   });
 });
-
