@@ -268,3 +268,4 @@
     "npm": "10.7.0"
   }
 }
+    "@kiroku/api-client": "workspace:*",
