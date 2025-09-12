@@ -5,7 +5,9 @@ type ClientConfig = {
   getToken?: TokenProvider;
 };
 
-async function authHeaders(getToken?: TokenProvider) {
+async function authHeaders(
+  getToken?: TokenProvider,
+): Promise<Record<string, string>> {
   const token = typeof getToken === 'function' ? await getToken() : undefined;
   return token ? {Authorization: `Bearer ${token}`} : {};
 }
@@ -16,7 +18,9 @@ function createApiClient({baseUrl, getToken}: ClientConfig) {
   return {
     async getPublic() {
       const res = await fetch(withBase('/public'));
-      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      if (!res.ok) {
+        throw new Error(`HTTP ${res.status}`);
+      }
       return res.text();
     },
 
@@ -26,7 +30,9 @@ function createApiClient({baseUrl, getToken}: ClientConfig) {
           ...(await authHeaders(getToken)),
         },
       });
-      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      if (!res.ok) {
+        throw new Error(`HTTP ${res.status}`);
+      }
       return res.text();
     },
 
@@ -40,7 +46,9 @@ function createApiClient({baseUrl, getToken}: ClientConfig) {
           },
           body: JSON.stringify({toUserId}),
         });
-        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        if (!res.ok) {
+          throw new Error(`HTTP ${res.status}`);
+        }
         return res.json();
       },
       async deleteRequest(otherUserId: string) {
@@ -52,7 +60,9 @@ function createApiClient({baseUrl, getToken}: ClientConfig) {
           },
           body: JSON.stringify({otherUserId}),
         });
-        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        if (!res.ok) {
+          throw new Error(`HTTP ${res.status}`);
+        }
         return res.json();
       },
       async accept(fromUserId: string) {
@@ -64,7 +74,9 @@ function createApiClient({baseUrl, getToken}: ClientConfig) {
           },
           body: JSON.stringify({fromUserId}),
         });
-        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        if (!res.ok) {
+          throw new Error(`HTTP ${res.status}`);
+        }
         return res.json();
       },
       async remove(otherUserId: string) {
@@ -76,7 +88,9 @@ function createApiClient({baseUrl, getToken}: ClientConfig) {
           },
           body: JSON.stringify({otherUserId}),
         });
-        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        if (!res.ok) {
+          throw new Error(`HTTP ${res.status}`);
+        }
         return res.json();
       },
     },
