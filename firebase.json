@@ -1,4 +1,15 @@
 {
+  "functions": {
+    "source": "apps/api",
+    "ignore": [
+      "node_modules",
+      ".git",
+      "firebase-debug.log",
+      "**/*.test.*",
+      "**/__tests__/**"
+    ],
+    "runtime": "nodejs20"
+  },
   "database": {
     "rules": "database.rules.json"
   },
@@ -7,6 +18,9 @@
   },
   "emulators": {
     "singleProjectMode": false,
+    "functions": {
+      "port": 5001
+    },
     "auth": {
       "port": 9099
     },
