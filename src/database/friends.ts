@@ -1,4 +1,3 @@
-import type {FriendRequestStatus} from '@src/types/onyx';
 import type {Database} from 'firebase/database';
 import {ref, get} from 'firebase/database';
 import DBPATHS from '@src/DBPATHS';
@@ -7,7 +6,6 @@ import {auth} from '@libs/Firebase/FirebaseApp';
 import {createApiClient} from '@kiroku/api-client';
 
 const friendRef = DBPATHS.USERS_USER_ID_FRIENDS_FRIEND_ID;
-const friendRequestRef = DBPATHS.USERS_USER_ID_FRIEND_REQUESTS_REQUEST_ID;
 
 /**
  * Check if userB is in userA's friend list.
