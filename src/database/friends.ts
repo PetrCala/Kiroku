@@ -1,7 +1,7 @@
 import type {Database} from 'firebase/database';
 import {ref, get} from 'firebase/database';
 import DBPATHS from '@src/DBPATHS';
-import CONFIG from '@src/CONFIG';
+import {getFunctionsApiBaseUrl} from '@src/libs/ApiConfig';
 import {auth} from '@libs/Firebase/FirebaseApp';
 import {createApiClient} from '@kiroku/api-client';
 
@@ -43,7 +43,7 @@ async function sendFriendRequest(
   userFrom: string,
   userTo: string,
 ): Promise<void> {
-  const baseUrl = getApiBaseUrl();
+  const baseUrl = getFunctionsApiBaseUrl();
   const client = createApiClient({
     baseUrl,
     getToken: () => auth.currentUser?.getIdToken(),
@@ -66,7 +66,7 @@ async function deleteFriendRequest(
   userFrom: string,
   userTo: string,
 ): Promise<void> {
-  const baseUrl = getApiBaseUrl();
+  const baseUrl = getFunctionsApiBaseUrl();
   const client = createApiClient({
     baseUrl,
     getToken: () => auth.currentUser?.getIdToken(),
@@ -90,7 +90,7 @@ async function acceptFriendRequest(
   userFrom: string,
   userTo: string,
 ): Promise<void> {
-  const baseUrl = getApiBaseUrl();
+  const baseUrl = getFunctionsApiBaseUrl();
   const client = createApiClient({
     baseUrl,
     getToken: () => auth.currentUser?.getIdToken(),
@@ -113,7 +113,7 @@ async function unfriend(
   userFrom: string,
   userTo: string,
 ): Promise<void> {
-  const baseUrl = getApiBaseUrl();
+  const baseUrl = getFunctionsApiBaseUrl();
   const client = createApiClient({
     baseUrl,
     getToken: () => auth.currentUser?.getIdToken(),
@@ -129,14 +129,4 @@ export {
   unfriend,
 };
 
-function getApiBaseUrl(): string {
-  // Prefer Functions emulator when enabled
-  if (CONFIG.IS_USING_EMULATORS) {
-    const host = CONFIG.EMULATORS.HOST;
-    const projectId = CONFIG.TEST_PROJECT_ID;
-    // Functions emulator default port is 5001; region assumed us-central1
-    return `http://${host}:5001/${projectId}/us-central1/api`;
-  }
-  // Default to secure API root with /api path; hosting rewrites are expected to proxy to functions
-  return `${CONFIG.KIROKU.DEFAULT_SECURE_API_ROOT}api`;
-}
+// Base URL now resolved via ApiConfig

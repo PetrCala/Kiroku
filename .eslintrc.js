@@ -337,6 +337,60 @@ module.exports = {
         'rulesdir/no-default-props': 'off',
       },
     },
+    {
+      files: ['packages/kiroku-common/**/*.{ts,tsx,js,jsx}'],
+      rules: {
+        'no-restricted-imports': [
+          'error',
+          {
+            paths: [],
+            patterns: [
+              {
+                group: ['react-native', 'expo', 'expo-*', 'firebase', 'firebase/*', 'firebase-admin'],
+                message:
+                  'Common package must remain platform-agnostic and SDK-free. No react-native, expo, firebase or firebase-admin imports.',
+              },
+            ],
+          },
+        ],
+      },
+    },
+    {
+      files: ['apps/api/**/*.{ts,tsx,js,jsx}'],
+      rules: {
+        'no-restricted-imports': [
+          'error',
+          {
+            paths: [],
+            patterns: [
+              {
+                group: ['react-native', 'expo', 'expo-*', 'firebase', 'firebase/*:not(firebase-admin)'],
+                message:
+                  'API must not import react-native, expo, or client firebase SDKs. Use firebase-admin only.',
+              },
+            ],
+          },
+        ],
+      },
+    },
+    {
+      files: ['packages/kiroku-api-client/**/*.{ts,tsx,js,jsx}'],
+      rules: {
+        'no-restricted-imports': [
+          'error',
+          {
+            paths: [],
+            patterns: [
+              {
+                group: ['react-native', 'expo', 'expo-*', 'firebase', 'firebase/*', 'firebase-admin'],
+                message:
+                  'API client should remain transport-only. Do not couple to RN or Firebase SDKs.',
+              },
+            ],
+          },
+        ],
+      },
+    },
     // {
     //   files: ['en.ts', 'cs_CZ.ts'],
     //   rules: {
