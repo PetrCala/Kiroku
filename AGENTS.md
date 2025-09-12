@@ -17,6 +17,15 @@
 - Build packages: `npm run ws:build`.
 - Start API emulators: `npm run ws:api` (requires firebase-tools).
 
+### Environment for Functions URL
+- App resolves Cloud Functions base automatically:
+  - If `USE_EMULATORS=true`: `http://<HOST>:<FUNCTIONS_PORT>/<PROJECT_ID>/<REGION>/api`.
+  - Else: `https://<REGION>-<PROJECT_ID>.cloudfunctions.net/api`.
+- Optional overrides via `.env.*` (react-native-config):
+  - `FUNCTIONS_URL` — full base URL override (takes precedence).
+  - `FUNCTIONS_REGION` — default `us-central1`.
+  - `FUNCTIONS_PORT` — emulator port (default `5001`).
+
 ### Migration Plan (high-level)
 1) Extract shared: move DBPATHS, update builders, and minimal ID types to `@kiroku/common`.
 2) Define contracts (later) and expand common types as needed.
