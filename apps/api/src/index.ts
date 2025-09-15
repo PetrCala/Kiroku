@@ -206,7 +206,7 @@ app.post(
   },
 );
 
-const FUNCTIONS_REGION = process.env.FUNCTIONS_REGION || 'europe-west1';
+const FUNCTIONS_REGION = process.env.FUNCTIONS_REGION ?? 'europe-west1';
 // eslint-disable-next-line
 export const api = onRequest(
   {
