@@ -20,7 +20,7 @@ describe('getFunctionsApiBaseUrl', () => {
     // Re-import after mock
     // eslint-disable-next-line @typescript-eslint/no-var-requires
     const {getFunctionsApiBaseUrl} = require('@src/libs/ApiConfig');
-    expect(getFunctionsApiBaseUrl()).toBe('https://api.example.com');
+    expect(getFunctionsApiBaseUrl()).toBe('https://api.example.com/v1');
   });
 
   test('builds emulator URL when USE_EMULATORS=true', async () => {
@@ -33,7 +33,7 @@ describe('getFunctionsApiBaseUrl', () => {
     const {getFunctionsApiBaseUrl} = require('@src/libs/ApiConfig');
     // Defaults HOST to 127.0.0.1 from CONFIG
     expect(getFunctionsApiBaseUrl()).toBe(
-      'http://127.0.0.1:5001/local-project/europe-west1/api',
+      'http://127.0.0.1:5001/local-project/europe-west1/api/v1',
     );
   });
 
@@ -45,7 +45,7 @@ describe('getFunctionsApiBaseUrl', () => {
     });
     const {getFunctionsApiBaseUrl} = require('@src/libs/ApiConfig');
     expect(getFunctionsApiBaseUrl()).toBe(
-      'https://europe-west1-project-prod.cloudfunctions.net/api',
+      'https://europe-west1-project-prod.cloudfunctions.net/api/v1',
     );
   });
 });
