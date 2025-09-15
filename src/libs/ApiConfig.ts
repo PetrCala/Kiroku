@@ -7,8 +7,9 @@ function stripTrailingSlash(url: string) {
 function getFunctionsApiBaseUrl(): string {
   // Highest priority: explicit override via env
   const override = CONFIG.FUNCTIONS.URL_OVERRIDE;
+  const version = CONFIG.API.VERSION || 'v1';
   if (override) {
-    return stripTrailingSlash(override);
+    return `${stripTrailingSlash(override)}/${version}`;
   }
 
   const region = CONFIG.FUNCTIONS.REGION || 'europe-west1';
@@ -18,11 +19,11 @@ function getFunctionsApiBaseUrl(): string {
   if (CONFIG.IS_USING_EMULATORS) {
     const host = CONFIG.EMULATORS.HOST || '127.0.0.1';
     const port = CONFIG.EMULATORS.FUNCTIONS_PORT || 5001;
-    return `http://${host}:${port}/${projectId}/${region}/api`;
+    return `http://${host}:${port}/${projectId}/${region}/api/${version}`;
   }
 
   // Cloud Functions default domain
-  return `https://${region}-${projectId}.cloudfunctions.net/api`;
+  return `https://${region}-${projectId}.cloudfunctions.net/api/${version}`;
 }
 
 export {getFunctionsApiBaseUrl};

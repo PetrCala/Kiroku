@@ -18,8 +18,19 @@ app.use(cors({origin: true}));
 // Parse incoming JSON requests
 app.use(express.json());
 
+const API_VERSION = process.env.API_VERSION || 'v1';
+const v = (p: string) => `/${API_VERSION}${p}`;
+
+// Health checks
+app.get('/healthz', (req, res) => {
+  res.status(200).json({ok: true, version: API_VERSION});
+});
+app.get(v('/healthz'), (req, res) => {
+  res.status(200).json({ok: true, version: API_VERSION});
+});
+
 // Public route (accessible without authentication)
-app.get('/public', (req, res) => {
+app.get(v('/public'), (req, res) => {
   res.send('Hello from the public endpoint!');
 });
 
@@ -48,7 +59,7 @@ const authenticate = async (
 
 // Protected route (requires authentication)
 app.get(
-  '/protected',
+  v('/protected'),
   authenticate,
   (req: AuthenticatedRequest, res: Response) => {
     res.send(
@@ -59,7 +70,7 @@ app.get(
 
 // Friends routes
 app.post(
-  '/friends/request',
+  v('/friends/request'),
   authenticate,
   async (req: AuthenticatedRequest, res: Response) => {
     try {
@@ -96,7 +107,7 @@ app.post(
 );
 
 app.post(
-  '/friends/delete-request',
+  v('/friends/delete-request'),
   authenticate,
   async (req: AuthenticatedRequest, res: Response) => {
     try {
@@ -129,7 +140,7 @@ app.post(
 );
 
 app.post(
-  '/friends/accept',
+  v('/friends/accept'),
   authenticate,
   async (req: AuthenticatedRequest, res: Response) => {
     try {
@@ -174,7 +185,7 @@ app.post(
 );
 
 app.post(
-  '/friends/remove',
+  v('/friends/remove'),
   authenticate,
   async (req: AuthenticatedRequest, res: Response) => {
     try {
