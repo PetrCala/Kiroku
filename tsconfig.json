@@ -50,7 +50,8 @@
     "package.json", // Application version import
     "firebase.json",
     "react-native.config.js",
-    "local/tests/integration"
+    "local/tests/integration",
+    "../kiroku-api/src/DBPATHS.ts"
   ],
   "exclude": [
     "**/node_modules/*",
