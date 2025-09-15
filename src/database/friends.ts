@@ -1,11 +1,11 @@
+import type {FriendRequestStatus} from '@src/types/onyx';
 import type {Database} from 'firebase/database';
-import {ref, get} from 'firebase/database';
+import {ref, get, update} from 'firebase/database';
 import DBPATHS from '@src/DBPATHS';
-import {getFunctionsApiBaseUrl} from '@src/libs/ApiConfig';
-import {auth} from '@libs/Firebase/FirebaseApp';
-import {createApiClient} from '@kiroku/api-client';
+import CONST from '@src/CONST';
 
 const friendRef = DBPATHS.USERS_USER_ID_FRIENDS_FRIEND_ID;
+const friendRequestRef = DBPATHS.USERS_USER_ID_FRIEND_REQUESTS_REQUEST_ID;
 
 /**
  * Check if userB is in userA's friend list.
@@ -43,12 +43,12 @@ async function sendFriendRequest(
   userFrom: string,
   userTo: string,
 ): Promise<void> {
-  const baseUrl = getFunctionsApiBaseUrl();
-  const client = createApiClient({
-    baseUrl,
-    getToken: () => auth.currentUser?.getIdToken(),
-  });
-  await client.friends.request(userTo);
+  const updates: Record<string, FriendRequestStatus> = {};
+  updates[friendRequestRef.getRoute(userFrom, userTo)] =
+    CONST.FRIEND_REQUEST_STATUS.SENT;
+  updates[friendRequestRef.getRoute(userTo, userFrom)] =
+    CONST.FRIEND_REQUEST_STATUS.RECEIVED;
+  await update(ref(db), updates);
 }
 
 /**
@@ -66,13 +66,10 @@ async function deleteFriendRequest(
   userFrom: string,
   userTo: string,
 ): Promise<void> {
-  const baseUrl = getFunctionsApiBaseUrl();
-  const client = createApiClient({
-    baseUrl,
-    getToken: () => auth.currentUser?.getIdToken(),
-  });
-  // userFrom is the current user; server derives it from token.
-  await client.friends.deleteRequest(userTo);
+  const updates: Record<string, null> = {};
+  updates[friendRequestRef.getRoute(userFrom, userTo)] = null;
+  updates[friendRequestRef.getRoute(userTo, userFrom)] = null;
+  await update(ref(db), updates);
 }
 
 /**
@@ -90,13 +87,12 @@ async function acceptFriendRequest(
   userFrom: string,
   userTo: string,
 ): Promise<void> {
-  const baseUrl = getFunctionsApiBaseUrl();
-  const client = createApiClient({
-    baseUrl,
-    getToken: () => auth.currentUser?.getIdToken(),
-  });
-  // In current signature, userTo is the original sender of the request.
-  await client.friends.accept(userTo);
+  const updates: Record<string, boolean | null> = {};
+  updates[friendRequestRef.getRoute(userFrom, userTo)] = null;
+  updates[friendRequestRef.getRoute(userTo, userFrom)] = null;
+  updates[friendRef.getRoute(userFrom, userTo)] = true;
+  updates[friendRef.getRoute(userTo, userFrom)] = true;
+  await update(ref(db), updates);
 }
 
 /**
@@ -113,12 +109,10 @@ async function unfriend(
   userFrom: string,
   userTo: string,
 ): Promise<void> {
-  const baseUrl = getFunctionsApiBaseUrl();
-  const client = createApiClient({
-    baseUrl,
-    getToken: () => auth.currentUser?.getIdToken(),
-  });
-  await client.friends.remove(userTo);
+  const updates: Record<string, null> = {};
+  updates[friendRef.getRoute(userFrom, userTo)] = null;
+  updates[friendRef.getRoute(userTo, userFrom)] = null;
+  await update(ref(db), updates);
 }
 
 export {
@@ -128,5 +122,3 @@ export {
   sendFriendRequest,
   unfriend,
 };
-
-// Base URL now resolved via ApiConfig
