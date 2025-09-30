@@ -12,5 +12,7 @@ export default {
   hide,
   getVisibilityStatus: BootSplash.getVisibilityStatus,
   logoSizeRatio: BootSplash.logoSizeRatio || 1,
+  logoWidth: BootSplash.logoWidth || 100,
+  logoHeight: BootSplash.logoHeight || 100,
   navigationBarHeight: BootSplash.navigationBarHeight || 0,
 };

@@ -23,6 +23,8 @@ function SplashScreenHider({
 }: SplashScreenHiderProps): SplashScreenHiderReturnType {
   const styles = useThemeStyles();
   const logoSizeRatio = BootSplash.logoSizeRatio || 1;
+  const logoWidth = BootSplash.logoWidth || 100;
+  const logoHeight = BootSplash.logoHeight || 100;
   const navigationBarHeight = BootSplash.navigationBarHeight || 0;
 
   const opacity = useSharedValue(1);
@@ -78,7 +80,7 @@ function SplashScreenHider({
       <Reanimated.View style={scaleStyle}>
         <ImageSVG
           contentFit="fill"
-          style={{width: 100 * logoSizeRatio, height: 100 * logoSizeRatio}}
+          style={{width: logoWidth * logoSizeRatio, height: logoHeight * logoSizeRatio}}
           fill={colors.white}
           src={KirokuIcons.Logo}
         />

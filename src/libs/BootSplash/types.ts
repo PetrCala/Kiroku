@@ -2,6 +2,8 @@ type VisibilityStatus = 'visible' | 'hidden';
 
 type BootSplashModule = {
   logoSizeRatio: number;
+  logoWidth: number;
+  logoHeight: number;
   navigationBarHeight: number;
   hide: () => Promise<void>;
   getVisibilityStatus: () => Promise<VisibilityStatus>;
