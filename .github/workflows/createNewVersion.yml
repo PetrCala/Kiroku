@@ -90,7 +90,7 @@ jobs:
             ./android/app/build.gradle \
             ./ios/kiroku/Info.plist \
             ./ios/kirokuTests/Info.plist
-          git commit -m "Update version to ${{ steps.bumpVersion.outputs.NEW_VERSION }}"
+          git commit -m "chore: release ${{ steps.bumpVersion.outputs.NEW_VERSION }}"
 
       - name: Push version bump branch
         id: pushVersionBranch
@@ -116,7 +116,7 @@ jobs:
         run: |
           set -eo pipefail
 
-          PR_TITLE="Update version to ${VERSION}"
+          PR_TITLE="chore: release ${VERSION}"
           PR_BODY=$(cat <<'EOF'
 ## Summary
 - Automated version bump prepared by the deployment workflow.
@@ -147,7 +147,7 @@ EOF
             --admin \
             --squash \
             --delete-branch \
-            --subject "Update version to ${VERSION}" \
+            --subject "chore: release ${VERSION}" \
             --body ""
 
   announceFailedWorkflow:
