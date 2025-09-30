@@ -15,6 +15,61 @@ static UIView *_rootView = nil;
 static float _duration = 0;
 static bool _nativeHidden = false;
 static bool _transitioning = false;
+static CGFloat _logoWidth = 100;
+static CGFloat _logoHeight = 100;
+
+static UIImageView *_Nullable findBootSplashLogoImageView(UIView *_Nonnull view) {
+  if ([view isKindOfClass:[UIImageView class]]) {
+    return (UIImageView *)view;
+  }
+
+  for (UIView *subview in view.subviews) {
+    UIImageView *imageView = findBootSplashLogoImageView(subview);
+
+    if (imageView != nil) {
+      return imageView;
+    }
+  }
+
+  return nil;
+}
+
+static void updateBootSplashLogoSize(UIImageView *_Nullable imageView) {
+  if (imageView == nil) {
+    _logoWidth = 100;
+    _logoHeight = 100;
+    return;
+  }
+
+  [imageView layoutIfNeeded];
+
+  const CGSize containerSize = imageView.bounds.size;
+  const UIImage *image = imageView.image;
+
+  if (image == nil || image.size.width <= 0 || image.size.height <= 0) {
+    _logoWidth = containerSize.width;
+    _logoHeight = containerSize.height;
+    return;
+  }
+
+  const CGFloat imageAspectRatio = image.size.width / image.size.height;
+  const CGFloat containerAspectRatio =
+      containerSize.height == 0 ? 0 : containerSize.width / containerSize.height;
+
+  if (containerAspectRatio == 0) {
+    _logoWidth = image.size.width;
+    _logoHeight = image.size.height;
+    return;
+  }
+
+  if (imageAspectRatio > containerAspectRatio) {
+    _logoWidth = containerSize.width;
+    _logoHeight = containerSize.width / imageAspectRatio;
+  } else {
+    _logoHeight = containerSize.height;
+    _logoWidth = containerSize.height * imageAspectRatio;
+  }
+}
 
 @implementation RCTBootSplash
 
@@ -28,6 +83,8 @@ RCT_EXPORT_MODULE();
     _resolveQueue = nil;
     _rootView = nil;
     _nativeHidden = false;
+    _logoWidth = 100;
+    _logoHeight = 100;
 }
 
 + (bool)isLoadingViewHidden {
@@ -110,6 +167,9 @@ RCT_EXPORT_MODULE();
 
   [_rootView addSubview:_loadingView];
 
+  [_loadingView layoutIfNeeded];
+  updateBootSplashLogoSize(findBootSplashLogoImageView(_loadingView));
+
   [NSTimer scheduledTimerWithTimeInterval:0.35
                                   repeats:NO
                                     block:^(NSTimer * _Nonnull timer) {
@@ -130,6 +190,16 @@ RCT_EXPORT_MODULE();
                                            selector:@selector(onJavaScriptDidFailToLoad)
                                                name:RCTJavaScriptDidFailToLoadNotification
                                              object:nil];
+}
+
+- (NSDictionary *)constantsToExport {
+  return @{ @"logoSizeRatio" : @(1),
+            @"logoWidth" : @(_logoWidth),
+            @"logoHeight" : @(_logoHeight) };
+}
+
++ (BOOL)requiresMainQueueSetup {
+  return YES;
 }
 
 + (void)onJavaScriptDidLoad {

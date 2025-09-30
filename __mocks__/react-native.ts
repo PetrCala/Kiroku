@@ -32,6 +32,8 @@ jest.doMock('react-native', () => {
         getVisibilityStatus: typeof BootSplash.getVisibilityStatus;
         hide: typeof BootSplash.hide;
         logoSizeRatio: number;
+        logoWidth: number;
+        logoHeight: number;
         navigationBarHeight: number;
       };
       StartupTimer: StartupTimer;
@@ -52,6 +54,8 @@ jest.doMock('react-native', () => {
           getVisibilityStatus: jest.fn(),
           hide: jest.fn(),
           logoSizeRatio: 1,
+          logoWidth: 100,
+          logoHeight: 100,
           navigationBarHeight: 0,
         },
         StartupTimer: {stop: jest.fn()},
