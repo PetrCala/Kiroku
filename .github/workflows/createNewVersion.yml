@@ -92,8 +92,63 @@ jobs:
             ./ios/kirokuTests/Info.plist
           git commit -m "Update version to ${{ steps.bumpVersion.outputs.NEW_VERSION }}"
 
-      - name: Update master branch
-        run: git push origin master
+      - name: Push version bump branch
+        id: pushVersionBranch
+        env:
+          VERSION: ${{ steps.bumpVersion.outputs.NEW_VERSION }}
+        run: |
+          set -eo pipefail
+
+          SANITISED_VERSION="${VERSION//[^a-zA-Z0-9._-]/-}"
+          BRANCH_NAME="automation/version-bump/${SANITISED_VERSION}-run-${GITHUB_RUN_ID}"
+
+          git switch -c "$BRANCH_NAME"
+          git push --set-upstream origin "$BRANCH_NAME"
+
+          echo "BRANCH_NAME=$BRANCH_NAME" >> "$GITHUB_OUTPUT"
+
+      - name: Create version bump pull request
+        id: createVersionPr
+        env:
+          GH_TOKEN: ${{ secrets.KIROKU_ADMIN_COMMIT_TOKEN }}
+          VERSION: ${{ steps.bumpVersion.outputs.NEW_VERSION }}
+          BRANCH_NAME: ${{ steps.pushVersionBranch.outputs.BRANCH_NAME }}
+        run: |
+          set -eo pipefail
+
+          PR_TITLE="Update version to ${VERSION}"
+          PR_BODY=$(cat <<'EOF'
+## Summary
+- Automated version bump prepared by the deployment workflow.
+
+## Testing
+- Not applicable
+EOF
+)
+
+          gh pr create \
+            --base master \
+            --head "$BRANCH_NAME" \
+            --title "$PR_TITLE" \
+            --body "$PR_BODY"
+
+          PR_NUMBER=$(gh pr view "$BRANCH_NAME" --json number -q '.number')
+          echo "PR_NUMBER=$PR_NUMBER" >> "$GITHUB_OUTPUT"
+
+      - name: Merge version bump pull request
+        env:
+          GH_TOKEN: ${{ secrets.KIROKU_ADMIN_COMMIT_TOKEN }}
+          PR_NUMBER: ${{ steps.createVersionPr.outputs.PR_NUMBER }}
+          VERSION: ${{ steps.bumpVersion.outputs.NEW_VERSION }}
+        run: |
+          set -eo pipefail
+
+          gh pr merge "$PR_NUMBER" \
+            --admin \
+            --squash \
+            --delete-branch \
+            --subject "Update version to ${VERSION}" \
+            --body ""
 
   announceFailedWorkflow:
     runs-on: ubuntu-latest
