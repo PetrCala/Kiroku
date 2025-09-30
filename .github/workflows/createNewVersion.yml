@@ -117,14 +117,7 @@ jobs:
           set -eo pipefail
 
           PR_TITLE="chore: release ${VERSION}"
-          PR_BODY=$(cat <<'EOF'
-## Summary
-- Automated version bump prepared by the deployment workflow.
-
-## Testing
-- Not applicable
-EOF
-)
+          PR_BODY=$'## Summary\n- Automated version bump prepared by the deployment workflow.\n\n## Testing\n- Not applicable'
 
           gh pr create \
             --base master \
