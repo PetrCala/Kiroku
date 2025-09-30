@@ -55,7 +55,9 @@ jobs:
 
   android:
     name: Build and deploy Android for testing
-    runs-on: ubuntu-latest
+    runs-on:
+      - self-hosted
+      - android-large
     needs: [validateActor, getBranchRef]
     if: ${{ fromJSON(needs.validateActor.outputs.READY_TO_BUILD) }}
     env:
