@@ -80,7 +80,10 @@ function SplashScreenHider({
       <Reanimated.View style={scaleStyle}>
         <ImageSVG
           contentFit="fill"
-          style={{width: logoWidth * logoSizeRatio, height: logoHeight * logoSizeRatio}}
+          style={{
+            width: logoWidth * logoSizeRatio,
+            height: logoHeight * logoSizeRatio,
+          }}
           fill={colors.white}
           src={KirokuIcons.Logo}
         />
