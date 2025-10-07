@@ -1,6 +1,5 @@
 const {getDefaultConfig} = require('expo/metro-config');
 const {mergeConfig} = require('@react-native/metro-config');
-const path = require('path');
 const defaultAssetExts =
   require('metro-config/src/defaults/defaults').assetExts;
 const defaultSourceExts =
@@ -31,7 +30,6 @@ const config = {
       // 'html'
     ],
   },
-  watchFolders: [path.resolve(__dirname, 'packages')],
 };
 
 module.exports = mergeConfig(defaultConfig, config);
