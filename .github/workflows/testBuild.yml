@@ -8,7 +8,7 @@ on:
         required: true
   pull_request:
     types: [opened, synchronize, labeled]
-    branches: ['*ci-test/**']
+    branches: ["*ci-test/**"]
 
 permissions:
   id-token: write
@@ -57,8 +57,6 @@ jobs:
     name: Build and deploy Android for testing
     runs-on:
       - self-hosted
-      - macOS
-      - ARM64
       - android-large
     needs: [validateActor, getBranchRef]
     if: ${{ fromJSON(needs.validateActor.outputs.READY_TO_BUILD) }}
@@ -81,13 +79,13 @@ jobs:
       - name: Setup Java
         uses: actions/setup-java@v3
         with:
-          distribution: 'oracle'
-          java-version: '17'
+          distribution: "oracle"
+          java-version: "17"
 
       - name: Setup Ruby
         uses: ruby/setup-ruby@a05e47355e80e57b9a67566a813648fa67d92011
         with:
-          ruby-version: '3.2.2'
+          ruby-version: "3.2.2"
           bundler-cache: true
 
       - name: Decrypt keystore
@@ -149,7 +147,7 @@ jobs:
       - name: Setup Ruby
         uses: ruby/setup-ruby@a05e47355e80e57b9a67566a813648fa67d92011
         with:
-          ruby-version: '3.2.2'
+          ruby-version: "3.2.2"
           bundler-cache: true
 
       - name: Cache Pod dependencies
