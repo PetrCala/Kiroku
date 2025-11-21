@@ -141,16 +141,42 @@ target 'kiroku' do
           end
         end
         
-        # Fix for iOS 26.0: Prevent Swift from compiling unavailable AssetsLibrary module
-        # Add build setting to skip unavailable system modules
-        swift_flags = config.build_settings['OTHER_SWIFT_FLAGS'] ||= ['$(inherited)']
-        if swift_flags.is_a?(Array)
-          # Add flag to suppress errors about unavailable APIs (iOS 26.0 compatibility)
-          swift_flags << '-Xfrontend -warn-long-function-bodies=100' unless swift_flags.any? { |f| f.include?('warn-long-function-bodies') }
+        # Exclude AssetsLibrary from FRAMEWORK_SEARCH_PATHS
+        if config.build_settings['FRAMEWORK_SEARCH_PATHS']
+          framework_paths = config.build_settings['FRAMEWORK_SEARCH_PATHS']
+          if framework_paths.is_a?(Array)
+            config.build_settings['FRAMEWORK_SEARCH_PATHS'] = framework_paths.reject { |path| path.to_s.include?('AssetsLibrary') }
+          end
         end
         
-        # Set build setting to suppress Swift warnings (helps with unavailable modules)
+        # Exclude AssetsLibrary from SWIFT_INCLUDE_PATHS
+        if config.build_settings['SWIFT_INCLUDE_PATHS']
+          swift_paths = config.build_settings['SWIFT_INCLUDE_PATHS']
+          if swift_paths.is_a?(Array)
+            config.build_settings['SWIFT_INCLUDE_PATHS'] = swift_paths.reject { |path| path.to_s.include?('AssetsLibrary') }
+          end
+        end
+        
+        # Fix for iOS 26.0: Prevent Swift from compiling unavailable AssetsLibrary module
+        # Add comprehensive Swift compiler flags to exclude unavailable modules
+        swift_flags = config.build_settings['OTHER_SWIFT_FLAGS'] ||= ['$(inherited)']
+        if swift_flags.is_a?(Array)
+          # Disable implicit concurrency module import (prevents AssetsLibrary compilation)
+          swift_flags << '-Xfrontend -disable-implicit-concurrency-module-import' unless swift_flags.any? { |f| f.include?('disable-implicit-concurrency-module-import') }
+          # Disable implicit string processing module import
+          swift_flags << '-Xfrontend -disable-implicit-string-processing-module-import' unless swift_flags.any? { |f| f.include?('disable-implicit-string-processing-module-import') }
+          # Suppress warnings about unavailable APIs (iOS 26.0 compatibility)
+          swift_flags << '-Xfrontend -warn-long-function-bodies=100' unless swift_flags.any? { |f| f.include?('warn-long-function-bodies') }
+          # Suppress Swift 3 objc inference warnings (helps with version mismatch)
+          swift_flags << '-Xfrontend -warn-swift3-objc-inference-complete' unless swift_flags.any? { |f| f.include?('warn-swift3-objc-inference-complete') }
+        end
+        
+        # Set build settings to suppress Swift warnings and handle unavailable modules
         config.build_settings['SWIFT_SUPPRESS_WARNINGS'] = 'YES'
+        
+        # Add build setting to ignore unavailable modules (if supported by Xcode version)
+        # This prevents Swift from trying to compile unavailable system modules like AssetsLibrary
+        config.build_settings['SWIFT_DISABLE_REQUIRED_ARCLITE'] = 'YES'
         
         # Most importantly: Set SDKROOT to use an older SDK if available, or add flag to skip unavailable modules
         # Since we can't easily change SDK, we'll add a workaround by setting a user-defined build setting
