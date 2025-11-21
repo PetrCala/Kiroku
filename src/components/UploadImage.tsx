@@ -2,9 +2,8 @@ import React, {useEffect, useState} from 'react';
 import type {ImageSourcePropType, StyleProp, ViewStyle} from 'react-native';
 import {View} from 'react-native';
 import * as ImagePicker from 'expo-image-picker';
-import type {ImagePickerAsset, ImagePickerResult} from 'expo-image-picker';
+import type {ImagePickerAsset} from 'expo-image-picker';
 import * as ImageManipulator from 'expo-image-manipulator';
-import {Image as CompressorImage} from 'react-native-compressor';
 import checkPermission from '@libs/Permissions/checkPermission';
 import requestPermission from '@libs/Permissions/requestPermission';
 import * as Profile from '@userActions/Profile';
@@ -47,7 +46,7 @@ function UploadImageComponent({
       // Launch image picker
       // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access
       const result =
-        (await // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-call
+        await // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-call
         (ImagePicker as unknown as typeof ImagePicker).launchImageLibraryAsync({
           // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access
           mediaTypes:
@@ -57,7 +56,7 @@ function UploadImageComponent({
           allowsEditing: true,
           aspect: isProfilePicture ? [1, 1] : [3, 4], // Square for profile, 3:4 for others
           quality: 0.8,
-        })) as ImagePickerResult;
+        });
 
       // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
       if (result.canceled || !result.assets || result.assets.length === 0) {
@@ -157,10 +156,9 @@ function UploadImageComponent({
       try {
         setUploadModalVisible(true);
         setUploadOngoing(true);
-        const compressedURI = await CompressorImage.compress(sourceURI);
         await uploadImageToFirebase(
           storage,
-          compressedURI,
+          sourceURI,
           pathToUpload,
           setUploadProgress,
           setSuccess,
