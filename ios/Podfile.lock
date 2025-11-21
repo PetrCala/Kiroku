@@ -30,6 +30,8 @@ PODS:
     - EXImageLoader
     - ExpoModulesCore
     - SDWebImageWebPCoder
+  - ExpoImagePicker (15.0.7):
+    - ExpoModulesCore
   - ExpoModulesCore (1.12.18):
     - DoubleConversion
     - glog
@@ -2077,15 +2079,6 @@ PODS:
   - RNGoogleSignin (11.0.1):
     - GoogleSignIn (~> 7.0.0)
     - React-Core
-  - RNImageCropPicker (0.41.2):
-    - React-Core
-    - React-RCTImage
-    - RNImageCropPicker/QBImagePickerController (= 0.41.2)
-    - TOCropViewController (~> 2.7.4)
-  - RNImageCropPicker/QBImagePickerController (0.41.2):
-    - React-Core
-    - React-RCTImage
-    - TOCropViewController (~> 2.7.4)
   - RNLocalize (3.2.0):
     - DoubleConversion
     - glog
@@ -2327,7 +2320,6 @@ PODS:
     - libwebp (~> 1.0)
     - SDWebImage/Core (~> 5.17)
   - SocketRocket (0.7.0)
-  - TOCropViewController (2.7.4)
   - Yoga (0.0.0)
 
 DEPENDENCIES:
@@ -2340,6 +2332,7 @@ DEPENDENCIES:
   - ExpoAsset (from `../node_modules/expo-asset/ios`)
   - ExpoImage (from `../node_modules/expo-image/ios`)
   - ExpoImageManipulator (from `../node_modules/expo-image-manipulator/ios`)
+  - ExpoImagePicker (from `../node_modules/expo-image-picker/ios`)
   - ExpoModulesCore (from `../node_modules/expo-modules-core`)
   - FBLazyVector (from `../node_modules/react-native/Libraries/FBLazyVector`)
   - fmt (from `../node_modules/react-native/third-party-podspecs/fmt.podspec`)
@@ -2425,7 +2418,6 @@ DEPENDENCIES:
   - RNFS (from `../node_modules/react-native-fs`)
   - RNGestureHandler (from `../node_modules/react-native-gesture-handler`)
   - "RNGoogleSignin (from `../node_modules/@react-native-google-signin/google-signin`)"
-  - RNImageCropPicker (from `../node_modules/react-native-image-crop-picker`)
   - RNLocalize (from `../node_modules/react-native-localize`)
   - RNPermissions (from `../node_modules/react-native-permissions`)
   - RNReactNativeHapticFeedback (from `../node_modules/react-native-haptic-feedback`)
@@ -2465,7 +2457,6 @@ SPEC REPOS:
     - SDWebImageSVGCoder
     - SDWebImageWebPCoder
     - SocketRocket
-    - TOCropViewController
 
 EXTERNAL SOURCES:
   boost:
@@ -2486,6 +2477,8 @@ EXTERNAL SOURCES:
     :path: "../node_modules/expo-image/ios"
   ExpoImageManipulator:
     :path: "../node_modules/expo-image-manipulator/ios"
+  ExpoImagePicker:
+    :path: "../node_modules/expo-image-picker/ios"
   ExpoModulesCore:
     :path: "../node_modules/expo-modules-core"
   FBLazyVector:
@@ -2653,8 +2646,6 @@ EXTERNAL SOURCES:
     :path: "../node_modules/react-native-gesture-handler"
   RNGoogleSignin:
     :path: "../node_modules/@react-native-google-signin/google-signin"
-  RNImageCropPicker:
-    :path: "../node_modules/react-native-image-crop-picker"
   RNLocalize:
     :path: "../node_modules/react-native-localize"
   RNPermissions:
@@ -2685,6 +2676,7 @@ SPEC CHECKSUMS:
   ExpoAsset: 286fee7ba711ce66bf20b315e68106b13b8629fc
   ExpoImage: 3c5ab9e57705afbaed43fbd0b1c92f70745c8f14
   ExpoImageManipulator: eb92d3ac4bad0fe96258f17273b9e295e87447be
+  ExpoImagePicker: 517a47896adf5d55d0a1c159e5d1e312af12e57c
   ExpoModulesCore: 1fcee6e43fa16a67742b710626fb2afd4352a7d8
   FBLazyVector: 38bb611218305c3bc61803e287b8a81c6f63b619
   Firebase: 5f8193dff4b5b7c5d5ef72ae54bb76c08e2b841d
@@ -2789,7 +2781,6 @@ SPEC CHECKSUMS:
   RNFS: 89de7d7f4c0f6bafa05343c578f61118c8282ed8
   RNGestureHandler: abf1191fd5f386ae89998cf83a4ccabdad698961
   RNGoogleSignin: b8f09e3ec56e09497e1e53b0ff66d5a45916c6b1
-  RNImageCropPicker: d14a08134d1b5bc2d5f29a12ce3ac1d402dd2389
   RNLocalize: 91f5dc75d7d7d6cdb55d1bb791cecfc953d664f4
   RNPermissions: 50d75cf19828a8187bc641a337067b7bc95fd26a
   RNReactNativeHapticFeedback: 3b25a36eb80fcb326a6c852c88b1c76a6f42d9ca
@@ -2803,7 +2794,6 @@ SPEC CHECKSUMS:
   SDWebImageSVGCoder: 15a300a97ec1c8ac958f009c02220ac0402e936c
   SDWebImageWebPCoder: e38c0a70396191361d60c092933e22c20d5b1380
   SocketRocket: abac6f5de4d4d62d24e11868d7a2f427e0ef940d
-  TOCropViewController: 80b8985ad794298fb69d3341de183f33d1853654
   Yoga: a1d7895431387402a674fd0d1c04ec85e87909b8
 
 PODFILE CHECKSUM: 73d5e3d03c90dbb652263ce7a864224265b5f617
