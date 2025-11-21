@@ -124,21 +124,21 @@ platform :ios do
 
       keychain_password = SecureRandom.uuid
 
-      create_keychain(
-          name: "ios-build.keychain",
-          password: keychain_password,
-          default_keychain: "true",
-          unlock: "true",
-          timeout: "3600",
-          add_to_search_list: "true"
-      )
+      # create_keychain(
+      #     name: "ios-build.keychain",
+      #     password: keychain_password,
+      #     default_keychain: "true",
+      #     unlock: "true",
+      #     timeout: "3600",
+      #     add_to_search_list: "true"
+      # )
 
-      import_certificate(
-          certificate_path: "./ios/Certificates.p12",
-          keychain_name: "ios-build.keychain",
-          keychain_password: keychain_password,
-          certificate_password: ENV["IOS_CERTIFICATE_PASSWORD"],
-      )
+      # import_certificate(
+      #     certificate_path: "./ios/Certificates.p12",
+      #     keychain_name: "ios-build.keychain",
+      #     keychain_password: keychain_password,
+      #     certificate_password: ENV["IOS_CERTIFICATE_PASSWORD"],
+      # )
 
       install_provisioning_profile(
           path: "./ios/Kiroku_AdHoc.mobileprovision"
@@ -176,23 +176,23 @@ platform :ios do
     require 'securerandom'
     ENV["ENVFILE"]=".env.production"
 
-    keychain_password = SecureRandom.uuid
+    # keychain_password = SecureRandom.uuid
 
-    create_keychain(
-        name: "ios-build.keychain",
-        password: keychain_password,
-        default_keychain: "true",
-        unlock: "true",
-        timeout: "3600",
-        add_to_search_list: "true"
-    )
+    # create_keychain(
+    #     name: "ios-build.keychain",
+    #     password: keychain_password,
+    #     default_keychain: "true",
+    #     unlock: "true",
+    #     timeout: "3600",
+    #     add_to_search_list: "true"
+    # )
 
-    import_certificate(
-        certificate_path: "./ios/Certificates.p12",
-        keychain_name: "ios-build.keychain",
-        keychain_password: keychain_password,
-        certificate_password: ENV["IOS_CERTIFICATE_PASSWORD"],
-    )
+    # import_certificate(
+    #     certificate_path: "./ios/Certificates.p12",
+    #     keychain_name: "ios-build.keychain",
+    #     keychain_password: keychain_password,
+    #     certificate_password: ENV["IOS_CERTIFICATE_PASSWORD"],
+    # )
 
     install_provisioning_profile(
         path: "./ios/Kiroku.mobileprovision"

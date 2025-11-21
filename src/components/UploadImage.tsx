@@ -1,7 +1,8 @@
 import React, {useEffect, useState} from 'react';
 import type {ImageSourcePropType, StyleProp, ViewStyle} from 'react-native';
 import {View} from 'react-native';
-import ImagePicker from 'react-native-image-crop-picker';
+import * as ImagePicker from 'expo-image-picker';
+import * as ImageManipulator from 'expo-image-manipulator';
 import {Image as CompressorImage} from 'react-native-compressor';
 import checkPermission from '@libs/Permissions/checkPermission';
 import requestPermission from '@libs/Permissions/requestPermission';
@@ -40,34 +41,76 @@ function UploadImageComponent({
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const [success, setSuccess] = useState('');
 
-  const chooseImage = () => {
-    ImagePicker.openPicker({
-      width: 300,
-      height: 400,
-      cropping: true,
-      includeBase64: true,
-      cropperCircleOverlay: true, // could use isProfilePicture
-      cropperToolbarTitle: 'Crop the image',
-      compressImageQuality: 0.8,
-      writeTempFile: true,
-      mediaType: 'photo',
-    })
-      .then(image => {
-        const source = {uri: image.path};
-        if (!source) {
-          ErrorUtils.raiseAppError(ERRORS.IMAGE_UPLOAD.FETCH_FAILED);
-          return;
-        }
-        setImageSource(source.uri); // Triggers upload
-      })
-      .catch(error => {
-        const errorMessage = error instanceof Error ? error.message : '';
-        // TODO add clever error handling
-        if (errorMessage === 'User cancelled image selection') {
-          return;
-        }
-        ErrorUtils.raiseAppError(ERRORS.IMAGE_UPLOAD.CHOICE_FAILED, error);
+  const chooseImage = async (): Promise<void> => {
+    try {
+      // Launch image picker
+      const result = await ImagePicker.launchImageLibraryAsync({
+        mediaTypes: ImagePicker.MediaTypeOptions.Images,
+        allowsEditing: true,
+        aspect: isProfilePicture ? [1, 1] : [3, 4], // Square for profile, 3:4 for others
+        quality: 0.8,
       });
+
+      if (result.canceled || !result.assets || result.assets.length === 0) {
+        return; // User cancelled or no assets
+      }
+
+      const selectedImage = result.assets[0];
+      const imageUri = selectedImage?.uri;
+      if (!imageUri || typeof imageUri !== 'string') {
+        ErrorUtils.raiseAppError(ERRORS.IMAGE_UPLOAD.FETCH_FAILED);
+        return;
+      }
+
+      // Crop and resize the image using expo-image-manipulator
+      const manipulatorActions: ImageManipulator.Action[] = [];
+
+      // For profile pictures, ensure square crop
+      if (isProfilePicture) {
+        manipulatorActions.push({
+          resize: {
+            width: 300,
+            height: 300,
+          },
+        });
+      } else {
+        // Resize to target dimensions (300x400)
+        manipulatorActions.push({
+          resize: {
+            width: 300,
+            height: 400,
+          },
+        });
+      }
+
+      const manipulatedImage = await ImageManipulator.manipulateAsync(
+        imageUri,
+        manipulatorActions,
+        {
+          compress: 0.8,
+          format: ImageManipulator.SaveFormat.JPEG,
+        },
+      );
+
+      const manipulatedUri = manipulatedImage?.uri;
+      if (!manipulatedUri || typeof manipulatedUri !== 'string') {
+        ErrorUtils.raiseAppError(ERRORS.IMAGE_UPLOAD.FETCH_FAILED);
+        return;
+      }
+
+      setImageSource(manipulatedUri); // Triggers upload
+    } catch (error) {
+      const errorMessage =
+        error instanceof Error ? error.message : String(error);
+      // TODO add clever error handling
+      if (
+        errorMessage.includes('cancel') ||
+        errorMessage.includes('cancelled')
+      ) {
+        return;
+      }
+      ErrorUtils.raiseAppError(ERRORS.IMAGE_UPLOAD.CHOICE_FAILED, error);
+    }
   };
 
   const resetIndicators = () => {
@@ -77,23 +120,21 @@ function UploadImageComponent({
     setSuccess('');
   };
 
-  const handleChooseImagePress = () => {
-    (async () => {
-      try {
-        // Check for permissions
-        const permissionAllowed = await checkPermission('read_photos');
-        if (!permissionAllowed) {
-          const permissionGranted = await requestPermission('read_photos');
-          if (!permissionGranted) {
-            return; // Permission denied - info message automatically handled by requestPermission
-          }
+  const handleChooseImagePress = async () => {
+    try {
+      // Check for permissions
+      const permissionAllowed = await checkPermission('read_photos');
+      if (!permissionAllowed) {
+        const permissionGranted = await requestPermission('read_photos');
+        if (!permissionGranted) {
+          return; // Permission denied - info message automatically handled by requestPermission
         }
-        chooseImage(); // Call automatically
-        resetIndicators(); // Clean the indicators for upload
-      } catch (error) {
-        ErrorUtils.raiseAppError(ERRORS.IMAGE_UPLOAD.CHOICE_FAILED, error);
       }
-    })();
+      resetIndicators(); // Clean the indicators for upload
+      await chooseImage(); // Call automatically
+    } catch (error) {
+      ErrorUtils.raiseAppError(ERRORS.IMAGE_UPLOAD.CHOICE_FAILED, error);
+    }
   };
 
   useEffect(() => {
@@ -142,7 +183,11 @@ function UploadImageComponent({
         containerStyles,
       ]}>
       <Button
-        onPress={handleChooseImagePress}
+        onPress={() => {
+          handleChooseImagePress().catch(() => {
+            // Error already handled in handleChooseImagePress
+          });
+        }}
         icon={src}
         style={[styles.border, styles.borderRadiusNormal, styles.appBG]}
       />
