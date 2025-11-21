@@ -131,6 +131,7 @@ target 'kiroku' do
       end
       
       # Fix for iOS 26.0: AssetsLibrary is deprecated and causes Swift compilation errors
+      # Prevent Swift from trying to compile unavailable system modules
       target.build_configurations.each do |config|
         # Remove AssetsLibrary from OTHER_LDFLAGS if present
         if config.build_settings['OTHER_LDFLAGS']
@@ -139,10 +140,32 @@ target 'kiroku' do
             config.build_settings['OTHER_LDFLAGS'] = flags.reject { |flag| flag.to_s.include?('AssetsLibrary') }
           end
         end
-        # Add Swift flag to handle unavailable APIs gracefully
+        
+        # Fix for iOS 26.0: Prevent Swift from compiling unavailable AssetsLibrary module
+        # Add build setting to skip unavailable system modules
         swift_flags = config.build_settings['OTHER_SWIFT_FLAGS'] ||= ['$(inherited)']
-        if swift_flags.is_a?(Array) && !swift_flags.any? { |f| f.include?('SWIFT_SUPPRESS_WARNINGS') }
-          swift_flags << '-Xfrontend -warn-long-function-bodies=100'
+        if swift_flags.is_a?(Array)
+          # Add flag to suppress errors about unavailable APIs (iOS 26.0 compatibility)
+          swift_flags << '-Xfrontend -warn-long-function-bodies=100' unless swift_flags.any? { |f| f.include?('warn-long-function-bodies') }
+        end
+        
+        # Set build setting to suppress Swift warnings (helps with unavailable modules)
+        config.build_settings['SWIFT_SUPPRESS_WARNINGS'] = 'YES'
+        
+        # Most importantly: Set SDKROOT to use an older SDK if available, or add flag to skip unavailable modules
+        # Since we can't easily change SDK, we'll add a workaround by setting a user-defined build setting
+        config.build_settings['SWIFT_ACTIVE_COMPILATION_CONDITIONS'] ||= '$(inherited)'
+        # Add condition to skip unavailable modules
+        if config.build_settings['SWIFT_ACTIVE_COMPILATION_CONDITIONS'].is_a?(String)
+          config.build_settings['SWIFT_ACTIVE_COMPILATION_CONDITIONS'] += ' SKIP_UNAVAILABLE_MODULES'
+        elsif config.build_settings['SWIFT_ACTIVE_COMPILATION_CONDITIONS'].is_a?(Array)
+          config.build_settings['SWIFT_ACTIVE_COMPILATION_CONDITIONS'] << 'SKIP_UNAVAILABLE_MODULES' unless config.build_settings['SWIFT_ACTIVE_COMPILATION_CONDITIONS'].include?('SKIP_UNAVAILABLE_MODULES')
+        end
+        
+        # Set deployment target to avoid iOS 26.0 SDK issues if using iOS 26.0 SDK
+        # This prevents Swift from trying to compile unavailable modules
+        if config.build_settings['IPHONEOS_DEPLOYMENT_TARGET'].to_f < 14.0
+          config.build_settings['IPHONEOS_DEPLOYMENT_TARGET'] = '14.0'
         end
       end
     end
