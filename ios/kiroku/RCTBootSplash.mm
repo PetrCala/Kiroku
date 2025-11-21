@@ -1,6 +1,7 @@
 #import "RCTBootSplash.h"
 
 #import <React/RCTUtils.h>
+#import <React/RCTBridgeModule.h>
 
 #if RCT_NEW_ARCH_ENABLED
 #import <React/RCTSurfaceHostingProxyRootView.h>
