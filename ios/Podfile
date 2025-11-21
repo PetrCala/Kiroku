@@ -129,6 +129,22 @@ target 'kiroku' do
           config.build_settings['CODE_SIGNING_ALLOWED'] = 'NO'
         end
       end
+      
+      # Fix for iOS 26.0: AssetsLibrary is deprecated and causes Swift compilation errors
+      target.build_configurations.each do |config|
+        # Remove AssetsLibrary from OTHER_LDFLAGS if present
+        if config.build_settings['OTHER_LDFLAGS']
+          flags = config.build_settings['OTHER_LDFLAGS']
+          if flags.is_a?(Array)
+            config.build_settings['OTHER_LDFLAGS'] = flags.reject { |flag| flag.to_s.include?('AssetsLibrary') }
+          end
+        end
+        # Add Swift flag to handle unavailable APIs gracefully
+        swift_flags = config.build_settings['OTHER_SWIFT_FLAGS'] ||= ['$(inherited)']
+        if swift_flags.is_a?(Array) && !swift_flags.any? { |f| f.include?('SWIFT_SUPPRESS_WARNINGS') }
+          swift_flags << '-Xfrontend -warn-long-function-bodies=100'
+        end
+      end
     end
   end
 end
