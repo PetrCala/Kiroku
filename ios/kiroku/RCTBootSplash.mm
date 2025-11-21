@@ -2,6 +2,7 @@
 
 #import <React/RCTUtils.h>
 #import <React/RCTBridgeModule.h>
+#import <React/RCTBridge.h>
 
 #if RCT_NEW_ARCH_ENABLED
 #import <React/RCTSurfaceHostingProxyRootView.h>
@@ -74,7 +75,12 @@ static void updateBootSplashLogoSize(UIImageView *_Nullable imageView) {
 
 @implementation RCTBootSplash
 
-RCT_EXPORT_MODULE();
+#if RCT_NEW_ARCH_ENABLED
+// With New Architecture, use RCT_EXTERN_REMAP_MODULE which uses constructor instead of +load
+RCT_EXTERN_REMAP_MODULE(BootSplash, RCTBootSplash, NSObject)
+#else
+RCT_EXPORT_MODULE(BootSplash);
+#endif
 
 - (dispatch_queue_t)methodQueue {
   return dispatch_get_main_queue();
