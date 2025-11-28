@@ -75,15 +75,7 @@ static void updateBootSplashLogoSize(UIImageView *_Nullable imageView) {
 
 @implementation RCTBootSplash
 
-#if RCT_NEW_ARCH_ENABLED
-// For New Architecture, manually define moduleName without +load registration
-// The module will be discovered through RCTBridgeModule protocol conformance
-+ (NSString *)moduleName {
-  return @"BootSplash";
-}
-#else
-RCT_EXPORT_MODULE(BootSplash);
-#endif
+RCT_EXPORT_MODULE();
 
 - (dispatch_queue_t)methodQueue {
   return dispatch_get_main_queue();
