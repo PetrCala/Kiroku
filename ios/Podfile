@@ -82,7 +82,8 @@ target 'kiroku' do
   flags = get_default_flags()
 
   # ENV Variable enables/disables TurboModules
-  ENV['RCT_NEW_ARCH_ENABLED'] = '1';
+  # Disabled: New arch has linking issues with RN 0.75.2, use old bridge architecture
+  ENV['RCT_NEW_ARCH_ENABLED'] = '0';
 
   # Enable react-native-config for environment file management
   # pod 'react-native-config/Extension', :path => '../node_modules/react-native-config'
