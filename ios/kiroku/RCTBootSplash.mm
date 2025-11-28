@@ -76,8 +76,8 @@ static void updateBootSplashLogoSize(UIImageView *_Nullable imageView) {
 @implementation RCTBootSplash
 
 #if RCT_NEW_ARCH_ENABLED
-// With New Architecture, use RCT_EXTERN_REMAP_MODULE which uses constructor instead of +load
-RCT_EXTERN_REMAP_MODULE(BootSplash, RCTBootSplash, NSObject)
+// With New Architecture, use RCT_EXPORT_MODULE_NO_LOAD which uses __attribute__((constructor)) instead of +load
+RCT_EXPORT_MODULE_NO_LOAD(BootSplash, RCTBootSplash)
 #else
 RCT_EXPORT_MODULE(BootSplash);
 #endif
