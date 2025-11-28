@@ -39,17 +39,9 @@ setup_permissions([
   # 'StoreKit',
 ])
 
-# Flipper is not compatible with use_frameworks! (Firebase)
-# flipper_config = FlipperConfiguration.disabled
-
-linkage = ENV['USE_FRAMEWORKS']
-if linkage != nil
-  Pod::UI.puts "Configuring Pod with #{linkage}ally linked Frameworks".green
-  use_frameworks! :linkage => linkage.to_sym
-end
-# use_frameworks! :linkage => :static
-# $RNFirebaseAsStaticFramework = true
-# use_modular_headers!
+# Static framework linkage required for Firebase compatibility
+use_frameworks! :linkage => :static
+$RNFirebaseAsStaticFramework = true
 
 # Force pods to match minimum iOS version for React Native
 # Fixes build issue on Xcode Cloud where some pods

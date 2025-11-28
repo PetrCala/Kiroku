@@ -17,8 +17,8 @@
 
 @implementation AppDelegate
 
-- (BOOL)application:(UIApplication *)application didFinishLaunchingWithOptions:(NSDictionary *)launchOptions
-{
+- (BOOL)application:(UIApplication *)application
+    didFinishLaunchingWithOptions:(NSDictionary *)launchOptions {
   self.moduleName = @"kiroku";
   // You can add your custom initial props in the dictionary below.
   // They will be passed down to the ViewController used by React Native.
@@ -31,11 +31,12 @@
   [[RCTI18nUtil sharedInstance] allowRTL:NO];
   [[RCTI18nUtil sharedInstance] forceRTL:NO];
 
-
   [super application:application didFinishLaunchingWithOptions:launchOptions];
 
   [RCTBootSplash initWithStoryboard:@"BootSplash"
-                           rootView:(RCTRootView *)self.window.rootViewController.view]; // <- initialization using the storyboard file name
+                           rootView:self.window.rootViewController
+                                        .view]; // <- initialization using the
+                                                // storyboard file name
 
   // Define UNUserNotificationCenter
   // UNUserNotificationCenter *center =
@@ -47,11 +48,13 @@
   // in the native layer and ending in the JS layer.
   // [RCTStartupTimer start];
 
-  if (![[NSUserDefaults standardUserDefaults] boolForKey:@"isFirstRunComplete"]) {
-      [UIApplication sharedApplication].applicationIconBadgeNumber = 0;
-      [[NSUserDefaults standardUserDefaults] setBool:YES forKey:@"isFirstRunComplete"];
+  if (![[NSUserDefaults standardUserDefaults]
+          boolForKey:@"isFirstRunComplete"]) {
+    [UIApplication sharedApplication].applicationIconBadgeNumber = 0;
+    [[NSUserDefaults standardUserDefaults] setBool:YES
+                                            forKey:@"isFirstRunComplete"];
   }
-  
+
   return YES;
 }
 
@@ -74,13 +77,11 @@
                      restorationHandler:restorationHandler];
 }
 
-- (NSURL *)sourceURLForBridge:(RCTBridge *)bridge
-{
+- (NSURL *)sourceURLForBridge:(RCTBridge *)bridge {
   return [self bundleURL];
 }
 
-- (NSURL *)bundleURL
-{
+- (NSURL *)bundleURL {
 #if DEBUG
   return
       [[RCTBundleURLProvider sharedSettings] jsBundleURLForBundleRoot:@"index"];
@@ -90,8 +91,7 @@
 #endif
 }
 
-- (BOOL)bridgelessEnabled
-{
+- (BOOL)bridgelessEnabled {
   return NO;
 }
 
