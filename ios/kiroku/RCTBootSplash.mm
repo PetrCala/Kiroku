@@ -3,13 +3,9 @@
 #import <React/RCTUtils.h>
 #import <React/RCTBridgeModule.h>
 #import <React/RCTBridge.h>
-
-#if RCT_NEW_ARCH_ENABLED
 #import <React/RCTSurfaceHostingProxyRootView.h>
 #import <React/RCTSurfaceHostingView.h>
-#else
 #import <React/RCTRootView.h>
-#endif
 
 static NSMutableArray<RCTPromiseResolveBlock> *_resolveQueue = nil;
 static UIView *_loadingView = nil;
