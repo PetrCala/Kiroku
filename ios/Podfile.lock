@@ -9,9 +9,6 @@ PODS:
   - BVLinearGradient (2.8.3):
     - React-Core
   - DoubleConversion (1.1.6)
-  - EXAV (14.0.6):
-    - ExpoModulesCore
-    - ReactCommon/turbomodule/core
   - EXImageLoader (4.7.0):
     - ExpoModulesCore
     - React-Core
@@ -1557,27 +1554,6 @@ PODS:
     - ReactCommon/turbomodule/bridging
     - ReactCommon/turbomodule/core
     - Yoga
-  - react-native-release-profiler (0.1.6):
-    - DoubleConversion
-    - glog
-    - hermes-engine
-    - RCT-Folly (= 2024.01.01.00)
-    - RCTRequired
-    - RCTTypeSafety
-    - React-Core
-    - React-debug
-    - React-Fabric
-    - React-featureflags
-    - React-graphics
-    - React-ImageManager
-    - React-NativeModulesApple
-    - React-RCTFabric
-    - React-rendererdebug
-    - React-utils
-    - ReactCodegen
-    - ReactCommon/turbomodule/bridging
-    - ReactCommon/turbomodule/core
-    - Yoga
   - react-native-render-html (6.3.4):
     - React-Core
   - react-native-safe-area-context (4.10.9):
@@ -2230,11 +2206,6 @@ PODS:
     - ReactCommon/turbomodule/bridging
     - ReactCommon/turbomodule/core
     - Yoga
-  - RNSound (0.11.2):
-    - React-Core
-    - RNSound/Core (= 0.11.2)
-  - RNSound/Core (0.11.2):
-    - React-Core
   - RNSVG (15.6.0):
     - DoubleConversion
     - glog
@@ -2296,7 +2267,6 @@ DEPENDENCIES:
   - boost (from `../node_modules/react-native/third-party-podspecs/boost.podspec`)
   - BVLinearGradient (from `../node_modules/react-native-linear-gradient`)
   - DoubleConversion (from `../node_modules/react-native/third-party-podspecs/DoubleConversion.podspec`)
-  - EXAV (from `../node_modules/expo-av/ios`)
   - EXImageLoader (from `../node_modules/expo-image-loader/ios`)
   - Expo (from `../node_modules/expo`)
   - ExpoAsset (from `../node_modules/expo-asset/ios`)
@@ -2345,7 +2315,6 @@ DEPENDENCIES:
   - react-native-pager-view (from `../node_modules/react-native-pager-view`)
   - react-native-performance (from `../node_modules/react-native-performance`)
   - react-native-quick-sqlite (from `../node_modules/react-native-quick-sqlite`)
-  - react-native-release-profiler (from `../node_modules/react-native-release-profiler`)
   - react-native-render-html (from `../node_modules/react-native-render-html`)
   - react-native-safe-area-context (from `../node_modules/react-native-safe-area-context`)
   - "react-native-slider (from `../node_modules/@react-native-community/slider`)"
@@ -2392,7 +2361,6 @@ DEPENDENCIES:
   - RNReactNativeHapticFeedback (from `../node_modules/react-native-haptic-feedback`)
   - RNReanimated (from `../node_modules/react-native-reanimated`)
   - RNScreens (from `../node_modules/react-native-screens`)
-  - RNSound (from `../node_modules/react-native-sound`)
   - RNSVG (from `../node_modules/react-native-svg`)
   - Yoga (from `../node_modules/react-native/ReactCommon/yoga`)
 
@@ -2432,8 +2400,6 @@ EXTERNAL SOURCES:
     :path: "../node_modules/react-native-linear-gradient"
   DoubleConversion:
     :podspec: "../node_modules/react-native/third-party-podspecs/DoubleConversion.podspec"
-  EXAV:
-    :path: "../node_modules/expo-av/ios"
   EXImageLoader:
     :path: "../node_modules/expo-image-loader/ios"
   Expo:
@@ -2527,8 +2493,6 @@ EXTERNAL SOURCES:
     :path: "../node_modules/react-native-performance"
   react-native-quick-sqlite:
     :path: "../node_modules/react-native-quick-sqlite"
-  react-native-release-profiler:
-    :path: "../node_modules/react-native-release-profiler"
   react-native-render-html:
     :path: "../node_modules/react-native-render-html"
   react-native-safe-area-context:
@@ -2621,8 +2585,6 @@ EXTERNAL SOURCES:
     :path: "../node_modules/react-native-reanimated"
   RNScreens:
     :path: "../node_modules/react-native-screens"
-  RNSound:
-    :path: "../node_modules/react-native-sound"
   RNSVG:
     :path: "../node_modules/react-native-svg"
   Yoga:
@@ -2633,7 +2595,6 @@ SPEC CHECKSUMS:
   boost: 26992d1adf73c1c7676360643e687aee6dda994b
   BVLinearGradient: cb006ba232a1f3e4f341bb62c42d1098c284da70
   DoubleConversion: 76ab83afb40bddeeee456813d9c04f67f78771b5
-  EXAV: 8f42343f5bec9b19fd7a231ab717b5f9017690a6
   EXImageLoader: 1fe96c70cdc78bedc985ec4b1fab5dd8e67dc38b
   Expo: 004203c75b6c1c47303c73e16018f60e8649e888
   ExpoAsset: 286fee7ba711ce66bf20b315e68106b13b8629fc
@@ -2700,7 +2661,6 @@ SPEC CHECKSUMS:
   react-native-pager-view: 256ea91c4e83fbcaf446fa6379211ff74b85ebce
   react-native-performance: cfdc166a3e515b6dab16809e38d36b22bb387119
   react-native-quick-sqlite: faac5422add841fecf59e06e2a6756f87560d8ee
-  react-native-release-profiler: 1d36f23d3042419432a304b9cd8d6fa288408ae6
   react-native-render-html: 5afc4751f1a98621b3009432ef84c47019dcb2bd
   react-native-safe-area-context: cfa9435ac366e169d1dfe758173e5db2862209b2
   react-native-slider: 891bc2b61f848c3f3d50904978f99421d608816d
@@ -2747,7 +2707,6 @@ SPEC CHECKSUMS:
   RNReactNativeHapticFeedback: 648c026131f032b9051cb374c8241fb504841994
   RNReanimated: 7ed15b4a9367dfb03cc4d027a257a7f171ef83c5
   RNScreens: a423ced11dd639776186f0e71bb3c527175451dc
-  RNSound: 314cc5226453ef4a3314a196c65e8a65e5106a7b
   RNSVG: 6c9b11319871e0d10bfb4e30f068a610d457d4b0
   SDWebImage: 8a6b7b160b4d710e2a22b6900e25301075c34cb3
   SDWebImageAVIFCoder: 00310d246aab3232ce77f1d8f0076f8c4b021d90
