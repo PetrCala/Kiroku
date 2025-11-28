@@ -122,13 +122,15 @@ target 'kiroku' do
         end
       end
       
-      # Ensure minimum deployment target and exclude x86_64 simulator on Apple Silicon
+      # Ensure minimum deployment target and fix module compilation
       target.build_configurations.each do |config|
         if config.build_settings['IPHONEOS_DEPLOYMENT_TARGET'].to_f < 14.0
           config.build_settings['IPHONEOS_DEPLOYMENT_TARGET'] = '14.0'
         end
         # Exclude x86_64 for simulator builds on Apple Silicon
         config.build_settings['EXCLUDED_ARCHS[sdk=iphonesimulator*]'] = 'x86_64'
+        # Disable explicit modules to fix "Unable to find module dependency" errors
+        config.build_settings['SWIFT_ENABLE_EXPLICIT_MODULES'] = 'NO'
       end
     end
   end
