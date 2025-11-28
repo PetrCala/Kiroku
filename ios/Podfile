@@ -9,6 +9,9 @@ def node_require(script)
     )", __dir__]).strip
 end
 
+# Disable new architecture BEFORE loading react native pods
+ENV['RCT_NEW_ARCH_ENABLED'] = '0'
+
 node_require('react-native/scripts/react_native_pods.rb')
 node_require('react-native-permissions/scripts/setup.rb')
 
@@ -81,10 +84,6 @@ target 'kiroku' do
   # Flags change depending on the env values.
   flags = get_default_flags()
 
-  # ENV Variable enables/disables TurboModules
-  # Disabled: New arch has linking issues with RN 0.75.2, use old bridge architecture
-  ENV['RCT_NEW_ARCH_ENABLED'] = '0';
-
   # Enable react-native-config for environment file management
   # pod 'react-native-config/Extension', :path => '../node_modules/react-native-config'
 # 
@@ -129,8 +128,12 @@ target 'kiroku' do
         end
         # Exclude x86_64 for simulator builds on Apple Silicon
         config.build_settings['EXCLUDED_ARCHS[sdk=iphonesimulator*]'] = 'x86_64'
-        # Disable explicit modules to fix "Unable to find module dependency" errors
+        # Disable explicit modules to fix "Unable to find module dependency" errors (Xcode 16+)
         config.build_settings['SWIFT_ENABLE_EXPLICIT_MODULES'] = 'NO'
+        # Fix module compilation order issues
+        config.build_settings['BUILD_LIBRARY_FOR_DISTRIBUTION'] = 'NO'
+        # Ensure Swift version is set
+        config.build_settings['SWIFT_VERSION'] = '5.0' unless config.build_settings['SWIFT_VERSION']
       end
     end
   end

@@ -55,16 +55,16 @@ RCT_EXPORT_MODULE();
     dispatch_async(dispatch_get_main_queue(), ^{
       [UIView transitionWithView:_rootView
           duration:0.250
-          options:UIViewAnimationOptionTransitionCrossDissolve
-          animations:^{
-            _loadingView.hidden = YES;
-          }
-          completion:^(__unused BOOL finished) {
-            [_loadingView removeFromSuperview];
-            _loadingView = nil;
+                         options:UIViewAnimationOptionTransitionCrossDissolve
+                      animations:^{
+        _loadingView.hidden = YES;
+      }
+                      completion:^(__unused BOOL finished) {
+        [_loadingView removeFromSuperview];
+        _loadingView = nil;
 
-            return [RCTBootSplash clearResolveQueue];
-          }];
+        return [RCTBootSplash clearResolveQueue];
+      }];
     });
   } else {
     _loadingView.hidden = YES;
@@ -86,7 +86,7 @@ RCT_EXPORT_MODULE();
                                     block:^(NSTimer *_Nonnull timer) {
                                       // wait for native iOS launch screen to
                                       // fade out
-                                      _nativeHidden = true;
+    _nativeHidden = true;
 
                                       // hide has been called before native
                                       // launch screen fade out
@@ -121,16 +121,16 @@ RCT_EXPORT_MODULE();
 
     [[NSNotificationCenter defaultCenter]
         addObserver:self
-           selector:@selector(onJavaScriptDidLoad)
-               name:RCTJavaScriptDidLoadNotification
-             object:nil];
+                                           selector:@selector(onJavaScriptDidLoad)
+                                               name:RCTJavaScriptDidLoadNotification
+                                             object:nil];
 
     [[NSNotificationCenter defaultCenter]
         addObserver:self
-           selector:@selector(onJavaScriptDidFailToLoad)
-               name:RCTJavaScriptDidFailToLoadNotification
-             object:nil];
-  }
+                                           selector:@selector(onJavaScriptDidFailToLoad)
+                                               name:RCTJavaScriptDidFailToLoadNotification
+                                             object:nil];
+}
 }
 
 + (void)onJavaScriptDidLoad {
