@@ -1,12 +1,9 @@
 #import "RCTBootSplash.h"
 
 #import <React/RCTUtils.h>
-
 #import <React/RCTRootView.h>
-#import <React/RCTSurfaceHostingProxyRootView.h>
-#import <React/RCTSurfaceHostingView.h>
 
-static RCTSurfaceHostingProxyRootView *_rootView = nil;
+static RCTRootView *_rootView = nil;
 
 static UIView *_loadingView = nil;
 static NSMutableArray<RCTPromiseResolveBlock> *_resolveQueue =
@@ -99,7 +96,7 @@ RCT_EXPORT_MODULE();
                                     }];
 
   if (rootView != nil) {
-    _rootView = (RCTSurfaceHostingProxyRootView *)rootView;
+    _rootView = (RCTRootView *)rootView;
 
     UIStoryboard *storyboard = [UIStoryboard storyboardWithName:storyboardName
                                                          bundle:nil];
