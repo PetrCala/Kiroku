@@ -71,10 +71,6 @@ jest.mock('react-native-sound', () => {
   return SoundMock;
 });
 
-jest.mock('react-native-share', () => ({
-  default: jest.fn(),
-}));
-
 jest.mock('react-native-reanimated', () => ({
   ...jest.requireActual<typeof Animated>('react-native-reanimated/mock'),
   createAnimatedPropAdapter: jest.fn,
