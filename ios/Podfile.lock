@@ -251,7 +251,6 @@ PODS:
     - React-RCTText (= 0.75.2)
     - React-RCTVibration (= 0.75.2)
   - React-callinvoker (0.75.2)
-  - React-Codegen (0.1.0)
   - React-Core (0.75.2):
     - glog
     - hermes-engine
@@ -2231,14 +2230,6 @@ PODS:
     - ReactCommon/turbomodule/bridging
     - ReactCommon/turbomodule/core
     - Yoga
-  - RNShare (10.2.1):
-    - RCT-Folly
-    - RCTRequired
-    - RCTTypeSafety
-    - React-Codegen
-    - React-Core
-    - React-RCTFabric
-    - ReactCommon/turbomodule/core
   - RNSound (0.11.2):
     - React-Core
     - RNSound/Core (= 0.11.2)
@@ -2428,7 +2419,6 @@ SPEC REPOS:
     - libwebp
     - nanopb
     - PromisesObjC
-    - React-Codegen
     - SDWebImage
     - SDWebImageAVIFCoder
     - SDWebImageSVGCoder
@@ -2681,7 +2671,6 @@ SPEC CHECKSUMS:
   RCTTypeSafety: ef5e91bd791abd3a99b2c75fd565791102a66352
   React: 643f06bc294806d2db2526b424fdf759e107f514
   React-callinvoker: 34d1fa0c340104f324e2521f546196beb44dfad2
-  React-Codegen: 4b8b4817cea7a54b83851d4c1f91f79aa73de30a
   React-Core: 14bffba7f3ab7ff5360636854f76af73d7508f00
   React-CoreModules: f7ab1179f615f46a89d81955828f139888c37504
   React-cxxreact: 183ff8146b58c9e60bf31857327222f4b233f447
@@ -2758,7 +2747,6 @@ SPEC CHECKSUMS:
   RNReactNativeHapticFeedback: 648c026131f032b9051cb374c8241fb504841994
   RNReanimated: 7ed15b4a9367dfb03cc4d027a257a7f171ef83c5
   RNScreens: a423ced11dd639776186f0e71bb3c527175451dc
-  RNShare: 268bd40f6f3830299d187b05d3c6f7bbbb3e9d85
   RNSound: 314cc5226453ef4a3314a196c65e8a65e5106a7b
   RNSVG: 6c9b11319871e0d10bfb4e30f068a610d457d4b0
   SDWebImage: 8a6b7b160b4d710e2a22b6900e25301075c34cb3
