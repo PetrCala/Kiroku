@@ -201,6 +201,7 @@
     "jest-transformer-svg": "^2.0.1",
     "jest-when": "^3.5.2",
     "memfs": "^4.8.1",
+    "metro-minify-terser": "^0.82.5",
     "patch-package": "^8.1.0-canary.1",
     "prettier": "^3.0.0",
     "protobufjs": "^7.2.4",
