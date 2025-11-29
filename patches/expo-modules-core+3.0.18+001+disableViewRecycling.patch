@@ -14,4 +14,3 @@ index 2eacddf..346bbb9 100644
  #pragma mark - Events
  
  - (void)dispatchEvent:(nonnull NSString *)eventName payload:(nullable id)payload
-
