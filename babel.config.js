@@ -1,12 +1,23 @@
 require('dotenv').config();
 
+const IS_E2E_TESTING = process.env.E2E_TESTING === 'true';
+
+const ReactCompilerConfig = {
+  target: '19',
+  environment: {
+    enableTreatRefLikeIdentifiersAsRefs: true,
+  },
+  sources: (filename) => !filename.includes('tests/') && !filename.includes('node_modules/'),
+};
+
 const defaultPresets = [
   '@babel/preset-react',
-  '@babel/preset-env',
+  ['@babel/preset-env', {targets: {node: 20}}],
   '@babel/preset-flow',
   '@babel/preset-typescript',
 ];
 const defaultPlugins = [
+  ['babel-plugin-react-compiler', ReactCompilerConfig], // must run first!
   // Adding the commonjs: true option to react-native-web plugin can cause styling conflicts
   ['react-native-web'],
 
@@ -19,10 +30,10 @@ const defaultPlugins = [
 
   // We use `transform-class-properties` for transforming ReactNative libraries and do not use it for our own
   // source code transformation as we do not use class property assignment.
-  'transform-class-properties',
+  '@babel/plugin-transform-class-properties',
 
   // Keep it last
-  'react-native-reanimated/plugin',
+  'react-native-worklets/plugin',
 ];
 
 const webpack = {
@@ -33,6 +44,8 @@ const webpack = {
 const metro = {
   presets: [require('@react-native/babel-preset')],
   plugins: [
+    ['babel-plugin-react-compiler', ReactCompilerConfig], // must run first!
+
     // This is needed due to a react-native bug: https://github.com/facebook/react-native/issues/29084#issuecomment-1030732709
     // It is included in metro-react-native-babel-preset but needs to be before plugin-proposal-class-properties or FlatList will break
     '@babel/plugin-transform-flow-strip-types',
@@ -40,8 +53,6 @@ const metro = {
     ['@babel/plugin-proposal-class-properties', {loose: true}],
     ['@babel/plugin-proposal-private-methods', {loose: true}],
     ['@babel/plugin-proposal-private-property-in-object', {loose: true}],
-    // The reanimated babel plugin needs to be last, as stated here: https://docs.swmansion.com/react-native-reanimated/docs/fundamentals/installation
-    'react-native-reanimated/plugin',
     [
       'module-resolver',
       {
@@ -83,15 +94,18 @@ const metro = {
         },
       },
     ],
+    '@babel/plugin-transform-export-namespace-from',
+    // The worklets babel plugin needs to be last
+    'react-native-worklets/plugin',
   ],
-  // env: {
-  //   production: {
-  //     // Keep console logs for e2e tests
-  //     plugins: IS_E2E_TESTING
-  //       ? []
-  //       : [['transform-remove-console', {exclude: ['error', 'warn']}]],
-  //   },
-  // },
+  env: {
+    production: {
+      // Keep console logs for e2e tests
+      plugins: IS_E2E_TESTING
+        ? []
+        : [['transform-remove-console', {exclude: ['error', 'warn']}]],
+    },
+  },
 };
 
 module.exports = api => {

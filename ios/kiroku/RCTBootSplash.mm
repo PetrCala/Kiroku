@@ -1,9 +1,12 @@
 #import "RCTBootSplash.h"
 
 #import <React/RCTUtils.h>
-#import <React/RCTRootView.h>
 
-static RCTRootView *_rootView = nil;
+#import <React/RCTRootView.h>
+#import <React/RCTSurfaceHostingProxyRootView.h>
+#import <React/RCTSurfaceHostingView.h>
+
+static RCTSurfaceHostingProxyRootView *_rootView = nil;
 
 static UIView *_loadingView = nil;
 static NSMutableArray<RCTPromiseResolveBlock> *_resolveQueue =
@@ -55,16 +58,16 @@ RCT_EXPORT_MODULE();
     dispatch_async(dispatch_get_main_queue(), ^{
       [UIView transitionWithView:_rootView
           duration:0.250
-                         options:UIViewAnimationOptionTransitionCrossDissolve
-                      animations:^{
-        _loadingView.hidden = YES;
-      }
-                      completion:^(__unused BOOL finished) {
-        [_loadingView removeFromSuperview];
-        _loadingView = nil;
+          options:UIViewAnimationOptionTransitionCrossDissolve
+          animations:^{
+            _loadingView.hidden = YES;
+          }
+          completion:^(__unused BOOL finished) {
+            [_loadingView removeFromSuperview];
+            _loadingView = nil;
 
-        return [RCTBootSplash clearResolveQueue];
-      }];
+            return [RCTBootSplash clearResolveQueue];
+          }];
     });
   } else {
     _loadingView.hidden = YES;
@@ -86,7 +89,7 @@ RCT_EXPORT_MODULE();
                                     block:^(NSTimer *_Nonnull timer) {
                                       // wait for native iOS launch screen to
                                       // fade out
-    _nativeHidden = true;
+                                      _nativeHidden = true;
 
                                       // hide has been called before native
                                       // launch screen fade out
@@ -96,7 +99,7 @@ RCT_EXPORT_MODULE();
                                     }];
 
   if (rootView != nil) {
-    _rootView = (RCTRootView *)rootView;
+    _rootView = (RCTSurfaceHostingProxyRootView *)rootView;
 
     UIStoryboard *storyboard = [UIStoryboard storyboardWithName:storyboardName
                                                          bundle:nil];
@@ -121,16 +124,16 @@ RCT_EXPORT_MODULE();
 
     [[NSNotificationCenter defaultCenter]
         addObserver:self
-                                           selector:@selector(onJavaScriptDidLoad)
-                                               name:RCTJavaScriptDidLoadNotification
-                                             object:nil];
+           selector:@selector(onJavaScriptDidLoad)
+               name:RCTJavaScriptDidLoadNotification
+             object:nil];
 
     [[NSNotificationCenter defaultCenter]
         addObserver:self
-                                           selector:@selector(onJavaScriptDidFailToLoad)
-                                               name:RCTJavaScriptDidFailToLoadNotification
-                                             object:nil];
-}
+           selector:@selector(onJavaScriptDidFailToLoad)
+               name:RCTJavaScriptDidFailToLoadNotification
+             object:nil];
+  }
 }
 
 + (void)onJavaScriptDidLoad {

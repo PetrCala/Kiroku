@@ -12,3 +12,4 @@ index 2ac3d1f..5a400bf 100644
            mergedProps.translucent
          ) {
            NativeStatusBarManagerAndroid.setTranslucent(mergedProps.translucent);
+
