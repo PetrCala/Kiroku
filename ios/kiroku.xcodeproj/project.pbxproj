@@ -31,6 +31,12 @@
 		8C6ACF932C3B17D5002BAD95 /* SessionTabView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8C6ACF922C3B17D5002BAD95 /* SessionTabView.swift */; };
 		8C84CE0B2BDB722F00C88D4E /* BootSplash.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 8C84CE0A2BDB722F00C88D4E /* BootSplash.storyboard */; };
 		8C84CE192BDB726F00C88D4E /* RCTBootSplash.mm in Sources */ = {isa = PBXBuildFile; fileRef = 8C84CE122BDB726F00C88D4E /* RCTBootSplash.mm */; };
+				8C84CE1A2BDB726F00C88D4F /* RCTStartupTimer.m in Sources */,
+				8C84CE132BDB726F00C88D4F /* RCTStartupTimer.m */,
+				8C84CE142BDB726F00C88D4F /* RCTStartupTimer.h */,
+		8C84CE132BDB726F00C88D4F /* RCTStartupTimer.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; name = RCTStartupTimer.m; path = kiroku/RCTStartupTimer.m; sourceTree = "<group>"; };
+		8C84CE142BDB726F00C88D4F /* RCTStartupTimer.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = RCTStartupTimer.h; path = kiroku/RCTStartupTimer.h; sourceTree = "<group>"; };
+		8C84CE1A2BDB726F00C88D4F /* RCTStartupTimer.m in Sources */ = {isa = PBXBuildFile; fileRef = 8C84CE132BDB726F00C88D4F /* RCTStartupTimer.m */; };
 		8C84CE1E2BDB72C800C88D4E /* Images.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 8C84CE1D2BDB72C800C88D4E /* Images.xcassets */; };
 		8C93A11A2BAE2C7200B5382C /* PrivacyInfo.xcprivacy in Resources */ = {isa = PBXBuildFile; fileRef = 8CA9A3092BAD9A380036C58C /* PrivacyInfo.xcprivacy */; };
 		8CACE1B02C3058C50051A44C /* UnitModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8CACE1992C3058C50051A44C /* UnitModel.swift */; };
@@ -135,6 +141,10 @@
 		8C84CE0A2BDB722F00C88D4E /* BootSplash.storyboard */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = file.storyboard; name = BootSplash.storyboard; path = kiroku/BootSplash.storyboard; sourceTree = "<group>"; };
 		8C84CE112BDB726F00C88D4E /* RCTBootSplash.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = RCTBootSplash.h; path = kiroku/RCTBootSplash.h; sourceTree = "<group>"; };
 		8C84CE122BDB726F00C88D4E /* RCTBootSplash.mm */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.objcpp; name = RCTBootSplash.mm; path = kiroku/RCTBootSplash.mm; sourceTree = "<group>"; };
+				8C84CE132BDB726F00C88D4F /* RCTStartupTimer.m */,
+				8C84CE142BDB726F00C88D4F /* RCTStartupTimer.h */,
+		8C84CE132BDB726F00C88D4F /* RCTStartupTimer.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; name = RCTStartupTimer.m; path = kiroku/RCTStartupTimer.m; sourceTree = "<group>"; };
+		8C84CE142BDB726F00C88D4F /* RCTStartupTimer.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = RCTStartupTimer.h; path = kiroku/RCTStartupTimer.h; sourceTree = "<group>"; };
 		8C84CE1D2BDB72C800C88D4E /* Images.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; name = Images.xcassets; path = kiroku/Images.xcassets; sourceTree = "<group>"; };
 		8CA9A3092BAD9A380036C58C /* PrivacyInfo.xcprivacy */ = {isa = PBXFileReference; lastKnownFileType = text.xml; name = PrivacyInfo.xcprivacy; path = kiroku/PrivacyInfo.xcprivacy; sourceTree = "<group>"; };
 		8CACE1992C3058C50051A44C /* UnitModel.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = UnitModel.swift; sourceTree = "<group>"; };
@@ -226,6 +236,10 @@
 				8C84CE1D2BDB72C800C88D4E /* Images.xcassets */,
 				8C84CE112BDB726F00C88D4E /* RCTBootSplash.h */,
 				8C84CE122BDB726F00C88D4E /* RCTBootSplash.mm */,
+				8C84CE132BDB726F00C88D4F /* RCTStartupTimer.m */,
+				8C84CE142BDB726F00C88D4F /* RCTStartupTimer.h */,
+		8C84CE132BDB726F00C88D4F /* RCTStartupTimer.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; name = RCTStartupTimer.m; path = kiroku/RCTStartupTimer.m; sourceTree = "<group>"; };
+		8C84CE142BDB726F00C88D4F /* RCTStartupTimer.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = RCTStartupTimer.h; path = kiroku/RCTStartupTimer.h; sourceTree = "<group>"; };
 				8C84CE0A2BDB722F00C88D4E /* BootSplash.storyboard */,
 				8C1479292B3430910014E28C /* kiroku.entitlements */,
 				13B07FAF1A68108700A75B9A /* AppDelegate.h */,
@@ -869,6 +883,8 @@
 			buildActionMask = 2147483647;
 			files = (
 				8C84CE192BDB726F00C88D4E /* RCTBootSplash.mm in Sources */,
+				8C84CE1A2BDB726F00C88D4F /* RCTStartupTimer.m in Sources */,
+		8C84CE1A2BDB726F00C88D4F /* RCTStartupTimer.m in Sources */ = {isa = PBXBuildFile; fileRef = 8C84CE132BDB726F00C88D4F /* RCTStartupTimer.m */; };
 				13B07FBC1A68108700A75B9A /* AppDelegate.swift in Sources */,
 				929EAF1A3FD507F3FF2058BF /* ExpoModulesProvider.swift in Sources */,
 			);
