@@ -22,7 +22,7 @@ export default <TOnyxKey extends OnyxKey>(
   function Provider(props: ChildrenProps): ReactNode {
     const [value] = useOnyx(onyxKeyName, {canBeMissing: true});
     return (
-      <Context.Provider value={value as OnyxValue<TOnyxKey>}>
+      <Context.Provider value={(value ?? null) as OnyxValue<TOnyxKey>}>
         {props.children}
       </Context.Provider>
     );

@@ -29,7 +29,7 @@ const auth: Auth =
     ? initializeAuth(FirebaseApp, {
         persistence: getReactNativePersistence(AsyncStorage),
       })
-    : getAuth();
+    : getAuth(FirebaseApp);
 
 export {FirebaseApp, auth};
 export type {FirebaseAppProps};
