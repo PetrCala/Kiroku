@@ -3006,6 +3006,7 @@
 				"PRODUCT_BUNDLE_IDENTIFIER[sdk=iphoneos*]" = "org.reactjs.native.example.alcohol-tracker";
 				PRODUCT_NAME = kiroku;
 				"PROVISIONING_PROFILE_SPECIFIER[sdk=iphoneos*]" = Kiroku_Development;
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "DEBUG $(inherited)";
 				SWIFT_OBJC_BRIDGING_HEADER = "kiroku-Bridging-Header.h";
 				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
 				SWIFT_VERSION = 5.0;
