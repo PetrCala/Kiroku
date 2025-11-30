@@ -1,15 +1,15 @@
 import React, {useMemo} from 'react';
-import {withOnyx} from 'react-native-onyx';
+import {useOnyx} from 'react-native-onyx';
 import ONYXKEYS from '@src/ONYXKEYS';
 import BaseImage from './BaseImage';
-import type {ImageOnyxProps, ImageOwnProps, ImageProps} from './types';
+import type {ImageOwnProps} from './types';
 
 function Image({
   source: propsSource,
   isAuthTokenRequired = false,
-  session,
   ...forwardedProps
-}: ImageProps) {
+}: ImageOwnProps) {
+  const [session] = useOnyx(ONYXKEYS.SESSION, {canBeMissing: true});
   /**
    * Check if the image source is a URL - if so the `encryptedAuthToken` is appended
    * to the source.
@@ -50,15 +50,8 @@ function imagePropsAreEqual(
   return prevProps.source === nextProps.source;
 }
 
-const ImageWithOnyx = React.memo(
-  withOnyx<ImageProps, ImageOnyxProps>({
-    session: {
-      key: ONYXKEYS.SESSION,
-    },
-  })(Image),
-  imagePropsAreEqual,
-);
+const MemoizedImage = React.memo(Image, imagePropsAreEqual);
 
-ImageWithOnyx.displayName = 'Image';
+MemoizedImage.displayName = 'Image';
 
-export default ImageWithOnyx;
+export default MemoizedImage;

@@ -1,8 +1,6 @@
 import React, {createContext, useMemo} from 'react';
-import type {OnyxEntry} from 'react-native-onyx';
-import {withOnyx} from 'react-native-onyx';
+import {useOnyx} from 'react-native-onyx';
 import type {ValueOf} from 'type-fest';
-import compose from '@libs/compose';
 import DateUtils from '@libs/DateUtils';
 import * as LocaleDigitUtils from '@libs/LocaleDigitUtils';
 import * as Localize from '@libs/Localize';
@@ -15,16 +13,10 @@ import withCurrentUserData from './withCurrentUserData';
 
 type Locale = ValueOf<typeof CONST.LOCALES>;
 
-type LocaleContextProviderOnyxProps = {
-  /** The user's preferred locale e.g. 'en', 'cs-CZ' */
-  preferredLocale: OnyxEntry<Locale>;
+type LocaleContextProviderProps = WithCurrentUserDataProps & {
+  /** Actual content wrapped by this component */
+  children: React.ReactNode;
 };
-
-type LocaleContextProviderProps = LocaleContextProviderOnyxProps &
-  WithCurrentUserDataProps & {
-    /** Actual content wrapped by this component */
-    children: React.ReactNode;
-  };
 
 type LocaleContextProps = {
   /** Returns translated string for given locale and phrase */
@@ -75,10 +67,12 @@ const LocaleContext = createContext<LocaleContextProps>({
 });
 
 function LocaleContextProvider({
-  preferredLocale,
   currentUserData = {},
   children,
 }: LocaleContextProviderProps) {
+  const [preferredLocale] = useOnyx(ONYXKEYS.NVP_PREFERRED_LOCALE, {
+    canBeMissing: true,
+  });
   const locale = preferredLocale ?? CONST.LOCALES.DEFAULT;
 
   const selectedTimezone = useMemo(
@@ -171,17 +165,9 @@ function LocaleContextProvider({
   );
 }
 
-const Provider = compose(
-  withOnyx<LocaleContextProviderProps, LocaleContextProviderOnyxProps>({
-    preferredLocale: {
-      key: ONYXKEYS.NVP_PREFERRED_LOCALE,
-      selector: preferredLocale => preferredLocale,
-    },
-  }),
-  withCurrentUserData,
-)(LocaleContextProvider);
+const Provider = withCurrentUserData(LocaleContextProvider);
 
-Provider.displayName = 'withOnyx(LocaleContextProvider)';
+Provider.displayName = 'LocaleContextProvider';
 
 export {Provider as LocaleContextProvider, LocaleContext};
 

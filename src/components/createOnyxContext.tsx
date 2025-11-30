@@ -1,62 +1,13 @@
-import type {
-  ComponentType,
-  ForwardedRef,
-  ForwardRefExoticComponent,
-  PropsWithoutRef,
-  ReactNode,
-  RefAttributes,
-} from 'react';
-import React, {createContext, forwardRef, useContext} from 'react';
-import {withOnyx} from 'react-native-onyx';
-import getComponentDisplayName from '@libs/getComponentDisplayName';
+import type {ComponentType, ReactNode} from 'react';
+import React, {createContext, useContext} from 'react';
+import {useOnyx} from 'react-native-onyx';
 import type {OnyxKey, OnyxValue} from '@src/ONYXKEYS';
 import type ChildrenProps from '@src/types/utils/ChildrenProps';
 import {UCFirst} from '@libs/StringUtilsKiroku';
 
-// Provider types
-type ProviderOnyxProps<TOnyxKey extends OnyxKey> = Record<
-  TOnyxKey,
-  OnyxValue<TOnyxKey>
->;
-
-type ProviderPropsWithOnyx<TOnyxKey extends OnyxKey> = ChildrenProps &
-  ProviderOnyxProps<TOnyxKey>;
-
-// withOnyxKey types
-type WithOnyxKeyProps<
-  TOnyxKey extends OnyxKey,
-  TNewOnyxKey extends string,
-  TTransformedValue,
-> = {
-  propName?: TOnyxKey | TNewOnyxKey;
-  transformValue?: (
-    value: OnyxValue<TOnyxKey>,
-    // It's not possible to infer the type of props of the wrapped component, so we have to use `any` here
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    props: any,
-  ) => TTransformedValue;
-};
-
-type WrapComponentWithConsumer<
-  TNewOnyxKey extends string,
-  TTransformedValue,
-> = <TProps extends Record<TNewOnyxKey, TTransformedValue>, TRef>(
-  WrappedComponent: ComponentType<TProps & RefAttributes<TRef>>,
-) => ForwardRefExoticComponent<
-  PropsWithoutRef<Omit<TProps, TNewOnyxKey>> & RefAttributes<TRef>
->;
-
-type WithOnyxKey<TOnyxKey extends OnyxKey> = <
-  TNewOnyxKey extends string = TOnyxKey,
-  TTransformedValue = OnyxValue<TOnyxKey>,
->(
-  props?: WithOnyxKeyProps<TOnyxKey, TNewOnyxKey, TTransformedValue>,
-) => WrapComponentWithConsumer<TNewOnyxKey, TTransformedValue>;
-
 // createOnyxContext return type
 type CreateOnyxContext<TOnyxKey extends OnyxKey> = [
-  WithOnyxKey<TOnyxKey>,
-  ComponentType<Omit<ProviderPropsWithOnyx<TOnyxKey>, TOnyxKey>>,
+  ComponentType<ChildrenProps>,
   React.Context<OnyxValue<TOnyxKey>>,
   () => NonNullable<OnyxValue<TOnyxKey>>,
 ];
@@ -67,9 +18,11 @@ export default <TOnyxKey extends OnyxKey>(
   const Context = createContext<OnyxValue<TOnyxKey>>(
     null as unknown as OnyxValue<TOnyxKey>,
   );
-  function Provider(props: ProviderPropsWithOnyx<TOnyxKey>): ReactNode {
+
+  function Provider(props: ChildrenProps): ReactNode {
+    const [value] = useOnyx(onyxKeyName, {canBeMissing: true});
     return (
-      <Context.Provider value={props[onyxKeyName]}>
+      <Context.Provider value={value as OnyxValue<TOnyxKey>}>
         {props.children}
       </Context.Provider>
     );
@@ -77,68 +30,15 @@ export default <TOnyxKey extends OnyxKey>(
 
   Provider.displayName = `${UCFirst(onyxKeyName)}Provider`;
 
-  const ProviderWithOnyx = withOnyx<
-    ProviderPropsWithOnyx<TOnyxKey>,
-    ProviderOnyxProps<TOnyxKey>
-  >({
-    [onyxKeyName]: {
-      key: onyxKeyName,
-    },
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  } as Record<TOnyxKey, any>)(Provider);
-
-  function withOnyxKey<
-    TNewOnyxKey extends string = TOnyxKey,
-    TTransformedValue = OnyxValue<TOnyxKey>,
-  >({
-    propName,
-    transformValue,
-  }: WithOnyxKeyProps<TOnyxKey, TNewOnyxKey, TTransformedValue> = {}) {
-    return <TProps extends Record<TNewOnyxKey, TTransformedValue>, TRef>(
-      WrappedComponent: ComponentType<TProps & RefAttributes<TRef>>,
-    ) => {
-      function Consumer(
-        props: Omit<TProps, TNewOnyxKey>,
-        ref: ForwardedRef<TRef>,
-      ): ReactNode {
-        return (
-          <Context.Consumer>
-            {value => {
-              const propsToPass = {
-                ...props,
-                [propName ?? onyxKeyName]: transformValue
-                  ? transformValue(value, props)
-                  : value,
-              } as TProps;
-
-              return (
-                <WrappedComponent
-                  // eslint-disable-next-line react/jsx-props-no-spreading
-                  {...propsToPass}
-                  ref={ref}
-                />
-              );
-            }}
-          </Context.Consumer>
-        );
-      }
-
-      Consumer.displayName = `with${UCFirst(
-        onyxKeyName,
-      )}(${getComponentDisplayName(WrappedComponent)})`;
-      return forwardRef(Consumer);
-    };
-  }
-
   const useOnyxContext = () => {
     const value = useContext(Context);
     if (value === null) {
       throw new Error(
-        `useOnyxContext must be used within a OnyxProvider [key: ${onyxKeyName}]`,
+        `useOnyxContext must be used within OnyxProvider [key: ${onyxKeyName}]`,
       );
     }
     return value as NonNullable<OnyxValue<TOnyxKey>>;
   };
 
-  return [withOnyxKey, ProviderWithOnyx, Context, useOnyxContext];
+  return [Provider, Context, useOnyxContext];
 };
