@@ -49,7 +49,7 @@ case "$BUILD" in
         export PATH="/opt/homebrew/bin:$PATH"
 
         npx rock run:ios \
-            --simulator "$IOS_SIMULATOR" \
+            --device "$IOS_SIMULATOR" \
             --scheme "$IOS_SCHEME" \
             --configuration $IOS_MODE \
             --dev-server \
