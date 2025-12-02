@@ -133,12 +133,12 @@ platform :ios do
       #     add_to_search_list: "true"
       # )
 
-      # import_certificate(
-      #     certificate_path: "./ios/Certificates.p12",
-      #     keychain_name: "ios-build.keychain",
-      #     keychain_password: keychain_password,
-      #     certificate_password: ENV["IOS_CERTIFICATE_PASSWORD"],
-      # )
+      import_certificate(
+          certificate_path: "./ios/Certificates.p12",
+          keychain_name: "ios-build.keychain",
+          keychain_password: keychain_password,
+          certificate_password: ENV["IOS_CERTIFICATE_PASSWORD"],
+      )
 
       install_provisioning_profile(
           path: "./ios/Kiroku_AdHoc.mobileprovision"
