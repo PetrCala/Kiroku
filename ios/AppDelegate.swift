@@ -21,6 +21,8 @@ class AppDelegate: ExpoAppDelegate {
     _ application: UIApplication,
     didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]? = nil
   ) -> Bool {
+    Self.configureFirebaseIfNeeded()
+
     let delegate = ReactNativeDelegate()
     let factory = RCTReactNativeFactory(delegate: delegate)
     delegate.dependencyProvider = RCTAppDependencyProvider()
@@ -89,6 +91,16 @@ class AppDelegate: ExpoAppDelegate {
 
   func handleKeyCommand(_ keyCommand: UIKeyCommand) {
     HardwareShortcuts.sharedInstance().handleKeyCommand(keyCommand)
+  }
+
+  private static let firebaseInitQueue = DispatchQueue(label: "org.kiroku.firebaseInit")
+
+  private static func configureFirebaseIfNeeded() {
+    firebaseInitQueue.sync {
+      if FirebaseApp.app() == nil {
+        FirebaseApp.configure()
+      }
+    }
   }
 }
 
