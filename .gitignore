@@ -130,3 +130,6 @@ mockDatabase.json
 .expo
 dist/
 web-build/
+
+# Rock Framework
+.rock/
