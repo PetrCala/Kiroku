@@ -31,17 +31,15 @@ class AppDelegate: ExpoAppDelegate {
 
     window = UIWindow(frame: UIScreen.main.bounds)
 
-    // Start React Native FIRST to initialize thread manager
+    if FirebaseApp.app() == nil {
+      FirebaseApp.configure()
+    }
+
     factory.startReactNative(
       withModuleName: "kiroku",
       in: window,
       launchOptions: launchOptions
     )
-
-    // Configure Firebase with a small delay to ensure thread pools are fully initialized
-    DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
-      FirebaseApp.configure()
-    }
 
     // Force the app to LTR mode.
     RCTI18nUtil.sharedInstance().allowRTL(false)
