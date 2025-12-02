@@ -22,8 +22,16 @@ class AppDelegate: ExpoAppDelegate {
     didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]? = nil
   ) -> Bool {
     // Configure Firebase on main thread BEFORE React Native initialization
+    print("[Kiroku] About to configure Firebase on thread: \(Thread.current)")
     if FirebaseApp.app() == nil {
-      FirebaseApp.configure()
+      do {
+        FirebaseApp.configure()
+        print("[Kiroku] ✅ Firebase configured successfully")
+      } catch {
+        print("[Kiroku] ❌ Firebase configuration failed: \(error)")
+      }
+    } else {
+      print("[Kiroku] Firebase already configured")
     }
 
     let delegate = ReactNativeDelegate()
