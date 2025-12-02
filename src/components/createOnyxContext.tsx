@@ -13,16 +13,19 @@ type CreateOnyxContext<TOnyxKey extends OnyxKey> = [
   () => NonNullable<OnyxValue<TOnyxKey>>, // useOnyxContext hook
 ];
 
+// Sentinel value to detect when context is used outside of provider
+const NOT_PROVIDED = Symbol('NOT_PROVIDED');
+
 export default <TOnyxKey extends OnyxKey>(
   onyxKeyName: TOnyxKey,
 ): CreateOnyxContext<TOnyxKey> => {
-  const Context = createContext<OnyxValue<TOnyxKey>>(
-    null as unknown as OnyxValue<TOnyxKey>,
+  const Context = createContext<OnyxValue<TOnyxKey> | typeof NOT_PROVIDED>(
+    NOT_PROVIDED as OnyxValue<TOnyxKey>,
   );
 
   function Provider(props: ChildrenProps): ReactNode {
     const [value] = useOnyx(onyxKeyName, {canBeMissing: true});
-    const contextValue = value ?? (null as OnyxValue<TOnyxKey>);
+    const contextValue = (value ?? null) as OnyxValue<TOnyxKey>;
     return (
       <Context.Provider value={contextValue}>
         {props.children}
@@ -42,7 +45,7 @@ export default <TOnyxKey extends OnyxKey>(
 
   const useOnyxContext = () => {
     const value = useContext(Context);
-    if (value === null) {
+    if (value === NOT_PROVIDED) {
       throw new Error(
         `useOnyxContext must be used within OnyxProvider [key: ${onyxKeyName}]`,
       );
