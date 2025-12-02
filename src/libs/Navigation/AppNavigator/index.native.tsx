@@ -27,14 +27,33 @@ function AppNavigator({authenticated}: AppNavigatorProps) {
   }, [initUrl]);
 
   if (authenticated) {
-    const AuthScreens = require<ReactComponentModule>('./AuthScreens').default;
+    let AuthScreens;
+    try {
+      AuthScreens = require<ReactComponentModule>('./AuthScreens').default;
+    } catch (error) {
+      console.error('[AppNavigator] Failed to load AuthScreens:', error);
+      throw new Error(`AuthScreens module failed to load: ${error instanceof Error ? error.message : String(error)}`);
+    }
+
+    if (!AuthScreens) {
+      throw new Error('AuthScreens module loaded but default export is undefined');
+    }
 
     // These are the protected screens and only accessible when an authToken is present
     return <AuthScreens />;
   }
 
-  const PublicScreens =
-    require<ReactComponentModule>('./PublicScreens').default;
+  let PublicScreens;
+  try {
+    PublicScreens = require<ReactComponentModule>('./PublicScreens').default;
+  } catch (error) {
+    console.error('[AppNavigator] Failed to load PublicScreens:', error);
+    throw new Error(`PublicScreens module failed to load: ${error instanceof Error ? error.message : String(error)}`);
+  }
+
+  if (!PublicScreens) {
+    throw new Error('PublicScreens module loaded but default export is undefined');
+  }
 
   return <PublicScreens />;
 }
