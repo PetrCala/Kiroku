@@ -198,9 +198,37 @@ platform :ios do
         path: "./ios/Kiroku.mobileprovision"
     )
 
+    # Pre-bundle JavaScript using the same Node version as Xcode
+    # This ensures the bundle is created before Archive and uses the correct Node binary
+    sh("cd .. && /Users/petr/.nvm/versions/node/v20.19.4/bin/node /Users/petr/.nvm/versions/node/v20.19.4/bin/npx expo export:embed --entry-file index.js --platform ios --dev false --reset-cache --bundle-output ./ios/main.jsbundle --assets-dest ./ios/assets")
+
+    # Compile with Hermes (same as Xcode would do)
+    sh("cd ../ios && ./Pods/hermes-engine/destroot/bin/hermesc -emit-binary -O -out ./main.jsbundle.hermesc ./main.jsbundle && mv ./main.jsbundle.hermesc ./main.jsbundle")
+
+    # Add bundle to Xcode project's Copy Bundle Resources phase
+    require 'xcodeproj'
+    project_path = '../ios/kiroku.xcodeproj'
+    project = Xcodeproj::Project.open(project_path)
+    target = project.targets.find { |t| t.name == 'kiroku' }
+
+    # Add main.jsbundle as a file reference if it doesn't exist
+    bundle_file_ref = project.files.find { |f| f.path == 'main.jsbundle' }
+    if bundle_file_ref.nil?
+      bundle_file_ref = project.new_file('main.jsbundle')
+    end
+
+    # Add to Copy Bundle Resources phase
+    resources_phase = target.resources_build_phase
+    unless resources_phase.files_references.include?(bundle_file_ref)
+      resources_phase.add_file_reference(bundle_file_ref)
+    end
+
+    project.save
+
     build_app(
         workspace: "./ios/kiroku.xcworkspace",
         scheme: "Kiroku (production)",
+        xcargs: "SKIP_BUNDLING=1",  # Skip Xcode's bundling since we did it manually
         output_name: "kiroku.ipa",
         export_options: {
             provisioningProfiles: {

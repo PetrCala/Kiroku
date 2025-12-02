@@ -11,6 +11,7 @@
 		0F5E276B37AD673B86962F31 /* Pods_kiroku.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 7F7FF032F5B870C24CB6D28E /* Pods_kiroku.framework */; };
 		13B07FBC1A68108700A75B9A /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 13B07FB01A68108700A75B9A /* AppDelegate.swift */; };
 		6EB690539DFC242A5AEDCD65 /* ExpoModulesProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = F181F1F78CECD2EE2A25A45D /* ExpoModulesProvider.swift */; };
+		7BA02DA7B5280C14C43EC99C /* main.jsbundle in Resources */ = {isa = PBXBuildFile; fileRef = 1CB57FD9FF92DB8328CBAE71 /* main.jsbundle */; };
 		8BFCA0355EE7CB1CCFFE402C /* PrivacyInfo.xcprivacy in Resources */ = {isa = PBXBuildFile; fileRef = 578E3F66D1F5F2E6772F698C /* PrivacyInfo.xcprivacy */; };
 		8C389EF12C3031AB00A015D5 /* Kiroku Watch App.app in Embed Watch Content */ = {isa = PBXBuildFile; fileRef = 8C389EF02C3031AB00A015D5 /* Kiroku Watch App.app */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 		8C389EF62C3031AB00A015D5 /* KirokuApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8C389EF52C3031AB00A015D5 /* KirokuApp.swift */; };
@@ -103,6 +104,7 @@
 		13B07FAF1A68108700A75B9A /* AppDelegate.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = AppDelegate.h; path = kiroku/AppDelegate.h; sourceTree = "<group>"; };
 		13B07FB01A68108700A75B9A /* AppDelegate.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = AppDelegate.swift; sourceTree = "<group>"; };
 		13B07FB61A68108700A75B9A /* Info.plist */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.xml; name = Info.plist; path = kiroku/Info.plist; sourceTree = "<group>"; };
+		1CB57FD9FF92DB8328CBAE71 /* main.jsbundle */ = {isa = PBXFileReference; includeInIndex = 1; path = main.jsbundle; sourceTree = "<group>"; };
 		212F9305F3ED7877AFAF89E0 /* Pods-kiroku.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-kiroku.release.xcconfig"; path = "Target Support Files/Pods-kiroku/Pods-kiroku.release.xcconfig"; sourceTree = "<group>"; };
 		3EA506AE226EC6E315F03E10 /* Pods-kiroku.debugadhoc.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-kiroku.debugadhoc.xcconfig"; path = "Target Support Files/Pods-kiroku/Pods-kiroku.debugadhoc.xcconfig"; sourceTree = "<group>"; };
 		4081F42A67A89D8950C71F21 /* Pods-kiroku-kirokuTests.debugdevelopment.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-kiroku-kirokuTests.debugdevelopment.xcconfig"; path = "Target Support Files/Pods-kiroku-kirokuTests/Pods-kiroku-kirokuTests.debugdevelopment.xcconfig"; sourceTree = "<group>"; };
@@ -288,6 +290,7 @@
 				2D16E6871FA4F8E400B85C8A /* Frameworks */,
 				BBD78D7AC51CEA395F1C20DB /* Pods */,
 				BC3B6BA81B2044988AFE0E0E /* ExpoModulesProviders */,
+				1CB57FD9FF92DB8328CBAE71 /* main.jsbundle */,
 			);
 			indentWidth = 2;
 			sourceTree = "<group>";
@@ -620,6 +623,7 @@
 				8C389F422C30578A00A015D5 /* GoogleService-Info.plist in Resources */,
 				8C84CE1E2BDB72C800C88D4E /* Images.xcassets in Resources */,
 				8C93A11A2BAE2C7200B5382C /* PrivacyInfo.xcprivacy in Resources */,
+				7BA02DA7B5280C14C43EC99C /* main.jsbundle in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
