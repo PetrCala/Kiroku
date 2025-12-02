@@ -337,9 +337,10 @@ index 755d103..4e4c564 100644
  + (NSDictionary *)env;
  + (NSString *)envFor: (NSString *)key;
 diff --git a/node_modules/react-native-config/ios/ReactNativeConfig/RNCConfigModule.m b/node_modules/react-native-config/ios/ReactNativeConfig/RNCConfigModule.m
-index 5365d4c..e69de29 100644
+deleted file mode 100644
+index 5365d4c..0000000
 --- a/node_modules/react-native-config/ios/ReactNativeConfig/RNCConfigModule.m
-+++ b/node_modules/react-native-config/ios/ReactNativeConfig/RNCConfigModule.m
++++ /dev/null
 @@ -1,25 +0,0 @@
 -#import "RNCConfig.h"
 -#import "RNCConfigModule.h"
