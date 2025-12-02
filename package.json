@@ -43,6 +43,7 @@
     "transpile": "npx tsc --build functions",
     "deploy-functions": "firebase deploy --only functions --debug",
     "workflow-test": "./workflow_tests/scripts/runWorkflowTests.sh",
+    "kill-metro": "lsof -ti:8081 | xargs kill -9 2>/dev/null",
     "bump": "./scripts/bumpVersion.sh",
     "build": "tsc"
   },
