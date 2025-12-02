@@ -30,14 +30,29 @@ class AppDelegate: ExpoAppDelegate {
     bindReactNativeFactory(factory)
 
     window = UIWindow(frame: UIScreen.main.bounds)
+
+    // Set up observer to initialize Firebase after React Native is ready
+    NotificationCenter.default.addObserver(
+      self,
+      selector: #selector(onJavaScriptDidLoad),
+      name: NSNotification.Name("RCTJavaScriptDidLoadNotification"),
+      object: nil
+    )
+
+    NotificationCenter.default.addObserver(
+      self,
+      selector: #selector(onJavaScriptDidFailToLoad),
+      name: NSNotification.Name("RCTJavaScriptDidFailToLoadNotification"),
+      object: nil
+    )
+
     factory.startReactNative(
       withModuleName: "kiroku",
       in: window,
       launchOptions: launchOptions
     )
 
-    // Configure firebase
-    FirebaseApp.configure()
+    // Firebase is now initialized in onJavaScriptDidLoad() after React Native is ready
 
     // Force the app to LTR mode.
     RCTI18nUtil.sharedInstance().allowRTL(false)
@@ -87,6 +102,41 @@ class AppDelegate: ExpoAppDelegate {
 
   func handleKeyCommand(_ keyCommand: UIKeyCommand) {
     HardwareShortcuts.sharedInstance().handleKeyCommand(keyCommand)
+  }
+
+  @objc private func onJavaScriptDidLoad() {
+    // Initialize Firebase now that React Native JS bridge is ready
+    FirebaseApp.configure()
+
+    // Clean up observers
+    NotificationCenter.default.removeObserver(
+      self,
+      name: NSNotification.Name("RCTJavaScriptDidLoadNotification"),
+      object: nil
+    )
+    NotificationCenter.default.removeObserver(
+      self,
+      name: NSNotification.Name("RCTJavaScriptDidFailToLoadNotification"),
+      object: nil
+    )
+  }
+
+  @objc private func onJavaScriptDidFailToLoad() {
+    // Still initialize Firebase even if JS fails to load
+    // (Firebase functionality should work independently)
+    FirebaseApp.configure()
+
+    // Clean up observers
+    NotificationCenter.default.removeObserver(
+      self,
+      name: NSNotification.Name("RCTJavaScriptDidLoadNotification"),
+      object: nil
+    )
+    NotificationCenter.default.removeObserver(
+      self,
+      name: NSNotification.Name("RCTJavaScriptDidFailToLoadNotification"),
+      object: nil
+    )
   }
 }
 
