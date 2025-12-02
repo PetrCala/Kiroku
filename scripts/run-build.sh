@@ -49,9 +49,9 @@ case "$BUILD" in
         export PATH="/opt/homebrew/bin:$PATH"
 
         npx rock run:ios \
-            --simulator="$IOS_SIMULATOR" \
-            --scheme="$IOS_SCHEME" \
-            --configuration="$IOS_MODE" \
+            --simulator "$IOS_SIMULATOR" \
+            --scheme "$IOS_SCHEME" \
+            --configuration $IOS_MODE \
             --dev-server \
             "${EXTRA_FLAGS[@]}"
         ;;
@@ -66,8 +66,8 @@ case "$BUILD" in
         export PATH="/opt/homebrew/bin:$PATH"
 
         npx rock run:android \
-            --variant=$ANDROID_MODE \
-            --app-id=$ANDROID_APP_ID \
+            --variant $ANDROID_MODE \
+            --app-id $ANDROID_APP_ID \
             --active-arch-only \
             --dev-server \
             "${EXTRA_FLAGS[@]}"
