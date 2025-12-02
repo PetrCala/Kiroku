@@ -42,32 +42,34 @@ case "$BUILD" in
         echo "🍎 Starting iOS build..."
         echo "   Simulator: $IOS_SIMULATOR"
         echo "   Scheme: $IOS_SCHEME"
-        echo "   Mode: $IOS_MODE"
+        echo "   Configuration: $IOS_MODE"
         echo ""
 
         # Set PATH to ensure node is available
         export PATH="/opt/homebrew/bin:$PATH"
 
-        npx react-native run-ios \
+        npx rock run:ios \
             --simulator="$IOS_SIMULATOR" \
-            --scheme "$IOS_SCHEME" \
-            --mode="$IOS_MODE" \
+            --scheme="$IOS_SCHEME" \
+            --configuration="$IOS_MODE" \
+            --dev-server \
             "${EXTRA_FLAGS[@]}"
         ;;
 
     --android)
         echo "🤖 Starting Android build..."
         echo "   App ID: $ANDROID_APP_ID"
-        echo "   Mode: $ANDROID_MODE"
+        echo "   Variant: $ANDROID_MODE"
         echo ""
 
         # Set PATH to ensure node is available
         export PATH="/opt/homebrew/bin:$PATH"
 
-        npx react-native run-android \
-            --mode=$ANDROID_MODE \
-            --appId=$ANDROID_APP_ID \
+        npx rock run:android \
+            --variant=$ANDROID_MODE \
+            --app-id=$ANDROID_APP_ID \
             --active-arch-only \
+            --dev-server \
             "${EXTRA_FLAGS[@]}"
         ;;
 
