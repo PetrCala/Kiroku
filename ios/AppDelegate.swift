@@ -6,6 +6,8 @@
 import Expo
 import ExpoModulesCore
 import Firebase
+import FirebaseCore
+import FirebasePerformance
 import React
 import ReactAppDependencyProvider
 import React_RCTAppDelegate
@@ -32,7 +34,16 @@ class AppDelegate: ExpoAppDelegate {
     window = UIWindow(frame: UIScreen.main.bounds)
 
     // Configure Firebase BEFORE starting React Native to ensure it's available when JS loads
+    // Automatic data collection is disabled in Info.plist to prevent thread conflicts
     FirebaseApp.configure()
+
+    // Set up observer to enable Firebase data collection after React Native is ready
+    NotificationCenter.default.addObserver(
+      self,
+      selector: #selector(onJavaScriptDidLoad),
+      name: NSNotification.Name("RCTJavaScriptDidLoadNotification"),
+      object: nil
+    )
 
     factory.startReactNative(
       withModuleName: "kiroku",
@@ -88,6 +99,21 @@ class AppDelegate: ExpoAppDelegate {
 
   func handleKeyCommand(_ keyCommand: UIKeyCommand) {
     HardwareShortcuts.sharedInstance().handleKeyCommand(keyCommand)
+  }
+
+  @objc private func onJavaScriptDidLoad() {
+    // Enable Firebase data collection now that React Native is fully initialized
+    // This prevents thread conflicts during startup
+    FirebaseConfiguration.shared.setLoggerLevel(.min)
+    Performance.sharedInstance().isDataCollectionEnabled = true
+    Performance.sharedInstance().isInstrumentationEnabled = true
+
+    // Clean up observer
+    NotificationCenter.default.removeObserver(
+      self,
+      name: NSNotification.Name("RCTJavaScriptDidLoadNotification"),
+      object: nil
+    )
   }
 }
 
