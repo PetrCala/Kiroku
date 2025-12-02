@@ -48,12 +48,20 @@ case "$BUILD" in
         # Set PATH to ensure node is available
         export PATH="/opt/homebrew/bin:$PATH"
 
-        npx rock run:ios \
-            --destination simulator \
-            --device "$IOS_SIMULATOR" \
+        # Rock build (requires Ruby >= 3.3.4 and proper pod configuration)
+        # npx rock run:ios \
+        #     --destination simulator \
+        #     --device "$IOS_SIMULATOR" \
+        #     --scheme "$IOS_SCHEME" \
+        #     --configuration $IOS_MODE \
+        #     --dev-server \
+        #     "${EXTRA_FLAGS[@]}"
+
+        # Standard React Native build
+        npx react-native run-ios \
+            --simulator "$IOS_SIMULATOR" \
             --scheme "$IOS_SCHEME" \
-            --configuration $IOS_MODE \
-            --dev-server \
+            --mode "$IOS_MODE" \
             "${EXTRA_FLAGS[@]}"
         ;;
 
