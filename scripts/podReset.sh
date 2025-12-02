@@ -36,6 +36,8 @@ rm -rf Pods
 
 rm -rf ~/Library/Developer/Xcode/DerivedData/*
 
+rm -rf ios/Podfile.lock
+
 # Remove all .xcworkspace files
 find . -name "*.xcworkspace" -type d -exec rm -rf {} +
 
@@ -47,6 +49,7 @@ cd -
 
 git add ios/kiroku.xcodeproj/project.pbxproj
 git add ios/kiroku.xcworkspace/contents.xcworkspacedata
+git add ios/Podfile.lock
 
 git commit -m "iOS Pods reset"
 
