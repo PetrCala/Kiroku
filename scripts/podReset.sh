@@ -45,6 +45,11 @@ pod deintegrate
 
 cd -
 
+git add ios/kiroku.xcodeproj/project.pbxproj
+git add ios/kiroku.xcworkspace/contents.xcworkspacedata
+
+git commit -m "iOS Pods reset"
+
 success "pod reset complete!"
 
 exit 0
