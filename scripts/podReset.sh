@@ -45,10 +45,13 @@ rm -rf build
 
 pod deintegrate
 
+pod install
+
 cd -
 
 git add ios/kiroku.xcodeproj/project.pbxproj
 git add ios/Podfile.lock
+git add ios/kiroku.xcworkspace/
 
 git commit -m "iOS Pods reset"
 
