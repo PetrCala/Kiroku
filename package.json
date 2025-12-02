@@ -5,8 +5,8 @@
   "type": "commonjs",
   "license": "MIT",
   "scripts": {
-    "android": "npx react-native run-android --mode=developmentDebug --appId=com.alcohol_tracker.dev --active-arch-only",
-    "ios": "npx react-native run-ios --simulator=\"iPhone 16 Pro\" --scheme \"Kiroku (development)\" --mode=\"DebugDevelopment\"",
+    "android": "./scripts/run-build.sh --android",
+    "ios": "./scripts/run-build.sh --ios",
     "ios:pod:install": "cd ios && pod install && cd ..",
     "ios:pod:reset": "./scripts/podReset.sh",
     "ios-build": "fastlane ios build",
