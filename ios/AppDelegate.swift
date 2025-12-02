@@ -21,7 +21,10 @@ class AppDelegate: ExpoAppDelegate {
     _ application: UIApplication,
     didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]? = nil
   ) -> Bool {
-    Self.configureFirebaseIfNeeded()
+    // Configure Firebase on main thread BEFORE React Native initialization
+    if FirebaseApp.app() == nil {
+      FirebaseApp.configure()
+    }
 
     let delegate = ReactNativeDelegate()
     let factory = RCTReactNativeFactory(delegate: delegate)
@@ -32,10 +35,6 @@ class AppDelegate: ExpoAppDelegate {
     bindReactNativeFactory(factory)
 
     window = UIWindow(frame: UIScreen.main.bounds)
-
-    if FirebaseApp.app() == nil {
-      FirebaseApp.configure()
-    }
 
     factory.startReactNative(
       withModuleName: "kiroku",
@@ -91,16 +90,6 @@ class AppDelegate: ExpoAppDelegate {
 
   func handleKeyCommand(_ keyCommand: UIKeyCommand) {
     HardwareShortcuts.sharedInstance().handleKeyCommand(keyCommand)
-  }
-
-  private static let firebaseInitQueue = DispatchQueue(label: "org.kiroku.firebaseInit")
-
-  private static func configureFirebaseIfNeeded() {
-    firebaseInitQueue.sync {
-      if FirebaseApp.app() == nil {
-        FirebaseApp.configure()
-      }
-    }
   }
 }
 
