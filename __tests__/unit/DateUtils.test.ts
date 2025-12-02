@@ -10,7 +10,7 @@ import {
   subMinutes,
   subSeconds,
 } from 'date-fns';
-import {format as tzFormat, utcToZonedTime} from 'date-fns-tz';
+import {format as tzFormat, toZonedTime} from 'date-fns-tz';
 import Onyx from 'react-native-onyx';
 import DateUtils from '@libs/DateUtils';
 import CONST from '@src/CONST';
@@ -229,9 +229,9 @@ describe('DateUtils', () => {
     const tomorrow = addDays(today, 1);
     const yesterday = subDays(today, 1);
 
-    const todayInTimezone = utcToZonedTime(today, timezone);
-    const tomorrowInTimezone = utcToZonedTime(tomorrow, timezone);
-    const yesterdayInTimezone = utcToZonedTime(yesterday, timezone);
+    const todayInTimezone = toZonedTime(today, timezone);
+    const tomorrowInTimezone = toZonedTime(tomorrow, timezone);
+    const yesterdayInTimezone = toZonedTime(yesterday, timezone);
 
     it('isToday should correctly identify today', () => {
       expect(DateUtils.isToday(todayInTimezone, timezone)).toBe(true);

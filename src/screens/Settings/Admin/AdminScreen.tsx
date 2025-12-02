@@ -118,10 +118,10 @@ function AdminScreen({route}: AdminScreenProps) {
       return true; // Prevent the event from bubbling up and being handled by the default handler
     };
 
-    BackHandler.addEventListener('hardwareBackPress', backAction);
+    const subscription = BackHandler.addEventListener('hardwareBackPress', backAction);
 
     return () => {
-      BackHandler.removeEventListener('hardwareBackPress', backAction);
+      subscription.remove();
     };
   }, []);
 

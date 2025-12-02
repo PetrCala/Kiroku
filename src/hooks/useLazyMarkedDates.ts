@@ -1,5 +1,5 @@
 import {useEffect, useMemo, useRef, useState} from 'react';
-import {utcToZonedTime} from 'date-fns-tz';
+import {toZonedTime} from 'date-fns-tz';
 import type {
   DrinkingSessionArray,
   DrinkingSessionList,
@@ -93,7 +93,7 @@ function useLazyMarkedDates(
     // Build the sessionIndex for relevant sessions - do not use the in-built forEach method, as it introduces an erro into the assignment
     // eslint-disable-next-line you-dont-need-lodash-underscore/for-each
     _.forEach(relevantSessions, session => {
-      const sessionDate = utcToZonedTime(
+      const sessionDate = toZonedTime(
         session.start_time,
         session.timezone ?? defaultTimezone,
       );

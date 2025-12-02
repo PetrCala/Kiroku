@@ -30,8 +30,8 @@ import {
 import {
   formatInTimeZone,
   format as tzFormat,
-  utcToZonedTime,
-  zonedTimeToUtc,
+  toZonedTime,
+  fromZonedTime,
 } from 'date-fns-tz';
 import enUS from 'date-fns/locale/en-US';
 import CS_CZ from 'date-fns/locale/cs';
@@ -109,8 +109,8 @@ function setLocale(localeString: Locale) {
 
 function getDayStartAndEndUTC(date: Date, tz: SelectedTimezone) {
   const dateString = format(date, 'yyyy-MM-dd');
-  const startOfDayUTC = zonedTimeToUtc(`${dateString} 00:00:00`, tz).getTime();
-  const endOfDayUTC = zonedTimeToUtc(
+  const startOfDayUTC = fromZonedTime(`${dateString} 00:00:00`, tz).getTime();
+  const endOfDayUTC = fromZonedTime(
     `${dateString} 23:59:59.999`,
     tz,
   ).getTime();
@@ -119,17 +119,17 @@ function getDayStartAndEndUTC(date: Date, tz: SelectedTimezone) {
 
 function getMonthStartAndEndUTC(date: Date, tz: string, untilToday: boolean) {
   // Get the date in the session's timezone
-  const zonedDate = utcToZonedTime(date, tz);
+  const zonedDate = toZonedTime(date, tz);
 
   // Start of the month in the session's timezone
   const startOfMonthDate = startOfMonth(zonedDate);
-  const startOfMonthUTC = zonedTimeToUtc(startOfMonthDate, tz).getTime();
+  const startOfMonthUTC = fromZonedTime(startOfMonthDate, tz).getTime();
 
   // End of the month in the session's timezone
   let endOfMonthDate = endOfMonth(zonedDate);
 
   if (untilToday) {
-    const todayInTz = utcToZonedTime(new Date(), tz);
+    const todayInTz = toZonedTime(new Date(), tz);
     const todayEndInTz = endOfDay(todayInTz);
 
     // If today is before the end of the month, use today as the end date
@@ -138,7 +138,7 @@ function getMonthStartAndEndUTC(date: Date, tz: string, untilToday: boolean) {
     }
   }
 
-  const endOfMonthUTC = zonedTimeToUtc(endOfMonthDate, tz).getTime();
+  const endOfMonthUTC = fromZonedTime(endOfMonthDate, tz).getTime();
 
   return {startOfMonthUTC, endOfMonthUTC};
 }
@@ -153,7 +153,7 @@ function getLocalDateFromDatetime(
 ): Date {
   setLocale(locale);
   if (!datetime) {
-    const res = utcToZonedTime(new Date(), currentSelectedTimezone);
+    const res = toZonedTime(new Date(), currentSelectedTimezone);
     if (Number.isNaN(res.getTime())) {
       Log.warn(
         'DateUtils.getLocalDateFromDatetime: utcToZonedTime returned an invalid date. Returning current date.',
@@ -168,7 +168,7 @@ function getLocalDateFromDatetime(
     return res;
   }
   const parsedDatetime = new Date(`${datetime}Z`);
-  return utcToZonedTime(parsedDatetime, currentSelectedTimezone);
+  return toZonedTime(parsedDatetime, currentSelectedTimezone);
 }
 
 /**
@@ -180,7 +180,7 @@ function getLocalDateFromDatetime(
  */
 function isToday(date: Date, timeZone: SelectedTimezone): boolean {
   const currentDate = new Date();
-  const currentDateInTimeZone = utcToZonedTime(currentDate, timeZone);
+  const currentDateInTimeZone = toZonedTime(currentDate, timeZone);
   return isSameDay(date, currentDateInTimeZone);
 }
 
@@ -210,7 +210,7 @@ function getLocalizedDay(
   if (!date) {
     return 'unknown';
   }
-  const day = utcToZonedTime(date, selectedTimezone);
+  const day = toZonedTime(date, selectedTimezone);
   return format(day, formatString);
 }
 
@@ -231,7 +231,7 @@ const getDeviceTimezone = (): SelectedTimezone => {
 function isTomorrow(date: Date, timeZone: SelectedTimezone): boolean {
   const currentDate = new Date();
   const tomorrow = addDays(currentDate, 1); // Get the date for tomorrow in the current time zone
-  const tomorrowInTimeZone = utcToZonedTime(tomorrow, timeZone);
+  const tomorrowInTimeZone = toZonedTime(tomorrow, timeZone);
   return isSameDay(date, tomorrowInTimeZone);
 }
 
@@ -245,7 +245,7 @@ function isTomorrow(date: Date, timeZone: SelectedTimezone): boolean {
 function isYesterday(date: Date, timeZone: SelectedTimezone): boolean {
   const currentDate = new Date();
   const yesterday = subDays(currentDate, 1); // Get the date for yesterday in the current time zone
-  const yesterdayInTimeZone = utcToZonedTime(yesterday, timeZone);
+  const yesterdayInTimeZone = toZonedTime(yesterday, timeZone);
   return isSameDay(date, yesterdayInTimeZone);
 }
 
@@ -486,7 +486,7 @@ function subtractMillisecondsFromDateTime(
   dateTime: string,
   milliseconds: number,
 ): string {
-  const date = zonedTimeToUtc(dateTime, 'UTC');
+  const date = fromZonedTime(dateTime, 'UTC');
   const newTimestamp = subMilliseconds(date, milliseconds).valueOf();
 
   return getDBTime(newTimestamp);
@@ -852,7 +852,7 @@ function formatWithUTCTimeZone(
   const date = new Date(datetime);
 
   if (isValid(date)) {
-    return tzFormat(utcToZonedTime(date, 'UTC'), dateFormat);
+    return tzFormat(toZonedTime(date, 'UTC'), dateFormat);
   }
 
   return '';
