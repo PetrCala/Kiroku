@@ -49,6 +49,10 @@
 	</array>
 	<key>RCTNewArchEnabled</key>
 	<true/>
+	<key>FirebaseCrashlyticsCollectionEnabled</key>
+	<false/>
+	<key>FirebasePerformanceCollectionEnabled</key>
+	<false/>
 	<key>UIAppFonts</key>
 	<array>
 		<string>ExpensifyNewKansas-Medium.otf</string>
