@@ -7,9 +7,10 @@ import {UCFirst} from '@libs/StringUtilsKiroku';
 
 // createOnyxContext return type
 type CreateOnyxContext<TOnyxKey extends OnyxKey> = [
-  ComponentType<ChildrenProps>,
-  React.Context<OnyxValue<TOnyxKey>>,
-  () => NonNullable<OnyxValue<TOnyxKey>>,
+  ComponentType<any>, // Deprecated withOnyx HOC (for backward compatibility)
+  ComponentType<ChildrenProps>, // Provider
+  React.Context<OnyxValue<TOnyxKey>>, // Context
+  () => NonNullable<OnyxValue<TOnyxKey>>, // useOnyxContext hook
 ];
 
 export default <TOnyxKey extends OnyxKey>(
@@ -21,14 +22,23 @@ export default <TOnyxKey extends OnyxKey>(
 
   function Provider(props: ChildrenProps): ReactNode {
     const [value] = useOnyx(onyxKeyName, {canBeMissing: true});
+    const contextValue = value ?? (null as OnyxValue<TOnyxKey>);
     return (
-      <Context.Provider value={(value ?? null) as OnyxValue<TOnyxKey>}>
+      <Context.Provider value={contextValue}>
         {props.children}
       </Context.Provider>
     );
   }
 
   Provider.displayName = `${UCFirst(onyxKeyName)}Provider`;
+
+  // Deprecated HOC for backward compatibility - not used but maintains API
+  const withOnyxKey = (Component: ComponentType<any>) => {
+    console.warn(
+      `withOnyx HOC is deprecated. Use ${UCFirst(onyxKeyName)}Provider and useOnyxContext instead.`,
+    );
+    return Component;
+  };
 
   const useOnyxContext = () => {
     const value = useContext(Context);
@@ -40,5 +50,5 @@ export default <TOnyxKey extends OnyxKey>(
     return value as NonNullable<OnyxValue<TOnyxKey>>;
   };
 
-  return [Provider, Context, useOnyxContext];
+  return [withOnyxKey, Provider, Context, useOnyxContext];
 };
