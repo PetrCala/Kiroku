@@ -30,7 +30,10 @@ const config = {
       ...defaultConfig.resolver.sourceExts,
       ...defaultConfig.watcher.additionalExts,
       'jsx',
+      'cjs', // Enable CommonJS file resolution for Firebase SDK
     ],
+    // Disable package exports to fix Firebase module resolution in React Native
+    unstable_enablePackageExports: false,
   },
   // We are merging the default config from Expo and React Native and expo one is overriding the React Native one so inlineRequires is set to false so we want to set it to true
   // for fix cycling dependencies and improve performance of app startup
