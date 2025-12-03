@@ -21,6 +21,15 @@ class AppDelegate: ExpoAppDelegate {
     _ application: UIApplication,
     didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]? = nil
   ) -> Bool {
+    // CRITICAL: Configure Firebase FIRST, BEFORE React Native starts
+    // React Native Firebase native modules (Crashlytics, Analytics, Perf) initialize
+    // when JavaScript loads, and they require FirebaseApp to be configured first
+    print("[Kiroku] Configuring Firebase on main thread BEFORE React Native")
+    if FirebaseApp.app() == nil {
+      FirebaseApp.configure()
+      print("[Kiroku] ✅ Firebase configured successfully")
+    }
+
     let delegate = ReactNativeDelegate()
     let factory = RCTReactNativeFactory(delegate: delegate)
     delegate.dependencyProvider = RCTAppDependencyProvider()
@@ -31,28 +40,12 @@ class AppDelegate: ExpoAppDelegate {
 
     window = UIWindow(frame: UIScreen.main.bounds)
 
-    // Start React Native FIRST to initialize thread manager (required for New Architecture)
+    // Now start React Native - Firebase is ready for native modules
     factory.startReactNative(
       withModuleName: "kiroku",
       in: window,
       launchOptions: launchOptions
     )
-
-    // Configure Firebase AFTER React Native to ensure thread pools are initialized
-    // This is especially important with RCTNewArchEnabled = true
-    DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
-      print("[Kiroku] About to configure Firebase on thread: \(Thread.current)")
-      if FirebaseApp.app() == nil {
-        do {
-          FirebaseApp.configure()
-          print("[Kiroku] ✅ Firebase configured successfully")
-        } catch {
-          print("[Kiroku] ❌ Firebase configuration failed: \(error)")
-        }
-      } else {
-        print("[Kiroku] Firebase already configured")
-      }
-    }
 
     // Force the app to LTR mode.
     RCTI18nUtil.sharedInstance().allowRTL(false)
