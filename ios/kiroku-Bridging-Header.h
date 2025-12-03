@@ -12,7 +12,6 @@
 #import <React/RCTLinkingManager.h>
 
 #import "RCTBootSplash.h"
-#import "RCTStartupTimer.h"
 
 #import <HardwareShortcuts.h>
 

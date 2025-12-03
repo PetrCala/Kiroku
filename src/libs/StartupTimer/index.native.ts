@@ -1,4 +1,4 @@
-import {NativeModules} from 'react-native';
+// import {NativeModules} from 'react-native';
 import type StartupTimer from './types';
 
 /**
@@ -7,7 +7,7 @@ import type StartupTimer from './types';
 const startupTimer: StartupTimer = {
   stop: () => {
     // eslint-disable-next-line @typescript-eslint/no-unsafe-call
-    NativeModules.StartupTimer.stop();
+    // NativeModules.StartupTimer.stop(); // TODO
   },
 };
 
