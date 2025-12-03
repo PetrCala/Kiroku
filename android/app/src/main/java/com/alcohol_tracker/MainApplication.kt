@@ -14,7 +14,7 @@ import com.facebook.react.defaults.DefaultNewArchitectureEntryPoint.load
 import com.facebook.react.defaults.DefaultReactNativeHost
 import com.facebook.react.modules.i18nmanager.I18nUtil
 import com.facebook.soloader.SoLoader
-import com.google.firebase.crashlytics.FirebaseCrashlytics
+// REMOVED: import com.google.firebase.crashlytics.FirebaseCrashlytics
 // import com.oblador.performance.RNPerformance
 import expo.modules.ApplicationLifecycleDispatcher
 import expo.modules.ReactNativeHostWrapper
@@ -50,9 +50,10 @@ class MainApplication : MultiDexApplication(), ReactApplication {
             // If you opted-in for the New Architecture, we load the native entry point for this app.
             load()
         }
-        if (BuildConfig.DEBUG) {
-            FirebaseCrashlytics.getInstance().setCrashlyticsCollectionEnabled(false)
-        }
+        // REMOVED: Crashlytics module no longer available
+        // if (BuildConfig.DEBUG) {
+        //     FirebaseCrashlytics.getInstance().setCrashlyticsCollectionEnabled(false)
+        // }
 
         // Force the app to LTR mode.
         val sharedI18nUtilInstance = I18nUtil.getInstance()

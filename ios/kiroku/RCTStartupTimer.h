@@ -5,7 +5,8 @@
 //  Created by Marc Glasser on 7/21/21.
 //
 #import <React/RCTBridgeModule.h>
-#import <FirebasePerformance/FIRPerformance.h>
+// REMOVED: Firebase Performance module no longer available
+// #import <FirebasePerformance/FIRPerformance.h>
 
 #ifndef RCTStartupTimer_h
 #define RCTStartupTimer_h

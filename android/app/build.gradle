@@ -1,7 +1,7 @@
 apply plugin: "com.android.application"
 apply plugin: "org.jetbrains.kotlin.android"
 apply plugin: "com.facebook.react"
-apply plugin: "com.google.firebase.firebase-perf"
+// REMOVED: apply plugin: "com.google.firebase.firebase-perf"
 
 
 /**
@@ -204,8 +204,8 @@ dependencies {
 
     // Firebase libraries (using the Firebase BoM for consistency - see https://firebase.google.com/docs/android/learn-more#bom)
     implementation platform("com.google.firebase:firebase-bom:33.2.0")
-    implementation "com.google.firebase:firebase-perf"
-    implementation "com.google.firebase:firebase-crashlytics"
+    // REMOVED: implementation "com.google.firebase:firebase-perf"
+    // REMOVED: implementation "com.google.firebase:firebase-crashlytics"
 
     // Android support library
     implementation 'com.android.support:support-core-utils:28.0.0'
@@ -222,4 +222,4 @@ dependencies {
 // This has to be at the end of the script to apply env config
 apply from: project(':react-native-config').projectDir.getPath() + "/dotenv.gradle"
 apply plugin: 'com.google.gms.google-services'  // Google Play services Gradle plugin
-apply plugin: 'com.google.firebase.crashlytics'
+// REMOVED: apply plugin: 'com.google.firebase.crashlytics'
