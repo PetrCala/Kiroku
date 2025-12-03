@@ -5,7 +5,6 @@
 
 import Expo
 import ExpoModulesCore
-import Firebase
 import React
 import ReactAppDependencyProvider
 import React_RCTAppDelegate
@@ -21,14 +20,8 @@ class AppDelegate: ExpoAppDelegate {
     _ application: UIApplication,
     didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]? = nil
   ) -> Bool {
-    // CRITICAL: Configure Firebase FIRST, BEFORE React Native starts
-    // React Native Firebase native modules (Crashlytics, Analytics, Perf) initialize
-    // when JavaScript loads, and they require FirebaseApp to be configured first
-    print("[Kiroku] Configuring Firebase on main thread BEFORE React Native")
-    if FirebaseApp.app() == nil {
-      FirebaseApp.configure()
-      print("[Kiroku] ✅ Firebase configured successfully")
-    }
+    // Note: Firebase is now configured via Web SDK in JavaScript
+    // React Native Firebase modules have been removed
 
     let delegate = ReactNativeDelegate()
     let factory = RCTReactNativeFactory(delegate: delegate)
