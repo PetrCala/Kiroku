@@ -9,22 +9,21 @@
 
 @implementation RCTStartupTimer
 
-static FIRTrace *trace = nil;
+// REMOVED: Firebase Performance module no longer available
+// This module is now a no-op stub since Firebase Performance was removed
 
 + (void)start {
-  #if DEBUG
-    // We don't want to record this on debug since it will skew the metrics we collect
-    NSLog(@"[StartupTimer] Metric tracing disabled in DEBUG");
-  #else
-    trace = [FIRPerformance startTraceWithName:@"js_loaded"];
-  #endif
+// No-op: Firebase Performance module removed
+#if DEBUG
+  NSLog(@"[StartupTimer] Firebase Performance disabled - module removed");
+#endif
 }
 
-RCT_EXPORT_METHOD(stop)
-{
-  if (trace) {
-    [trace stop];
-  }
+- (void)stop {
+// No-op: Firebase Performance module removed
+#if DEBUG
+  NSLog(@"[StartupTimer] Firebase Performance disabled - module removed");
+#endif
 }
 
 // To export a module named StartupTimer
