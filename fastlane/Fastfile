@@ -257,12 +257,12 @@ platform :ios do
           }
       )
 
-    upload_symbols_to_crashlytics(
-      app_id: "1:665512857657:ios:a07eeddf1f54bac2b4fde8",
-      dsym_path: lane_context[SharedValues::DSYM_OUTPUT_PATH],
-      gsp_path: "./ios/GoogleService-Info.plist",
-      binary_path: "./ios/Pods/FirebaseCrashlytics/upload-symbols"
-    )
+    # upload_symbols_to_crashlytics(
+    #   app_id: "1:665512857657:ios:a07eeddf1f54bac2b4fde8",
+    #   dsym_path: lane_context[SharedValues::DSYM_OUTPUT_PATH],
+    #   gsp_path: "./ios/GoogleService-Info.plist",
+    #   binary_path: "./ios/Pods/FirebaseCrashlytics/upload-symbols"
+    # )
     end
 
   end
