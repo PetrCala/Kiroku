@@ -67,6 +67,7 @@ function Kiroku() {
   const [loadingText] = useOnyx(ONYXKEYS.APP_LOADING_TEXT);
   const [initialUrl, setInitialUrl] = useState<string | null>(null);
   const [hasCheckedAutoLogin] = useOnyx(ONYXKEYS.HAS_CHECKED_AUTO_LOGIN);
+  const [preferredTheme] = useOnyx(ONYXKEYS.PREFERRED_THEME);
   const {config} = useConfig();
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [authenticationChecked, setAuthenticationChecked] = useState(false);
@@ -118,9 +119,15 @@ function Kiroku() {
   }, [config, shouldShowVerifyEmailModal]);
 
   const shouldInit = isNavigationReady && hasCheckedAutoLogin;
+
+  // For logged-in users, wait for theme to be loaded from Firebase before hiding splash
+  // For logged-out users, theme is ready immediately (system default will be used)
+  const isThemeReady = !isAuthenticated || preferredTheme !== undefined;
+
   const shouldHideSplash =
     shouldInit &&
     authenticationChecked &&
+    isThemeReady &&
     splashScreenState === CONST.BOOT_SPLASH_STATE.VISIBLE;
 
   const initializeClient = () => {
@@ -171,6 +178,8 @@ function Kiroku() {
           // isSidebarLoaded,
           // focusModeNotification,
           isAuthenticated,
+          isThemeReady,
+          preferredTheme,
           lastVisitedPath,
         };
         Log.alert(

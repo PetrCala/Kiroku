@@ -1,6 +1,7 @@
 // DatabaseDataContext.tsx
 import type {ReactNode} from 'react';
-import React, {createContext, useContext, useMemo} from 'react';
+import React, {createContext, useContext, useEffect, useMemo} from 'react';
+import Onyx from 'react-native-onyx';
 import type {
   DrinkingSessionList,
   Preferences,
@@ -10,6 +11,8 @@ import type {
 } from '@src/types/onyx';
 import type {FetchDataKeys} from '@hooks/useFetchData/types';
 import useListenToData from '@hooks/useListenToData';
+import ONYXKEYS from '@src/ONYXKEYS';
+import CONST from '@src/CONST';
 import {useFirebase} from './FirebaseContext';
 
 type DatabaseDataContextType = {
@@ -63,6 +66,16 @@ function DatabaseDataProvider({children}: DatabaseDataProviderProps) {
     }),
     [data],
   );
+
+  // Sync theme preference from Firebase to Onyx when preferences are loaded
+  // This ensures the app theme is consistent with the user's saved preference
+  useEffect(() => {
+    if (data.preferences === undefined) {
+      return;
+    }
+    const theme = data.preferences?.theme ?? CONST.THEME.DEFAULT;
+    Onyx.set(ONYXKEYS.PREFERRED_THEME, theme);
+  }, [data.preferences]);
 
   // Monitor local data for changes - TODO rewrite this later
   // useEffect(() => {
