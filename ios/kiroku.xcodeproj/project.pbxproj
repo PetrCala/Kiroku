@@ -9,9 +9,13 @@
 /* Begin PBXBuildFile section */
 		00E356F31AD99517003FC87E /* kirokuTests.m in Sources */ = {isa = PBXBuildFile; fileRef = 00E356F21AD99517003FC87E /* kirokuTests.m */; };
 		13B07FBC1A68108700A75B9A /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 13B07FB01A68108700A75B9A /* AppDelegate.swift */; };
+		1A62DBC1A5D568783196F7A3 /* ExpensifyMono-Bold.otf in Resources */ = {isa = PBXBuildFile; fileRef = ED0A948AA11F82C1E09976C4 /* ExpensifyMono-Bold.otf */; };
 		1E3AC1077EDE128BF47D95A2 /* Pods_kiroku.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 73CBBA296F63F17325028152 /* Pods_kiroku.framework */; };
+		3BF5DCBF49144230602331B7 /* ExpensifyNewKansas-MediumItalic.otf in Resources */ = {isa = PBXBuildFile; fileRef = 066DBBF1F40F285C84786D99 /* ExpensifyNewKansas-MediumItalic.otf */; };
+		3FFBE9D3AE6652AF6E703560 /* ExpensifyNeue-Regular.otf in Resources */ = {isa = PBXBuildFile; fileRef = F30D7D06D9779DF1F8FB3592 /* ExpensifyNeue-Regular.otf */; };
 		6EB690539DFC242A5AEDCD65 /* ExpoModulesProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = F181F1F78CECD2EE2A25A45D /* ExpoModulesProvider.swift */; };
 		7BA02DA7B5280C14C43EC99C /* main.jsbundle in Resources */ = {isa = PBXBuildFile; fileRef = 1CB57FD9FF92DB8328CBAE71 /* main.jsbundle */; };
+		7BCB1D7CE4F97FD4D61E7618 /* ExpensifyNewKansas-Medium.otf in Resources */ = {isa = PBXBuildFile; fileRef = C4A1138961387D93467BCEC8 /* ExpensifyNewKansas-Medium.otf */; };
 		8BFCA0355EE7CB1CCFFE402C /* PrivacyInfo.xcprivacy in Resources */ = {isa = PBXBuildFile; fileRef = 578E3F66D1F5F2E6772F698C /* PrivacyInfo.xcprivacy */; };
 		8C389EF12C3031AB00A015D5 /* Kiroku Watch App.app in Embed Watch Content */ = {isa = PBXBuildFile; fileRef = 8C389EF02C3031AB00A015D5 /* Kiroku Watch App.app */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 		8C389EF62C3031AB00A015D5 /* KirokuApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8C389EF52C3031AB00A015D5 /* KirokuApp.swift */; };
@@ -47,6 +51,10 @@
 		8CCCAE2F2B7188B4008DCF56 /* Info.plist in Resources */ = {isa = PBXBuildFile; fileRef = 13B07FB61A68108700A75B9A /* Info.plist */; };
 		929EAF1A3FD507F3FF2058BF /* ExpoModulesProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9B3D3536B8F71ACC793CEB96 /* ExpoModulesProvider.swift */; };
 		A3B29B1DA820AAD0FD9B76F6 /* Pods_kiroku_kirokuTests.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = EF9480BC6A6C9436355B3ED3 /* Pods_kiroku_kirokuTests.framework */; };
+		A56A2C8EA2EADF1AFCCD9ED2 /* ExpensifyNeue-Bold.otf in Resources */ = {isa = PBXBuildFile; fileRef = AF7FF45134AFDF99EE2C1E55 /* ExpensifyNeue-Bold.otf */; };
+		A90469355EF940E6F8E672FD /* ExpensifyNeue-Italic.otf in Resources */ = {isa = PBXBuildFile; fileRef = D223A394859A66044AE15C35 /* ExpensifyNeue-Italic.otf */; };
+		ABCBF5A772771C50A17C4045 /* ExpensifyNeue-BoldItalic.otf in Resources */ = {isa = PBXBuildFile; fileRef = E3C26734F934D5ED4E2A27E4 /* ExpensifyNeue-BoldItalic.otf */; };
+		C94A7B4409B2F8236A797144 /* ExpensifyMono-Regular.otf in Resources */ = {isa = PBXBuildFile; fileRef = 126E5F28BA6D5DB5B0801087 /* ExpensifyMono-Regular.otf */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -98,6 +106,8 @@
 		00E356EE1AD99517003FC87E /* kirokuTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = kirokuTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		00E356F11AD99517003FC87E /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		00E356F21AD99517003FC87E /* kirokuTests.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = kirokuTests.m; sourceTree = "<group>"; };
+		066DBBF1F40F285C84786D99 /* ExpensifyNewKansas-MediumItalic.otf */ = {isa = PBXFileReference; includeInIndex = 1; path = "ExpensifyNewKansas-MediumItalic.otf"; sourceTree = "<group>"; };
+		126E5F28BA6D5DB5B0801087 /* ExpensifyMono-Regular.otf */ = {isa = PBXFileReference; includeInIndex = 1; path = "ExpensifyMono-Regular.otf"; sourceTree = "<group>"; };
 		13B07F961A680F5B00A75B9A /* kiroku.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = kiroku.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		13B07FAF1A68108700A75B9A /* AppDelegate.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = AppDelegate.h; path = kiroku/AppDelegate.h; sourceTree = "<group>"; };
 		13B07FB01A68108700A75B9A /* AppDelegate.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = AppDelegate.swift; sourceTree = "<group>"; };
@@ -155,13 +165,19 @@
 		93F06CD8ACC0786E452215C6 /* Pods-kiroku.debugdevelopment.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-kiroku.debugdevelopment.xcconfig"; path = "Target Support Files/Pods-kiroku/Pods-kiroku.debugdevelopment.xcconfig"; sourceTree = "<group>"; };
 		9B3D3536B8F71ACC793CEB96 /* ExpoModulesProvider.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = ExpoModulesProvider.swift; path = "Pods/Target Support Files/Pods-kiroku/ExpoModulesProvider.swift"; sourceTree = "<group>"; };
 		9BF1D47E40732B6F9E99CC36 /* Pods-kiroku.releaseadhoc.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-kiroku.releaseadhoc.xcconfig"; path = "Target Support Files/Pods-kiroku/Pods-kiroku.releaseadhoc.xcconfig"; sourceTree = "<group>"; };
+		AF7FF45134AFDF99EE2C1E55 /* ExpensifyNeue-Bold.otf */ = {isa = PBXFileReference; includeInIndex = 1; path = "ExpensifyNeue-Bold.otf"; sourceTree = "<group>"; };
 		B1FA72C508FFC57858FCA39F /* Pods-kiroku.releasedevelopment.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-kiroku.releasedevelopment.xcconfig"; path = "Target Support Files/Pods-kiroku/Pods-kiroku.releasedevelopment.xcconfig"; sourceTree = "<group>"; };
+		C4A1138961387D93467BCEC8 /* ExpensifyNewKansas-Medium.otf */ = {isa = PBXFileReference; includeInIndex = 1; path = "ExpensifyNewKansas-Medium.otf"; sourceTree = "<group>"; };
+		D223A394859A66044AE15C35 /* ExpensifyNeue-Italic.otf */ = {isa = PBXFileReference; includeInIndex = 1; path = "ExpensifyNeue-Italic.otf"; sourceTree = "<group>"; };
+		E3C26734F934D5ED4E2A27E4 /* ExpensifyNeue-BoldItalic.otf */ = {isa = PBXFileReference; includeInIndex = 1; path = "ExpensifyNeue-BoldItalic.otf"; sourceTree = "<group>"; };
 		E4BC2BDB7F4DC35FD91119F7 /* Pods-kiroku-kirokuTests.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-kiroku-kirokuTests.debug.xcconfig"; path = "Target Support Files/Pods-kiroku-kirokuTests/Pods-kiroku-kirokuTests.debug.xcconfig"; sourceTree = "<group>"; };
 		E607CC2E8BCF6346889ABDD3 /* Pods-kiroku.debugadhoc.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-kiroku.debugadhoc.xcconfig"; path = "Target Support Files/Pods-kiroku/Pods-kiroku.debugadhoc.xcconfig"; sourceTree = "<group>"; };
+		ED0A948AA11F82C1E09976C4 /* ExpensifyMono-Bold.otf */ = {isa = PBXFileReference; includeInIndex = 1; path = "ExpensifyMono-Bold.otf"; sourceTree = "<group>"; };
 		ED297162215061F000B7C4FE /* JavaScriptCore.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = JavaScriptCore.framework; path = System/Library/Frameworks/JavaScriptCore.framework; sourceTree = SDKROOT; };
 		EF9480BC6A6C9436355B3ED3 /* Pods_kiroku_kirokuTests.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = Pods_kiroku_kirokuTests.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 		F061B1723000707A06B8A512 /* Pods-kiroku-kirokuTests.releaseproduction.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-kiroku-kirokuTests.releaseproduction.xcconfig"; path = "Target Support Files/Pods-kiroku-kirokuTests/Pods-kiroku-kirokuTests.releaseproduction.xcconfig"; sourceTree = "<group>"; };
 		F181F1F78CECD2EE2A25A45D /* ExpoModulesProvider.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = ExpoModulesProvider.swift; path = "Pods/Target Support Files/Pods-kiroku-kirokuTests/ExpoModulesProvider.swift"; sourceTree = "<group>"; };
+		F30D7D06D9779DF1F8FB3592 /* ExpensifyNeue-Regular.otf */ = {isa = PBXFileReference; includeInIndex = 1; path = "ExpensifyNeue-Regular.otf"; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -233,6 +249,7 @@
 				13B07FAF1A68108700A75B9A /* AppDelegate.h */,
 				13B07FB01A68108700A75B9A /* AppDelegate.swift */,
 				13B07FB61A68108700A75B9A /* Info.plist */,
+				52CC548A7CDD506515E91F18 /* Fonts */,
 			);
 			name = kiroku;
 			sourceTree = "<group>";
@@ -253,6 +270,22 @@
 				9B3D3536B8F71ACC793CEB96 /* ExpoModulesProvider.swift */,
 			);
 			name = kiroku;
+			sourceTree = "<group>";
+		};
+		52CC548A7CDD506515E91F18 /* Fonts */ = {
+			isa = PBXGroup;
+			children = (
+				ED0A948AA11F82C1E09976C4 /* ExpensifyMono-Bold.otf */,
+				126E5F28BA6D5DB5B0801087 /* ExpensifyMono-Regular.otf */,
+				AF7FF45134AFDF99EE2C1E55 /* ExpensifyNeue-Bold.otf */,
+				E3C26734F934D5ED4E2A27E4 /* ExpensifyNeue-BoldItalic.otf */,
+				D223A394859A66044AE15C35 /* ExpensifyNeue-Italic.otf */,
+				F30D7D06D9779DF1F8FB3592 /* ExpensifyNeue-Regular.otf */,
+				C4A1138961387D93467BCEC8 /* ExpensifyNewKansas-Medium.otf */,
+				066DBBF1F40F285C84786D99 /* ExpensifyNewKansas-MediumItalic.otf */,
+			);
+			name = Fonts;
+			path = kiroku/Fonts;
 			sourceTree = "<group>";
 		};
 		5D37D04909FB44CC7B886173 /* kirokuTests */ = {
@@ -617,6 +650,14 @@
 				8C84CE1E2BDB72C800C88D4E /* Images.xcassets in Resources */,
 				8C93A11A2BAE2C7200B5382C /* PrivacyInfo.xcprivacy in Resources */,
 				7BA02DA7B5280C14C43EC99C /* main.jsbundle in Resources */,
+				1A62DBC1A5D568783196F7A3 /* ExpensifyMono-Bold.otf in Resources */,
+				C94A7B4409B2F8236A797144 /* ExpensifyMono-Regular.otf in Resources */,
+				A56A2C8EA2EADF1AFCCD9ED2 /* ExpensifyNeue-Bold.otf in Resources */,
+				ABCBF5A772771C50A17C4045 /* ExpensifyNeue-BoldItalic.otf in Resources */,
+				A90469355EF940E6F8E672FD /* ExpensifyNeue-Italic.otf in Resources */,
+				3FFBE9D3AE6652AF6E703560 /* ExpensifyNeue-Regular.otf in Resources */,
+				7BCB1D7CE4F97FD4D61E7618 /* ExpensifyNewKansas-Medium.otf in Resources */,
+				3BF5DCBF49144230602331B7 /* ExpensifyNewKansas-MediumItalic.otf in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
