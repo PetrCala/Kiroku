@@ -48,7 +48,7 @@
 		<string>INSendMessageIntent</string>
 	</array>
 	<key>RCTNewArchEnabled</key>
-	<true/>
+	<false/>
 	<key>UIAppFonts</key>
 	<array>
 		<string>ExpensifyNewKansas-Medium.otf</string>
