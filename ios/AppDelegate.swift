@@ -6,16 +6,11 @@
 import Expo
 import ExpoModulesCore
 import React
-import ReactAppDependencyProvider
 import React_RCTAppDelegate
 import UIKit
 
 @main
 class AppDelegate: ExpoAppDelegate {
-  var window: UIWindow?
-  var reactNativeDelegate: ExpoReactNativeFactoryDelegate?
-  var reactNativeFactory: RCTReactNativeFactory?
-
   override func application(
     _ application: UIApplication,
     didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]? = nil
@@ -23,29 +18,15 @@ class AppDelegate: ExpoAppDelegate {
     // Note: Firebase is now configured via Web SDK in JavaScript
     // React Native Firebase modules have been removed
 
-    let delegate = ReactNativeDelegate()
-    let factory = RCTReactNativeFactory(delegate: delegate)
-    delegate.dependencyProvider = RCTAppDependencyProvider()
-
-    reactNativeDelegate = delegate
-    reactNativeFactory = factory
-    bindReactNativeFactory(factory)
-
-    window = UIWindow(frame: UIScreen.main.bounds)
-
-    // Now start React Native - Firebase is ready for native modules
-    factory.startReactNative(
-      withModuleName: "kiroku",
-      in: window,
-      launchOptions: launchOptions
-    )
+    // CRITICAL: Call super.application() FIRST to let Expo handle React Native initialization
+    // This prevents double initialization that was causing RCTJSThreadManager crashes
+    let result = super.application(application, didFinishLaunchingWithOptions: launchOptions)
 
     // Force the app to LTR mode.
     RCTI18nUtil.sharedInstance().allowRTL(false)
     RCTI18nUtil.sharedInstance().forceRTL(false)
 
-    _ = super.application(application, didFinishLaunchingWithOptions: launchOptions)
-
+    // Initialize BootSplash after React Native is fully set up
     if let rootView = self.window?.rootViewController?.view as? RCTRootView {
       RCTBootSplash.initWithStoryboard("BootSplash", rootView: rootView)
     }
@@ -60,7 +41,7 @@ class AppDelegate: ExpoAppDelegate {
       UserDefaults.standard.set(true, forKey: "isFirstRunComplete")
     }
 
-    return true
+    return result
   }
 
   override func application(
@@ -89,19 +70,13 @@ class AppDelegate: ExpoAppDelegate {
   func handleKeyCommand(_ keyCommand: UIKeyCommand) {
     HardwareShortcuts.sharedInstance().handleKeyCommand(keyCommand)
   }
-}
 
-class ReactNativeDelegate: ExpoReactNativeFactoryDelegate {
+  // Override bundle URL to specify custom bundle location
   override func sourceURL(for bridge: RCTBridge) -> URL? {
-    return self.bundleURL()
-  }
-
-  override func bundleURL() -> URL? {
     #if DEBUG
       return RCTBundleURLProvider.sharedSettings().jsBundleURL(forBundleRoot: "index")
     #else
       return Bundle.main.url(forResource: "main", withExtension: "jsbundle")
     #endif
   }
-
 }
