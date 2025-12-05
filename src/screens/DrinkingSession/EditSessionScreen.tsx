@@ -14,7 +14,6 @@ import useLocalize from '@hooks/useLocalize';
 import type DeepValueOf from '@src/types/utils/DeepValueOf';
 import Navigation from '@libs/Navigation/Navigation';
 import type {Route} from '@src/ROUTES';
-import ROUTES from '@src/ROUTES';
 
 type EditSessionScreenProps = StackScreenProps<
   DrinkingSessionNavigatorParamList,
@@ -41,7 +40,8 @@ function EditSessionScreen({route}: EditSessionScreenProps) {
       } else if (previousScreenName === SCREENS.DRINKING_SESSION.SUMMARY) {
         Navigation.goBack();
       } else {
-        Navigation.navigate(ROUTES.HOME);
+        // Use dismissModal instead of navigate(HOME) to avoid double animation
+        Navigation.dismissModal();
       }
     } else {
       Navigation.goBack();

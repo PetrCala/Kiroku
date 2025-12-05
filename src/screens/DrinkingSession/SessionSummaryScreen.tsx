@@ -19,7 +19,6 @@ import * as DSUtils from '@libs/DrinkingSessionUtils';
 import * as DS from '@userActions/DrinkingSession';
 import DateUtils from '@libs/DateUtils';
 import Navigation from '@libs/Navigation/Navigation';
-import ROUTES from '@src/ROUTES';
 import ScreenWrapper from '@components/ScreenWrapper';
 import HeaderWithBackButton from '@components/HeaderWithBackButton';
 import Button from '@components/Button';
@@ -92,7 +91,8 @@ function SessionSummaryScreen({route}: SessionSummaryScreenProps) {
     if (lastScreenName === SCREENS.DAY_OVERVIEW.ROOT) {
       Navigation.goBack();
     } else {
-      Navigation.navigate(ROUTES.HOME);
+      // Use dismissModal instead of navigate(HOME) to avoid double animation
+      Navigation.dismissModal();
     }
   };
 
