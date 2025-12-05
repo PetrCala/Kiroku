@@ -228,7 +228,6 @@ platform :ios do
     build_app(
         workspace: "./ios/kiroku.xcworkspace",
         scheme: "Kiroku (production)",
-        xcargs: "SKIP_BUNDLING=1",  # Skip Xcode's bundling since we did it manually
         output_name: "kiroku.ipa",
         export_options: {
             provisioningProfiles: {
