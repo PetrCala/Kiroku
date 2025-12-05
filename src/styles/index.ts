@@ -2436,7 +2436,7 @@ const styles = (theme: ThemeColors) =>
     },
 
     textHeadlineH2: {
-      ...headlineFont,
+      ...FontUtils.fontFamily.platform.EXP_NEUE_BOLD,
       ...whiteSpace.preWrap,
       color: theme.heading,
       fontSize: variables.fontSizeh2,
