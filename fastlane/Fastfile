@@ -198,11 +198,12 @@ platform :ios do
         path: "./ios/Kiroku.mobileprovision"
     )
 
-    # Pre-bundle JavaScript using the same Node version as Xcode
+    # Pre-bundle JavaScript using rock bundler (same as Expensify)
     # This ensures the bundle is created before Archive and uses the correct Node binary
-    sh("cd .. && /Users/petr/.nvm/versions/node/v20.19.4/bin/node /Users/petr/.nvm/versions/node/v20.19.4/bin/npx expo export:embed --entry-file index.js --platform ios --dev false --reset-cache --bundle-output ./ios/main.jsbundle --assets-dest ./ios/assets")
+    sh("cd .. && /Users/petr/.nvm/versions/node/v20.19.4/bin/node /Users/petr/.nvm/versions/node/v20.19.4/bin/npx rock bundle --entry-file index.js --platform ios --dev false --reset-cache --bundle-output ./ios/main.jsbundle --assets-dest ./ios/assets")
 
-    # sh("cd ../ios && ./Pods/hermes-engine/destroot/bin/hermesc -emit-binary -O -out ./main.jsbundle.hermesc ./main.jsbundle && mv ./main.jsbundle.hermesc ./main.jsbundle")
+    # Compile with Hermes (same as Xcode would do)
+    sh("cd ../ios && ./Pods/hermes-engine/destroot/bin/hermesc -emit-binary -O -out ./main.jsbundle.hermesc ./main.jsbundle && mv ./main.jsbundle.hermesc ./main.jsbundle")
 
     # Add bundle to Xcode project's Copy Bundle Resources phase
     require 'xcodeproj'
