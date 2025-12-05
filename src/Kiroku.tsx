@@ -310,7 +310,12 @@ function Kiroku() {
         lastVisitedPath={lastVisitedPath as Route}
         initialUrl={initialUrl}
       />
-      {shouldHideSplash && <SplashScreenHider onHide={onSplashHide} />}
+      {/* SplashScreenHider is always rendered to cover content until app is ready.
+          When shouldHideSplash becomes true, isVisible becomes false and the hide animation triggers. */}
+      <SplashScreenHider
+        onHide={onSplashHide}
+        isVisible={!shouldHideSplash}
+      />
     </>
   );
 }

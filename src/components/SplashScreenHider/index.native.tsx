@@ -1,4 +1,4 @@
-import {useCallback, useRef} from 'react';
+import {useCallback, useEffect, useRef} from 'react';
 import type {ViewStyle} from 'react-native';
 import {StyleSheet} from 'react-native';
 import Reanimated, {
@@ -20,6 +20,7 @@ import type {
 
 function SplashScreenHider({
   onHide = () => {},
+  isVisible = true,
 }: SplashScreenHiderProps): SplashScreenHiderReturnType {
   const styles = useThemeStyles();
   const logoSizeRatio = BootSplash.logoSizeRatio || 1;
@@ -65,9 +66,16 @@ function SplashScreenHider({
     });
   }, [opacity, scale, onHide]);
 
+  // Trigger hide when isVisible becomes false (i.e., when app is ready)
+  useEffect(() => {
+    if (isVisible) {
+      return;
+    }
+    hide();
+  }, [isVisible, hide]);
+
   return (
     <Reanimated.View
-      onLayout={hide}
       style={[
         StyleSheet.absoluteFill,
         styles.splashScreenHider,

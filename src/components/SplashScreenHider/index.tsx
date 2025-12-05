@@ -1,4 +1,4 @@
-import {useEffect} from 'react';
+import {useEffect, useRef} from 'react';
 import BootSplash from '@libs/BootSplash';
 import type {
   SplashScreenHiderProps,
@@ -7,10 +7,18 @@ import type {
 
 function SplashScreenHider({
   onHide = () => {},
+  isVisible = true,
 }: SplashScreenHiderProps): SplashScreenHiderReturnType {
+  const hideHasBeenCalled = useRef(false);
+
   useEffect(() => {
+    // Only hide when isVisible becomes false and hide hasn't been called yet
+    if (isVisible || hideHasBeenCalled.current) {
+      return;
+    }
+    hideHasBeenCalled.current = true;
     BootSplash.hide().then(() => onHide());
-  }, [onHide]);
+  }, [isVisible, onHide]);
 
   return null;
 }
