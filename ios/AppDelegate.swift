@@ -3,12 +3,12 @@
 //  kiroku
 //
 
-import UIKit
-import React
-import React_RCTAppDelegate
-import ReactAppDependencyProvider
-import ExpoModulesCore
 import Expo
+import ExpoModulesCore
+import React
+import ReactAppDependencyProvider
+import React_RCTAppDelegate
+import UIKit
 
 @main
 class AppDelegate: ExpoAppDelegate {
