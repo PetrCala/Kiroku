@@ -42,7 +42,7 @@ import CONST from '@src/CONST';
 import ONYXKEYS from '@src/ONYXKEYS';
 import {timezoneBackwardMap} from '@src/TIMEZONES';
 import type {SelectedTimezone, Timezone} from '@src/types/onyx/UserData';
-import {auth} from './Firebase/FirebaseApp';
+import {getFirebaseAuth} from './Firebase/FirebaseApp';
 import * as CurrentDate from './actions/CurrentDate';
 import * as Localize from './Localize';
 import Log from './Log';
@@ -56,7 +56,9 @@ let timezone: Required<Timezone> = CONST.DEFAULT_TIME_ZONE;
 Onyx.connect({
   key: ONYXKEYS.USER_DATA_LIST,
   callback: value => {
-    if (!auth?.currentUser) {
+    // Safe to call getFirebaseAuth() here - Onyx callbacks run after app initialization
+    const auth = getFirebaseAuth();
+    if (!auth.currentUser) {
       return;
     }
     const currentUserID = auth?.currentUser?.uid;
@@ -110,10 +112,7 @@ function setLocale(localeString: Locale) {
 function getDayStartAndEndUTC(date: Date, tz: SelectedTimezone) {
   const dateString = format(date, 'yyyy-MM-dd');
   const startOfDayUTC = fromZonedTime(`${dateString} 00:00:00`, tz).getTime();
-  const endOfDayUTC = fromZonedTime(
-    `${dateString} 23:59:59.999`,
-    tz,
-  ).getTime();
+  const endOfDayUTC = fromZonedTime(`${dateString} 23:59:59.999`, tz).getTime();
   return {startOfDayUTC, endOfDayUTC};
 }
 

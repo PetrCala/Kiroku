@@ -9,7 +9,7 @@ import * as DSUtils from '@libs/DrinkingSessionUtils';
 import useThemeStyles from '@hooks/useThemeStyles';
 import CONST from '@src/CONST';
 import {differenceInMonths, format} from 'date-fns';
-import {auth} from '@libs/Firebase/FirebaseApp';
+import {useFirebase} from '@context/global/FirebaseContext';
 import Navigation from '@libs/Navigation/Navigation';
 import ROUTES from '@src/ROUTES';
 import type {DateString} from '@src/types/onyx/OnyxCommon';
@@ -33,7 +33,8 @@ function SessionsCalendar({
 }: SessionsCalendarProps) {
   const styles = useThemeStyles();
   const StyleUtils = useStyleUtils();
-  const user = auth?.currentUser;
+  const {auth} = useFirebase();
+  const user = auth.currentUser;
   const [preferredLocale] = useOnyx(ONYXKEYS.NVP_PREFERRED_LOCALE);
   const {markedDates, unitsMap, loadedFrom, loadMoreMonths, isLoading} =
     useLazyMarkedDates(userID, drinkingSessionData ?? {}, preferences);

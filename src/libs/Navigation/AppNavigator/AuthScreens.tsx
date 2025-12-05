@@ -26,9 +26,10 @@ import SCREENS from '@src/SCREENS';
 import getOnboardingModalScreenOptions from '@libs/Navigation/getOnboardingModalScreenOptions';
 import {DatabaseDataProvider} from '@context/global/DatabaseDataContext';
 import type {SelectedTimezone, Timezone} from '@src/types/onyx/UserData';
-import {auth} from '@libs/Firebase/FirebaseApp';
+import {getFirebaseAuth} from '@libs/Firebase/FirebaseApp';
 import type ReactComponentModule from '@src/types/utils/ReactComponentModule';
 import useResponsiveLayout from '@hooks/useResponsiveLayout';
+import {useFirebase} from '@context/global/FirebaseContext';
 import createCustomStackNavigator from './createCustomStackNavigator';
 import getRootNavigatorScreenOptions from './getRootNavigatorScreenOptions';
 import BottomTabNavigator from './Navigators/BottomTabNavigator';
@@ -51,6 +52,8 @@ let timezone: Timezone | null;
 Onyx.connect({
   key: ONYXKEYS.USER_DATA_LIST,
   callback: value => {
+    // Safe to call getFirebaseAuth() here - Onyx callbacks run after app initialization
+    const auth = getFirebaseAuth();
     // eslint-disable-next-line @typescript-eslint/prefer-nullish-coalescing
     if (!value || timezone || !auth.currentUser) {
       return;
@@ -111,6 +114,8 @@ const modalScreenListeners = {
 function AuthScreens() {
   const styles = useThemeStyles();
   const StyleUtils = useStyleUtils();
+  const {auth} = useFirebase();
+
   // We need to use isSmallScreenWidth for the root stack navigator
   const {
     shouldUseNarrowLayout,

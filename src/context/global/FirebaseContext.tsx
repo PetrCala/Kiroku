@@ -11,7 +11,7 @@ import {
   isConnectedToDatabaseEmulator,
   isConnectedToStorageEmulator,
 } from '@src/libs/Firebase/FirebaseUtils';
-import {FirebaseApp, auth} from '@libs/Firebase/FirebaseApp';
+import {FirebaseApp, getFirebaseAuth} from '@libs/Firebase/FirebaseApp';
 import FirebaseConfig from '@libs/Firebase/FirebaseConfig';
 import CONFIG from '@src/CONFIG';
 
@@ -45,7 +45,10 @@ type FirebaseProviderProps = {
  */
 function FirebaseProvider({children}: FirebaseProviderProps) {
   const value = useMemo(() => {
-    // Initialize Auth with React Native persistence
+    // CRITICAL: Initialize auth with lazy getter to ensure native modules are ready
+    // This is called in useMemo which runs after component mounts, ensuring React Native
+    // bridge is fully initialized. Direct import would execute at module load time and crash.
+    const auth = getFirebaseAuth();
     const db = getDatabase(FirebaseApp);
     const storage = getStorage(FirebaseApp);
 

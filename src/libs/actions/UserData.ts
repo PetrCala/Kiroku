@@ -10,7 +10,7 @@ import type {} from // OpenPublicProfilePageParams,
 // UpdateSelectedTimezoneParams,
 // UpdateUserAvatarParams,
 '@libs/API/parameters';
-import {auth} from '@libs/Firebase/FirebaseApp';
+import {getFirebaseAuth} from '@libs/Firebase/FirebaseApp';
 // import {READ_COMMANDS, WRITE_COMMANDS} from '@libs/API/types';
 // // import type {CustomRNImageManipulatorResult} from '@libs/cropOrRotateImage/types';
 import DateUtils from '@libs/DateUtils';
@@ -167,7 +167,9 @@ function updateAutomaticTimezone(timezone: Timezone) {
   // if (Session.isAnonymousUser()) {
   //   return;
   // }
-  const currentUserID = auth?.currentUser?.uid;
+  // Safe to call getFirebaseAuth() here - actions are called after app initialization
+  const auth = getFirebaseAuth();
+  const currentUserID = auth.currentUser?.uid;
 
   if (!currentUserID) {
     return;
