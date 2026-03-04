@@ -198,6 +198,12 @@ platform :ios do
         path: "./ios/Kiroku.mobileprovision"
     )
 
+    # Generate ios/tmp.xcconfig from .env.production for react-native-config.
+    # This replaces the Xcode scheme pre-action which hangs due to a dyld issue
+    # when ruby is exec'd as a child of xcodebuild on this machine.
+    sh("echo \"#{File.expand_path('../.env.production')}\" > /tmp/envfile")
+    sh("ruby #{File.expand_path('../node_modules/react-native-config/ios/ReactNativeConfig/BuildXCConfig.rb')} #{File.expand_path('..')} #{File.expand_path('../ios/tmp.xcconfig')}")
+
     # Xcode will handle JS bundling via bundle-react-native-code-and-images.sh (uses rock bundler)
     build_app(
         workspace: "./ios/kiroku.xcworkspace",
