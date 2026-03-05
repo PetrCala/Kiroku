@@ -54,27 +54,12 @@ jobs:
           echo "NODE_BINARY=$(which node)" >> "$GITHUB_ENV"
           echo "export NODE_BINARY=$(which node)" >> "$HOME/.bash_profile"
 
-      - name: Cache Pod dependencies
-        uses: actions/cache@v4
-        id: pods-cache
-        with:
-          path: |
-            ios/Pods
-            ios/build/generated/ios
-          key: ${{ runner.os }}-pods-cache-${{ hashFiles('ios/Podfile.lock', 'firebase.json') }}
-          restore-keys: ${{ runner.os }}-pods-cache-
-
-      - name: Compare Podfile.lock and Manifest.lock
-        id: compare-podfile-and-manifest
-        run: echo "IS_PODFILE_SAME_AS_MANIFEST=${{ hashFiles('ios/Podfile.lock') == hashFiles('ios/Pods/Manifest.lock') }}" >> "$GITHUB_OUTPUT"
-
-      - name: Install cocoapods
+      - name: Reset and install Pods
         uses: nick-fields/retry@3f757583fb1b1f940bc8ef4bf4734c8dc02a5847
-        if: steps.pods-cache.outputs.cache-hit != 'true' || steps.compare-podfile-and-manifest.outputs.IS_PODFILE_SAME_AS_MANIFEST != 'true'
         with:
-          timeout_minutes: 10
-          max_attempts: 5
-          command: scripts/pod-install.sh
+          timeout_minutes: 20
+          max_attempts: 3
+          command: cd ios && pod deintegrate && bundle exec pod install
 
       - name: Decrypt AppStore provisioning profile
         run: cd ios && gpg --quiet --batch --yes --decrypt --passphrase="$LARGE_SECRET_PASSPHRASE" --output Kiroku.mobileprovision Kiroku.mobileprovision.gpg
