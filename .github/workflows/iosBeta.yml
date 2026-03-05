@@ -51,14 +51,16 @@ jobs:
 
       - name: Set up NODE_BINARY for Xcode
         run: |
+          echo "NODE_BINARY=$(which node)" >> "$GITHUB_ENV"
           echo "export NODE_BINARY=$(which node)" >> "$HOME/.bash_profile"
-          source "$HOME/.bash_profile"
 
       - name: Cache Pod dependencies
         uses: actions/cache@v4
         id: pods-cache
         with:
-          path: ios/Pods
+          path: |
+            ios/Pods
+            ios/build/generated/ios
           key: ${{ runner.os }}-pods-cache-${{ hashFiles('ios/Podfile.lock', 'firebase.json') }}
           restore-keys: ${{ runner.os }}-pods-cache-
 
