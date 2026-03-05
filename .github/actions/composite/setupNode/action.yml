@@ -7,6 +7,7 @@ runs:
     - uses: actions/setup-node@v4
       with:
         node-version-file: '.nvmrc'
+        cache: 'npm'
 
     - name: Install root project node packages
       uses: nick-fields/retry@3f757583fb1b1f940bc8ef4bf4734c8dc02a5847
