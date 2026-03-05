@@ -1892,9 +1892,9 @@ PODS:
     - React-RCTFBReactNativeSpec
     - ReactCommon/turbomodule/core
     - SocketRocket
-  - react-native-config (1.5.3):
-    - react-native-config/App (= 1.5.3)
-  - react-native-config/App (1.5.3):
+  - react-native-config (1.6.1):
+    - react-native-config/App (= 1.6.1)
+  - react-native-config/App (1.6.1):
     - boost
     - DoubleConversion
     - fast_float
@@ -3630,7 +3630,7 @@ SPEC CHECKSUMS:
   React-logger: a3cb5b29c32b8e447b5a96919340e89334062b48
   React-Mapbuffer: e4a65db5f4df53369f39558c0cf2f480f6d3d6c7
   React-microtasksnativemodule: 86334c5c06315e0bccb7b6e6f2c905e92f98b615
-  react-native-config: 62c1dce61201623334f751c71c7b12c4accbdff8
+  react-native-config: 916e53e7333d5b2bcb7ee9882f5605143b4fc4c5
   react-native-key-command: 7538df85ed26502b2a929c0584235459b26c7a91
   react-native-netinfo: f084f2324cb11b986503a39a3ccbb5d15e2a56d3
   react-native-pager-view: 0e228ec2dfdd87807d125c7bbfb83299edede19c
@@ -3691,6 +3691,6 @@ SPEC CHECKSUMS:
   SocketRocket: d4aabe649be1e368d1318fdf28a022d714d65748
   Yoga: 9b30b783a17681321b52ac507a37219d7d795ace
 
-PODFILE CHECKSUM: e6e02fa8889c30f53725ddf933fc08db179a6c1c
+PODFILE CHECKSUM: c293d3f42f7347ef838f4e8142f48a55433ff060
 
 COCOAPODS: 1.16.2

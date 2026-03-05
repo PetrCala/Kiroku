@@ -96,6 +96,14 @@ target 'kiroku' do
     installer.pods_project.targets.each do |target|
       target.build_configurations.each do |config|
         config.build_settings['SWIFT_ENABLE_EXPLICIT_MODULES'] = 'NO'
+
+        # react-native-config imports RNCConfigSpec.h (New Arch Codegen output) with a
+        # quoted include, but its HEADER_SEARCH_PATHS don't include the Codegen output
+        # directory. Add it explicitly so the build can find the generated header.
+        if target.name == 'react-native-config'
+          config.build_settings['HEADER_SEARCH_PATHS'] =
+            '$(inherited) "$(PODS_ROOT)/../build/generated/ios/RNCConfigSpec"'
+        end
       end
 
       if target.respond_to?(:product_type) and target.product_type == "com.apple.product-type.bundle"
