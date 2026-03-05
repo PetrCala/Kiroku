@@ -31,9 +31,9 @@ jobs:
     name: Build and deploy iOS to TestFlight
     needs: validateActor
     if: ${{ fromJSON(needs.validateActor.outputs.HAS_WRITE_ACCESS) }}
-    runs-on: macos-15
+    runs-on: macos-26
     env:
-      DEVELOPER_DIR: /Applications/Xcode_16.4.app/Contents/Developer
+      DEVELOPER_DIR: /Applications/Xcode_26.1.1.app/Contents/Developer
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -47,19 +47,31 @@ jobs:
           bundler-cache: true
 
       - name: Setup Xcode
-        run: sudo xcode-select -switch /Applications/Xcode_16.4.app
+        run: sudo xcode-select -switch /Applications/Xcode_26.1.1.app
 
       - name: Set up NODE_BINARY for Xcode
         run: |
-          echo "NODE_BINARY=$(which node)" >> "$GITHUB_ENV"
           echo "export NODE_BINARY=$(which node)" >> "$HOME/.bash_profile"
+          source "$HOME/.bash_profile"
 
-      - name: Reset and install Pods
-        uses: nick-fields/retry@3f757583fb1b1f940bc8ef4bf4734c8dc02a5847
+      - name: Cache Pod dependencies
+        uses: actions/cache@v4
+        id: pods-cache
         with:
-          timeout_minutes: 20
-          max_attempts: 3
-          command: cd ios && pod deintegrate && bundle exec pod install
+          path: ios/Pods
+          key: ${{ runner.os }}-pods-cache-${{ hashFiles('ios/Podfile.lock', 'firebase.json') }}
+
+      - name: Compare Podfile.lock and Manifest.lock
+        id: compare-podfile-and-manifest
+        run: echo "IS_PODFILE_SAME_AS_MANIFEST=${{ hashFiles('ios/Podfile.lock') == hashFiles('ios/Pods/Manifest.lock') }}" >> "$GITHUB_OUTPUT"
+
+      - name: Install cocoapods
+        uses: nick-fields/retry@3f757583fb1b1f940bc8ef4bf4734c8dc02a5847
+        if: steps.pods-cache.outputs.cache-hit != 'true' || steps.compare-podfile-and-manifest.outputs.IS_PODFILE_SAME_AS_MANIFEST != 'true'
+        with:
+          timeout_minutes: 10
+          max_attempts: 5
+          command: scripts/pod-install.sh
 
       - name: Decrypt AppStore provisioning profile
         run: cd ios && gpg --quiet --batch --yes --decrypt --passphrase="$LARGE_SECRET_PASSPHRASE" --output Kiroku.mobileprovision Kiroku.mobileprovision.gpg
