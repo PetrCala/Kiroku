@@ -31,9 +31,9 @@ jobs:
     name: Build and deploy iOS to TestFlight
     needs: validateActor
     if: ${{ fromJSON(needs.validateActor.outputs.HAS_WRITE_ACCESS) }}
-    runs-on: macos-13
+    runs-on: macos-15
     env:
-      DEVELOPER_DIR: /Applications/Xcode_15.2.0.app/Contents/Developer
+      DEVELOPER_DIR: /Applications/Xcode_16.4.app/Contents/Developer
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -47,7 +47,7 @@ jobs:
           bundler-cache: true
 
       - name: Setup Xcode
-        run: sudo xcode-select -switch /Applications/Xcode_15.2.0.app
+        run: sudo xcode-select -switch /Applications/Xcode_16.4.app
 
       - name: Set up NODE_BINARY for Xcode
         run: |
