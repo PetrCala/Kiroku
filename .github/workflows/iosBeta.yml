@@ -25,7 +25,7 @@ jobs:
             exit 1
           fi
         env:
-          GITHUB_TOKEN: ${{ secrets.KIROKU_ADMIN_TOKEN }}
+          GITHUB_TOKEN: ${{ github.token }}
 
   iOS:
     name: Build and deploy iOS to TestFlight
