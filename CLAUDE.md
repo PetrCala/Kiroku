@@ -1,171 +1,203 @@
-# CLAUDE.md
+# Kiroku
 
-## Project overview
+## Repository Overview
 
-Kiroku is a cross-platform React Native (Expo) mobile app for tracking alcohol consumption. It targets iOS and Android, with Firebase used today for auth, realtime database, storage, and cloud functions.
+### Technology Stack
 
-## Migration status ⚠️
+- **Framework**: React Native
+- **Language**: TypeScript
+- **State Management**: React Native Onyx
+- **Navigation**: React Navigation
+- **Platforms**: iOS, Android, Web
 
-This repository is in active migration. Business logic is being moved to a separate API repository.
+## Core Architecture & Structure
 
-- Logic that has already been migrated: [TODO: fill in]
-- Logic still in this repo that is scheduled for migration: [TODO: fill in — likely includes Firebase data access, database rules, cloud functions, and database migration/maintenance scripts referenced in the README]
-- What stays here permanently: UI layer, navigation, device integrations
+### Entry Points
 
-**Do not add new business logic to this repo. Do not deepen existing logic that is scheduled for migration. When in doubt, ask.**
+- `src/App.tsx`: Main application component with provider hierarchy
+- `src/Kiroku.tsx`: Core application logic and initialization
+- `index.js`: React Native entry point
 
-## Repository structure
+### Provider Architecture
 
-Top-level layout (only directories whose purpose is clear from the listing/README are described; the rest are marked TODO):
+The application uses a nested provider structure for context management:
 
-- `src/` — Application source (entry point is `src/App.tsx`, registered from root `index.js`)
-- `android/` — Native Android project
-- `ios/` — Native iOS project (CocoaPods)
-- `assets/` — Static assets (images, fonts, etc.)
-- `config/` — App configuration files [TODO: confirm contents]
-- `desktop/` — Desktop-specific code [TODO: confirm — Electron?]
-- `local/` — Local files that should not be touched
-- `scripts/` — Shell/TS scripts referenced by `package.json` (build, release, emulator setup, version bump, PR helpers, etc.)
-- `fastlane/` — Fastlane configuration for iOS/Android release automation
-- `patches/` — `patch-package` patches applied via `postinstall`
-- `jest/` — Jest setup/helpers
-- `__mocks__/` — Manual Jest mocks
-- `__tests__/` — Tests (includes `integration/emulators` per `package.json`)
-- `docs/` — Jekyll-based documentation site (`bun run docs`)
-- `contributingGuides/` — Contribution documentation
-- `workflow_tests/` — GitHub workflow tests (`npm run workflow-test`)
-- `.github/` — GitHub Actions workflows and JS actions
+1. **SplashScreenStateContextProvider**: Manages splash screen visibility
+2. **InitialURLContextProvider**: Handles deep linking
+3. **ThemeProvider**: Theme management
+4. **LocaleContextProvider**: Internationalization
 
-Build/config files at the root: `app.json`, `babel.config.js`, `metro.config.js`, `react-native.config.js`, `rock.config.mjs`, `tsconfig.json`, `firebase.json`, `database.rules.json`, `storage.rules`, `Gemfile`, `.eslintrc.js`, `.prettierrc.js`.
+### Data Layer
 
-## Commands
+- **Onyx**: Custom data persistence layer for offline-first functionality
+- **ONYXKEYS.ts**: Centralized key definitions for data store
+- Supports optimistic updates and conflict resolution
 
-From `package.json` scripts:
+## Key Features & Modules
 
-**Run / dev**
+### Core Functionality
 
-- `npm start` — Start Metro bundler (`react-native start`)
-- `npm run ios` — Build & run iOS (`scripts/run-build.sh --ios`)
-- `npm run android` — Build & run Android (`scripts/run-build.sh --android`)
-- `npm run startAndroidEmulator` — Launch Android emulator
-- `npm run kill-metro` — Kill anything on port 8081
+TBA
 
-**Native housekeeping**
+## Navigation & Routing
 
-- `npm run ios:pod:install` — `pod install` in `ios/`
-- `npm run ios:pod:reset` — Reset CocoaPods state
-- `npm run gradle-clean` — `./gradlew clean` in `android/`
+### Structure
 
-**Release builds**
+- `src/SCREENS.ts`: Screen name constants
+- `src/ROUTES.ts`: Route definitions and builders
+- `src/NAVIGATORS.ts`: Navigator configuration
 
-- `npm run ios-build` / `npm run android-build` — Fastlane production builds
-- `npm run jsbundle` — Generate iOS JS bundle + sourcemap
-- `npm run symbolicate:ios` / `npm run symbolicate:android` — Symbolicate a stack trace
-- `npm run symbolicate-release:ios` / `npm run symbolicate-release:android`
-- `npm run bump` — Bump version
+### Key Navigators
 
-**Lint / format / typecheck**
+- **ProtectedScreens**: Authenticated app screens
+- **PublicScreens**: Login and onboarding screens
+- **RHP (Right Hand Panel/Pane)**: Settings and details panel
+- **Central Pane**: Main content area
+- **LHN (Left Hand Navigation)**: Unused currently
+- **RHP**: Contextual panels and settings
 
-- `npm run lint` — ESLint (errors only, cached)
-- `npm run lint:changed` — ESLint --fix on files changed vs `master`
-- `npm run lint:watch` — Watch mode
-- `npm run lint:quiet` — Quiet lint
-- `npm run prettier` — Prettier write
-- `npm run prettier-watch` — Prettier on change
-- `npm run build` — `tsc` typecheck
+## State Management
 
-**Tests**
+### Onyx Keys Organization
 
-- `npm test` — Jest (`TZ=utc`)
-- `npm run test:debug` — Jest with Node inspector
-- `npm run test:emulators` — Run emulator-backed integration tests
-- `npm run perf-test` — Reassure performance tests
-- `npm run workflow-test` — GitHub Actions workflow tests
+TBA
 
-**Firebase**
+### Action Modules (`src/libs/actions/`)
 
-- `npm run emulators` — Start Firebase emulators
-- `npm run emulators-with-setup` — Setup + start emulators
-- `npm run transpile` — `tsc --build functions`
-- `npm run deploy-functions` — Deploy Firebase functions
+Major action categories:
 
-**Misc / repo helpers**
+- `App.ts`: Application lifecycle
+- `User.ts`: User account operations
+- `Session.ts`: Authentication
 
-- `npm run docs` — Serve Jekyll docs locally
-- `npm run merge` / `npm run mergePR` / `npm run openPR` / `npm run pull-all`
-- `npm run encrypt` — Encryption helper script
-- `npm run gh-actions-build` / `npm run gh-actions-validate`
-- `postinstall` runs `scripts/postInstall.sh` automatically after `npm install`
+And others
 
-Note: The README recommends using **Bun** (`bun i`, `bun run …`) as the package manager.
+## Build & Deployment
 
-## Tech stack
+### CI/CD Workflows
 
-From `package.json`:
+Key GitHub Actions workflows:
 
-- **Runtime:** React Native `0.81.4`, React `19.1.0`, Expo `54.0.10`, React Native Web via `@expo/metro-runtime`
-- **Build/tooling:** Metro, Babel (`@react-native/babel-preset`), TypeScript `5.9.x`, `babel-plugin-react-compiler`, Rock (`rock`, `@rock-js/*`), Fastlane, `patch-package`
-- **Navigation:** `@react-navigation/native` 7, `@react-navigation/native-stack`, `@react-navigation/stack`
-- **State / data:** `react-native-onyx`, `firebase` 10 (auth, realtime database, storage), `pusher-js`
-- **Storage / persistence:** `@react-native-async-storage/async-storage`, `react-native-nitro-sqlite`, `react-native-quick-sqlite`, `react-native-fs`
-- **UI / interaction:** `react-native-reanimated` 4, `react-native-gesture-handler`, `react-native-screens`, `react-native-safe-area-context`, `@shopify/flash-list`, `@gorhom/portal`, `react-native-modal`, `react-native-tab-view`, `react-native-pager-view`, `react-native-calendars`, `react-native-svg`, `react-native-linear-gradient`, `expo-image`, `react-content-loader`, `react-native-animatable`, `react-native-render-html`
-- **Device / platform:** `react-native-device-info`, `react-native-permissions`, `react-native-haptic-feedback`, `react-native-localize`, `@react-native-community/netinfo`, `@react-native-community/slider`, `@react-native-clipboard/clipboard`, `expo-image-picker`, `expo-image-manipulator`, `react-native-webview`, `@react-native-google-signin/google-signin`
-- **i18n / dates:** `@formatjs/intl-*`, `date-fns`, `date-fns-tz`
-- **Utility:** `lodash`, `underscore`, `type-fest`, `semver`, `seedrandom`, `deep-diff`, `simply-deferred`, `ua-parser-js`, `yargs`
-- **Testing:** Jest 29, `jest-expo`, `@testing-library/react-native`, `react-test-renderer`, `reassure`, `@firebase/rules-unit-testing`, `pusher-js-mock`, `memfs`, `jest-when`, `@ngneat/falso`
-- **Linting:** ESLint 8 with `eslint-config-expensify`, `eslint-config-airbnb-typescript`, Prettier, plugins for React, React Native, React Hooks, React Compiler, JSX a11y, jsdoc, Storybook, testing-library, import-alias, `you-dont-need-lodash-underscore`
+- `deploy.yml`: Production deployment
+- `preDeploy.yml`: Staging deployment
+- `testBuild.yml`: PR test builds
+- `test.yml`: Unit tests
+- `typecheck.yml`: TypeScript validation
+- `lint.yml`: Code quality checks
 
-Node engine: `20.19.4`, npm `10.8.2` (per `engines`).
+## Related Repositories
 
-## Environment setup
+### kiroku-api
 
-No `.env.example` is checked into the repo. The repo contains env files per environment instead: `.env.development`, `.env.staging`, `.env.production`, `.env.adhoc` (their contents were not read here).
+- **Purpose**: Kiroku API repository
+- Contains API logic and code
 
-From the README, one documented variable is:
+### kiroku-cli
 
-- `USE_EMULATORS=true` in `.env.development` — point the app at local Firebase emulators
+- **Purpose**: Admin libraries and utilities
+- Contains admin tools and utilities for high-level app management
+- Private
 
-Local setup (from README):
+## Development Practices
+
+### React Native Best Practices
+
+Use the `/react-native-best-practices` skill when working on performance-sensitive code, native modules, or release preparation. This ensures code respects established best practices from the start, resulting in more consistent code, fewer review iterations, and better resilience against regressions.
+
+The skill provides guidance on:
+
+- **Performance**: FPS optimization, virtualized lists (FlashList), memoization, atomic state, animations
+- **Bundle & App Size**: Barrel imports, tree shaking, bundle analysis, R8 shrinking
+- **Startup (TTI)**: Hermes bytecode optimization, native navigation, deferred work
+- **Native Modules**: Turbo Module development, threading model, Swift/Kotlin/C++ patterns
+- **Memory**: JS and native memory leak detection and patterns
+- **Build Compliance**: Android 16KB page alignment (Google Play requirement)
+- **Platform Tooling**: Xcode/Android Studio profiling and debugging setup
+
+### Code Quality
+
+- **TypeScript**: Strict mode enabled
+- **ESLint**: Linter. Pre-existing violations are grandfathered via [`eslint-seatbelt`](https://github.com/justjake/eslint-seatbelt).
+- **Prettier**: Code formatting - run `npm run prettier` after making changes
+- **Patch Management**: patch-package for dependency fixes
+
+### Post-Edit Checklist (IMPORTANT)
+
+**ALWAYS run these steps after making code changes, before committing:**
+
+1. **Prettier**: Run `npx prettier --write <changed files>` on every file you modified. This is mandatory - CI will reject unformatted code.
+2. **ESLint**: Run `npm run lint-changed` to catch lint errors early.
+3. **TypeScript**: Run `npm run typecheck-tsgo` after changes that may affect typing (types, interfaces, or function signatures). It is ~10x faster and usually stricter than tsc. CI validates with `npm run typecheck` (tsc), which remains the required merge gate.
+4. **React Compiler**: If you added new React components/hooks or modified existing ones, run `npm run react-compiler-compliance-check check-changed` to verify they compile with React Compiler. This applies the same rules as CI: new components/hooks must compile, and existing compiled files must not regress. See `contributingGuides/REACT_COMPILER.md` for details and common fixes.
+
+### Testing
+
+- **Unit Tests**: Jest with React Native Testing Library
+- **Performance Tests**: Reassure framework
+
+## Special Considerations
+
+### Offline-First Architecture
+
+- All features work offline
+- Optimistic updates with rollback
+- Queue-based request handling
+- Conflict resolution strategies
+
+## Command Reference
+
+### Common Tasks
 
 ```bash
-bundle update
-bun i
-bun -g i firebase-tools
-brew install cmake   # required for Android compilation
-cd ios && pod install
+# Install dependencies
+npm install
+
+# Clean build artifacts
+npm run clean
+
+# Type checking (tsc, CI production gate)
+npm run typecheck
+
+# Linting
+npm run lint
+
+# Format code with Prettier
+npm run prettier
+
+# Testing
+npm run test
 ```
 
-Android also requires a `android/local.properties` with `sdk.dir` and an `ANDROID_HOME` env var pointing at the Android SDK.
+### Platform Builds
 
-[TODO: enumerate the actual variables expected by the app once a canonical env example is established]
+```bash
+# iOS build
+npm run ios
 
-## What to avoid touching
+# Android build
+npm run android
 
-- The `/local/` folder
-- Any directory prefixed with `legacy/` or `old/`
-- Native project files in `ios/` and `android/` — only edit when intentionally changing native config
-- `patches/` — managed by `patch-package`; do not hand-edit without regenerating
-- Generated/large artifacts at the root such as `main.jsbundle.map`, `tsconfig.tsbuildinfo`, `package-lock.json`, `bun.lockb` — do not edit manually
-- Admin SDK JSON files (`kiroku-admin-sdk-*.json`) — secrets; never commit changes or new ones
+# Web build
+npm run web
+```
 
-## Conventions
+## Architecture Decisions
 
-- TypeScript: use strict types — **do not use `any`**
-- Platform-specific file extensions (from README): default to `index.js`/`index.ts`; only split into `index.native.js`, `index.ios.js`, `index.android.js`, `index.website.js`, `index.desktop.js` when a feature is intrinsically tied to a platform. `index.native.js` must not coexist with `index.ios.js`/`index.android.js` in the same module.
-- Formatting: Prettier for JS/TS/TSX, `shell-format` for bash scripts
-- Linting: `npm run lint` must pass with zero warnings (`--max-warnings=0`)
-- Path aliases like `@context/...` are used (see `src/App.tsx`) — prefer aliased imports over deep relative paths
-- [TODO: fill in conventions for component structure, state management with Onyx, navigation patterns, and testing once working patterns are established]
+### React Native New Architecture
 
-## Known gotchas
+- Fabric renderer enabled
+- TurboModules for native module integration
+- Hermes JavaScript engine
 
-- The repo standardizes on **Bun**, but `package.json` scripts and CI also work with npm; mixing package managers can desync `bun.lockb` and `package-lock.json`.
-- `postinstall` runs `scripts/postInstall.sh` — installs may have side effects beyond fetching packages (e.g. applying patches).
-- Android builds can fail with `Error: Command failed with EN0ENT` if `ANDROID_HOME` is unset (see README).
-- `bun run build:android` may fail with a permissions error on `android/gradlew`; fix with `chmod +x ./android/gradlew`.
-- iOS native deps must be reinstalled after dependency changes (`npm run ios:pod:install`; use `ios:pod:reset` if state is corrupted).
-- Tests run with `TZ=utc` — time-sensitive code should not depend on the host timezone.
-- Firebase database rules cascade for `.read`/`.write` but **`.validate` does not cascade** (see README "Working with Firebase").
-- `expo.autolinking.exclude` in `package.json` opts out of autolinking for `expo-file-system`, `@react-native-google-signin/google-signin`, and `expo-keep-awake` — be aware when touching those integrations.
-- React Compiler is enabled (`babel-plugin-react-compiler`) — avoid patterns that break its assumptions (mutating props/state outside setters, etc.).
-- [TODO: add migration-specific gotchas as logic moves to the API repo — e.g. which client modules must call the API instead of Firebase directly]
+### State Management Choice
+
+- Custom Onyx library for offline-first capabilities
+- Optimistic updates as default pattern
+- Centralized action layer for API calls
+- Direct key-value storage with automatic persistence
+
+### Navigation Strategy
+
+- React Navigation for cross-platform consistency
+- Custom navigation state management
+- Deep linking support
