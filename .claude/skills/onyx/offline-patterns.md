@@ -5,7 +5,7 @@
 No `successData`/`failureData` — fire and forget.
 
 ```typescript
-function pinReport(sessionID: string) {
+function pinDrinkingSession(sessionID: string) {
     const optimisticData: OnyxUpdate[] = [
         {
             onyxMethod: Onyx.METHOD.MERGE,
@@ -14,7 +14,7 @@ function pinReport(sessionID: string) {
         },
     ];
 
-    API.write('TogglePinnedChat', {sessionID}, {optimisticData});
+    API.write('TogglePinnedSession', {sessionID}, {optimisticData});
 }
 ```
 
@@ -23,7 +23,7 @@ function pinReport(sessionID: string) {
 Show pending state; revert or clean up on completion.
 
 ```typescript
-function deleteReport(sessionID: string) {
+function deleteDrinkingSession(sessionID: string) {
     const optimisticData: OnyxUpdate[] = [
         {
             onyxMethod: Onyx.METHOD.MERGE,
@@ -50,26 +50,26 @@ function deleteReport(sessionID: string) {
             value: {
                 statusNum: null,
                 pendingAction: null,
-                errors: {[DateUtils.getMicroseconds()]: 'Failed to delete a session'},
+                errors: {[Date.now()]: 'Failed to delete a session'},
             },
         },
     ];
 
-    API.write('DeleteReport', {sessionID}, {optimisticData, successData, failureData});
+    API.write('DeleteDrinkingSession', {sessionID}, {optimisticData, successData, failureData});
 }
 ```
 
 ## Example with Loading State
 
 ```typescript
-function sendMessage(sessionID: string, text: string) {
+function addSessionNote(sessionID: string, text: string) {
     const optimisticData: OnyxUpdate[] = [
         {
             onyxMethod: Onyx.METHOD.MERGE,
             key: `${ONYXKEYS.COLLECTION.DRINKING_SESSION}${sessionID}`,
             value: {
                 isLoading: true,
-                lastMessageText: text,
+                note: text,
             },
         },
     ];
@@ -91,14 +91,14 @@ function sendMessage(sessionID: string, text: string) {
             key: `${ONYXKEYS.COLLECTION.DRINKING_SESSION}${sessionID}`,
             value: {
                 isLoading: false,
-                lastMessageText: null,
+                note: null,
                 pendingAction: null,
-                errors: {[DateUtils.getMicroseconds()]: 'Failed to send message'},
+                errors: {[Date.now()]: 'Failed to add note'},
             },
         },
     ];
 
-    API.write('AddComment', {sessionID, text}, {optimisticData, successData, failureData});
+    API.write('AddSessionNote', {sessionID, text}, {optimisticData, successData, failureData});
 }
 ```
 

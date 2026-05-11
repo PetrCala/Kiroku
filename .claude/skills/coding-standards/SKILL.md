@@ -4,7 +4,7 @@ description: Provides coding standards for React Native — performance patterns
 alwaysApply: true
 ---
 
-# Expensify Coding Standards
+# Kiroku Coding Standards
 
 Coding standards for the Kiroku app. Each standard is a standalone file in `rules/` with reasoning, examples, and applicability conditions.
 
