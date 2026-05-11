@@ -123,39 +123,10 @@ jobs:
 
   updateStaging:
     needs: [chooseDeployActions, createNewVersion]
-    runs-on: ubuntu-latest
-    steps:
-      - name: Run turnstyle
-        uses: softprops/turnstyle@49108bdfa571e62371bd2c3094893c547ab3fc03
-        with:
-          poll-interval-seconds: 10
-        env:
-          GITHUB_TOKEN: ${{ github.token }}
-
-      - name: Checkout master
-        uses: actions/checkout@v4
-        with:
-          ref: master
-          token: ${{ secrets.KIROKU_ADMIN_TOKEN }}
-
-      - name: Setup Git for KirokuAdmin
-        uses: ./.github/actions/composite/setupGitForKirokuAdmin
-        with:
-          GPG_PASSPHRASE: ${{ secrets.LARGE_SECRET_PASSPHRASE }}
-
-      - name: Update staging branch from master
-        run: |
-          # Re-create the staging branch from master
-          git switch -c staging
-
-          # Force-update the remote staging branch
-          git push --force origin staging
-
-      - name: Announce failed workflow in Discord
-        if: ${{ failure() }}
-        uses: ./.github/actions/composite/announceFailedWorkflowInDiscord
-        with:
-          DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_URL }}
+    uses: ./.github/workflows/updateProtectedBranch.yml
+    secrets: inherit
+    with:
+      TARGET_BRANCH: staging
 
   # e2ePerformanceTests:
   #   needs: [chooseDeployActions]

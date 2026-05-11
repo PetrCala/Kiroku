@@ -1,0 +1,64 @@
+name: Update protected branch
+
+on:
+  workflow_call:
+    inputs:
+      TARGET_BRANCH:
+        description: One of {staging, production}
+        required: true
+        type: string
+
+    secrets:
+      DISCORD_WEBHOOK_URL:
+        description: Webhook used to comment in Discord
+        required: true
+      KIROKU_ADMIN_TOKEN:
+        description: KirokuAdmin personal access token, used to update protected branches
+        required: true
+      LARGE_SECRET_PASSPHRASE:
+        description: Passphrase used to decrypt GPG key
+        required: true
+
+concurrency:
+  group: update-protected-branch-${{ inputs.TARGET_BRANCH }}
+
+jobs:
+  updateProtectedBranch:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Determine source branch
+        id: getSourceBranch
+        run: |
+          if [[ '${{ inputs.TARGET_BRANCH }}' == 'staging' ]]; then
+            echo "SOURCE_BRANCH=master" >> "$GITHUB_OUTPUT"
+          elif [[ '${{ inputs.TARGET_BRANCH }}' == 'production' ]]; then
+            echo "SOURCE_BRANCH=staging" >> "$GITHUB_OUTPUT"
+          else
+            echo "::error::Invalid TARGET_BRANCH ${{ inputs.TARGET_BRANCH }}"
+            exit 1
+          fi
+
+      - name: Checkout source branch
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ steps.getSourceBranch.outputs.SOURCE_BRANCH }}
+          token: ${{ secrets.KIROKU_ADMIN_TOKEN }}
+
+      - name: Setup git for KirokuAdmin
+        uses: ./.github/actions/composite/setupGitForKirokuAdmin
+        with:
+          GPG_PASSPHRASE: ${{ secrets.LARGE_SECRET_PASSPHRASE }}
+
+      - name: Update target branch
+        run: |
+          # Re-create the target branch from the source branch
+          git switch -c ${{ inputs.TARGET_BRANCH }}
+
+          # Force-update the remote target branch
+          git push --force origin ${{ inputs.TARGET_BRANCH }}
+
+      - name: Announce failed workflow in Discord
+        if: ${{ failure() }}
+        uses: ./.github/actions/composite/announceFailedWorkflowInDiscord
+        with:
+          DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_URL }}
