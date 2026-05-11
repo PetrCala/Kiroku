@@ -24,13 +24,7 @@
 </div>
 
 - [Deploying](#deploying)
-  - [QA and deploy cycles](#qa-and-deploy-cycles)
-  - [Key GitHub workflows](#key-github-workflows)
-    - [preDeploy](#predeploy)
-    - [deploy](#deploy)
-    - [platformDeploy](#platformdeploy)
-    - [lockDeploys](#lockdeploys)
-    - [finishReleaseCycle](#finishreleasecycle)
+  - [Release cycle](#release-cycle)
   - [Local production builds](#local-production-builds)
       - [Local production build the iOS app](#local-production-build-the-ios-app)
       - [Local production build the Android app](#local-production-build-the-android-app)
@@ -55,48 +49,17 @@
 
 # Deploying
 
-## QA and deploy cycles
+## Release cycle
 
-We utilize a CI/CD deployment system built using [GitHub Actions](https://github.com/features/actions) to ensure that new code is automatically deployed to our users as fast as possible. As part of this process, all code is first deployed to our staging environments, where it undergoes quality assurance (QA) testing before it is deployed to production. Typically, pull requests are deployed to staging immediately after they are merged.
+Kiroku's release cycle is documented in [Deploying Philosophy](contributingGuides/philosophies/DEPLOYING.md).
 
-Every time a PR is deployed to staging, it is added to a [special tracking issue](https://github.com/PetrCala/Kiroku/issues?q=is%3Aopen+is%3Aissue+label%3AStagingDeployCash) with the label `StagingDeployCash` (there will only ever be one open at a time). This tracking issue contains information about the new application version, a list of recently deployed pull requests, and any issues found on staging that are not present on production. Every weekday at 9am PST, our QA team adds the `🔐LockCashDeploys🔐` label to that tracking issue, and that signifies that they are starting their daily QA cycle. They will perform both regular regression testing and the QA steps listed for every pull request on the `StagingDeployCash` checklist.
+At a high level, changes flow through:
 
-Once the `StagingDeployCash` is locked, we won't run any staging deploys until it is either unlocked, or we run a production deploy. If severe issues are found on staging that are not present on production, a new issue (or the PR that caused the issue) will be labeled with `DeployBlockerCash`, and added to the `StagingDeployCash` deploy checklist. If we want to resolve a deploy blocker by reverting a pull request or deploying a hotfix directly to the staging environment, we can merge a pull request with the `CP Staging` label.
+```text
+master -> staging -> production
+```
 
-Once we have confirmed to the best of our ability that there are no deploy-blocking issues and that all our new features are working as expected on staging, we'll close the `StagingDeployCash`. That will automatically trigger a production deployment, open a new `StagingDeployCash` checklist, and deploy to staging any pull requests that were merged while the previous checklist was locked.
-
-## Key GitHub workflows
-
-These are some of the most central [GitHub Workflows](https://github.com/PetrCala/Kiroku/tree/main/.github/workflows). There is more detailed information in the README [here](https://github.com/PetrCala/Kiroku/blob/main/.github/workflows/README.md).
-
-### preDeploy
-
-The [preDeploy workflow](https://github.com/PetrCala/Kiroku/blob/main/.github/workflows/preDeploy.yml) executes whenever a pull request is merged to `main`, and at a high level does the following:
-
-- If the `StagingDeployCash` is locked, comment on the merged PR that it will be deployed later.
-- Otherwise:
-  - Create a new version by triggering the [`createNewVersion` workflow](https://github.com/PetrCala/Kiroku/blob/main/.github/workflows/createNewVersion.yml)
-  - Update the `staging` branch from main.
-- Also, if the pull request has the `CP Staging` label, it will execute the [`cherryPick` workflow](https://github.com/PetrCala/Kiroku/blob/main/.github/workflows/cherryPick.yml) to deploy the pull request directly to staging, even if the `StagingDeployCash` is locked.
-
-### deploy
-
-The [`deploy` workflow](https://github.com/PetrCala/Kiroku/blob/main/.github/workflows/deploy.yml) is really quite simple. It runs when code is pushed to the `staging` or `production` branches, and:
-
-- If `staging` was updated, it creates a tag matching the new version, and pushes tags.
-- If `production` was updated, it creates a GitHub Release for the new version.
-
-### platformDeploy
-
-The [`platformDeploy` workflow](https://github.com/PetrCala/Kiroku/blob/main/.github/workflows/platformDeploy.yml) is what actually runs the deployment on both platforms (iOS, Android). It runs a staging deploy whenever a new tag is pushed to GitHub, and runs a production deploy whenever a new release is created.
-
-### lockDeploys
-
-The [`lockDeploys` workflow](https://github.com/PetrCala/Kiroku/blob/main/.github/workflows/lockDeploys.yml) executes when the `StagingDeployCash` is locked, and it waits for any currently running staging deploys to finish, then gives Applause the :green_circle: to begin QA by commenting in the `StagingDeployCash` checklist.
-
-### finishReleaseCycle
-
-The [`finishReleaseCycle` workflow](https://github.com/PetrCala/Kiroku/blob/main/.github/workflows/finishReleaseCycle.yml) executes when the `StagingDeployCash` is closed. It updates the `production` branch from `staging` (triggering a production deploy), deploys `main` to staging (with a new `PATCH` version), and creates a new `StagingDeployCash` deploy checklist.
+Merging to `master` should automatically create a new internal/closed beta candidate on `staging` when deploys are not locked. The open `StagingDeployCash` issue tracks that candidate. After testing, a final `:shipit:` comment and closing the checklist promotes `staging` to `production`, which represents open beta now and App Store / Play Store production later.
 
 ## Local production builds
 
