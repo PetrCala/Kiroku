@@ -10,8 +10,6 @@ import type {RestEndpointMethodTypes} from '@octokit/plugin-rest-endpoint-method
 import type {RestEndpointMethods} from '@octokit/plugin-rest-endpoint-methods/dist-types/generated/method-types';
 import type {Api} from '@octokit/plugin-rest-endpoint-methods/dist-types/types';
 import {throttling} from '@octokit/plugin-throttling';
-import {isEmptyObject} from '@src/types/utils/EmptyObject';
-import arrayDifference from '@src/utils/arrayDifference';
 import CONST from './CONST';
 
 type OctokitOptions = {
@@ -58,8 +56,8 @@ type StagingDeployCashData = {
   labels: OctokitIssueItem['labels'];
   PRList: StagingDeployCashPR[];
   deployBlockers: StagingDeployCashBlocker[];
-  internalQAPRList: StagingDeployCashBlocker[];
-  isTimingDashboardChecked: boolean;
+  isIOSSmokeChecked: boolean;
+  isAndroidSmokeChecked: boolean;
   isFirebaseChecked: boolean;
   isGHStatusChecked: boolean;
   tag?: string;
@@ -207,9 +205,11 @@ class GithubUtils {
         labels: issue.labels,
         PRList: this.getStagingDeployCashPRList(issue),
         deployBlockers: this.getStagingDeployCashDeployBlockers(issue),
-        internalQAPRList: this.getStagingDeployCashInternalQA(issue),
-        isTimingDashboardChecked: issue.body
-          ? /-\s\[x]\sI checked the \[App Timing Dashboard]/.test(issue.body)
+        isIOSSmokeChecked: issue.body
+          ? /-\s\[x]\siOS internal TestFlight build installed/.test(issue.body)
+          : false,
+        isAndroidSmokeChecked: issue.body
+          ? /-\s\[x]\sAndroid closed beta build installed/.test(issue.body)
           : false,
         isFirebaseChecked: issue.body
           ? /-\s\[x]\sI checked \[Firebase Crashlytics]/.test(issue.body)
@@ -291,33 +291,6 @@ class GithubUtils {
   }
 
   /**
-   * Parse InternalQA section of the StagingDeployCash issue body.
-   *
-   * @private
-   */
-  static getStagingDeployCashInternalQA(
-    issue: OctokitIssueItem,
-  ): StagingDeployCashBlocker[] {
-    let internalQASection: RegExpMatchArray | string | null =
-      issue.body?.match(/Internal QA:\*\*\r?\n((?:- \[[ x]].*\r?\n)+)/) ?? null;
-    if (internalQASection?.length !== 2) {
-      return [];
-    }
-    internalQASection = internalQASection[1];
-    const internalQAPRs = [
-      ...internalQASection.matchAll(
-        new RegExp(`- \\[([ x])]\\s(${CONST.PULL_REQUEST_REGEX.source})`, 'g'),
-      ),
-    ].map(match => ({
-      url: match[2].split('-')[0].trim(),
-      number: Number.parseInt(match[3], 10),
-      isResolved: match[1] === 'x',
-    }));
-
-    return internalQAPRs.sort((a, b) => a.number - b.number);
-  }
-
-  /**
    * Generate the issue body and assignees for a StagingDeployCash.
    */
   static generateStagingDeployCashBodyAndAssignees(
@@ -326,8 +299,8 @@ class GithubUtils {
     verifiedPRList: string[] = [],
     deployBlockers: string[] = [],
     resolvedDeployBlockers: string[] = [],
-    resolvedInternalQAPRs: string[] = [],
-    isTimingDashboardChecked = false,
+    isIOSSmokeChecked = false,
+    isAndroidSmokeChecked = false,
     isFirebaseChecked = false,
     isGHStatusChecked = false,
   ): Promise<void | StagingDeployCashBody> {
@@ -335,119 +308,65 @@ class GithubUtils {
       PRList.map(pr => this.getPullRequestNumberFromURL(pr)),
     )
       .then(data => {
-        const internalQAPRs = Array.isArray(data)
-          ? data.filter(
-              pr =>
-                !isEmptyObject(
-                  pr.labels.find(
-                    item => item.name === CONST.LABELS.INTERNAL_QA,
-                  ),
-                ),
-            )
+        const noQAPRs = Array.isArray(data)
+          ? data
+              .filter(PR => /\[No\s?QA]/i.test(PR.title))
+              .map(item => item.html_url)
           : [];
-        return Promise.all(
-          internalQAPRs.map(pr =>
-            this.getPullRequestMergerLogin(pr.number).then(mergerLogin => ({
-              url: pr.html_url,
-              mergerLogin,
-            })),
-          ),
-        ).then(results => {
-          // The format of this map is following:
-          // {
-          //    'https://github.com/Expensify/App/pull/9641': 'PauloGasparSv',
-          //    'https://github.com/Expensify/App/pull/9642': 'mountiny'
-          // }
-          const internalQAPRMap = results.reduce<
-            Record<string, string | undefined>
-          >((acc, {url, mergerLogin}) => {
-            acc[url] = mergerLogin;
-            return acc;
-          }, {});
-          console.log('Found the following Internal QA PRs:', internalQAPRMap);
+        console.log('Found the following NO QA PRs:', noQAPRs);
+        const verifiedOrNoQAPRs = [
+          ...new Set([...verifiedPRList, ...noQAPRs]),
+        ];
 
-          const noQAPRs = Array.isArray(data)
-            ? data
-                .filter(PR => /\[No\s?QA]/i.test(PR.title))
-                .map(item => item.html_url)
-            : [];
-          console.log('Found the following NO QA PRs:', noQAPRs);
-          const verifiedOrNoQAPRs = [
-            ...new Set([...verifiedPRList, ...noQAPRs]),
-          ];
+        const sortedPRList = [...new Set(PRList)].sort(
+          (a, b) =>
+            GithubUtils.getPullRequestNumberFromURL(a) -
+            GithubUtils.getPullRequestNumberFromURL(b),
+        );
+        const sortedDeployBlockers = [...new Set(deployBlockers)].sort(
+          (a, b) =>
+            GithubUtils.getIssueOrPullRequestNumberFromURL(a) -
+            GithubUtils.getIssueOrPullRequestNumberFromURL(b),
+        );
 
-          const sortedPRList = [
-            ...new Set(arrayDifference(PRList, Object.keys(internalQAPRMap))),
-          ].sort(
-            (a, b) =>
-              GithubUtils.getPullRequestNumberFromURL(a) -
-              GithubUtils.getPullRequestNumberFromURL(b),
-          );
-          const sortedDeployBlockers = [...new Set(deployBlockers)].sort(
-            (a, b) =>
-              GithubUtils.getIssueOrPullRequestNumberFromURL(a) -
-              GithubUtils.getIssueOrPullRequestNumberFromURL(b),
-          );
+        // Tag version and comparison URL
+        // eslint-disable-next-line max-len
+        let issueBody = `**Release Version:** \`${tag}\`\r\n**Compare Changes:** https://github.com/PetrCala/Kiroku/compare/production...staging\r\n`;
 
-          // Tag version and comparison URL
-          // eslint-disable-next-line max-len
-          let issueBody = `**Release Version:** \`${tag}\`\r\n**Compare Changes:** https://github.com/PetrCala/Kiroku/compare/production...staging\r\n`;
+        // PR list
+        if (sortedPRList.length > 0) {
+          issueBody +=
+            '\r\n**This release contains changes from the following pull requests:**\r\n';
+          sortedPRList.forEach(URL => {
+            issueBody += verifiedOrNoQAPRs.includes(URL) ? '- [x]' : '- [ ]';
+            issueBody += ` ${URL}\r\n`;
+          });
+          issueBody += '\r\n\r\n';
+        }
 
-          // PR list
-          if (sortedPRList.length > 0) {
-            issueBody +=
-              '\r\n**This release contains changes from the following pull requests:**\r\n';
-            sortedPRList.forEach(URL => {
-              issueBody += verifiedOrNoQAPRs.includes(URL) ? '- [x]' : '- [ ]';
-              issueBody += ` ${URL}\r\n`;
-            });
-            issueBody += '\r\n\r\n';
-          }
+        // Deploy blockers
+        if (deployBlockers.length > 0) {
+          issueBody += '**Deploy Blockers:**\r\n';
+          sortedDeployBlockers.forEach(URL => {
+            issueBody += resolvedDeployBlockers.includes(URL)
+              ? '- [x] '
+              : '- [ ] ';
+            issueBody += URL;
+            issueBody += '\r\n';
+          });
+          issueBody += '\r\n\r\n';
+        }
 
-          // Internal QA PR list
-          if (!isEmptyObject(internalQAPRMap)) {
-            console.log(
-              'Found the following verified Internal QA PRs:',
-              resolvedInternalQAPRs,
-            );
-            issueBody += '**Internal QA:**\r\n';
-            Object.keys(internalQAPRMap).forEach(URL => {
-              const merger = internalQAPRMap[URL];
-              const mergerMention = `@${merger}`;
-              issueBody += `${resolvedInternalQAPRs.includes(URL) ? '- [x]' : '- [ ]'} `;
-              issueBody += `${URL}`;
-              issueBody += ` - ${mergerMention}`;
-              issueBody += '\r\n';
-            });
-            issueBody += '\r\n\r\n';
-          }
+        issueBody += '**Deployer verifications:**';
+        issueBody += `\r\n- [${isIOSSmokeChecked ? 'x' : ' '}] iOS internal TestFlight build installed and basic launch verified.`;
+        issueBody += `\r\n- [${isAndroidSmokeChecked ? 'x' : ' '}] Android closed beta build installed and basic launch verified.`;
+        // eslint-disable-next-line max-len
+        issueBody += `\r\n- [${isFirebaseChecked ? 'x' : ' '}] I checked [Firebase Crashlytics](https://console.firebase.google.com/u/0/project/alcohol-tracker-db/crashlytics/app/android:com.alcohol_tracker/issues?state=open&time=last-seven-days&tag=all) and verified that this release does not introduce any new crashes.`;
+        issueBody += `\r\n- [${isGHStatusChecked ? 'x' : ' '}] I checked [GitHub Status](https://www.githubstatus.com/) and verified there is no reported incident with Actions.`;
 
-          // Deploy blockers
-          if (deployBlockers.length > 0) {
-            issueBody += '**Deploy Blockers:**\r\n';
-            sortedDeployBlockers.forEach(URL => {
-              issueBody += resolvedDeployBlockers.includes(URL)
-                ? '- [x] '
-                : '- [ ] ';
-              issueBody += URL;
-              issueBody += '\r\n';
-            });
-            issueBody += '\r\n\r\n';
-          }
-
-          issueBody += '**Deployer verifications:**';
-          // eslint-disable-next-line max-len
-          issueBody += `\r\n- [${
-            isFirebaseChecked ? 'x' : ' '
-          }] I checked [Firebase Crashlytics](https://console.firebase.google.com/u/0/project/alcohol-tracker-db/crashlytics/app/android:com.alcohol_tracker/issues?state=open&time=last-seven-days&tag=all) and verified that this release does not introduce any new crashes.`;
-          // eslint-disable-next-line max-len
-          issueBody += `\r\n- [${isGHStatusChecked ? 'x' : ' '}] I checked [GitHub Status](https://www.githubstatus.com/) and verified there is no reported incident with Actions.`;
-
-          // issueBody += '\r\n\r\ncc @Expensify/applauseleads\r\n';
-          const issueAssignees = [...new Set(Object.values(internalQAPRMap))];
-          const issue = {issueBody, issueAssignees};
-          return issue;
-        });
+        const issueAssignees: Array<string | undefined> = [];
+        const issue = {issueBody, issueAssignees};
+        return issue;
       })
       .catch(err =>
         console.warn(

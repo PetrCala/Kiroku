@@ -20,7 +20,7 @@ jobs:
         with:
           GITHUB_TOKEN: ${{ secrets.KIROKU_ADMIN_TOKEN }}
 
-      - name: Comment in StagingDeployCash to give Applause the 🟢 to begin QA
+      - name: Comment in StagingDeployCash to begin internal QA
         run: |
           gh issue comment \
             "$(gh issue list --label StagingDeployCash --json number --jq '.[0].number')" \

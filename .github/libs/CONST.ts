@@ -9,7 +9,6 @@ const GIT_CONST = {
 
 const CONST = {
   ...GIT_CONST,
-  APPLAUSE_BOT: 'applausebot',
   KIROKU_ADMIN: 'KirokuAdmin',
   LABELS: {
       STAGING_DEPLOY: 'StagingDeployCash',
