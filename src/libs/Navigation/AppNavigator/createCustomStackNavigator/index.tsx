@@ -54,8 +54,11 @@ function ResponsiveStackNavigator(props: ResponsiveStackNavigatorProps) {
       StackNavigationOptions,
       StackNavigationEventMap
     >(CustomRouter, {
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access
       children: props.children,
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access
       screenOptions: props.screenOptions,
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access
       initialRouteName: props.initialRouteName,
     });
 

@@ -169,7 +169,10 @@ function PreferencesScreen({route}: PreferencesScreenProps) {
       return true; // Prevent the event from bubbling up and being handled by the default handler
     };
 
-    const subscription = BackHandler.addEventListener('hardwareBackPress', backAction);
+    const subscription = BackHandler.addEventListener(
+      'hardwareBackPress',
+      backAction,
+    );
 
     return () => {
       subscription.remove();

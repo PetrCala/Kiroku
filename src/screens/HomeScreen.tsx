@@ -1,4 +1,4 @@
-import React, {useEffect, useMemo, useState} from 'react';
+import React, {useEffect, useState} from 'react';
 import {View} from 'react-native';
 import SessionsCalendar from '@components/SessionsCalendar';
 import type {DateData} from 'react-native-calendars';
@@ -83,7 +83,7 @@ function HomeScreen({route}: HomeScreenProps) {
   ];
 
   // Monitor visible month and various statistics
-  useMemo(() => {
+  useEffect(() => {
     if (!preferences) {
       return;
     }

@@ -7,7 +7,8 @@ const ReactCompilerConfig = {
   environment: {
     enableTreatRefLikeIdentifiersAsRefs: true,
   },
-  sources: (filename) => !filename.includes('tests/') && !filename.includes('node_modules/'),
+  sources: filename =>
+    !filename.includes('tests/') && !filename.includes('node_modules/'),
 };
 
 const defaultPresets = [

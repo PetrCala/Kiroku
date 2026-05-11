@@ -3,7 +3,6 @@ import React, {
   useContext,
   useEffect,
   useLayoutEffect,
-  useMemo,
   useRef,
   useState,
 } from 'react';
@@ -98,7 +97,7 @@ function Kiroku() {
     return () => unsubscribe();
   }, [auth]);
 
-  useMemo(() => {
+  useEffect(() => {
     if (!config) {
       return;
     }
@@ -312,10 +311,7 @@ function Kiroku() {
       />
       {/* SplashScreenHider is always rendered to cover content until app is ready.
           When shouldHideSplash becomes true, isVisible becomes false and the hide animation triggers. */}
-      <SplashScreenHider
-        onHide={onSplashHide}
-        isVisible={!shouldHideSplash}
-      />
+      <SplashScreenHider onHide={onSplashHide} isVisible={!shouldHideSplash} />
     </>
   );
 }

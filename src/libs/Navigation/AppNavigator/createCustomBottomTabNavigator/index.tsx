@@ -25,6 +25,7 @@ import ScreenWrapper from '@components/ScreenWrapper';
 // import BottomTabBar from './BottomTabBar';
 // import TopBar from './TopBar';
 
+// eslint-disable-next-line @typescript-eslint/no-redundant-type-constituents
 type CustomNavigatorProps = DefaultNavigatorOptions<
   ParamListBase,
   StackNavigationState<ParamListBase>,
@@ -69,8 +70,11 @@ function CustomBottomTabNavigator({
       StackNavigationOptions,
       StackNavigationEventMap
     >(StackRouter, {
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
       children,
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
       screenOptions,
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
       initialRouteName,
     });
 

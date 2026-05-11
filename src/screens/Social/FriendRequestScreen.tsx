@@ -4,7 +4,7 @@ import type {
   FriendRequestStatus,
   ProfileList,
 } from '@src/types/onyx';
-import {useEffect, useMemo, useState} from 'react';
+import {useEffect, useState} from 'react';
 import * as KirokuIcons from '@components/Icon/KirokuIcons';
 import * as ErrorUtils from '@libs/ErrorUtils';
 import {useFirebase} from '@context/global/FirebaseContext';
@@ -209,7 +209,7 @@ function FriendRequestScreen() {
   const [requestsSentCount, setRequestsSentCount] = useState<number>(0);
   const [requestsReceivedCount, setRequestsReceivedCount] = useState<number>(0);
 
-  useMemo(() => {
+  useEffect(() => {
     if (!userData) {
       return;
     }

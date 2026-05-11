@@ -72,6 +72,7 @@ function SuccessAnimation({
           }
           onAnimationEnd();
         }}
+        // eslint-disable-next-line react-compiler/react-compiler
         useNativeDriver={useNativeDriver}>
         <Icon
           src={iconSource}

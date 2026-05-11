@@ -74,6 +74,7 @@ function DatabaseDataProvider({children}: DatabaseDataProviderProps) {
       return;
     }
     const theme = data.preferences?.theme ?? CONST.THEME.DEFAULT;
+    // eslint-disable-next-line rulesdir/prefer-actions-set-data
     Onyx.set(ONYXKEYS.PREFERRED_THEME, theme);
   }, [data.preferences]);
 
