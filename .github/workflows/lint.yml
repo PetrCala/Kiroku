@@ -5,10 +5,10 @@ on:
   pull_request:
     types: [opened, synchronize]
     branches-ignore: [staging, production]
-    paths: ['**.js', '**.ts', '**.tsx', '**.json', '**.mjs', '**.cjs']
+    paths: ["**.js", "**.ts", "**.tsx", "**.json", "**.mjs", "**.cjs"]
 
 concurrency:
-  group: ${{ github.ref == 'refs/heads/maste' && format('{0}-{1}', github.ref, github.sha) || github.ref }}-lint
+  group: ${{ github.ref == 'refs/heads/master' && format('{0}-{1}', github.ref, github.sha) || github.ref }}-lint
   cancel-in-progress: true
 
 jobs:
