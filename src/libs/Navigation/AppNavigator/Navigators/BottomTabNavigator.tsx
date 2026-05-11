@@ -13,6 +13,7 @@ import SCREENS from '@src/SCREENS';
 import HomeScreen from '@screens/HomeScreen';
 import ActiveCentralPaneRouteContext from './ActiveRouteContext';
 
+// eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
 const Tab = createCustomBottomTabNavigator<BottomTabNavigatorParamList>();
 
 const screenOptions: StackNavigationOptions = {

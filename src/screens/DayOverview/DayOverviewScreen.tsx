@@ -1,4 +1,4 @@
-import React, {useState, useMemo} from 'react';
+import React, {useState, useEffect, useMemo} from 'react';
 import {View, FlatList} from 'react-native';
 import * as KirokuIcons from '@components/Icon/KirokuIcons';
 import {changeDateBySomeDays, dateStringToDate} from '@libs/DataHandling';
@@ -55,7 +55,7 @@ function DayOverviewScreen({route}: DayOverviewScreenProps) {
   const [dailyData, setDailyData] = useState<DrinkingSessionKeyValue[]>([]);
 
   // Monitor the combined data
-  useMemo(() => {
+  useEffect(() => {
     if (!drinkingSessionData) {
       setDailyData([]);
       return;

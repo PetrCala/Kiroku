@@ -1,4 +1,4 @@
-import React, {useState, useRef, useMemo, useEffect} from 'react';
+import React, {useState, useRef, useEffect} from 'react';
 import {Keyboard, TextInput, View} from 'react-native';
 import {sumDrinksOfSingleType} from '@libs/DataHandling';
 import * as DSUtils from '@src/libs/DrinkingSessionUtils';
@@ -133,7 +133,7 @@ function SessionDrinksInputWindow({
   };
 
   // Update input value when drinks change
-  useMemo(() => {
+  useEffect(() => {
     const newInputValue = sumDrinksOfSingleType(drinks, drinkKey).toString();
     setInputValue(newInputValue);
   }, [drinks, drinkKey]);

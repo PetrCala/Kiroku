@@ -299,6 +299,7 @@ function BaseModal(
             onModalWillShow={saveFocusState}
             onDismiss={handleDismissModal}>
             <PortalHost name="modal" />
+            {/* eslint-disable-next-line @typescript-eslint/no-unsafe-assignment */}
             <FocusTrapForModal active={isVisible} initialFocus={initialFocus}>
               <View
                 style={[

@@ -15,6 +15,7 @@ type ResponsiveStackNavigatorConfig = {
 
 type ResponsiveStackNavigatorRouterOptions = StackRouterOptions;
 
+// eslint-disable-next-line @typescript-eslint/no-redundant-type-constituents
 type ResponsiveStackNavigatorProps = DefaultNavigatorOptions<
   ParamListBase,
   StackNavigationState<ParamListBase>,

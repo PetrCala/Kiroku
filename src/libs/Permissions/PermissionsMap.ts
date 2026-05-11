@@ -16,6 +16,7 @@ const PermissionsMap: Record<PermissionKey, PermissionEntry> = {
   },
   notifications: {
     iOS: undefined, // Handle through the checkNotifications, requestNotifications functions
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
     Android: PERMISSIONS.ANDROID.POST_NOTIFICATIONS,
   },
 };

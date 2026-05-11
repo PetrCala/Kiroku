@@ -128,7 +128,7 @@ function ProfileScreen({route}: ProfileScreenProps) {
   }, [db, friends, user, userID]);
 
   // Monitor friends count
-  useMemo(() => {
+  useEffect(() => {
     const newFriendCount = friends ? objKeys(friends).length : 0;
     const newCommonFriendCount = getCommonFriendsCount(
       objKeys(selfFriends),
@@ -139,7 +139,7 @@ function ProfileScreen({route}: ProfileScreenProps) {
   }, [friends, selfFriends]);
 
   // Monitor stats
-  useMemo(() => {
+  useEffect(() => {
     if (!drinkingSessionData || !preferences) {
       return;
     }
