@@ -194,10 +194,11 @@ class GithubUtils {
   ): StagingDeployCashData {
     try {
       const versionRegex = new RegExp(
-        '([0-9]+)\\.([0-9]+)\\.([0-9]+)(?:-([0-9]+))?',
+        '([0-9]+)\\.([0-9]+)\\.([0-9]+)(?:-([0-9]+))?(?:-[A-Za-z0-9._-]+)?',
         'g',
       );
-      const tag = issue.body?.match(versionRegex)?.[0].replace(/`/g, '');
+      const releaseVersionTag = issue.body?.match(/\*\*Release Version:\*\*\s`([^`]+)`/)?.[1];
+      const tag = releaseVersionTag ?? issue.body?.match(versionRegex)?.[0].replace(/`/g, '');
 
       return {
         title: issue.title,

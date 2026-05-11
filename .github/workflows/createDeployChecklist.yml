@@ -2,7 +2,16 @@ name: Create or update deploy checklist
 
 on:
   workflow_call:
+    inputs:
+      TAG:
+        description: Git tag being deployed to staging
+        required: false
+        type: string
   workflow_dispatch:
+    inputs:
+      TAG:
+        description: Git tag being deployed to staging
+        required: false
 
 jobs:
   createChecklist:
@@ -18,3 +27,4 @@ jobs:
         uses: ./.github/actions/javascript/createOrUpdateStagingDeploy
         with:
           GITHUB_TOKEN: ${{ github.token }}
+          TAG: ${{ inputs.TAG }}

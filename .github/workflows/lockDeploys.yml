@@ -7,7 +7,7 @@ on:
 jobs:
   lockStagingDeploys:
     if: ${{ github.event.label.name == '🔐 LockCashDeploys 🔐' && contains(github.event.issue.labels.*.name, 'StagingDeployCash') && github.actor != 'KirokuAdmin' }}
-    runs-on: macos-12
+    runs-on: ubuntu-latest
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -24,7 +24,7 @@ jobs:
         run: |
           gh issue comment \
             "$(gh issue list --label StagingDeployCash --json number --jq '.[0].number')" \
-            --body ":rocket: All staging deploys are complete, please begin QA on version https://github.com/PetrCala/Kiroku/releases/tag/$(< package.json jq -r .version) :rocket:"
+            --body ":rocket: All staging deploys are complete, please begin QA on version https://github.com/PetrCala/Kiroku/releases/tag/$(jq -r '.version + "-staging"' package.json) :rocket:"
         env:
           GITHUB_TOKEN: ${{ secrets.KIROKU_ADMIN_TOKEN }}
 

@@ -4,6 +4,9 @@ inputs:
     GITHUB_TOKEN:
         description: Auth token for Kiroku Github
         required: true
+    TAG:
+        description: Git tag being deployed to staging
+        required: false
 
 runs:
     using: 'node20'

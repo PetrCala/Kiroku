@@ -34347,98 +34347,15 @@ function wrappy (fn, cb) {
 
 /***/ }),
 
-/***/ 2123:
-/***/ (function(__unused_webpack_module, exports, __nccwpck_require__) {
-
-"use strict";
-
-var __importDefault = (this && this.__importDefault) || function (mod) {
-    return (mod && mod.__esModule) ? mod : { "default": mod };
-};
-Object.defineProperty(exports, "__esModule", ({ value: true }));
-/* eslint-disable @typescript-eslint/naming-convention */
-const throttle_1 = __importDefault(__nccwpck_require__(2891));
-const ActionUtils_1 = __nccwpck_require__(6981);
-const CONST_1 = __importDefault(__nccwpck_require__(9873));
-const GithubUtils_1 = __importDefault(__nccwpck_require__(9296));
-const promiseWhile_1 = __nccwpck_require__(9438);
-function run() {
-    const tag = (0, ActionUtils_1.getStringInput)('TAG', { required: false });
-    let currentStagingDeploys = [];
-    const throttleFunc = () => Promise.all([
-        // These are active deploys
-        GithubUtils_1.default.octokit.actions.listWorkflowRuns({
-            owner: CONST_1.default.GITHUB_OWNER,
-            repo: CONST_1.default.APP_REPO,
-            workflow_id: 'platformDeploy.yml',
-            event: 'push',
-            branch: tag,
-        }),
-        // These have the potential to become active deploys, so we need to wait for them to finish as well (unless we're looking for a specific tag)
-        // In this context, we'll refer to unresolved preDeploy workflow runs as staging deploys as well
-        !tag &&
-            GithubUtils_1.default.octokit.actions.listWorkflowRuns({
-                owner: CONST_1.default.GITHUB_OWNER,
-                repo: CONST_1.default.APP_REPO,
-                workflow_id: 'preDeploy.yml',
-            }),
-    ])
-        .then((responses) => {
-        const workflowRuns = responses[0].data.workflow_runs;
-        if (!tag && typeof responses[1] === 'object') {
-            workflowRuns.push(...responses[1].data.workflow_runs);
-        }
-        return workflowRuns;
-    })
-        .then((workflowRuns) => (currentStagingDeploys = workflowRuns.filter((workflowRun) => workflowRun.status !== 'completed')))
-        .then(() => {
-        console.log(!currentStagingDeploys.length
-            ? 'No current staging deploys found'
-            : `Found ${currentStagingDeploys.length} staging deploy${currentStagingDeploys.length > 1 ? 's' : ''} still running...`);
-    });
-    return (0, promiseWhile_1.promiseDoWhile)(() => !!currentStagingDeploys.length, (0, throttle_1.default)(throttleFunc, 
-    // Poll every 60 seconds instead of every 10 seconds
-    CONST_1.default.POLL_RATE * 6));
-}
-if (require.main === require.cache[eval('__filename')]) {
-    run();
-}
-exports["default"] = run;
-
-
-/***/ }),
-
 /***/ 6981:
-/***/ (function(__unused_webpack_module, exports, __nccwpck_require__) {
+/***/ ((__unused_webpack_module, exports, __nccwpck_require__) => {
 
 "use strict";
 
-var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
-    if (k2 === undefined) k2 = k;
-    var desc = Object.getOwnPropertyDescriptor(m, k);
-    if (!desc || ("get" in desc ? !m.__esModule : desc.writable || desc.configurable)) {
-      desc = { enumerable: true, get: function() { return m[k]; } };
-    }
-    Object.defineProperty(o, k2, desc);
-}) : (function(o, m, k, k2) {
-    if (k2 === undefined) k2 = k;
-    o[k2] = m[k];
-}));
-var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (function(o, v) {
-    Object.defineProperty(o, "default", { enumerable: true, value: v });
-}) : function(o, v) {
-    o["default"] = v;
-});
-var __importStar = (this && this.__importStar) || function (mod) {
-    if (mod && mod.__esModule) return mod;
-    var result = {};
-    if (mod != null) for (var k in mod) if (k !== "default" && Object.prototype.hasOwnProperty.call(mod, k)) __createBinding(result, mod, k);
-    __setModuleDefault(result, mod);
-    return result;
-};
 Object.defineProperty(exports, "__esModule", ({ value: true }));
-exports.getStringInput = exports.getJSONInput = void 0;
-const core = __importStar(__nccwpck_require__(2186));
+exports.getJSONInput = getJSONInput;
+exports.getStringInput = getStringInput;
+const core = __nccwpck_require__(2186);
 /**
  * Safely parse a JSON input to a GitHub Action.
  *
@@ -34454,7 +34371,6 @@ function getJSONInput(name, options, defaultValue) {
     }
     return defaultValue;
 }
-exports.getJSONInput = getJSONInput;
 /**
  * Safely access a string input to a GitHub Action, or fall back on a default if the string is empty.
  */
@@ -34465,7 +34381,6 @@ function getStringInput(name, options, defaultValue) {
     }
     return input;
 }
-exports.getStringInput = getStringInput;
 
 
 /***/ }),
@@ -34518,47 +34433,20 @@ exports["default"] = CONST;
 /***/ }),
 
 /***/ 9296:
-/***/ (function(__unused_webpack_module, exports, __nccwpck_require__) {
+/***/ ((__unused_webpack_module, exports, __nccwpck_require__) => {
 
 "use strict";
 
-var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
-    if (k2 === undefined) k2 = k;
-    var desc = Object.getOwnPropertyDescriptor(m, k);
-    if (!desc || ("get" in desc ? !m.__esModule : desc.writable || desc.configurable)) {
-      desc = { enumerable: true, get: function() { return m[k]; } };
-    }
-    Object.defineProperty(o, k2, desc);
-}) : (function(o, m, k, k2) {
-    if (k2 === undefined) k2 = k;
-    o[k2] = m[k];
-}));
-var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (function(o, v) {
-    Object.defineProperty(o, "default", { enumerable: true, value: v });
-}) : function(o, v) {
-    o["default"] = v;
-});
-var __importStar = (this && this.__importStar) || function (mod) {
-    if (mod && mod.__esModule) return mod;
-    var result = {};
-    if (mod != null) for (var k in mod) if (k !== "default" && Object.prototype.hasOwnProperty.call(mod, k)) __createBinding(result, mod, k);
-    __setModuleDefault(result, mod);
-    return result;
-};
-var __importDefault = (this && this.__importDefault) || function (mod) {
-    return (mod && mod.__esModule) ? mod : { "default": mod };
-};
 Object.defineProperty(exports, "__esModule", ({ value: true }));
 /* eslint-disable @typescript-eslint/naming-convention, import/no-import-module-exports */
-const core = __importStar(__nccwpck_require__(2186));
+const core = __nccwpck_require__(2186);
 const utils_1 = __nccwpck_require__(3030);
 const plugin_paginate_rest_1 = __nccwpck_require__(4193);
 const plugin_throttling_1 = __nccwpck_require__(9968);
 const EmptyObject_1 = __nccwpck_require__(8227);
-const arrayDifference_1 = __importDefault(__nccwpck_require__(7034));
-const CONST_1 = __importDefault(__nccwpck_require__(9873));
+const arrayDifference_1 = __nccwpck_require__(7034);
+const CONST_1 = __nccwpck_require__(9873);
 class GithubUtils {
-    static internalOctokit;
     /**
      * Initialize internal octokit.
      * NOTE: When using GithubUtils in CI, you don't need to call this manually.
@@ -34656,9 +34544,11 @@ class GithubUtils {
      * Takes in a GitHub issue object and returns the data we want.
      */
     static getStagingDeployCashData(issue) {
+        var _a, _b, _c, _d;
         try {
-            const versionRegex = new RegExp('([0-9]+)\\.([0-9]+)\\.([0-9]+)(?:-([0-9]+))?', 'g');
-            const tag = issue.body?.match(versionRegex)?.[0].replace(/`/g, '');
+            const versionRegex = new RegExp('([0-9]+)\\.([0-9]+)\\.([0-9]+)(?:-([0-9]+))?(?:-[A-Za-z0-9._-]+)?', 'g');
+            const releaseVersionTag = (_b = (_a = issue.body) === null || _a === void 0 ? void 0 : _a.match(/\*\*Release Version:\*\*\s`([^`]+)`/)) === null || _b === void 0 ? void 0 : _b[1];
+            const tag = releaseVersionTag !== null && releaseVersionTag !== void 0 ? releaseVersionTag : (_d = (_c = issue.body) === null || _c === void 0 ? void 0 : _c.match(versionRegex)) === null || _d === void 0 ? void 0 : _d[0].replace(/`/g, '');
             return {
                 title: issue.title,
                 url: issue.url,
@@ -34689,9 +34579,9 @@ class GithubUtils {
      * @private
      */
     static getStagingDeployCashPRList(issue) {
-        let PRListSection = issue.body?.match(/pull requests:\*\*\r?\n((?:-.*\r?\n)+)\r?\n\r?\n?/) ??
-            null;
-        if (PRListSection?.length !== 2) {
+        var _a, _b;
+        let PRListSection = (_b = (_a = issue.body) === null || _a === void 0 ? void 0 : _a.match(/pull requests:\*\*\r?\n((?:-.*\r?\n)+)\r?\n\r?\n?/)) !== null && _b !== void 0 ? _b : null;
+        if ((PRListSection === null || PRListSection === void 0 ? void 0 : PRListSection.length) !== 2) {
             // No PRs, return an empty array
             console.log('Hmmm...The open StagingDeployCash does not list any pull requests, continuing...');
             return [];
@@ -34712,8 +34602,9 @@ class GithubUtils {
      * @private
      */
     static getStagingDeployCashDeployBlockers(issue) {
-        let deployBlockerSection = issue.body?.match(/Deploy Blockers:\*\*\r?\n((?:-.*\r?\n)+)/) ?? null;
-        if (deployBlockerSection?.length !== 2) {
+        var _a, _b;
+        let deployBlockerSection = (_b = (_a = issue.body) === null || _a === void 0 ? void 0 : _a.match(/Deploy Blockers:\*\*\r?\n((?:-.*\r?\n)+)/)) !== null && _b !== void 0 ? _b : null;
+        if ((deployBlockerSection === null || deployBlockerSection === void 0 ? void 0 : deployBlockerSection.length) !== 2) {
             return [];
         }
         deployBlockerSection = deployBlockerSection[1];
@@ -34732,8 +34623,9 @@ class GithubUtils {
      * @private
      */
     static getStagingDeployCashInternalQA(issue) {
-        let internalQASection = issue.body?.match(/Internal QA:\*\*\r?\n((?:- \[[ x]].*\r?\n)+)/) ?? null;
-        if (internalQASection?.length !== 2) {
+        var _a, _b;
+        let internalQASection = (_b = (_a = issue.body) === null || _a === void 0 ? void 0 : _a.match(/Internal QA:\*\*\r?\n((?:- \[[ x]].*\r?\n)+)/)) !== null && _b !== void 0 ? _b : null;
+        if ((internalQASection === null || internalQASection === void 0 ? void 0 : internalQASection.length) !== 2) {
             return [];
         }
         internalQASection = internalQASection[1];
@@ -34864,7 +34756,7 @@ class GithubUtils {
             repo: CONST_1.default.APP_REPO,
             pull_number: pullRequestNumber,
         })
-            .then(({ data: pullRequest }) => pullRequest.merged_by?.login);
+            .then(({ data: pullRequest }) => { var _a; return (_a = pullRequest.merged_by) === null || _a === void 0 ? void 0 : _a.login; });
     }
     static getPullRequestBody(pullRequestNumber) {
         return this.octokit.pulls
@@ -34914,7 +34806,7 @@ class GithubUtils {
             repo: CONST_1.default.APP_REPO,
             workflow_id: workflow,
         })
-            .then(response => response.data.workflow_runs[0]?.id);
+            .then(response => { var _a; return (_a = response.data.workflow_runs[0]) === null || _a === void 0 ? void 0 : _a.id; });
     }
     /**
      * Generate the URL of an Kiroku pull request given the PR number.
@@ -34969,7 +34861,7 @@ class GithubUtils {
             per_page: 100,
         })
             .then(events => events.filter(event => event.event === 'closed'))
-            .then(closedEvents => closedEvents[closedEvents.length - 1]?.actor?.login ?? '');
+            .then(closedEvents => { var _a, _b, _c; return (_c = (_b = (_a = closedEvents[closedEvents.length - 1]) === null || _a === void 0 ? void 0 : _a.actor) === null || _b === void 0 ? void 0 : _b.login) !== null && _c !== void 0 ? _c : ''; });
     }
     /**
      * Returns a single artifact by name. If none is found, it returns undefined.
@@ -35009,7 +34901,8 @@ exports["default"] = GithubUtils;
 "use strict";
 
 Object.defineProperty(exports, "__esModule", ({ value: true }));
-exports.promiseDoWhile = exports.promiseWhile = void 0;
+exports.promiseWhile = promiseWhile;
+exports.promiseDoWhile = promiseDoWhile;
 /**
  * Simulates a while loop where the condition is determined by the result of a Promise.
  */
@@ -35020,7 +34913,7 @@ function promiseWhile(condition, action) {
                 resolve();
             }
             else {
-                const actionResult = action?.();
+                const actionResult = action === null || action === void 0 ? void 0 : action();
                 if (!actionResult) {
                     resolve();
                     return;
@@ -35036,13 +34929,12 @@ function promiseWhile(condition, action) {
         loop();
     });
 }
-exports.promiseWhile = promiseWhile;
 /**
  * Simulates a do-while loop where the condition is determined by the result of a Promise.
  */
 function promiseDoWhile(condition, action) {
     return new Promise((resolve, reject) => {
-        const actionResult = action?.();
+        const actionResult = action === null || action === void 0 ? void 0 : action();
         if (!actionResult) {
             resolve();
             return;
@@ -35053,7 +34945,6 @@ function promiseDoWhile(condition, action) {
             .catch(reject);
     });
 }
-exports.promiseDoWhile = promiseDoWhile;
 
 
 /***/ }),
@@ -35064,11 +34955,10 @@ exports.promiseDoWhile = promiseDoWhile;
 "use strict";
 
 Object.defineProperty(exports, "__esModule", ({ value: true }));
-exports.isEmptyObject = void 0;
-function isEmptyObject(obj) {
-    return Object.keys(obj ?? {}).length === 0;
-}
 exports.isEmptyObject = isEmptyObject;
+function isEmptyObject(obj) {
+    return Object.keys(obj !== null && obj !== void 0 ? obj : {}).length === 0;
+}
 
 
 /***/ }),
@@ -37002,12 +36892,64 @@ module.exports = JSON.parse('[[[0,44],"disallowed_STD3_valid"],[[45,46],"valid"]
 /******/ 	if (typeof __nccwpck_require__ !== 'undefined') __nccwpck_require__.ab = __dirname + "/";
 /******/ 	
 /************************************************************************/
-/******/ 	
-/******/ 	// startup
-/******/ 	// Load entry module and return exports
-/******/ 	// This entry module is referenced by other modules so it can't be inlined
-/******/ 	var __webpack_exports__ = __nccwpck_require__(2123);
-/******/ 	module.exports = __webpack_exports__;
-/******/ 	
+var __webpack_exports__ = {};
+// This entry need to be wrapped in an IIFE because it need to be in strict mode.
+(() => {
+"use strict";
+var exports = __webpack_exports__;
+
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+/* eslint-disable @typescript-eslint/naming-convention */
+const throttle_1 = __nccwpck_require__(2891);
+const ActionUtils_1 = __nccwpck_require__(6981);
+const CONST_1 = __nccwpck_require__(9873);
+const GithubUtils_1 = __nccwpck_require__(9296);
+const promiseWhile_1 = __nccwpck_require__(9438);
+function run() {
+    const branch = (0, ActionUtils_1.getStringInput)('TAG', { required: false }) || 'staging';
+    let currentStagingDeploys = [];
+    const throttleFunc = () => Promise.all([
+        // These are active deploys
+        GithubUtils_1.default.octokit.actions.listWorkflowRuns({
+            owner: CONST_1.default.GITHUB_OWNER,
+            repo: CONST_1.default.APP_REPO,
+            workflow_id: 'deploy.yml',
+            event: 'push',
+            branch,
+        }),
+        // These have the potential to become active deploys, so we need to wait for them to finish as well (unless we're looking for a specific branch)
+        // In this context, we'll refer to unresolved preDeploy workflow runs as staging deploys as well
+        branch === 'staging' &&
+            GithubUtils_1.default.octokit.actions.listWorkflowRuns({
+                owner: CONST_1.default.GITHUB_OWNER,
+                repo: CONST_1.default.APP_REPO,
+                workflow_id: 'preDeploy.yml',
+            }),
+    ])
+        .then((responses) => {
+        const workflowRuns = responses[0].data.workflow_runs;
+        if (branch === 'staging' && typeof responses[1] === 'object') {
+            workflowRuns.push(...responses[1].data.workflow_runs);
+        }
+        return workflowRuns;
+    })
+        .then((workflowRuns) => (currentStagingDeploys = workflowRuns.filter((workflowRun) => workflowRun.status !== 'completed')))
+        .then(() => {
+        console.log(!currentStagingDeploys.length
+            ? 'No current staging deploys found'
+            : `Found ${currentStagingDeploys.length} staging deploy${currentStagingDeploys.length > 1 ? 's' : ''} still running...`);
+    });
+    return (0, promiseWhile_1.promiseDoWhile)(() => !!currentStagingDeploys.length, (0, throttle_1.default)(throttleFunc, 
+    // Poll every 60 seconds instead of every 10 seconds
+    CONST_1.default.POLL_RATE * 6));
+}
+if (require.main === require.cache[eval('__filename')]) {
+    run();
+}
+exports["default"] = run;
+
+})();
+
+module.exports = __webpack_exports__;
 /******/ })()
 ;

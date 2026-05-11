@@ -33697,181 +33697,15 @@ function wrappy (fn, cb) {
 
 /***/ }),
 
-/***/ 1935:
-/***/ (function(__unused_webpack_module, exports, __nccwpck_require__) {
-
-"use strict";
-
-var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
-    if (k2 === undefined) k2 = k;
-    var desc = Object.getOwnPropertyDescriptor(m, k);
-    if (!desc || ("get" in desc ? !m.__esModule : desc.writable || desc.configurable)) {
-      desc = { enumerable: true, get: function() { return m[k]; } };
-    }
-    Object.defineProperty(o, k2, desc);
-}) : (function(o, m, k, k2) {
-    if (k2 === undefined) k2 = k;
-    o[k2] = m[k];
-}));
-var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (function(o, v) {
-    Object.defineProperty(o, "default", { enumerable: true, value: v });
-}) : function(o, v) {
-    o["default"] = v;
-});
-var __importStar = (this && this.__importStar) || function (mod) {
-    if (mod && mod.__esModule) return mod;
-    var result = {};
-    if (mod != null) for (var k in mod) if (k !== "default" && Object.prototype.hasOwnProperty.call(mod, k)) __createBinding(result, mod, k);
-    __setModuleDefault(result, mod);
-    return result;
-};
-var __importDefault = (this && this.__importDefault) || function (mod) {
-    return (mod && mod.__esModule) ? mod : { "default": mod };
-};
-Object.defineProperty(exports, "__esModule", ({ value: true }));
-const core = __importStar(__nccwpck_require__(2186));
-const github = __importStar(__nccwpck_require__(5438));
-const ActionUtils_1 = __nccwpck_require__(6981);
-const GithubUtils_1 = __importDefault(__nccwpck_require__(9296));
-const GitUtils_1 = __importDefault(__nccwpck_require__(1547));
-const BUILD_AND_DEPLOY_JOB_NAME_PREFIX = 'Build and deploy';
-/**
- * This function checks if a given release is a valid baseTag to get the PR list with `git log baseTag...endTag`.
- *
- * The rules are:
- *     - production deploys can only be compared with other production deploys
- *     - staging deploys can be compared with other staging deploys or production deploys.
- *       The reason is that the final staging release in each deploy cycle will BECOME a production release.
- *       For example, imagine a checklist is closed with version 9.0.20-6; that's the most recent staging deploy, but the release for 9.0.20-6 is now finalized, so it looks like a prod deploy.
- *       When 9.0.21-0 finishes deploying to staging, the most recent prerelease is 9.0.20-5. However, we want 9.0.20-6...9.0.21-0,
- *       NOT 9.0.20-5...9.0.21-0 (so that the PR CP'd in 9.0.20-6 is not included in the next checklist)
- */
-async function isReleaseValidBaseForEnvironment(releaseTag, isProductionDeploy) {
-    if (!isProductionDeploy) {
-        return true;
-    }
-    const isPrerelease = (await GithubUtils_1.default.octokit.repos.getReleaseByTag({
-        owner: github.context.repo.owner,
-        repo: github.context.repo.repo,
-        tag: releaseTag,
-    })).data.prerelease;
-    return !isPrerelease;
-}
-/**
- * Was a given platformDeploy workflow run successful on at least one platform?
- */
-async function wasDeploySuccessful(runID) {
-    const jobsForWorkflowRun = (await GithubUtils_1.default.octokit.actions.listJobsForWorkflowRun({
-        owner: github.context.repo.owner,
-        repo: github.context.repo.repo,
-        // eslint-disable-next-line @typescript-eslint/naming-convention
-        run_id: runID,
-        filter: 'latest',
-    })).data.jobs;
-    return jobsForWorkflowRun.some((job) => job.name.startsWith(BUILD_AND_DEPLOY_JOB_NAME_PREFIX) && job.conclusion === 'success');
-}
-/**
- * This function checks if a given deploy workflow is a valid basis for comparison when listing PRs merged between two versions.
- * It returns the reason a version should be skipped, or an empty string if the version should not be skipped.
- */
-async function shouldSkipVersion(lastSuccessfulDeploy, inputTag, isProductionDeploy) {
-    if (!lastSuccessfulDeploy?.head_branch) {
-        // This should never happen. Just doing this to appease TS.
-        return '';
-    }
-    // we never want to compare a tag with itself. This check is necessary because prod deploys almost always have the same version as the last staging deploy.
-    // In this case, the next for wrong environment fails because the release that triggered that staging deploy is now finalized, so it looks like a prod deploy.
-    if (lastSuccessfulDeploy?.head_branch === inputTag) {
-        return `Same as input tag ${inputTag}`;
-    }
-    if (!(await isReleaseValidBaseForEnvironment(lastSuccessfulDeploy?.head_branch, isProductionDeploy))) {
-        return 'Was a staging deploy, we only want to compare with other production deploys';
-    }
-    if (!(await wasDeploySuccessful(lastSuccessfulDeploy.id))) {
-        return 'Was an unsuccessful deploy, nothing was deployed in that version';
-    }
-    return '';
-}
-async function run() {
-    try {
-        const inputTag = core.getInput('TAG', { required: true });
-        const isProductionDeploy = !!(0, ActionUtils_1.getJSONInput)('IS_PRODUCTION_DEPLOY', { required: false }, false);
-        const deployEnv = isProductionDeploy ? 'production' : 'staging';
-        console.log(`Looking for PRs deployed to ${deployEnv} in ${inputTag}...`);
-        const completedDeploys = (await GithubUtils_1.default.octokit.actions.listWorkflowRuns({
-            owner: github.context.repo.owner,
-            repo: github.context.repo.repo,
-            // eslint-disable-next-line @typescript-eslint/naming-convention
-            workflow_id: 'platformDeploy.yml',
-            status: 'completed',
-        })).data.workflow_runs
-            // Note: we filter out cancelled runs instead of looking only for success runs
-            // because if a build fails on even one platform, then it will have the status 'failure'
-            .filter((workflowRun) => workflowRun.conclusion !== 'cancelled');
-        // Find the most recent deploy workflow targeting the correct environment, for which at least one of the build jobs finished successfully
-        let lastSuccessfulDeploy = completedDeploys.shift();
-        if (!lastSuccessfulDeploy) {
-            throw new Error('Could not find a prior successful deploy');
-        }
-        let reason = await shouldSkipVersion(lastSuccessfulDeploy, inputTag, isProductionDeploy);
-        while (lastSuccessfulDeploy && reason) {
-            console.log(`Deploy of tag ${lastSuccessfulDeploy.head_branch} was not valid as a base for comparison, looking at the next one. Reason: ${reason}`, lastSuccessfulDeploy.html_url);
-            lastSuccessfulDeploy = completedDeploys.shift();
-            if (!lastSuccessfulDeploy) {
-                throw new Error('Could not find a prior successful deploy');
-            }
-            reason = await shouldSkipVersion(lastSuccessfulDeploy, inputTag, isProductionDeploy);
-        }
-        const priorTag = lastSuccessfulDeploy.head_branch;
-        console.log(`Looking for PRs deployed to ${deployEnv} between ${priorTag} and ${inputTag}`);
-        const prList = await GitUtils_1.default.getPullRequestsMergedBetween(priorTag ?? '', inputTag);
-        console.log('Found the pull request list: ', prList);
-        core.setOutput('PR_LIST', prList);
-    }
-    catch (error) {
-        console.error(error.message);
-        core.setFailed(error);
-    }
-}
-if (require.main === require.cache[eval('__filename')]) {
-    run();
-}
-exports["default"] = run;
-
-
-/***/ }),
-
 /***/ 6981:
-/***/ (function(__unused_webpack_module, exports, __nccwpck_require__) {
+/***/ ((__unused_webpack_module, exports, __nccwpck_require__) => {
 
 "use strict";
 
-var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
-    if (k2 === undefined) k2 = k;
-    var desc = Object.getOwnPropertyDescriptor(m, k);
-    if (!desc || ("get" in desc ? !m.__esModule : desc.writable || desc.configurable)) {
-      desc = { enumerable: true, get: function() { return m[k]; } };
-    }
-    Object.defineProperty(o, k2, desc);
-}) : (function(o, m, k, k2) {
-    if (k2 === undefined) k2 = k;
-    o[k2] = m[k];
-}));
-var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (function(o, v) {
-    Object.defineProperty(o, "default", { enumerable: true, value: v });
-}) : function(o, v) {
-    o["default"] = v;
-});
-var __importStar = (this && this.__importStar) || function (mod) {
-    if (mod && mod.__esModule) return mod;
-    var result = {};
-    if (mod != null) for (var k in mod) if (k !== "default" && Object.prototype.hasOwnProperty.call(mod, k)) __createBinding(result, mod, k);
-    __setModuleDefault(result, mod);
-    return result;
-};
 Object.defineProperty(exports, "__esModule", ({ value: true }));
-exports.getStringInput = exports.getJSONInput = void 0;
-const core = __importStar(__nccwpck_require__(2186));
+exports.getJSONInput = getJSONInput;
+exports.getStringInput = getStringInput;
+const core = __nccwpck_require__(2186);
 /**
  * Safely parse a JSON input to a GitHub Action.
  *
@@ -33887,7 +33721,6 @@ function getJSONInput(name, options, defaultValue) {
     }
     return defaultValue;
 }
-exports.getJSONInput = getJSONInput;
 /**
  * Safely access a string input to a GitHub Action, or fall back on a default if the string is empty.
  */
@@ -33898,7 +33731,6 @@ function getStringInput(name, options, defaultValue) {
     }
     return input;
 }
-exports.getStringInput = getStringInput;
 
 
 /***/ }),
@@ -33951,41 +33783,15 @@ exports["default"] = CONST;
 /***/ }),
 
 /***/ 1547:
-/***/ (function(__unused_webpack_module, exports, __nccwpck_require__) {
+/***/ ((__unused_webpack_module, exports, __nccwpck_require__) => {
 
 "use strict";
 
-var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
-    if (k2 === undefined) k2 = k;
-    var desc = Object.getOwnPropertyDescriptor(m, k);
-    if (!desc || ("get" in desc ? !m.__esModule : desc.writable || desc.configurable)) {
-      desc = { enumerable: true, get: function() { return m[k]; } };
-    }
-    Object.defineProperty(o, k2, desc);
-}) : (function(o, m, k, k2) {
-    if (k2 === undefined) k2 = k;
-    o[k2] = m[k];
-}));
-var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (function(o, v) {
-    Object.defineProperty(o, "default", { enumerable: true, value: v });
-}) : function(o, v) {
-    o["default"] = v;
-});
-var __importStar = (this && this.__importStar) || function (mod) {
-    if (mod && mod.__esModule) return mod;
-    var result = {};
-    if (mod != null) for (var k in mod) if (k !== "default" && Object.prototype.hasOwnProperty.call(mod, k)) __createBinding(result, mod, k);
-    __setModuleDefault(result, mod);
-    return result;
-};
-var __importDefault = (this && this.__importDefault) || function (mod) {
-    return (mod && mod.__esModule) ? mod : { "default": mod };
-};
 Object.defineProperty(exports, "__esModule", ({ value: true }));
 const child_process_1 = __nccwpck_require__(2081);
-const CONST_1 = __importDefault(__nccwpck_require__(9873));
-const sanitizeStringForJSONParse_1 = __importDefault(__nccwpck_require__(3902));
-const VersionUpdater = __importStar(__nccwpck_require__(8982));
+const CONST_1 = __nccwpck_require__(9873);
+const sanitizeStringForJSONParse_1 = __nccwpck_require__(3902);
+const VersionUpdater = __nccwpck_require__(8982);
 /**
  * Check if a tag exists locally or in the remote.
  */
@@ -34007,7 +33813,9 @@ function tagExists(tag) {
                     // Why? Who knows... https://github.com/Expensify/App/pull/31459
                     (0, child_process_1.execSync)('git repack -d', { stdio: 'inherit' });
                 }
-                (0, child_process_1.execSync)(`git ls-remote --exit-code --tags origin ${tag}`, { stdio: 'ignore' });
+                (0, child_process_1.execSync)(`git ls-remote --exit-code --tags origin ${tag}`, {
+                    stdio: 'ignore',
+                });
                 doesTagExist = true;
                 shouldRetry = false;
             }
@@ -34095,7 +33903,11 @@ function getCommitHistoryAsJSON(fromTag, toTag) {
     return new Promise((resolve, reject) => {
         let stdout = '';
         let stderr = '';
-        const args = ['log', '--format={"commit": "%H", "authorName": "%an", "subject": "%s"},', `${fromTag}...${toTag}`];
+        const args = [
+            'log',
+            '--format={"commit": "%H", "authorName": "%an", "subject": "%s"},',
+            `${fromTag}...${toTag}`,
+        ];
         console.log(`Running command: git ${args.join(' ')}`);
         const spawnedProcess = (0, child_process_1.spawn)('git', args);
         spawnedProcess.on('message', console.log);
@@ -34107,19 +33919,21 @@ function getCommitHistoryAsJSON(fromTag, toTag) {
             console.error(chunk.toString());
             stderr += chunk.toString();
         });
-        spawnedProcess.on('close', (code) => {
+        spawnedProcess.on('close', code => {
             if (code !== 0) {
                 console.log('code: ', code);
                 return reject(new Error(`${stderr}`));
             }
             resolve(stdout);
         });
-        spawnedProcess.on('error', (err) => reject(err));
-    }).then((stdout) => {
+        spawnedProcess.on('error', err => reject(err));
+    }).then(stdout => {
         // Sanitize just the text within commit subjects as that's the only potentially un-parseable text.
-        const sanitizedOutput = stdout.replace(/(?<="subject": ").*?(?="})/g, (subject) => (0, sanitizeStringForJSONParse_1.default)(subject));
+        const sanitizedOutput = stdout.replace(/(?<="subject": ").*?(?="})/g, subject => (0, sanitizeStringForJSONParse_1.default)(subject));
         // Then remove newlines, format as JSON and convert to a proper JS object
-        const json = `[${sanitizedOutput}]`.replace(/(\r\n|\n|\r)/gm, '').replace('},]', '}]');
+        const json = `[${sanitizedOutput}]`
+            .replace(/(\r\n|\n|\r)/gm, '')
+            .replace('},]', '}]');
         return JSON.parse(json);
     });
 }
@@ -34128,12 +33942,12 @@ function getCommitHistoryAsJSON(fromTag, toTag) {
  */
 function getValidMergedPRs(commits) {
     const mergedPRs = new Set();
-    commits.forEach((commit) => {
+    commits.forEach(commit => {
         const author = commit.authorName;
         if (author === CONST_1.default.KIROKU_ADMIN) {
             return;
         }
-        const match = commit.subject.match(/Merge pull request #(\d+) from (?!Kiroku\/.*-cherry-pick-staging)/);
+        const match = commit.subject.match(/Merge pull request #(\d+) from (?!Expensify\/.*-cherry-pick-staging)/);
         if (!Array.isArray(match) || match.length < 2) {
             return;
         }
@@ -34170,47 +33984,20 @@ exports["default"] = {
 /***/ }),
 
 /***/ 9296:
-/***/ (function(__unused_webpack_module, exports, __nccwpck_require__) {
+/***/ ((__unused_webpack_module, exports, __nccwpck_require__) => {
 
 "use strict";
 
-var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
-    if (k2 === undefined) k2 = k;
-    var desc = Object.getOwnPropertyDescriptor(m, k);
-    if (!desc || ("get" in desc ? !m.__esModule : desc.writable || desc.configurable)) {
-      desc = { enumerable: true, get: function() { return m[k]; } };
-    }
-    Object.defineProperty(o, k2, desc);
-}) : (function(o, m, k, k2) {
-    if (k2 === undefined) k2 = k;
-    o[k2] = m[k];
-}));
-var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (function(o, v) {
-    Object.defineProperty(o, "default", { enumerable: true, value: v });
-}) : function(o, v) {
-    o["default"] = v;
-});
-var __importStar = (this && this.__importStar) || function (mod) {
-    if (mod && mod.__esModule) return mod;
-    var result = {};
-    if (mod != null) for (var k in mod) if (k !== "default" && Object.prototype.hasOwnProperty.call(mod, k)) __createBinding(result, mod, k);
-    __setModuleDefault(result, mod);
-    return result;
-};
-var __importDefault = (this && this.__importDefault) || function (mod) {
-    return (mod && mod.__esModule) ? mod : { "default": mod };
-};
 Object.defineProperty(exports, "__esModule", ({ value: true }));
 /* eslint-disable @typescript-eslint/naming-convention, import/no-import-module-exports */
-const core = __importStar(__nccwpck_require__(2186));
+const core = __nccwpck_require__(2186);
 const utils_1 = __nccwpck_require__(3030);
 const plugin_paginate_rest_1 = __nccwpck_require__(4193);
 const plugin_throttling_1 = __nccwpck_require__(9968);
 const EmptyObject_1 = __nccwpck_require__(8227);
-const arrayDifference_1 = __importDefault(__nccwpck_require__(7034));
-const CONST_1 = __importDefault(__nccwpck_require__(9873));
+const arrayDifference_1 = __nccwpck_require__(7034);
+const CONST_1 = __nccwpck_require__(9873);
 class GithubUtils {
-    static internalOctokit;
     /**
      * Initialize internal octokit.
      * NOTE: When using GithubUtils in CI, you don't need to call this manually.
@@ -34308,9 +34095,11 @@ class GithubUtils {
      * Takes in a GitHub issue object and returns the data we want.
      */
     static getStagingDeployCashData(issue) {
+        var _a, _b, _c, _d;
         try {
-            const versionRegex = new RegExp('([0-9]+)\\.([0-9]+)\\.([0-9]+)(?:-([0-9]+))?', 'g');
-            const tag = issue.body?.match(versionRegex)?.[0].replace(/`/g, '');
+            const versionRegex = new RegExp('([0-9]+)\\.([0-9]+)\\.([0-9]+)(?:-([0-9]+))?(?:-[A-Za-z0-9._-]+)?', 'g');
+            const releaseVersionTag = (_b = (_a = issue.body) === null || _a === void 0 ? void 0 : _a.match(/\*\*Release Version:\*\*\s`([^`]+)`/)) === null || _b === void 0 ? void 0 : _b[1];
+            const tag = releaseVersionTag !== null && releaseVersionTag !== void 0 ? releaseVersionTag : (_d = (_c = issue.body) === null || _c === void 0 ? void 0 : _c.match(versionRegex)) === null || _d === void 0 ? void 0 : _d[0].replace(/`/g, '');
             return {
                 title: issue.title,
                 url: issue.url,
@@ -34341,9 +34130,9 @@ class GithubUtils {
      * @private
      */
     static getStagingDeployCashPRList(issue) {
-        let PRListSection = issue.body?.match(/pull requests:\*\*\r?\n((?:-.*\r?\n)+)\r?\n\r?\n?/) ??
-            null;
-        if (PRListSection?.length !== 2) {
+        var _a, _b;
+        let PRListSection = (_b = (_a = issue.body) === null || _a === void 0 ? void 0 : _a.match(/pull requests:\*\*\r?\n((?:-.*\r?\n)+)\r?\n\r?\n?/)) !== null && _b !== void 0 ? _b : null;
+        if ((PRListSection === null || PRListSection === void 0 ? void 0 : PRListSection.length) !== 2) {
             // No PRs, return an empty array
             console.log('Hmmm...The open StagingDeployCash does not list any pull requests, continuing...');
             return [];
@@ -34364,8 +34153,9 @@ class GithubUtils {
      * @private
      */
     static getStagingDeployCashDeployBlockers(issue) {
-        let deployBlockerSection = issue.body?.match(/Deploy Blockers:\*\*\r?\n((?:-.*\r?\n)+)/) ?? null;
-        if (deployBlockerSection?.length !== 2) {
+        var _a, _b;
+        let deployBlockerSection = (_b = (_a = issue.body) === null || _a === void 0 ? void 0 : _a.match(/Deploy Blockers:\*\*\r?\n((?:-.*\r?\n)+)/)) !== null && _b !== void 0 ? _b : null;
+        if ((deployBlockerSection === null || deployBlockerSection === void 0 ? void 0 : deployBlockerSection.length) !== 2) {
             return [];
         }
         deployBlockerSection = deployBlockerSection[1];
@@ -34384,8 +34174,9 @@ class GithubUtils {
      * @private
      */
     static getStagingDeployCashInternalQA(issue) {
-        let internalQASection = issue.body?.match(/Internal QA:\*\*\r?\n((?:- \[[ x]].*\r?\n)+)/) ?? null;
-        if (internalQASection?.length !== 2) {
+        var _a, _b;
+        let internalQASection = (_b = (_a = issue.body) === null || _a === void 0 ? void 0 : _a.match(/Internal QA:\*\*\r?\n((?:- \[[ x]].*\r?\n)+)/)) !== null && _b !== void 0 ? _b : null;
+        if ((internalQASection === null || internalQASection === void 0 ? void 0 : internalQASection.length) !== 2) {
             return [];
         }
         internalQASection = internalQASection[1];
@@ -34516,7 +34307,7 @@ class GithubUtils {
             repo: CONST_1.default.APP_REPO,
             pull_number: pullRequestNumber,
         })
-            .then(({ data: pullRequest }) => pullRequest.merged_by?.login);
+            .then(({ data: pullRequest }) => { var _a; return (_a = pullRequest.merged_by) === null || _a === void 0 ? void 0 : _a.login; });
     }
     static getPullRequestBody(pullRequestNumber) {
         return this.octokit.pulls
@@ -34566,7 +34357,7 @@ class GithubUtils {
             repo: CONST_1.default.APP_REPO,
             workflow_id: workflow,
         })
-            .then(response => response.data.workflow_runs[0]?.id);
+            .then(response => { var _a; return (_a = response.data.workflow_runs[0]) === null || _a === void 0 ? void 0 : _a.id; });
     }
     /**
      * Generate the URL of an Kiroku pull request given the PR number.
@@ -34621,7 +34412,7 @@ class GithubUtils {
             per_page: 100,
         })
             .then(events => events.filter(event => event.event === 'closed'))
-            .then(closedEvents => closedEvents[closedEvents.length - 1]?.actor?.login ?? '');
+            .then(closedEvents => { var _a, _b, _c; return (_c = (_b = (_a = closedEvents[closedEvents.length - 1]) === null || _a === void 0 ? void 0 : _a.actor) === null || _b === void 0 ? void 0 : _b.login) !== null && _c !== void 0 ? _c : ''; });
     }
     /**
      * Returns a single artifact by name. If none is found, it returns undefined.
@@ -34662,14 +34453,17 @@ exports["default"] = GithubUtils;
 
 /* eslint-disable @typescript-eslint/naming-convention */
 Object.defineProperty(exports, "__esModule", ({ value: true }));
-const replacer = (str) => ({
-    '\\': '\\\\',
-    '\t': '\\t',
-    '\n': '\\n',
-    '\r': '\\r',
-    '\f': '\\f',
-    '"': '\\"',
-}[str] ?? '');
+const replacer = (str) => {
+    var _a;
+    return ((_a = {
+        '\\': '\\\\',
+        '\t': '\\t',
+        '\n': '\\n',
+        '\r': '\\r',
+        '\f': '\\f',
+        '"': '\\"',
+    }[str]) !== null && _a !== void 0 ? _a : '');
+};
 /**
  * Replace any characters in the string that will break JSON.parse for our Git Log output
  *
@@ -34694,7 +34488,9 @@ exports["default"] = sanitizeStringForJSONParse;
 "use strict";
 
 Object.defineProperty(exports, "__esModule", ({ value: true }));
-exports.getPreviousVersion = exports.incrementPatch = exports.incrementMinor = exports.SEMANTIC_VERSION_LEVELS = exports.MAX_INCREMENTS = exports.incrementVersion = exports.getVersionStringFromNumber = exports.getVersionNumberFromString = exports.isValidSemverLevel = void 0;
+exports.incrementPatch = exports.incrementMinor = exports.SEMANTIC_VERSION_LEVELS = exports.MAX_INCREMENTS = exports.incrementVersion = exports.getVersionStringFromNumber = exports.getVersionNumberFromString = void 0;
+exports.isValidSemverLevel = isValidSemverLevel;
+exports.getPreviousVersion = getPreviousVersion;
 const SEMANTIC_VERSION_LEVELS = {
     MAJOR: 'MAJOR',
     MINOR: 'MINOR',
@@ -34707,7 +34503,6 @@ exports.MAX_INCREMENTS = MAX_INCREMENTS;
 function isValidSemverLevel(str) {
     return Object.keys(SEMANTIC_VERSION_LEVELS).includes(str);
 }
-exports.isValidSemverLevel = isValidSemverLevel;
 /**
  * Transforms a versions string into a number
  */
@@ -34788,7 +34583,6 @@ function getPreviousVersion(currentVersion, level) {
     }
     return getVersionStringFromNumber(major, minor, patch, build - 1);
 }
-exports.getPreviousVersion = getPreviousVersion;
 
 
 /***/ }),
@@ -34799,11 +34593,10 @@ exports.getPreviousVersion = getPreviousVersion;
 "use strict";
 
 Object.defineProperty(exports, "__esModule", ({ value: true }));
-exports.isEmptyObject = void 0;
-function isEmptyObject(obj) {
-    return Object.keys(obj ?? {}).length === 0;
-}
 exports.isEmptyObject = isEmptyObject;
+function isEmptyObject(obj) {
+    return Object.keys(obj !== null && obj !== void 0 ? obj : {}).length === 0;
+}
 
 
 /***/ }),
@@ -36745,12 +36538,68 @@ module.exports = JSON.parse('[[[0,44],"disallowed_STD3_valid"],[[45,46],"valid"]
 /******/ 	if (typeof __nccwpck_require__ !== 'undefined') __nccwpck_require__.ab = __dirname + "/";
 /******/ 	
 /************************************************************************/
-/******/ 	
-/******/ 	// startup
-/******/ 	// Load entry module and return exports
-/******/ 	// This entry module is referenced by other modules so it can't be inlined
-/******/ 	var __webpack_exports__ = __nccwpck_require__(1935);
-/******/ 	module.exports = __webpack_exports__;
-/******/ 	
+var __webpack_exports__ = {};
+// This entry need to be wrapped in an IIFE because it need to be in strict mode.
+(() => {
+"use strict";
+var exports = __webpack_exports__;
+
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+const core = __nccwpck_require__(2186);
+const github = __nccwpck_require__(5438);
+const ActionUtils_1 = __nccwpck_require__(6981);
+const GithubUtils_1 = __nccwpck_require__(9296);
+const GitUtils_1 = __nccwpck_require__(1547);
+function isReleaseValidBaseForEnvironment(release, isProductionDeploy) {
+    return !isProductionDeploy || !release.prerelease;
+}
+async function getPreviousDeployTag(inputTag, isProductionDeploy) {
+    const releases = await GithubUtils_1.default.paginate(GithubUtils_1.default.octokit.repos.listReleases, {
+        owner: github.context.repo.owner,
+        repo: github.context.repo.repo,
+        // eslint-disable-next-line @typescript-eslint/naming-convention
+        per_page: 100,
+    });
+    let foundCurrentRelease = false;
+    for (const release of releases) {
+        if (release.draft) {
+            continue;
+        }
+        if (release.tag_name === inputTag) {
+            foundCurrentRelease = true;
+            continue;
+        }
+        if (!foundCurrentRelease || !isReleaseValidBaseForEnvironment(release, isProductionDeploy)) {
+            continue;
+        }
+        return release.tag_name;
+    }
+    throw new Error(`Could not find a prior ${isProductionDeploy ? 'production' : 'staging'} deploy release for ${inputTag}`);
+}
+async function run() {
+    try {
+        const inputTag = core.getInput('TAG', { required: true });
+        const isProductionDeploy = !!(0, ActionUtils_1.getJSONInput)('IS_PRODUCTION_DEPLOY', { required: false }, false);
+        const deployEnv = isProductionDeploy ? 'production' : 'staging';
+        console.log(`Looking for PRs deployed to ${deployEnv} in ${inputTag}...`);
+        const priorTag = await getPreviousDeployTag(inputTag, isProductionDeploy);
+        console.log(`Looking for PRs deployed to ${deployEnv} between ${priorTag} and ${inputTag}`);
+        const prList = await GitUtils_1.default.getPullRequestsMergedBetween(priorTag, inputTag);
+        console.log('Found the pull request list: ', prList);
+        core.setOutput('PR_LIST', prList);
+    }
+    catch (error) {
+        console.error(error.message);
+        core.setFailed(error);
+    }
+}
+if (require.main === require.cache[eval('__filename')]) {
+    run();
+}
+exports["default"] = run;
+
+})();
+
+module.exports = __webpack_exports__;
 /******/ })()
 ;

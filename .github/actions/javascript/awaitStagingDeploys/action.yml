@@ -5,7 +5,7 @@ inputs:
     description: Auth token for Kiroku Github
     required: true
   TAG:
-    description: If provided, this action will only wait for a deploy matching this tag.
+    description: If provided, this action will only wait for deploys on this branch.
     required: false
 runs:
   using: 'node20'

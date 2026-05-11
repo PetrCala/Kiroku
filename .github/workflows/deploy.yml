@@ -4,66 +4,101 @@ on:
   push:
     branches: [staging, production]
 
+permissions:
+  contents: write
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
-  deployStaging:
+  prep:
+    name: Prepare deploy metadata
     runs-on: ubuntu-latest
-    if: github.ref == 'refs/heads/staging'
+    outputs:
+      APP_VERSION: ${{ steps.deploy-metadata.outputs.APP_VERSION }}
+      DEPLOY_ENVIRONMENT: ${{ steps.deploy-metadata.outputs.DEPLOY_ENVIRONMENT }}
+      PRODUCTION_TAG: ${{ steps.deploy-metadata.outputs.PRODUCTION_TAG }}
+      RELEASE_TAG: ${{ steps.deploy-metadata.outputs.RELEASE_TAG }}
+      SHOULD_DEPLOY_PRODUCTION: ${{ steps.deploy-metadata.outputs.SHOULD_DEPLOY_PRODUCTION }}
+      STAGING_TAG: ${{ steps.deploy-metadata.outputs.STAGING_TAG }}
     steps:
-      - name: Checkout staging branch
+      - name: Checkout
         uses: actions/checkout@v4
-        with:
-          ref: staging
-          token: ${{ secrets.KIROKU_ADMIN_TOKEN }}
 
-      - name: Setup git for KirokuAdmin
-        uses: ./.github/actions/composite/setupGitForKirokuAdmin
-        id: setupGitForKirokuAdmin
-        with:
-          GPG_PASSPHRASE: ${{ secrets.LARGE_SECRET_PASSPHRASE }}
-
-      - name: Get current app version
-        run: echo "STAGING_VERSION=$(npm run print-version --silent)" >> "$GITHUB_ENV"
-
-      - name: 🚀 Create prerelease to trigger staging deploy 🚀
-        run: gh release create ${{ env.STAGING_VERSION }} --title ${{ env.STAGING_VERSION }} --generate-notes --prerelease --target staging
-        env:
-          GITHUB_TOKEN: ${{ steps.setupGitForKirokuAdmin.outputs.KIROKU_ADMIN_API_TOKEN }}
-
-      - name: Warn deployers if staging deploy failed
-        if: ${{ failure() }}
-        uses: ./.github/actions/composite/announceFailedWorkflowInDiscord
-        with:
-          DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_URL }}
-
-  deployProduction:
-    runs-on: ubuntu-latest
-    if: github.ref == 'refs/heads/production'
-    steps:
-      - uses: actions/checkout@v4
-        name: Checkout
-        with:
-          ref: production
-          token: ${{ secrets.KIROKU_ADMIN_TOKEN }}
-
-      - name: Setup git for KirokuAdmin
-        uses: ./.github/actions/composite/setupGitForKirokuAdmin
-        id: setupGitForKirokuAdmin
-        with:
-          GPG_PASSPHRASE: ${{ secrets.LARGE_SECRET_PASSPHRASE }}
-
-      - name: Get current app version
-        run: echo "PRODUCTION_VERSION=$(npm run print-version --silent)" >> "$GITHUB_ENV"
-
-      - name: 🚀 Edit the release to be no longer a prerelease to deploy production 🚀
+      - name: Get deploy metadata
+        id: deploy-metadata
         run: |
-          LATEST_RELEASE="$(gh release list --exclude-pre-releases --json tagName,isLatest --jq '.[] | select(.isLatest) | .tagName')"
-          gh api --method POST /repos/PetrCala/Kiroku/releases/generate-notes -f "tag_name=${{ env.PRODUCTION_VERSION }}" -f "previous_tag_name=$LATEST_RELEASE" >> releaseNotes.md
-          gh release edit ${{ env.PRODUCTION_VERSION }} --prerelease=false --latest --notes-file releaseNotes.md
-        env:
-          GITHUB_TOKEN: ${{ steps.setupGitForKirokuAdmin.outputs.KIROKU_ADMIN_API_TOKEN }}
+          APP_VERSION="$(node -p "require('./package.json').version")"
+          STAGING_TAG="${APP_VERSION}-staging"
+          PRODUCTION_TAG="${APP_VERSION}"
 
-      - name: Warn deployers if production deploy failed
+          if [[ "$GITHUB_REF_NAME" == "production" ]]; then
+            DEPLOY_ENVIRONMENT=production
+            RELEASE_TAG="$PRODUCTION_TAG"
+            SHOULD_DEPLOY_PRODUCTION=true
+          else
+            DEPLOY_ENVIRONMENT=staging
+            RELEASE_TAG="$STAGING_TAG"
+            SHOULD_DEPLOY_PRODUCTION=false
+          fi
+
+          {
+            echo "APP_VERSION=$APP_VERSION"
+            echo "DEPLOY_ENVIRONMENT=$DEPLOY_ENVIRONMENT"
+            echo "PRODUCTION_TAG=$PRODUCTION_TAG"
+            echo "RELEASE_TAG=$RELEASE_TAG"
+            echo "SHOULD_DEPLOY_PRODUCTION=$SHOULD_DEPLOY_PRODUCTION"
+            echo "STAGING_TAG=$STAGING_TAG"
+          } >> "$GITHUB_OUTPUT"
+
+  prepareRelease:
+    name: Create or update GitHub Release
+    needs: prep
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Create or update deploy release
+        env:
+          DEPLOY_ENVIRONMENT: ${{ needs.prep.outputs.DEPLOY_ENVIRONMENT }}
+          GITHUB_TOKEN: ${{ secrets.KIROKU_ADMIN_TOKEN }}
+          RELEASE_TAG: ${{ needs.prep.outputs.RELEASE_TAG }}
+        run: |
+          set -euo pipefail
+
+          if gh release view "$RELEASE_TAG" >/dev/null 2>&1; then
+            gh api --method PATCH "/repos/$GITHUB_REPOSITORY/git/refs/tags/$RELEASE_TAG" -f "sha=$GITHUB_SHA" -F "force=true"
+
+            if [[ "$DEPLOY_ENVIRONMENT" == "production" ]]; then
+              gh release edit "$RELEASE_TAG" --title "$RELEASE_TAG" --prerelease=false --latest
+            else
+              gh release edit "$RELEASE_TAG" --title "$RELEASE_TAG" --prerelease
+            fi
+            exit 0
+          fi
+
+          if [[ "$DEPLOY_ENVIRONMENT" == "production" ]]; then
+            gh release create "$RELEASE_TAG" --title "$RELEASE_TAG" --generate-notes --latest --target "$GITHUB_SHA"
+          else
+            gh release create "$RELEASE_TAG" --title "$RELEASE_TAG" --generate-notes --prerelease --target "$GITHUB_SHA"
+          fi
+
+      - name: Warn deployers if release preparation failed
         if: ${{ failure() }}
         uses: ./.github/actions/composite/announceFailedWorkflowInDiscord
         with:
           DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_URL }}
+
+  platformDeploy:
+    name: Build and deploy native platforms
+    needs: [prep, prepareRelease]
+    uses: ./.github/workflows/platformDeploy.yml
+    with:
+      APP_VERSION: ${{ needs.prep.outputs.APP_VERSION }}
+      DEPLOY_ENVIRONMENT: ${{ needs.prep.outputs.DEPLOY_ENVIRONMENT }}
+      RELEASE_TAG: ${{ needs.prep.outputs.RELEASE_TAG }}
+      SHOULD_DEPLOY_PRODUCTION: ${{ needs.prep.outputs.SHOULD_DEPLOY_PRODUCTION == 'true' }}
+      STAGING_TAG: ${{ needs.prep.outputs.STAGING_TAG }}
+    secrets: inherit

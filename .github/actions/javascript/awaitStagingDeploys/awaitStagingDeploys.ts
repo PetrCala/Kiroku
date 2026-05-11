@@ -8,7 +8,7 @@ import {promiseDoWhile} from '@github/libs/promiseWhile';
 type CurrentStagingDeploys = Awaited<ReturnType<typeof GitHubUtils.octokit.actions.listWorkflowRuns>>['data']['workflow_runs'];
 
 function run() {
-    const tag = getStringInput('TAG', {required: false});
+    const branch = getStringInput('TAG', {required: false}) || 'staging';
 
     let currentStagingDeploys: CurrentStagingDeploys = [];
 
@@ -18,14 +18,14 @@ function run() {
             GitHubUtils.octokit.actions.listWorkflowRuns({
                 owner: CONST.GITHUB_OWNER,
                 repo: CONST.APP_REPO,
-                workflow_id: 'platformDeploy.yml',
+                workflow_id: 'deploy.yml',
                 event: 'push',
-                branch: tag,
+                branch,
             }),
 
-            // These have the potential to become active deploys, so we need to wait for them to finish as well (unless we're looking for a specific tag)
+            // These have the potential to become active deploys, so we need to wait for them to finish as well (unless we're looking for a specific branch)
             // In this context, we'll refer to unresolved preDeploy workflow runs as staging deploys as well
-            !tag &&
+            branch === 'staging' &&
                 GitHubUtils.octokit.actions.listWorkflowRuns({
                     owner: CONST.GITHUB_OWNER,
                     repo: CONST.APP_REPO,
@@ -34,7 +34,7 @@ function run() {
         ])
             .then((responses) => {
                 const workflowRuns = responses[0].data.workflow_runs;
-                if (!tag && typeof responses[1] === 'object') {
+                if (branch === 'staging' && typeof responses[1] === 'object') {
                     workflowRuns.push(...responses[1].data.workflow_runs);
                 }
                 return workflowRuns;

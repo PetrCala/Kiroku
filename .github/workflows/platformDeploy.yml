@@ -1,45 +1,46 @@
 name: Build and deploy android and iOS clients
 
-# This workflow is run when a release or prerelease is created
 on:
-  release:
-    types: [prereleased, released]
-
-env:
-  # SHOULD_DEPLOY_PRODUCTION: ${{ github.event.action == 'released' }}
-  SHOULD_DEPLOY_PRODUCTION: false # For now, production deploys are manual
+  workflow_call:
+    inputs:
+      APP_VERSION:
+        description: App version from package.json
+        required: true
+        type: string
+      DEPLOY_ENVIRONMENT:
+        description: Deploy environment derived from the pushed branch
+        required: true
+        type: string
+      RELEASE_TAG:
+        description: GitHub Release tag for this deploy
+        required: true
+        type: string
+      SHOULD_DEPLOY_PRODUCTION:
+        description: Whether to run production/promotion lanes
+        required: true
+        type: boolean
+      STAGING_TAG:
+        description: Staging GitHub Release tag for this app version
+        required: true
+        type: string
 
 concurrency:
-  group: ${{ github.workflow }}-${{ github.event.action }}
+  group: ${{ github.workflow }}-${{ inputs.RELEASE_TAG }}
   cancel-in-progress: true
 
 jobs:
-  validateActor:
-    runs-on: ubuntu-latest
-    outputs:
-      IS_DEPLOYER: ${{ fromJSON(steps.isUserDeployer.outputs.IS_DEPLOYER) || github.actor == 'KirokuAdmin' }}
-    steps:
-      - name: Check if user is deployer
-        id: isUserDeployer
-        # This could check a group in Kiroku, but as we are not an entrerprise yet, only KirokuAdmin can deploy
-        run: |
-          echo "IS_DEPLOYER=false" >> "$GITHUB_OUTPUT"
-        env:
-          GITHUB_TOKEN: ${{ secrets.KIROKU_ADMIN_TOKEN }}
-
   # Note: we're updating the checklist before running the deploys and assuming that it will succeed on at least one platform
   deployChecklist:
     name: Create or update deploy checklist
     uses: ./.github/workflows/createDeployChecklist.yml
-    if: ${{ github.event.action != 'released' }}
-    needs: validateActor
+    if: ${{ !inputs.SHOULD_DEPLOY_PRODUCTION }}
+    with:
+      TAG: ${{ inputs.RELEASE_TAG }}
     secrets: inherit
 
   android:
     # WARNING: getDeployPullRequestList depends on this job name. do not change job name without adjusting that action accordingly
     name: Build and deploy Android
-    needs: validateActor
-    if: ${{ fromJSON(needs.validateActor.outputs.IS_DEPLOYER) }}
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
@@ -49,7 +50,7 @@ jobs:
         uses: ./.github/actions/composite/setupNode
 
       - name: Setup Java
-        uses: actions/setup-java@v3
+        uses: actions/setup-java@v4
         with:
           distribution: 'oracle'
           java-version: '17'
@@ -78,7 +79,7 @@ jobs:
         run: echo "VERSION_CODE=$(grep -o 'versionCode\s\+[0-9]\+' android/app/build.gradle | awk '{ print $2 }')" >> "$GITHUB_ENV"
 
       - name: Run Fastlane
-        run: bundle exec fastlane android ${{ fromJSON(env.SHOULD_DEPLOY_PRODUCTION) && 'production' || 'beta' }}
+        run: bundle exec fastlane android ${{ inputs.SHOULD_DEPLOY_PRODUCTION && 'production' || 'beta' }}
         env:
           RUBYOPT: '-rostruct'
           MYAPP_UPLOAD_STORE_PASSWORD: ${{ secrets.MYAPP_UPLOAD_STORE_PASSWORD }}
@@ -86,25 +87,25 @@ jobs:
           VERSION: ${{ env.VERSION_CODE }}
 
       # - name: Upload Android build to Browser Stack
-      #   if: ${{ !fromJSON(env.SHOULD_DEPLOY_PRODUCTION) }}
+      #   if: ${{ !inputs.SHOULD_DEPLOY_PRODUCTION }}
       #   run: curl -u "$BROWSERSTACK" -X POST "https://api-cloud.browserstack.com/app-live/upload" -F "file=@./android/app/build/outputs/bundle/productionRelease/app-production-release.aab"
       #   env:
       #     BROWSERSTACK: ${{ secrets.BROWSERSTACK }}
 
       - name: Upload Android sourcemaps to GitHub Release
-        if: ${{ !fromJSON(env.SHOULD_DEPLOY_PRODUCTION) }}
-        run: gh release upload ${{ github.event.release.tag_name }} android/app/build/generated/sourcemaps/react/productionRelease/index.android.bundle.map#android-sourcemap-${{ github.event.release.tag_name }}
+        if: ${{ !inputs.SHOULD_DEPLOY_PRODUCTION }}
+        run: gh release upload ${{ inputs.RELEASE_TAG }} android/app/build/generated/sourcemaps/react/productionRelease/index.android.bundle.map#android-sourcemap-${{ inputs.RELEASE_TAG }} --clobber
         env:
-          GITHUB_TOKEN: ${{ github.token }}
+          GITHUB_TOKEN: ${{ secrets.KIROKU_ADMIN_TOKEN }}
 
       - name: Upload Android build to GitHub Release
-        if: ${{ !fromJSON(env.SHOULD_DEPLOY_PRODUCTION) }}
-        run: gh release upload ${{ github.event.release.tag_name }} android/app/build/outputs/bundle/productionRelease/app-production-release.aab
+        if: ${{ !inputs.SHOULD_DEPLOY_PRODUCTION }}
+        run: gh release upload ${{ inputs.RELEASE_TAG }} android/app/build/outputs/bundle/productionRelease/app-production-release.aab --clobber
         env:
-          GITHUB_TOKEN: ${{ github.token }}
+          GITHUB_TOKEN: ${{ secrets.KIROKU_ADMIN_TOKEN }}
 
       - name: Warn deployers if Android production deploy failed
-        #   if: ${{ failure() && fromJSON(env.SHOULD_DEPLOY_PRODUCTION) }}
+        if: ${{ failure() }}
         uses: ./.github/actions/composite/announceFailedWorkflowInDiscord
         with:
           DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_URL }}
@@ -112,11 +113,9 @@ jobs:
   iOS:
     # WARNING: getDeployPullRequestList depends on this job name. do not change job name without adjusting that action accordingly
     name: Build and deploy iOS
-    needs: validateActor
-    if: ${{ fromJSON(needs.validateActor.outputs.IS_DEPLOYER) }}
     env:
-      DEVELOPER_DIR: /Applications/Xcode_15.2.0.app/Contents/Developer
-    runs-on: macos-13
+      DEVELOPER_DIR: /Applications/Xcode_26.1.1.app/Contents/Developer
+    runs-on: macos-26
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -143,7 +142,7 @@ jobs:
 
       - name: Install cocoapods
         uses: nick-fields/retry@3f757583fb1b1f940bc8ef4bf4734c8dc02a5847
-        if: steps.pods-cache.outputs.cache-hit != 'true' || steps.compare-podfile-and-manifest.outputs.IS_PODFILE_SAME_AS_MANIFEST != 'true' || steps.setup-node.outputs.cache-hit != 'true'
+        if: steps.pods-cache.outputs.cache-hit != 'true' || steps.compare-podfile-and-manifest.outputs.IS_PODFILE_SAME_AS_MANIFEST != 'true'
         with:
           timeout_minutes: 10
           max_attempts: 5
@@ -170,10 +169,10 @@ jobs:
           echo "${{ secrets.PRODUCTION_ENV_FILE }}" > .env.production
 
       - name: Set iOS version in ENV
-        run: echo "IOS_VERSION=$(echo '${{ github.event.release.tag_name }}' | tr '-' '.')" >> "$GITHUB_ENV"
+        run: echo "IOS_VERSION=$(echo '${{ inputs.APP_VERSION }}' | tr '-' '.')" >> "$GITHUB_ENV"
 
       - name: Run Fastlane
-        run: bundle exec fastlane ios ${{ fromJSON(env.SHOULD_DEPLOY_PRODUCTION) && 'production' || 'beta' }}
+        run: bundle exec fastlane ios ${{ inputs.SHOULD_DEPLOY_PRODUCTION && 'production' || 'beta' }}
         env:
           APPLE_CONTACT_EMAIL: ${{ secrets.APPLE_CONTACT_EMAIL }}
           APPLE_CONTACT_PHONE: ${{ secrets.APPLE_CONTACT_PHONE }}
@@ -182,25 +181,60 @@ jobs:
           VERSION: ${{ env.IOS_VERSION }}
 
       # - name: Upload iOS build to Browser Stack
-      #   if: ${{ !fromJSON(env.SHOULD_DEPLOY_PRODUCTION) }}
+      #   if: ${{ !inputs.SHOULD_DEPLOY_PRODUCTION }}
       #   run: curl -u "$BROWSERSTACK" -X POST "https://api-cloud.browserstack.com/app-live/upload" -F "file=@/Users/runner/work/App/App/kiroku.ipa"
       #   env:
       #     BROWSERSTACK: ${{ secrets.BROWSERSTACK }}
 
       - name: Upload iOS sourcemaps to GitHub Release
-        if: ${{ !fromJSON(env.SHOULD_DEPLOY_PRODUCTION) }}
-        run: gh release upload ${{ github.event.release.tag_name }} main.jsbundle.map#ios-sourcemap-${{ github.event.release.tag_name }}
+        if: ${{ !inputs.SHOULD_DEPLOY_PRODUCTION }}
+        run: gh release upload ${{ inputs.RELEASE_TAG }} main.jsbundle.map#ios-sourcemap-${{ inputs.RELEASE_TAG }} --clobber
         env:
-          GITHUB_TOKEN: ${{ github.token }}
+          GITHUB_TOKEN: ${{ secrets.KIROKU_ADMIN_TOKEN }}
 
       - name: Upload iOS build to GitHub Release
-        if: ${{ !fromJSON(env.SHOULD_DEPLOY_PRODUCTION) }}
-        run: gh release upload ${{ github.event.release.tag_name }} /Users/runner/work/App/App/kiroku.ipa
+        if: ${{ !inputs.SHOULD_DEPLOY_PRODUCTION }}
+        run: gh release upload ${{ inputs.RELEASE_TAG }} /Users/runner/work/App/App/kiroku.ipa --clobber
         env:
-          GITHUB_TOKEN: ${{ github.token }}
+          GITHUB_TOKEN: ${{ secrets.KIROKU_ADMIN_TOKEN }}
 
       - name: Warn deployers if iOS production deploy failed
-        #   if: ${{ failure() && fromJSON(env.SHOULD_DEPLOY_PRODUCTION) }}
+        if: ${{ failure() }}
+        uses: ./.github/actions/composite/announceFailedWorkflowInDiscord
+        with:
+          DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_URL }}
+
+  copyProductionReleaseAssets:
+    name: Copy staging assets to production release
+    runs-on: ubuntu-latest
+    if: ${{ !cancelled() && inputs.SHOULD_DEPLOY_PRODUCTION && (needs.android.result == 'success' || needs.iOS.result == 'success') }}
+    needs: [android, iOS]
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Copy release assets
+        env:
+          GITHUB_TOKEN: ${{ secrets.KIROKU_ADMIN_TOKEN }}
+          RELEASE_TAG: ${{ inputs.RELEASE_TAG }}
+          STAGING_TAG: ${{ inputs.STAGING_TAG }}
+        run: |
+          set -euo pipefail
+
+          mkdir -p release-assets
+          gh release download "$STAGING_TAG" --dir release-assets
+
+          shopt -s nullglob
+          assets=(release-assets/*)
+          if [[ ${#assets[@]} -eq 0 ]]; then
+            echo "::error::No assets found on staging release $STAGING_TAG"
+            exit 1
+          fi
+
+          gh release upload "$RELEASE_TAG" "${assets[@]}" --clobber
+
+      - name: Warn deployers if production asset copy failed
+        if: ${{ failure() }}
         uses: ./.github/actions/composite/announceFailedWorkflowInDiscord
         with:
           DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_URL }}
@@ -208,8 +242,8 @@ jobs:
   postDiscordMessageOnFailure:
     name: Post a Discord message when any platform fails to build or deploy
     runs-on: ubuntu-latest
-    if: ${{ failure() }}
-    needs: [android, iOS]
+    if: ${{ !cancelled() && (needs.android.result == 'failure' || needs.iOS.result == 'failure' || needs.copyProductionReleaseAssets.result == 'failure') }}
+    needs: [android, iOS, copyProductionReleaseAssets]
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -220,16 +254,13 @@ jobs:
           DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_URL }}
 
   postDiscordMessageOnSuccess:
-    name: PDiscord Slack message when all platforms deploy successfully
+    name: Post a Discord message when all platforms deploy successfully
     runs-on: ubuntu-latest
-    if: ${{ success() }}
-    needs: [android, iOS]
+    if: ${{ !cancelled() && needs.android.result == 'success' && needs.iOS.result == 'success' && (needs.copyProductionReleaseAssets.result == 'success' || needs.copyProductionReleaseAssets.result == 'skipped') }}
+    needs: [android, iOS, copyProductionReleaseAssets]
     steps:
       - name: Checkout
         uses: actions/checkout@v4
-
-      - name: Set version
-        run: echo "VERSION=$(npm run print-version --silent)" >> "$GITHUB_ENV"
 
       - name: 'Announces the deploy in the #announce Discord channel'
         uses: peter-evans/webhook-action@v2
@@ -240,10 +271,9 @@ jobs:
             {
               "content": "",
               "embeds": [{
-                "title": "🎉 Deploy Successful",
-                "color": "good",
-                "description": `🎉️ Successfully deployed ${process.env.AS_REPO} <https://github.com/PetrCala/Kiroku/releases/tag/${{ env.VERSION }}|${{ env.VERSION }}> to ${{ fromJSON(env.SHOULD_DEPLOY_PRODUCTION) && 'production' || 'staging' }} 🎉️`,
-                "timestamp": "${{ github.event.workflow_run.updated_at }}",
+                "title": "Deploy Successful",
+                "color": 3066993,
+                "description": "Successfully deployed Kiroku <https://github.com/PetrCala/Kiroku/releases/tag/${{ inputs.RELEASE_TAG }}|${{ inputs.RELEASE_TAG }}> to ${{ inputs.DEPLOY_ENVIRONMENT }}",
                 "footer": {
                   "text": "GitHub Actions",
                   "icon_url": "https://github.githubassets.com/images/modules/logos_page/GitHub-Mark.png"
@@ -299,23 +329,20 @@ jobs:
       - name: Setup Node
         uses: ./.github/actions/composite/setupNode
 
-      - name: Set version
-        run: echo "VERSION=$(npm run print-version --silent)" >> "$GITHUB_ENV"
-
       - name: Get Release Pull Request List
         id: getReleasePRList
         uses: ./.github/actions/javascript/getDeployPullRequestList
         with:
-          TAG: ${{ env.VERSION }}
+          TAG: ${{ inputs.RELEASE_TAG }}
           GITHUB_TOKEN: ${{ secrets.KIROKU_ADMIN_TOKEN }}
-          IS_PRODUCTION_DEPLOY: ${{ fromJSON(env.SHOULD_DEPLOY_PRODUCTION) }}
+          IS_PRODUCTION_DEPLOY: ${{ inputs.SHOULD_DEPLOY_PRODUCTION }}
 
       - name: Comment on issues
         uses: ./.github/actions/javascript/markPullRequestsAsDeployed
         with:
           PR_LIST: ${{ steps.getReleasePRList.outputs.PR_LIST }}
-          IS_PRODUCTION_DEPLOY: ${{ fromJSON(env.SHOULD_DEPLOY_PRODUCTION) }}
-          DEPLOY_VERSION: ${{ env.VERSION }}
+          IS_PRODUCTION_DEPLOY: ${{ inputs.SHOULD_DEPLOY_PRODUCTION }}
+          DEPLOY_VERSION: ${{ inputs.RELEASE_TAG }}
           GITHUB_TOKEN: ${{ secrets.KIROKU_ADMIN_TOKEN }}
           ANDROID: ${{ needs.android.result }}
           IOS: ${{ needs.iOS.result }}
