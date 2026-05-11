@@ -58,7 +58,7 @@ Onyx.connect({
   callback: value => {
     // Safe to call getFirebaseAuth() here - Onyx callbacks run after app initialization
     const auth = getFirebaseAuth();
-    if (!auth.currentUser) {
+    if (!auth?.currentUser) {
       return;
     }
     const currentUserID = auth?.currentUser?.uid;
