@@ -24,7 +24,7 @@ Top-level layout (only directories whose purpose is clear from the listing/READM
 - `assets/` — Static assets (images, fonts, etc.)
 - `config/` — App configuration files [TODO: confirm contents]
 - `desktop/` — Desktop-specific code [TODO: confirm — Electron?]
-- `local/` — [TODO: describe]
+- `local/` — Local files that should not be touched
 - `scripts/` — Shell/TS scripts referenced by `package.json` (build, release, emulator setup, version bump, PR helpers, etc.)
 - `fastlane/` — Fastlane configuration for iOS/Android release automation
 - `patches/` — `patch-package` patches applied via `postinstall`
@@ -141,7 +141,7 @@ Android also requires a `android/local.properties` with `sdk.dir` and an `ANDROI
 
 ## What to avoid touching
 
-- [TODO: list deprecated or legacy directories once known — candidates to verify: `local/`, `desktop/`, any in-repo Firebase data-access modules that are being migrated to the API repo]
+- The `/local/` folder
 - Any directory prefixed with `legacy/` or `old/`
 - Native project files in `ios/` and `android/` — only edit when intentionally changing native config
 - `patches/` — managed by `patch-package`; do not hand-edit without regenerating
