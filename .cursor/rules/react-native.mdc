@@ -1,0 +1,67 @@
+---
+description: React Native coding standards for Kiroku components and hooks
+globs: src/**/*.tsx, src/**/*.ts
+alwaysApply: false
+---
+
+# React Native Coding Standards
+
+Distilled from `.claude/skills/coding-standards/rules/`. See those files for full reasoning and examples.
+
+## Performance
+
+**PERF-1 — No spread in `renderItem`**
+Never spread objects inside `renderItem` — it creates new object references on every render and defeats `React.memo`.
+```tsx
+// BAD
+renderItem={({item}) => <Row {...item} />}
+// GOOD
+renderItem={({item}) => <Row id={item.id} title={item.title} />}
+```
+
+**PERF-2 — Return early before expensive work**
+Validate inputs at the top of a function before doing anything costly.
+```ts
+function doWork(id: string | undefined) {
+    if (!id) return;
+    // expensive work here
+}
+```
+
+## Consistency
+
+**CONSISTENCY-2 — No magic numbers or strings**
+All constants belong in `src/CONST.ts`. Never inline raw values.
+```tsx
+// BAD
+<View style={{borderRadius: 8}} />
+// GOOD
+<View style={{borderRadius: CONST.BORDER_RADIUS.DEFAULT}} />
+```
+
+**CONSISTENCY-4 — No unused props**
+Every prop passed to a component must be used inside it. Delete props that aren't consumed.
+
+## Clean React Patterns
+
+**CLEAN-REACT-PATTERNS-1 — Composition over configuration**
+Prefer multiple focused components over a single component with many boolean flags.
+```tsx
+// BAD — flag-driven
+<Button isPrimary isLarge isLoading />
+// GOOD — composed
+<PrimaryButton><Spinner /></PrimaryButton>
+```
+
+**CLEAN-REACT-PATTERNS-2 — Components own their behavior**
+A component should fetch its own data via `useOnyx` rather than receiving it as props from a parent that had to import hooks just for the child's sake.
+```tsx
+// BAD — parent micromanages child's data
+<SessionListItem sessionData={sessionData} userProfile={userProfile} stats={stats} />
+// GOOD — child owns its data
+<SessionListItem sessionID={sessionID} onSelectRow={onSelectRow} />
+```
+
+## Full Rules Reference
+
+All rules with full reasoning and examples: [`.claude/skills/coding-standards/rules/`](../../.claude/skills/coding-standards/rules/)

@@ -1,0 +1,52 @@
+---
+description: Onyx state management rules — action files and data access patterns
+globs: src/libs/actions/**, src/libs/**/*.ts, src/hooks/**/*.ts
+alwaysApply: false
+---
+
+# Onyx State Management
+
+## Critical Rule
+
+**Onyx state is only modified from action files in `src/libs/actions/`.**
+
+Never call `Onyx.merge`, `Onyx.set`, `Onyx.clear`, or `API.write` directly from a component or hook. If you need to update state, create or extend an action file.
+
+## Reading State in Components
+
+Use the `useOnyx` hook:
+
+```tsx
+// Subscribe to a single key
+const [network] = useOnyx(ONYXKEYS.NETWORK);
+
+// Subscribe to a specific collection member (preferred over subscribing to whole collection)
+const [session] = useOnyx(`${ONYXKEYS.COLLECTION.DRINKING_SESSION}${sessionID}`);
+
+// Narrow re-renders with a selector — define the selector outside the component for stability
+const selectIsOffline = (network: Network) => network?.isOffline;
+const [isOffline] = useOnyx(ONYXKEYS.NETWORK, {selector: selectIsOffline});
+```
+
+## Action File Structure
+
+```typescript
+import Onyx from 'react-native-onyx';
+import ONYXKEYS from '@src/ONYXKEYS';
+
+function doSomething(id: string) {
+    Onyx.merge(ONYXKEYS.SOME_KEY, {field: value});
+}
+
+export {doSomething};
+```
+
+- Named exports only — no default exports from action files.
+- One logical domain per file (e.g., `Session.ts`, `DrinkingSession.ts`).
+
+## Optimistic Updates
+
+For any non-trivial feature that needs optimistic updates (API call + immediate UI feedback + rollback on failure): **use Claude Code with the `onyx` skill loaded**. The three-dataset pattern (`optimisticData` / `successData` / `failureData`) has enough edge cases that generating it inline in Cursor risks incomplete or incorrect rollback logic.
+
+Quick reference patterns: [`.claude/skills/onyx/offline-patterns.md`](../../.claude/skills/onyx/offline-patterns.md)
+Full guide: [`.claude/skills/onyx/SKILL.md`](../../.claude/skills/onyx/SKILL.md)

@@ -1,0 +1,40 @@
+---
+description: General Kiroku conventions — always active
+alwaysApply: true
+---
+
+# Kiroku — General Rules
+
+**Stack**: React Native · TypeScript (strict) · React Native Onyx · React Navigation
+
+## Post-Edit Checklist
+
+Run these after every change — CI will reject failures:
+
+1. `npx prettier --write <file>` — mandatory on every modified file
+2. `npm run lint-changed` — catch lint errors early
+3. `npm run typecheck-tsgo` — if you changed types, interfaces, or function signatures
+
+## Key File Locations
+
+| What | Where |
+|---|---|
+| Onyx key definitions | `src/ONYXKEYS.ts` |
+| App-wide constants | `src/CONST.ts` |
+| Screen name constants | `src/SCREENS.ts` |
+| Route definitions | `src/ROUTES.ts` |
+| Navigator config | `src/NAVIGATORS.ts` |
+| Onyx action files | `src/libs/actions/` |
+| TypeScript types | `src/types/` |
+
+## Code Style
+
+- **No comments** unless the WHY is non-obvious (a hidden constraint, a workaround for a specific bug). Never describe what the code does.
+- **No docstrings** or multi-line comment blocks.
+- **No unused variables, props, or imports.**
+- TypeScript strict mode is enforced — no `any`, no non-null assertions without justification.
+
+## Full References
+
+- [`CLAUDE.md`](../../CLAUDE.md) — complete development guide
+- [`contributingGuides/STYLE.md`](../../contributingGuides/STYLE.md) — code style conventions

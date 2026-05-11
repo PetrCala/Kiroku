@@ -1,0 +1,39 @@
+---
+description: Navigation conventions — screens, routes, and navigators
+globs: src/**/*Navigator*.tsx, src/**/*Navigator*.ts, src/ROUTES.ts, src/SCREENS.ts, src/NAVIGATORS.ts
+alwaysApply: false
+---
+
+# Navigation
+
+Kiroku uses React Navigation. Three files define the navigation structure:
+
+| File | Purpose |
+|---|---|
+| `src/SCREENS.ts` | Screen name constants |
+| `src/ROUTES.ts` | Route path definitions and builder functions |
+| `src/NAVIGATORS.ts` | Navigator type constants |
+
+## Adding a New Screen
+
+1. Add the screen name constant to `src/SCREENS.ts` first.
+2. Add the route definition (and a `getRoute` builder if it takes params) to `src/ROUTES.ts`, following the existing pattern.
+3. Register the screen in the appropriate navigator component.
+4. Never hardcode route strings — always reference `ROUTES.*` and `SCREENS.*`.
+
+## Navigating
+
+```tsx
+import Navigation from '@libs/Navigation/Navigation';
+import ROUTES from '@src/ROUTES';
+
+// Navigate to a screen
+Navigation.navigate(ROUTES.SOME_SCREEN);
+
+// Navigate with params
+Navigation.navigate(ROUTES.SOME_SCREEN_WITH_PARAM.getRoute(paramValue));
+```
+
+## Full Reference
+
+[`contributingGuides/NAVIGATION.md`](../../contributingGuides/NAVIGATION.md)
