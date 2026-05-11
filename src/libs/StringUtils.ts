@@ -17,10 +17,23 @@ function sanitizeString(str: string): string {
  *  Check if the string would be empty if all invisible characters were removed.
  */
 function isEmptyString(value: string): boolean {
+  // Replace valid surrogate pairs (emoji) with a visible placeholder before stripping invisible
+  // characters. Babel's transform-unicode-property-regex removes the `u` flag from /[\p{C}]/gu,
+  // causing it to match the individual UTF-16 surrogate code units that make up emoji, which
+  // would incorrectly strip them. By protecting valid pairs first, lone surrogates (invisible)
+  // are still removed while emoji are preserved.
+  const withEmojiProtected = value.replace(
+    /[\uD800-\uDBFF][\uDC00-\uDFFF]/g,
+    'X',
+  );
+
   // \p{C} matches all 'Other' characters
   // \p{Z} matches all separators (spaces etc.)
   // Source: http://www.unicode.org/reports/tr18/#General_Category_Property
-  let transformed = value.replace(CONST.REGEX.INVISIBLE_CHARACTERS_GROUPS, '');
+  let transformed = withEmojiProtected.replace(
+    CONST.REGEX.INVISIBLE_CHARACTERS_GROUPS,
+    '',
+  );
 
   // Remove other invisible characters that are not in the above unicode categories
   transformed = transformed.replace(CONST.REGEX.OTHER_INVISIBLE_CHARACTERS, '');

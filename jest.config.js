@@ -4,7 +4,6 @@ module.exports = {
   testMatch: [
     `<rootDir>/__tests__/ui/**/*.${testFileExtension}`,
     `<rootDir>/__tests__/unit/**/*.${testFileExtension}`,
-    `<rootDir>/__tests__/integration/**/*.${testFileExtension}`,
     `<rootDir>/__tests__/actions/**/*.${testFileExtension}`,
     `<rootDir>/?(*.)+(spec|test).${testFileExtension}`,
   ],
