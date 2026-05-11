@@ -27,4 +27,6 @@ Here is the list of technologies you should get acquainted with:
 - Google Firebase
 - Github actions and workflows
 
+For the release workflow specifically, read the [deploying guide](philosophies/DEPLOYING.md). It explains how `master`, `staging`, `production`, internal beta deploys, open beta promotion, deploy locks, and `StagingDeployCash` fit together.
+
 [Discord invitation]: https://discord.gg/mv8zcQz5

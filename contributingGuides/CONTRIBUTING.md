@@ -4,7 +4,7 @@ Greetings, and thank you for your interest in contributing to the Kiroku open so
 
 ## Getting started
 
-Before you can jump into writing code, there are several mandatory things you must do. First, we kindly ask you to read this readme file in its entirety. Once you have done that, go ahead and review our coding practices in [this README file][main README]. If you are not acquainted with the technology stack we employ in this project, make sure to also take a look at [this document][technology README], where you can find a list of concepts you need to familiarize yourself with before you can contribute to this repository.
+Before you can jump into writing code, there are several mandatory things you must do. First, we kindly ask you to read this readme file in its entirety. Once you have done that, go ahead and review our coding practices in [this README file][main README]. If you are not acquainted with the technology stack we employ in this project, make sure to also take a look at [this document][technology README], where you can find a list of concepts you need to familiarize yourself with before you can contribute to this repository. Contributors who need to understand how merged code reaches beta testers should also read the [deploying guide][deploying guide].
 
 ## Join our Discord
 
@@ -32,7 +32,7 @@ signingkey = <your_signing_key>
 program = gpg
 ```
 
-3. [Open a draft pull request](https://docs.github.com/en/free-pro-team@latest/github/collaborating-with-issues-and-pull-requests/creating-a-pull-request-from-a-fork), and make sure to fill in the required fields. All PRs should target the **dev** branch, never the **staging**, or **master** branches.
+3. [Open a draft pull request](https://docs.github.com/en/free-pro-team@latest/github/collaborating-with-issues-and-pull-requests/creating-a-pull-request-from-a-fork), and make sure to fill in the required fields. Normal PRs should target **master**. Do not target **staging** or **production** directly unless you are intentionally using the release-cycle cherry-pick process described in the [deploying guide][deploying guide].
 4. A member of the Kiroku head developer team will automatically be assigned to your pull request for review.
 
 #### Submitting your pull request for review
@@ -51,4 +51,5 @@ program = gpg
 
 [main README]: https://github.com/PetrCala/Kiroku/blob/master/README.md
 [technology README]: https://github.com/PetrCala/Kiroku/blob/master/contributingGuides/TECHNOLOGY.md
+[deploying guide]: https://github.com/PetrCala/Kiroku/blob/master/contributingGuides/philosophies/DEPLOYING.md
 [Discord invitation]: https://discord.gg/mv8zcQz5
