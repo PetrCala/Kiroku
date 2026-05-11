@@ -33,8 +33,7 @@ import {
   toZonedTime,
   fromZonedTime,
 } from 'date-fns-tz';
-import enUS from 'date-fns/locale/en-US';
-import CS_CZ from 'date-fns/locale/cs';
+import {cs as CS_CZ, enUS} from 'date-fns/locale';
 import throttle from 'lodash/throttle';
 import Onyx from 'react-native-onyx';
 import type {ValueOf} from 'type-fest';

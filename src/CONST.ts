@@ -1,5 +1,4 @@
-import dateAdd from 'date-fns/add';
-import dateSubtract from 'date-fns/sub';
+import {add as dateAdd, sub as dateSubtract} from 'date-fns';
 import Config from 'react-native-config';
 import * as KeyCommand from 'react-native-key-command';
 import SCREENS from './SCREENS';
