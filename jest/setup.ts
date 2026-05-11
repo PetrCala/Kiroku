@@ -29,10 +29,6 @@ jest.mock('firebase/auth', () => ({
 
 jest.mock('@react-native-async-storage/async-storage', () => ({}));
 
-// This mock is required as per setup instructions for react-navigation testing
-// https://reactnavigation.org/docs/testing/#mocking-native-modules
-jest.mock('react-native/Libraries/Animated/NativeAnimatedHelper');
-
 // Mock react-native-onyx storage layer because the SQLite storage layer doesn't work in jest.
 // Mocking this file in __mocks__ does not work because jest doesn't support mocking files that are not directly used in the testing project,
 // and we only want to mock the storage layer, not the whole Onyx module.
