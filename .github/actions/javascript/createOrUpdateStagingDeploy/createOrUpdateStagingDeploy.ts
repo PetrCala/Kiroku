@@ -104,8 +104,8 @@ async function run(): Promise<IssuesCreateResponse | void> {
                 PRList.filter((pr) => pr.isVerified).map((pr) => pr.url),
                 deployBlockers.map((blocker) => blocker.url),
                 deployBlockers.filter((blocker) => blocker.isResolved).map((blocker) => blocker.url),
-                currentChecklistData?.internalQAPRList.filter((pr) => pr.isResolved).map((pr) => pr.url),
-                didVersionChange ? false : currentChecklistData.isTimingDashboardChecked,
+                didVersionChange ? false : currentChecklistData.isIOSSmokeChecked,
+                didVersionChange ? false : currentChecklistData.isAndroidSmokeChecked,
                 didVersionChange ? false : currentChecklistData.isFirebaseChecked,
                 didVersionChange ? false : currentChecklistData.isGHStatusChecked,
             );
@@ -127,7 +127,7 @@ async function run(): Promise<IssuesCreateResponse | void> {
                 ...defaultPayload,
                 title: `Deploy Checklist: Kiroku ${format(new Date(), CONST.DATE_FORMAT_STRING)}`,
                 labels: [CONST.LABELS.STAGING_DEPLOY],
-                assignees: [CONST.APPLAUSE_BOT as string].concat(checklistAssignees),
+                assignees: checklistAssignees,
             });
             console.log(`Successfully created new StagingDeployCash! 🎉 ${newChecklist.html_url}`);
             return newChecklist;
