@@ -1,5 +1,8 @@
 name: Create new version
 
+# Expensify-derived version semantics:
+# - master -> staging and staging cherry-picks use BUILD
+# - after production releases and production cherry-picks use PATCH
 on:
   workflow_dispatch:
     inputs:
@@ -51,7 +54,7 @@ jobs:
     if: ${{ fromJSON(needs.validateActor.outputs.HAS_WRITE_ACCESS) }}
 
     outputs:
-      NEW_VERSION: ${{ steps.bumpVersion.outputs.NEW_VERSION }}
+      NEW_VERSION: ${{ steps.exportNewVersion.outputs.NEW_VERSION }}
 
     steps:
       - name: Run turnstyle
@@ -65,8 +68,9 @@ jobs:
         uses: actions/checkout@v4
         with:
           ref: master
-          # The KIROKU_ADMIN_COMMIT_TOKEN is a personal access token tied to KirokuAdmin
-          # This is a workaround to allow pushes to a protected branch
+          # KIROKU_ADMIN_COMMIT_TOKEN is tied to KirokuAdmin. We keep the PR + admin
+          # squash merge flow instead of committing directly so the release workflow can
+          # update protected master without weakening branch protection for regular PRs.
           token: ${{ secrets.KIROKU_ADMIN_COMMIT_TOKEN }}
 
       - name: Setup git for KirokuAdmin
@@ -82,6 +86,22 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.KIROKU_ADMIN_COMMIT_TOKEN }}
           SEMVER_LEVEL: ${{ inputs.SEMVER_LEVEL }}
 
+      - name: Export new version
+        id: exportNewVersion
+        env:
+          NEW_VERSION: ${{ steps.bumpVersion.outputs.NEW_VERSION }}
+        run: |
+          set -eo pipefail
+
+          if [[ -z "$NEW_VERSION" ]]; then
+            echo "::error::bumpVersion did not produce NEW_VERSION"
+            exit 1
+          fi
+
+          echo "NEW_VERSION=$NEW_VERSION" >> "$GITHUB_OUTPUT"
+          echo "NEW_VERSION=$NEW_VERSION" >> "$GITHUB_ENV"
+          echo "New version: $NEW_VERSION" >> "$GITHUB_STEP_SUMMARY"
+
       - name: Commit new version
         run: |
           git add \
@@ -90,16 +110,14 @@ jobs:
             ./android/app/build.gradle \
             ./ios/kiroku/Info.plist \
             ./ios/kirokuTests/Info.plist
-          git commit -m "chore: release ${{ steps.bumpVersion.outputs.NEW_VERSION }}"
+          git commit -m "chore: release $NEW_VERSION"
 
       - name: Push version bump branch
         id: pushVersionBranch
-        env:
-          VERSION: ${{ steps.bumpVersion.outputs.NEW_VERSION }}
         run: |
           set -eo pipefail
 
-          SANITISED_VERSION="${VERSION//[^a-zA-Z0-9._-]/-}"
+          SANITISED_VERSION="${NEW_VERSION//[^a-zA-Z0-9._-]/-}"
           BRANCH_NAME="automation/version-bump/${SANITISED_VERSION}-run-${GITHUB_RUN_ID}"
 
           git switch -c "$BRANCH_NAME"
@@ -111,12 +129,11 @@ jobs:
         id: createVersionPr
         env:
           GH_TOKEN: ${{ secrets.KIROKU_ADMIN_COMMIT_TOKEN }}
-          VERSION: ${{ steps.bumpVersion.outputs.NEW_VERSION }}
           BRANCH_NAME: ${{ steps.pushVersionBranch.outputs.BRANCH_NAME }}
         run: |
           set -eo pipefail
 
-          PR_TITLE="chore: release ${VERSION}"
+          PR_TITLE="chore: release ${NEW_VERSION}"
           PR_BODY=$'## Summary\n- Automated version bump prepared by the deployment workflow.\n\n## Testing\n- Not applicable'
 
           gh pr create \
@@ -132,15 +149,16 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.KIROKU_ADMIN_COMMIT_TOKEN }}
           PR_NUMBER: ${{ steps.createVersionPr.outputs.PR_NUMBER }}
-          VERSION: ${{ steps.bumpVersion.outputs.NEW_VERSION }}
         run: |
           set -eo pipefail
 
+          # The squash commit includes [skip ci] so the automation PR merge cannot
+          # recursively trigger the master -> staging preDeploy workflow.
           gh pr merge "$PR_NUMBER" \
             --admin \
             --squash \
             --delete-branch \
-            --subject "chore: release ${VERSION}" \
+            --subject "chore: release ${NEW_VERSION} [skip ci]" \
             --body ""
 
   announceFailedWorkflow:

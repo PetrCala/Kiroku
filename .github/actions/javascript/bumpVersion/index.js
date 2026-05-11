@@ -1836,6 +1836,9 @@ function isLoopbackAddress(host) {
 /***/ 8088:
 /***/ ((module, __unused_webpack_exports, __nccwpck_require__) => {
 
+"use strict";
+
+
 const debug = __nccwpck_require__(427)
 const { MAX_LENGTH, MAX_SAFE_INTEGER } = __nccwpck_require__(2293)
 const { safeRe: re, t } = __nccwpck_require__(9523)
@@ -1848,7 +1851,7 @@ class SemVer {
 
     if (version instanceof SemVer) {
       if (version.loose === !!options.loose &&
-          version.includePrerelease === !!options.includePrerelease) {
+        version.includePrerelease === !!options.includePrerelease) {
         return version
       } else {
         version = version.version
@@ -1947,11 +1950,25 @@ class SemVer {
       other = new SemVer(other, this.options)
     }
 
-    return (
-      compareIdentifiers(this.major, other.major) ||
-      compareIdentifiers(this.minor, other.minor) ||
-      compareIdentifiers(this.patch, other.patch)
-    )
+    if (this.major < other.major) {
+      return -1
+    }
+    if (this.major > other.major) {
+      return 1
+    }
+    if (this.minor < other.minor) {
+      return -1
+    }
+    if (this.minor > other.minor) {
+      return 1
+    }
+    if (this.patch < other.patch) {
+      return -1
+    }
+    if (this.patch > other.patch) {
+      return 1
+    }
+    return 0
   }
 
   comparePre (other) {
@@ -1996,7 +2013,7 @@ class SemVer {
     do {
       const a = this.build[i]
       const b = other.build[i]
-      debug('prerelease compare', i, a, b)
+      debug('build compare', i, a, b)
       if (a === undefined && b === undefined) {
         return 0
       } else if (b === undefined) {
@@ -2014,6 +2031,19 @@ class SemVer {
   // preminor will bump the version up to the next minor release, and immediately
   // down to pre-release. premajor and prepatch work the same way.
   inc (release, identifier, identifierBase) {
+    if (release.startsWith('pre')) {
+      if (!identifier && identifierBase === false) {
+        throw new Error('invalid increment argument: identifier is empty')
+      }
+      // Avoid an invalid semver results
+      if (identifier) {
+        const match = `-${identifier}`.match(this.options.loose ? re[t.PRERELEASELOOSE] : re[t.PRERELEASE])
+        if (!match || match[1] !== identifier) {
+          throw new Error(`invalid identifier: ${identifier}`)
+        }
+      }
+    }
+
     switch (release) {
       case 'premajor':
         this.prerelease.length = 0
@@ -2043,6 +2073,12 @@ class SemVer {
           this.inc('patch', identifier, identifierBase)
         }
         this.inc('pre', identifier, identifierBase)
+        break
+      case 'release':
+        if (this.prerelease.length === 0) {
+          throw new Error(`version ${this.raw} is not a prerelease`)
+        }
+        this.prerelease.length = 0
         break
 
       case 'major':
@@ -2086,10 +2122,6 @@ class SemVer {
       // 1.0.0 'pre' would become 1.0.0-0 which is the wrong direction.
       case 'pre': {
         const base = Number(identifierBase) ? 1 : 0
-
-        if (!identifier && identifierBase === false) {
-          throw new Error('invalid increment argument: identifier is empty')
-        }
 
         if (this.prerelease.length === 0) {
           this.prerelease = [base]
@@ -2145,6 +2177,9 @@ module.exports = SemVer
 /***/ 6688:
 /***/ ((module, __unused_webpack_exports, __nccwpck_require__) => {
 
+"use strict";
+
+
 const SemVer = __nccwpck_require__(8088)
 const major = (a, loose) => new SemVer(a, loose).major
 module.exports = major
@@ -2155,6 +2190,9 @@ module.exports = major
 /***/ 8447:
 /***/ ((module, __unused_webpack_exports, __nccwpck_require__) => {
 
+"use strict";
+
+
 const SemVer = __nccwpck_require__(8088)
 const minor = (a, loose) => new SemVer(a, loose).minor
 module.exports = minor
@@ -2164,6 +2202,9 @@ module.exports = minor
 
 /***/ 5925:
 /***/ ((module, __unused_webpack_exports, __nccwpck_require__) => {
+
+"use strict";
+
 
 const SemVer = __nccwpck_require__(8088)
 const parse = (version, options, throwErrors = false) => {
@@ -2188,6 +2229,9 @@ module.exports = parse
 /***/ 2866:
 /***/ ((module, __unused_webpack_exports, __nccwpck_require__) => {
 
+"use strict";
+
+
 const SemVer = __nccwpck_require__(8088)
 const patch = (a, loose) => new SemVer(a, loose).patch
 module.exports = patch
@@ -2197,6 +2241,9 @@ module.exports = patch
 
 /***/ 4016:
 /***/ ((module, __unused_webpack_exports, __nccwpck_require__) => {
+
+"use strict";
+
 
 const parse = __nccwpck_require__(5925)
 const prerelease = (version, options) => {
@@ -2210,6 +2257,9 @@ module.exports = prerelease
 
 /***/ 2293:
 /***/ ((module) => {
+
+"use strict";
+
 
 // Note: this is the semver.org version of the spec that it implements
 // Not necessarily the package version of this code.
@@ -2253,6 +2303,9 @@ module.exports = {
 /***/ 427:
 /***/ ((module) => {
 
+"use strict";
+
+
 const debug = (
   typeof process === 'object' &&
   process.env &&
@@ -2269,8 +2322,15 @@ module.exports = debug
 /***/ 2463:
 /***/ ((module) => {
 
+"use strict";
+
+
 const numeric = /^[0-9]+$/
 const compareIdentifiers = (a, b) => {
+  if (typeof a === 'number' && typeof b === 'number') {
+    return a === b ? 0 : a < b ? -1 : 1
+  }
+
   const anum = numeric.test(a)
   const bnum = numeric.test(b)
 
@@ -2299,6 +2359,9 @@ module.exports = {
 /***/ 785:
 /***/ ((module) => {
 
+"use strict";
+
+
 // parse out just the options we care about
 const looseOption = Object.freeze({ loose: true })
 const emptyOpts = Object.freeze({ })
@@ -2321,6 +2384,9 @@ module.exports = parseOptions
 /***/ 9523:
 /***/ ((module, exports, __nccwpck_require__) => {
 
+"use strict";
+
+
 const {
   MAX_SAFE_COMPONENT_LENGTH,
   MAX_SAFE_BUILD_LENGTH,
@@ -2333,6 +2399,7 @@ exports = module.exports = {}
 const re = exports.re = []
 const safeRe = exports.safeRe = []
 const src = exports.src = []
+const safeSrc = exports.safeSrc = []
 const t = exports.t = {}
 let R = 0
 
@@ -2365,6 +2432,7 @@ const createToken = (name, value, isGlobal) => {
   debug(name, index, value)
   t[name] = index
   src[index] = value
+  safeSrc[index] = safe
   re[index] = new RegExp(value, isGlobal ? 'g' : undefined)
   safeRe[index] = new RegExp(safe, isGlobal ? 'g' : undefined)
 }
@@ -2397,12 +2465,14 @@ createToken('MAINVERSIONLOOSE', `(${src[t.NUMERICIDENTIFIERLOOSE]})\\.` +
 
 // ## Pre-release Version Identifier
 // A numeric identifier, or a non-numeric identifier.
+// Non-numberic identifiers include numberic identifiers but can be longer.
+// Therefore non-numberic identifiers must go first.
 
-createToken('PRERELEASEIDENTIFIER', `(?:${src[t.NUMERICIDENTIFIER]
-}|${src[t.NONNUMERICIDENTIFIER]})`)
+createToken('PRERELEASEIDENTIFIER', `(?:${src[t.NONNUMERICIDENTIFIER]
+}|${src[t.NUMERICIDENTIFIER]})`)
 
-createToken('PRERELEASEIDENTIFIERLOOSE', `(?:${src[t.NUMERICIDENTIFIERLOOSE]
-}|${src[t.NONNUMERICIDENTIFIER]})`)
+createToken('PRERELEASEIDENTIFIERLOOSE', `(?:${src[t.NONNUMERICIDENTIFIER]
+}|${src[t.NUMERICIDENTIFIERLOOSE]})`)
 
 // ## Pre-release Version
 // Hyphen, followed by one or more dot-separated pre-release version
@@ -25628,124 +25698,23 @@ exports["default"] = _default;
 
 /***/ }),
 
-/***/ 7361:
-/***/ (function(__unused_webpack_module, exports, __nccwpck_require__) {
-
-"use strict";
-
-var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
-    if (k2 === undefined) k2 = k;
-    var desc = Object.getOwnPropertyDescriptor(m, k);
-    if (!desc || ("get" in desc ? !m.__esModule : desc.writable || desc.configurable)) {
-      desc = { enumerable: true, get: function() { return m[k]; } };
-    }
-    Object.defineProperty(o, k2, desc);
-}) : (function(o, m, k, k2) {
-    if (k2 === undefined) k2 = k;
-    o[k2] = m[k];
-}));
-var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (function(o, v) {
-    Object.defineProperty(o, "default", { enumerable: true, value: v });
-}) : function(o, v) {
-    o["default"] = v;
-});
-var __importStar = (this && this.__importStar) || function (mod) {
-    if (mod && mod.__esModule) return mod;
-    var result = {};
-    if (mod != null) for (var k in mod) if (k !== "default" && Object.prototype.hasOwnProperty.call(mod, k)) __createBinding(result, mod, k);
-    __setModuleDefault(result, mod);
-    return result;
-};
-var __importDefault = (this && this.__importDefault) || function (mod) {
-    return (mod && mod.__esModule) ? mod : { "default": mod };
-};
-Object.defineProperty(exports, "__esModule", ({ value: true }));
-const core = __importStar(__nccwpck_require__(2186));
-const child_process_1 = __nccwpck_require__(2081);
-const fs_1 = __importDefault(__nccwpck_require__(7147));
-const util_1 = __nccwpck_require__(3837);
-const nativeVersionUpdater_1 = __nccwpck_require__(9095);
-const versionUpdater = __importStar(__nccwpck_require__(8982));
-const exec = (0, util_1.promisify)(child_process_1.exec);
-/**
- * Update the native app versions.
- */
-function updateNativeVersions(version) {
-    console.log(`Updating native versions to ${version}`);
-    // Update Android
-    const androidVersionCode = (0, nativeVersionUpdater_1.generateAndroidVersionCode)(version);
-    (0, nativeVersionUpdater_1.updateAndroidVersion)(version, androidVersionCode)
-        .then(() => {
-        console.log('Successfully updated Android!');
-    })
-        .catch((err) => {
-        console.error('Error updating Android');
-        core.setFailed(err);
-    });
-    // Update iOS
-    try {
-        const cfBundleVersion = (0, nativeVersionUpdater_1.updateiOSVersion)(version);
-        if (typeof cfBundleVersion === 'string' && cfBundleVersion.split('.').length === 4) {
-            core.setOutput('NEW_IOS_VERSION', cfBundleVersion);
-            console.log('Successfully updated iOS!');
-        }
-        else {
-            core.setFailed(`Failed to set NEW_IOS_VERSION. CFBundleVersion: ${cfBundleVersion}`);
-        }
-    }
-    catch (err) {
-        console.error('Error updating iOS');
-        if (err instanceof Error) {
-            core.setFailed(err);
-        }
-    }
-}
-let semanticVersionLevel = core.getInput('SEMVER_LEVEL', { required: true });
-if (!semanticVersionLevel || !versionUpdater.isValidSemverLevel(semanticVersionLevel)) {
-    semanticVersionLevel = versionUpdater.SEMANTIC_VERSION_LEVELS.BUILD;
-    console.log(`Invalid input for 'SEMVER_LEVEL': ${semanticVersionLevel}`, `Defaulting to: ${semanticVersionLevel}`);
-}
-const { version: previousVersion } = JSON.parse(fs_1.default.readFileSync('./package.json').toString());
-if (!previousVersion) {
-    core.setFailed('Error: Could not read package.json');
-}
-const newVersion = versionUpdater.incrementVersion(previousVersion ?? '', semanticVersionLevel);
-console.log(`Previous version: ${previousVersion}`, `New version: ${newVersion}`);
-updateNativeVersions(newVersion);
-console.log(`Setting npm version to ${newVersion}`);
-exec(`npm --no-git-tag-version version ${newVersion} -m "Update version to ${newVersion}"`)
-    .then(({ stdout }) => {
-    // NPM and native versions successfully updated, output new version
-    console.log(stdout);
-    core.setOutput('NEW_VERSION', newVersion);
-})
-    .catch(({ stdout, stderr }) => {
-    // Log errors and retry
-    console.log(stdout);
-    console.error(stderr);
-    core.setFailed('An error occurred in the `npm version` command');
-});
-
-
-/***/ }),
-
 /***/ 9095:
-/***/ (function(__unused_webpack_module, exports, __nccwpck_require__) {
+/***/ ((__unused_webpack_module, exports, __nccwpck_require__) => {
 
 "use strict";
 
-var __importDefault = (this && this.__importDefault) || function (mod) {
-    return (mod && mod.__esModule) ? mod : { "default": mod };
-};
 Object.defineProperty(exports, "__esModule", ({ value: true }));
-exports.PLIST_PATH_TEST = exports.PLIST_PATH = exports.BUILD_GRADLE_PATH = exports.generateAndroidVersionCode = exports.updateAndroidVersion = exports.updateiOSVersion = void 0;
+exports.PLIST_PATH_TEST = exports.PLIST_PATH = exports.BUILD_GRADLE_PATH = void 0;
+exports.updateiOSVersion = updateiOSVersion;
+exports.updateAndroidVersion = updateAndroidVersion;
+exports.generateAndroidVersionCode = generateAndroidVersionCode;
 const child_process_1 = __nccwpck_require__(2081);
 const fs_1 = __nccwpck_require__(7147);
-const path_1 = __importDefault(__nccwpck_require__(1017));
-const major_1 = __importDefault(__nccwpck_require__(6688));
-const minor_1 = __importDefault(__nccwpck_require__(8447));
-const patch_1 = __importDefault(__nccwpck_require__(2866));
-const prerelease_1 = __importDefault(__nccwpck_require__(4016));
+const path_1 = __nccwpck_require__(1017);
+const major_1 = __nccwpck_require__(6688);
+const minor_1 = __nccwpck_require__(8447);
+const patch_1 = __nccwpck_require__(2866);
+const prerelease_1 = __nccwpck_require__(4016);
 // Filepath constants
 const BUILD_GRADLE_PATH = process.env.NODE_ENV === 'test'
     ? path_1.default.resolve(__dirname, '../../android/app/build.gradle')
@@ -25770,11 +25739,11 @@ function padToTwoDigits(value) {
  * As a result, our max version is 99.99.99-99.
  */
 function generateAndroidVersionCode(npmVersion) {
+    var _a, _b, _c, _d;
     // All Android versions will be prefixed with '10' due to previous versioning
     const prefix = '10';
-    return ''.concat(prefix, padToTwoDigits((0, major_1.default)(npmVersion) ?? 0), padToTwoDigits((0, minor_1.default)(npmVersion) ?? 0), padToTwoDigits((0, patch_1.default)(npmVersion) ?? 0), padToTwoDigits(Number((0, prerelease_1.default)(npmVersion)) ?? 0));
+    return ''.concat(prefix, padToTwoDigits((_a = (0, major_1.default)(npmVersion)) !== null && _a !== void 0 ? _a : 0), padToTwoDigits((_b = (0, minor_1.default)(npmVersion)) !== null && _b !== void 0 ? _b : 0), padToTwoDigits((_c = (0, patch_1.default)(npmVersion)) !== null && _c !== void 0 ? _c : 0), padToTwoDigits((_d = Number((0, prerelease_1.default)(npmVersion))) !== null && _d !== void 0 ? _d : 0));
 }
-exports.generateAndroidVersionCode = generateAndroidVersionCode;
 /**
  * Update the Android app versionName and versionCode.
  */
@@ -25790,7 +25759,6 @@ function updateAndroidVersion(versionName, versionCode) {
     })
         .then(updatedContent => fs_1.promises.writeFile(BUILD_GRADLE_PATH, updatedContent, { encoding: 'utf8' }));
 }
-exports.updateAndroidVersion = updateAndroidVersion;
 /**
  * Update the iOS app version.
  * Updates the CFBundleShortVersionString and the CFBundleVersion.
@@ -25809,7 +25777,6 @@ function updateiOSVersion(version) {
     // Return the cfVersion so we can set the NEW_IOS_VERSION in ios.yml
     return cfVersion;
 }
-exports.updateiOSVersion = updateiOSVersion;
 
 
 /***/ }),
@@ -25820,7 +25787,9 @@ exports.updateiOSVersion = updateiOSVersion;
 "use strict";
 
 Object.defineProperty(exports, "__esModule", ({ value: true }));
-exports.getPreviousVersion = exports.incrementPatch = exports.incrementMinor = exports.SEMANTIC_VERSION_LEVELS = exports.MAX_INCREMENTS = exports.incrementVersion = exports.getVersionStringFromNumber = exports.getVersionNumberFromString = exports.isValidSemverLevel = void 0;
+exports.incrementPatch = exports.incrementMinor = exports.SEMANTIC_VERSION_LEVELS = exports.MAX_INCREMENTS = exports.incrementVersion = exports.getVersionStringFromNumber = exports.getVersionNumberFromString = void 0;
+exports.isValidSemverLevel = isValidSemverLevel;
+exports.getPreviousVersion = getPreviousVersion;
 const SEMANTIC_VERSION_LEVELS = {
     MAJOR: 'MAJOR',
     MINOR: 'MINOR',
@@ -25833,7 +25802,6 @@ exports.MAX_INCREMENTS = MAX_INCREMENTS;
 function isValidSemverLevel(str) {
     return Object.keys(SEMANTIC_VERSION_LEVELS).includes(str);
 }
-exports.isValidSemverLevel = isValidSemverLevel;
 /**
  * Transforms a versions string into a number
  */
@@ -25914,7 +25882,6 @@ function getPreviousVersion(currentVersion, level) {
     }
     return getVersionStringFromNumber(major, minor, patch, build - 1);
 }
-exports.getPreviousVersion = getPreviousVersion;
 
 
 /***/ }),
@@ -27814,12 +27781,105 @@ module.exports = parseParams
 /******/ 	if (typeof __nccwpck_require__ !== 'undefined') __nccwpck_require__.ab = __dirname + "/";
 /******/ 	
 /************************************************************************/
-/******/ 	
-/******/ 	// startup
-/******/ 	// Load entry module and return exports
-/******/ 	// This entry module is referenced by other modules so it can't be inlined
-/******/ 	var __webpack_exports__ = __nccwpck_require__(7361);
-/******/ 	module.exports = __webpack_exports__;
-/******/ 	
+var __webpack_exports__ = {};
+// This entry need to be wrapped in an IIFE because it need to be in strict mode.
+(() => {
+"use strict";
+var exports = __webpack_exports__;
+
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+const core = __nccwpck_require__(2186);
+const child_process_1 = __nccwpck_require__(2081);
+const fs_1 = __nccwpck_require__(7147);
+const util_1 = __nccwpck_require__(3837);
+const nativeVersionUpdater_1 = __nccwpck_require__(9095);
+const versionUpdater = __nccwpck_require__(8982);
+const execFile = (0, util_1.promisify)(child_process_1.execFile);
+function getErrorMessage(error) {
+    if (error instanceof Error) {
+        return error.message;
+    }
+    return String(error);
+}
+function getSemverLevelInput() {
+    const semanticVersionLevel = core
+        .getInput('SEMVER_LEVEL', { required: true })
+        .trim()
+        .toUpperCase();
+    if (!semanticVersionLevel ||
+        !versionUpdater.isValidSemverLevel(semanticVersionLevel)) {
+        throw new Error(`Invalid input for 'SEMVER_LEVEL': ${semanticVersionLevel || '<empty>'}. Expected one of: ${Object.values(versionUpdater.SEMANTIC_VERSION_LEVELS).join(', ')}`);
+    }
+    return semanticVersionLevel;
+}
+function getPreviousVersion() {
+    const { version: previousVersion } = JSON.parse(fs_1.default.readFileSync('./package.json', { encoding: 'utf8' }));
+    if (typeof previousVersion !== 'string' || previousVersion.length === 0) {
+        throw new Error('Could not read version from package.json');
+    }
+    return previousVersion;
+}
+/**
+ * Update the native app versions.
+ */
+async function updateNativeVersions(version) {
+    console.log(`Updating native versions to ${version}`);
+    // Update Android
+    const androidVersionCode = (0, nativeVersionUpdater_1.generateAndroidVersionCode)(version);
+    try {
+        await (0, nativeVersionUpdater_1.updateAndroidVersion)(version, androidVersionCode);
+        console.log('Successfully updated Android!');
+    }
+    catch (error) {
+        throw new Error(`Error updating Android: ${getErrorMessage(error)}`);
+    }
+    // Update iOS
+    try {
+        const cfBundleVersion = (0, nativeVersionUpdater_1.updateiOSVersion)(version);
+        if (typeof cfBundleVersion === 'string' &&
+            cfBundleVersion.split('.').length === 4) {
+            core.setOutput('NEW_IOS_VERSION', cfBundleVersion);
+            console.log('Successfully updated iOS!');
+        }
+        else {
+            throw new Error(`Failed to set NEW_IOS_VERSION. CFBundleVersion: ${cfBundleVersion}`);
+        }
+    }
+    catch (error) {
+        throw new Error(`Error updating iOS: ${getErrorMessage(error)}`);
+    }
+}
+async function updateNpmVersion(version) {
+    console.log(`Setting npm version to ${version}`);
+    const { stdout, stderr } = await execFile('npm', [
+        '--no-git-tag-version',
+        'version',
+        version,
+        '-m',
+        `Update version to ${version}`,
+    ]);
+    if (stdout) {
+        console.log(stdout);
+    }
+    if (stderr) {
+        console.error(stderr);
+    }
+}
+async function run() {
+    const semanticVersionLevel = getSemverLevelInput();
+    const previousVersion = getPreviousVersion();
+    const newVersion = versionUpdater.incrementVersion(previousVersion, semanticVersionLevel);
+    console.log(`Previous version: ${previousVersion}`, `New version: ${newVersion}`);
+    await updateNativeVersions(newVersion);
+    await updateNpmVersion(newVersion);
+    core.setOutput('NEW_VERSION', newVersion);
+}
+run().catch((error) => {
+    core.setFailed(getErrorMessage(error));
+});
+
+})();
+
+module.exports = __webpack_exports__;
 /******/ })()
 ;

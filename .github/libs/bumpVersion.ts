@@ -1,22 +1,21 @@
 import {promisify} from 'util';
 import * as fs from 'fs';
-import {exec as execCallback} from 'child_process';
+import {execFile as execFileCallback} from 'child_process';
 import yargs from 'yargs/yargs';
 import {hideBin} from 'yargs/helpers';
-import {SEMANTIC_VERSION_LEVELS, incrementVersion} from './versionUpdater';
+import {
+  SEMANTIC_VERSION_LEVELS,
+  incrementVersion,
+  isValidSemverLevel,
+} from './versionUpdater';
+import type {SemverLevel} from './versionUpdater';
 import {
   updateAndroidVersion,
   updateiOSVersion,
   generateAndroidVersionCode,
 } from './nativeVersionUpdater';
 
-const exec = promisify(execCallback) as (
-  command: string,
-) => Promise<{stdout: string; stderr: string}>;
-
-interface Arguments {
-  SEMVER_LEVEL: string;
-}
+const execFile = promisify(execFileCallback);
 
 const argv = yargs(hideBin(process.argv))
   .option('SEMVER_LEVEL', {
@@ -26,6 +25,13 @@ const argv = yargs(hideBin(process.argv))
     demandOption: true,
   })
   .parseSync();
+
+function getErrorMessage(error: unknown): string {
+  if (error instanceof Error) {
+    return error.message;
+  }
+  return String(error);
+}
 
 /**
  * Update the native app versions.
@@ -37,9 +43,8 @@ async function updateNativeVersions(version: string): Promise<void> {
   try {
     const androidVersionCode = generateAndroidVersionCode(version);
     await updateAndroidVersion(version, androidVersionCode);
-  } catch (err: any) {
-    console.error('Error updating Android:', err);
-    process.exit(1);
+  } catch (error) {
+    throw new Error(`Error updating Android: ${getErrorMessage(error)}`);
   }
 
   // Update iOS
@@ -49,52 +54,60 @@ async function updateNativeVersions(version: string): Promise<void> {
       typeof cfBundleVersion !== 'string' ||
       cfBundleVersion.split('.').length !== 4
     ) {
-      console.error(
+      throw new Error(
         `Failed to update iOS version. CFBundleVersion: ${cfBundleVersion}`,
       );
-      process.exit(1);
     }
-  } catch (err: any) {
-    console.error('Error updating iOS:', err);
-    process.exit(1);
+  } catch (error) {
+    throw new Error(`Error updating iOS: ${getErrorMessage(error)}`);
   }
 }
 
-// Define a type representing the values of the enum
-type SemanticVersionLevel =
-  (typeof SEMANTIC_VERSION_LEVELS)[keyof typeof SEMANTIC_VERSION_LEVELS];
+function getSemverLevelInput(): SemverLevel {
+  const semanticVersionLevel = String(argv.SEMVER_LEVEL ?? '')
+    .trim()
+    .toUpperCase();
+  if (!semanticVersionLevel || !isValidSemverLevel(semanticVersionLevel)) {
+    throw new Error(
+      `Invalid input for 'SEMVER_LEVEL': ${
+        semanticVersionLevel || '<empty>'
+      }. Expected one of: ${Object.values(SEMANTIC_VERSION_LEVELS).join(', ')}`,
+    );
+  }
 
-let semanticVersionLevel = argv.SEMVER_LEVEL as SemanticVersionLevel;
-
-if (
-  !semanticVersionLevel ||
-  !Object.values(SEMANTIC_VERSION_LEVELS).includes(semanticVersionLevel)
-) {
-  console.error(`Invalid input for 'SEMVER_LEVEL': ${semanticVersionLevel}`);
-  process.exit(1);
+  return semanticVersionLevel;
 }
 
-interface PackageJson {
-  version: string;
-  [key: string]: any;
-}
+type PackageJson = {
+  version?: unknown;
+};
 
-try {
+async function run(): Promise<void> {
+  const semanticVersionLevel = getSemverLevelInput();
   const packageJsonContent = fs.readFileSync('./package.json', 'utf8');
   const packageJson: PackageJson = JSON.parse(packageJsonContent);
-  const previousVersion: string = packageJson.version;
+  const previousVersion = packageJson.version;
+  if (typeof previousVersion !== 'string' || previousVersion.length === 0) {
+    throw new Error('Could not read version from package.json');
+  }
 
   const newVersion = incrementVersion(previousVersion, semanticVersionLevel);
 
-  updateNativeVersions(newVersion);
+  await updateNativeVersions(newVersion);
 
-  exec(
-    `npm --no-git-tag-version version ${newVersion} -m "Update version to ${newVersion}"`,
-  );
+  await execFile('npm', [
+    '--no-git-tag-version',
+    'version',
+    newVersion,
+    '-m',
+    `Update version to ${newVersion}`,
+  ]);
 
   // Output only the new version
   console.log(newVersion);
-} catch (error) {
-  console.error('An error occurred:', error);
-  process.exit(1);
 }
+
+run().catch(error => {
+  console.error('An error occurred:', getErrorMessage(error));
+  process.exit(1);
+});
