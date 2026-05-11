@@ -34,26 +34,192 @@ declare -r NOTE_DONT_EDIT='/**
  */
 '
 
-# This stores all the process IDs of the ncc commands so they can run in parallel
-declare ASYNC_BUILDS
+declare -a SELECTED_ACTIONS
+declare -a ACTIVE_PIDS
+declare -a ACTIVE_ACTIONS
+declare -a ACTIVE_OUTPUT_FILES
+declare EXIT_CODE=0
 
-for ((i = 0; i < ${#GITHUB_ACTIONS[@]}; i++)); do
-    ACTION=${GITHUB_ACTIONS[$i]}
+function usage {
+    echo 'Usage: npm run gh-actions-build -- [actionName ...]'
+    echo
+    echo 'Examples:'
+    echo '  npm run gh-actions-build'
+    echo '  npm run gh-actions-build -- bumpVersion'
+    echo '  GHA_BUILD_CONCURRENCY=2 npm run gh-actions-build'
+}
+
+function getDefaultConcurrency {
+    if [[ -n "${GHA_BUILD_CONCURRENCY:-}" ]]; then
+        echo "$GHA_BUILD_CONCURRENCY"
+        return
+    fi
+
+    if [[ -n "${CI:-}" ]]; then
+        echo 2
+        return
+    fi
+
+    echo 1
+}
+
+declare BUILD_CONCURRENCY
+BUILD_CONCURRENCY="$(getDefaultConcurrency)"
+
+if [[ ! "$BUILD_CONCURRENCY" =~ ^[1-9][0-9]*$ ]]; then
+    echo "Invalid GHA_BUILD_CONCURRENCY: $BUILD_CONCURRENCY"
+    exit 1
+fi
+
+function actionName {
+    basename "$(dirname "$1")"
+}
+
+function hasSelectedAction {
+    local CANDIDATE=$1
+
+    for SELECTED_ACTION in "${SELECTED_ACTIONS[@]}"; do
+        if [[ "$SELECTED_ACTION" == "$CANDIDATE" ]]; then
+            return 0
+        fi
+    done
+
+    return 1
+}
+
+function appendSelectedAction {
+    local ACTION=$1
+
+    if hasSelectedAction "$ACTION"; then
+        return
+    fi
+
+    SELECTED_ACTIONS+=("$ACTION")
+}
+
+function selectActions {
+    if [[ $# -eq 0 ]]; then
+        SELECTED_ACTIONS=("${GITHUB_ACTIONS[@]}")
+        return
+    fi
+
+    for REQUESTED_ACTION in "$@"; do
+        if [[ "$REQUESTED_ACTION" == '-h' || "$REQUESTED_ACTION" == '--help' ]]; then
+            usage
+            exit 0
+        fi
+
+        local FOUND=false
+        for ACTION in "${GITHUB_ACTIONS[@]}"; do
+            local NAME
+            NAME=$(actionName "$ACTION")
+            local SOURCE_FILE
+            SOURCE_FILE=$(basename "$ACTION")
+            local RELATIVE_PATH
+            RELATIVE_PATH="${ACTION#"$ACTIONS_DIR"/}"
+
+            if [[ "$REQUESTED_ACTION" == "$NAME" ||
+                "$REQUESTED_ACTION" == "$SOURCE_FILE" ||
+                "$REQUESTED_ACTION" == "$RELATIVE_PATH" ||
+                "$REQUESTED_ACTION" == "$ACTION" ]]; then
+                appendSelectedAction "$ACTION"
+                FOUND=true
+            fi
+        done
+
+        if [[ "$FOUND" != true ]]; then
+            echo "Unknown GitHub Action: $REQUESTED_ACTION"
+            usage
+            exit 1
+        fi
+    done
+}
+
+function cleanupBuilds {
+    if [[ ${#ACTIVE_PIDS[@]} -eq 0 ]]; then
+        return
+    fi
+
+    echo 'Stopping active ncc builds...'
+    kill "${ACTIVE_PIDS[@]}" 2>/dev/null || true
+
+    for PID in "${ACTIVE_PIDS[@]}"; do
+        wait "$PID" 2>/dev/null || true
+    done
+}
+
+trap 'cleanupBuilds; exit 130' INT TERM
+
+function prependCompiledFileNote {
+    local OUTPUT_FILE=$1
+    local TEMP_OUTPUT_FILE="$OUTPUT_FILE.tmp"
+
+    printf '%s' "$NOTE_DONT_EDIT" >"$TEMP_OUTPUT_FILE"
+    cat "$OUTPUT_FILE" >>"$TEMP_OUTPUT_FILE"
+    mv "$TEMP_OUTPUT_FILE" "$OUTPUT_FILE"
+}
+
+function startBuildAction {
+    local ACTION=$1
+    local ACTION_DIR
     ACTION_DIR=$(dirname "$ACTION")
+    local OUTPUT_FILE="$ACTION_DIR/index.js"
 
-    # Build the action in the background
-    ncc build "$ACTION" -o "$ACTION_DIR" &
-    ASYNC_BUILDS[i]=$!
+    # Type checking is handled by separate workflows. Keeping ncc in transpile-only
+    # mode makes action bundling independent from unrelated app TypeScript errors.
+    ncc build "$ACTION" --transpile-only -o "$ACTION_DIR" &
+
+    ACTIVE_PIDS+=("$!")
+    ACTIVE_ACTIONS+=("$ACTION")
+    ACTIVE_OUTPUT_FILES+=("$OUTPUT_FILE")
+}
+
+function removeActiveBuild {
+    local INDEX=$1
+
+    ACTIVE_PIDS=("${ACTIVE_PIDS[@]:0:$INDEX}" "${ACTIVE_PIDS[@]:$((INDEX + 1))}")
+    ACTIVE_ACTIONS=("${ACTIVE_ACTIONS[@]:0:$INDEX}" "${ACTIVE_ACTIONS[@]:$((INDEX + 1))}")
+    ACTIVE_OUTPUT_FILES=("${ACTIVE_OUTPUT_FILES[@]:0:$INDEX}" "${ACTIVE_OUTPUT_FILES[@]:$((INDEX + 1))}")
+}
+
+function waitForActiveBuild {
+    local INDEX=$1
+    local PID=${ACTIVE_PIDS[$INDEX]}
+    local ACTION=${ACTIVE_ACTIONS[$INDEX]}
+    local OUTPUT_FILE=${ACTIVE_OUTPUT_FILES[$INDEX]}
+    local NAME
+    NAME=$(actionName "$ACTION")
+
+    if wait "$PID"; then
+        prependCompiledFileNote "$OUTPUT_FILE"
+        echo "Built $NAME"
+    else
+        local RESULT=$?
+        echo "Failed to build $NAME"
+        EXIT_CODE=$RESULT
+    fi
+
+    removeActiveBuild "$INDEX"
+}
+
+function waitForOpenBuildSlot {
+    while [[ ${#ACTIVE_PIDS[@]} -ge "$BUILD_CONCURRENCY" ]]; do
+        waitForActiveBuild 0
+    done
+}
+
+selectActions "$@"
+
+echo "Building ${#SELECTED_ACTIONS[@]} GitHub Action(s) with concurrency $BUILD_CONCURRENCY"
+
+for ACTION in "${SELECTED_ACTIONS[@]}"; do
+    waitForOpenBuildSlot
+
+    startBuildAction "$ACTION"
 done
 
-for ((i = 0; i < ${#GITHUB_ACTIONS[@]}; i++)); do
-    ACTION=${GITHUB_ACTIONS[$i]}
-    ACTION_DIR=$(dirname "$ACTION")
-
-    # Wait for the background build to finish
-    wait "${ASYNC_BUILDS[$i]}"
-
-    # Prepend the warning note to the top of the compiled file
-    OUTPUT_FILE="$ACTION_DIR/index.js"
-    echo "$NOTE_DONT_EDIT$(cat "$OUTPUT_FILE")" >"$OUTPUT_FILE"
+while [[ ${#ACTIVE_PIDS[@]} -gt 0 ]]; do
+    waitForActiveBuild 0
 done
+
+exit "$EXIT_CODE"
