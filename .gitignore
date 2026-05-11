@@ -133,3 +133,6 @@ web-build/
 
 # Rock Framework
 .rock/
+
+# Claude
+.claude/worktrees/
