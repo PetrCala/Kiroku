@@ -50,8 +50,6 @@ if [[ "$SHOW_WARNINGS" == "false" ]]; then
     ESLINT_ARGS+=(--quiet)
 fi
 ESLINT_ARGS+=(
-    --concurrency=auto
-    --no-warn-ignored
     "${PASSTHROUGH_ARGS[@]}"
 )
 
