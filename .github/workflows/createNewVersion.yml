@@ -152,13 +152,14 @@ jobs:
         run: |
           set -eo pipefail
 
-          # The squash commit includes [skip ci] so the automation PR merge cannot
-          # recursively trigger the master -> staging preDeploy workflow.
+          # Keep the release commit eligible for push-triggered staging deploys.
+          # preDeploy prevents recursion by skipping deploy actions for KirokuAdmin
+          # and automation/version-bump/* PRs.
           gh pr merge "$PR_NUMBER" \
             --admin \
             --squash \
             --delete-branch \
-            --subject "chore: release ${NEW_VERSION} [skip ci]" \
+            --subject "chore: release ${NEW_VERSION}" \
             --body ""
 
   announceFailedWorkflow:
