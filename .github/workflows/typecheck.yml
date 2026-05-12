@@ -1,3 +1,4 @@
+# TypeScript type-checking workflow
 name: TypeScript Checks
 
 on:
