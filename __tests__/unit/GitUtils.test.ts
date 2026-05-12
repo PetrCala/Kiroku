@@ -1,6 +1,9 @@
 import type {CommitType} from '@github/libs/GitUtils';
 import GitUtils from '@github/libs/GitUtils';
-import {getPreviousVersion, SEMANTIC_VERSION_LEVELS} from '@github/libs/versionUpdater';
+import {
+  getPreviousVersion,
+  SEMANTIC_VERSION_LEVELS,
+} from '@github/libs/versionUpdater';
 
 type ExampleDataType = {
   input: CommitType[];
