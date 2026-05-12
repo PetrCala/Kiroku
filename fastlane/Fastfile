@@ -214,20 +214,7 @@ platform :ios do
     begin
       upload_to_testflight(
           api_key_path: "./ios/ios-fastlane-json-key.json",
-          distribute_external: true,
-          notify_external_testers: true,
-          changelog: "Thank your being a beta tester! Please provide feedback and report any issues you encounter.",
-          groups: ["Beta"],
-          demo_account_required: true,
-          beta_app_review_info: {
-              contact_email: ENV["APPLE_CONTACT_EMAIL"],
-              contact_first_name: "Petr",
-              contact_last_name: "Čala",
-              contact_phone: ENV["APPLE_CONTACT_PHONE"],
-              demo_account_name: ENV["APPLE_DEMO_EMAIL"],
-              demo_account_password: ENV["APPLE_DEMO_PASSWORD"],
-              notes: "You should be able to login using the provided credentials."
-          }
+          distribute_external: false,
       )
 
     # upload_symbols_to_crashlytics(
@@ -242,6 +229,27 @@ platform :ios do
 
   desc "Move app to App Store Review"
   lane :production do
+    upload_to_testflight(
+        api_key_path: "./ios/ios-fastlane-json-key.json",
+        distribute_external: true,
+        notify_external_testers: true,
+        changelog: ENV.fetch("TESTFLIGHT_CHANGELOG", "Improvements and bug fixes."),
+        groups: ["Beta"],
+        demo_account_required: true,
+        beta_app_review_info: {
+            contact_email: ENV["APPLE_CONTACT_EMAIL"],
+            contact_first_name: "Petr",
+            contact_last_name: "Čala",
+            contact_phone: ENV["APPLE_CONTACT_PHONE"],
+            demo_account_name: ENV["APPLE_DEMO_EMAIL"],
+            demo_account_password: ENV["APPLE_DEMO_PASSWORD"],
+            notes: "You should be able to login using the provided credentials."
+        },
+        app_version: ENV["VERSION"].rpartition(".")[0],
+        build_number: ENV["VERSION"],
+        skip_waiting_for_build_processing: false
+    )
+
     deliver(
       api_key_path: "./ios/ios-fastlane-json-key.json",
 
@@ -303,8 +311,8 @@ platform :ios do
         content_rights_has_rights: true
       },
       release_notes: {
-        'default' => "Improvements and bug fixes",
-        'en-US' => "Improvements and bug fixes"
+        'default' => ENV.fetch("TESTFLIGHT_CHANGELOG", "Improvements and bug fixes"),
+        'en-US'   => ENV.fetch("TESTFLIGHT_CHANGELOG", "Improvements and bug fixes")
       }
     )
 

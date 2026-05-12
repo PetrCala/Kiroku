@@ -181,6 +181,13 @@ jobs:
       - name: Set iOS version in ENV
         run: echo "IOS_VERSION=$(echo '${{ inputs.APP_VERSION }}' | tr '-' '.')" >> "$GITHUB_ENV"
 
+      - name: Generate release notes
+        if: ${{ inputs.SHOULD_DEPLOY_PRODUCTION }}
+        continue-on-error: true
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+        run: bash scripts/generateReleaseNotes.sh
+
       - name: Run Fastlane
         run: bundle exec fastlane ios ${{ inputs.SHOULD_DEPLOY_PRODUCTION && 'production' || 'beta' }}
         env:
@@ -190,6 +197,7 @@ jobs:
           APPLE_DEMO_PASSWORD: ${{ secrets.APPLE_DEMO_PASSWORD }}
           IOS_CERTIFICATE_PASSWORD: ${{ secrets.IOS_CERTIFICATE_PASSWORD }}
           VERSION: ${{ env.IOS_VERSION }}
+          TESTFLIGHT_CHANGELOG: ${{ env.TESTFLIGHT_CHANGELOG }}
 
       # - name: Upload iOS build to Browser Stack
       #   if: ${{ !inputs.SHOULD_DEPLOY_PRODUCTION }}
