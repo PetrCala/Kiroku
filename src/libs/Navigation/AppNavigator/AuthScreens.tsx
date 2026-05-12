@@ -5,7 +5,7 @@ import Onyx from 'react-native-onyx';
 // import OptionsListContextProvider from '@components/OptionListContextProvider';
 import useStyleUtils from '@hooks/useStyleUtils';
 import useThemeStyles from '@hooks/useThemeStyles';
-import type {AuthScreensParamList} from '@libs/Navigation/types';
+// import type {AuthScreensParamList} from '@libs/Navigation/types';
 // import PusherConnectionManager from '@libs/PusherConnectionManager';
 import getTzFixModalScreenOptions from '@libs/Navigation/getTzFixModalScreenOptions';
 // import DesktopSignInRedirectPage from '@pages/signin/DesktopSignInRedirectPage';

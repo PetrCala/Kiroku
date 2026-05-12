@@ -5,5 +5,6 @@ declare function getReactNativePersistence(
 ): Persistence;
 
 declare module 'firebase/auth' {
+  // eslint-disable-next-line import/prefer-default-export
   export {getReactNativePersistence};
 }

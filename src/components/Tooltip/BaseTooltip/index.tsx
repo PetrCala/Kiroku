@@ -125,9 +125,11 @@ function Tooltip(
               onHoverIn={showTooltip}
               onHoverOut={hideTooltip}
               shouldHandleScroll={shouldHandleScroll}>
-              {React.cloneElement(children as React.ReactElement<any>, {
-                onMouseEnter: updateTargetPositionOnMouseEnter,
-              })}
+              {React.cloneElement(
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                children as React.ReactElement<any>,
+                {onMouseEnter: updateTargetPositionOnMouseEnter},
+              )}
             </Hoverable>
           </BoundsObserver>
         ) : (

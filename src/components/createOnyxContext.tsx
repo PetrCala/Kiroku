@@ -10,8 +10,7 @@ type CreateOnyxContext<TOnyxKey extends OnyxKey> = [
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   () => (Component: ComponentType<any>) => ComponentType<any>, // Deprecated withOnyx HOC (for backward compatibility)
   ComponentType<ChildrenProps>, // Provider
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  React.Context<any>, // Context
+  React.Context<OnyxValue<TOnyxKey>>, // Context
   () => NonNullable<OnyxValue<TOnyxKey>>, // useOnyxContext hook
 ];
 
@@ -56,5 +55,10 @@ export default <TOnyxKey extends OnyxKey>(
     return value as NonNullable<OnyxValue<TOnyxKey>>;
   };
 
-  return [withOnyxKey, Provider, Context, useOnyxContext];
+  return [
+    withOnyxKey,
+    Provider,
+    Context as unknown as React.Context<OnyxValue<TOnyxKey>>,
+    useOnyxContext,
+  ];
 };
