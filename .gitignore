@@ -136,3 +136,7 @@ web-build/
 
 # Claude
 .claude/worktrees/
+
+# Typescript
+tsconfig.tsbuildinfo
+tsconfig.tsgo.tsbuildinfo

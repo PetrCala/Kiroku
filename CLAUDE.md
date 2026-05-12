@@ -158,6 +158,9 @@ npm run clean
 # Type checking (tsc, CI production gate)
 npm run typecheck
 
+# Type checking (tsgo, fast, for development only)
+npm run typecheck-tsgo
+
 # Linting
 npm run lint
 
