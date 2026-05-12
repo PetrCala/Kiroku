@@ -33653,6 +33653,192 @@ function wrappy (fn, cb) {
 
 /***/ }),
 
+/***/ 8944:
+/***/ (function(__unused_webpack_module, exports, __nccwpck_require__) {
+
+"use strict";
+
+var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    var desc = Object.getOwnPropertyDescriptor(m, k);
+    if (!desc || ("get" in desc ? !m.__esModule : desc.writable || desc.configurable)) {
+      desc = { enumerable: true, get: function() { return m[k]; } };
+    }
+    Object.defineProperty(o, k2, desc);
+}) : (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    o[k2] = m[k];
+}));
+var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (function(o, v) {
+    Object.defineProperty(o, "default", { enumerable: true, value: v });
+}) : function(o, v) {
+    o["default"] = v;
+});
+var __importStar = (this && this.__importStar) || (function () {
+    var ownKeys = function(o) {
+        ownKeys = Object.getOwnPropertyNames || function (o) {
+            var ar = [];
+            for (var k in o) if (Object.prototype.hasOwnProperty.call(o, k)) ar[ar.length] = k;
+            return ar;
+        };
+        return ownKeys(o);
+    };
+    return function (mod) {
+        if (mod && mod.__esModule) return mod;
+        var result = {};
+        if (mod != null) for (var k = ownKeys(mod), i = 0; i < k.length; i++) if (k[i] !== "default") __createBinding(result, mod, k[i]);
+        __setModuleDefault(result, mod);
+        return result;
+    };
+})();
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+const core = __importStar(__nccwpck_require__(2481));
+const date_fns_1 = __nccwpck_require__(2602);
+const fs_1 = __nccwpck_require__(7147);
+const CONST_1 = __importDefault(__nccwpck_require__(4780));
+const GithubUtils_1 = __importDefault(__nccwpck_require__(4615));
+const GitUtils_1 = __importDefault(__nccwpck_require__(1928));
+async function run() {
+    var _a, _b, _c, _d, _e, _f;
+    // Note: require('package.json').version does not work because ncc will resolve that to a plain string at compile time
+    const packageJson = JSON.parse((0, fs_1.readFileSync)('package.json', 'utf8'));
+    const newVersionTag = core.getInput('TAG', { required: false }) || packageJson.version;
+    try {
+        // Start by fetching the list of recent deploy checklists and open deploy blockers.
+        const { data: recentDeployChecklists } = await GithubUtils_1.default.octokit.issues.listForRepo({
+            log: console,
+            owner: CONST_1.default.GITHUB_OWNER,
+            repo: CONST_1.default.APP_REPO,
+            labels: CONST_1.default.LABELS.STAGING_DEPLOY,
+            state: 'all',
+        });
+        const { data: openDeployBlockers } = await GithubUtils_1.default.octokit.issues.listForRepo({
+            log: console,
+            owner: CONST_1.default.GITHUB_OWNER,
+            repo: CONST_1.default.APP_REPO,
+            labels: CONST_1.default.LABELS.DEPLOY_BLOCKER,
+        });
+        // Look at the state of the most recent deploy checklist,
+        // if it is open then we'll update the existing one, otherwise, we'll create a new one.
+        const mostRecentChecklist = recentDeployChecklists[0];
+        const shouldCreateNewDeployChecklist = !mostRecentChecklist || mostRecentChecklist.state !== 'open';
+        const previousChecklist = shouldCreateNewDeployChecklist
+            ? mostRecentChecklist
+            : recentDeployChecklists[1];
+        if (shouldCreateNewDeployChecklist) {
+            console.log('Latest deploy checklist is closed, creating a new one.', mostRecentChecklist);
+        }
+        else {
+            console.log('Latest deploy checklist is open, updating it instead of creating a new one.', 'Current:', mostRecentChecklist, 'Previous:', previousChecklist);
+        }
+        // Parse the data from the previous and current checklists into the format used to generate the checklist
+        const previousChecklistData = previousChecklist
+            ? GithubUtils_1.default.getStagingDeployCashData(previousChecklist)
+            : undefined;
+        const currentChecklistData = shouldCreateNewDeployChecklist
+            ? undefined
+            : GithubUtils_1.default.getStagingDeployCashData(mostRecentChecklist);
+        // Find the list of PRs merged between the current checklist and the previous checklist
+        const mergedPRs = await GitUtils_1.default.getPullRequestsMergedBetween((_a = previousChecklistData === null || previousChecklistData === void 0 ? void 0 : previousChecklistData.tag) !== null && _a !== void 0 ? _a : '', newVersionTag);
+        // Next, we generate the checklist body
+        let checklistBody = '';
+        let checklistAssignees = [];
+        if (shouldCreateNewDeployChecklist) {
+            const stagingDeployCashBodyAndAssignees = await GithubUtils_1.default.generateStagingDeployCashBodyAndAssignees(newVersionTag, mergedPRs.map(value => GithubUtils_1.default.getPullRequestURLFromNumber(value)), [], openDeployBlockers.map(deployBlocker => deployBlocker.html_url));
+            if (stagingDeployCashBodyAndAssignees) {
+                checklistBody = stagingDeployCashBodyAndAssignees.issueBody;
+                checklistAssignees =
+                    stagingDeployCashBodyAndAssignees.issueAssignees.filter(Boolean);
+            }
+        }
+        else {
+            // Generate the updated PR list, preserving the previous state of `isVerified` for existing PRs
+            const PRList = mergedPRs.map(prNum => {
+                var _a;
+                const indexOfPRInCurrentChecklist = (_a = currentChecklistData === null || currentChecklistData === void 0 ? void 0 : currentChecklistData.PRList.findIndex(pr => pr.number === prNum)) !== null && _a !== void 0 ? _a : -1;
+                const isVerified = indexOfPRInCurrentChecklist >= 0
+                    ? currentChecklistData === null || currentChecklistData === void 0 ? void 0 : currentChecklistData.PRList[indexOfPRInCurrentChecklist].isVerified
+                    : false;
+                return {
+                    number: prNum,
+                    url: GithubUtils_1.default.getPullRequestURLFromNumber(prNum),
+                    isVerified,
+                };
+            });
+            // Generate the deploy blocker list, preserving the previous state of `isResolved`
+            // First, make sure we include all current deploy blockers
+            const deployBlockers = openDeployBlockers.map(deployBlocker => {
+                var _a;
+                const indexInCurrentChecklist = (_a = currentChecklistData === null || currentChecklistData === void 0 ? void 0 : currentChecklistData.deployBlockers.findIndex(item => item.number === deployBlocker.number)) !== null && _a !== void 0 ? _a : -1;
+                const isResolved = indexInCurrentChecklist >= 0
+                    ? currentChecklistData === null || currentChecklistData === void 0 ? void 0 : currentChecklistData.deployBlockers[indexInCurrentChecklist].isResolved
+                    : false;
+                return {
+                    number: deployBlocker.number,
+                    url: deployBlocker.html_url,
+                    isResolved,
+                };
+            });
+            // Then include any demoted or closed blockers, and check them off automatically.
+            currentChecklistData === null || currentChecklistData === void 0 ? void 0 : currentChecklistData.deployBlockers.forEach(deployBlocker => {
+                const isStillOpen = deployBlockers.findIndex(openBlocker => openBlocker.number === deployBlocker.number) >= 0;
+                if (isStillOpen) {
+                    return;
+                }
+                deployBlockers.push({
+                    ...deployBlocker,
+                    isResolved: true,
+                });
+            });
+            const stagingDeployCashBodyAndAssignees = await GithubUtils_1.default.generateStagingDeployCashBodyAndAssignees(newVersionTag, PRList.map(pr => pr.url), PRList.filter(pr => pr.isVerified).map(pr => pr.url), deployBlockers.map(blocker => blocker.url), deployBlockers
+                .filter(blocker => blocker.isResolved)
+                .map(blocker => blocker.url), (_b = currentChecklistData === null || currentChecklistData === void 0 ? void 0 : currentChecklistData.isIOSSmokeChecked) !== null && _b !== void 0 ? _b : false, (_c = currentChecklistData === null || currentChecklistData === void 0 ? void 0 : currentChecklistData.isAndroidSmokeChecked) !== null && _c !== void 0 ? _c : false, (_d = currentChecklistData === null || currentChecklistData === void 0 ? void 0 : currentChecklistData.isFirebaseChecked) !== null && _d !== void 0 ? _d : false, (_e = currentChecklistData === null || currentChecklistData === void 0 ? void 0 : currentChecklistData.isGHStatusChecked) !== null && _e !== void 0 ? _e : false);
+            if (stagingDeployCashBodyAndAssignees) {
+                checklistBody = stagingDeployCashBodyAndAssignees.issueBody;
+                checklistAssignees =
+                    stagingDeployCashBodyAndAssignees.issueAssignees.filter(Boolean);
+            }
+        }
+        // Finally, create or update the checklist
+        const defaultPayload = {
+            owner: CONST_1.default.GITHUB_OWNER,
+            repo: CONST_1.default.APP_REPO,
+            body: checklistBody,
+        };
+        if (shouldCreateNewDeployChecklist) {
+            const { data: newChecklist } = await GithubUtils_1.default.octokit.issues.create({
+                ...defaultPayload,
+                title: `Deploy Checklist: Kiroku ${(0, date_fns_1.format)(new Date(), CONST_1.default.DATE_FORMAT_STRING)}`,
+                labels: [CONST_1.default.LABELS.STAGING_DEPLOY],
+                assignees: checklistAssignees,
+            });
+            console.log(`Successfully created new deploy checklist! 🎉 ${newChecklist.html_url}`);
+            return newChecklist;
+        }
+        const { data: updatedChecklist } = await GithubUtils_1.default.octokit.issues.update({
+            ...defaultPayload,
+            // eslint-disable-next-line @typescript-eslint/naming-convention
+            issue_number: (_f = currentChecklistData === null || currentChecklistData === void 0 ? void 0 : currentChecklistData.number) !== null && _f !== void 0 ? _f : 0,
+        });
+        console.log(`Successfully updated deploy checklist! 🎉 ${updatedChecklist.html_url}`);
+        return updatedChecklist;
+    }
+    catch (err) {
+        console.error('An unknown error occurred!', err);
+        core.setFailed(err);
+    }
+}
+if (require.main === require.cache[eval('__filename')]) {
+    run();
+}
+exports["default"] = run;
+
+
+/***/ }),
+
 /***/ 4780:
 /***/ ((__unused_webpack_module, exports) => {
 
@@ -33700,15 +33886,51 @@ exports["default"] = CONST;
 /***/ }),
 
 /***/ 1928:
-/***/ ((__unused_webpack_module, exports, __nccwpck_require__) => {
+/***/ (function(__unused_webpack_module, exports, __nccwpck_require__) {
 
 "use strict";
 
+var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    var desc = Object.getOwnPropertyDescriptor(m, k);
+    if (!desc || ("get" in desc ? !m.__esModule : desc.writable || desc.configurable)) {
+      desc = { enumerable: true, get: function() { return m[k]; } };
+    }
+    Object.defineProperty(o, k2, desc);
+}) : (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    o[k2] = m[k];
+}));
+var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (function(o, v) {
+    Object.defineProperty(o, "default", { enumerable: true, value: v });
+}) : function(o, v) {
+    o["default"] = v;
+});
+var __importStar = (this && this.__importStar) || (function () {
+    var ownKeys = function(o) {
+        ownKeys = Object.getOwnPropertyNames || function (o) {
+            var ar = [];
+            for (var k in o) if (Object.prototype.hasOwnProperty.call(o, k)) ar[ar.length] = k;
+            return ar;
+        };
+        return ownKeys(o);
+    };
+    return function (mod) {
+        if (mod && mod.__esModule) return mod;
+        var result = {};
+        if (mod != null) for (var k = ownKeys(mod), i = 0; i < k.length; i++) if (k[i] !== "default") __createBinding(result, mod, k[i]);
+        __setModuleDefault(result, mod);
+        return result;
+    };
+})();
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
 Object.defineProperty(exports, "__esModule", ({ value: true }));
 const child_process_1 = __nccwpck_require__(2081);
-const CONST_1 = __nccwpck_require__(4780);
-const sanitizeStringForJSONParse_1 = __nccwpck_require__(2798);
-const VersionUpdater = __nccwpck_require__(6733);
+const CONST_1 = __importDefault(__nccwpck_require__(4780));
+const sanitizeStringForJSONParse_1 = __importDefault(__nccwpck_require__(2798));
+const VersionUpdater = __importStar(__nccwpck_require__(6733));
 /**
  * Check if a tag exists locally or in the remote.
  */
@@ -33909,17 +34131,53 @@ exports["default"] = {
 /***/ }),
 
 /***/ 4615:
-/***/ ((__unused_webpack_module, exports, __nccwpck_require__) => {
+/***/ (function(__unused_webpack_module, exports, __nccwpck_require__) {
 
 "use strict";
 
+var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    var desc = Object.getOwnPropertyDescriptor(m, k);
+    if (!desc || ("get" in desc ? !m.__esModule : desc.writable || desc.configurable)) {
+      desc = { enumerable: true, get: function() { return m[k]; } };
+    }
+    Object.defineProperty(o, k2, desc);
+}) : (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    o[k2] = m[k];
+}));
+var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (function(o, v) {
+    Object.defineProperty(o, "default", { enumerable: true, value: v });
+}) : function(o, v) {
+    o["default"] = v;
+});
+var __importStar = (this && this.__importStar) || (function () {
+    var ownKeys = function(o) {
+        ownKeys = Object.getOwnPropertyNames || function (o) {
+            var ar = [];
+            for (var k in o) if (Object.prototype.hasOwnProperty.call(o, k)) ar[ar.length] = k;
+            return ar;
+        };
+        return ownKeys(o);
+    };
+    return function (mod) {
+        if (mod && mod.__esModule) return mod;
+        var result = {};
+        if (mod != null) for (var k = ownKeys(mod), i = 0; i < k.length; i++) if (k[i] !== "default") __createBinding(result, mod, k[i]);
+        __setModuleDefault(result, mod);
+        return result;
+    };
+})();
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
 Object.defineProperty(exports, "__esModule", ({ value: true }));
 /* eslint-disable @typescript-eslint/naming-convention, import/no-import-module-exports */
-const core = __nccwpck_require__(2481);
+const core = __importStar(__nccwpck_require__(2481));
 const utils_1 = __nccwpck_require__(5628);
 const plugin_paginate_rest_1 = __nccwpck_require__(8474);
 const plugin_throttling_1 = __nccwpck_require__(4760);
-const CONST_1 = __nccwpck_require__(4780);
+const CONST_1 = __importDefault(__nccwpck_require__(4780));
 class GithubUtils {
     /**
      * Initialize internal octokit.
@@ -58186,156 +58444,12 @@ module.exports = JSON.parse('[[[0,44],"disallowed_STD3_valid"],[[45,46],"valid"]
 /******/ 	if (typeof __nccwpck_require__ !== 'undefined') __nccwpck_require__.ab = __dirname + "/";
 /******/ 	
 /************************************************************************/
-var __webpack_exports__ = {};
-// This entry need to be wrapped in an IIFE because it need to be in strict mode.
-(() => {
-"use strict";
-var exports = __webpack_exports__;
-
-Object.defineProperty(exports, "__esModule", ({ value: true }));
-const core = __nccwpck_require__(2481);
-const date_fns_1 = __nccwpck_require__(2602);
-const fs_1 = __nccwpck_require__(7147);
-const CONST_1 = __nccwpck_require__(4780);
-const GithubUtils_1 = __nccwpck_require__(4615);
-const GitUtils_1 = __nccwpck_require__(1928);
-async function run() {
-    var _a, _b, _c, _d, _e, _f;
-    // Note: require('package.json').version does not work because ncc will resolve that to a plain string at compile time
-    const packageJson = JSON.parse((0, fs_1.readFileSync)('package.json', 'utf8'));
-    const newVersionTag = core.getInput('TAG', { required: false }) || packageJson.version;
-    try {
-        // Start by fetching the list of recent deploy checklists and open deploy blockers.
-        const { data: recentDeployChecklists } = await GithubUtils_1.default.octokit.issues.listForRepo({
-            log: console,
-            owner: CONST_1.default.GITHUB_OWNER,
-            repo: CONST_1.default.APP_REPO,
-            labels: CONST_1.default.LABELS.STAGING_DEPLOY,
-            state: 'all',
-        });
-        const { data: openDeployBlockers } = await GithubUtils_1.default.octokit.issues.listForRepo({
-            log: console,
-            owner: CONST_1.default.GITHUB_OWNER,
-            repo: CONST_1.default.APP_REPO,
-            labels: CONST_1.default.LABELS.DEPLOY_BLOCKER,
-        });
-        // Look at the state of the most recent deploy checklist,
-        // if it is open then we'll update the existing one, otherwise, we'll create a new one.
-        const mostRecentChecklist = recentDeployChecklists[0];
-        const shouldCreateNewDeployChecklist = !mostRecentChecklist || mostRecentChecklist.state !== 'open';
-        const previousChecklist = shouldCreateNewDeployChecklist
-            ? mostRecentChecklist
-            : recentDeployChecklists[1];
-        if (shouldCreateNewDeployChecklist) {
-            console.log('Latest deploy checklist is closed, creating a new one.', mostRecentChecklist);
-        }
-        else {
-            console.log('Latest deploy checklist is open, updating it instead of creating a new one.', 'Current:', mostRecentChecklist, 'Previous:', previousChecklist);
-        }
-        // Parse the data from the previous and current checklists into the format used to generate the checklist
-        const previousChecklistData = previousChecklist
-            ? GithubUtils_1.default.getStagingDeployCashData(previousChecklist)
-            : undefined;
-        const currentChecklistData = shouldCreateNewDeployChecklist
-            ? undefined
-            : GithubUtils_1.default.getStagingDeployCashData(mostRecentChecklist);
-        // Find the list of PRs merged between the current checklist and the previous checklist
-        const mergedPRs = await GitUtils_1.default.getPullRequestsMergedBetween((_a = previousChecklistData === null || previousChecklistData === void 0 ? void 0 : previousChecklistData.tag) !== null && _a !== void 0 ? _a : '', newVersionTag);
-        // Next, we generate the checklist body
-        let checklistBody = '';
-        let checklistAssignees = [];
-        if (shouldCreateNewDeployChecklist) {
-            const stagingDeployCashBodyAndAssignees = await GithubUtils_1.default.generateStagingDeployCashBodyAndAssignees(newVersionTag, mergedPRs.map(value => GithubUtils_1.default.getPullRequestURLFromNumber(value)), [], openDeployBlockers.map(deployBlocker => deployBlocker.html_url));
-            if (stagingDeployCashBodyAndAssignees) {
-                checklistBody = stagingDeployCashBodyAndAssignees.issueBody;
-                checklistAssignees =
-                    stagingDeployCashBodyAndAssignees.issueAssignees.filter(Boolean);
-            }
-        }
-        else {
-            // Generate the updated PR list, preserving the previous state of `isVerified` for existing PRs
-            const PRList = mergedPRs.map(prNum => {
-                var _a;
-                const indexOfPRInCurrentChecklist = (_a = currentChecklistData === null || currentChecklistData === void 0 ? void 0 : currentChecklistData.PRList.findIndex(pr => pr.number === prNum)) !== null && _a !== void 0 ? _a : -1;
-                const isVerified = indexOfPRInCurrentChecklist >= 0
-                    ? currentChecklistData === null || currentChecklistData === void 0 ? void 0 : currentChecklistData.PRList[indexOfPRInCurrentChecklist].isVerified
-                    : false;
-                return {
-                    number: prNum,
-                    url: GithubUtils_1.default.getPullRequestURLFromNumber(prNum),
-                    isVerified,
-                };
-            });
-            // Generate the deploy blocker list, preserving the previous state of `isResolved`
-            // First, make sure we include all current deploy blockers
-            const deployBlockers = openDeployBlockers.map(deployBlocker => {
-                var _a;
-                const indexInCurrentChecklist = (_a = currentChecklistData === null || currentChecklistData === void 0 ? void 0 : currentChecklistData.deployBlockers.findIndex(item => item.number === deployBlocker.number)) !== null && _a !== void 0 ? _a : -1;
-                const isResolved = indexInCurrentChecklist >= 0
-                    ? currentChecklistData === null || currentChecklistData === void 0 ? void 0 : currentChecklistData.deployBlockers[indexInCurrentChecklist].isResolved
-                    : false;
-                return {
-                    number: deployBlocker.number,
-                    url: deployBlocker.html_url,
-                    isResolved,
-                };
-            });
-            // Then include any demoted or closed blockers, and check them off automatically.
-            currentChecklistData === null || currentChecklistData === void 0 ? void 0 : currentChecklistData.deployBlockers.forEach(deployBlocker => {
-                const isStillOpen = deployBlockers.findIndex(openBlocker => openBlocker.number === deployBlocker.number) >= 0;
-                if (isStillOpen) {
-                    return;
-                }
-                deployBlockers.push({
-                    ...deployBlocker,
-                    isResolved: true,
-                });
-            });
-            const stagingDeployCashBodyAndAssignees = await GithubUtils_1.default.generateStagingDeployCashBodyAndAssignees(newVersionTag, PRList.map(pr => pr.url), PRList.filter(pr => pr.isVerified).map(pr => pr.url), deployBlockers.map(blocker => blocker.url), deployBlockers
-                .filter(blocker => blocker.isResolved)
-                .map(blocker => blocker.url), (_b = currentChecklistData === null || currentChecklistData === void 0 ? void 0 : currentChecklistData.isIOSSmokeChecked) !== null && _b !== void 0 ? _b : false, (_c = currentChecklistData === null || currentChecklistData === void 0 ? void 0 : currentChecklistData.isAndroidSmokeChecked) !== null && _c !== void 0 ? _c : false, (_d = currentChecklistData === null || currentChecklistData === void 0 ? void 0 : currentChecklistData.isFirebaseChecked) !== null && _d !== void 0 ? _d : false, (_e = currentChecklistData === null || currentChecklistData === void 0 ? void 0 : currentChecklistData.isGHStatusChecked) !== null && _e !== void 0 ? _e : false);
-            if (stagingDeployCashBodyAndAssignees) {
-                checklistBody = stagingDeployCashBodyAndAssignees.issueBody;
-                checklistAssignees =
-                    stagingDeployCashBodyAndAssignees.issueAssignees.filter(Boolean);
-            }
-        }
-        // Finally, create or update the checklist
-        const defaultPayload = {
-            owner: CONST_1.default.GITHUB_OWNER,
-            repo: CONST_1.default.APP_REPO,
-            body: checklistBody,
-        };
-        if (shouldCreateNewDeployChecklist) {
-            const { data: newChecklist } = await GithubUtils_1.default.octokit.issues.create({
-                ...defaultPayload,
-                title: `Deploy Checklist: Kiroku ${(0, date_fns_1.format)(new Date(), CONST_1.default.DATE_FORMAT_STRING)}`,
-                labels: [CONST_1.default.LABELS.STAGING_DEPLOY],
-                assignees: checklistAssignees,
-            });
-            console.log(`Successfully created new deploy checklist! 🎉 ${newChecklist.html_url}`);
-            return newChecklist;
-        }
-        const { data: updatedChecklist } = await GithubUtils_1.default.octokit.issues.update({
-            ...defaultPayload,
-            // eslint-disable-next-line @typescript-eslint/naming-convention
-            issue_number: (_f = currentChecklistData === null || currentChecklistData === void 0 ? void 0 : currentChecklistData.number) !== null && _f !== void 0 ? _f : 0,
-        });
-        console.log(`Successfully updated deploy checklist! 🎉 ${updatedChecklist.html_url}`);
-        return updatedChecklist;
-    }
-    catch (err) {
-        console.error('An unknown error occurred!', err);
-        core.setFailed(err);
-    }
-}
-if (require.main === require.cache[eval('__filename')]) {
-    run();
-}
-exports["default"] = run;
-
-})();
-
-module.exports = __webpack_exports__;
+/******/ 	
+/******/ 	// startup
+/******/ 	// Load entry module and return exports
+/******/ 	// This entry module is referenced by other modules so it can't be inlined
+/******/ 	var __webpack_exports__ = __nccwpck_require__(8944);
+/******/ 	module.exports = __webpack_exports__;
+/******/ 	
 /******/ })()
 ;

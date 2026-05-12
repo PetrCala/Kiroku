@@ -33697,15 +33697,146 @@ function wrappy (fn, cb) {
 
 /***/ }),
 
-/***/ 2930:
-/***/ ((__unused_webpack_module, exports, __nccwpck_require__) => {
+/***/ 4115:
+/***/ (function(__unused_webpack_module, exports, __nccwpck_require__) {
 
 "use strict";
 
+var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    var desc = Object.getOwnPropertyDescriptor(m, k);
+    if (!desc || ("get" in desc ? !m.__esModule : desc.writable || desc.configurable)) {
+      desc = { enumerable: true, get: function() { return m[k]; } };
+    }
+    Object.defineProperty(o, k2, desc);
+}) : (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    o[k2] = m[k];
+}));
+var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (function(o, v) {
+    Object.defineProperty(o, "default", { enumerable: true, value: v });
+}) : function(o, v) {
+    o["default"] = v;
+});
+var __importStar = (this && this.__importStar) || (function () {
+    var ownKeys = function(o) {
+        ownKeys = Object.getOwnPropertyNames || function (o) {
+            var ar = [];
+            for (var k in o) if (Object.prototype.hasOwnProperty.call(o, k)) ar[ar.length] = k;
+            return ar;
+        };
+        return ownKeys(o);
+    };
+    return function (mod) {
+        if (mod && mod.__esModule) return mod;
+        var result = {};
+        if (mod != null) for (var k = ownKeys(mod), i = 0; i < k.length; i++) if (k[i] !== "default") __createBinding(result, mod, k[i]);
+        __setModuleDefault(result, mod);
+        return result;
+    };
+})();
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+const core = __importStar(__nccwpck_require__(2481));
+const github = __importStar(__nccwpck_require__(707));
+const ActionUtils_1 = __nccwpck_require__(2930);
+const GithubUtils_1 = __importDefault(__nccwpck_require__(4615));
+const GitUtils_1 = __importDefault(__nccwpck_require__(1928));
+function isReleaseValidBaseForEnvironment(release, isProductionDeploy) {
+    return !isProductionDeploy || !release.prerelease;
+}
+async function getPreviousDeployTag(inputTag, isProductionDeploy) {
+    const releases = await GithubUtils_1.default.paginate(GithubUtils_1.default.octokit.repos.listReleases, {
+        owner: github.context.repo.owner,
+        repo: github.context.repo.repo,
+        // eslint-disable-next-line @typescript-eslint/naming-convention
+        per_page: 100,
+    });
+    let foundCurrentRelease = false;
+    for (const release of releases) {
+        if (release.draft) {
+            continue;
+        }
+        if (release.tag_name === inputTag) {
+            foundCurrentRelease = true;
+            continue;
+        }
+        if (!foundCurrentRelease || !isReleaseValidBaseForEnvironment(release, isProductionDeploy)) {
+            continue;
+        }
+        return release.tag_name;
+    }
+    throw new Error(`Could not find a prior ${isProductionDeploy ? 'production' : 'staging'} deploy release for ${inputTag}`);
+}
+async function run() {
+    try {
+        const inputTag = core.getInput('TAG', { required: true });
+        const isProductionDeploy = !!(0, ActionUtils_1.getJSONInput)('IS_PRODUCTION_DEPLOY', { required: false }, false);
+        const deployEnv = isProductionDeploy ? 'production' : 'staging';
+        console.log(`Looking for PRs deployed to ${deployEnv} in ${inputTag}...`);
+        const priorTag = await getPreviousDeployTag(inputTag, isProductionDeploy);
+        console.log(`Looking for PRs deployed to ${deployEnv} between ${priorTag} and ${inputTag}`);
+        const prList = await GitUtils_1.default.getPullRequestsMergedBetween(priorTag, inputTag);
+        console.log('Found the pull request list: ', prList);
+        core.setOutput('PR_LIST', prList);
+    }
+    catch (error) {
+        console.error(error.message);
+        core.setFailed(error);
+    }
+}
+if (require.main === require.cache[eval('__filename')]) {
+    run();
+}
+exports["default"] = run;
+
+
+/***/ }),
+
+/***/ 2930:
+/***/ (function(__unused_webpack_module, exports, __nccwpck_require__) {
+
+"use strict";
+
+var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    var desc = Object.getOwnPropertyDescriptor(m, k);
+    if (!desc || ("get" in desc ? !m.__esModule : desc.writable || desc.configurable)) {
+      desc = { enumerable: true, get: function() { return m[k]; } };
+    }
+    Object.defineProperty(o, k2, desc);
+}) : (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    o[k2] = m[k];
+}));
+var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (function(o, v) {
+    Object.defineProperty(o, "default", { enumerable: true, value: v });
+}) : function(o, v) {
+    o["default"] = v;
+});
+var __importStar = (this && this.__importStar) || (function () {
+    var ownKeys = function(o) {
+        ownKeys = Object.getOwnPropertyNames || function (o) {
+            var ar = [];
+            for (var k in o) if (Object.prototype.hasOwnProperty.call(o, k)) ar[ar.length] = k;
+            return ar;
+        };
+        return ownKeys(o);
+    };
+    return function (mod) {
+        if (mod && mod.__esModule) return mod;
+        var result = {};
+        if (mod != null) for (var k = ownKeys(mod), i = 0; i < k.length; i++) if (k[i] !== "default") __createBinding(result, mod, k[i]);
+        __setModuleDefault(result, mod);
+        return result;
+    };
+})();
 Object.defineProperty(exports, "__esModule", ({ value: true }));
 exports.getJSONInput = getJSONInput;
 exports.getStringInput = getStringInput;
-const core = __nccwpck_require__(2481);
+const core = __importStar(__nccwpck_require__(2481));
 /**
  * Safely parse a JSON input to a GitHub Action.
  *
@@ -33782,15 +33913,51 @@ exports["default"] = CONST;
 /***/ }),
 
 /***/ 1928:
-/***/ ((__unused_webpack_module, exports, __nccwpck_require__) => {
+/***/ (function(__unused_webpack_module, exports, __nccwpck_require__) {
 
 "use strict";
 
+var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    var desc = Object.getOwnPropertyDescriptor(m, k);
+    if (!desc || ("get" in desc ? !m.__esModule : desc.writable || desc.configurable)) {
+      desc = { enumerable: true, get: function() { return m[k]; } };
+    }
+    Object.defineProperty(o, k2, desc);
+}) : (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    o[k2] = m[k];
+}));
+var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (function(o, v) {
+    Object.defineProperty(o, "default", { enumerable: true, value: v });
+}) : function(o, v) {
+    o["default"] = v;
+});
+var __importStar = (this && this.__importStar) || (function () {
+    var ownKeys = function(o) {
+        ownKeys = Object.getOwnPropertyNames || function (o) {
+            var ar = [];
+            for (var k in o) if (Object.prototype.hasOwnProperty.call(o, k)) ar[ar.length] = k;
+            return ar;
+        };
+        return ownKeys(o);
+    };
+    return function (mod) {
+        if (mod && mod.__esModule) return mod;
+        var result = {};
+        if (mod != null) for (var k = ownKeys(mod), i = 0; i < k.length; i++) if (k[i] !== "default") __createBinding(result, mod, k[i]);
+        __setModuleDefault(result, mod);
+        return result;
+    };
+})();
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
 Object.defineProperty(exports, "__esModule", ({ value: true }));
 const child_process_1 = __nccwpck_require__(2081);
-const CONST_1 = __nccwpck_require__(4780);
-const sanitizeStringForJSONParse_1 = __nccwpck_require__(2798);
-const VersionUpdater = __nccwpck_require__(6733);
+const CONST_1 = __importDefault(__nccwpck_require__(4780));
+const sanitizeStringForJSONParse_1 = __importDefault(__nccwpck_require__(2798));
+const VersionUpdater = __importStar(__nccwpck_require__(6733));
 /**
  * Check if a tag exists locally or in the remote.
  */
@@ -33991,17 +34158,53 @@ exports["default"] = {
 /***/ }),
 
 /***/ 4615:
-/***/ ((__unused_webpack_module, exports, __nccwpck_require__) => {
+/***/ (function(__unused_webpack_module, exports, __nccwpck_require__) {
 
 "use strict";
 
+var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    var desc = Object.getOwnPropertyDescriptor(m, k);
+    if (!desc || ("get" in desc ? !m.__esModule : desc.writable || desc.configurable)) {
+      desc = { enumerable: true, get: function() { return m[k]; } };
+    }
+    Object.defineProperty(o, k2, desc);
+}) : (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    o[k2] = m[k];
+}));
+var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (function(o, v) {
+    Object.defineProperty(o, "default", { enumerable: true, value: v });
+}) : function(o, v) {
+    o["default"] = v;
+});
+var __importStar = (this && this.__importStar) || (function () {
+    var ownKeys = function(o) {
+        ownKeys = Object.getOwnPropertyNames || function (o) {
+            var ar = [];
+            for (var k in o) if (Object.prototype.hasOwnProperty.call(o, k)) ar[ar.length] = k;
+            return ar;
+        };
+        return ownKeys(o);
+    };
+    return function (mod) {
+        if (mod && mod.__esModule) return mod;
+        var result = {};
+        if (mod != null) for (var k = ownKeys(mod), i = 0; i < k.length; i++) if (k[i] !== "default") __createBinding(result, mod, k[i]);
+        __setModuleDefault(result, mod);
+        return result;
+    };
+})();
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
 Object.defineProperty(exports, "__esModule", ({ value: true }));
 /* eslint-disable @typescript-eslint/naming-convention, import/no-import-module-exports */
-const core = __nccwpck_require__(2481);
+const core = __importStar(__nccwpck_require__(2481));
 const utils_1 = __nccwpck_require__(5628);
 const plugin_paginate_rest_1 = __nccwpck_require__(8474);
 const plugin_throttling_1 = __nccwpck_require__(4760);
-const CONST_1 = __nccwpck_require__(4780);
+const CONST_1 = __importDefault(__nccwpck_require__(4780));
 class GithubUtils {
     /**
      * Initialize internal octokit.
@@ -36441,68 +36644,12 @@ module.exports = JSON.parse('[[[0,44],"disallowed_STD3_valid"],[[45,46],"valid"]
 /******/ 	if (typeof __nccwpck_require__ !== 'undefined') __nccwpck_require__.ab = __dirname + "/";
 /******/ 	
 /************************************************************************/
-var __webpack_exports__ = {};
-// This entry need to be wrapped in an IIFE because it need to be in strict mode.
-(() => {
-"use strict";
-var exports = __webpack_exports__;
-
-Object.defineProperty(exports, "__esModule", ({ value: true }));
-const core = __nccwpck_require__(2481);
-const github = __nccwpck_require__(707);
-const ActionUtils_1 = __nccwpck_require__(2930);
-const GithubUtils_1 = __nccwpck_require__(4615);
-const GitUtils_1 = __nccwpck_require__(1928);
-function isReleaseValidBaseForEnvironment(release, isProductionDeploy) {
-    return !isProductionDeploy || !release.prerelease;
-}
-async function getPreviousDeployTag(inputTag, isProductionDeploy) {
-    const releases = await GithubUtils_1.default.paginate(GithubUtils_1.default.octokit.repos.listReleases, {
-        owner: github.context.repo.owner,
-        repo: github.context.repo.repo,
-        // eslint-disable-next-line @typescript-eslint/naming-convention
-        per_page: 100,
-    });
-    let foundCurrentRelease = false;
-    for (const release of releases) {
-        if (release.draft) {
-            continue;
-        }
-        if (release.tag_name === inputTag) {
-            foundCurrentRelease = true;
-            continue;
-        }
-        if (!foundCurrentRelease || !isReleaseValidBaseForEnvironment(release, isProductionDeploy)) {
-            continue;
-        }
-        return release.tag_name;
-    }
-    throw new Error(`Could not find a prior ${isProductionDeploy ? 'production' : 'staging'} deploy release for ${inputTag}`);
-}
-async function run() {
-    try {
-        const inputTag = core.getInput('TAG', { required: true });
-        const isProductionDeploy = !!(0, ActionUtils_1.getJSONInput)('IS_PRODUCTION_DEPLOY', { required: false }, false);
-        const deployEnv = isProductionDeploy ? 'production' : 'staging';
-        console.log(`Looking for PRs deployed to ${deployEnv} in ${inputTag}...`);
-        const priorTag = await getPreviousDeployTag(inputTag, isProductionDeploy);
-        console.log(`Looking for PRs deployed to ${deployEnv} between ${priorTag} and ${inputTag}`);
-        const prList = await GitUtils_1.default.getPullRequestsMergedBetween(priorTag, inputTag);
-        console.log('Found the pull request list: ', prList);
-        core.setOutput('PR_LIST', prList);
-    }
-    catch (error) {
-        console.error(error.message);
-        core.setFailed(error);
-    }
-}
-if (require.main === require.cache[eval('__filename')]) {
-    run();
-}
-exports["default"] = run;
-
-})();
-
-module.exports = __webpack_exports__;
+/******/ 	
+/******/ 	// startup
+/******/ 	// Load entry module and return exports
+/******/ 	// This entry module is referenced by other modules so it can't be inlined
+/******/ 	var __webpack_exports__ = __nccwpck_require__(4115);
+/******/ 	module.exports = __webpack_exports__;
+/******/ 	
 /******/ })()
 ;

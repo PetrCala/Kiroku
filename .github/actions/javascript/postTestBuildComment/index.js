@@ -33697,6 +33697,128 @@ function wrappy (fn, cb) {
 
 /***/ }),
 
+/***/ 1761:
+/***/ (function(__unused_webpack_module, exports, __nccwpck_require__) {
+
+"use strict";
+
+var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    var desc = Object.getOwnPropertyDescriptor(m, k);
+    if (!desc || ("get" in desc ? !m.__esModule : desc.writable || desc.configurable)) {
+      desc = { enumerable: true, get: function() { return m[k]; } };
+    }
+    Object.defineProperty(o, k2, desc);
+}) : (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    o[k2] = m[k];
+}));
+var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (function(o, v) {
+    Object.defineProperty(o, "default", { enumerable: true, value: v });
+}) : function(o, v) {
+    o["default"] = v;
+});
+var __importStar = (this && this.__importStar) || (function () {
+    var ownKeys = function(o) {
+        ownKeys = Object.getOwnPropertyNames || function (o) {
+            var ar = [];
+            for (var k in o) if (Object.prototype.hasOwnProperty.call(o, k)) ar[ar.length] = k;
+            return ar;
+        };
+        return ownKeys(o);
+    };
+    return function (mod) {
+        if (mod && mod.__esModule) return mod;
+        var result = {};
+        if (mod != null) for (var k = ownKeys(mod), i = 0; i < k.length; i++) if (k[i] !== "default") __createBinding(result, mod, k[i]);
+        __setModuleDefault(result, mod);
+        return result;
+    };
+})();
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+const core = __importStar(__nccwpck_require__(2481));
+const github_1 = __nccwpck_require__(707);
+const CONST_1 = __importDefault(__nccwpck_require__(4780));
+const GithubUtils_1 = __importDefault(__nccwpck_require__(4615));
+function getTestBuildMessage() {
+    console.log('Input for android', core.getInput('ANDROID', { required: true }));
+    const androidSuccess = core.getInput('ANDROID', { required: true }) === 'success';
+    const iOSSuccess = core.getInput('IOS', { required: true }) === 'success';
+    const androidLink = androidSuccess
+        ? core.getInput('ANDROID_LINK')
+        : '❌ FAILED ❌';
+    const iOSLink = iOSSuccess ? core.getInput('IOS_LINK') : '❌ FAILED ❌';
+    const androidQRCode = androidSuccess
+        ? `![Android](https://api.qrserver.com/v1/create-qr-code/?size=120x120&data=${androidLink})`
+        : "The QR code can't be generated, because the android build failed";
+    const iOSQRCode = iOSSuccess
+        ? `![iOS](https://api.qrserver.com/v1/create-qr-code/?size=120x120&data=${iOSLink})`
+        : "The QR code can't be generated, because the iOS build failed";
+    const message = `:test_tube::test_tube: Use the links below to test this adhoc build on Android and iOS. Happy testing! :test_tube::test_tube:
+| Android :robot:  | iOS :apple: |
+| ------------- | ------------- |
+| ${androidLink}  | ${iOSLink}  |
+| ${androidQRCode}  | ${iOSQRCode}  |
+
+---
+
+:eyes: [View the workflow run that generated this build](https://github.com/${github_1.context.repo.owner}/${github_1.context.repo.repo}/actions/runs/${github_1.context.runId}) :eyes:
+`;
+    return message;
+}
+/** Comment on a single PR */
+async function commentPR(PR, message) {
+    console.log(`Posting test build comment on #${PR}`);
+    try {
+        await GithubUtils_1.default.createComment(github_1.context.repo.repo, PR, message);
+        console.log(`Comment created on #${PR} successfully 🎉`);
+    }
+    catch (err) {
+        console.log(`Unable to write comment on #${PR} 😞`);
+        if (err instanceof Error) {
+            core.setFailed(err.message);
+        }
+    }
+}
+async function run() {
+    const PR_NUMBER = Number(core.getInput('PR_NUMBER', { required: true }));
+    const comments = await GithubUtils_1.default.paginate(GithubUtils_1.default.octokit.issues.listComments, {
+        owner: CONST_1.default.GITHUB_OWNER,
+        repo: CONST_1.default.APP_REPO,
+        // eslint-disable-next-line @typescript-eslint/naming-convention
+        issue_number: PR_NUMBER,
+        // eslint-disable-next-line @typescript-eslint/naming-convention
+        per_page: 100,
+    }, response => response.data);
+    const testBuildComment = comments.find(comment => {
+        var _a;
+        return (_a = comment.body) === null || _a === void 0 ? void 0 : _a.startsWith(':test_tube::test_tube: Use the links below to test this adhoc build');
+    });
+    if (testBuildComment) {
+        console.log('Found previous build comment, hiding it', testBuildComment);
+        await GithubUtils_1.default.graphql(`
+            mutation {
+              minimizeComment(input: {classifier: OUTDATED, subjectId: "${testBuildComment.node_id}"}) {
+                minimizedComment {
+                  minimizedReason
+                }
+              }
+            }
+        `);
+    }
+    await commentPR(PR_NUMBER, getTestBuildMessage());
+}
+if (require.main === require.cache[eval('__filename')]) {
+    run();
+}
+exports["default"] = run;
+
+
+/***/ }),
+
 /***/ 4780:
 /***/ ((__unused_webpack_module, exports) => {
 
@@ -33716,6 +33838,7 @@ const CONST = {
         DEPLOY_BLOCKER: 'DeployBlockerCash',
         HELP_WANTED: 'Help Wanted',
         CP_STAGING: 'CP Staging',
+        CP_PRODUCTION: 'CP Production',
     },
     EVENTS: {
         ISSUE_COMMENT: 'issue_comment',
@@ -33743,17 +33866,53 @@ exports["default"] = CONST;
 /***/ }),
 
 /***/ 4615:
-/***/ ((__unused_webpack_module, exports, __nccwpck_require__) => {
+/***/ (function(__unused_webpack_module, exports, __nccwpck_require__) {
 
 "use strict";
 
+var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    var desc = Object.getOwnPropertyDescriptor(m, k);
+    if (!desc || ("get" in desc ? !m.__esModule : desc.writable || desc.configurable)) {
+      desc = { enumerable: true, get: function() { return m[k]; } };
+    }
+    Object.defineProperty(o, k2, desc);
+}) : (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    o[k2] = m[k];
+}));
+var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (function(o, v) {
+    Object.defineProperty(o, "default", { enumerable: true, value: v });
+}) : function(o, v) {
+    o["default"] = v;
+});
+var __importStar = (this && this.__importStar) || (function () {
+    var ownKeys = function(o) {
+        ownKeys = Object.getOwnPropertyNames || function (o) {
+            var ar = [];
+            for (var k in o) if (Object.prototype.hasOwnProperty.call(o, k)) ar[ar.length] = k;
+            return ar;
+        };
+        return ownKeys(o);
+    };
+    return function (mod) {
+        if (mod && mod.__esModule) return mod;
+        var result = {};
+        if (mod != null) for (var k = ownKeys(mod), i = 0; i < k.length; i++) if (k[i] !== "default") __createBinding(result, mod, k[i]);
+        __setModuleDefault(result, mod);
+        return result;
+    };
+})();
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
 Object.defineProperty(exports, "__esModule", ({ value: true }));
 /* eslint-disable @typescript-eslint/naming-convention, import/no-import-module-exports */
-const core = __nccwpck_require__(2481);
+const core = __importStar(__nccwpck_require__(2481));
 const utils_1 = __nccwpck_require__(5628);
 const plugin_paginate_rest_1 = __nccwpck_require__(8474);
 const plugin_throttling_1 = __nccwpck_require__(4760);
-const CONST_1 = __nccwpck_require__(4780);
+const CONST_1 = __importDefault(__nccwpck_require__(4780));
 class GithubUtils {
     /**
      * Initialize internal octokit.
@@ -36041,92 +36200,12 @@ module.exports = JSON.parse('[[[0,44],"disallowed_STD3_valid"],[[45,46],"valid"]
 /******/ 	if (typeof __nccwpck_require__ !== 'undefined') __nccwpck_require__.ab = __dirname + "/";
 /******/ 	
 /************************************************************************/
-var __webpack_exports__ = {};
-// This entry need to be wrapped in an IIFE because it need to be in strict mode.
-(() => {
-"use strict";
-var exports = __webpack_exports__;
-
-Object.defineProperty(exports, "__esModule", ({ value: true }));
-const core = __nccwpck_require__(2481);
-const github_1 = __nccwpck_require__(707);
-const CONST_1 = __nccwpck_require__(4780);
-const GithubUtils_1 = __nccwpck_require__(4615);
-function getTestBuildMessage() {
-    console.log('Input for android', core.getInput('ANDROID', { required: true }));
-    const androidSuccess = core.getInput('ANDROID', { required: true }) === 'success';
-    const iOSSuccess = core.getInput('IOS', { required: true }) === 'success';
-    const androidLink = androidSuccess
-        ? core.getInput('ANDROID_LINK')
-        : '❌ FAILED ❌';
-    const iOSLink = iOSSuccess ? core.getInput('IOS_LINK') : '❌ FAILED ❌';
-    const androidQRCode = androidSuccess
-        ? `![Android](https://api.qrserver.com/v1/create-qr-code/?size=120x120&data=${androidLink})`
-        : "The QR code can't be generated, because the android build failed";
-    const iOSQRCode = iOSSuccess
-        ? `![iOS](https://api.qrserver.com/v1/create-qr-code/?size=120x120&data=${iOSLink})`
-        : "The QR code can't be generated, because the iOS build failed";
-    const message = `:test_tube::test_tube: Use the links below to test this adhoc build on Android and iOS. Happy testing! :test_tube::test_tube:
-| Android :robot:  | iOS :apple: |
-| ------------- | ------------- |
-| ${androidLink}  | ${iOSLink}  |
-| ${androidQRCode}  | ${iOSQRCode}  |
-
----
-
-:eyes: [View the workflow run that generated this build](https://github.com/${github_1.context.repo.owner}/${github_1.context.repo.repo}/actions/runs/${github_1.context.runId}) :eyes:
-`;
-    return message;
-}
-/** Comment on a single PR */
-async function commentPR(PR, message) {
-    console.log(`Posting test build comment on #${PR}`);
-    try {
-        await GithubUtils_1.default.createComment(github_1.context.repo.repo, PR, message);
-        console.log(`Comment created on #${PR} successfully 🎉`);
-    }
-    catch (err) {
-        console.log(`Unable to write comment on #${PR} 😞`);
-        if (err instanceof Error) {
-            core.setFailed(err.message);
-        }
-    }
-}
-async function run() {
-    const PR_NUMBER = Number(core.getInput('PR_NUMBER', { required: true }));
-    const comments = await GithubUtils_1.default.paginate(GithubUtils_1.default.octokit.issues.listComments, {
-        owner: CONST_1.default.GITHUB_OWNER,
-        repo: CONST_1.default.APP_REPO,
-        // eslint-disable-next-line @typescript-eslint/naming-convention
-        issue_number: PR_NUMBER,
-        // eslint-disable-next-line @typescript-eslint/naming-convention
-        per_page: 100,
-    }, response => response.data);
-    const testBuildComment = comments.find(comment => {
-        var _a;
-        return (_a = comment.body) === null || _a === void 0 ? void 0 : _a.startsWith(':test_tube::test_tube: Use the links below to test this adhoc build');
-    });
-    if (testBuildComment) {
-        console.log('Found previous build comment, hiding it', testBuildComment);
-        await GithubUtils_1.default.graphql(`
-            mutation {
-              minimizeComment(input: {classifier: OUTDATED, subjectId: "${testBuildComment.node_id}"}) {
-                minimizedComment {
-                  minimizedReason
-                }
-              }
-            }
-        `);
-    }
-    await commentPR(PR_NUMBER, getTestBuildMessage());
-}
-if (require.main === require.cache[eval('__filename')]) {
-    run();
-}
-exports["default"] = run;
-
-})();
-
-module.exports = __webpack_exports__;
+/******/ 	
+/******/ 	// startup
+/******/ 	// Load entry module and return exports
+/******/ 	// This entry module is referenced by other modules so it can't be inlined
+/******/ 	var __webpack_exports__ = __nccwpck_require__(1761);
+/******/ 	module.exports = __webpack_exports__;
+/******/ 	
 /******/ })()
 ;
