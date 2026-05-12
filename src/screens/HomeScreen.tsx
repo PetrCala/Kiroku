@@ -32,6 +32,7 @@ import * as DSUtils from '@libs/DrinkingSessionUtils';
 import * as DS from '@userActions/DrinkingSession';
 import * as ErrorUtils from '@libs/ErrorUtils';
 import * as Session from '@userActions/Session';
+import Timing from '@userActions/Timing';
 import ScrollView from '@components/ScrollView';
 import useLocalize from '@hooks/useLocalize';
 import {roundToTwoDecimalPlaces} from '@libs/NumberUtils';
@@ -154,6 +155,7 @@ function HomeScreen({route}: HomeScreenProps) {
     }
     Session.setHasCheckedAutoLogin(true);
     setIsLoading(false);
+    Timing.end(CONST.TIMING.HOMEPAGE_INITIAL_RENDER);
   }, [loadingText, preferences, userData, user]);
 
   if (!user) {

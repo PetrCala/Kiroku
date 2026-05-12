@@ -213,8 +213,6 @@ function AuthScreens() {
 
     // Download.clearDownloads();
 
-    Timing.end(CONST.TIMING.HOMEPAGE_INITIAL_RENDER);
-
     // Listen to keyboard shortcuts for opening certain pages
     // const unsubscribeShortcutsOverviewShortcut = KeyboardShortcut.subscribe(
     //   shortcutsOverviewShortcutConfig.shortcutKey,
