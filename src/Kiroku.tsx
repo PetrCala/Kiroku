@@ -123,11 +123,12 @@ function Kiroku() {
   // For logged-out users, theme is ready immediately (system default will be used)
   const isThemeReady = !isAuthenticated || preferredTheme !== undefined;
 
-  const shouldHideSplash =
+  const shouldHideSplash = !!(
     shouldInit &&
     authenticationChecked &&
     isThemeReady &&
-    splashScreenState === CONST.BOOT_SPLASH_STATE.VISIBLE;
+    splashScreenState === CONST.BOOT_SPLASH_STATE.VISIBLE
+  );
 
   const initializeClient = () => {
     if (!Visibility.isVisible()) {
@@ -309,9 +310,12 @@ function Kiroku() {
         lastVisitedPath={lastVisitedPath as Route}
         initialUrl={initialUrl}
       />
-      {/* SplashScreenHider is always rendered to cover content until app is ready.
-          When shouldHideSplash becomes true, isVisible becomes false and the hide animation triggers. */}
-      <SplashScreenHider onHide={onSplashHide} isVisible={!shouldHideSplash} />
+      {splashScreenState !== CONST.BOOT_SPLASH_STATE.HIDDEN && (
+        <SplashScreenHider
+          shouldHideSplash={shouldHideSplash}
+          onHide={onSplashHide}
+        />
+      )}
     </>
   );
 }
