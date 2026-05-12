@@ -24,7 +24,7 @@ const PopoverContext = createContext<PopoverContextValue>({
 });
 
 function elementContains(
-  ref: RefObject<View | HTMLElement | Text> | undefined,
+  ref: RefObject<View | HTMLElement | Text | null> | undefined,
   target: EventTarget | null,
 ) {
   if (
@@ -44,7 +44,7 @@ function PopoverContextProvider(props: PopoverContextProps) {
     useState<AnchorRef['anchorRef']['current']>(null);
 
   const closePopover = useCallback(
-    (anchorRef?: RefObject<View | HTMLElement | Text>): boolean => {
+    (anchorRef?: RefObject<View | HTMLElement | Text | null>): boolean => {
       if (
         !activePopoverRef.current ||
         (anchorRef && anchorRef !== activePopoverRef.current.anchorRef)

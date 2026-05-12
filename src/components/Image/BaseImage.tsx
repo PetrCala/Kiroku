@@ -21,8 +21,8 @@ function BaseImage({onLoad, ...props}: BaseImageProps) {
     <RNImage
       // Only subscribe to onLoad when a handler is provided to avoid unnecessary event registrations, optimizing performance.
       onLoad={onLoad ? imageLoadedSuccessfully : undefined}
-      // eslint-disable-next-line react/jsx-props-no-spreading
-      {...props}
+      // eslint-disable-next-line react/jsx-props-no-spreading, @typescript-eslint/no-explicit-any
+      {...(props as any)}
     />
   );
 }

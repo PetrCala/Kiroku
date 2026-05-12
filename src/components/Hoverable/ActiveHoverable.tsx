@@ -187,7 +187,8 @@ function ActiveHoverable(
     [updateIsHovered, onMouseMove],
   );
 
-  return cloneElement(child, {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  return cloneElement(child as React.ReactElement<any>, {
     ref: mergeRefs(elementRef, outerRef, child.ref),
     onMouseEnter: hoverAndForwardOnMouseEnter,
     onMouseLeave: unhoverAndForwardOnMouseLeave,

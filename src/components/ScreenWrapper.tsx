@@ -47,7 +47,7 @@ type ScreenWrapperChildrenProps = {
 
 type ScreenWrapperProps = {
   /** Returns a function as a child to pass insets to or a node to render without insets */
-  children: ReactNode | React.FC<ScreenWrapperChildrenProps>;
+  children: ReactNode | ((props: ScreenWrapperChildrenProps) => ReactNode);
 
   /** A unique ID to find the screen wrapper in tests */
   testID: string;

@@ -7,7 +7,6 @@ import {randDrinkingSessionList} from '../utils/collections/drinkingSessions';
 beforeAll(() =>
   Onyx.init({
     keys: ONYXKEYS,
-    safeEvictionKeys: [ONYXKEYS.COLLECTION.DRINKING_SESSION],
   }),
 );
 

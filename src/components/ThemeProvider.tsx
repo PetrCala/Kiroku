@@ -19,7 +19,7 @@ function ThemeProvider({
     staticThemePreference,
   );
   const [, debouncedTheme, setDebouncedTheme] =
-    useDebouncedState(themePreference);
+    useDebouncedState<ThemePreferenceWithoutSystem>(themePreference);
 
   useEffect(() => {
     setDebouncedTheme(themePreference);

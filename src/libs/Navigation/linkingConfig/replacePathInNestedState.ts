@@ -12,7 +12,6 @@ function replacePathInNestedState(
     return;
   }
 
-  // @ts-expect-error Updating read only property
-  found.path = path;
+  (found as {path?: string}).path = path;
 }
 export default replacePathInNestedState;

@@ -130,6 +130,7 @@ function SessionsCalendar({
       renderArrow={(direction: Direction) => CalendarArrow(direction)}
       style={styles.sessionsCalendarContainer}
       theme={StyleUtils.getSessionsCalendarStyle()}
+      // @ts-expect-error locale prop exists at runtime but is not declared in types
       locale={locale}
     />
   );

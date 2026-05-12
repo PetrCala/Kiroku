@@ -118,10 +118,10 @@ function FormProvider(
   const [network] = useOnyx(ONYXKEYS.NETWORK, {canBeMissing: true});
   const [formState] = useOnyx(formID as OnyxKey, {
     canBeMissing: true,
-  }) as [OnyxEntry<Form>];
+  }) as [OnyxEntry<Form>, unknown];
   const [draftValues] = useOnyx(`${formID}Draft` as OnyxKey, {
     canBeMissing: true,
-  }) as [OnyxEntry<Form>];
+  }) as [OnyxEntry<Form>, unknown];
 
   const inputRefs = useRef<InputRefs>({});
   const touchedInputs = useRef<Record<string, boolean>>({});

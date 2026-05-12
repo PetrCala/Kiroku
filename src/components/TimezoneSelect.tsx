@@ -1,5 +1,4 @@
-import type {ForwardedRef} from 'react';
-import React, {useState} from 'react';
+import React, {forwardRef, useState} from 'react';
 import useInitialValue from '@hooks/useInitialValue';
 import useLocalize from '@hooks/useLocalize';
 import TIMEZONES from '@src/TIMEZONES';
@@ -21,13 +20,9 @@ type TimezoneSelectProps = {
   onSelectedTimezone?: (timezone: SelectedTimezone) => void;
 };
 
-function TimezoneSelect(
-  {
-    initialTimezone,
-
-    onSelectedTimezone,
-  }: TimezoneSelectProps,
-  ref: ForwardedRef<SelectionListHandle>,
+const TimezoneSelect = forwardRef(function TimezoneSelect(
+  {initialTimezone, onSelectedTimezone}: TimezoneSelectProps,
+  ref: React.ForwardedRef<SelectionListHandle>,
 ) {
   const {translate} = useLocalize();
   const allTimezones = useInitialValue(() =>
@@ -94,7 +89,6 @@ function TimezoneSelect(
       ListItem={RadioListItem}
     />
   );
-}
+});
 
-TimezoneSelect.displayName = 'TimezoneSelect';
 export default TimezoneSelect;

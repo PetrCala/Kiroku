@@ -65,10 +65,11 @@ export default function linkTo(
 
   const isNarrowLayout = getIsNarrowLayout();
 
-  const action: StackNavigationAction = getActionFromState(
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const action = getActionFromState(
     stateFromPath,
     linkingConfig.config,
-  );
+  ) as StackNavigationAction;
 
   // If action type is different than NAVIGATE we can't change it to the PUSH safely
   if (action?.type === CONST.NAVIGATION.ACTION_TYPE.NAVIGATE) {

@@ -9,7 +9,7 @@ import {ScreenWrapperStatusContext} from '@components/ScreenWrapper';
  * To maintain consistency when an element is focused in the app, the focus() method is additionally called on the focused element to eliminate the difference between native browser focus and application focus.
  */
 const useSyncFocus = (
-  ref: RefObject<View>,
+  ref: RefObject<View | null>,
   isFocused: boolean,
   shouldSyncFocus = true,
 ) => {

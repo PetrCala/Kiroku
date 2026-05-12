@@ -126,7 +126,7 @@ function BaseSelectionList<TItem extends ListItem>(
   const listRef =
     useRef<RNSectionList<TItem, SectionWithIndexOffset<TItem>>>(null);
   const innerTextInputRef = useRef<RNTextInput | null>(null);
-  const focusTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const focusTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const shouldShowTextInput = !!textInputLabel || !!textInputIconLeft;
   const shouldShowSelectAll = !!onSelectAll;
   const activeElementRole = useActiveElementRole();
@@ -142,7 +142,9 @@ function BaseSelectionList<TItem extends ListItem>(
   const [itemsToHighlight, setItemsToHighlight] = useState<Set<string> | null>(
     null,
   );
-  const itemFocusTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const itemFocusTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(
+    null,
+  );
   const [currentPage, setCurrentPage] = useState(1);
   const isTextInputFocusedRef = useRef<boolean>(false);
   const {singleExecution} = useSingleExecution();

@@ -11,7 +11,7 @@ type SafeAreaChildrenProps = {
 };
 
 type SafeAreaConsumerProps = {
-  children: React.FC<SafeAreaChildrenProps>;
+  children: (props: SafeAreaChildrenProps) => React.ReactNode;
 };
 
 export default SafeAreaConsumerProps;

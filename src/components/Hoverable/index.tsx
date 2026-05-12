@@ -19,8 +19,10 @@ function Hoverable(
   // eslint-disable-next-line @typescript-eslint/prefer-nullish-coalescing
   if (isDisabled || !hasHoverSupport()) {
     const child = getReturnValue(props.children, false);
-    // eslint-disable-next-line react-compiler/react-compiler
-    return cloneElement(child, {ref: mergeRefs(ref, child.ref)});
+    // eslint-disable-next-line react-compiler/react-compiler, @typescript-eslint/no-explicit-any
+    return cloneElement(child as React.ReactElement<any>, {
+      ref: mergeRefs(ref, child.ref),
+    });
   }
 
   return (

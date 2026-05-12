@@ -67,7 +67,7 @@ const useBatchedUpdates = (
   const [isPending, setIsPending] = useState(false);
   const updatesRef = useRef<any>({});
   const syncingRef = useRef<boolean>(false);
-  const timerRef = useRef<NodeJS.Timeout | null>(null);
+  const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const retriesRef = useRef<number>(0);
   const maxRetries = 1;
 

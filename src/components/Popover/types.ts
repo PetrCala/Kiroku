@@ -21,7 +21,7 @@ type PopoverProps = BaseModalProps &
     anchorAlignment?: AnchorAlignment;
 
     /** The anchor ref of the popover */
-    anchorRef: RefObject<View | HTMLDivElement | Text>;
+    anchorRef: RefObject<View | HTMLDivElement | Text | null>;
 
     /** Whether disable the animations */
     disableAnimation?: boolean;
@@ -33,7 +33,7 @@ type PopoverProps = BaseModalProps &
     popoverDimensions?: PopoverDimensions;
 
     /** The ref of the popover */
-    withoutOverlayRef?: RefObject<View | HTMLDivElement>;
+    withoutOverlayRef?: RefObject<View | HTMLDivElement | null>;
 
     /** Whether we want to show the popover on the right side of the screen */
     fromSidebarMediumScreen?: boolean;

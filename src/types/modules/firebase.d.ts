@@ -5,5 +5,5 @@ declare function getReactNativePersistence(
 ): Persistence;
 
 declare module 'firebase/auth' {
-  export default getReactNativePersistence;
+  export {getReactNativePersistence};
 }

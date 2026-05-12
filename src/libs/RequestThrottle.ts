@@ -8,7 +8,7 @@ class RequestThrottle {
 
   private requestRetryCount = 0;
 
-  private timeoutID?: NodeJS.Timeout;
+  private timeoutID?: ReturnType<typeof setTimeout>;
 
   private name: string;
 

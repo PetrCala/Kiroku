@@ -10,14 +10,14 @@ type PopoverContextValue = {
   onOpen?: (popoverParams: AnchorRef) => void;
   popover?: AnchorRef | null;
   popoverAnchor?: AnchorRef['anchorRef']['current'];
-  close: (anchorRef?: RefObject<View | HTMLDivElement | Text>) => void;
+  close: (anchorRef?: RefObject<View | HTMLDivElement | Text | null>) => void;
   isOpen: boolean;
 };
 
 type AnchorRef = {
-  ref: RefObject<View | HTMLDivElement | Text>;
-  close: (anchorRef?: RefObject<View | HTMLDivElement | Text>) => void;
-  anchorRef: RefObject<View | HTMLDivElement | Text>;
+  ref: RefObject<View | HTMLDivElement | Text | null>;
+  close: (anchorRef?: RefObject<View | HTMLDivElement | Text | null>) => void;
+  anchorRef: RefObject<View | HTMLDivElement | Text | null>;
 };
 
 export type {PopoverContextProps, PopoverContextValue, AnchorRef};
