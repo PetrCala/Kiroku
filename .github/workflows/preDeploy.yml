@@ -24,13 +24,11 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-
       - name: Announce failed workflow in Discord
         if: ${{ needs.typecheck.result == 'failure' || needs.lint.result == 'failure' || needs.test.result == 'failure' }}
         uses: ./.github/actions/composite/announceFailedWorkflowInDiscord
         with:
           DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_URL }}
-
 
       - name: Exit failed workflow
         if: ${{ needs.typecheck.result == 'failure' || needs.lint.result == 'failure' || needs.test.result == 'failure' }}
@@ -113,7 +111,7 @@ jobs:
           github_token: ${{ secrets.KIROKU_ADMIN_TOKEN }}
           number: ${{ needs.chooseDeployActions.outputs.MERGED_PR }}
           body: |
-            :hand: This PR was not deployed to staging yet because QA is ongoing. It will be automatically deployed to staging after the next production release.
+            :hand: This PR was not deployed to staging yet because internal QA is ongoing. It will be automatically deployed to staging after the next production release.
 
   createNewVersion:
     needs: chooseDeployActions

@@ -33670,7 +33670,6 @@ const CONST = {
     LABELS: {
         STAGING_DEPLOY: 'StagingDeployCash',
         DEPLOY_BLOCKER: 'DeployBlockerCash',
-        INTERNAL_QA: 'InternalQA',
         HELP_WANTED: 'Help Wanted',
         CP_STAGING: 'CP Staging',
     },
@@ -34029,10 +34028,10 @@ class GithubUtils {
                     ? /-\s\[x]\sAndroid closed beta build installed/.test(issue.body)
                     : false,
                 isFirebaseChecked: issue.body
-                    ? /-\s\[x]\sI checked \[Firebase Crashlytics]/.test(issue.body)
+                    ? /-\s\[x]\s(?:I checked\s)?(?:\[Firebase Crashlytics]|Firebase Crashlytics)/.test(issue.body)
                     : false,
                 isGHStatusChecked: issue.body
-                    ? /-\s\[x]\sI checked \[GitHub Status]/.test(issue.body)
+                    ? /-\s\[x]\s(?:I checked\s)?(?:\[GitHub Status]|GitHub Status)/.test(issue.body)
                     : false,
                 tag,
             };
@@ -34042,16 +34041,14 @@ class GithubUtils {
         }
     }
     /**
-     * Parse the PRList and Internal QA section of the StagingDeployCash issue body.
-     *
-     * @private
+     * Parse the PR list section of the deploy checklist issue body.
      */
     static getStagingDeployCashPRList(issue) {
         var _a, _b;
-        let PRListSection = (_b = (_a = issue.body) === null || _a === void 0 ? void 0 : _a.match(/pull requests:\*\*\r?\n((?:-.*\r?\n)+)\r?\n\r?\n?/)) !== null && _b !== void 0 ? _b : null;
+        let PRListSection = (_b = (_a = issue.body) === null || _a === void 0 ? void 0 : _a.match(/\*\*(?:Pull Requests Included|This release contains changes from the following pull requests):\*\*\r?\n((?:-.*\r?\n)+)\r?\n\r?\n?/i)) !== null && _b !== void 0 ? _b : null;
         if ((PRListSection === null || PRListSection === void 0 ? void 0 : PRListSection.length) !== 2) {
             // No PRs, return an empty array
-            console.log('Hmmm...The open StagingDeployCash does not list any pull requests, continuing...');
+            console.log('The open deploy checklist does not list any pull requests, continuing...');
             return [];
         }
         PRListSection = PRListSection[1];
@@ -34065,9 +34062,7 @@ class GithubUtils {
         return PRList.sort((a, b) => a.number - b.number);
     }
     /**
-     * Parse DeployBlocker section of the StagingDeployCash issue body.
-     *
-     * @private
+     * Parse the deploy blocker section of the deploy checklist issue body.
      */
     static getStagingDeployCashDeployBlockers(issue) {
         var _a, _b;
@@ -34086,60 +34081,44 @@ class GithubUtils {
         return deployBlockers.sort((a, b) => a.number - b.number);
     }
     /**
-     * Generate the issue body and assignees for a StagingDeployCash.
+     * Generate the issue body and assignees for a deploy checklist.
      */
     static generateStagingDeployCashBodyAndAssignees(tag, PRList, verifiedPRList = [], deployBlockers = [], resolvedDeployBlockers = [], isIOSSmokeChecked = false, isAndroidSmokeChecked = false, isFirebaseChecked = false, isGHStatusChecked = false) {
-        return this.fetchAllPullRequests(PRList.map(pr => this.getPullRequestNumberFromURL(pr)))
-            .then(data => {
-            const noQAPRs = Array.isArray(data)
-                ? data
-                    .filter(PR => /\[No\s?QA]/i.test(PR.title))
-                    .map(item => item.html_url)
-                : [];
-            console.log('Found the following NO QA PRs:', noQAPRs);
-            const verifiedOrNoQAPRs = [
-                ...new Set([...verifiedPRList, ...noQAPRs]),
-            ];
-            const sortedPRList = [...new Set(PRList)].sort((a, b) => GithubUtils.getPullRequestNumberFromURL(a) -
-                GithubUtils.getPullRequestNumberFromURL(b));
-            const sortedDeployBlockers = [...new Set(deployBlockers)].sort((a, b) => GithubUtils.getIssueOrPullRequestNumberFromURL(a) -
-                GithubUtils.getIssueOrPullRequestNumberFromURL(b));
-            // Tag version and comparison URL
-            // eslint-disable-next-line max-len
-            let issueBody = `**Release Version:** \`${tag}\`\r\n**Compare Changes:** https://github.com/PetrCala/Kiroku/compare/production...staging\r\n`;
-            // PR list
-            if (sortedPRList.length > 0) {
-                issueBody +=
-                    '\r\n**This release contains changes from the following pull requests:**\r\n';
-                sortedPRList.forEach(URL => {
-                    issueBody += verifiedOrNoQAPRs.includes(URL) ? '- [x]' : '- [ ]';
-                    issueBody += ` ${URL}\r\n`;
-                });
-                issueBody += '\r\n\r\n';
-            }
-            // Deploy blockers
-            if (deployBlockers.length > 0) {
-                issueBody += '**Deploy Blockers:**\r\n';
-                sortedDeployBlockers.forEach(URL => {
-                    issueBody += resolvedDeployBlockers.includes(URL)
-                        ? '- [x] '
-                        : '- [ ] ';
-                    issueBody += URL;
-                    issueBody += '\r\n';
-                });
-                issueBody += '\r\n\r\n';
-            }
-            issueBody += '**Deployer verifications:**';
-            issueBody += `\r\n- [${isIOSSmokeChecked ? 'x' : ' '}] iOS internal TestFlight build installed and basic launch verified.`;
-            issueBody += `\r\n- [${isAndroidSmokeChecked ? 'x' : ' '}] Android closed beta build installed and basic launch verified.`;
-            // eslint-disable-next-line max-len
-            issueBody += `\r\n- [${isFirebaseChecked ? 'x' : ' '}] I checked [Firebase Crashlytics](https://console.firebase.google.com/u/0/project/alcohol-tracker-db/crashlytics/app/android:com.alcohol_tracker/issues?state=open&time=last-seven-days&tag=all) and verified that this release does not introduce any new crashes.`;
-            issueBody += `\r\n- [${isGHStatusChecked ? 'x' : ' '}] I checked [GitHub Status](https://www.githubstatus.com/) and verified there is no reported incident with Actions.`;
-            const issueAssignees = [];
-            const issue = { issueBody, issueAssignees };
-            return issue;
-        })
-            .catch(err => console.warn('Error generating StagingDeployCash issue body! Continuing...', err));
+        const sortedPRList = [...new Set(PRList)].sort((a, b) => GithubUtils.getPullRequestNumberFromURL(a) -
+            GithubUtils.getPullRequestNumberFromURL(b));
+        const sortedDeployBlockers = [...new Set(deployBlockers)].sort((a, b) => GithubUtils.getIssueOrPullRequestNumberFromURL(a) -
+            GithubUtils.getIssueOrPullRequestNumberFromURL(b));
+        const issueBodyLines = [
+            `**Release Version:** \`${tag}\``,
+            `**Compare Link:** ${CONST_1.default.APP_REPO_URL}/compare/production...staging`,
+            '',
+            '**Pull Requests Included:**',
+        ];
+        if (sortedPRList.length === 0) {
+            issueBodyLines.push('No pull requests found.');
+        }
+        else {
+            sortedPRList.forEach(URL => {
+                const isChecked = verifiedPRList.includes(URL);
+                issueBodyLines.push(`- [${isChecked ? 'x' : ' '}] ${URL}`);
+            });
+        }
+        issueBodyLines.push('', '**Deploy Blockers:**');
+        if (sortedDeployBlockers.length === 0) {
+            issueBodyLines.push('No open deploy blockers.');
+        }
+        else {
+            sortedDeployBlockers.forEach(URL => {
+                const isChecked = resolvedDeployBlockers.includes(URL);
+                issueBodyLines.push(`- [${isChecked ? 'x' : ' '}] ${URL}`);
+            });
+        }
+        issueBodyLines.push('', '**Simple Smoke Checks:**', `- [${isIOSSmokeChecked ? 'x' : ' '}] iOS internal TestFlight build installed and basic launch verified.`, `- [${isAndroidSmokeChecked ? 'x' : ' '}] Android closed beta build installed and basic launch verified.`, '', '**Crash/Status Checks:**', `- [${isFirebaseChecked ? 'x' : ' '}] [Firebase Crashlytics](https://console.firebase.google.com/u/0/project/alcohol-tracker-db/crashlytics/app/android:com.alcohol_tracker/issues?state=open&time=last-seven-days&tag=all) checked.`, `- [${isGHStatusChecked ? 'x' : ' '}] [GitHub Status](https://www.githubstatus.com/) checked.`, '', '**Final Approval:**', 'Close this checklist only after the last comment begins with `:shipit:`.');
+        const issueAssignees = [];
+        return Promise.resolve({
+            issueBody: issueBodyLines.join('\r\n'),
+            issueAssignees,
+        });
     }
     /**
      * Fetch all pull requests given a list of PR numbers.
@@ -58214,7 +58193,7 @@ async function run() {
     const packageJson = JSON.parse((0, fs_1.readFileSync)('package.json', 'utf8'));
     const newVersionTag = core.getInput('TAG', { required: false }) || packageJson.version;
     try {
-        // Start by fetching the list of recent StagingDeployCash issues, along with the list of open deploy blockers
+        // Start by fetching the list of recent deploy checklists and open deploy blockers.
         const { data: recentDeployChecklists } = await GithubUtils_1.default.octokit.issues.listForRepo({
             log: console,
             owner: CONST_1.default.GITHUB_OWNER,
@@ -58222,7 +58201,13 @@ async function run() {
             labels: CONST_1.default.LABELS.STAGING_DEPLOY,
             state: 'all',
         });
-        // Look at the state of the most recent StagingDeployCash,
+        const { data: openDeployBlockers } = await GithubUtils_1.default.octokit.issues.listForRepo({
+            log: console,
+            owner: CONST_1.default.GITHUB_OWNER,
+            repo: CONST_1.default.APP_REPO,
+            labels: CONST_1.default.LABELS.DEPLOY_BLOCKER,
+        });
+        // Look at the state of the most recent deploy checklist,
         // if it is open then we'll update the existing one, otherwise, we'll create a new one.
         const mostRecentChecklist = recentDeployChecklists[0];
         const shouldCreateNewDeployChecklist = mostRecentChecklist.state !== 'open';
@@ -58230,10 +58215,10 @@ async function run() {
             ? mostRecentChecklist
             : recentDeployChecklists[1];
         if (shouldCreateNewDeployChecklist) {
-            console.log('Latest StagingDeployCash is closed, creating a new one.', mostRecentChecklist);
+            console.log('Latest deploy checklist is closed, creating a new one.', mostRecentChecklist);
         }
         else {
-            console.log('Latest StagingDeployCash is open, updating it instead of creating a new one.', 'Current:', mostRecentChecklist, 'Previous:', previousChecklist);
+            console.log('Latest deploy checklist is open, updating it instead of creating a new one.', 'Current:', mostRecentChecklist, 'Previous:', previousChecklist);
         }
         // Parse the data from the previous and current checklists into the format used to generate the checklist
         const previousChecklistData = GithubUtils_1.default.getStagingDeployCashData(previousChecklist);
@@ -58246,7 +58231,7 @@ async function run() {
         let checklistBody = '';
         let checklistAssignees = [];
         if (shouldCreateNewDeployChecklist) {
-            const stagingDeployCashBodyAndAssignees = await GithubUtils_1.default.generateStagingDeployCashBodyAndAssignees(newVersionTag, mergedPRs.map(value => GithubUtils_1.default.getPullRequestURLFromNumber(value)));
+            const stagingDeployCashBodyAndAssignees = await GithubUtils_1.default.generateStagingDeployCashBodyAndAssignees(newVersionTag, mergedPRs.map(value => GithubUtils_1.default.getPullRequestURLFromNumber(value)), [], openDeployBlockers.map(deployBlocker => deployBlocker.html_url));
             if (stagingDeployCashBodyAndAssignees) {
                 checklistBody = stagingDeployCashBodyAndAssignees.issueBody;
                 checklistAssignees =
@@ -58268,12 +58253,6 @@ async function run() {
                 };
             });
             // Generate the deploy blocker list, preserving the previous state of `isResolved`
-            const { data: openDeployBlockers } = await GithubUtils_1.default.octokit.issues.listForRepo({
-                log: console,
-                owner: CONST_1.default.GITHUB_OWNER,
-                repo: CONST_1.default.APP_REPO,
-                labels: CONST_1.default.LABELS.DEPLOY_BLOCKER,
-            });
             // First, make sure we include all current deploy blockers
             const deployBlockers = openDeployBlockers.map(deployBlocker => {
                 var _a;
@@ -58287,18 +58266,20 @@ async function run() {
                     isResolved,
                 };
             });
-            // Then make sure we include any demoted or closed blockers as well, and just check them off automatically
+            // Then include any demoted or closed blockers, and check them off automatically.
             currentChecklistData === null || currentChecklistData === void 0 ? void 0 : currentChecklistData.deployBlockers.forEach(deployBlocker => {
-                const isResolved = deployBlockers.findIndex(openBlocker => openBlocker.number === deployBlocker.number) < 0;
+                const isStillOpen = deployBlockers.findIndex(openBlocker => openBlocker.number === deployBlocker.number) >= 0;
+                if (isStillOpen) {
+                    return;
+                }
                 deployBlockers.push({
                     ...deployBlocker,
-                    isResolved,
+                    isResolved: true,
                 });
             });
-            const didVersionChange = newVersionTag !== (currentChecklistData === null || currentChecklistData === void 0 ? void 0 : currentChecklistData.tag);
             const stagingDeployCashBodyAndAssignees = await GithubUtils_1.default.generateStagingDeployCashBodyAndAssignees(newVersionTag, PRList.map(pr => pr.url), PRList.filter(pr => pr.isVerified).map(pr => pr.url), deployBlockers.map(blocker => blocker.url), deployBlockers
                 .filter(blocker => blocker.isResolved)
-                .map(blocker => blocker.url), didVersionChange ? false : currentChecklistData.isIOSSmokeChecked, didVersionChange ? false : currentChecklistData.isAndroidSmokeChecked, didVersionChange ? false : currentChecklistData.isFirebaseChecked, didVersionChange ? false : currentChecklistData.isGHStatusChecked);
+                .map(blocker => blocker.url), currentChecklistData.isIOSSmokeChecked, currentChecklistData.isAndroidSmokeChecked, currentChecklistData.isFirebaseChecked, currentChecklistData.isGHStatusChecked);
             if (stagingDeployCashBodyAndAssignees) {
                 checklistBody = stagingDeployCashBodyAndAssignees.issueBody;
                 checklistAssignees =
@@ -58318,7 +58299,7 @@ async function run() {
                 labels: [CONST_1.default.LABELS.STAGING_DEPLOY],
                 assignees: checklistAssignees,
             });
-            console.log(`Successfully created new StagingDeployCash! 🎉 ${newChecklist.html_url}`);
+            console.log(`Successfully created new deploy checklist! 🎉 ${newChecklist.html_url}`);
             return newChecklist;
         }
         const { data: updatedChecklist } = await GithubUtils_1.default.octokit.issues.update({
@@ -58326,7 +58307,7 @@ async function run() {
             // eslint-disable-next-line @typescript-eslint/naming-convention
             issue_number: (_b = currentChecklistData === null || currentChecklistData === void 0 ? void 0 : currentChecklistData.number) !== null && _b !== void 0 ? _b : 0,
         });
-        console.log(`Successfully updated StagingDeployCash! 🎉 ${updatedChecklist.html_url}`);
+        console.log(`Successfully updated deploy checklist! 🎉 ${updatedChecklist.html_url}`);
         return updatedChecklist;
     }
     catch (err) {

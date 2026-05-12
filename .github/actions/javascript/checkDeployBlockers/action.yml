@@ -1,5 +1,5 @@
-name: 'Check Deploy blockers'
-description: 'Check a recently closed `ProductionDeployCash` issue for unchecked boxes or a missing `:shipit:` comment'
+name: 'Check Deploy Blockers'
+description: 'Check a recently closed deploy checklist for unchecked boxes or a missing `:shipit:` comment'
 inputs:
   GITHUB_TOKEN:
     description: Auth token for Kiroku Github; necessary for accessing Octokit.
