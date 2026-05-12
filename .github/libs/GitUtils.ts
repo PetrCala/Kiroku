@@ -58,18 +58,21 @@ function tagExists(tag: string) {
  */
 function getPreviousExistingTag(tag: string, level: SemverLevel) {
   let previousVersion = VersionUpdater.getPreviousVersion(tag, level);
-  let tagExistsForPreviousVersion = false;
-  while (!tagExistsForPreviousVersion) {
+  while (true) {
     if (tagExists(previousVersion)) {
-      tagExistsForPreviousVersion = true;
-      break;
+      return previousVersion;
+    }
+    const nextVersion = VersionUpdater.getPreviousVersion(previousVersion, level);
+    if (nextVersion === previousVersion) {
+      // Reached the floor version with no matching tag — bail out.
+      // fetchTag handles an empty/same shallowExcludeTag gracefully.
+      return previousVersion;
     }
     console.log(
       `Tag for previous version ${previousVersion} does not exist. Checking for an older version...`,
     );
-    previousVersion = VersionUpdater.getPreviousVersion(previousVersion, level);
+    previousVersion = nextVersion;
   }
-  return previousVersion;
 }
 
 /**

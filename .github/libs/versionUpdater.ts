@@ -80,6 +80,9 @@ function getPreviousVersion(currentVersion: string, level: string): string {
     const [major, minor, patch, build] = getVersionNumberFromString(currentVersion);
 
     if (level === SEMANTIC_VERSION_LEVELS.MAJOR) {
+        if (major === 0) {
+            return getVersionStringFromNumber(0, 0, 0, 0);
+        }
         if (major === 1) {
             return getVersionStringFromNumber(1, 0, 0, 0);
         }

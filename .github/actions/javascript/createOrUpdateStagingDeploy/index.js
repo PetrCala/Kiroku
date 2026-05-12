@@ -33758,16 +33758,19 @@ function tagExists(tag) {
  */
 function getPreviousExistingTag(tag, level) {
     let previousVersion = VersionUpdater.getPreviousVersion(tag, level);
-    let tagExistsForPreviousVersion = false;
-    while (!tagExistsForPreviousVersion) {
+    while (true) {
         if (tagExists(previousVersion)) {
-            tagExistsForPreviousVersion = true;
-            break;
+            return previousVersion;
+        }
+        const nextVersion = VersionUpdater.getPreviousVersion(previousVersion, level);
+        if (nextVersion === previousVersion) {
+            // Reached the floor version with no matching tag — bail out.
+            // fetchTag handles an empty/same shallowExcludeTag gracefully.
+            return previousVersion;
         }
         console.log(`Tag for previous version ${previousVersion} does not exist. Checking for an older version...`);
-        previousVersion = VersionUpdater.getPreviousVersion(previousVersion, level);
+        previousVersion = nextVersion;
     }
-    return previousVersion;
 }
 /**
  * @param [shallowExcludeTag] When fetching the given tag, exclude all history reachable by the shallowExcludeTag (used to make fetch much faster)
@@ -34406,6 +34409,9 @@ exports.incrementVersion = incrementVersion;
 function getPreviousVersion(currentVersion, level) {
     const [major, minor, patch, build] = getVersionNumberFromString(currentVersion);
     if (level === SEMANTIC_VERSION_LEVELS.MAJOR) {
+        if (major === 0) {
+            return getVersionStringFromNumber(0, 0, 0, 0);
+        }
         if (major === 1) {
             return getVersionStringFromNumber(1, 0, 0, 0);
         }
