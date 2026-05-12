@@ -10,25 +10,10 @@ runs:
   using: composite
   steps:
     - name: Send Discord Notification
-      uses: Ilshidur/action-discord@master
-      with:
-        args: '💥 **${{ github.repository }}** failed on [${{ github.workflow }}](https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}) workflow 💥`'
-        # args: 'Workflow failed for repo {{ EVENT_PAYLOAD.repository.full_name }}.'
-        # content-type: 'json'
-        # payload: |
-        #   {
-        #     "content": "",
-        #     "embeds": [{
-        #       "title": "🚨 Workflow Failed",
-        #       "color": 13632027,
-        #       "description": `💥 **${{ github.repository }}** failed on [${{ github.workflow }}](https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}) workflow 💥`,
-        #       "timestamp": "${{ github.event.workflow_run.updated_at }}",
-        #       "footer": {
-        #         "text": "GitHub Actions",
-        #         "icon_url": "https://github.githubassets.com/images/modules/logos_page/GitHub-Mark.png"
-        #       }
-        #     }]
-        #   }
+      shell: bash
+      run: |
+        curl -s -X POST "$DISCORD_WEBHOOK" \
+          -H "Content-Type: application/json" \
+          -d "{\"content\": \"💥 **${{ github.repository }}** failed on [${{ github.workflow }}](https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}) workflow 💥\"}"
       env:
         DISCORD_WEBHOOK: ${{ inputs.DISCORD_WEBHOOK_URL }}
-        GITHUB_TOKEN: ${{ github.token }}

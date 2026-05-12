@@ -124,6 +124,16 @@ jobs:
         id: setup-node
         uses: ./.github/actions/composite/setupNode
 
+      - name: Install Ruby into tool cache (self-hosted runner)
+        run: |
+          RUBY_VERSION="3.3.4"
+          RUBY_PATH="${RUNNER_TOOL_CACHE}/Ruby/${RUBY_VERSION}/arm64"
+          if [[ ! -f "${RUBY_PATH}.complete" ]]; then
+            brew install ruby-build 2>/dev/null || true
+            ruby-build "$RUBY_VERSION" "$RUBY_PATH"
+            touch "${RUBY_PATH}.complete"
+          fi
+
       - name: Setup Ruby
         uses: ruby/setup-ruby@v1.190.0
         with:
