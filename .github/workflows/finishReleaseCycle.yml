@@ -1,10 +1,9 @@
-name: Prepare production deploy
+name: Finish release cycle
 
 on:
   issues:
     types: [closed]
 
-# The updateProduction and createNewStagingDeployCash jobs are executed when a StagingDeployCash is closed.
 jobs:
   validate:
     runs-on: ubuntu-latest
@@ -27,11 +26,15 @@ jobs:
       - name: Validate actor is deployer
         id: isDeployer
         run: |
-          PERMISSION=$(gh api /repos/${{ github.repository }}/collaborators/${{ github.actor }}/permission | jq -r '.permission')
-          if [[ "$PERMISSION" == "write" || "$PERMISSION" == "admin" ]]; then
+          if [[ "${{ github.actor }}" == "KirokuAdmin" ]]; then
             echo "IS_DEPLOYER=true" >> "$GITHUB_OUTPUT"
           else
-            echo "IS_DEPLOYER=false" >> "$GITHUB_OUTPUT"
+            PERMISSION=$(gh api /repos/${{ github.repository }}/collaborators/${{ github.actor }}/permission | jq -r '.permission')
+            if [[ "$PERMISSION" == "write" || "$PERMISSION" == "admin" ]]; then
+              echo "IS_DEPLOYER=true" >> "$GITHUB_OUTPUT"
+            else
+              echo "IS_DEPLOYER=false" >> "$GITHUB_OUTPUT"
+            fi
           fi
         env:
           GITHUB_TOKEN: ${{ secrets.KIROKU_ADMIN_TOKEN }}
@@ -43,7 +46,7 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.KIROKU_ADMIN_TOKEN }}
           ISSUE_NUMBER: ${{ github.event.issue.number }}
           COMMENT: |
-            Sorry, only Kiroku deployers of can close deploy checklists.
+            Sorry, only Kiroku deployers can close deploy checklists.
             Reopening!
 
       - name: Check for any deploy blockers
@@ -70,7 +73,7 @@ jobs:
         with:
           DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_URL }}
 
-  # Update the production branch to trigger the production deploy.
+  # Promote staging -> production; the production branch push triggers the production/open-beta deploy.
   updateProduction:
     needs: validate
     if: ${{ fromJSON(needs.validate.outputs.isValid) }}
@@ -79,18 +82,19 @@ jobs:
     with:
       TARGET_BRANCH: production
 
-  # Create a new patch version to prep for next release cycle
+  # Bump master to the next PATCH version after production is confirmed.
   createNewPatchVersion:
-    needs: validate
+    needs: [validate, updateProduction]
     if: ${{ fromJSON(needs.validate.outputs.isValid) }}
     uses: ./.github/workflows/createNewVersion.yml
     secrets: inherit
     with:
       SEMVER_LEVEL: PATCH
 
-  # Update the staging branch to trigger a staging deploy
+  # Promote master -> staging to open the next internal/closed-beta cycle.
   updateStaging:
-    needs: [updateProduction, createNewPatchVersion]
+    needs: [validate, updateProduction, createNewPatchVersion]
+    if: ${{ fromJSON(needs.validate.outputs.isValid) }}
     uses: ./.github/workflows/updateProtectedBranch.yml
     secrets: inherit
     with:
