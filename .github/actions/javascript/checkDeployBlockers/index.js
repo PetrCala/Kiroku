@@ -33672,6 +33672,7 @@ const CONST = {
         DEPLOY_BLOCKER: 'DeployBlockerCash',
         HELP_WANTED: 'Help Wanted',
         CP_STAGING: 'CP Staging',
+        CP_PRODUCTION: 'CP Production',
     },
     EVENTS: {
         ISSUE_COMMENT: 'issue_comment',
