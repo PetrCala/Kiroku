@@ -7,8 +7,13 @@ on:
         description: Pull Request number for correct placement of apps
         required: true
   pull_request:
-    types: [opened, synchronize, labeled]
-    branches: ["*ci-test/**"]
+    types: [opened, synchronize, reopened]
+    paths:
+      - 'src/**'
+      - 'android/**'
+      - 'ios/**'
+      - 'package.json'
+      - 'package-lock.json'
 
 permissions:
   id-token: write
@@ -16,26 +21,8 @@ permissions:
   contents: write
 
 jobs:
-  validateActor:
-    runs-on: ubuntu-latest
-    outputs:
-      READY_TO_BUILD: ${{  fromJSON(steps.hasReadyToBuildLabel.outputs.HAS_READY_TO_BUILD_LABEL) }}
-    steps:
-      - id: hasReadyToBuildLabel
-        name: Set HAS_READY_TO_BUILD_LABEL flag
-        run: |
-          echo "HAS_READY_TO_BUILD_LABEL=$(gh pr view "${{ env.PULL_REQUEST_NUMBER }}" --repo PetrCala/Kiroku --json labels --jq '.labels[].name' | grep -q 'Ready To Build' && echo 'true')" >> "$GITHUB_OUTPUT"
-          if [[ "$HAS_READY_TO_BUILD_LABEL" != 'true' ]]; then
-            echo "The 'Ready to Build' label is not attached to the PR #${{ env.PULL_REQUEST_NUMBER }}"
-          fi
-        env:
-          PULL_REQUEST_NUMBER: ${{ github.event.number || github.event.inputs.PULL_REQUEST_NUMBER }}
-          GITHUB_TOKEN: ${{ github.token }}
-
   getBranchRef:
     runs-on: ubuntu-latest
-    needs: validateActor
-    if: ${{ fromJSON(needs.validateActor.outputs.READY_TO_BUILD) }}
     outputs:
       REF: ${{steps.getHeadRef.outputs.REF}}
     steps:
@@ -58,8 +45,7 @@ jobs:
     runs-on:
       - self-hosted
       - android-large
-    needs: [validateActor, getBranchRef]
-    if: ${{ fromJSON(needs.validateActor.outputs.READY_TO_BUILD) }}
+    needs: [getBranchRef]
     env:
       PULL_REQUEST_NUMBER: ${{ github.event.number || github.event.inputs.PULL_REQUEST_NUMBER }}
     steps:
@@ -121,8 +107,7 @@ jobs:
 
   iOS:
     name: Build and deploy iOS for testing
-    needs: [validateActor, getBranchRef]
-    if: ${{ fromJSON(needs.validateActor.outputs.READY_TO_BUILD) }}
+    needs: [getBranchRef]
     env:
       PULL_REQUEST_NUMBER: ${{ github.event.number || github.event.inputs.PULL_REQUEST_NUMBER }}
       DEVELOPER_DIR: /Applications/Xcode_15.2.0.app/Contents/Developer
@@ -215,7 +200,7 @@ jobs:
   postGithubComment:
     runs-on: ubuntu-latest
     name: Post a GitHub comment with app download links for testing
-    needs: [validateActor, getBranchRef, android, iOS]
+    needs: [getBranchRef, android, iOS]
     if: ${{ always() }}
     env:
       PULL_REQUEST_NUMBER: ${{ github.event.number || github.event.inputs.PULL_REQUEST_NUMBER }}
