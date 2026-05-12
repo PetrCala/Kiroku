@@ -8,5 +8,5 @@ export default function updateStatusBarAppearance({
   if (!statusBarStyle) {
     return;
   }
-  StatusBar.setBarStyle(statusBarStyle, true);
+  StatusBar.setBarStyle(statusBarStyle, false);
 }

@@ -1978,6 +1978,7 @@ const styles = (theme: ThemeColors) =>
       backgroundColor: theme.splashBG,
       alignItems: 'center',
       justifyContent: 'center',
+      zIndex: 20,
     },
 
     settingValueButton: {
