@@ -129,6 +129,7 @@ Key GitHub Actions workflows:
 - `test.yml`: Unit tests
 - `typecheck.yml`: TypeScript validation
 - `lint.yml`: Code quality checks
+- `claude-review.yml`: Claude Code automated PR review — **intentionally disabled** (costs ~$1–2/PR in API credits; trigger is `workflow_dispatch` only — do not change to `pull_request`)
 
 ## Related Repositories
 
