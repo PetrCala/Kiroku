@@ -4,7 +4,6 @@ import React from 'react';
 import createCustomBottomTabNavigator from '@navigation/AppNavigator/createCustomBottomTabNavigator';
 import getTopmostCentralPaneRoute from '@navigation/getTopmostCentralPaneRoute';
 import type {
-  BottomTabNavigatorParamList,
   CentralPaneName,
   NavigationPartialRoute,
   RootStackParamList,

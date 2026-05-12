@@ -52,6 +52,7 @@ function BaseEducationalTooltip({
       {({showTooltip, hideTooltip, updateTargetBounds}) => {
         // eslint-disable-next-line react-compiler/react-compiler
         hideTooltipRef.current = hideTooltip;
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         return React.cloneElement(children as React.ReactElement<any>, {
           onLayout: (e: LayoutChangeEventWithTarget) => {
             // e.target is specific to native, use e.nativeEvent.target on web instead
