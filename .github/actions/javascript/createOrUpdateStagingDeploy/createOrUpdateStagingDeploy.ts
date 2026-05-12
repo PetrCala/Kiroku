@@ -23,7 +23,7 @@ async function run(): Promise<IssuesCreateResponse | void> {
     core.getInput('TAG', {required: false}) || packageJson.version;
 
   try {
-    // Start by fetching the list of recent StagingDeployCash issues, along with the list of open deploy blockers
+    // Start by fetching the list of recent deploy checklists and open deploy blockers.
     const {data: recentDeployChecklists} =
       await GithubUtils.octokit.issues.listForRepo({
         log: console,
@@ -32,8 +32,15 @@ async function run(): Promise<IssuesCreateResponse | void> {
         labels: CONST.LABELS.STAGING_DEPLOY,
         state: 'all',
       });
+    const {data: openDeployBlockers} =
+      await GithubUtils.octokit.issues.listForRepo({
+        log: console,
+        owner: CONST.GITHUB_OWNER,
+        repo: CONST.APP_REPO,
+        labels: CONST.LABELS.DEPLOY_BLOCKER,
+      });
 
-    // Look at the state of the most recent StagingDeployCash,
+    // Look at the state of the most recent deploy checklist,
     // if it is open then we'll update the existing one, otherwise, we'll create a new one.
     const mostRecentChecklist = recentDeployChecklists[0];
     const shouldCreateNewDeployChecklist = mostRecentChecklist.state !== 'open';
@@ -42,12 +49,12 @@ async function run(): Promise<IssuesCreateResponse | void> {
       : recentDeployChecklists[1];
     if (shouldCreateNewDeployChecklist) {
       console.log(
-        'Latest StagingDeployCash is closed, creating a new one.',
+        'Latest deploy checklist is closed, creating a new one.',
         mostRecentChecklist,
       );
     } else {
       console.log(
-        'Latest StagingDeployCash is open, updating it instead of creating a new one.',
+        'Latest deploy checklist is open, updating it instead of creating a new one.',
         'Current:',
         mostRecentChecklist,
         'Previous:',
@@ -79,6 +86,8 @@ async function run(): Promise<IssuesCreateResponse | void> {
           mergedPRs.map(value =>
             GithubUtils.getPullRequestURLFromNumber(value),
           ),
+          [],
+          openDeployBlockers.map(deployBlocker => deployBlocker.html_url),
         );
       if (stagingDeployCashBodyAndAssignees) {
         checklistBody = stagingDeployCashBodyAndAssignees.issueBody;
@@ -106,14 +115,6 @@ async function run(): Promise<IssuesCreateResponse | void> {
       });
 
       // Generate the deploy blocker list, preserving the previous state of `isResolved`
-      const {data: openDeployBlockers} =
-        await GithubUtils.octokit.issues.listForRepo({
-          log: console,
-          owner: CONST.GITHUB_OWNER,
-          repo: CONST.APP_REPO,
-          labels: CONST.LABELS.DEPLOY_BLOCKER,
-        });
-
       // First, make sure we include all current deploy blockers
       const deployBlockers = openDeployBlockers.map(deployBlocker => {
         const indexInCurrentChecklist =
@@ -132,19 +133,22 @@ async function run(): Promise<IssuesCreateResponse | void> {
         };
       });
 
-      // Then make sure we include any demoted or closed blockers as well, and just check them off automatically
+      // Then include any demoted or closed blockers, and check them off automatically.
       currentChecklistData?.deployBlockers.forEach(deployBlocker => {
-        const isResolved =
+        const isStillOpen =
           deployBlockers.findIndex(
             openBlocker => openBlocker.number === deployBlocker.number,
-          ) < 0;
+          ) >= 0;
+        if (isStillOpen) {
+          return;
+        }
+
         deployBlockers.push({
           ...deployBlocker,
-          isResolved,
+          isResolved: true,
         });
       });
 
-      const didVersionChange = newVersionTag !== currentChecklistData?.tag;
       const stagingDeployCashBodyAndAssignees =
         await GithubUtils.generateStagingDeployCashBodyAndAssignees(
           newVersionTag,
@@ -154,10 +158,10 @@ async function run(): Promise<IssuesCreateResponse | void> {
           deployBlockers
             .filter(blocker => blocker.isResolved)
             .map(blocker => blocker.url),
-          didVersionChange ? false : currentChecklistData.isIOSSmokeChecked,
-          didVersionChange ? false : currentChecklistData.isAndroidSmokeChecked,
-          didVersionChange ? false : currentChecklistData.isFirebaseChecked,
-          didVersionChange ? false : currentChecklistData.isGHStatusChecked,
+          currentChecklistData.isIOSSmokeChecked,
+          currentChecklistData.isAndroidSmokeChecked,
+          currentChecklistData.isFirebaseChecked,
+          currentChecklistData.isGHStatusChecked,
         );
       if (stagingDeployCashBodyAndAssignees) {
         checklistBody = stagingDeployCashBodyAndAssignees.issueBody;
@@ -183,7 +187,7 @@ async function run(): Promise<IssuesCreateResponse | void> {
         assignees: checklistAssignees,
       });
       console.log(
-        `Successfully created new StagingDeployCash! 🎉 ${newChecklist.html_url}`,
+        `Successfully created new deploy checklist! 🎉 ${newChecklist.html_url}`,
       );
       return newChecklist;
     }
@@ -194,7 +198,7 @@ async function run(): Promise<IssuesCreateResponse | void> {
       issue_number: currentChecklistData?.number ?? 0,
     });
     console.log(
-      `Successfully updated StagingDeployCash! 🎉 ${updatedChecklist.html_url}`,
+      `Successfully updated deploy checklist! 🎉 ${updatedChecklist.html_url}`,
     );
     return updatedChecklist;
   } catch (err: unknown) {

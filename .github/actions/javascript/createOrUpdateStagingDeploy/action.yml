@@ -1,13 +1,13 @@
-name: 'Create or Update StagingDeployCash'
-description: 'Creates a new StagingDeployCash issue if there is not one open, or updates the existing one.'
+name: 'Create or Update Deploy Checklist'
+description: 'Creates a new deploy checklist issue if there is not one open, or updates the existing one.'
 inputs:
-    GITHUB_TOKEN:
-        description: Auth token for Kiroku Github
-        required: true
-    TAG:
-        description: Git tag being deployed to staging
-        required: false
+  GITHUB_TOKEN:
+    description: Auth token for Kiroku Github
+    required: true
+  TAG:
+    description: Git tag being deployed to staging
+    required: false
 
 runs:
-    using: 'node20'
-    main: './index.js'
+  using: 'node20'
+  main: './index.js'

@@ -1,4 +1,4 @@
-name: Lock staging deploys during QA
+name: Lock staging deploys during internal QA
 
 on:
   issues:
@@ -20,11 +20,11 @@ jobs:
         with:
           GITHUB_TOKEN: ${{ secrets.KIROKU_ADMIN_TOKEN }}
 
-      - name: Comment in StagingDeployCash to begin internal QA
+      - name: Comment in deploy checklist to begin internal QA
         run: |
           gh issue comment \
             "$(gh issue list --label StagingDeployCash --json number --jq '.[0].number')" \
-            --body ":rocket: All staging deploys are complete, please begin QA on version https://github.com/PetrCala/Kiroku/releases/tag/$(jq -r '.version + "-staging"' package.json) :rocket:"
+            --body ":rocket: All staging deploys are complete; internal QA can begin on version https://github.com/PetrCala/Kiroku/releases/tag/$(jq -r '.version + "-staging"' package.json) :rocket:"
         env:
           GITHUB_TOKEN: ${{ secrets.KIROKU_ADMIN_TOKEN }}
 
