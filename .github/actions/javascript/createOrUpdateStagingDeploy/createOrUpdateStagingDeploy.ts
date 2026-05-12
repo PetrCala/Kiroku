@@ -43,7 +43,8 @@ async function run(): Promise<IssuesCreateResponse | void> {
     // Look at the state of the most recent deploy checklist,
     // if it is open then we'll update the existing one, otherwise, we'll create a new one.
     const mostRecentChecklist = recentDeployChecklists[0];
-    const shouldCreateNewDeployChecklist = mostRecentChecklist.state !== 'open';
+    const shouldCreateNewDeployChecklist =
+      !mostRecentChecklist || mostRecentChecklist.state !== 'open';
     const previousChecklist = shouldCreateNewDeployChecklist
       ? mostRecentChecklist
       : recentDeployChecklists[1];
@@ -63,8 +64,9 @@ async function run(): Promise<IssuesCreateResponse | void> {
     }
 
     // Parse the data from the previous and current checklists into the format used to generate the checklist
-    const previousChecklistData =
-      GithubUtils.getStagingDeployCashData(previousChecklist);
+    const previousChecklistData = previousChecklist
+      ? GithubUtils.getStagingDeployCashData(previousChecklist)
+      : undefined;
     const currentChecklistData: StagingDeployCashData | undefined =
       shouldCreateNewDeployChecklist
         ? undefined
@@ -72,7 +74,7 @@ async function run(): Promise<IssuesCreateResponse | void> {
 
     // Find the list of PRs merged between the current checklist and the previous checklist
     const mergedPRs = await GitUtils.getPullRequestsMergedBetween(
-      previousChecklistData.tag ?? '',
+      previousChecklistData?.tag ?? '',
       newVersionTag,
     );
 
