@@ -1,5 +1,4 @@
-// REMOVED: import crashlytics from '@react-native-firebase/crashlytics';
-// Crashlytics temporarily disabled - module removed from dependencies
+import crashlytics from '@react-native-firebase/crashlytics';
 import React from 'react';
 import Log from '@libs/Log';
 import BaseErrorBoundary from './BaseErrorBoundary';
@@ -13,6 +12,9 @@ const logError: LogError = (errorMessage, error, errorInfo) => {
     errorString.includes('asyncstorage') ||
     errorString.includes('native module') ||
     errorString.includes('rct');
+
+  crashlytics().recordError(error);
+  crashlytics().log(`${errorMessage} | errorInfo: ${errorInfo}`);
 
   if (isFirebaseError) {
     // Firebase/native module initialization error detected
@@ -29,8 +31,6 @@ const logError: LogError = (errorMessage, error, errorInfo) => {
     Log.alert(`${errorMessage} - ${error.message}`, {errorInfo}, false);
   }
 
-  /* REMOVED: Crashlytics module no longer available
-   * Fallback error logging while Crashlytics is disabled */
   if (__DEV__) {
     Log.alert(`[ErrorBoundary] Error caught: ${error.message}`);
     Log.alert(`[ErrorBoundary] Error info: ${errorInfo}`);

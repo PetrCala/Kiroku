@@ -1,17 +1,7 @@
-// REMOVED: import crashlytics from '@react-native-firebase/crashlytics';
-// Crashlytics temporarily disabled - module removed from dependencies
-import Log from '@libs/Log';
+import crashlytics from '@react-native-firebase/crashlytics';
 
-/**
- * No-op stub for Crashlytics user ID setting
- * TODO: Re-enable when Crashlytics is restored
- */
 const setCrashlyticsUserId = (accountID: string | number) => {
-  // No-op: Crashlytics module removed
-  if (!__DEV__) {
-    return;
-  }
-  Log.info(`[Crashlytics] Would set user ID: ${accountID}`);
+  crashlytics().setUserId(String(accountID));
 };
 
 export default setCrashlyticsUserId;
