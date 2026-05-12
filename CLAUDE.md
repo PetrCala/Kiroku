@@ -37,7 +37,33 @@ The application uses a nested provider structure for context management:
 
 ### Core Functionality
 
-TBA
+1. **Drinking Session Management**
+   - Session creation, editing, and deletion
+   - Real-time session tracking
+   - Drink logging within sessions
+   - Session notes
+
+2. **Calendar & History**
+   - Monthly calendar view of past sessions
+   - Session history browsing
+   - Paginated calendar data loading
+
+3. **User Profile & Account**
+   - Profile management (display name, username, legal name, date of birth)
+   - Account settings and preferences
+   - Account deletion flow
+
+4. **Preferences**
+   - Theme selection (light/dark mode)
+   - App-wide preference persistence
+
+5. **Notifications**
+   - Push notification opt-in/out
+   - Focus mode alerts
+
+6. **Onboarding & Welcome**
+   - First-run onboarding flow
+   - Email verification
 
 ## Navigation & Routing
 
@@ -60,7 +86,14 @@ TBA
 
 ### Onyx Keys Organization
 
-TBA
+- **Auth & Session**: `CREDENTIALS`, `STASHED_CREDENTIALS`, `SESSION`, `HAS_CHECKED_AUTO_LOGIN`
+- **User Data**: `USER`, `USER_DATA_LIST`, `USER_PRIVATE_DATA`, `USER_DATA_METADATA`, `USER_LOCATION`
+- **Network & State**: `NETWORK`, `PERSISTED_REQUESTS`, `PERSISTED_ONGOING_REQUESTS`, `DEVICE_ID`
+- **Session & Activity**: `ONGOING_SESSION_DATA`, `EDIT_SESSION_DATA`, `START_SESSION_GLOBAL_CREATE`, `SESSIONS_CALENDAR_MONTHS_LOADED`
+- **UI & App State**: `MODAL`, `IS_LOADING_APP`, `APP_LOADING_TEXT`, `PREFERRED_THEME`
+- **Updates & Notifications**: `UPDATE_AVAILABLE`, `UPDATE_REQUIRED`, `PUSH_NOTIFICATIONS_ENABLED`, `FOCUS_MODE_NOTIFICATION`
+- **Forms**: Login, Sign Up, Close Account, Display Name, Username, Legal Name, DOB, Email, Password, Feedback, Bug Report, Session Date/Note
+- **Collections**: `DRINKS`, `DRINKING_SESSION`, `FEEDBACK`, `BUG`, `DOWNLOAD`
 
 ### Action Modules (`src/libs/actions/`)
 
@@ -68,9 +101,21 @@ Major action categories:
 
 - `App.ts`: Application lifecycle
 - `User.ts`: User account operations
-- `Session.ts`: Authentication
-
-And others
+- `Session/`: Authentication and session token management
+- `DrinkingSession.ts`: Drinking session CRUD and tracking
+- `Calendar.ts`: Calendar data loading and pagination
+- `UserData.ts`: User data synchronization
+- `Profile.ts`: Profile updates
+- `Preferences.ts`: User preference persistence
+- `PushNotification.ts`: Push notification opt-in/out
+- `Network.ts`: Network state management
+- `Modal.ts`: Modal visibility state
+- `FormActions.ts`: Form state management
+- `Welcome.ts`: Onboarding flow
+- `CloseAccount.ts`: Account deletion
+- `AppUpdate/`: App update detection and prompting
+- `OnyxUpdates.ts` / `OnyxUpdateManager/`: Onyx update processing
+- `PersistedRequests.ts`: Offline request queue management
 
 ## Build & Deployment
 
@@ -165,6 +210,21 @@ export {getReactNativePersistence};
 - Queue-based request handling
 - Conflict resolution strategies
 
+### Mobile-Specific Notes
+
+- Push notifications via Pusher (`pusher-js`)
+- Image picker and camera access via `expo-image-picker` and `react-native-permissions`
+- Image processing via `expo-image-manipulator`
+- Local SQLite database via `react-native-nitro-sqlite`
+- Device info via `react-native-device-info`
+
+### Security
+
+- Firebase Authentication as primary auth provider (email/password and Google Sign-In)
+- Encrypted auth token storage (`encryptedAuthToken`) persisted in Onyx
+- Session tokens treated as opaque credentials — no client-side JWT parsing
+- Runtime permissions managed via `react-native-permissions`
+
 ## Command Reference
 
 ### Common Tasks
@@ -176,11 +236,11 @@ npm install
 # Clean build artifacts
 npm run clean
 
-# Type checking (tsc, CI production gate)
-npm run typecheck
-
 # Type checking (tsgo, fast, for development only)
 npm run typecheck-tsgo
+
+# Type checking (tsc, CI production gate)
+npm run typecheck
 
 # Linting
 npm run lint
@@ -225,3 +285,18 @@ npm run web
 - React Navigation for cross-platform consistency
 - Custom navigation state management
 - Deep linking support
+
+## Known Integration Points
+
+### With kiroku-api
+
+- REST API communication via native `fetch` with FormData request bodies
+- Middleware chain: `makeXHR() → middleware[] → HttpUtils.xhr()`
+- Dynamic API root selection (staging vs. production) configured in `src/libs/ApiUtils.ts`
+- Network connectivity monitored via `NetworkConnection.ts` (pings `api/Ping` for server availability)
+- Offline request queue managed via `PersistedRequests.ts` — replayed on reconnection
+
+### With Firebase
+
+- Auth provider for email/password and Google Sign-In
+- Session lifecycle managed in `src/libs/actions/Session/`
