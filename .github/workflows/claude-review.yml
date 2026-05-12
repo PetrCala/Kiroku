@@ -1,0 +1,75 @@
+name: PR Reviews with Claude Code
+
+permissions:
+  contents: read
+  pull-requests: write
+
+on:
+  pull_request:
+    types: [opened, synchronize, ready_for_review]
+    branches-ignore: [staging, production]
+    paths:
+      - 'src/**'
+
+concurrency:
+  group: ${{ github.ref == 'refs/heads/master' && format('{0}-{1}', github.ref, github.sha) || github.ref }}-claude-review
+  cancel-in-progress: true
+
+jobs:
+  review:
+    name: Claude Code PR Review
+    if: ${{ !github.event.pull_request.draft && !startsWith(github.event.pull_request.title, 'Revert ') && github.actor != 'KirokuAdmin' }}
+    runs-on: ubuntu-latest
+    env:
+      PR_NUMBER: ${{ github.event.pull_request.number }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Make scripts executable
+        run: chmod +x .claude/scripts/*.sh .github/scripts/extractAllowedRules.sh
+
+      - name: Add claude scripts to PATH
+        run: echo "$GITHUB_WORKSPACE/.claude/scripts" >> "$GITHUB_PATH"
+
+      - name: Extract allowed rule IDs
+        run: .github/scripts/extractAllowedRules.sh .claude/skills/coding-standards/rules "$RUNNER_TEMP/allowed-rules.txt"
+
+      - name: Load code review JSON schema
+        id: schema
+        run: echo "json=$(jq -c . .claude/schemas/code-review-output.json)" >> "$GITHUB_OUTPUT"
+
+      - name: Run Claude Code PR review
+        id: code-review
+        uses: anthropics/claude-code-action@ba026a3e56b9f646ae3b1be02dd9c0812aa2f8ae  # v1.0.86
+        with:
+          display_report: "true"
+          anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          prompt: "/review-code-pr REPO: ${{ github.repository }} PR_NUMBER: ${{ github.event.pull_request.number }}"
+          claude_args: |
+            --model claude-opus-4-6
+            --allowedTools "Task,Glob,Grep,Read,Bash(gh pr diff:*),Bash(gh pr view:*)" --json-schema '${{ steps.schema.outputs.json }}'
+
+      - name: Post code review results
+        if: steps.code-review.outcome == 'success'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          STRUCTURED_OUTPUT: ${{ steps.code-review.outputs.structured_output }}
+          ALLOWED_RULES_FILE: ${{ runner.temp }}/allowed-rules.txt
+        run: |
+          if [ -z "$STRUCTURED_OUTPUT" ]; then
+            echo "::error::Claude Code returned empty structured output"
+            exit 1
+          fi
+          COUNT=$(echo "$STRUCTURED_OUTPUT" | jq '.violations | length')
+          if [ "$COUNT" -eq 0 ]; then
+            addPrReaction.sh "$PR_NUMBER"
+          else
+            echo "$STRUCTURED_OUTPUT" | jq -c '.violations[]' | while IFS= read -r v; do
+              PATH_ARG=$(echo "$v" | jq -r '.path')
+              BODY_ARG=$(echo "$v" | jq -r '.body')
+              LINE_ARG=$(echo "$v" | jq -r '.line')
+              createInlineComment.sh "$PATH_ARG" "$BODY_ARG" "$LINE_ARG" || true
+            done
+          fi
