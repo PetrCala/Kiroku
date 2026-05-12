@@ -27813,7 +27813,7 @@ function getSemverLevelInput() {
     return semanticVersionLevel;
 }
 function getPreviousVersion() {
-    const { version: previousVersion } = JSON.parse(fs_1.default.readFileSync('./package.json', { encoding: 'utf8' }));
+    const { version: previousVersion } = JSON.parse((0, fs_1.readFileSync)('./package.json', { encoding: 'utf8' }));
     if (typeof previousVersion !== 'string' || previousVersion.length === 0) {
         throw new Error('Could not read version from package.json');
     }

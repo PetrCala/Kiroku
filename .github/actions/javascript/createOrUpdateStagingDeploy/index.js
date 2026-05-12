@@ -58211,7 +58211,7 @@ const GitUtils_1 = __nccwpck_require__(1928);
 async function run() {
     var _a, _b;
     // Note: require('package.json').version does not work because ncc will resolve that to a plain string at compile time
-    const packageJson = JSON.parse(fs_1.default.readFileSync('package.json', 'utf8'));
+    const packageJson = JSON.parse((0, fs_1.readFileSync)('package.json', 'utf8'));
     const newVersionTag = core.getInput('TAG', { required: false }) || packageJson.version;
     try {
         // Start by fetching the list of recent StagingDeployCash issues, along with the list of open deploy blockers
