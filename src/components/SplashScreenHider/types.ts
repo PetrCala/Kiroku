@@ -1,11 +1,11 @@
 import type {ReactNode} from 'react';
 
 type SplashScreenHiderProps = {
-  /** Splash screen has been hidden */
+  /** Callback fired after the hide animation completes */
   onHide: () => void;
 
-  /** Whether the splash screen should remain visible (default: true) */
-  isVisible?: boolean;
+  /** When true, triggers the hide animation */
+  shouldHideSplash: boolean;
 };
 
 type SplashScreenHiderReturnType = ReactNode;

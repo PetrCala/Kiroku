@@ -20,7 +20,7 @@ import type {
 
 function SplashScreenHider({
   onHide = () => {},
-  isVisible = true,
+  shouldHideSplash,
 }: SplashScreenHiderProps): SplashScreenHiderReturnType {
   const styles = useThemeStyles();
   const logoSizeRatio = BootSplash.logoSizeRatio || 1;
@@ -69,13 +69,12 @@ function SplashScreenHider({
     });
   }, [opacity, scale, onHide]);
 
-  // Trigger hide when isVisible becomes false (i.e., when app is ready)
   useEffect(() => {
-    if (isVisible) {
+    if (!shouldHideSplash) {
       return;
     }
     hide();
-  }, [isVisible, hide]);
+  }, [shouldHideSplash, hide]);
 
   return (
     <Reanimated.View
