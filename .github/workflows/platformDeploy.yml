@@ -188,6 +188,7 @@ jobs:
           APPLE_CONTACT_PHONE: ${{ secrets.APPLE_CONTACT_PHONE }}
           APPLE_DEMO_EMAIL: ${{ secrets.APPLE_DEMO_EMAIL }}
           APPLE_DEMO_PASSWORD: ${{ secrets.APPLE_DEMO_PASSWORD }}
+          IOS_CERTIFICATE_PASSWORD: ${{ secrets.IOS_CERTIFICATE_PASSWORD }}
           VERSION: ${{ env.IOS_VERSION }}
 
       # - name: Upload iOS build to Browser Stack
@@ -204,7 +205,7 @@ jobs:
 
       - name: Upload iOS build to GitHub Release
         if: ${{ !inputs.SHOULD_DEPLOY_PRODUCTION }}
-        run: gh release upload ${{ inputs.RELEASE_TAG }} /Users/runner/work/App/App/kiroku.ipa --clobber
+        run: gh release upload ${{ inputs.RELEASE_TAG }} "$GITHUB_WORKSPACE/kiroku.ipa" --clobber
         env:
           GITHUB_TOKEN: ${{ secrets.KIROKU_ADMIN_TOKEN }}
 
