@@ -12,7 +12,7 @@ on:
       DISCORD_WEBHOOK_URL:
         description: Webhook used to comment in Discord
         required: true
-      KIROKU_ADMIN_TOKEN:
+      KIROKU_ADMIN_COMMIT_TOKEN:
         description: KirokuAdmin personal access token, used to update protected branches
         required: true
       LARGE_SECRET_PASSPHRASE:
@@ -42,7 +42,7 @@ jobs:
         uses: actions/checkout@v4
         with:
           ref: ${{ steps.getSourceBranch.outputs.SOURCE_BRANCH }}
-          token: ${{ secrets.KIROKU_ADMIN_TOKEN }}
+          token: ${{ secrets.KIROKU_ADMIN_COMMIT_TOKEN }}
 
       - name: Setup git for KirokuAdmin
         uses: ./.github/actions/composite/setupGitForKirokuAdmin
