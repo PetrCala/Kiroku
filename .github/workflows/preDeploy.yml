@@ -16,6 +16,13 @@ jobs:
   test:
     uses: ./.github/workflows/test.yml
 
+  warmMacosCache:
+    name: Seed macOS node_modules cache
+    runs-on: macos-26
+    steps:
+      - uses: actions/checkout@v4
+      - uses: ./.github/actions/composite/setupNode
+
   confirmPassingBuild:
     runs-on: ubuntu-latest
     needs: [typecheck, lint, test]
