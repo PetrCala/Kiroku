@@ -20,7 +20,7 @@
     "lint": "eslint . --max-warnings=0 --cache --cache-location=node_modules/.cache/eslint",
     "lint:changed": "eslint --fix $(git diff --diff-filter=AM --name-only master -- \"*.js\" \"*.ts\" \"*.tsx\")",
     "lint:watch": "npx eslint-watch --watch --changed",
-    "lint:quiet": "eslint . --max-warnings=0 --quiet --cache --cache-location=node_modules/.cache/eslint",
+    "lint:quiet": "eslint . --max-warnings=0 --quiet --cache --cache-location=.eslintcache",
     "gh-actions-build": "./.github/scripts/buildActions.sh",
     "gh-actions-validate": "./.github/scripts/validateActionsAndWorkflows.sh",
     "merge": "./scripts/mergeAndPush.sh",

@@ -39,7 +39,9 @@ jobs:
         uses: actions/cache@ac25611caef967612169ab7e95533cf932c32270
         with:
           path: .jest-cache
-          key: ${{ runner.os }}-jest
+          key: ${{ runner.os }}-jest-${{ hashFiles('package-lock.json') }}
+          restore-keys: |
+            ${{ runner.os }}-jest-
 
       - name: Jest tests
         run: npx jest --silent --shard=${{ fromJSON(matrix.chunk) }}/${{ strategy.job-total }} --max-workers ${{ steps.cpu-cores.outputs.count }}

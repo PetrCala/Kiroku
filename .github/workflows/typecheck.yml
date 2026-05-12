@@ -5,7 +5,15 @@ on:
   pull_request:
     types: [opened, synchronize]
     branches-ignore: [staging, production]
-    paths: ['**.js', '**.ts', '**.tsx', 'package.json', 'package-lock.json', 'tsconfig.json']
+    paths:
+      [
+        '**.js',
+        '**.ts',
+        '**.tsx',
+        'package.json',
+        'package-lock.json',
+        'tsconfig.json',
+      ]
 
 concurrency:
   group: ${{ github.ref == 'refs/heads/master' && format('{0}-{1}', github.ref, github.sha) || github.ref }}-typecheck
@@ -20,11 +28,10 @@ jobs:
 
       - uses: ./.github/actions/composite/setupNode
 
-      # TODO enable this
-      # - name: Type check with TypeScript
-      #   run: npm run typecheck
-      #   env:
-      #     CI: true
+      - name: Type check with TypeScript
+        run: npm run typecheck-tsgo
+        env:
+          CI: true
 
       # - name: Check for new JavaScript files
       #   run: |

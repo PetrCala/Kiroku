@@ -5,7 +5,7 @@ on:
   pull_request:
     types: [opened, synchronize]
     branches-ignore: [staging, production]
-    paths: ["**.js", "**.ts", "**.tsx", "**.json", "**.mjs", "**.cjs"]
+    paths: ['**.js', '**.ts', '**.tsx', '**.json', '**.mjs', '**.cjs']
 
 concurrency:
   group: ${{ github.ref == 'refs/heads/master' && format('{0}-{1}', github.ref, github.sha) || github.ref }}-lint
@@ -22,6 +22,14 @@ jobs:
 
       - name: Setup Node
         uses: ./.github/actions/composite/setupNode
+
+      - name: Cache ESLint cache
+        uses: actions/cache@v4
+        with:
+          path: .eslintcache
+          key: ${{ runner.os }}-eslint-${{ hashFiles('package-lock.json', '.eslintrc.js') }}
+          restore-keys: |
+            ${{ runner.os }}-eslint-
 
       - name: Lint JavaScript and Typescript with ESLint
         run: npm run lint
