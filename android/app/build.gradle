@@ -1,7 +1,7 @@
 apply plugin: "com.android.application"
 apply plugin: "org.jetbrains.kotlin.android"
 apply plugin: "com.facebook.react"
-// REMOVED: apply plugin: "com.google.firebase.firebase-perf"
+apply plugin: "com.google.firebase.firebase-perf"
 
 
 /**
@@ -204,7 +204,7 @@ dependencies {
 
     // Firebase libraries (using the Firebase BoM for consistency - see https://firebase.google.com/docs/android/learn-more#bom)
     implementation platform("com.google.firebase:firebase-bom:33.2.0")
-    // REMOVED: implementation "com.google.firebase:firebase-perf"
+    implementation "com.google.firebase:firebase-perf"
     implementation "com.google.firebase:firebase-crashlytics"
 
     // Android support library
