@@ -181,6 +181,9 @@ jobs:
       - name: Set iOS version in ENV
         run: echo "IOS_VERSION=$(echo '${{ inputs.APP_VERSION }}' | tr '-' '.')" >> "$GITHUB_ENV"
 
+      - name: Bundle React Native code and images
+        run: npm run jsbundle
+
       - name: Run Fastlane
         run: bundle exec fastlane ios ${{ inputs.SHOULD_DEPLOY_PRODUCTION && 'production' || 'beta' }}
         env:
