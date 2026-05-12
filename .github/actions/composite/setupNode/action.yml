@@ -1,19 +1,32 @@
 name: Set up Node
 description: Set up Node
 
+outputs:
+  cache-hit:
+    description: Was there a cache hit on the main node_modules?
+    value: ${{ steps.node-modules-cache.outputs.cache-hit }}
+
 runs:
   using: composite
   steps:
+    - name: Normalize package-lock.json
+      shell: bash
+      run: jq 'del(.version, .packages[""].version)' package-lock.json > normalized-package-lock.json
+
     - uses: actions/setup-node@v4
       with:
         node-version-file: '.nvmrc'
+        cache: 'npm'
+        cache-dependency-path: normalized-package-lock.json
 
     - name: Cache node_modules
       id: node-modules-cache
       uses: actions/cache@v4
       with:
         path: node_modules
-        key: ${{ runner.os }}-node-modules-${{ hashFiles('package-lock.json') }}
+        key: ${{ runner.os }}-node-modules-${{ hashFiles('normalized-package-lock.json', 'patches/**') }}
+        restore-keys: |
+          ${{ runner.os }}-node-modules-
 
     - name: Install root project node packages
       if: steps.node-modules-cache.outputs.cache-hit != 'true'
