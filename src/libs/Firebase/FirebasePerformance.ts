@@ -1,8 +1,10 @@
-function startTrace(): Promise<void> {
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+function startTrace(_traceName: string): Promise<void> {
   return Promise.resolve();
 }
 
-function stopTrace(): Promise<void> {
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+function stopTrace(_traceName: string): Promise<void> {
   return Promise.resolve();
 }
 
