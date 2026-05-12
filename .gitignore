@@ -49,6 +49,7 @@ android/app/android-fastlane-json-key.json
 # node.js
 #
 node_modules/
+.eslintcache
 npm-debug.log
 yarn-error.log
 functions/ui-debug.log
