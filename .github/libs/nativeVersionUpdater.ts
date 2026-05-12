@@ -2,10 +2,12 @@ import {execSync} from 'child_process';
 import {promises as fs} from 'fs';
 import path from 'path';
 import type {SemVer} from 'semver';
-import getMajorVersion from 'semver/functions/major';
-import getMinorVersion from 'semver/functions/minor';
-import getPatchVersion from 'semver/functions/patch';
-import getBuildVersion from 'semver/functions/prerelease';
+import {
+  major as getMajorVersion,
+  minor as getMinorVersion,
+  patch as getPatchVersion,
+  prerelease as getBuildVersion,
+} from 'semver';
 
 // Filepath constants
 const BUILD_GRADLE_PATH =
