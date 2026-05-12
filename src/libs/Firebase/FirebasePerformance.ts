@@ -1,8 +1,8 @@
-function startTrace(_traceName: string): Promise<void> {
+function startTrace(): Promise<void> {
   return Promise.resolve();
 }
 
-function stopTrace(_traceName: string): Promise<void> {
+function stopTrace(): Promise<void> {
   return Promise.resolve();
 }
 

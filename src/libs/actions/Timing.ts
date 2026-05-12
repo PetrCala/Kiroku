@@ -12,7 +12,7 @@ let timestampData: Record<string, TimestampData> = {};
  * Start a performance timing measurement and open a Firebase Performance trace.
  */
 function start(eventName: string) {
-  void FirebasePerformance.startTrace(eventName);
+  FirebasePerformance.startTrace(eventName);
   timestampData[eventName] = {startTime: performance.now()};
 }
 
@@ -28,7 +28,7 @@ function end(eventName: string, secondaryName = '', maxExecutionTime = 0) {
   const {startTime} = timestampData[eventName];
   const eventTime = performance.now() - startTime;
 
-  void FirebasePerformance.stopTrace(eventName);
+  FirebasePerformance.stopTrace(eventName);
 
   Environment.getEnvironment().then(envName => {
     const baseEventName = `${envName}.kiroku.${eventName}`;
