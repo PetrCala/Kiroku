@@ -11,10 +11,10 @@
     "allowSyntheticDefaultImports": true,
     "incremental": true,
     "sourceMap": true,
-    "baseUrl": ".",
     "paths": {
+      "*": ["./*"],
       "@assets/*": ["./assets/*"],
-      "@auth/*": ["src/libs/auth/*"],
+      "@auth/*": ["./src/libs/auth/*"],
       "@components/*": ["./src/components/*"],
       "@context/*": ["./src/context/*"],
       "@database/*": ["./src/database/*"],
@@ -28,7 +28,7 @@
       "@src/*": ["./src/*"],
       "@storage/*": ["./src/storage/*"],
       "@styles/*": ["./src/styles/*"],
-      "@utils/*": ["src/utils/*"],
+      "@utils/*": ["./src/utils/*"],
       "@userActions/*": ["./src/libs/actions/*"]
     }
   },
