@@ -7,12 +7,12 @@ import React, {
 } from 'react';
 import {
   interpolateColor,
-  runOnJS,
   useAnimatedReaction,
   useSharedValue,
   withDelay,
   withTiming,
 } from 'react-native-reanimated';
+import {scheduleOnRN} from 'react-native-worklets';
 import usePrevious from '@hooks/usePrevious';
 import useTheme from '@hooks/useTheme';
 import {navigationRef} from '@libs/Navigation/Navigation';
@@ -61,7 +61,7 @@ function CustomStatusBarAndBackground({
   const statusBarAnimation = useSharedValue(0);
 
   useAnimatedReaction(
-    () => statusBarAnimation.value,
+    () => statusBarAnimation.get(),
     (current, previous) => {
       // Do not run if either of the animated value is null
       // or previous animated value is greater than or equal to the current one
@@ -69,11 +69,11 @@ function CustomStatusBarAndBackground({
         return;
       }
       const backgroundColor = interpolateColor(
-        statusBarAnimation.value,
+        statusBarAnimation.get(),
         [0, 1],
-        [prevStatusBarBackgroundColor.value, statusBarBackgroundColor.value],
+        [prevStatusBarBackgroundColor.get(), statusBarBackgroundColor.get()],
       );
-      runOnJS(updateStatusBarAppearance)({backgroundColor});
+      scheduleOnRN(() => updateStatusBarAppearance({backgroundColor}));
     },
   );
 
@@ -123,8 +123,8 @@ function CustomStatusBarAndBackground({
           backgroundColorFromRoute || pageTheme.backgroundColor;
       }
 
-      prevStatusBarBackgroundColor.value = statusBarBackgroundColor.value;
-      statusBarBackgroundColor.value = currentScreenBackgroundColor;
+      prevStatusBarBackgroundColor.set(statusBarBackgroundColor.get());
+      statusBarBackgroundColor.set(currentScreenBackgroundColor);
 
       const callUpdateStatusBarAppearance = () => {
         updateStatusBarAppearance({statusBarStyle: newStatusBarStyle});
@@ -132,8 +132,8 @@ function CustomStatusBarAndBackground({
       };
 
       const callUpdateStatusBarBackgroundColor = () => {
-        statusBarAnimation.value = 0;
-        statusBarAnimation.value = withDelay(300, withTiming(1));
+        statusBarAnimation.set(0);
+        statusBarAnimation.set(withDelay(300, withTiming(1)));
       };
 
       // Don't update the status bar style if it's the same as the current one, to prevent flashing.
