@@ -9,9 +9,9 @@ PODS:
   - BVLinearGradient (2.8.3):
     - React-Core
   - DoubleConversion (1.1.6)
-  - EXConstants (18.0.10):
+  - EXConstants (18.0.13):
     - ExpoModulesCore
-  - EXImageLoader (6.0.0):
+  - EXImageLoader (5.1.0):
     - ExpoModulesCore
     - React-Core
   - Expo (54.0.10):
@@ -47,7 +47,7 @@ PODS:
     - Yoga
   - ExpoAsset (12.0.8):
     - ExpoModulesCore
-  - ExpoFont (14.0.9):
+  - ExpoFont (14.0.11):
     - ExpoModulesCore
   - ExpoImage (3.0.8):
     - ExpoModulesCore
@@ -157,8 +157,8 @@ PODS:
   - hermes-engine (0.81.4):
     - hermes-engine/Pre-built (= 0.81.4)
   - hermes-engine/Pre-built (0.81.4)
-  - libavif/core (0.11.1)
-  - libavif/libdav1d (0.11.1):
+  - libavif/core (1.0.0)
+  - libavif/libdav1d (1.0.0):
     - libavif/core
     - libdav1d (>= 0.6.0)
   - libdav1d (1.2.0)
@@ -179,7 +179,7 @@ PODS:
     - nanopb/encode (= 3.30910.0)
   - nanopb/decode (3.30910.0)
   - nanopb/encode (3.30910.0)
-  - NitroModules (0.29.4):
+  - NitroModules (0.29.8):
     - boost
     - DoubleConversion
     - fast_float
@@ -2067,34 +2067,6 @@ PODS:
     - ReactCommon/turbomodule/core
     - SocketRocket
     - Yoga
-  - react-native-quick-sqlite (8.1.0):
-    - boost
-    - DoubleConversion
-    - fast_float
-    - fmt
-    - glog
-    - hermes-engine
-    - RCT-Folly
-    - RCT-Folly/Fabric
-    - RCTRequired
-    - RCTTypeSafety
-    - React-Core
-    - React-debug
-    - React-Fabric
-    - React-featureflags
-    - React-graphics
-    - React-ImageManager
-    - React-jsi
-    - React-NativeModulesApple
-    - React-RCTFabric
-    - React-renderercss
-    - React-rendererdebug
-    - React-utils
-    - ReactCodegen
-    - ReactCommon/turbomodule/bridging
-    - ReactCommon/turbomodule/core
-    - SocketRocket
-    - Yoga
   - react-native-render-html (6.3.1):
     - React-Core
   - react-native-safe-area-context (5.4.0):
@@ -2184,7 +2156,7 @@ PODS:
     - ReactCommon/turbomodule/core
     - SocketRocket
     - Yoga
-  - react-native-slider (4.5.5):
+  - react-native-slider (4.5.7):
     - boost
     - DoubleConversion
     - fast_float
@@ -2202,7 +2174,7 @@ PODS:
     - React-graphics
     - React-ImageManager
     - React-jsi
-    - react-native-slider/common (= 4.5.5)
+    - react-native-slider/common (= 4.5.7)
     - React-NativeModulesApple
     - React-RCTFabric
     - React-renderercss
@@ -2213,7 +2185,7 @@ PODS:
     - ReactCommon/turbomodule/core
     - SocketRocket
     - Yoga
-  - react-native-slider/common (4.5.5):
+  - react-native-slider/common (4.5.7):
     - boost
     - DoubleConversion
     - fast_float
@@ -2926,7 +2898,7 @@ PODS:
   - RNGoogleSignin (10.1.2):
     - GoogleSignIn (~> 7.0.0)
     - React-Core
-  - RNLocalize (3.6.0):
+  - RNLocalize (3.7.0):
     - boost
     - DoubleConversion
     - fast_float
@@ -2954,7 +2926,7 @@ PODS:
     - ReactCommon/turbomodule/core
     - SocketRocket
     - Yoga
-  - RNNitroSQLite (9.2.0):
+  - RNNitroSQLite (9.6.0):
     - boost
     - DoubleConversion
     - fast_float
@@ -2983,7 +2955,7 @@ PODS:
     - ReactCommon/turbomodule/core
     - SocketRocket
     - Yoga
-  - RNPermissions (5.4.4):
+  - RNPermissions (5.5.1):
     - boost
     - DoubleConversion
     - fast_float
@@ -3011,7 +2983,7 @@ PODS:
     - ReactCommon/turbomodule/core
     - SocketRocket
     - Yoga
-  - RNReactNativeHapticFeedback (2.3.3):
+  - RNReactNativeHapticFeedback (2.3.4):
     - boost
     - DoubleConversion
     - fast_float
@@ -3336,9 +3308,9 @@ PODS:
     - ReactCommon/turbomodule/core
     - SocketRocket
     - Yoga
-  - SDWebImage (5.21.4):
-    - SDWebImage/Core (= 5.21.4)
-  - SDWebImage/Core (5.21.4)
+  - SDWebImage (5.21.7):
+    - SDWebImage/Core (= 5.21.7)
+  - SDWebImage/Core (5.21.7)
   - SDWebImageAVIFCoder (0.11.1):
     - libavif/core (>= 0.11.0)
     - SDWebImage (~> 5.10)
@@ -3408,7 +3380,6 @@ DEPENDENCIES:
   - "react-native-netinfo (from `../node_modules/@react-native-community/netinfo`)"
   - react-native-pager-view (from `../node_modules/react-native-pager-view`)
   - react-native-performance (from `../node_modules/react-native-performance`)
-  - react-native-quick-sqlite (from `../node_modules/react-native-quick-sqlite`)
   - react-native-render-html (from `../node_modules/react-native-render-html`)
   - react-native-safe-area-context (from `../node_modules/react-native-safe-area-context`)
   - "react-native-slider (from `../node_modules/@react-native-community/slider`)"
@@ -3604,8 +3575,6 @@ EXTERNAL SOURCES:
     :path: "../node_modules/react-native-pager-view"
   react-native-performance:
     :path: "../node_modules/react-native-performance"
-  react-native-quick-sqlite:
-    :path: "../node_modules/react-native-quick-sqlite"
   react-native-render-html:
     :path: "../node_modules/react-native-render-html"
   react-native-safe-area-context:
@@ -3714,11 +3683,11 @@ SPEC CHECKSUMS:
   boost: 7e761d76ca2ce687f7cc98e698152abd03a18f90
   BVLinearGradient: cb006ba232a1f3e4f341bb62c42d1098c284da70
   DoubleConversion: cb417026b2400c8f53ae97020b2be961b59470cb
-  EXConstants: fd688cef4e401dcf798a021cfb5d87c890c30ba3
-  EXImageLoader: 189e3476581efe3ad4d1d3fb4735b7179eb26f05
+  EXConstants: fce59a631a06c4151602843667f7cfe35f81e271
+  EXImageLoader: 4d3d3284141f1a45006cc4d0844061c182daf7ee
   Expo: b2748512b0df06c1e569f93372b53c488f02ffe7
   ExpoAsset: 84810d6fed8179f04d4a7a4a6b37028bbd726e26
-  ExpoFont: cf9d90ec1d3b97c4f513211905724c8171f82961
+  ExpoFont: f543ce20a228dd702813668b1a07b46f51878d47
   ExpoImage: e88f500585913969b930e13a4be47277eb7c6de8
   ExpoImageManipulator: 1e06e7a1e56f454e75d01b7032c1e44963bfc865
   ExpoImagePicker: d251aab45a1b1857e4156fed88511b278b4eee1c
@@ -3741,11 +3710,11 @@ SPEC CHECKSUMS:
   GTMAppAuth: 99fb010047ba3973b7026e45393f51f27ab965ae
   GTMSessionFetcher: 5aea5ba6bd522a239e236100971f10cb71b96ab6
   hermes-engine: 35c763d57c9832d0eef764316ca1c4d043581394
-  libavif: 84bbb62fb232c3018d6f1bab79beea87e35de7b7
+  libavif: 5f8e715bea24debec477006f21ef9e95432e254d
   libdav1d: 23581a4d8ec811ff171ed5e2e05cd27bad64c39f
   libwebp: 02b23773aedb6ff1fd38cec7a77b81414c6842a8
   nanopb: fad817b59e0457d11a5dfbde799381cd727c1275
-  NitroModules: 8bffd214aa360baba0f2c5718fe0acff5ef94763
+  NitroModules: 73c42f3089bd74f411172ea8e69024aac4a2ac9f
   PromisesObjC: f5707f49cb48b9636751c5b2e7d227e43fba9f47
   PromisesSwift: 9d77319bbe72ebf6d872900551f7eeba9bce2851
   RCT-Folly: 846fda9475e61ec7bcbf8a3fe81edfcaeb090669
@@ -3786,10 +3755,9 @@ SPEC CHECKSUMS:
   react-native-netinfo: f084f2324cb11b986503a39a3ccbb5d15e2a56d3
   react-native-pager-view: 0e228ec2dfdd87807d125c7bbfb83299edede19c
   react-native-performance: d77c7992b9ebf63be75f95bcdcafd12048fac487
-  react-native-quick-sqlite: 1aa95bfdc4d4fb47570386004a0a943368c7bcc4
   react-native-render-html: 05a7d4490ffc85c88094601207f3e48a90533476
   react-native-safe-area-context: 138d5c5f300c6568f2a64a7c01906ae3fcce0330
-  react-native-slider: ef798d9b69f0a76b89fef769c8e428f552a7b2ac
+  react-native-slider: 0f87d2b0a6df64094c027e2308b3cd5b490fde74
   react-native-webview: cdce419e8022d0ef6f07db21890631258e7a9e6e
   React-NativeModulesApple: 8c7eb6057b00c191a11ad5ced41826ec5a0e4d78
   React-oscompat: 93b5535ea7f7dff46aaee4f78309a70979bdde9d
@@ -3829,15 +3797,15 @@ SPEC CHECKSUMS:
   RNFS: 89de7d7f4c0f6bafa05343c578f61118c8282ed8
   RNGestureHandler: b8d2e75c2e88fc2a1f6be3b3beeeed80b88fa37d
   RNGoogleSignin: c1a22e417bbb2629eb04d458c24e11c84a6cb433
-  RNLocalize: a0bf70cf27f116db4e32be09a6f549715db0686d
-  RNNitroSQLite: fb251387cfbee73b100cd484a3c886fda681b3b5
-  RNPermissions: a779c2d1cea11fb46c5a7d2b5162fbf7a3bf2060
-  RNReactNativeHapticFeedback: 5f1542065f0b24c9252bd8cf3e83bc9c548182e4
+  RNLocalize: c46dd4008dc8990a098fcafd6ee051122a1ccfda
+  RNNitroSQLite: a9b5965d511ed6e99ce903380e64934d043a0d2c
+  RNPermissions: 91dfda811b106ddd2052d4bf6c1fcf9dfd46b258
+  RNReactNativeHapticFeedback: b9623bdeb59a778ca905e97035d5cc73a15d00f3
   RNReanimated: c3de6d69dba4054d4f35562b14c84061699188e5
   RNScreens: 4f2aed147a2775017923789d8a0a2d377712ec2e
   RNSVG: 94a1be05fab4043354bcf7104f0f9b0e2231ef05
   RNWorklets: ab618bf7d1c7fd2cb793b9f0f39c3e29274b3ebf
-  SDWebImage: d0184764be51240d49c761c37f53dd017e1ccaaf
+  SDWebImage: e9fc87c1aab89a8ab1bbd74eba378c6f53be8abf
   SDWebImageAVIFCoder: afe194a084e851f70228e4be35ef651df0fc5c57
   SDWebImageSVGCoder: 15a300a97ec1c8ac958f009c02220ac0402e936c
   SDWebImageWebPCoder: e38c0a70396191361d60c092933e22c20d5b1380
