@@ -2,6 +2,9 @@
 
 A setup for running agents (eg: code review, triage etc.) on **issues and pull requests** using [Anthropic’s Claude Code GitHub Action](https://github.com/anthropics/claude-code-action).
 
+> **⚠️ Automated CI workflows are currently disabled.**
+> `claude-review.yml` (the only workflow in this repo using this framework) is set to `workflow_dispatch` only and must not be changed to fire automatically on PRs. Each run costs ~$1–2 in Anthropic API credits. The agents and commands remain available for **manual use** via `/review-code-pr` in Claude Code.
+
 ## Architecture
 
 ```

@@ -1,15 +1,28 @@
 name: PR Reviews with Claude Code
 
+# ============================================================
+# INTENTIONALLY DISABLED — DO NOT RE-ENABLE WITHOUT REVIEW
+# ============================================================
+# This workflow runs claude-opus-4-6 on every PR touching src/,
+# which costs ~$1–2 per PR in Anthropic API credits.
+# It is kept here for reference but must NOT fire automatically.
+#
+# To enable in the future:
+#   1. Confirm ANTHROPIC_API_KEY is set in repo secrets.
+#   2. Replace the trigger below with:
+#        on:
+#          pull_request:
+#            types: [opened, synchronize, ready_for_review]
+#            branches-ignore: [staging, production]
+#            paths: ['src/**']
+# ============================================================
+
 permissions:
   contents: read
   pull-requests: write
 
 on:
-  pull_request:
-    types: [opened, synchronize, ready_for_review]
-    branches-ignore: [staging, production]
-    paths:
-      - 'src/**'
+  workflow_dispatch:
 
 concurrency:
   group: ${{ github.ref == 'refs/heads/master' && format('{0}-{1}', github.ref, github.sha) || github.ref }}-claude-review
