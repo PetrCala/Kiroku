@@ -1,6 +1,6 @@
 import * as core from '@actions/core';
 import {format} from 'date-fns';
-import fs from 'fs';
+import {readFileSync} from 'fs';
 import CONST from '@github/libs/CONST';
 import GithubUtils from '@github/libs/GithubUtils';
 import type {StagingDeployCashData} from '@github/libs/GithubUtils';
@@ -17,7 +17,7 @@ type PackageJson = {
 async function run(): Promise<IssuesCreateResponse | void> {
   // Note: require('package.json').version does not work because ncc will resolve that to a plain string at compile time
   const packageJson = JSON.parse(
-    fs.readFileSync('package.json', 'utf8'),
+    readFileSync('package.json', 'utf8'),
   ) as PackageJson;
   const newVersionTag =
     core.getInput('TAG', {required: false}) || packageJson.version;

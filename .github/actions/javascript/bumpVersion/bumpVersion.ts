@@ -1,6 +1,6 @@
 import * as core from '@actions/core';
 import {execFile as originalExecFile} from 'child_process';
-import fs from 'fs';
+import {readFileSync} from 'fs';
 import type {PackageJson} from 'type-fest';
 import {promisify} from 'util';
 import {
@@ -39,7 +39,7 @@ function getSemverLevelInput(): SemverLevel {
 
 function getPreviousVersion(): string {
   const {version: previousVersion} = JSON.parse(
-    fs.readFileSync('./package.json', {encoding: 'utf8'}),
+    readFileSync('./package.json', {encoding: 'utf8'}),
   ) as PackageJson;
   if (typeof previousVersion !== 'string' || previousVersion.length === 0) {
     throw new Error('Could not read version from package.json');
