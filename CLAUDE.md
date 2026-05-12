@@ -121,14 +121,35 @@ The skill provides guidance on:
 - **Prettier**: Code formatting - run `npm run prettier` after making changes
 - **Patch Management**: patch-package for dependency fixes
 
+### Avoiding `any` type violations
+
+The rules `@typescript-eslint/no-explicit-any`, `@typescript-eslint/no-unsafe-assignment`, and `@typescript-eslint/no-unsafe-argument` are enforced as errors.
+
+- Prefer proper types over `any`. When a cast to `any` or `ReactElement<any>` is genuinely necessary (e.g., for `cloneElement` with spread props), add the disable comment on the **preceding line**:
+  ```ts
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  return cloneElement(child as React.ReactElement<any>, {...});
+  ```
+- Apply the comment consistently — if you add the same pattern in multiple places in a PR, every instance needs the comment.
+
+### Module declarations with single named exports
+
+If a `declare module` block uses a named export (required for module augmentation — default exports do not work in module declarations), suppress the `import/prefer-default-export` rule on the preceding line:
+
+```ts
+// eslint-disable-next-line import/prefer-default-export
+export {getReactNativePersistence};
+```
+
 ### Post-Edit Checklist (IMPORTANT)
 
 **ALWAYS run these steps after making code changes, before committing:**
 
 1. **Prettier**: Run `npx prettier --write <changed files>` on every file you modified. This is mandatory - CI will reject unformatted code.
-2. **ESLint**: Run `npm run lint-changed` to catch lint errors early.
+2. **ESLint**: Run `npm run lint:changed` to catch fixable errors in changed files early. Then run `npm run lint` to validate exactly what CI will check — this is the required gate. Note that `lint:changed` uses `--fix` (auto-fixes files in place) and only covers your changed files, so it is NOT equivalent to CI.
 3. **TypeScript**: Run `npm run typecheck-tsgo` after changes that may affect typing (types, interfaces, or function signatures). It is ~10x faster and usually stricter than tsc. CI validates with `npm run typecheck` (tsc), which remains the required merge gate.
 4. **React Compiler**: If you added new React components/hooks or modified existing ones, run `npm run react-compiler-compliance-check check-changed` to verify they compile with React Compiler. This applies the same rules as CI: new components/hooks must compile, and existing compiled files must not regress. See `contributingGuides/REACT_COMPILER.md` for details and common fixes.
+5. **Unused imports**: After removing a type parameter from a function call (e.g., `createNavigator<MyParamList>()` → `createNavigator()`), verify the removed type's import is also deleted if it is no longer used anywhere in the file.
 
 ### Testing
 
