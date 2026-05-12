@@ -158,10 +158,10 @@ async function run(): Promise<IssuesCreateResponse | void> {
           deployBlockers
             .filter(blocker => blocker.isResolved)
             .map(blocker => blocker.url),
-          currentChecklistData.isIOSSmokeChecked,
-          currentChecklistData.isAndroidSmokeChecked,
-          currentChecklistData.isFirebaseChecked,
-          currentChecklistData.isGHStatusChecked,
+          currentChecklistData?.isIOSSmokeChecked ?? false,
+          currentChecklistData?.isAndroidSmokeChecked ?? false,
+          currentChecklistData?.isFirebaseChecked ?? false,
+          currentChecklistData?.isGHStatusChecked ?? false,
         );
       if (stagingDeployCashBodyAndAssignees) {
         checklistBody = stagingDeployCashBodyAndAssignees.issueBody;
