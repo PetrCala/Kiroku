@@ -135,9 +135,17 @@ jobs:
           fi
 
       - name: Setup Ruby
-        uses: ruby/setup-ruby@v1.190.0
+        uses: ruby/setup-ruby@v1.289.0
         with:
           bundler-cache: true
+
+      - name: Setup Xcode
+        run: sudo xcode-select -switch /Applications/Xcode_26.1.1.app
+
+      - name: Set up NODE_BINARY for Xcode
+        run: |
+          echo "export NODE_BINARY=$(which node)" >> "$HOME/.bash_profile"
+          source "$HOME/.bash_profile"
 
       - name: Cache Pod dependencies
         uses: actions/cache@v4
@@ -211,6 +219,13 @@ jobs:
         run: gh release upload ${{ inputs.RELEASE_TAG }} "$GITHUB_WORKSPACE/kiroku.ipa" --clobber
         env:
           GITHUB_TOKEN: ${{ secrets.KIROKU_ADMIN_TOKEN }}
+
+      - name: Upload gym log on failure
+        if: ${{ failure() }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: gym-log
+          path: ~/Library/Logs/gym/
 
       - name: Warn deployers if iOS production deploy failed
         if: ${{ failure() }}
