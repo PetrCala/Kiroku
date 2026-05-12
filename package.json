@@ -20,7 +20,6 @@
     "lint": "./scripts/lint.sh",
     "lint-changed": "./scripts/lintChanged.sh",
     "lint-watch": "onchange '**/*.{js,jsx,ts,tsx,mjs,cjs}' -- ./scripts/lint.sh {{changed}}",
-    "lint:watch": "npx eslint-watch --watch --changed",
     "lint:quiet": "eslint . --max-warnings=0 --quiet --cache --cache-location=.eslintcache",
     "gh-actions-build": "./.github/scripts/buildActions.sh",
     "gh-actions-validate": "./.github/scripts/validateActionsAndWorkflows.sh",

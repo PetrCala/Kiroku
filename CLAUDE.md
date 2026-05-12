@@ -146,7 +146,7 @@ export {getReactNativePersistence};
 **ALWAYS run these steps after making code changes, before committing:**
 
 1. **Prettier**: Run `npx prettier --write <changed files>` on every file you modified. This is mandatory - CI will reject unformatted code.
-2. **ESLint**: Run `npm run lint:changed` to catch fixable errors in changed files early. Then run `npm run lint` to validate exactly what CI will check — this is the required gate. Note that `lint:changed` uses `--fix` (auto-fixes files in place) and only covers your changed files, so it is NOT equivalent to CI.
+2. **ESLint**: Run `npm run lint-changed` to catch fixable errors in changed files early. Then run `npm run lint` to validate exactly what CI will check — this is the required gate. Note that `lint-changed` uses `--fix` (auto-fixes files in place) and only covers your changed files, so it is NOT equivalent to CI.
 3. **TypeScript**: Run `npm run typecheck-tsgo` after changes that may affect typing (types, interfaces, or function signatures). It is ~10x faster and usually stricter than tsc. CI validates with `npm run typecheck` (tsc), which remains the required merge gate.
 4. **React Compiler**: If you added new React components/hooks or modified existing ones, run `npm run react-compiler-compliance-check check-changed` to verify they compile with React Compiler. This applies the same rules as CI: new components/hooks must compile, and existing compiled files must not regress. See `contributingGuides/REACT_COMPILER.md` for details and common fixes.
 5. **Unused imports**: After removing a type parameter from a function call (e.g., `createNavigator<MyParamList>()` → `createNavigator()`), verify the removed type's import is also deleted if it is no longer used anywhere in the file.
