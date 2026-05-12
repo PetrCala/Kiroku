@@ -1,5 +1,6 @@
 import type {CommitType} from '@github/libs/GitUtils';
 import GitUtils from '@github/libs/GitUtils';
+import {getPreviousVersion, SEMANTIC_VERSION_LEVELS} from '@github/libs/versionUpdater';
 
 type ExampleDataType = {
   input: CommitType[];
@@ -123,5 +124,29 @@ describe('GitUtils', () => {
       const result = GitUtils.getValidMergedPRs(exampleCase.input);
       expect(result).toStrictEqual(exampleCase.expectedOutput);
     });
+  });
+});
+
+describe('getPreviousVersion — floor behaviour', () => {
+  it('does not go below 0.0.0-0', () => {
+    const result = getPreviousVersion('0.0.0-0', SEMANTIC_VERSION_LEVELS.PATCH);
+    expect(result).toBe('0.0.0-0');
+  });
+
+  it('returns 0.0.0-0 when decrementing major from 0', () => {
+    const result = getPreviousVersion('0.0.0-0', SEMANTIC_VERSION_LEVELS.MAJOR);
+    expect(result).toBe('0.0.0-0');
+  });
+
+  it('does not produce NaN values when decrementing a 0.x.x version to the floor', () => {
+    const result = getPreviousVersion('0.3.0-0', SEMANTIC_VERSION_LEVELS.PATCH);
+    expect(result).not.toContain('NaN');
+    expect(result).not.toContain('undefined');
+  });
+
+  it('is idempotent at the floor — calling it twice returns the same value', () => {
+    const floor = getPreviousVersion('0.0.0-0', SEMANTIC_VERSION_LEVELS.PATCH);
+    const floorAgain = getPreviousVersion(floor, SEMANTIC_VERSION_LEVELS.PATCH);
+    expect(floor).toBe(floorAgain);
   });
 });
