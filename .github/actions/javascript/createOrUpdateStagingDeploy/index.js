@@ -33672,6 +33672,7 @@ const CONST = {
         DEPLOY_BLOCKER: 'DeployBlockerCash',
         HELP_WANTED: 'Help Wanted',
         CP_STAGING: 'CP Staging',
+        CP_PRODUCTION: 'CP Production',
     },
     EVENTS: {
         ISSUE_COMMENT: 'issue_comment',
@@ -33753,24 +33754,25 @@ function tagExists(tag) {
  * This essentially just calls getPreviousVersion in a loop, until it finds a version for which a tag exists.
  * It's useful if we manually perform a version bump, because in that case a tag may not exist for the previous version.
  *
+ * Returns an empty string when no prior tag is found within MAX_ATTEMPTS steps, which causes fetchTag to
+ * skip --shallow-exclude and do a full fetch instead of looping forever.
+ *
  * @param tag the current tag
  * @param level the Semver level to step backward by
  */
 function getPreviousExistingTag(tag, level) {
+    const MAX_ATTEMPTS = 100;
     let previousVersion = VersionUpdater.getPreviousVersion(tag, level);
-    while (true) {
+    for (let attempts = 0; attempts < MAX_ATTEMPTS; attempts++) {
         if (tagExists(previousVersion)) {
             return previousVersion;
         }
         const nextVersion = VersionUpdater.getPreviousVersion(previousVersion, level);
-        if (nextVersion === previousVersion) {
-            // Reached the floor version with no matching tag — bail out.
-            // fetchTag handles an empty/same shallowExcludeTag gracefully.
-            return previousVersion;
-        }
         console.log(`Tag for previous version ${previousVersion} does not exist. Checking for an older version...`);
         previousVersion = nextVersion;
     }
+    console.warn(`Could not find a prior tag for ${tag} after ${MAX_ATTEMPTS} attempts. Fetching without shallow-exclude.`);
+    return '';
 }
 /**
  * @param [shallowExcludeTag] When fetching the given tag, exclude all history reachable by the shallowExcludeTag (used to make fetch much faster)
