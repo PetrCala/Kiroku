@@ -1,0 +1,302 @@
+name: Cherry-pick a pull request
+
+on:
+  workflow_dispatch:
+    inputs:
+      PULL_REQUEST_URL:
+        description: 'URL of the merged Kiroku PR to cherry-pick (leave empty to bump version only)'
+        required: false
+        type: string
+      TARGET:
+        description: 'Target branch: staging or production'
+        required: true
+        type: choice
+        options:
+          - staging
+          - production
+        default: staging
+
+  workflow_call:
+    inputs:
+      PULL_REQUEST_URL:
+        description: 'URL of the merged Kiroku PR to cherry-pick (leave empty to bump version only)'
+        type: string
+        required: false
+      TARGET:
+        description: 'Target branch: staging or production'
+        type: string
+        required: true
+    secrets:
+      LARGE_SECRET_PASSPHRASE:
+        required: true
+      DISCORD_WEBHOOK_URL:
+        required: true
+      KIROKU_ADMIN_COMMIT_TOKEN:
+        required: true
+      KIROKU_ADMIN_TOKEN:
+        required: true
+
+# Never cancel a cherry-pick mid-execution — queue instead to avoid leaving the target branch in an inconsistent state.
+concurrency:
+  group: cherry-pick-${{ inputs.TARGET }}
+  cancel-in-progress: false
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    outputs:
+      ACTOR_HAS_WRITE_ACCESS: ${{ steps.checkPermissions.outputs.ACTOR_HAS_WRITE_ACCESS }}
+      PR_IS_MERGED: ${{ steps.checkPR.outputs.PR_IS_MERGED }}
+    steps:
+      - name: Check actor permissions
+        id: checkPermissions
+        run: |
+          PERMISSION=$(gh api /repos/${{ github.repository }}/collaborators/${{ github.actor }}/permission \
+            | jq -r '.permission')
+          if [[ "$PERMISSION" == "write" || "$PERMISSION" == "admin" ]]; then
+            echo "ACTOR_HAS_WRITE_ACCESS=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "::error::Actor ${{ github.actor }} does not have write access (permission=$PERMISSION)"
+            echo "ACTOR_HAS_WRITE_ACCESS=false" >> "$GITHUB_OUTPUT"
+          fi
+        env:
+          GITHUB_TOKEN: ${{ secrets.KIROKU_ADMIN_TOKEN }}
+
+      - name: Validate PR URL and merged status
+        id: checkPR
+        run: |
+          PULL_REQUEST_URL="${{ inputs.PULL_REQUEST_URL }}"
+
+          if [[ -z "$PULL_REQUEST_URL" ]]; then
+            echo "PR_IS_MERGED=true" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          REPO=$(echo "$PULL_REQUEST_URL" | sed -E 's|https?://github\.com/([^/]+/[^/]+)/pull/.*|\1|')
+          if [[ "$REPO" != "PetrCala/Kiroku" ]]; then
+            echo "::error::Cherry-picks are only supported for PetrCala/Kiroku. Found: $REPO"
+            echo "PR_IS_MERGED=false" >> "$GITHUB_OUTPUT"
+            exit 1
+          fi
+
+          STATE=$(gh pr view "$PULL_REQUEST_URL" --json state --jq '.state')
+          if [[ "$STATE" == "MERGED" ]]; then
+            echo "PR_IS_MERGED=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "::error::PR is not merged (state=$STATE): $PULL_REQUEST_URL"
+            echo "PR_IS_MERGED=false" >> "$GITHUB_OUTPUT"
+            exit 1
+          fi
+        env:
+          GITHUB_TOKEN: ${{ secrets.KIROKU_ADMIN_TOKEN }}
+
+  createNewVersion:
+    needs: validate
+    if: ${{ fromJSON(needs.validate.outputs.ACTOR_HAS_WRITE_ACCESS) && fromJSON(needs.validate.outputs.PR_IS_MERGED) }}
+    uses: ./.github/workflows/createNewVersion.yml
+    secrets: inherit
+    with:
+      # staging CP with a PR     → BUILD  (e.g. 0.3.11-5 → 0.3.11-6)
+      # production CP with a PR  → PATCH  (e.g. 0.3.11-6 → 0.3.12-0)
+      # staging, no PR (post-production version sync) → PATCH (so staging stays ahead of the store version)
+      SEMVER_LEVEL: ${{ (inputs.TARGET == 'production' || inputs.PULL_REQUEST_URL == '') && 'PATCH' || 'BUILD' }}
+
+  cherryPick:
+    needs: [validate, createNewVersion]
+    if: ${{ fromJSON(needs.validate.outputs.ACTOR_HAS_WRITE_ACCESS) && fromJSON(needs.validate.outputs.PR_IS_MERGED) }}
+    runs-on: ubuntu-latest
+    outputs:
+      HAS_CONFLICTS: ${{ steps.cherryPickPR.outputs.HAS_CONFLICTS }}
+    steps:
+      - name: Extract PR number and merge commit SHA
+        if: ${{ inputs.PULL_REQUEST_URL != '' }}
+        id: extractPRInfo
+        run: |
+          PR_NUMBER=$(echo "$PULL_REQUEST_URL" | grep -oE '[0-9]+$')
+          echo "PR_NUMBER=$PR_NUMBER" >> "$GITHUB_OUTPUT"
+
+          MERGE_COMMIT_SHA=$(gh pr view "$PULL_REQUEST_URL" --json mergeCommit --jq '.mergeCommit.oid')
+          if [[ -z "$MERGE_COMMIT_SHA" || "$MERGE_COMMIT_SHA" == "null" ]]; then
+            echo "::error::Could not find merge commit for PR $PR_NUMBER"
+            exit 1
+          fi
+          echo "MERGE_COMMIT_SHA=$MERGE_COMMIT_SHA" >> "$GITHUB_OUTPUT"
+        env:
+          GITHUB_TOKEN: ${{ secrets.KIROKU_ADMIN_TOKEN }}
+          PULL_REQUEST_URL: ${{ inputs.PULL_REQUEST_URL }}
+
+      - name: Set conflict branch name
+        if: ${{ inputs.PULL_REQUEST_URL != '' }}
+        id: setBranchName
+        run: |
+          echo "CONFLICT_BRANCH=cherry-pick-${{ inputs.TARGET }}-${{ steps.extractPRInfo.outputs.PR_NUMBER }}-${{ github.run_id }}-${{ github.run_attempt }}" >> "$GITHUB_OUTPUT"
+
+      - name: Checkout target branch
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.TARGET }}
+          token: ${{ secrets.KIROKU_ADMIN_COMMIT_TOKEN }}
+          fetch-depth: 0
+
+      - name: Setup git for KirokuAdmin
+        uses: ./.github/actions/composite/setupGitForKirokuAdmin
+        with:
+          GPG_PASSPHRASE: ${{ secrets.LARGE_SECRET_PASSPHRASE }}
+
+      - name: Fetch master history
+        run: git fetch origin master --no-tags --depth=100
+
+      - name: Find version bump commit on master
+        id: findVersionBumpCommit
+        run: |
+          VERSION_BUMP_COMMIT=$(git log origin/master --format='%H' \
+            --grep "chore: release $NEW_VERSION" -1)
+          if [[ -z "$VERSION_BUMP_COMMIT" ]]; then
+            echo "::error::Could not find version bump commit for $NEW_VERSION on master"
+            echo "Recent master commits:"
+            git log origin/master --oneline -20
+            exit 1
+          fi
+          echo "::notice::Found version bump commit: $VERSION_BUMP_COMMIT"
+          echo "VERSION_BUMP_COMMIT=$VERSION_BUMP_COMMIT" >> "$GITHUB_OUTPUT"
+        env:
+          NEW_VERSION: ${{ needs.createNewVersion.outputs.NEW_VERSION }}
+
+      - name: Cherry-pick version bump to target branch
+        run: |
+          if ! git cherry-pick -x "$VERSION_BUMP_COMMIT"; then
+            git cherry-pick --abort || true
+            echo "::error::Version bump cherry-pick failed — this should not happen; check the target branch manually"
+            exit 1
+          fi
+        env:
+          VERSION_BUMP_COMMIT: ${{ steps.findVersionBumpCommit.outputs.VERSION_BUMP_COMMIT }}
+
+      - name: Cherry-pick target PR merge commit
+        if: ${{ inputs.PULL_REQUEST_URL != '' }}
+        id: cherryPickPR
+        run: |
+          MERGE_COMMIT_SHA="${{ steps.extractPRInfo.outputs.MERGE_COMMIT_SHA }}"
+          TARGET="${{ inputs.TARGET }}"
+
+          # Squash merges have 1 parent; true merge commits have 2+.
+          # --mainline 1 is only valid for multi-parent commits.
+          PARENT_COUNT=$(git cat-file -p "$MERGE_COMMIT_SHA" | grep -c '^parent ')
+
+          CHERRY_PICK_RESULT=0
+          if [[ "$PARENT_COUNT" -gt 1 ]]; then
+            git cherry-pick -x --mainline 1 "$MERGE_COMMIT_SHA" || CHERRY_PICK_RESULT=$?
+          else
+            git cherry-pick -x "$MERGE_COMMIT_SHA" || CHERRY_PICK_RESULT=$?
+          fi
+
+          if [[ "$CHERRY_PICK_RESULT" -ne 0 ]]; then
+            git cherry-pick --abort || true
+            echo "HAS_CONFLICTS=true" >> "$GITHUB_OUTPUT"
+          else
+            git commit --amend \
+              -m "$(git log -1 --pretty=%B)" \
+              -m "(cherry-picked to $TARGET by ${{ github.actor }})"
+            echo "HAS_CONFLICTS=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Push to target branch
+        if: ${{ inputs.PULL_REQUEST_URL == '' || !fromJSON(steps.cherryPickPR.outputs.HAS_CONFLICTS || 'false') }}
+        run: git push origin HEAD:${{ inputs.TARGET }}
+
+      - name: Create conflict branch and PR
+        if: ${{ inputs.PULL_REQUEST_URL != '' && fromJSON(steps.cherryPickPR.outputs.HAS_CONFLICTS || 'false') }}
+        id: createConflictPR
+        run: |
+          CONFLICT_BRANCH="${{ steps.setBranchName.outputs.CONFLICT_BRANCH }}"
+          PR_NUMBER="${{ steps.extractPRInfo.outputs.PR_NUMBER }}"
+          TARGET="${{ inputs.TARGET }}"
+          MERGE_COMMIT_SHA="${{ steps.extractPRInfo.outputs.MERGE_COMMIT_SHA }}"
+
+          git switch -c "$CONFLICT_BRANCH"
+          git push --set-upstream origin "$CONFLICT_BRANCH"
+
+          PR_DESCRIPTION=$(cat <<EOF
+          🍒 Cherry pick ${{ inputs.PULL_REQUEST_URL }} to \`$TARGET\` 🍒
+
+          This PR had conflicts when we tried to cherry-pick it to \`$TARGET\`. Please resolve manually:
+
+          \`\`\`bash
+          git fetch
+          git checkout $CONFLICT_BRANCH
+          git cherry-pick -x $MERGE_COMMIT_SHA
+          # resolve conflicts, then:
+          git cherry-pick --continue
+          git commit --amend -m "\$(git log -1 --pretty=%B)" -m "(cherry-picked to $TARGET by ${{ github.actor }})"
+          git push origin $CONFLICT_BRANCH
+          \`\`\`
+
+          Once all conflicts are resolved and pushed, open this PR for review. Both author and reviewer checklists must be completed before merging.
+          EOF
+          )
+
+          gh pr create \
+            --base "$TARGET" \
+            --head "$CONFLICT_BRANCH" \
+            --title "🍒 Cherry pick PR #${PR_NUMBER} to ${TARGET} 🍒" \
+            --label "$([[ "$TARGET" == "staging" ]] && echo "CP Staging" || echo "CP Production")" \
+            --body "$PR_DESCRIPTION"
+
+          CONFLICT_PR_URL=$(gh pr view "$CONFLICT_BRANCH" --json url --jq '.url')
+          echo "CONFLICT_PR_URL=$CONFLICT_PR_URL" >> "$GITHUB_OUTPUT"
+        env:
+          GITHUB_TOKEN: ${{ secrets.KIROKU_ADMIN_TOKEN }}
+
+      - name: Label original PR as cherry-picked
+        if: ${{ inputs.PULL_REQUEST_URL != '' && !fromJSON(steps.cherryPickPR.outputs.HAS_CONFLICTS || 'false') }}
+        run: |
+          LABEL=$([[ "${{ inputs.TARGET }}" == "staging" ]] && echo "CP Staging" || echo "CP Production")
+          gh pr edit "${{ inputs.PULL_REQUEST_URL }}" --add-label "$LABEL"
+        env:
+          GITHUB_TOKEN: ${{ secrets.KIROKU_ADMIN_TOKEN }}
+
+      - name: Notify Discord on success
+        if: ${{ success() && !fromJSON(steps.cherryPickPR.outputs.HAS_CONFLICTS || 'false') }}
+        run: |
+          PR_URL="${{ inputs.PULL_REQUEST_URL }}"
+          PR_NUMBER="${{ steps.extractPRInfo.outputs.PR_NUMBER }}"
+          TARGET="${{ inputs.TARGET }}"
+          NEW_VERSION="${{ needs.createNewVersion.outputs.NEW_VERSION }}"
+
+          if [[ -n "$PR_URL" ]]; then
+            MSG="🍒 Cherry-pick of [#${PR_NUMBER}](${PR_URL}) to \`${TARGET}\` succeeded — version \`${NEW_VERSION}\` deploying."
+          else
+            MSG="🍒 Version bump to \`${NEW_VERSION}\` cherry-picked to \`${TARGET}\` — deploying."
+          fi
+
+          curl -s -X POST "$DISCORD_WEBHOOK_URL" \
+            -H "Content-Type: application/json" \
+            -d "{\"content\": \"$MSG\"}"
+        env:
+          DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_URL }}
+
+      - name: Notify Discord on conflict
+        if: ${{ inputs.PULL_REQUEST_URL != '' && fromJSON(steps.cherryPickPR.outputs.HAS_CONFLICTS || 'false') }}
+        run: |
+          curl -s -X POST "$DISCORD_WEBHOOK_URL" \
+            -H "Content-Type: application/json" \
+            -d "{\"content\": \"⚠️ Cherry-pick of [#${{ steps.extractPRInfo.outputs.PR_NUMBER }}](${{ inputs.PULL_REQUEST_URL }}) to \`${{ inputs.TARGET }}\` has conflicts. A conflict PR has been opened: ${{ steps.createConflictPR.outputs.CONFLICT_PR_URL }}\"}"
+        env:
+          DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_URL }}
+
+      - name: Announce failed workflow in Discord
+        if: ${{ failure() }}
+        uses: ./.github/actions/composite/announceFailedWorkflowInDiscord
+        with:
+          DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_URL }}
+
+  # After a production CP, bump staging to a higher PATCH version so it remains ahead of the
+  # production/store version. This prevents store submission failures due to version conflicts.
+  bumpStagingAfterProductionCP:
+    needs: [validate, cherryPick]
+    if: ${{ inputs.TARGET == 'production' && fromJSON(needs.validate.outputs.ACTOR_HAS_WRITE_ACCESS) && fromJSON(needs.validate.outputs.PR_IS_MERGED) && !fromJSON(needs.cherryPick.outputs.HAS_CONFLICTS || 'false') }}
+    uses: ./.github/workflows/cherryPick.yml
+    secrets: inherit
+    with:
+      TARGET: staging
+      PULL_REQUEST_URL: ''
