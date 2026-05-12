@@ -1,8 +1,9 @@
-import type {TextStyle} from 'react-native';
-
 type UserSelectStyles = Record<
   'userSelectText' | 'userSelectNone',
-  Pick<TextStyle, 'userSelect' | 'WebkitUserSelect'>
+  {
+    userSelect?: 'none' | 'auto' | 'text';
+    WebkitUserSelect?: 'none' | 'auto' | 'text';
+  }
 >;
 
 export default UserSelectStyles;

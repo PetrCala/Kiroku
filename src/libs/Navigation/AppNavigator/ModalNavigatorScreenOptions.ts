@@ -11,7 +11,6 @@ const ModalNavigatorScreenOptions = (
   themeStyles: ThemeStyles,
 ): StackNavigationOptions => ({
   headerShown: false,
-  animationEnabled: true,
   gestureDirection: 'horizontal',
   cardStyle: themeStyles.navigationScreenCardStyle,
   cardStyleInterpolator: CardStyleInterpolators.forHorizontalIOS,

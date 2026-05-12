@@ -8,9 +8,10 @@ import {UCFirst} from '@libs/StringUtilsKiroku';
 // createOnyxContext return type
 type CreateOnyxContext<TOnyxKey extends OnyxKey> = [
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  ComponentType<any>, // Deprecated withOnyx HOC (for backward compatibility)
+  () => (Component: ComponentType<any>) => ComponentType<any>, // Deprecated withOnyx HOC (for backward compatibility)
   ComponentType<ChildrenProps>, // Provider
-  React.Context<OnyxValue<TOnyxKey>>, // Context
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  React.Context<any>, // Context
   () => NonNullable<OnyxValue<TOnyxKey>>, // useOnyxContext hook
 ];
 
@@ -21,7 +22,7 @@ export default <TOnyxKey extends OnyxKey>(
   onyxKeyName: TOnyxKey,
 ): CreateOnyxContext<TOnyxKey> => {
   const Context = createContext<OnyxValue<TOnyxKey> | typeof CONTEXT_UNSET>(
-    CONTEXT_UNSET as OnyxValue<TOnyxKey>,
+    CONTEXT_UNSET as unknown as OnyxValue<TOnyxKey>,
   );
 
   function Provider(props: ChildrenProps): ReactNode {

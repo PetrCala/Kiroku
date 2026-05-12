@@ -121,6 +121,9 @@ type CustomBaseTextInputProps = {
   /** Whether the clear button should be displayed */
   shouldShowClearButton?: boolean;
 
+  /** Callback when the clear button is pressed */
+  onClear?: () => void;
+
   /** Style for the prefix */
   prefixStyle?: StyleProp<TextStyle>;
 

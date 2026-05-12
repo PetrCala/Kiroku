@@ -8,6 +8,7 @@ import type {
 import {
   createNavigatorFactory,
   StackRouter,
+  useLocale,
   useNavigationBuilder,
 } from '@react-navigation/native';
 import type {
@@ -28,9 +29,12 @@ import ScreenWrapper from '@components/ScreenWrapper';
 // eslint-disable-next-line @typescript-eslint/no-redundant-type-constituents
 type CustomNavigatorProps = DefaultNavigatorOptions<
   ParamListBase,
+  string | undefined,
   StackNavigationState<ParamListBase>,
   StackNavigationOptions,
-  StackNavigationEventMap
+  StackNavigationEventMap,
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  any
 > & {
   initialRouteName: string;
 };
@@ -62,7 +66,8 @@ function CustomBottomTabNavigator({
   screenOptions,
   ...props
 }: CustomNavigatorProps) {
-  const {state, navigation, descriptors, NavigationContent} =
+  const {direction} = useLocale();
+  const {state, navigation, descriptors, describe, NavigationContent} =
     useNavigationBuilder<
       StackNavigationState<ParamListBase>,
       StackRouterOptions,
@@ -97,6 +102,8 @@ function CustomBottomTabNavigator({
             state={stateToRender}
             descriptors={descriptors}
             navigation={navigation}
+            direction={direction}
+            describe={describe}
           />
         </NavigationContent>
         {/* <BottomTabBar selectedTab={selectedTab} /> */}

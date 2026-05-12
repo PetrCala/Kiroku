@@ -1,4 +1,5 @@
 import {PERMISSIONS} from 'react-native-permissions';
+import type {Permission as RNPermission} from 'react-native-permissions';
 import type {PermissionEntry, PermissionKey} from './types';
 
 const PermissionsMap: Record<PermissionKey, PermissionEntry> = {
@@ -16,8 +17,8 @@ const PermissionsMap: Record<PermissionKey, PermissionEntry> = {
   },
   notifications: {
     iOS: undefined, // Handle through the checkNotifications, requestNotifications functions
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
-    Android: PERMISSIONS.ANDROID.POST_NOTIFICATIONS,
+    // POST_NOTIFICATIONS is not in the type definitions but exists on Android 13+
+    Android: 'android.permission.POST_NOTIFICATIONS' as RNPermission,
   },
 };
 

@@ -8,7 +8,7 @@ type Action<T extends unknown[]> = (...params: T) => void | Promise<void>;
  */
 export default function useSingleExecution() {
   const [isExecuting, setIsExecuting] = useState(false);
-  const isExecutingRef = useRef<boolean>();
+  const isExecutingRef = useRef<boolean>(false);
 
   isExecutingRef.current = isExecuting;
 

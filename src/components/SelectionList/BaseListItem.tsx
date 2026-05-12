@@ -39,7 +39,7 @@ function BaseListItem<TItem extends ListItem>({
   const {hovered, bind} = useHover();
   const {isMouseDownOnInput, setMouseUp} = useMouseContext();
 
-  const pressableRef = useRef<View>(null);
+  const pressableRef = useRef<View | null>(null);
 
   // Sync focus on an item
   useSyncFocus(pressableRef, !!isFocused, shouldSyncFocus);

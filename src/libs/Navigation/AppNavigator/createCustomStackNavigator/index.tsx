@@ -5,6 +5,7 @@ import type {
 } from '@react-navigation/native';
 import {
   createNavigatorFactory,
+  useLocale,
   useNavigationBuilder,
 } from '@react-navigation/native';
 import type {
@@ -45,8 +46,9 @@ function reduceCentralPaneRoutes(routes: Routes): Routes {
 
 function ResponsiveStackNavigator(props: ResponsiveStackNavigatorProps) {
   const {shouldUseNarrowLayout} = useResponsiveLayout();
+  const {direction} = useLocale();
 
-  const {navigation, state, descriptors, NavigationContent} =
+  const {navigation, state, descriptors, describe, NavigationContent} =
     useNavigationBuilder<
       StackNavigationState<ParamListBase>,
       ResponsiveStackNavigatorRouterOptions,
@@ -89,6 +91,8 @@ function ResponsiveStackNavigator(props: ResponsiveStackNavigatorProps) {
         state={stateToRender}
         descriptors={descriptors}
         navigation={navigation}
+        direction={direction}
+        describe={describe}
       />
       {/* {searchRoute && (
         <View style={styles.dNone}>
@@ -101,9 +105,4 @@ function ResponsiveStackNavigator(props: ResponsiveStackNavigatorProps) {
 
 ResponsiveStackNavigator.displayName = 'ResponsiveStackNavigator';
 
-export default createNavigatorFactory<
-  StackNavigationState<ParamListBase>,
-  StackNavigationOptions,
-  StackNavigationEventMap,
-  typeof ResponsiveStackNavigator
->(ResponsiveStackNavigator);
+export default createNavigatorFactory(ResponsiveStackNavigator);

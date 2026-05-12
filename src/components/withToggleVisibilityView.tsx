@@ -30,7 +30,7 @@ export default function withToggleVisibilityView<
       <View style={!isVisible && styles.visuallyHidden} collapsable={false}>
         <WrappedComponent
           // eslint-disable-next-line react/jsx-props-no-spreading
-          {...(rest as TProps)}
+          {...(rest as unknown as TProps)}
           ref={ref}
           isVisible={isVisible}
         />
@@ -39,7 +39,9 @@ export default function withToggleVisibilityView<
   }
 
   WithToggleVisibilityView.displayName = `WithToggleVisibilityViewWithRef(${getComponentDisplayName(WrappedComponent)})`;
-  return React.forwardRef(WithToggleVisibilityView);
+  return React.forwardRef(WithToggleVisibilityView) as unknown as (
+    props: TProps & RefAttributes<TRef>,
+  ) => ReactElement | null;
 }
 
 export type {WithToggleVisibilityViewProps};

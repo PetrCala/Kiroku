@@ -187,13 +187,17 @@ function BaseTextInput(
     isLabelActive.current = false;
   }, [animateLabel, forceActiveLabel, prefixCharacter, value]);
 
-  const onFocus = (event: NativeSyntheticEvent<TextInputFocusEventData>) => {
-    inputProps.onFocus?.(event);
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const onFocus = (event: any) => {
+    inputProps.onFocus?.(
+      event as NativeSyntheticEvent<TextInputFocusEventData>,
+    );
     setIsFocused(true);
   };
 
-  const onBlur = (event: NativeSyntheticEvent<TextInputFocusEventData>) => {
-    inputProps.onBlur?.(event);
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const onBlur = (event: any) => {
+    inputProps.onBlur?.(event as NativeSyntheticEvent<TextInputFocusEventData>);
     setIsFocused(false);
   };
 

@@ -1272,7 +1272,7 @@ const styles = (theme: ThemeColors) =>
 
     noSelect: {
       boxShadow: 'none',
-      outlineStyle: 'none',
+      outlineWidth: 0,
     },
 
     shadowStrong: {

@@ -12,7 +12,7 @@ import {addLog, flushAllLogsOnAppLaunch} from './actions/Console';
 import {shouldAttachLog} from './Console';
 import getPlatform from './getPlatform';
 
-let timeout: NodeJS.Timeout;
+let timeout: ReturnType<typeof setTimeout>;
 let shouldCollectLogs = false;
 
 Onyx.connect({

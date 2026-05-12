@@ -19,7 +19,7 @@ function BaseEducationalTooltip({
   shouldAutoDismiss = false,
   ...props
 }: EducationalTooltipProps) {
-  const hideTooltipRef = useRef<() => void>();
+  const hideTooltipRef = useRef<(() => void) | undefined>(undefined);
 
   useEffect(
     () => () => {
@@ -52,7 +52,7 @@ function BaseEducationalTooltip({
       {({showTooltip, hideTooltip, updateTargetBounds}) => {
         // eslint-disable-next-line react-compiler/react-compiler
         hideTooltipRef.current = hideTooltip;
-        return React.cloneElement(children as React.ReactElement, {
+        return React.cloneElement(children as React.ReactElement<any>, {
           onLayout: (e: LayoutChangeEventWithTarget) => {
             // e.target is specific to native, use e.nativeEvent.target on web instead
             const target = e.target || e.nativeEvent.target;

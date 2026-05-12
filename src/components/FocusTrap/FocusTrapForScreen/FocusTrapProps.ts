@@ -1,11 +1,11 @@
-import type FocusTrap from 'focus-trap-react';
+import type {FocusTrapProps} from 'focus-trap-react';
 
 type FocusTrapForScreenProps = {
   children: React.ReactNode;
 
   /** Overrides the focus trap settings */
   focusTrapSettings?: Pick<
-    FocusTrap.Props,
+    FocusTrapProps,
     'containerElements' | 'focusTrapOptions' | 'active'
   >;
 };

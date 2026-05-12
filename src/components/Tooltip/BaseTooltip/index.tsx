@@ -125,7 +125,7 @@ function Tooltip(
               onHoverIn={showTooltip}
               onHoverOut={hideTooltip}
               shouldHandleScroll={shouldHandleScroll}>
-              {React.cloneElement(children as React.ReactElement, {
+              {React.cloneElement(children as React.ReactElement<any>, {
                 onMouseEnter: updateTargetPositionOnMouseEnter,
               })}
             </Hoverable>

@@ -42,8 +42,8 @@ function BaseGenericTooltip({
   const [contentMeasuredWidth, setContentMeasuredWidth] = useState<number>();
   // The height of tooltip's wrapper.
   const [wrapperMeasuredHeight, setWrapperMeasuredHeight] = useState<number>();
-  const contentRef = useRef<HTMLDivElement>(null);
-  const rootWrapper = useRef<HTMLDivElement>(null);
+  const contentRef = useRef<HTMLDivElement | null>(null);
+  const rootWrapper = useRef<HTMLDivElement | null>(null);
 
   const StyleUtils = useStyleUtils();
 

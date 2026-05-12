@@ -91,7 +91,7 @@ Onyx.connect({
 // }
 
 // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
-const RootStack = createCustomStackNavigator<AuthScreensParamList>();
+const RootStack = createCustomStackNavigator();
 // We want to delay the re-rendering for components
 // that depends on modal visibility until Modal is completely closed and its focused
 // When modal screen is focused, update modal visibility in Onyx

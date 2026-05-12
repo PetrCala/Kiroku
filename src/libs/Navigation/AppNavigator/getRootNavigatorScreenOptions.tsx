@@ -28,7 +28,6 @@ type ScreenOptions = {
 const commonScreenOptions: StackNavigationOptions = {
   headerShown: false,
   gestureDirection: 'horizontal',
-  animationEnabled: true,
   cardOverlayEnabled: true,
   animationTypeForReplace: 'push',
 };
@@ -74,7 +73,6 @@ const getRootNavigatorScreenOptions: GetRootNavigatorScreenOptions = (
           props,
         ),
       headerShown: false,
-      animationEnabled: true,
       cardOverlayEnabled: false,
       presentation: 'transparentModal',
       cardStyle: {
@@ -97,7 +95,6 @@ const getRootNavigatorScreenOptions: GetRootNavigatorScreenOptions = (
         ),
 
       headerShown: false,
-      animationEnabled: true,
       cardOverlayEnabled: false,
       presentation: 'transparentModal',
       cardStyle: {
@@ -158,7 +155,6 @@ const getRootNavigatorScreenOptions: GetRootNavigatorScreenOptions = (
     centralPaneNavigator: {
       title: CONFIG.SITE_TITLE,
       ...commonScreenOptions,
-      animationEnabled: isSmallScreenWidth,
       cardStyleInterpolator: (props: StackCardInterpolationProps) =>
         modalCardStyleInterpolator(isSmallScreenWidth, true, false, props),
 
