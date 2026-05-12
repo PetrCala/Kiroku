@@ -132,9 +132,15 @@ If validation passes, the workflows promote `staging -> production`.
 
 ### I need a hotfix or cherry-pick
 
-Use the cherry-pick workflow once it exists. It should accept a merged PR URL and a target branch, either `staging` or `production`.
+Trigger the [cherryPick workflow](../../.github/workflows/cherryPick.yml) manually from the GitHub Actions UI:
 
-The workflow should bump the version, cherry-pick the PR, push the target branch, and let the normal branch-driven deploy run.
+1. Go to **Actions → Cherry-pick a pull request → Run workflow**.
+2. Paste the full URL of the already-merged PR.
+3. Choose `staging` or `production` as the target.
+
+The workflow bumps the version, cherry-picks the PR, and pushes the target branch — triggering the normal branch-driven deploy. If there are conflicts, it opens a conflict-resolution PR instead and notifies Discord.
+
+For a **production** cherry-pick, the workflow also automatically bumps staging to the next patch version afterwards, so staging stays ahead of the App Store / Play Store version.
 
 ## Key GitHub Workflows
 
@@ -220,15 +226,29 @@ Expected behavior:
 
 ### cherryPick
 
-Manual workflow for deploying specific merged PRs to `staging` or `production`.
+Manual `workflow_dispatch` for deploying a specific already-merged PR directly to `staging` or `production`, bypassing the normal release cycle.
 
-Expected behavior:
+**Inputs:**
 
-- validate the PR is merged
-- bump the correct version level
-- cherry-pick the PR to the target branch
-- create a conflict PR if needed
-- push the target branch to trigger deploy
+| Input              | Required | Description                                     |
+| ------------------ | -------- | ----------------------------------------------- |
+| `PULL_REQUEST_URL` | Yes      | Full URL of the merged Kiroku PR to cherry-pick |
+| `TARGET`           | Yes      | `staging` or `production`                       |
+
+**What it does:**
+
+1. Validates the actor has write/admin access and the PR is merged into `PetrCala/Kiroku`.
+2. Creates a new version via `createNewVersion`:
+   - `TARGET=staging` → `BUILD` bump (e.g. `0.3.11-5 → 0.3.11-6`)
+   - `TARGET=production` → `PATCH` bump (e.g. `0.3.11-6 → 0.3.12-0`)
+3. Cherry-picks the version bump commit and the PR's merge commit onto the target branch.
+4. Pushes the target branch, triggering the normal `deploy` workflow.
+5. Labels the original PR `CP Staging` or `CP Production`.
+6. Notifies Discord on success, conflict, or failure.
+
+**Conflict handling:** if the cherry-pick cannot be applied cleanly, the workflow creates a conflict-resolution branch and opens a PR against the target branch with step-by-step manual resolution instructions. Discord is notified with a link to the conflict PR.
+
+**Post-production staging sync:** after a successful production cherry-pick, the workflow automatically performs a second `PATCH` bump on `master` and cherry-picks it to `staging`. This keeps staging's version strictly higher than production, which is required to submit new builds to the App Store and Play Store.
 
 ### testBuild
 
