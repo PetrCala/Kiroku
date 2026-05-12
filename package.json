@@ -17,6 +17,7 @@
     "gradle-clean": "cd android && ./gradlew clean && cd ..",
     "typecheck": "NODE_OPTIONS=--max_old_space_size=8192 tsc",
     "typecheck-tsgo": "tsgo --noEmit --incremental --tsBuildInfoFile tsconfig.tsgo.tsbuildinfo",
+    "lint": "./scripts/lint.sh",
     "lint-changed": "./scripts/lintChanged.sh",
     "lint-watch": "onchange '**/*.{js,jsx,ts,tsx,mjs,cjs}' -- ./scripts/lint.sh {{changed}}",
     "lint:watch": "npx eslint-watch --watch --changed",
