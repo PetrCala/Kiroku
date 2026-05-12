@@ -26,5 +26,5 @@ jobs:
       - name: Create or update deploy checklist
         uses: ./.github/actions/javascript/createOrUpdateStagingDeploy
         with:
-          GITHUB_TOKEN: ${{ github.token }}
+          GITHUB_TOKEN: ${{ secrets.KIROKU_ADMIN_TOKEN }}
           TAG: ${{ inputs.TAG }}
