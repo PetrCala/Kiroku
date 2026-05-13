@@ -34947,6 +34947,7 @@ async function commentPR(PR, message) {
 }
 const workflowURL = `${process.env.GITHUB_SERVER_URL}/${process.env.GITHUB_REPOSITORY}/actions/runs/${process.env.GITHUB_RUN_ID}`;
 const getCommit = (0, memoize_1.default)(GithubUtils_1.default.octokit.git.getCommit);
+const MAX_PRS_TO_COMMENT = 25;
 async function run() {
     var _a, _b;
     const prList = ActionUtils.getJSONInput('PR_LIST', { required: true }).map(num => Number.parseInt(num, 10));
@@ -34954,6 +34955,12 @@ async function run() {
         required: true,
     });
     const version = core.getInput('DEPLOY_VERSION', { required: true });
+    if (prList.length > MAX_PRS_TO_COMMENT) {
+        const message = `PR list contains ${prList.length} PRs, which exceeds the safety limit of ${MAX_PRS_TO_COMMENT}. This likely indicates a bug in the PR detection logic. Aborting to prevent comment spam.`;
+        console.error(message);
+        core.setFailed(message);
+        return;
+    }
     const androidResult = getDeployTableMessage(core.getInput('ANDROID', { required: true }));
     const iOSResult = getDeployTableMessage(core.getInput('IOS', { required: true }));
     function getDeployMessage(deployer, deployVerb, prTitle) {
@@ -35025,10 +35032,12 @@ async function run() {
                     }
                 }
             }
+            if (!deployer) {
+                console.log(`Could not determine deployer for PR #${prNumber}, skipping comment.`);
+                continue;
+            }
             const title = pr.title;
-            const deployMessage = deployer
-                ? getDeployMessage(deployer, isCP ? 'Cherry-picked' : 'Deployed', title)
-                : '';
+            const deployMessage = getDeployMessage(deployer, isCP ? 'Cherry-picked' : 'Deployed', title);
             await commentPR(prNumber, deployMessage);
         }
         catch (error) {
