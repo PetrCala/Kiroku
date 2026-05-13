@@ -141,8 +141,9 @@ function getCommitHistoryAsJSON(
     let stderr = '';
     const args = [
       'log',
+      '--first-parent',
       '--format={"commit": "%H", "authorName": "%an", "subject": "%s"},',
-      `${fromTag}...${toTag}`,
+      `${fromTag}..${toTag}`,
     ];
     console.log(`Running command: git ${args.join(' ')}`);
     const spawnedProcess = spawn('git', args);
