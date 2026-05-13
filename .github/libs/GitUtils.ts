@@ -123,13 +123,17 @@ function getCommitHistoryAsJSON(
   fromTag: string,
   toTag: string,
 ): Promise<CommitType[]> {
-  // Fetch tags, excluding commits reachable from the previous patch version (i.e: previous checklist), so that we don't have to fetch the full history
+  // Fetch fromTag first, limited by the previous patch version to avoid pulling full history.
   const previousPatchVersion = getPreviousExistingTag(
     fromTag,
     VersionUpdater.SEMANTIC_VERSION_LEVELS.PATCH,
   );
   fetchTag(fromTag, previousPatchVersion);
-  fetchTag(toTag, previousPatchVersion);
+  // Fetch toTag with fromTag as the shallow boundary so the ancestry chain between
+  // fromTag and toTag is explicitly established in the (potentially shallow) CI clone.
+  // Using previousPatchVersion for toTag caused git to treat the two tags as unrelated
+  // when previousPatchVersion didn't exist, making git log walk the entire history.
+  fetchTag(toTag, fromTag);
 
   console.log(
     'Getting pull requests merged between the following tags:',
