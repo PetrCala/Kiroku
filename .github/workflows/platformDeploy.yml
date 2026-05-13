@@ -286,25 +286,12 @@ jobs:
         uses: actions/checkout@v4
 
       - name: 'Announces the deploy in the #announce Discord channel'
-        uses: peter-evans/webhook-action@v2
-        with:
-          url: ${{ secrets.DISCORD_WEBHOOK_URL }}
-          content-type: 'json'
-          payload: |
-            {
-              "content": "",
-              "embeds": [{
-                "title": "Deploy Successful",
-                "color": 3066993,
-                "description": "Successfully deployed Kiroku <https://github.com/PetrCala/Kiroku/releases/tag/${{ inputs.RELEASE_TAG }}|${{ inputs.RELEASE_TAG }}> to ${{ inputs.DEPLOY_ENVIRONMENT }}",
-                "footer": {
-                  "text": "GitHub Actions",
-                  "icon_url": "https://github.githubassets.com/images/modules/logos_page/GitHub-Mark.png"
-                }
-              }]
-            }
+        shell: bash
+        run: |
+          curl -s -X POST "$DISCORD_WEBHOOK_URL" \
+            -H "Content-Type: application/json" \
+            -d "{\"content\":\"\",\"embeds\":[{\"title\":\"Deploy Successful\",\"color\":3066993,\"description\":\"Successfully deployed Kiroku [${{ inputs.RELEASE_TAG }}](https://github.com/PetrCala/Kiroku/releases/tag/${{ inputs.RELEASE_TAG }}) to ${{ inputs.DEPLOY_ENVIRONMENT }}\",\"footer\":{\"text\":\"GitHub Actions\",\"icon_url\":\"https://github.githubassets.com/images/modules/logos_page/GitHub-Mark.png\"}}]}"
         env:
-          GITHUB_TOKEN: ${{ github.token }}
           DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_URL }}
 
   #     - name: 'Announces the deploy in the #deployer Slack room'
