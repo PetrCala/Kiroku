@@ -41,7 +41,9 @@ class AppDelegate: ExpoAppDelegate {
 
     _ = super.application(application, didFinishLaunchingWithOptions: launchOptions)
 
-    if let rootView = self.window?.rootViewController?.view as? RCTRootView {
+    // RCTSurfaceHostingProxyRootView (New Architecture) inherits from UIView, not RCTRootView.
+    // The method accepts UIView so cast directly without a subclass check.
+    if let rootView = self.window?.rootViewController?.view {
       RCTBootSplash.initWithStoryboard("BootSplash", rootView: rootView)
     }
 
