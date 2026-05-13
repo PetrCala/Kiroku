@@ -11,6 +11,7 @@ jest.mock('@actions/github', () => ({
 }));
 jest.mock('@github/libs/ActionUtils');
 jest.mock('@github/libs/GithubUtils', () => ({
+  // eslint-disable-next-line @typescript-eslint/naming-convention
   __esModule: true,
   default: {
     createComment: jest.fn(),
@@ -24,8 +25,11 @@ jest.mock('@github/libs/GithubUtils', () => ({
   },
 }));
 
+// eslint-disable-next-line import/first
 import * as core from '@actions/core';
+// eslint-disable-next-line import/first
 import * as ActionUtils from '@github/libs/ActionUtils';
+// eslint-disable-next-line import/first
 import GithubUtils from '@github/libs/GithubUtils';
 
 const run =
