@@ -119,6 +119,63 @@ const data: ExampleDataType[] = [
     ],
     expectedOutput: [1521],
   },
+  {
+    // Commits authored by KirokuAdmin (release bumps) should be excluded even if
+    // their subject looks like a PR merge — otherwise we'd comment on the deploy bot's own work.
+    input: [
+      {
+        commit: '1',
+        subject: 'Merge pull request #500 from PetrCala/some-feature',
+        authorName: 'KirokuAdmin',
+      },
+      {
+        commit: '2',
+        subject: 'Merge pull request #501 from PetrCala/another-feature',
+        authorName: 'test@gmail.com',
+      },
+    ],
+    expectedOutput: [501],
+  },
+  {
+    // The regex's negative lookahead must filter out Expensify cherry-pick-staging
+    // merge commits so they don't pollute the deploy comment list.
+    input: [
+      {
+        commit: '1',
+        subject:
+          'Merge pull request #600 from Expensify/feature-cherry-pick-staging',
+        authorName: 'test@gmail.com',
+      },
+      {
+        commit: '2',
+        subject: 'Merge pull request #601 from PetrCala/regular-pr',
+        authorName: 'test@gmail.com',
+      },
+    ],
+    expectedOutput: [601],
+  },
+  {
+    // A PR that appears twice in the commit window (e.g. direct merge plus a
+    // cherry-pick into a release branch) must be removed — it was already deployed.
+    input: [
+      {
+        commit: '1',
+        subject: 'Merge pull request #700 from PetrCala/feature',
+        authorName: 'test@gmail.com',
+      },
+      {
+        commit: '2',
+        subject: 'Merge pull request #701 from PetrCala/other-feature',
+        authorName: 'test@gmail.com',
+      },
+      {
+        commit: '3',
+        subject: 'Merge pull request #700 from PetrCala/feature',
+        authorName: 'test@gmail.com',
+      },
+    ],
+    expectedOutput: [701],
+  },
 ];
 
 describe('GitUtils', () => {
