@@ -79,7 +79,11 @@ jobs:
         run: echo "VERSION_CODE=$(grep -o 'versionCode\s\+[0-9]\+' android/app/build.gradle | awk '{ print $2 }')" >> "$GITHUB_ENV"
 
       - name: Run Fastlane
-        run: bundle exec fastlane android ${{ inputs.SHOULD_DEPLOY_PRODUCTION && 'production' || 'beta' }}
+        uses: nick-fields/retry@3f757583fb1b1f940bc8ef4bf4734c8dc02a5847
+        with:
+          timeout_minutes: 40
+          max_attempts: 3
+          command: bundle exec fastlane android ${{ inputs.SHOULD_DEPLOY_PRODUCTION && 'production' || 'beta' }}
         env:
           RUBYOPT: '-rostruct'
           MYAPP_UPLOAD_STORE_PASSWORD: ${{ secrets.MYAPP_UPLOAD_STORE_PASSWORD }}
