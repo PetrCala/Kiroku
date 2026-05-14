@@ -48,12 +48,7 @@ import Timing from '@userActions/Timing';
 // import CONFIG from '@src/CONFIG';
 // import CONST from '@src/CONST';
 import ONYXKEYS from '@src/ONYXKEYS';
-// import type {Route} from '@src/ROUTES';
-import ROUTES from '@src/ROUTES';
 import SCREENS from '@src/SCREENS';
-// import type {AutoAuthState} from '@src/types/onyx/Session';
-// import type Session from '@src/types/onyx/Session';
-import type {FormOnyxValues} from '@components/Form/types';
 import ERRORS from '@src/ERRORS';
 import clearCache from './clearCache';
 

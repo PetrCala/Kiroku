@@ -92,18 +92,23 @@ function AuthScreen() {
         formKey: keyof typeof errors;
       };
 
+      // Sign-up enforces password complexity; log-in only requires non-empty.
+      let passwordErrorKey: TranslationPaths | null;
+      if (isSignUp) {
+        passwordErrorKey = ValidationUtils.validatePassword(values.password);
+      } else {
+        passwordErrorKey = values.password
+          ? null
+          : 'password.pleaseFillPassword';
+      }
+
       const errorData: ErrorDataItem[] = [
         {
           errorKey: ValidationUtils.validateEmail(values.email),
           formKey: INPUT_IDS.EMAIL,
         },
         {
-          // Sign-up enforces password complexity; log-in only requires non-empty.
-          errorKey: isSignUp
-            ? ValidationUtils.validatePassword(values.password)
-            : values.password
-              ? null
-              : 'password.pleaseFillPassword',
+          errorKey: passwordErrorKey,
           formKey: INPUT_IDS.PASSWORD,
         },
       ];
