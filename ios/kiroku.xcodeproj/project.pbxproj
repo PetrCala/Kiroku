@@ -7,94 +7,94 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
-		00E356F31AD99517003FC87E /* kirokuTests.m in Sources */ = {isa = PBXBuildFile; fileRef = 00E356F21AD99517003FC87E /* kirokuTests.m */; };
-		13B07FBC1A68108700A75B9A /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 13B07FB01A68108700A75B9A /* AppDelegate.swift */; };
-		1A62DBC1A5D568783196F7A3 /* ExpensifyMono-Bold.otf in Resources */ = {isa = PBXBuildFile; fileRef = ED0A948AA11F82C1E09976C4 /* ExpensifyMono-Bold.otf */; };
-		3BF5DCBF49144230602331B7 /* ExpensifyNewKansas-MediumItalic.otf in Resources */ = {isa = PBXBuildFile; fileRef = 066DBBF1F40F285C84786D99 /* ExpensifyNewKansas-MediumItalic.otf */; };
-		3FFBE9D3AE6652AF6E703560 /* ExpensifyNeue-Regular.otf in Resources */ = {isa = PBXBuildFile; fileRef = F30D7D06D9779DF1F8FB3592 /* ExpensifyNeue-Regular.otf */; };
-		6EB690539DFC242A5AEDCD65 /* ExpoModulesProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = F181F1F78CECD2EE2A25A45D /* ExpoModulesProvider.swift */; };
-		7BCB1D7CE4F97FD4D61E7618 /* ExpensifyNewKansas-Medium.otf in Resources */ = {isa = PBXBuildFile; fileRef = C4A1138961387D93467BCEC8 /* ExpensifyNewKansas-Medium.otf */; };
-		8BFCA0355EE7CB1CCFFE402C /* PrivacyInfo.xcprivacy in Resources */ = {isa = PBXBuildFile; fileRef = 578E3F66D1F5F2E6772F698C /* PrivacyInfo.xcprivacy */; };
-		8C389EF12C3031AB00A015D5 /* Kiroku Watch App.app in Embed Watch Content */ = {isa = PBXBuildFile; fileRef = 8C389EF02C3031AB00A015D5 /* Kiroku Watch App.app */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
-		8C389EF62C3031AB00A015D5 /* KirokuApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8C389EF52C3031AB00A015D5 /* KirokuApp.swift */; };
-		8C389EF82C3031AC00A015D5 /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8C389EF72C3031AC00A015D5 /* ContentView.swift */; };
-		8C389EFA2C3031AC00A015D5 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 8C389EF92C3031AC00A015D5 /* Assets.xcassets */; };
-		8C389F072C3031AD00A015D5 /* Kiroku_Watch_AppTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8C389F062C3031AD00A015D5 /* Kiroku_Watch_AppTests.swift */; };
-		8C389F112C3031AE00A015D5 /* Kiroku_Watch_AppUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8C389F102C3031AE00A015D5 /* Kiroku_Watch_AppUITests.swift */; };
-		8C389F132C3031AE00A015D5 /* Kiroku_Watch_AppUITestsLaunchTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8C389F122C3031AE00A015D5 /* Kiroku_Watch_AppUITestsLaunchTests.swift */; };
-		8C389F422C30578A00A015D5 /* GoogleService-Info.plist in Resources */ = {isa = PBXBuildFile; fileRef = 8C389F412C30578A00A015D5 /* GoogleService-Info.plist */; };
-		8C6ACF782C3AF96C002BAD95 /* Colors.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8C6ACF772C3AF96C002BAD95 /* Colors.swift */; };
-		8C6ACF7A2C3B01D3002BAD95 /* ImageAssets.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8C6ACF792C3B01D3002BAD95 /* ImageAssets.swift */; };
-		8C6ACF822C3B0304002BAD95 /* Translate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8C6ACF812C3B0304002BAD95 /* Translate.swift */; };
-		8C6ACF892C3B03C3002BAD95 /* CzechTexts.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8C6ACF872C3B03C3002BAD95 /* CzechTexts.swift */; };
-		8C6ACF8A2C3B03C3002BAD95 /* EnglishTexts.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8C6ACF882C3B03C3002BAD95 /* EnglishTexts.swift */; };
-		8C6ACF8D2C3B0CB5002BAD95 /* InitialView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8C6ACF8C2C3B0CB5002BAD95 /* InitialView.swift */; };
-		8C6ACF8F2C3B0CE5002BAD95 /* StartSessionContent.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8C6ACF8E2C3B0CE5002BAD95 /* StartSessionContent.swift */; };
-		8C6ACF912C3B0D1D002BAD95 /* SessionViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8C6ACF902C3B0D1D002BAD95 /* SessionViewModel.swift */; };
-		8C6ACF932C3B17D5002BAD95 /* SessionTabView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8C6ACF922C3B17D5002BAD95 /* SessionTabView.swift */; };
-		8C84CE0B2BDB722F00C88D4E /* BootSplash.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 8C84CE0A2BDB722F00C88D4E /* BootSplash.storyboard */; };
-		8C84CE192BDB726F00C88D4E /* RCTBootSplash.mm in Sources */ = {isa = PBXBuildFile; fileRef = 8C84CE122BDB726F00C88D4E /* RCTBootSplash.mm */; };
-		8C84CE1E2BDB72C800C88D4E /* Images.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 8C84CE1D2BDB72C800C88D4E /* Images.xcassets */; };
-		8C93A11A2BAE2C7200B5382C /* PrivacyInfo.xcprivacy in Resources */ = {isa = PBXBuildFile; fileRef = 8CA9A3092BAD9A380036C58C /* PrivacyInfo.xcprivacy */; };
-		8CACE1B02C3058C50051A44C /* UnitModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8CACE1992C3058C50051A44C /* UnitModel.swift */; };
-		8CACE1B12C3058C50051A44C /* SessionModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8CACE19A2C3058C50051A44C /* SessionModel.swift */; };
-		8CACE1B82C3058C50051A44C /* Constants.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8CACE1A42C3058C50051A44C /* Constants.swift */; };
-		8CACE1B92C3058C50051A44C /* Helpers.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8CACE1A52C3058C50051A44C /* Helpers.swift */; };
-		8CACE1BA2C3058C50051A44C /* FirebaseConfig.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8CACE1A62C3058C50051A44C /* FirebaseConfig.swift */; };
-		8CACE1BB2C3058C50051A44C /* Extensions.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8CACE1A72C3058C50051A44C /* Extensions.swift */; };
-		8CACE1BD2C3058C50051A44C /* SettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8CACE1AA2C3058C50051A44C /* SettingsView.swift */; };
-		8CACE1BF2C3058C50051A44C /* UnitSelectionView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8CACE1AC2C3058C50051A44C /* UnitSelectionView.swift */; };
-		8CACE1C02C3058C50051A44C /* SessionControlView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8CACE1AD2C3058C50051A44C /* SessionControlView.swift */; };
-		8CACE1C12C3058C50051A44C /* MainScreenView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8CACE1AE2C3058C50051A44C /* MainScreenView.swift */; };
-		8CCCAE2F2B7188B4008DCF56 /* Info.plist in Resources */ = {isa = PBXBuildFile; fileRef = 13B07FB61A68108700A75B9A /* Info.plist */; };
-		8D8E60E1D2043204E3EFD15D /* Pods_kiroku_kirokuTests.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 8851D617A7B29ECB3150FBE4 /* Pods_kiroku_kirokuTests.framework */; };
-		929EAF1A3FD507F3FF2058BF /* ExpoModulesProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9B3D3536B8F71ACC793CEB96 /* ExpoModulesProvider.swift */; };
-		A56A2C8EA2EADF1AFCCD9ED2 /* ExpensifyNeue-Bold.otf in Resources */ = {isa = PBXBuildFile; fileRef = AF7FF45134AFDF99EE2C1E55 /* ExpensifyNeue-Bold.otf */; };
-		A90469355EF940E6F8E672FD /* ExpensifyNeue-Italic.otf in Resources */ = {isa = PBXBuildFile; fileRef = D223A394859A66044AE15C35 /* ExpensifyNeue-Italic.otf */; };
-		ABCBF5A772771C50A17C4045 /* ExpensifyNeue-BoldItalic.otf in Resources */ = {isa = PBXBuildFile; fileRef = E3C26734F934D5ED4E2A27E4 /* ExpensifyNeue-BoldItalic.otf */; };
-		B354C4547DECB97E37B99BAF /* Pods_kiroku.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 6DA43D2740D9E61A5B78C5B2 /* Pods_kiroku.framework */; };
-		C94A7B4409B2F8236A797144 /* ExpensifyMono-Regular.otf in Resources */ = {isa = PBXBuildFile; fileRef = 126E5F28BA6D5DB5B0801087 /* ExpensifyMono-Regular.otf */; };
+		0003B1D50D35F4B29CA69A269A654B52 /* Constants.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7EAD3F577988585FEAA5C1D243A285CA /* Constants.swift */; };
+		019BCBAE783DCC5846936DD88AB03C7C /* KirokuApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 09510CCA296BCC25E8A2E7147E6746C0 /* KirokuApp.swift */; };
+		035C31412C1E2603431E7F1593EA2AF3 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 21DD778E0182447ABC5084CA24728F34 /* Assets.xcassets */; };
+		1471B0984BB001ADC50E41AF3823C6AB /* Kiroku Watch App.app in Embed Watch Content */ = {isa = PBXBuildFile; fileRef = FCC932AE708BEAD1D1F250D3CC3196F3 /* Kiroku Watch App.app */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
+		193F7A25C49440E7ED264BE3769398DD /* ExpensifyNewKansas-MediumItalic.otf in Resources */ = {isa = PBXBuildFile; fileRef = 948CE50BEBF728B21C429B720A5CF721 /* ExpensifyNewKansas-MediumItalic.otf */; };
+		1F91B5D9007998E199916D67139B5ED4 /* MainScreenView.swift in Sources */ = {isa = PBXBuildFile; fileRef = E902042D42637C89104374A81DCFA1D7 /* MainScreenView.swift */; };
+		2277E0348F15E2F05F9D299348664B51 /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = EED2CAA158622481E69D1D7775C83089 /* AppDelegate.swift */; };
+		26D171A980698257B1C52A1C8AC6E6B0 /* ExpoModulesProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = 47B2D168AA0BF104AA56C9784517733C /* ExpoModulesProvider.swift */; };
+		2DC4F8962FC8D810ADE1081F0D3C2DAD /* FirebaseConfig.swift in Sources */ = {isa = PBXBuildFile; fileRef = 03E1B9495EAFDC6B2FE4739336121A2C /* FirebaseConfig.swift */; };
+		2F803A034CB24D096891B8A298FF8A5D /* StartSessionContent.swift in Sources */ = {isa = PBXBuildFile; fileRef = 94C048D5A45F93365BFB5AB6705DA84E /* StartSessionContent.swift */; };
+		2FC41EC86A043DE6B063268BD4EF74ED /* RCTBootSplash.mm in Sources */ = {isa = PBXBuildFile; fileRef = FC94F72FE31465CA8BCABD916FE6A2C6 /* RCTBootSplash.mm */; };
+		3045C3F8DEFEF19445042F36559AF357 /* ExpensifyNeue-Regular.otf in Resources */ = {isa = PBXBuildFile; fileRef = FCBF9C1AD1D6D46631D118FD0EFF49A8 /* ExpensifyNeue-Regular.otf */; };
+		3078B470B1214DFD1DB6E9FAD333C00E /* ExpoModulesProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = 16F132D48386C9465215324CB11F83E1 /* ExpoModulesProvider.swift */; };
+		35346397021C5BB6272FEF86A02996A7 /* UnitSelectionView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 732611B2ED16C157779228EEB137A4DD /* UnitSelectionView.swift */; };
+		36623FEF1D5A221A557F73AD647500ED /* ExpensifyMono-Bold.otf in Resources */ = {isa = PBXBuildFile; fileRef = 93A69287161165BB233810A4C9B5A2B1 /* ExpensifyMono-Bold.otf */; };
+		3ECB6456528593DA203A62E188E56513 /* Pods_kiroku_kirokuTests.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 014651CD44E7A06F5B009885706DF5E1 /* Pods_kiroku_kirokuTests.framework */; };
+		413CBD8FE514996619387E2F9C8595F8 /* Kiroku_Watch_AppUITestsLaunchTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 713C1A165F6C545FF4D8DBF61DB26122 /* Kiroku_Watch_AppUITestsLaunchTests.swift */; };
+		43B45031E9C37461A97616988D3E4910 /* SessionControlView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 446D800DA47EC05519C25EBD2C4C1B15 /* SessionControlView.swift */; };
+		5D73DDAAC692EAB1B6F59E686222DD3A /* ExpensifyNeue-BoldItalic.otf in Resources */ = {isa = PBXBuildFile; fileRef = 601DDAA52DC96A11298F6162BBD4AC76 /* ExpensifyNeue-BoldItalic.otf */; };
+		5E4ACD6C1EE6FBC1E05D75AE525E2969 /* EnglishTexts.swift in Sources */ = {isa = PBXBuildFile; fileRef = 757F0F7521F134C57D1F63028986A15B /* EnglishTexts.swift */; };
+		5E6F0D5CF1BB03DF159E4C2B88BAD48D /* BootSplash.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 93B257D6B0C1E19861DCDBEDB8A5D721 /* BootSplash.storyboard */; };
+		5F2594213B6739843D542E9AD460E687 /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1B6C89C296C5EE51CAEA9F599877E10F /* ContentView.swift */; };
+		698A9148B06F94922C213C8C768EDC59 /* Kiroku_Watch_AppUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = F90E4662CD4C73E9774EEA208AAE068D /* Kiroku_Watch_AppUITests.swift */; };
+		6E05CC7FD00177EE114BE7541BE9EF1A /* UnitModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8CF1DA67722E0F45DD9EAC0BBC5B5960 /* UnitModel.swift */; };
+		6F3319D785115B5E3BBC9021CD9C847E /* Extensions.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5C5E1ACFE4690F6678D0F721A527DB2 /* Extensions.swift */; };
+		6F94F2AA7E288ADCCF00F2E294B5735A /* ExpensifyNewKansas-Medium.otf in Resources */ = {isa = PBXBuildFile; fileRef = 6FC3B8C4CA38E90FD39FE96759DCF07F /* ExpensifyNewKansas-Medium.otf */; };
+		7923E1C1CB31B61783462D0D2F40F726 /* Images.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 23F8FAF4E5F3844745702042BF927A6B /* Images.xcassets */; };
+		7B99E11036358517E7C0D017D67AF44D /* ExpensifyMono-Regular.otf in Resources */ = {isa = PBXBuildFile; fileRef = FFFCFA9FBD0D2BA0F2B2FC4FADD17836 /* ExpensifyMono-Regular.otf */; };
+		8308E9663D6A74638FA6E5CDAEB9E063 /* Kiroku_Watch_AppTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5AFE612BFBD88D03D71A637ED725B1C6 /* Kiroku_Watch_AppTests.swift */; };
+		83FC8CE3177C39CBDAA6C289AB66D895 /* InitialView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 672DB160CC5BB29428AC67E4E2129203 /* InitialView.swift */; };
+		85D3A2428FB7A384E0E90E056C100D01 /* CzechTexts.swift in Sources */ = {isa = PBXBuildFile; fileRef = 36534A287E6B0F7321F76D2E4AE78B47 /* CzechTexts.swift */; };
+		8D816A8A45007ECEC6023F2B1611E96F /* GoogleService-Info.plist in Resources */ = {isa = PBXBuildFile; fileRef = 20B93213AADC988803A5E898F274F872 /* GoogleService-Info.plist */; };
+		96AC25BB9F951774C540913B63BFF33E /* SessionTabView.swift in Sources */ = {isa = PBXBuildFile; fileRef = DA84EB4D89EE659667E5AE7A7E79CEDE /* SessionTabView.swift */; };
+		99C0C09ABE98934F6A4CE02AAC233123 /* SessionViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4FB608088F2E6A985BD942B01309E2CA /* SessionViewModel.swift */; };
+		9BD2C165AA19304B36E83BF41E38849D /* Translate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9D2F7B1458F4F39F476FE5D6C1F84D9D /* Translate.swift */; };
+		A2831D15E1FC7975C5D17616AA4B5B50 /* ImageAssets.swift in Sources */ = {isa = PBXBuildFile; fileRef = DE7215CAB6FE7E391659BEFCCEB6A930 /* ImageAssets.swift */; };
+		ACBE498C432C3C34E13F86BE6E6E3D2E /* ExpensifyNeue-Bold.otf in Resources */ = {isa = PBXBuildFile; fileRef = 1777A343F31D8EAE6EB90ABA5CC06332 /* ExpensifyNeue-Bold.otf */; };
+		C1EBD956700E09BF2140DEC98EFAF04F /* PrivacyInfo.xcprivacy in Resources */ = {isa = PBXBuildFile; fileRef = 2807A7F093875785C9B9FD52DF99D726 /* PrivacyInfo.xcprivacy */; };
+		CD82A7D58DF57491E66EF28B14FE910A /* Pods_kiroku.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 51753892CBE6CE9B5DAB68645B64E2DA /* Pods_kiroku.framework */; };
+		D4EB4C4B472CFB5C1C447FC0D70B6A6E /* PrivacyInfo.xcprivacy in Resources */ = {isa = PBXBuildFile; fileRef = D17B18F000F10331F3702AFEF2670158 /* PrivacyInfo.xcprivacy */; };
+		D71B38A9F2A8830AA7E03D95986CE51A /* ExpensifyNeue-Italic.otf in Resources */ = {isa = PBXBuildFile; fileRef = A39E3F7FF983A2F51A9E09DB690AF791 /* ExpensifyNeue-Italic.otf */; };
+		D82DC1221CC00D823D0DE5A65FAD639C /* SessionModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 23D208995320DA55DFBD5707B1041726 /* SessionModel.swift */; };
+		DED6357362BCF4B61ACF65076BD05FDE /* SettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 67409ABB382975A15E2A13689AEBBF4A /* SettingsView.swift */; };
+		E7B715AA87095EA0860A562B52B7C0BB /* Info.plist in Resources */ = {isa = PBXBuildFile; fileRef = 7F0F9082C37DDC79066DFE0B03E80EE2 /* Info.plist */; };
+		EF9D890B86812601ABFEC945C2E3E8C7 /* kirokuTests.m in Sources */ = {isa = PBXBuildFile; fileRef = 588A590E6BED68E1F6FD0254E55C2F6C /* kirokuTests.m */; };
+		EFB7AA8916E578EFEB6F9665AF5AF9C7 /* Colors.swift in Sources */ = {isa = PBXBuildFile; fileRef = 49139152A47AFDA44AD894FFDC4658D1 /* Colors.swift */; };
+		F47F8A41F5D448D71B54676D1D4404B1 /* Helpers.swift in Sources */ = {isa = PBXBuildFile; fileRef = E1B02FACB14F5B45F97FCC201FB3AF24 /* Helpers.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
-		00E356F41AD99517003FC87E /* PBXContainerItemProxy */ = {
+		9774B0A8F09340A04D36FAA2284BBD2E /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
-			containerPortal = 83CBB9F71A601CBA00E9B192 /* Project object */;
+			containerPortal = D2A5813054ACA3B6901A52E154E07BC5 /* Project object */;
 			proxyType = 1;
-			remoteGlobalIDString = 13B07F861A680F5B00A75B9A;
+			remoteGlobalIDString = A0F368BFB24FC009055767B843B48D83;
 			remoteInfo = kiroku;
 		};
-		8C389EF22C3031AB00A015D5 /* PBXContainerItemProxy */ = {
+		255A6392D9E6D2F131947B4C37F1D679 /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
-			containerPortal = 83CBB9F71A601CBA00E9B192 /* Project object */;
+			containerPortal = D2A5813054ACA3B6901A52E154E07BC5 /* Project object */;
 			proxyType = 1;
-			remoteGlobalIDString = 8C389EEF2C3031AB00A015D5;
+			remoteGlobalIDString = 1821A5F349D591C181E1BE15261F44F4;
 			remoteInfo = "Kiroku Watch App";
 		};
-		8C389F032C3031AD00A015D5 /* PBXContainerItemProxy */ = {
+		169CAF2FC7928E2A3D283E5CCDCA4622 /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
-			containerPortal = 83CBB9F71A601CBA00E9B192 /* Project object */;
+			containerPortal = D2A5813054ACA3B6901A52E154E07BC5 /* Project object */;
 			proxyType = 1;
-			remoteGlobalIDString = 8C389EEF2C3031AB00A015D5;
+			remoteGlobalIDString = 1821A5F349D591C181E1BE15261F44F4;
 			remoteInfo = "Kiroku Watch App";
 		};
-		8C389F0D2C3031AE00A015D5 /* PBXContainerItemProxy */ = {
+		F3D7B2C73FADEBA793155B833E55028E /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
-			containerPortal = 83CBB9F71A601CBA00E9B192 /* Project object */;
+			containerPortal = D2A5813054ACA3B6901A52E154E07BC5 /* Project object */;
 			proxyType = 1;
-			remoteGlobalIDString = 8C389EEF2C3031AB00A015D5;
+			remoteGlobalIDString = 1821A5F349D591C181E1BE15261F44F4;
 			remoteInfo = "Kiroku Watch App";
 		};
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXCopyFilesBuildPhase section */
-		8C389F1D2C3031AE00A015D5 /* Embed Watch Content */ = {
+		F2010B4D3BC2E6E8F7D0E27034D5D234 /* Embed Watch Content */ = {
 			isa = PBXCopyFilesBuildPhase;
 			buildActionMask = 2147483647;
 			dstPath = "$(CONTENTS_FOLDER_PATH)/Watch";
 			dstSubfolderSpec = 16;
 			files = (
-				8C389EF12C3031AB00A015D5 /* Kiroku Watch App.app in Embed Watch Content */,
+				1471B0984BB001ADC50E41AF3823C6AB /* Kiroku Watch App.app in Embed Watch Content */,
 			);
 			name = "Embed Watch Content";
 			runOnlyForDeploymentPostprocessing = 0;
@@ -102,114 +102,114 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
-		00E356EE1AD99517003FC87E /* kirokuTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = kirokuTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
-		00E356F11AD99517003FC87E /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
-		00E356F21AD99517003FC87E /* kirokuTests.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = kirokuTests.m; sourceTree = "<group>"; };
-		066DBBF1F40F285C84786D99 /* ExpensifyNewKansas-MediumItalic.otf */ = {isa = PBXFileReference; includeInIndex = 1; path = "ExpensifyNewKansas-MediumItalic.otf"; sourceTree = "<group>"; };
-		0B28C983366094AEB9C2B4A5 /* Pods-kiroku-kirokuTests.releaseadhoc.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-kiroku-kirokuTests.releaseadhoc.xcconfig"; path = "Target Support Files/Pods-kiroku-kirokuTests/Pods-kiroku-kirokuTests.releaseadhoc.xcconfig"; sourceTree = "<group>"; };
-		126E5F28BA6D5DB5B0801087 /* ExpensifyMono-Regular.otf */ = {isa = PBXFileReference; includeInIndex = 1; path = "ExpensifyMono-Regular.otf"; sourceTree = "<group>"; };
-		13B07F961A680F5B00A75B9A /* kiroku.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = kiroku.app; sourceTree = BUILT_PRODUCTS_DIR; };
-		13B07FAF1A68108700A75B9A /* AppDelegate.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = AppDelegate.h; path = kiroku/AppDelegate.h; sourceTree = "<group>"; };
-		13B07FB01A68108700A75B9A /* AppDelegate.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = AppDelegate.swift; sourceTree = "<group>"; };
-		13B07FB61A68108700A75B9A /* Info.plist */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.xml; name = Info.plist; path = kiroku/Info.plist; sourceTree = "<group>"; };
-		1893362DE81D1050738ACA39 /* Pods-kiroku.releasedevelopment.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-kiroku.releasedevelopment.xcconfig"; path = "Target Support Files/Pods-kiroku/Pods-kiroku.releasedevelopment.xcconfig"; sourceTree = "<group>"; };
-		2135C2C0884E915713A05FA4 /* Pods-kiroku-kirokuTests.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-kiroku-kirokuTests.release.xcconfig"; path = "Target Support Files/Pods-kiroku-kirokuTests/Pods-kiroku-kirokuTests.release.xcconfig"; sourceTree = "<group>"; };
-		21F30E77514AC490EEC869BA /* Pods-kiroku-kirokuTests.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-kiroku-kirokuTests.debug.xcconfig"; path = "Target Support Files/Pods-kiroku-kirokuTests/Pods-kiroku-kirokuTests.debug.xcconfig"; sourceTree = "<group>"; };
-		23EFFC2F81751B98BF10B125 /* Pods-kiroku.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-kiroku.debug.xcconfig"; path = "Target Support Files/Pods-kiroku/Pods-kiroku.debug.xcconfig"; sourceTree = "<group>"; };
-		369C3B1C1760381877510E1C /* Pods-kiroku.debugadhoc.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-kiroku.debugadhoc.xcconfig"; path = "Target Support Files/Pods-kiroku/Pods-kiroku.debugadhoc.xcconfig"; sourceTree = "<group>"; };
-		578E3F66D1F5F2E6772F698C /* PrivacyInfo.xcprivacy */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xml; name = PrivacyInfo.xcprivacy; path = ../kiroku/PrivacyInfo.xcprivacy; sourceTree = "<group>"; };
-		5863B10EBBCCDC21D3B3AA65 /* Pods-kiroku.releaseproduction.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-kiroku.releaseproduction.xcconfig"; path = "Target Support Files/Pods-kiroku/Pods-kiroku.releaseproduction.xcconfig"; sourceTree = "<group>"; };
-		693696E11F1A334E80B22BB2 /* Pods-kiroku.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-kiroku.release.xcconfig"; path = "Target Support Files/Pods-kiroku/Pods-kiroku.release.xcconfig"; sourceTree = "<group>"; };
-		6DA43D2740D9E61A5B78C5B2 /* Pods_kiroku.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = Pods_kiroku.framework; sourceTree = BUILT_PRODUCTS_DIR; };
-		6F070B9C165B8CC6F81116CB /* Pods-kiroku-kirokuTests.debugadhoc.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-kiroku-kirokuTests.debugadhoc.xcconfig"; path = "Target Support Files/Pods-kiroku-kirokuTests/Pods-kiroku-kirokuTests.debugadhoc.xcconfig"; sourceTree = "<group>"; };
-		7E47691371691820D1D4C135 /* Pods-kiroku.debugproduction.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-kiroku.debugproduction.xcconfig"; path = "Target Support Files/Pods-kiroku/Pods-kiroku.debugproduction.xcconfig"; sourceTree = "<group>"; };
-		7F46A2BD4FCD7933B2B6F49B /* Pods-kiroku.releaseadhoc.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-kiroku.releaseadhoc.xcconfig"; path = "Target Support Files/Pods-kiroku/Pods-kiroku.releaseadhoc.xcconfig"; sourceTree = "<group>"; };
-		802E2F74C2828B9B5E184DCE /* Pods-kiroku.debugdevelopment.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-kiroku.debugdevelopment.xcconfig"; path = "Target Support Files/Pods-kiroku/Pods-kiroku.debugdevelopment.xcconfig"; sourceTree = "<group>"; };
-		8851D617A7B29ECB3150FBE4 /* Pods_kiroku_kirokuTests.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = Pods_kiroku_kirokuTests.framework; sourceTree = BUILT_PRODUCTS_DIR; };
-		8C1479292B3430910014E28C /* kiroku.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; name = kiroku.entitlements; path = kiroku/kiroku.entitlements; sourceTree = "<group>"; };
-		8C389EEB2C3031AB00A015D5 /* Kiroku.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Kiroku.app; sourceTree = BUILT_PRODUCTS_DIR; };
-		8C389EF02C3031AB00A015D5 /* Kiroku Watch App.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "Kiroku Watch App.app"; sourceTree = BUILT_PRODUCTS_DIR; };
-		8C389EF52C3031AB00A015D5 /* KirokuApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KirokuApp.swift; sourceTree = "<group>"; };
-		8C389EF72C3031AC00A015D5 /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
-		8C389EF92C3031AC00A015D5 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
-		8C389F022C3031AC00A015D5 /* Kiroku Watch AppTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = "Kiroku Watch AppTests.xctest"; sourceTree = BUILT_PRODUCTS_DIR; };
-		8C389F062C3031AD00A015D5 /* Kiroku_Watch_AppTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Kiroku_Watch_AppTests.swift; sourceTree = "<group>"; };
-		8C389F0C2C3031AD00A015D5 /* Kiroku Watch AppUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = "Kiroku Watch AppUITests.xctest"; sourceTree = BUILT_PRODUCTS_DIR; };
-		8C389F102C3031AE00A015D5 /* Kiroku_Watch_AppUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Kiroku_Watch_AppUITests.swift; sourceTree = "<group>"; };
-		8C389F122C3031AE00A015D5 /* Kiroku_Watch_AppUITestsLaunchTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Kiroku_Watch_AppUITestsLaunchTests.swift; sourceTree = "<group>"; };
-		8C389F412C30578A00A015D5 /* GoogleService-Info.plist */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.xml; path = "GoogleService-Info.plist"; sourceTree = "<group>"; };
-		8C6ACF772C3AF96C002BAD95 /* Colors.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; name = Colors.swift; path = "Kiroku Watch App/Utilities/Colors.swift"; sourceTree = SOURCE_ROOT; };
-		8C6ACF792C3B01D3002BAD95 /* ImageAssets.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ImageAssets.swift; sourceTree = "<group>"; };
-		8C6ACF812C3B0304002BAD95 /* Translate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Translate.swift; sourceTree = "<group>"; };
-		8C6ACF872C3B03C3002BAD95 /* CzechTexts.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = CzechTexts.swift; sourceTree = "<group>"; };
-		8C6ACF882C3B03C3002BAD95 /* EnglishTexts.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = EnglishTexts.swift; sourceTree = "<group>"; };
-		8C6ACF8C2C3B0CB5002BAD95 /* InitialView.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = InitialView.swift; sourceTree = "<group>"; };
-		8C6ACF8E2C3B0CE5002BAD95 /* StartSessionContent.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StartSessionContent.swift; sourceTree = "<group>"; };
-		8C6ACF902C3B0D1D002BAD95 /* SessionViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SessionViewModel.swift; sourceTree = "<group>"; };
-		8C6ACF922C3B17D5002BAD95 /* SessionTabView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SessionTabView.swift; sourceTree = "<group>"; };
-		8C84CE0A2BDB722F00C88D4E /* BootSplash.storyboard */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = file.storyboard; name = BootSplash.storyboard; path = kiroku/BootSplash.storyboard; sourceTree = "<group>"; };
-		8C84CE112BDB726F00C88D4E /* RCTBootSplash.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = RCTBootSplash.h; path = kiroku/RCTBootSplash.h; sourceTree = "<group>"; };
-		8C84CE122BDB726F00C88D4E /* RCTBootSplash.mm */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.objcpp; name = RCTBootSplash.mm; path = kiroku/RCTBootSplash.mm; sourceTree = "<group>"; };
-		8C84CE1D2BDB72C800C88D4E /* Images.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; name = Images.xcassets; path = kiroku/Images.xcassets; sourceTree = "<group>"; };
-		8CA9A3092BAD9A380036C58C /* PrivacyInfo.xcprivacy */ = {isa = PBXFileReference; lastKnownFileType = text.xml; name = PrivacyInfo.xcprivacy; path = kiroku/PrivacyInfo.xcprivacy; sourceTree = "<group>"; };
-		8CACE1992C3058C50051A44C /* UnitModel.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = UnitModel.swift; sourceTree = "<group>"; };
-		8CACE19A2C3058C50051A44C /* SessionModel.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = SessionModel.swift; sourceTree = "<group>"; };
-		8CACE1A42C3058C50051A44C /* Constants.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Constants.swift; sourceTree = "<group>"; };
-		8CACE1A52C3058C50051A44C /* Helpers.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Helpers.swift; sourceTree = "<group>"; };
-		8CACE1A62C3058C50051A44C /* FirebaseConfig.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = FirebaseConfig.swift; sourceTree = "<group>"; };
-		8CACE1A72C3058C50051A44C /* Extensions.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Extensions.swift; sourceTree = "<group>"; };
-		8CACE1AA2C3058C50051A44C /* SettingsView.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = SettingsView.swift; sourceTree = "<group>"; };
-		8CACE1AC2C3058C50051A44C /* UnitSelectionView.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = UnitSelectionView.swift; sourceTree = "<group>"; };
-		8CACE1AD2C3058C50051A44C /* SessionControlView.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = SessionControlView.swift; sourceTree = "<group>"; };
-		8CACE1AE2C3058C50051A44C /* MainScreenView.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = MainScreenView.swift; sourceTree = "<group>"; };
-		8CB29CD72C3974D100EF2A0E /* Kiroku-Watch-App-Info.plist */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.xml; path = "Kiroku-Watch-App-Info.plist"; sourceTree = "<group>"; };
-		8CC6BC76612204E66CEBEB90 /* Pods-kiroku-kirokuTests.releaseproduction.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-kiroku-kirokuTests.releaseproduction.xcconfig"; path = "Target Support Files/Pods-kiroku-kirokuTests/Pods-kiroku-kirokuTests.releaseproduction.xcconfig"; sourceTree = "<group>"; };
-		9B3D3536B8F71ACC793CEB96 /* ExpoModulesProvider.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = ExpoModulesProvider.swift; path = "Pods/Target Support Files/Pods-kiroku/ExpoModulesProvider.swift"; sourceTree = "<group>"; };
-		AF7FF45134AFDF99EE2C1E55 /* ExpensifyNeue-Bold.otf */ = {isa = PBXFileReference; includeInIndex = 1; path = "ExpensifyNeue-Bold.otf"; sourceTree = "<group>"; };
-		C4A1138961387D93467BCEC8 /* ExpensifyNewKansas-Medium.otf */ = {isa = PBXFileReference; includeInIndex = 1; path = "ExpensifyNewKansas-Medium.otf"; sourceTree = "<group>"; };
-		CA3A01ADBC1F4E2E2DF19916 /* Pods-kiroku-kirokuTests.releasedevelopment.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-kiroku-kirokuTests.releasedevelopment.xcconfig"; path = "Target Support Files/Pods-kiroku-kirokuTests/Pods-kiroku-kirokuTests.releasedevelopment.xcconfig"; sourceTree = "<group>"; };
-		CBFDFB53E37FEB640CDF5598 /* Pods-kiroku-kirokuTests.debugproduction.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-kiroku-kirokuTests.debugproduction.xcconfig"; path = "Target Support Files/Pods-kiroku-kirokuTests/Pods-kiroku-kirokuTests.debugproduction.xcconfig"; sourceTree = "<group>"; };
-		D223A394859A66044AE15C35 /* ExpensifyNeue-Italic.otf */ = {isa = PBXFileReference; includeInIndex = 1; path = "ExpensifyNeue-Italic.otf"; sourceTree = "<group>"; };
-		E3C26734F934D5ED4E2A27E4 /* ExpensifyNeue-BoldItalic.otf */ = {isa = PBXFileReference; includeInIndex = 1; path = "ExpensifyNeue-BoldItalic.otf"; sourceTree = "<group>"; };
-		ED0A948AA11F82C1E09976C4 /* ExpensifyMono-Bold.otf */ = {isa = PBXFileReference; includeInIndex = 1; path = "ExpensifyMono-Bold.otf"; sourceTree = "<group>"; };
-		ED297162215061F000B7C4FE /* JavaScriptCore.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = JavaScriptCore.framework; path = System/Library/Frameworks/JavaScriptCore.framework; sourceTree = SDKROOT; };
-		F181F1F78CECD2EE2A25A45D /* ExpoModulesProvider.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = ExpoModulesProvider.swift; path = "Pods/Target Support Files/Pods-kiroku-kirokuTests/ExpoModulesProvider.swift"; sourceTree = "<group>"; };
-		F30D7D06D9779DF1F8FB3592 /* ExpensifyNeue-Regular.otf */ = {isa = PBXFileReference; includeInIndex = 1; path = "ExpensifyNeue-Regular.otf"; sourceTree = "<group>"; };
-		FC98FBA4EF484EE6C0C982DE /* Pods-kiroku-kirokuTests.debugdevelopment.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-kiroku-kirokuTests.debugdevelopment.xcconfig"; path = "Target Support Files/Pods-kiroku-kirokuTests/Pods-kiroku-kirokuTests.debugdevelopment.xcconfig"; sourceTree = "<group>"; };
+		0023E2B3C39E731E83A026B01F285CBA /* Pods-kiroku-kirokuTests.debugproduction.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-kiroku-kirokuTests.debugproduction.xcconfig"; path = "Target Support Files/Pods-kiroku-kirokuTests/Pods-kiroku-kirokuTests.debugproduction.xcconfig"; sourceTree = "<group>"; };
+		014651CD44E7A06F5B009885706DF5E1 /* Pods_kiroku_kirokuTests.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = Pods_kiroku_kirokuTests.framework; sourceTree = BUILT_PRODUCTS_DIR; };
+		03E1B9495EAFDC6B2FE4739336121A2C /* FirebaseConfig.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = FirebaseConfig.swift; sourceTree = "<group>"; };
+		079861F232F305189FCFB5CFCE752BF0 /* Pods-kiroku-kirokuTests.releasedevelopment.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-kiroku-kirokuTests.releasedevelopment.xcconfig"; path = "Target Support Files/Pods-kiroku-kirokuTests/Pods-kiroku-kirokuTests.releasedevelopment.xcconfig"; sourceTree = "<group>"; };
+		09510CCA296BCC25E8A2E7147E6746C0 /* KirokuApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KirokuApp.swift; sourceTree = "<group>"; };
+		16F132D48386C9465215324CB11F83E1 /* ExpoModulesProvider.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = ExpoModulesProvider.swift; path = "Pods/Target Support Files/Pods-kiroku-kirokuTests/ExpoModulesProvider.swift"; sourceTree = "<group>"; };
+		1777A343F31D8EAE6EB90ABA5CC06332 /* ExpensifyNeue-Bold.otf */ = {isa = PBXFileReference; includeInIndex = 1; path = "ExpensifyNeue-Bold.otf"; sourceTree = "<group>"; };
+		1B073BCE83604D59197935453ACCE810 /* Pods-kiroku-kirokuTests.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-kiroku-kirokuTests.release.xcconfig"; path = "Target Support Files/Pods-kiroku-kirokuTests/Pods-kiroku-kirokuTests.release.xcconfig"; sourceTree = "<group>"; };
+		1B6C89C296C5EE51CAEA9F599877E10F /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
+		1BC997089BCD05EFEEF7618697295B92 /* Pods-kiroku.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-kiroku.debug.xcconfig"; path = "Target Support Files/Pods-kiroku/Pods-kiroku.debug.xcconfig"; sourceTree = "<group>"; };
+		20B93213AADC988803A5E898F274F872 /* GoogleService-Info.plist */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.xml; path = "GoogleService-Info.plist"; sourceTree = "<group>"; };
+		21DD778E0182447ABC5084CA24728F34 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
+		23D208995320DA55DFBD5707B1041726 /* SessionModel.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = SessionModel.swift; sourceTree = "<group>"; };
+		23F8FAF4E5F3844745702042BF927A6B /* Images.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; name = Images.xcassets; path = kiroku/Images.xcassets; sourceTree = "<group>"; };
+		2807A7F093875785C9B9FD52DF99D726 /* PrivacyInfo.xcprivacy */ = {isa = PBXFileReference; lastKnownFileType = text.xml; name = PrivacyInfo.xcprivacy; path = kiroku/PrivacyInfo.xcprivacy; sourceTree = "<group>"; };
+		30BFAEB5CDC561A8FC2261889B95287B /* Pods-kiroku.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-kiroku.release.xcconfig"; path = "Target Support Files/Pods-kiroku/Pods-kiroku.release.xcconfig"; sourceTree = "<group>"; };
+		36534A287E6B0F7321F76D2E4AE78B47 /* CzechTexts.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = CzechTexts.swift; sourceTree = "<group>"; };
+		3FC14E075100224A5C18F4B89B5FDAA8 /* RCTBootSplash.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = RCTBootSplash.h; path = kiroku/RCTBootSplash.h; sourceTree = "<group>"; };
+		41C49860CF9CB115A5F250852F8975C8 /* Pods-kiroku-kirokuTests.releaseproduction.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-kiroku-kirokuTests.releaseproduction.xcconfig"; path = "Target Support Files/Pods-kiroku-kirokuTests/Pods-kiroku-kirokuTests.releaseproduction.xcconfig"; sourceTree = "<group>"; };
+		41DA18E074548C9167CB8366E1E84FFA /* Pods-kiroku-kirokuTests.releaseadhoc.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-kiroku-kirokuTests.releaseadhoc.xcconfig"; path = "Target Support Files/Pods-kiroku-kirokuTests/Pods-kiroku-kirokuTests.releaseadhoc.xcconfig"; sourceTree = "<group>"; };
+		446D800DA47EC05519C25EBD2C4C1B15 /* SessionControlView.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = SessionControlView.swift; sourceTree = "<group>"; };
+		47B2D168AA0BF104AA56C9784517733C /* ExpoModulesProvider.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = ExpoModulesProvider.swift; path = "Pods/Target Support Files/Pods-kiroku/ExpoModulesProvider.swift"; sourceTree = "<group>"; };
+		49139152A47AFDA44AD894FFDC4658D1 /* Colors.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; name = Colors.swift; path = "Kiroku Watch App/Utilities/Colors.swift"; sourceTree = SOURCE_ROOT; };
+		4FB608088F2E6A985BD942B01309E2CA /* SessionViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SessionViewModel.swift; sourceTree = "<group>"; };
+		51753892CBE6CE9B5DAB68645B64E2DA /* Pods_kiroku.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = Pods_kiroku.framework; sourceTree = BUILT_PRODUCTS_DIR; };
+		579905A8BB8DCE18E94D427DC261E8D3 /* Kiroku Watch AppUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = "Kiroku Watch AppUITests.xctest"; sourceTree = BUILT_PRODUCTS_DIR; };
+		588A590E6BED68E1F6FD0254E55C2F6C /* kirokuTests.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = kirokuTests.m; sourceTree = "<group>"; };
+		5AFE612BFBD88D03D71A637ED725B1C6 /* Kiroku_Watch_AppTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Kiroku_Watch_AppTests.swift; sourceTree = "<group>"; };
+		601DDAA52DC96A11298F6162BBD4AC76 /* ExpensifyNeue-BoldItalic.otf */ = {isa = PBXFileReference; includeInIndex = 1; path = "ExpensifyNeue-BoldItalic.otf"; sourceTree = "<group>"; };
+		626F52CEF3B2C5855C78BEB531BBC705 /* Pods-kiroku-kirokuTests.debugadhoc.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-kiroku-kirokuTests.debugadhoc.xcconfig"; path = "Target Support Files/Pods-kiroku-kirokuTests/Pods-kiroku-kirokuTests.debugadhoc.xcconfig"; sourceTree = "<group>"; };
+		672DB160CC5BB29428AC67E4E2129203 /* InitialView.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = InitialView.swift; sourceTree = "<group>"; };
+		67409ABB382975A15E2A13689AEBBF4A /* SettingsView.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = SettingsView.swift; sourceTree = "<group>"; };
+		685FF1D72D7A49104164E4BB3E1EE42F /* kirokuTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = kirokuTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		6FC3B8C4CA38E90FD39FE96759DCF07F /* ExpensifyNewKansas-Medium.otf */ = {isa = PBXFileReference; includeInIndex = 1; path = "ExpensifyNewKansas-Medium.otf"; sourceTree = "<group>"; };
+		713C1A165F6C545FF4D8DBF61DB26122 /* Kiroku_Watch_AppUITestsLaunchTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Kiroku_Watch_AppUITestsLaunchTests.swift; sourceTree = "<group>"; };
+		732611B2ED16C157779228EEB137A4DD /* UnitSelectionView.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = UnitSelectionView.swift; sourceTree = "<group>"; };
+		757F0F7521F134C57D1F63028986A15B /* EnglishTexts.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = EnglishTexts.swift; sourceTree = "<group>"; };
+		7EAD3F577988585FEAA5C1D243A285CA /* Constants.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Constants.swift; sourceTree = "<group>"; };
+		7F0F9082C37DDC79066DFE0B03E80EE2 /* Info.plist */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.xml; name = Info.plist; path = kiroku/Info.plist; sourceTree = "<group>"; };
+		808A43D92E51BAE16514C24C06578B57 /* Pods-kiroku.releaseadhoc.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-kiroku.releaseadhoc.xcconfig"; path = "Target Support Files/Pods-kiroku/Pods-kiroku.releaseadhoc.xcconfig"; sourceTree = "<group>"; };
+		8557B5A4E0FB12B8FE79BD843EED5B9B /* JavaScriptCore.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = JavaScriptCore.framework; path = System/Library/Frameworks/JavaScriptCore.framework; sourceTree = SDKROOT; };
+		8690BB807EE45F07700764C9F93DB4B1 /* Pods-kiroku.debugadhoc.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-kiroku.debugadhoc.xcconfig"; path = "Target Support Files/Pods-kiroku/Pods-kiroku.debugadhoc.xcconfig"; sourceTree = "<group>"; };
+		8CF1DA67722E0F45DD9EAC0BBC5B5960 /* UnitModel.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = UnitModel.swift; sourceTree = "<group>"; };
+		937610E9D0162A83E7A4284BBBD373C1 /* Pods-kiroku-kirokuTests.debugdevelopment.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-kiroku-kirokuTests.debugdevelopment.xcconfig"; path = "Target Support Files/Pods-kiroku-kirokuTests/Pods-kiroku-kirokuTests.debugdevelopment.xcconfig"; sourceTree = "<group>"; };
+		93A69287161165BB233810A4C9B5A2B1 /* ExpensifyMono-Bold.otf */ = {isa = PBXFileReference; includeInIndex = 1; path = "ExpensifyMono-Bold.otf"; sourceTree = "<group>"; };
+		93B257D6B0C1E19861DCDBEDB8A5D721 /* BootSplash.storyboard */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = file.storyboard; name = BootSplash.storyboard; path = kiroku/BootSplash.storyboard; sourceTree = "<group>"; };
+		940E29BAAD0E2B39450F8DEA08D977DC /* Pods-kiroku-kirokuTests.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-kiroku-kirokuTests.debug.xcconfig"; path = "Target Support Files/Pods-kiroku-kirokuTests/Pods-kiroku-kirokuTests.debug.xcconfig"; sourceTree = "<group>"; };
+		948CE50BEBF728B21C429B720A5CF721 /* ExpensifyNewKansas-MediumItalic.otf */ = {isa = PBXFileReference; includeInIndex = 1; path = "ExpensifyNewKansas-MediumItalic.otf"; sourceTree = "<group>"; };
+		94C048D5A45F93365BFB5AB6705DA84E /* StartSessionContent.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StartSessionContent.swift; sourceTree = "<group>"; };
+		9A13E951A4D63CD9FF3A57BD6E46773A /* Pods-kiroku.releasedevelopment.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-kiroku.releasedevelopment.xcconfig"; path = "Target Support Files/Pods-kiroku/Pods-kiroku.releasedevelopment.xcconfig"; sourceTree = "<group>"; };
+		9CB1138976433A90E404C5076D2F5DEC /* Kiroku-Watch-App-Info.plist */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.xml; path = "Kiroku-Watch-App-Info.plist"; sourceTree = "<group>"; };
+		9D2F7B1458F4F39F476FE5D6C1F84D9D /* Translate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Translate.swift; sourceTree = "<group>"; };
+		A19095879D0F5A5F11311FBA6371E13F /* kiroku.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; name = kiroku.entitlements; path = kiroku/kiroku.entitlements; sourceTree = "<group>"; };
+		A39E3F7FF983A2F51A9E09DB690AF791 /* ExpensifyNeue-Italic.otf */ = {isa = PBXFileReference; includeInIndex = 1; path = "ExpensifyNeue-Italic.otf"; sourceTree = "<group>"; };
+		A5C5E1ACFE4690F6678D0F721A527DB2 /* Extensions.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Extensions.swift; sourceTree = "<group>"; };
+		BA6939CB91B9F4FF63C2946A0B76CF49 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
+		BB25A7D871D3CF6578C3E000FCCE4D70 /* kiroku.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = kiroku.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		BC57D7BDBD22330433BB32D58C66F350 /* Kiroku.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Kiroku.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		BD563DF2BC10EA495DB4C8CA94903344 /* AppDelegate.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = AppDelegate.h; path = kiroku/AppDelegate.h; sourceTree = "<group>"; };
+		BDE37520D28FFB693C07E6CD4B8C554D /* Kiroku Watch AppTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = "Kiroku Watch AppTests.xctest"; sourceTree = BUILT_PRODUCTS_DIR; };
+		C8125522733C8CDA669574E9CD0877F9 /* Pods-kiroku.debugproduction.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-kiroku.debugproduction.xcconfig"; path = "Target Support Files/Pods-kiroku/Pods-kiroku.debugproduction.xcconfig"; sourceTree = "<group>"; };
+		CBBEBF345C4A83E4EE008676C6C2ABF4 /* Pods-kiroku.releaseproduction.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-kiroku.releaseproduction.xcconfig"; path = "Target Support Files/Pods-kiroku/Pods-kiroku.releaseproduction.xcconfig"; sourceTree = "<group>"; };
+		D17B18F000F10331F3702AFEF2670158 /* PrivacyInfo.xcprivacy */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xml; name = PrivacyInfo.xcprivacy; path = ../kiroku/PrivacyInfo.xcprivacy; sourceTree = "<group>"; };
+		DA84EB4D89EE659667E5AE7A7E79CEDE /* SessionTabView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SessionTabView.swift; sourceTree = "<group>"; };
+		DC58989E75FA42CFB52CFA57DD74CD6A /* Pods-kiroku.debugdevelopment.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-kiroku.debugdevelopment.xcconfig"; path = "Target Support Files/Pods-kiroku/Pods-kiroku.debugdevelopment.xcconfig"; sourceTree = "<group>"; };
+		DE7215CAB6FE7E391659BEFCCEB6A930 /* ImageAssets.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ImageAssets.swift; sourceTree = "<group>"; };
+		E1B02FACB14F5B45F97FCC201FB3AF24 /* Helpers.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Helpers.swift; sourceTree = "<group>"; };
+		E902042D42637C89104374A81DCFA1D7 /* MainScreenView.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = MainScreenView.swift; sourceTree = "<group>"; };
+		EED2CAA158622481E69D1D7775C83089 /* AppDelegate.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = AppDelegate.swift; sourceTree = "<group>"; };
+		F90E4662CD4C73E9774EEA208AAE068D /* Kiroku_Watch_AppUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Kiroku_Watch_AppUITests.swift; sourceTree = "<group>"; };
+		FC94F72FE31465CA8BCABD916FE6A2C6 /* RCTBootSplash.mm */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.objcpp; name = RCTBootSplash.mm; path = kiroku/RCTBootSplash.mm; sourceTree = "<group>"; };
+		FCBF9C1AD1D6D46631D118FD0EFF49A8 /* ExpensifyNeue-Regular.otf */ = {isa = PBXFileReference; includeInIndex = 1; path = "ExpensifyNeue-Regular.otf"; sourceTree = "<group>"; };
+		FCC932AE708BEAD1D1F250D3CC3196F3 /* Kiroku Watch App.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "Kiroku Watch App.app"; sourceTree = BUILT_PRODUCTS_DIR; };
+		FFFCFA9FBD0D2BA0F2B2FC4FADD17836 /* ExpensifyMono-Regular.otf */ = {isa = PBXFileReference; includeInIndex = 1; path = "ExpensifyMono-Regular.otf"; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
-		00E356EB1AD99517003FC87E /* Frameworks */ = {
+		AEDCC1176977E7061AB3AD52F9543639 /* Frameworks */ = {
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				8D8E60E1D2043204E3EFD15D /* Pods_kiroku_kirokuTests.framework in Frameworks */,
+				3ECB6456528593DA203A62E188E56513 /* Pods_kiroku_kirokuTests.framework in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
-		13B07F8C1A680F5B00A75B9A /* Frameworks */ = {
+		96EE1767D138A900D6E3A4421BAD14EF /* Frameworks */ = {
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				B354C4547DECB97E37B99BAF /* Pods_kiroku.framework in Frameworks */,
+				CD82A7D58DF57491E66EF28B14FE910A /* Pods_kiroku.framework in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
-		8C389EED2C3031AB00A015D5 /* Frameworks */ = {
-			isa = PBXFrameworksBuildPhase;
-			buildActionMask = 2147483647;
-			files = (
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-		};
-		8C389EFF2C3031AC00A015D5 /* Frameworks */ = {
+		33C02F89EDC8CE841BA11563CBE7B138 /* Frameworks */ = {
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
-		8C389F092C3031AD00A015D5 /* Frameworks */ = {
+		F92BF19A9D047BF399D13DC598430771 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		49FDDD77E32808435ACA1A71C2B2C74F /* Frameworks */ = {
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
@@ -219,238 +219,238 @@
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
-		00E356EF1AD99517003FC87E /* kirokuTests */ = {
+		06C4DCA3C5D22106DA115FD361AC0880 /* kirokuTests */ = {
 			isa = PBXGroup;
 			children = (
-				00E356F21AD99517003FC87E /* kirokuTests.m */,
-				00E356F01AD99517003FC87E /* Supporting Files */,
+				D04E6F991354770904E61C4565FB8BC4 /* Supporting Files */,
+				588A590E6BED68E1F6FD0254E55C2F6C /* kirokuTests.m */,
 			);
 			path = kirokuTests;
 			sourceTree = "<group>";
 		};
-		00E356F01AD99517003FC87E /* Supporting Files */ = {
+		D04E6F991354770904E61C4565FB8BC4 /* Supporting Files */ = {
 			isa = PBXGroup;
 			children = (
-				00E356F11AD99517003FC87E /* Info.plist */,
+				BA6939CB91B9F4FF63C2946A0B76CF49 /* Info.plist */,
 			);
 			name = "Supporting Files";
 			sourceTree = "<group>";
 		};
-		13B07FAE1A68108700A75B9A /* kiroku */ = {
+		4067ED857C908ED36A15A7A90DA27989 /* kiroku */ = {
 			isa = PBXGroup;
 			children = (
-				8C84CE1D2BDB72C800C88D4E /* Images.xcassets */,
-				8C84CE112BDB726F00C88D4E /* RCTBootSplash.h */,
-				8C84CE122BDB726F00C88D4E /* RCTBootSplash.mm */,
-				8C84CE0A2BDB722F00C88D4E /* BootSplash.storyboard */,
-				8C1479292B3430910014E28C /* kiroku.entitlements */,
-				13B07FAF1A68108700A75B9A /* AppDelegate.h */,
-				13B07FB01A68108700A75B9A /* AppDelegate.swift */,
-				13B07FB61A68108700A75B9A /* Info.plist */,
-				52CC548A7CDD506515E91F18 /* Fonts */,
+				F8B657671AE8D2BEB437A1BCD27CC732 /* Fonts */,
+				BD563DF2BC10EA495DB4C8CA94903344 /* AppDelegate.h */,
+				EED2CAA158622481E69D1D7775C83089 /* AppDelegate.swift */,
+				93B257D6B0C1E19861DCDBEDB8A5D721 /* BootSplash.storyboard */,
+				23F8FAF4E5F3844745702042BF927A6B /* Images.xcassets */,
+				7F0F9082C37DDC79066DFE0B03E80EE2 /* Info.plist */,
+				3FC14E075100224A5C18F4B89B5FDAA8 /* RCTBootSplash.h */,
+				FC94F72FE31465CA8BCABD916FE6A2C6 /* RCTBootSplash.mm */,
+				A19095879D0F5A5F11311FBA6371E13F /* kiroku.entitlements */,
 			);
 			name = kiroku;
 			sourceTree = "<group>";
 		};
-		2D16E6871FA4F8E400B85C8A /* Frameworks */ = {
+		C2221F8FA586809B28A426C97DC8FA80 /* Frameworks */ = {
 			isa = PBXGroup;
 			children = (
-				ED297162215061F000B7C4FE /* JavaScriptCore.framework */,
-				6DA43D2740D9E61A5B78C5B2 /* Pods_kiroku.framework */,
-				8851D617A7B29ECB3150FBE4 /* Pods_kiroku_kirokuTests.framework */,
+				8557B5A4E0FB12B8FE79BD843EED5B9B /* JavaScriptCore.framework */,
+				51753892CBE6CE9B5DAB68645B64E2DA /* Pods_kiroku.framework */,
+				014651CD44E7A06F5B009885706DF5E1 /* Pods_kiroku_kirokuTests.framework */,
 			);
 			name = Frameworks;
 			sourceTree = "<group>";
 		};
-		4CB764A8E7EA376C8FE4A9FA /* kiroku */ = {
+		C046637D23FFB29874C337DD76F26707 /* kiroku */ = {
 			isa = PBXGroup;
 			children = (
-				9B3D3536B8F71ACC793CEB96 /* ExpoModulesProvider.swift */,
+				47B2D168AA0BF104AA56C9784517733C /* ExpoModulesProvider.swift */,
 			);
 			name = kiroku;
 			sourceTree = "<group>";
 		};
-		52CC548A7CDD506515E91F18 /* Fonts */ = {
+		F8B657671AE8D2BEB437A1BCD27CC732 /* Fonts */ = {
 			isa = PBXGroup;
 			children = (
-				ED0A948AA11F82C1E09976C4 /* ExpensifyMono-Bold.otf */,
-				126E5F28BA6D5DB5B0801087 /* ExpensifyMono-Regular.otf */,
-				AF7FF45134AFDF99EE2C1E55 /* ExpensifyNeue-Bold.otf */,
-				E3C26734F934D5ED4E2A27E4 /* ExpensifyNeue-BoldItalic.otf */,
-				D223A394859A66044AE15C35 /* ExpensifyNeue-Italic.otf */,
-				F30D7D06D9779DF1F8FB3592 /* ExpensifyNeue-Regular.otf */,
-				C4A1138961387D93467BCEC8 /* ExpensifyNewKansas-Medium.otf */,
-				066DBBF1F40F285C84786D99 /* ExpensifyNewKansas-MediumItalic.otf */,
+				93A69287161165BB233810A4C9B5A2B1 /* ExpensifyMono-Bold.otf */,
+				FFFCFA9FBD0D2BA0F2B2FC4FADD17836 /* ExpensifyMono-Regular.otf */,
+				1777A343F31D8EAE6EB90ABA5CC06332 /* ExpensifyNeue-Bold.otf */,
+				601DDAA52DC96A11298F6162BBD4AC76 /* ExpensifyNeue-BoldItalic.otf */,
+				A39E3F7FF983A2F51A9E09DB690AF791 /* ExpensifyNeue-Italic.otf */,
+				FCBF9C1AD1D6D46631D118FD0EFF49A8 /* ExpensifyNeue-Regular.otf */,
+				6FC3B8C4CA38E90FD39FE96759DCF07F /* ExpensifyNewKansas-Medium.otf */,
+				948CE50BEBF728B21C429B720A5CF721 /* ExpensifyNewKansas-MediumItalic.otf */,
 			);
 			name = Fonts;
 			path = kiroku/Fonts;
 			sourceTree = "<group>";
 		};
-		5D37D04909FB44CC7B886173 /* kirokuTests */ = {
+		BC83C793F474A83D48468D1E715D93EA /* kirokuTests */ = {
 			isa = PBXGroup;
 			children = (
-				F181F1F78CECD2EE2A25A45D /* ExpoModulesProvider.swift */,
+				16F132D48386C9465215324CB11F83E1 /* ExpoModulesProvider.swift */,
 			);
 			name = kirokuTests;
 			sourceTree = "<group>";
 		};
-		832341AE1AAA6A7D00B99B32 /* Libraries */ = {
+		8D46E3A5033EE97CAA6706071167B93D /* Libraries */ = {
 			isa = PBXGroup;
 			children = (
 			);
 			name = Libraries;
 			sourceTree = "<group>";
 		};
-		83CBB9F61A601CBA00E9B192 = {
+		FD071299D960BEEF67562C6236225476 = {
 			isa = PBXGroup;
 			children = (
-				8C389F412C30578A00A015D5 /* GoogleService-Info.plist */,
-				8CA9A3092BAD9A380036C58C /* PrivacyInfo.xcprivacy */,
-				13B07FAE1A68108700A75B9A /* kiroku */,
-				832341AE1AAA6A7D00B99B32 /* Libraries */,
-				00E356EF1AD99517003FC87E /* kirokuTests */,
-				8C389EF42C3031AB00A015D5 /* Kiroku Watch App */,
-				8C389F052C3031AD00A015D5 /* Kiroku Watch AppTests */,
-				8C389F0F2C3031AE00A015D5 /* Kiroku Watch AppUITests */,
-				83CBBA001A601CBA00E9B192 /* Products */,
-				2D16E6871FA4F8E400B85C8A /* Frameworks */,
-				BBD78D7AC51CEA395F1C20DB /* Pods */,
-				BC3B6BA81B2044988AFE0E0E /* ExpoModulesProviders */,
+				28FD904D0E0DADA6DA8CDD6EC955C49F /* ExpoModulesProviders */,
+				C2221F8FA586809B28A426C97DC8FA80 /* Frameworks */,
+				CC4028DFABA22F2B894CB6ACB0524F51 /* Kiroku Watch App */,
+				3033D0FD61CF6CBB9476F5C026C158A2 /* Kiroku Watch AppTests */,
+				A23BFC79ADF6012F6C996779CB9F855C /* Kiroku Watch AppUITests */,
+				8D46E3A5033EE97CAA6706071167B93D /* Libraries */,
+				1CDAA5A670455A257CD71C8A83C8BB60 /* Pods */,
+				F29D5C17DC725F51699881F3CDFF95F4 /* Products */,
+				4067ED857C908ED36A15A7A90DA27989 /* kiroku */,
+				06C4DCA3C5D22106DA115FD361AC0880 /* kirokuTests */,
+				20B93213AADC988803A5E898F274F872 /* GoogleService-Info.plist */,
+				2807A7F093875785C9B9FD52DF99D726 /* PrivacyInfo.xcprivacy */,
 			);
 			indentWidth = 2;
 			sourceTree = "<group>";
 			tabWidth = 2;
 			usesTabs = 0;
 		};
-		83CBBA001A601CBA00E9B192 /* Products */ = {
+		F29D5C17DC725F51699881F3CDFF95F4 /* Products */ = {
 			isa = PBXGroup;
 			children = (
-				13B07F961A680F5B00A75B9A /* kiroku.app */,
-				00E356EE1AD99517003FC87E /* kirokuTests.xctest */,
-				8C389EEB2C3031AB00A015D5 /* Kiroku.app */,
-				8C389EF02C3031AB00A015D5 /* Kiroku Watch App.app */,
-				8C389F022C3031AC00A015D5 /* Kiroku Watch AppTests.xctest */,
-				8C389F0C2C3031AD00A015D5 /* Kiroku Watch AppUITests.xctest */,
+				FCC932AE708BEAD1D1F250D3CC3196F3 /* Kiroku Watch App.app */,
+				BDE37520D28FFB693C07E6CD4B8C554D /* Kiroku Watch AppTests.xctest */,
+				579905A8BB8DCE18E94D427DC261E8D3 /* Kiroku Watch AppUITests.xctest */,
+				BC57D7BDBD22330433BB32D58C66F350 /* Kiroku.app */,
+				BB25A7D871D3CF6578C3E000FCCE4D70 /* kiroku.app */,
+				685FF1D72D7A49104164E4BB3E1EE42F /* kirokuTests.xctest */,
 			);
 			name = Products;
 			sourceTree = "<group>";
 		};
-		8C389EF42C3031AB00A015D5 /* Kiroku Watch App */ = {
+		CC4028DFABA22F2B894CB6ACB0524F51 /* Kiroku Watch App */ = {
 			isa = PBXGroup;
 			children = (
-				8CB29CD72C3974D100EF2A0E /* Kiroku-Watch-App-Info.plist */,
-				8C6ACF7F2C3B02A6002BAD95 /* Translations */,
-				8CACE1982C3058C50051A44C /* Models */,
-				8CACE1A32C3058C50051A44C /* Utilities */,
-				8C6ACF8B2C3B0CA9002BAD95 /* ViewModels */,
-				8CACE1A92C3058C50051A44C /* Views */,
-				8C389EF52C3031AB00A015D5 /* KirokuApp.swift */,
-				8C389EF72C3031AC00A015D5 /* ContentView.swift */,
-				8C389EF92C3031AC00A015D5 /* Assets.xcassets */,
-				578E3F66D1F5F2E6772F698C /* PrivacyInfo.xcprivacy */,
+				6131D7EE3500A2D60142FA287C792680 /* Models */,
+				8CBD8A636D60DFCD7C4BA2D998EEDFFB /* Translations */,
+				4171FFEA62094A4054A4BF980B511CA6 /* Utilities */,
+				9F61FB7D0BEC6FF01602E150CCE695FF /* ViewModels */,
+				DB40329F97BC338BBC21D169EB6644ED /* Views */,
+				21DD778E0182447ABC5084CA24728F34 /* Assets.xcassets */,
+				1B6C89C296C5EE51CAEA9F599877E10F /* ContentView.swift */,
+				9CB1138976433A90E404C5076D2F5DEC /* Kiroku-Watch-App-Info.plist */,
+				09510CCA296BCC25E8A2E7147E6746C0 /* KirokuApp.swift */,
+				D17B18F000F10331F3702AFEF2670158 /* PrivacyInfo.xcprivacy */,
 			);
 			path = "Kiroku Watch App";
 			sourceTree = "<group>";
 		};
-		8C389F052C3031AD00A015D5 /* Kiroku Watch AppTests */ = {
+		3033D0FD61CF6CBB9476F5C026C158A2 /* Kiroku Watch AppTests */ = {
 			isa = PBXGroup;
 			children = (
-				8C389F062C3031AD00A015D5 /* Kiroku_Watch_AppTests.swift */,
+				5AFE612BFBD88D03D71A637ED725B1C6 /* Kiroku_Watch_AppTests.swift */,
 			);
 			path = "Kiroku Watch AppTests";
 			sourceTree = "<group>";
 		};
-		8C389F0F2C3031AE00A015D5 /* Kiroku Watch AppUITests */ = {
+		A23BFC79ADF6012F6C996779CB9F855C /* Kiroku Watch AppUITests */ = {
 			isa = PBXGroup;
 			children = (
-				8C389F102C3031AE00A015D5 /* Kiroku_Watch_AppUITests.swift */,
-				8C389F122C3031AE00A015D5 /* Kiroku_Watch_AppUITestsLaunchTests.swift */,
+				F90E4662CD4C73E9774EEA208AAE068D /* Kiroku_Watch_AppUITests.swift */,
+				713C1A165F6C545FF4D8DBF61DB26122 /* Kiroku_Watch_AppUITestsLaunchTests.swift */,
 			);
 			path = "Kiroku Watch AppUITests";
 			sourceTree = "<group>";
 		};
-		8C6ACF7F2C3B02A6002BAD95 /* Translations */ = {
+		8CBD8A636D60DFCD7C4BA2D998EEDFFB /* Translations */ = {
 			isa = PBXGroup;
 			children = (
-				8C6ACF872C3B03C3002BAD95 /* CzechTexts.swift */,
-				8C6ACF882C3B03C3002BAD95 /* EnglishTexts.swift */,
-				8C6ACF812C3B0304002BAD95 /* Translate.swift */,
+				36534A287E6B0F7321F76D2E4AE78B47 /* CzechTexts.swift */,
+				757F0F7521F134C57D1F63028986A15B /* EnglishTexts.swift */,
+				9D2F7B1458F4F39F476FE5D6C1F84D9D /* Translate.swift */,
 			);
 			path = Translations;
 			sourceTree = "<group>";
 		};
-		8C6ACF8B2C3B0CA9002BAD95 /* ViewModels */ = {
+		9F61FB7D0BEC6FF01602E150CCE695FF /* ViewModels */ = {
 			isa = PBXGroup;
 			children = (
-				8C6ACF902C3B0D1D002BAD95 /* SessionViewModel.swift */,
+				4FB608088F2E6A985BD942B01309E2CA /* SessionViewModel.swift */,
 			);
 			path = ViewModels;
 			sourceTree = "<group>";
 		};
-		8CACE1982C3058C50051A44C /* Models */ = {
+		6131D7EE3500A2D60142FA287C792680 /* Models */ = {
 			isa = PBXGroup;
 			children = (
-				8CACE1992C3058C50051A44C /* UnitModel.swift */,
-				8CACE19A2C3058C50051A44C /* SessionModel.swift */,
+				23D208995320DA55DFBD5707B1041726 /* SessionModel.swift */,
+				8CF1DA67722E0F45DD9EAC0BBC5B5960 /* UnitModel.swift */,
 			);
 			path = Models;
 			sourceTree = "<group>";
 		};
-		8CACE1A32C3058C50051A44C /* Utilities */ = {
+		4171FFEA62094A4054A4BF980B511CA6 /* Utilities */ = {
 			isa = PBXGroup;
 			children = (
-				8CACE1A42C3058C50051A44C /* Constants.swift */,
-				8CACE1A52C3058C50051A44C /* Helpers.swift */,
-				8CACE1A62C3058C50051A44C /* FirebaseConfig.swift */,
-				8CACE1A72C3058C50051A44C /* Extensions.swift */,
-				8C6ACF792C3B01D3002BAD95 /* ImageAssets.swift */,
+				7EAD3F577988585FEAA5C1D243A285CA /* Constants.swift */,
+				A5C5E1ACFE4690F6678D0F721A527DB2 /* Extensions.swift */,
+				03E1B9495EAFDC6B2FE4739336121A2C /* FirebaseConfig.swift */,
+				E1B02FACB14F5B45F97FCC201FB3AF24 /* Helpers.swift */,
+				DE7215CAB6FE7E391659BEFCCEB6A930 /* ImageAssets.swift */,
 			);
 			path = Utilities;
 			sourceTree = "<group>";
 		};
-		8CACE1A92C3058C50051A44C /* Views */ = {
+		DB40329F97BC338BBC21D169EB6644ED /* Views */ = {
 			isa = PBXGroup;
 			children = (
-				8C6ACF8C2C3B0CB5002BAD95 /* InitialView.swift */,
-				8C6ACF772C3AF96C002BAD95 /* Colors.swift */,
-				8CACE1AA2C3058C50051A44C /* SettingsView.swift */,
-				8CACE1AC2C3058C50051A44C /* UnitSelectionView.swift */,
-				8CACE1AD2C3058C50051A44C /* SessionControlView.swift */,
-				8CACE1AE2C3058C50051A44C /* MainScreenView.swift */,
-				8C6ACF8E2C3B0CE5002BAD95 /* StartSessionContent.swift */,
-				8C6ACF922C3B17D5002BAD95 /* SessionTabView.swift */,
+				49139152A47AFDA44AD894FFDC4658D1 /* Colors.swift */,
+				672DB160CC5BB29428AC67E4E2129203 /* InitialView.swift */,
+				E902042D42637C89104374A81DCFA1D7 /* MainScreenView.swift */,
+				446D800DA47EC05519C25EBD2C4C1B15 /* SessionControlView.swift */,
+				DA84EB4D89EE659667E5AE7A7E79CEDE /* SessionTabView.swift */,
+				67409ABB382975A15E2A13689AEBBF4A /* SettingsView.swift */,
+				94C048D5A45F93365BFB5AB6705DA84E /* StartSessionContent.swift */,
+				732611B2ED16C157779228EEB137A4DD /* UnitSelectionView.swift */,
 			);
 			path = Views;
 			sourceTree = "<group>";
 		};
-		BBD78D7AC51CEA395F1C20DB /* Pods */ = {
+		1CDAA5A670455A257CD71C8A83C8BB60 /* Pods */ = {
 			isa = PBXGroup;
 			children = (
-				23EFFC2F81751B98BF10B125 /* Pods-kiroku.debug.xcconfig */,
-				369C3B1C1760381877510E1C /* Pods-kiroku.debugadhoc.xcconfig */,
-				7E47691371691820D1D4C135 /* Pods-kiroku.debugproduction.xcconfig */,
-				802E2F74C2828B9B5E184DCE /* Pods-kiroku.debugdevelopment.xcconfig */,
-				693696E11F1A334E80B22BB2 /* Pods-kiroku.release.xcconfig */,
-				7F46A2BD4FCD7933B2B6F49B /* Pods-kiroku.releaseadhoc.xcconfig */,
-				1893362DE81D1050738ACA39 /* Pods-kiroku.releasedevelopment.xcconfig */,
-				5863B10EBBCCDC21D3B3AA65 /* Pods-kiroku.releaseproduction.xcconfig */,
-				21F30E77514AC490EEC869BA /* Pods-kiroku-kirokuTests.debug.xcconfig */,
-				6F070B9C165B8CC6F81116CB /* Pods-kiroku-kirokuTests.debugadhoc.xcconfig */,
-				CBFDFB53E37FEB640CDF5598 /* Pods-kiroku-kirokuTests.debugproduction.xcconfig */,
-				FC98FBA4EF484EE6C0C982DE /* Pods-kiroku-kirokuTests.debugdevelopment.xcconfig */,
-				2135C2C0884E915713A05FA4 /* Pods-kiroku-kirokuTests.release.xcconfig */,
-				0B28C983366094AEB9C2B4A5 /* Pods-kiroku-kirokuTests.releaseadhoc.xcconfig */,
-				CA3A01ADBC1F4E2E2DF19916 /* Pods-kiroku-kirokuTests.releasedevelopment.xcconfig */,
-				8CC6BC76612204E66CEBEB90 /* Pods-kiroku-kirokuTests.releaseproduction.xcconfig */,
+				940E29BAAD0E2B39450F8DEA08D977DC /* Pods-kiroku-kirokuTests.debug.xcconfig */,
+				626F52CEF3B2C5855C78BEB531BBC705 /* Pods-kiroku-kirokuTests.debugadhoc.xcconfig */,
+				937610E9D0162A83E7A4284BBBD373C1 /* Pods-kiroku-kirokuTests.debugdevelopment.xcconfig */,
+				0023E2B3C39E731E83A026B01F285CBA /* Pods-kiroku-kirokuTests.debugproduction.xcconfig */,
+				1B073BCE83604D59197935453ACCE810 /* Pods-kiroku-kirokuTests.release.xcconfig */,
+				41DA18E074548C9167CB8366E1E84FFA /* Pods-kiroku-kirokuTests.releaseadhoc.xcconfig */,
+				079861F232F305189FCFB5CFCE752BF0 /* Pods-kiroku-kirokuTests.releasedevelopment.xcconfig */,
+				41C49860CF9CB115A5F250852F8975C8 /* Pods-kiroku-kirokuTests.releaseproduction.xcconfig */,
+				1BC997089BCD05EFEEF7618697295B92 /* Pods-kiroku.debug.xcconfig */,
+				8690BB807EE45F07700764C9F93DB4B1 /* Pods-kiroku.debugadhoc.xcconfig */,
+				DC58989E75FA42CFB52CFA57DD74CD6A /* Pods-kiroku.debugdevelopment.xcconfig */,
+				C8125522733C8CDA669574E9CD0877F9 /* Pods-kiroku.debugproduction.xcconfig */,
+				30BFAEB5CDC561A8FC2261889B95287B /* Pods-kiroku.release.xcconfig */,
+				808A43D92E51BAE16514C24C06578B57 /* Pods-kiroku.releaseadhoc.xcconfig */,
+				9A13E951A4D63CD9FF3A57BD6E46773A /* Pods-kiroku.releasedevelopment.xcconfig */,
+				CBBEBF345C4A83E4EE008676C6C2ABF4 /* Pods-kiroku.releaseproduction.xcconfig */,
 			);
 			path = Pods;
 			sourceTree = "<group>";
 		};
-		BC3B6BA81B2044988AFE0E0E /* ExpoModulesProviders */ = {
+		28FD904D0E0DADA6DA8CDD6EC955C49F /* ExpoModulesProviders */ = {
 			isa = PBXGroup;
 			children = (
-				4CB764A8E7EA376C8FE4A9FA /* kiroku */,
-				5D37D04909FB44CC7B886173 /* kirokuTests */,
+				C046637D23FFB29874C337DD76F26707 /* kiroku */,
+				BC83C793F474A83D48468D1E715D93EA /* kirokuTests */,
 			);
 			name = ExpoModulesProviders;
 			sourceTree = "<group>";
@@ -458,42 +458,42 @@
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
-		00E356ED1AD99517003FC87E /* kirokuTests */ = {
+		AC36C12117F334B91F614CAA26EE1E57 /* kirokuTests */ = {
 			isa = PBXNativeTarget;
-			buildConfigurationList = 00E357021AD99517003FC87E /* Build configuration list for PBXNativeTarget "kirokuTests" */;
+			buildConfigurationList = 15336BC6CCD5CA0D6CBF0EB63D1E57DC /* Build configuration list for PBXNativeTarget "kirokuTests" */;
 			buildPhases = (
-				C313222D268186D28F1D415B /* [CP] Check Pods Manifest.lock */,
-				DFECB64F3971494213FCA331 /* [Expo] Configure project */,
-				00E356EA1AD99517003FC87E /* Sources */,
-				00E356EB1AD99517003FC87E /* Frameworks */,
-				00E356EC1AD99517003FC87E /* Resources */,
-				FE9FC59B62C090524AFB47F0 /* [CP] Embed Pods Frameworks */,
-				4E544BD4B111026791F0BCE0 /* [CP] Copy Pods Resources */,
+				C0957DA537DAEC4EBA9961FD330E7891 /* [CP] Check Pods Manifest.lock */,
+				0F44606D2E0BC75B30BC4A3CB6BA1D64 /* [Expo] Configure project */,
+				A93E8CBD17A498532401C194C407014E /* Sources */,
+				AEDCC1176977E7061AB3AD52F9543639 /* Frameworks */,
+				C5520CF6175E407F067C128F87A14820 /* Resources */,
+				8BB43835598DD3FB89031BA763F884FB /* [CP] Embed Pods Frameworks */,
+				AF7CC9EDC1CCE41D37A63E2574E9A0E6 /* [CP] Copy Pods Resources */,
 			);
 			buildRules = (
 			);
 			dependencies = (
-				00E356F51AD99517003FC87E /* PBXTargetDependency */,
+				FA2171A6864D3C461544D7E69D6FDAD8 /* PBXTargetDependency */,
 			);
 			name = kirokuTests;
 			productName = kirokuTests;
-			productReference = 00E356EE1AD99517003FC87E /* kirokuTests.xctest */;
+			productReference = 685FF1D72D7A49104164E4BB3E1EE42F /* kirokuTests.xctest */;
 			productType = "com.apple.product-type.bundle.unit-test";
 		};
-		13B07F861A680F5B00A75B9A /* kiroku */ = {
+		A0F368BFB24FC009055767B843B48D83 /* kiroku */ = {
 			isa = PBXNativeTarget;
-			buildConfigurationList = 13B07F931A680F5B00A75B9A /* Build configuration list for PBXNativeTarget "kiroku" */;
+			buildConfigurationList = 6E44B8D3A96B9B8AAD373500F3DFBCC4 /* Build configuration list for PBXNativeTarget "kiroku" */;
 			buildPhases = (
-				EBD63EB17266980D2895B3C5 /* [CP] Check Pods Manifest.lock */,
-				C57CA4998D4534446617B54F /* [Expo] Configure project */,
-				13B07F871A680F5B00A75B9A /* Sources */,
-				13B07F8C1A680F5B00A75B9A /* Frameworks */,
-				13B07F8E1A680F5B00A75B9A /* Resources */,
-				00DD1BFF1BD5951E006B06BC /* Bundle React Native code and images */,
-				673FD1F4B9F91B91AE623D3A /* [CP] Embed Pods Frameworks */,
-				3A675757CA80ACDDC1BD63C0 /* [CP] Copy Pods Resources */,
-				DBA561062E4B7F5D019D5655 /* [CP-User] [RNFB] Core Configuration */,
-				E614BBBC4AC3AC7FC656DAD3 /* [CP-User] [RNFB] Crashlytics Configuration */,
+				6BA8C02FF83F16AA97A53C6D1458DA30 /* [CP] Check Pods Manifest.lock */,
+				E12D80FAA2C7D4948EADD995232AC9C4 /* [Expo] Configure project */,
+				13FFCC6A33C3E3066CB0EF683CE05097 /* Sources */,
+				96EE1767D138A900D6E3A4421BAD14EF /* Frameworks */,
+				B9F8269ED055C5C64E7601A97DC265CB /* Resources */,
+				F3EDCA035BBAB0CF568F51A01F8CD5C4 /* Bundle React Native code and images */,
+				C8797D152CA0AE0A452321A15956A667 /* [CP] Embed Pods Frameworks */,
+				D5E72D27AC939E72A1D8B21BBBFF4B2F /* [CP] Copy Pods Resources */,
+				434780F6C23C23F11C55F216EF3F5161 /* [CP-User] [RNFB] Core Configuration */,
+				B3F66D10A8D53734A2A99DB51A9ABC94 /* [CP-User] [RNFB] Crashlytics Configuration */,
 			);
 			buildRules = (
 			);
@@ -501,34 +501,34 @@
 			);
 			name = kiroku;
 			productName = kiroku;
-			productReference = 13B07F961A680F5B00A75B9A /* kiroku.app */;
+			productReference = BB25A7D871D3CF6578C3E000FCCE4D70 /* kiroku.app */;
 			productType = "com.apple.product-type.application";
 		};
-		8C389EEA2C3031AB00A015D5 /* Kiroku */ = {
+		99F71B234BAFE63738CCB5CFF77DD194 /* Kiroku */ = {
 			isa = PBXNativeTarget;
-			buildConfigurationList = 8C389F1E2C3031AE00A015D5 /* Build configuration list for PBXNativeTarget "Kiroku" */;
+			buildConfigurationList = 8CED10E6FDB8490443708EB94176B348 /* Build configuration list for PBXNativeTarget "Kiroku" */;
 			buildPhases = (
-				8C389EE92C3031AB00A015D5 /* Resources */,
-				8C389F1D2C3031AE00A015D5 /* Embed Watch Content */,
-				DAE9F7CFD2F38C274A819B19 /* Sources */,
+				51CCAE0BE0042D86CFB87ED2A7BDAB74 /* Resources */,
+				F2010B4D3BC2E6E8F7D0E27034D5D234 /* Embed Watch Content */,
+				F39765C6E8D1E19FCB8265B99173064A /* Sources */,
 			);
 			buildRules = (
 			);
 			dependencies = (
-				8C389EF32C3031AB00A015D5 /* PBXTargetDependency */,
+				96502ED23BA1640FBCDE70E7DF353A82 /* PBXTargetDependency */,
 			);
 			name = Kiroku;
 			productName = Kiroku;
-			productReference = 8C389EEB2C3031AB00A015D5 /* Kiroku.app */;
+			productReference = BC57D7BDBD22330433BB32D58C66F350 /* Kiroku.app */;
 			productType = "com.apple.product-type.application.watchapp2-container";
 		};
-		8C389EEF2C3031AB00A015D5 /* Kiroku Watch App */ = {
+		1821A5F349D591C181E1BE15261F44F4 /* Kiroku Watch App */ = {
 			isa = PBXNativeTarget;
-			buildConfigurationList = 8C389F142C3031AE00A015D5 /* Build configuration list for PBXNativeTarget "Kiroku Watch App" */;
+			buildConfigurationList = 3B2FC5D1E33A26F1799FD346F65BF815 /* Build configuration list for PBXNativeTarget "Kiroku Watch App" */;
 			buildPhases = (
-				8C389EEC2C3031AB00A015D5 /* Sources */,
-				8C389EED2C3031AB00A015D5 /* Frameworks */,
-				8C389EEE2C3031AB00A015D5 /* Resources */,
+				69E82C80FFCDE903B70BAF2C5E5BDBAF /* Sources */,
+				33C02F89EDC8CE841BA11563CBE7B138 /* Frameworks */,
+				DBF5240D37674310418F3E4C0DE6B671 /* Resources */,
 			);
 			buildRules = (
 			);
@@ -536,79 +536,79 @@
 			);
 			name = "Kiroku Watch App";
 			productName = "Kiroku Watch App";
-			productReference = 8C389EF02C3031AB00A015D5 /* Kiroku Watch App.app */;
+			productReference = FCC932AE708BEAD1D1F250D3CC3196F3 /* Kiroku Watch App.app */;
 			productType = "com.apple.product-type.application";
 		};
-		8C389F012C3031AC00A015D5 /* Kiroku Watch AppTests */ = {
+		4ABA158997A49FE2D5F2DF38FC33EDA2 /* Kiroku Watch AppTests */ = {
 			isa = PBXNativeTarget;
-			buildConfigurationList = 8C389F272C3031AE00A015D5 /* Build configuration list for PBXNativeTarget "Kiroku Watch AppTests" */;
+			buildConfigurationList = BEA60D00EB9C0B85E09A305E72DE141B /* Build configuration list for PBXNativeTarget "Kiroku Watch AppTests" */;
 			buildPhases = (
-				8C389EFE2C3031AC00A015D5 /* Sources */,
-				8C389EFF2C3031AC00A015D5 /* Frameworks */,
-				8C389F002C3031AC00A015D5 /* Resources */,
+				F999D39ECB6826484546DFB0A2890FDB /* Sources */,
+				F92BF19A9D047BF399D13DC598430771 /* Frameworks */,
+				0F472666BE7659B93E2A0A67489D9220 /* Resources */,
 			);
 			buildRules = (
 			);
 			dependencies = (
-				8C389F042C3031AD00A015D5 /* PBXTargetDependency */,
+				0BCD24E46AA06D6D20A6B6FF3FEE19FC /* PBXTargetDependency */,
 			);
 			name = "Kiroku Watch AppTests";
 			productName = "Kiroku Watch AppTests";
-			productReference = 8C389F022C3031AC00A015D5 /* Kiroku Watch AppTests.xctest */;
+			productReference = BDE37520D28FFB693C07E6CD4B8C554D /* Kiroku Watch AppTests.xctest */;
 			productType = "com.apple.product-type.bundle.unit-test";
 		};
-		8C389F0B2C3031AD00A015D5 /* Kiroku Watch AppUITests */ = {
+		2BFAB10152AABFA9CA34A99939C5C2AF /* Kiroku Watch AppUITests */ = {
 			isa = PBXNativeTarget;
-			buildConfigurationList = 8C389F302C3031AE00A015D5 /* Build configuration list for PBXNativeTarget "Kiroku Watch AppUITests" */;
+			buildConfigurationList = D6E0D2B6C656C63C00B7A26BD6E943D1 /* Build configuration list for PBXNativeTarget "Kiroku Watch AppUITests" */;
 			buildPhases = (
-				8C389F082C3031AD00A015D5 /* Sources */,
-				8C389F092C3031AD00A015D5 /* Frameworks */,
-				8C389F0A2C3031AD00A015D5 /* Resources */,
+				E2535323B00DE8DE797CE7DD84878EF0 /* Sources */,
+				49FDDD77E32808435ACA1A71C2B2C74F /* Frameworks */,
+				B0A2755EAC1627DB2C2559262F31C054 /* Resources */,
 			);
 			buildRules = (
 			);
 			dependencies = (
-				8C389F0E2C3031AE00A015D5 /* PBXTargetDependency */,
+				E4F47FF98EC0179B90BC0E2C8E1214B4 /* PBXTargetDependency */,
 			);
 			name = "Kiroku Watch AppUITests";
 			productName = "Kiroku Watch AppUITests";
-			productReference = 8C389F0C2C3031AD00A015D5 /* Kiroku Watch AppUITests.xctest */;
+			productReference = 579905A8BB8DCE18E94D427DC261E8D3 /* Kiroku Watch AppUITests.xctest */;
 			productType = "com.apple.product-type.bundle.ui-testing";
 		};
 /* End PBXNativeTarget section */
 
 /* Begin PBXProject section */
-		83CBB9F71A601CBA00E9B192 /* Project object */ = {
+		D2A5813054ACA3B6901A52E154E07BC5 /* Project object */ = {
 			isa = PBXProject;
 			attributes = {
 				BuildIndependentTargetsInParallel = YES;
 				LastSwiftUpdateCheck = 1520;
 				LastUpgradeCheck = 2600;
 				TargetAttributes = {
-					00E356ED1AD99517003FC87E = {
+					AC36C12117F334B91F614CAA26EE1E57 = {
 						CreatedOnToolsVersion = 6.2;
-						TestTargetID = 13B07F861A680F5B00A75B9A;
+						TestTargetID = A0F368BFB24FC009055767B843B48D83;
 					};
-					13B07F861A680F5B00A75B9A = {
+					A0F368BFB24FC009055767B843B48D83 = {
 						LastSwiftMigration = 1120;
 					};
-					8C389EEA2C3031AB00A015D5 = {
+					99F71B234BAFE63738CCB5CFF77DD194 = {
 						CreatedOnToolsVersion = 15.2;
 					};
-					8C389EEF2C3031AB00A015D5 = {
+					1821A5F349D591C181E1BE15261F44F4 = {
 						CreatedOnToolsVersion = 15.2;
 					};
-					8C389F012C3031AC00A015D5 = {
+					4ABA158997A49FE2D5F2DF38FC33EDA2 = {
 						CreatedOnToolsVersion = 15.2;
-						TestTargetID = 8C389EEF2C3031AB00A015D5;
+						TestTargetID = 1821A5F349D591C181E1BE15261F44F4;
 					};
-					8C389F0B2C3031AD00A015D5 = {
+					2BFAB10152AABFA9CA34A99939C5C2AF = {
 						CreatedOnToolsVersion = 15.2;
-						TestTargetID = 8C389EEF2C3031AB00A015D5;
+						TestTargetID = 1821A5F349D591C181E1BE15261F44F4;
 					};
 				};
 			};
-			buildConfigurationList = 83CBB9FA1A601CBA00E9B192 /* Build configuration list for PBXProject "kiroku" */;
+			buildConfigurationList = D33A8A289F34EFB01B84D4B29B1ABA60 /* Build configuration list for PBXProject "kiroku" */;
 			compatibilityVersion = "Xcode 12.0";
 			developmentRegion = en;
 			hasScannedForEncodings = 0;
@@ -616,73 +616,73 @@
 				en,
 				Base,
 			);
-			mainGroup = 83CBB9F61A601CBA00E9B192;
-			productRefGroup = 83CBBA001A601CBA00E9B192 /* Products */;
+			mainGroup = FD071299D960BEEF67562C6236225476;
+			productRefGroup = F29D5C17DC725F51699881F3CDFF95F4 /* Products */;
 			projectDirPath = "";
 			projectRoot = "";
 			targets = (
-				13B07F861A680F5B00A75B9A /* kiroku */,
-				00E356ED1AD99517003FC87E /* kirokuTests */,
-				8C389EEA2C3031AB00A015D5 /* Kiroku */,
-				8C389EEF2C3031AB00A015D5 /* Kiroku Watch App */,
-				8C389F012C3031AC00A015D5 /* Kiroku Watch AppTests */,
-				8C389F0B2C3031AD00A015D5 /* Kiroku Watch AppUITests */,
+				A0F368BFB24FC009055767B843B48D83 /* kiroku */,
+				AC36C12117F334B91F614CAA26EE1E57 /* kirokuTests */,
+				99F71B234BAFE63738CCB5CFF77DD194 /* Kiroku */,
+				1821A5F349D591C181E1BE15261F44F4 /* Kiroku Watch App */,
+				4ABA158997A49FE2D5F2DF38FC33EDA2 /* Kiroku Watch AppTests */,
+				2BFAB10152AABFA9CA34A99939C5C2AF /* Kiroku Watch AppUITests */,
 			);
 		};
 /* End PBXProject section */
 
 /* Begin PBXResourcesBuildPhase section */
-		00E356EC1AD99517003FC87E /* Resources */ = {
+		C5520CF6175E407F067C128F87A14820 /* Resources */ = {
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				8CCCAE2F2B7188B4008DCF56 /* Info.plist in Resources */,
+				E7B715AA87095EA0860A562B52B7C0BB /* Info.plist in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
-		13B07F8E1A680F5B00A75B9A /* Resources */ = {
+		B9F8269ED055C5C64E7601A97DC265CB /* Resources */ = {
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				8C84CE0B2BDB722F00C88D4E /* BootSplash.storyboard in Resources */,
-				8C389F422C30578A00A015D5 /* GoogleService-Info.plist in Resources */,
-				8C84CE1E2BDB72C800C88D4E /* Images.xcassets in Resources */,
-				8C93A11A2BAE2C7200B5382C /* PrivacyInfo.xcprivacy in Resources */,
-				1A62DBC1A5D568783196F7A3 /* ExpensifyMono-Bold.otf in Resources */,
-				C94A7B4409B2F8236A797144 /* ExpensifyMono-Regular.otf in Resources */,
-				A56A2C8EA2EADF1AFCCD9ED2 /* ExpensifyNeue-Bold.otf in Resources */,
-				ABCBF5A772771C50A17C4045 /* ExpensifyNeue-BoldItalic.otf in Resources */,
-				A90469355EF940E6F8E672FD /* ExpensifyNeue-Italic.otf in Resources */,
-				3FFBE9D3AE6652AF6E703560 /* ExpensifyNeue-Regular.otf in Resources */,
-				7BCB1D7CE4F97FD4D61E7618 /* ExpensifyNewKansas-Medium.otf in Resources */,
-				3BF5DCBF49144230602331B7 /* ExpensifyNewKansas-MediumItalic.otf in Resources */,
+				5E6F0D5CF1BB03DF159E4C2B88BAD48D /* BootSplash.storyboard in Resources */,
+				36623FEF1D5A221A557F73AD647500ED /* ExpensifyMono-Bold.otf in Resources */,
+				7B99E11036358517E7C0D017D67AF44D /* ExpensifyMono-Regular.otf in Resources */,
+				ACBE498C432C3C34E13F86BE6E6E3D2E /* ExpensifyNeue-Bold.otf in Resources */,
+				5D73DDAAC692EAB1B6F59E686222DD3A /* ExpensifyNeue-BoldItalic.otf in Resources */,
+				D71B38A9F2A8830AA7E03D95986CE51A /* ExpensifyNeue-Italic.otf in Resources */,
+				3045C3F8DEFEF19445042F36559AF357 /* ExpensifyNeue-Regular.otf in Resources */,
+				6F94F2AA7E288ADCCF00F2E294B5735A /* ExpensifyNewKansas-Medium.otf in Resources */,
+				193F7A25C49440E7ED264BE3769398DD /* ExpensifyNewKansas-MediumItalic.otf in Resources */,
+				8D816A8A45007ECEC6023F2B1611E96F /* GoogleService-Info.plist in Resources */,
+				7923E1C1CB31B61783462D0D2F40F726 /* Images.xcassets in Resources */,
+				C1EBD956700E09BF2140DEC98EFAF04F /* PrivacyInfo.xcprivacy in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
-		8C389EE92C3031AB00A015D5 /* Resources */ = {
-			isa = PBXResourcesBuildPhase;
-			buildActionMask = 2147483647;
-			files = (
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-		};
-		8C389EEE2C3031AB00A015D5 /* Resources */ = {
-			isa = PBXResourcesBuildPhase;
-			buildActionMask = 2147483647;
-			files = (
-				8C389EFA2C3031AC00A015D5 /* Assets.xcassets in Resources */,
-				8BFCA0355EE7CB1CCFFE402C /* PrivacyInfo.xcprivacy in Resources */,
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-		};
-		8C389F002C3031AC00A015D5 /* Resources */ = {
+		51CCAE0BE0042D86CFB87ED2A7BDAB74 /* Resources */ = {
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
-		8C389F0A2C3031AD00A015D5 /* Resources */ = {
+		DBF5240D37674310418F3E4C0DE6B671 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				035C31412C1E2603431E7F1593EA2AF3 /* Assets.xcassets in Resources */,
+				D4EB4C4B472CFB5C1C447FC0D70B6A6E /* PrivacyInfo.xcprivacy in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		0F472666BE7659B93E2A0A67489D9220 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		B0A2755EAC1627DB2C2559262F31C054 /* Resources */ = {
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
@@ -692,7 +692,7 @@
 /* End PBXResourcesBuildPhase section */
 
 /* Begin PBXShellScriptBuildPhase section */
-		00DD1BFF1BD5951E006B06BC /* Bundle React Native code and images */ = {
+		F3EDCA035BBAB0CF568F51A01F8CD5C4 /* Bundle React Native code and images */ = {
 			isa = PBXShellScriptBuildPhase;
 			alwaysOutOfDate = 1;
 			buildActionMask = 2147483647;
@@ -707,7 +707,7 @@
 			shellPath = /bin/sh;
 			shellScript = "\"$PROJECT_DIR/bundle-react-native-code-and-images.sh\"\n";
 		};
-		3A675757CA80ACDDC1BD63C0 /* [CP] Copy Pods Resources */ = {
+		D5E72D27AC939E72A1D8B21BBBFF4B2F /* [CP] Copy Pods Resources */ = {
 			isa = PBXShellScriptBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
@@ -724,7 +724,7 @@
 			shellScript = "\"${PODS_ROOT}/Target Support Files/Pods-kiroku/Pods-kiroku-resources.sh\"\n";
 			showEnvVarsInLog = 0;
 		};
-		4E544BD4B111026791F0BCE0 /* [CP] Copy Pods Resources */ = {
+		AF7CC9EDC1CCE41D37A63E2574E9A0E6 /* [CP] Copy Pods Resources */ = {
 			isa = PBXShellScriptBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
@@ -741,7 +741,7 @@
 			shellScript = "\"${PODS_ROOT}/Target Support Files/Pods-kiroku-kirokuTests/Pods-kiroku-kirokuTests-resources.sh\"\n";
 			showEnvVarsInLog = 0;
 		};
-		673FD1F4B9F91B91AE623D3A /* [CP] Embed Pods Frameworks */ = {
+		C8797D152CA0AE0A452321A15956A667 /* [CP] Embed Pods Frameworks */ = {
 			isa = PBXShellScriptBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
@@ -758,7 +758,7 @@
 			shellScript = "\"${PODS_ROOT}/Target Support Files/Pods-kiroku/Pods-kiroku-frameworks.sh\"\n";
 			showEnvVarsInLog = 0;
 		};
-		C313222D268186D28F1D415B /* [CP] Check Pods Manifest.lock */ = {
+		C0957DA537DAEC4EBA9961FD330E7891 /* [CP] Check Pods Manifest.lock */ = {
 			isa = PBXShellScriptBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
@@ -780,7 +780,7 @@
 			shellScript = "diff \"${PODS_PODFILE_DIR_PATH}/Podfile.lock\" \"${PODS_ROOT}/Manifest.lock\" > /dev/null\nif [ $? != 0 ] ; then\n    # print error to STDERR\n    echo \"error: The sandbox is not in sync with the Podfile.lock. Run 'pod install' or update your CocoaPods installation.\" >&2\n    exit 1\nfi\n# This output is used by Xcode 'outputs' to avoid re-running this script phase.\necho \"SUCCESS\" > \"${SCRIPT_OUTPUT_FILE_0}\"\n";
 			showEnvVarsInLog = 0;
 		};
-		C57CA4998D4534446617B54F /* [Expo] Configure project */ = {
+		E12D80FAA2C7D4948EADD995232AC9C4 /* [Expo] Configure project */ = {
 			isa = PBXShellScriptBuildPhase;
 			alwaysOutOfDate = 1;
 			buildActionMask = 2147483647;
@@ -804,7 +804,7 @@
 			shellPath = /bin/sh;
 			shellScript = "# This script configures Expo modules and generates the modules provider file.\nbash -l -c \"./Pods/Target\\ Support\\ Files/Pods-kiroku/expo-configure-project.sh\"\n";
 		};
-		DBA561062E4B7F5D019D5655 /* [CP-User] [RNFB] Core Configuration */ = {
+		434780F6C23C23F11C55F216EF3F5161 /* [CP-User] [RNFB] Core Configuration */ = {
 			isa = PBXShellScriptBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
@@ -817,7 +817,7 @@
 			shellPath = /bin/sh;
 			shellScript = "#!/usr/bin/env bash\n#\n# Copyright (c) 2016-present Invertase Limited & Contributors\n#\n# Licensed under the Apache License, Version 2.0 (the \"License\");\n# you may not use this library except in compliance with the License.\n# You may obtain a copy of the License at\n#\n#   http://www.apache.org/licenses/LICENSE-2.0\n#\n# Unless required by applicable law or agreed to in writing, software\n# distributed under the License is distributed on an \"AS IS\" BASIS,\n# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.\n# See the License for the specific language governing permissions and\n# limitations under the License.\n#\n\n##########################################################################\n##########################################################################\n#\n#  NOTE THAT IF YOU CHANGE THIS FILE YOU MUST RUN pod install AFTERWARDS\n#\n#  This file is installed as an Xcode build script in the project file\n#  by cocoapods, and you will not see your changes until you pod install\n#\n##########################################################################\n##########################################################################\n\nset -e\n\n_MAX_LOOKUPS=2;\n_SEARCH_RESULT=''\n_RN_ROOT_EXISTS=''\n_CURRENT_LOOKUPS=1\n_JSON_ROOT=\"'react-native'\"\n_JSON_FILE_NAME='firebase.json'\n_JSON_OUTPUT_BASE64='e30=' # { }\n_CURRENT_SEARCH_DIR=${PROJECT_DIR}\n_PLIST_BUDDY=/usr/libexec/PlistBuddy\n_TARGET_PLIST=\"${BUILT_PRODUCTS_DIR}/${INFOPLIST_PATH}\"\n_DSYM_PLIST=\"${DWARF_DSYM_FOLDER_PATH}/${DWARF_DSYM_FILE_NAME}/Contents/Info.plist\"\n\n# plist arrays\n_PLIST_ENTRY_KEYS=()\n_PLIST_ENTRY_TYPES=()\n_PLIST_ENTRY_VALUES=()\n\nfunction setPlistValue {\n  echo \"note:      setting plist entry '$1' of type '$2' in file '$4'\"\n  ${_PLIST_BUDDY} -c \"Add :$1 $2 '$3'\" $4 || echo \"note:      '$1' already exists\"\n}\n\nfunction getFirebaseJsonKeyValue () {\n  if [[ ${_RN_ROOT_EXISTS} ]]; then\n    ruby -Ku -e \"require 'rubygems';require 'json'; output=JSON.parse('$1'); puts output[$_JSON_ROOT]['$2']\"\n  else\n    echo \"\"\n  fi;\n}\n\nfunction jsonBoolToYesNo () {\n  if [[ $1 == \"false\" ]]; then\n    echo \"NO\"\n  elif [[ $1 == \"true\" ]]; then\n    echo \"YES\"\n  else echo \"NO\"\n  fi\n}\n\necho \"note: -> RNFB build script started\"\necho \"note: 1) Locating ${_JSON_FILE_NAME} file:\"\n\nif [[ -z ${_CURRENT_SEARCH_DIR} ]]; then\n  _CURRENT_SEARCH_DIR=$(pwd)\nfi;\n\nwhile true; do\n  _CURRENT_SEARCH_DIR=$(dirname \"$_CURRENT_SEARCH_DIR\")\n  if [[ \"$_CURRENT_SEARCH_DIR\" == \"/\" ]] || [[ ${_CURRENT_LOOKUPS} -gt ${_MAX_LOOKUPS} ]]; then break; fi;\n  echo \"note:      ($_CURRENT_LOOKUPS of $_MAX_LOOKUPS) Searching in '$_CURRENT_SEARCH_DIR' for a ${_JSON_FILE_NAME} file.\"\n  _SEARCH_RESULT=$(find \"$_CURRENT_SEARCH_DIR\" -maxdepth 2 -name ${_JSON_FILE_NAME} -print | /usr/bin/head -n 1)\n  if [[ ${_SEARCH_RESULT} ]]; then\n    echo \"note:      ${_JSON_FILE_NAME} found at $_SEARCH_RESULT\"\n    break;\n  fi;\n  _CURRENT_LOOKUPS=$((_CURRENT_LOOKUPS+1))\ndone\n\nif [[ ${_SEARCH_RESULT} ]]; then\n  _JSON_OUTPUT_RAW=$(cat \"${_SEARCH_RESULT}\")\n  if ! _RN_ROOT_EXISTS=$(ruby -Ku -e \"require 'json'; output=JSON.parse('$_JSON_OUTPUT_RAW'); puts output[$_JSON_ROOT]\"); then\n    echo \"error: Failed to parse firebase.json, check for syntax errors.\"\n    exit 1\n  fi\n\n  if [[ ${_RN_ROOT_EXISTS} ]]; then\n    if ! python3 --version >/dev/null 2>&1; then echo \"error: python3 not found, firebase.json file processing error.\" && exit 1; fi\n    _JSON_OUTPUT_BASE64=$(python3 -c 'import json,sys,base64;print(base64.b64encode(bytes(json.dumps(json.loads(open('\"'${_SEARCH_RESULT}'\"', '\"'rb'\"').read())['${_JSON_ROOT}']), '\"'utf-8'\"')).decode())' || echo \"e30=\")\n  fi\n\n  _PLIST_ENTRY_KEYS+=(\"firebase_json_raw\")\n  _PLIST_ENTRY_TYPES+=(\"string\")\n  _PLIST_ENTRY_VALUES+=(\"$_JSON_OUTPUT_BASE64\")\n\n  # config.app_data_collection_default_enabled\n  _APP_DATA_COLLECTION_ENABLED=$(getFirebaseJsonKeyValue \"$_JSON_OUTPUT_RAW\" \"app_data_collection_default_enabled\")\n  if [[ $_APP_DATA_COLLECTION_ENABLED ]]; then\n    _PLIST_ENTRY_KEYS+=(\"FirebaseDataCollectionDefaultEnabled\")\n    _PLIST_ENTRY_TYPES+=(\"bool\")\n    _PLIST_ENTRY_VALUES+=(\"$(jsonBoolToYesNo \"$_APP_DATA_COLLECTION_ENABLED\")\")\n  fi\n\n  # config.analytics_auto_collection_enabled\n  _ANALYTICS_AUTO_COLLECTION=$(getFirebaseJsonKeyValue \"$_JSON_OUTPUT_RAW\" \"analytics_auto_collection_enabled\")\n  if [[ $_ANALYTICS_AUTO_COLLECTION ]]; then\n    _PLIST_ENTRY_KEYS+=(\"FIREBASE_ANALYTICS_COLLECTION_ENABLED\")\n    _PLIST_ENTRY_TYPES+=(\"bool\")\n    _PLIST_ENTRY_VALUES+=(\"$(jsonBoolToYesNo \"$_ANALYTICS_AUTO_COLLECTION\")\")\n  fi\n\n  # config.analytics_collection_deactivated\n  _ANALYTICS_DEACTIVATED=$(getFirebaseJsonKeyValue \"$_JSON_OUTPUT_RAW\" \"analytics_collection_deactivated\")\n  if [[ $_ANALYTICS_DEACTIVATED ]]; then\n    _PLIST_ENTRY_KEYS+=(\"FIREBASE_ANALYTICS_COLLECTION_DEACTIVATED\")\n    _PLIST_ENTRY_TYPES+=(\"bool\")\n    _PLIST_ENTRY_VALUES+=(\"$(jsonBoolToYesNo \"$_ANALYTICS_DEACTIVATED\")\")\n  fi\n\n  # config.analytics_idfv_collection_enabled\n  _ANALYTICS_IDFV_COLLECTION=$(getFirebaseJsonKeyValue \"$_JSON_OUTPUT_RAW\" \"analytics_idfv_collection_enabled\")\n  if [[ $_ANALYTICS_IDFV_COLLECTION ]]; then\n    _PLIST_ENTRY_KEYS+=(\"GOOGLE_ANALYTICS_IDFV_COLLECTION_ENABLED\")\n    _PLIST_ENTRY_TYPES+=(\"bool\")\n    _PLIST_ENTRY_VALUES+=(\"$(jsonBoolToYesNo \"$_ANALYTICS_IDFV_COLLECTION\")\")\n  fi\n\n  # config.analytics_default_allow_analytics_storage\n  _ANALYTICS_STORAGE=$(getFirebaseJsonKeyValue \"$_JSON_OUTPUT_RAW\" \"analytics_default_allow_analytics_storage\")\n  if [[ $_ANALYTICS_STORAGE ]]; then\n    _PLIST_ENTRY_KEYS+=(\"GOOGLE_ANALYTICS_DEFAULT_ALLOW_ANALYTICS_STORAGE\")\n    _PLIST_ENTRY_TYPES+=(\"bool\")\n    _PLIST_ENTRY_VALUES+=(\"$(jsonBoolToYesNo \"$_ANALYTICS_STORAGE\")\")\n  fi\n\n  # config.analytics_default_allow_ad_storage\n  _ANALYTICS_AD_STORAGE=$(getFirebaseJsonKeyValue \"$_JSON_OUTPUT_RAW\" \"analytics_default_allow_ad_storage\")\n  if [[ $_ANALYTICS_AD_STORAGE ]]; then\n    _PLIST_ENTRY_KEYS+=(\"GOOGLE_ANALYTICS_DEFAULT_ALLOW_AD_STORAGE\")\n    _PLIST_ENTRY_TYPES+=(\"bool\")\n    _PLIST_ENTRY_VALUES+=(\"$(jsonBoolToYesNo \"$_ANALYTICS_AD_STORAGE\")\")\n  fi\n\n  # config.analytics_default_allow_ad_user_data\n  _ANALYTICS_AD_USER_DATA=$(getFirebaseJsonKeyValue \"$_JSON_OUTPUT_RAW\" \"analytics_default_allow_ad_user_data\")\n  if [[ $_ANALYTICS_AD_USER_DATA ]]; then\n    _PLIST_ENTRY_KEYS+=(\"GOOGLE_ANALYTICS_DEFAULT_ALLOW_AD_USER_DATA\")\n    _PLIST_ENTRY_TYPES+=(\"bool\")\n    _PLIST_ENTRY_VALUES+=(\"$(jsonBoolToYesNo \"$_ANALYTICS_AD_USER_DATA\")\")\n  fi\n\n  # config.analytics_default_allow_ad_personalization_signals\n  _ANALYTICS_PERSONALIZATION=$(getFirebaseJsonKeyValue \"$_JSON_OUTPUT_RAW\" \"analytics_default_allow_ad_personalization_signals\")\n  if [[ $_ANALYTICS_PERSONALIZATION ]]; then\n    _PLIST_ENTRY_KEYS+=(\"GOOGLE_ANALYTICS_DEFAULT_ALLOW_AD_PERSONALIZATION_SIGNALS\")\n    _PLIST_ENTRY_TYPES+=(\"bool\")\n    _PLIST_ENTRY_VALUES+=(\"$(jsonBoolToYesNo \"$_ANALYTICS_PERSONALIZATION\")\")\n  fi\n\n  # config.analytics_registration_with_ad_network_enabled\n  _ANALYTICS_REGISTRATION_WITH_AD_NETWORK=$(getFirebaseJsonKeyValue \"$_JSON_OUTPUT_RAW\" \"google_analytics_registration_with_ad_network_enabled\")\n  if [[ $_ANALYTICS_REGISTRATION_WITH_AD_NETWORK ]]; then\n    _PLIST_ENTRY_KEYS+=(\"GOOGLE_ANALYTICS_REGISTRATION_WITH_AD_NETWORK_ENABLED\")\n    _PLIST_ENTRY_TYPES+=(\"bool\")\n    _PLIST_ENTRY_VALUES+=(\"$(jsonBoolToYesNo \"$_ANALYTICS_REGISTRATION_WITH_AD_NETWORK\")\")\n  fi\n\n  # config.google_analytics_automatic_screen_reporting_enabled\n  _ANALYTICS_AUTO_SCREEN_REPORTING=$(getFirebaseJsonKeyValue \"$_JSON_OUTPUT_RAW\" \"google_analytics_automatic_screen_reporting_enabled\")\n  if [[ $_ANALYTICS_AUTO_SCREEN_REPORTING ]]; then\n    _PLIST_ENTRY_KEYS+=(\"FirebaseAutomaticScreenReportingEnabled\")\n    _PLIST_ENTRY_TYPES+=(\"bool\")\n    _PLIST_ENTRY_VALUES+=(\"$(jsonBoolToYesNo \"$_ANALYTICS_AUTO_SCREEN_REPORTING\")\")\n  fi\n\n  # config.perf_auto_collection_enabled\n  _PERF_AUTO_COLLECTION=$(getFirebaseJsonKeyValue \"$_JSON_OUTPUT_RAW\" \"perf_auto_collection_enabled\")\n  if [[ $_PERF_AUTO_COLLECTION ]]; then\n    _PLIST_ENTRY_KEYS+=(\"firebase_performance_collection_enabled\")\n    _PLIST_ENTRY_TYPES+=(\"bool\")\n    _PLIST_ENTRY_VALUES+=(\"$(jsonBoolToYesNo \"$_PERF_AUTO_COLLECTION\")\")\n  fi\n\n  # config.perf_collection_deactivated\n  _PERF_DEACTIVATED=$(getFirebaseJsonKeyValue \"$_JSON_OUTPUT_RAW\" \"perf_collection_deactivated\")\n  if [[ $_PERF_DEACTIVATED ]]; then\n    _PLIST_ENTRY_KEYS+=(\"firebase_performance_collection_deactivated\")\n    _PLIST_ENTRY_TYPES+=(\"bool\")\n    _PLIST_ENTRY_VALUES+=(\"$(jsonBoolToYesNo \"$_PERF_DEACTIVATED\")\")\n  fi\n\n  # config.messaging_auto_init_enabled\n  _MESSAGING_AUTO_INIT=$(getFirebaseJsonKeyValue \"$_JSON_OUTPUT_RAW\" \"messaging_auto_init_enabled\")\n  if [[ $_MESSAGING_AUTO_INIT ]]; then\n    _PLIST_ENTRY_KEYS+=(\"FirebaseMessagingAutoInitEnabled\")\n    _PLIST_ENTRY_TYPES+=(\"bool\")\n    _PLIST_ENTRY_VALUES+=(\"$(jsonBoolToYesNo \"$_MESSAGING_AUTO_INIT\")\")\n  fi\n\n  # config.in_app_messaging_auto_colllection_enabled\n  _FIAM_AUTO_INIT=$(getFirebaseJsonKeyValue \"$_JSON_OUTPUT_RAW\" \"in_app_messaging_auto_collection_enabled\")\n  if [[ $_FIAM_AUTO_INIT ]]; then\n    _PLIST_ENTRY_KEYS+=(\"FirebaseInAppMessagingAutomaticDataCollectionEnabled\")\n    _PLIST_ENTRY_TYPES+=(\"bool\")\n    _PLIST_ENTRY_VALUES+=(\"$(jsonBoolToYesNo \"$_FIAM_AUTO_INIT\")\")\n  fi\n\n  # config.app_check_token_auto_refresh\n  _APP_CHECK_TOKEN_AUTO_REFRESH=$(getFirebaseJsonKeyValue \"$_JSON_OUTPUT_RAW\" \"app_check_token_auto_refresh\")\n  if [[ $_APP_CHECK_TOKEN_AUTO_REFRESH ]]; then\n    _PLIST_ENTRY_KEYS+=(\"FirebaseAppCheckTokenAutoRefreshEnabled\")\n    _PLIST_ENTRY_TYPES+=(\"bool\")\n    _PLIST_ENTRY_VALUES+=(\"$(jsonBoolToYesNo \"$_APP_CHECK_TOKEN_AUTO_REFRESH\")\")\n  fi\n\n  # config.crashlytics_disable_auto_disabler - undocumented for now - mainly for debugging, document if becomes useful\n  _CRASHLYTICS_AUTO_DISABLE_ENABLED=$(getFirebaseJsonKeyValue \"$_JSON_OUTPUT_RAW\" \"crashlytics_disable_auto_disabler\")\n  if [[ $_CRASHLYTICS_AUTO_DISABLE_ENABLED == \"true\" ]]; then\n    echo \"Disabled Crashlytics auto disabler.\" # do nothing\n  else\n    _PLIST_ENTRY_KEYS+=(\"FirebaseCrashlyticsCollectionEnabled\")\n    _PLIST_ENTRY_TYPES+=(\"bool\")\n    _PLIST_ENTRY_VALUES+=(\"NO\")\n  fi\nelse\n  _PLIST_ENTRY_KEYS+=(\"firebase_json_raw\")\n  _PLIST_ENTRY_TYPES+=(\"string\")\n  _PLIST_ENTRY_VALUES+=(\"$_JSON_OUTPUT_BASE64\")\n  echo \"warning:   A firebase.json file was not found, whilst this file is optional it is recommended to include it to configure firebase services in React Native Firebase.\"\nfi;\n\necho \"note: 2) Injecting Info.plist entries: \"\n\n# Log out the keys we're adding\nfor i in \"${!_PLIST_ENTRY_KEYS[@]}\"; do\n  echo \"    ->  $i) ${_PLIST_ENTRY_KEYS[$i]}\" \"${_PLIST_ENTRY_TYPES[$i]}\" \"${_PLIST_ENTRY_VALUES[$i]}\"\ndone\n\nfor plist in \"${_TARGET_PLIST}\" \"${_DSYM_PLIST}\" ; do\n  if [[ -f \"${plist}\" ]]; then\n\n    # paths with spaces break the call to setPlistValue. temporarily modify\n    # the shell internal field separator variable (IFS), which normally\n    # includes spaces, to consist only of line breaks\n    oldifs=$IFS\n    IFS=\"\n\"\n\n    for i in \"${!_PLIST_ENTRY_KEYS[@]}\"; do\n      setPlistValue \"${_PLIST_ENTRY_KEYS[$i]}\" \"${_PLIST_ENTRY_TYPES[$i]}\" \"${_PLIST_ENTRY_VALUES[$i]}\" \"${plist}\"\n    done\n\n    # restore the original internal field separator value\n    IFS=$oldifs\n  else\n    echo \"warning:   A Info.plist build output file was not found (${plist})\"\n  fi\ndone\n\necho \"note: <- RNFB build script finished\"\n";
 		};
-		DFECB64F3971494213FCA331 /* [Expo] Configure project */ = {
+		0F44606D2E0BC75B30BC4A3CB6BA1D64 /* [Expo] Configure project */ = {
 			isa = PBXShellScriptBuildPhase;
 			alwaysOutOfDate = 1;
 			buildActionMask = 2147483647;
@@ -840,7 +840,7 @@
 			shellPath = /bin/sh;
 			shellScript = "# This script configures Expo modules and generates the modules provider file.\nbash -l -c \"./Pods/Target\\ Support\\ Files/Pods-kiroku-kirokuTests/expo-configure-project.sh\"\n";
 		};
-		E614BBBC4AC3AC7FC656DAD3 /* [CP-User] [RNFB] Crashlytics Configuration */ = {
+		B3F66D10A8D53734A2A99DB51A9ABC94 /* [CP-User] [RNFB] Crashlytics Configuration */ = {
 			isa = PBXShellScriptBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
@@ -854,7 +854,7 @@
 			shellPath = /bin/sh;
 			shellScript = "#!/usr/bin/env bash\n#\n# Copyright (c) 2016-present Invertase Limited & Contributors\n#\n# Licensed under the Apache License, Version 2.0 (the \"License\");\n# you may not use this library except in compliance with the License.\n# You may obtain a copy of the License at\n#\n#   http://www.apache.org/licenses/LICENSE-2.0\n#\n# Unless required by applicable law or agreed to in writing, software\n# distributed under the License is distributed on an \"AS IS\" BASIS,\n# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.\n# See the License for the specific language governing permissions and\n# limitations under the License.\n#\nset -e\n\nif [[ ${PODS_ROOT} ]]; then\n  echo \"info: Exec FirebaseCrashlytics Run from Pods\"\n  \"${PODS_ROOT}/FirebaseCrashlytics/run\"\nelse\n  echo \"info: Exec FirebaseCrashlytics Run from framework\"\n  \"${PROJECT_DIR}/FirebaseCrashlytics.framework/run\"\nfi\n";
 		};
-		EBD63EB17266980D2895B3C5 /* [CP] Check Pods Manifest.lock */ = {
+		6BA8C02FF83F16AA97A53C6D1458DA30 /* [CP] Check Pods Manifest.lock */ = {
 			isa = PBXShellScriptBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
@@ -876,7 +876,7 @@
 			shellScript = "diff \"${PODS_PODFILE_DIR_PATH}/Podfile.lock\" \"${PODS_ROOT}/Manifest.lock\" > /dev/null\nif [ $? != 0 ] ; then\n    # print error to STDERR\n    echo \"error: The sandbox is not in sync with the Podfile.lock. Run 'pod install' or update your CocoaPods installation.\" >&2\n    exit 1\nfi\n# This output is used by Xcode 'outputs' to avoid re-running this script phase.\necho \"SUCCESS\" > \"${SCRIPT_OUTPUT_FILE_0}\"\n";
 			showEnvVarsInLog = 0;
 		};
-		FE9FC59B62C090524AFB47F0 /* [CP] Embed Pods Frameworks */ = {
+		8BB43835598DD3FB89031BA763F884FB /* [CP] Embed Pods Frameworks */ = {
 			isa = PBXShellScriptBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
@@ -896,71 +896,71 @@
 /* End PBXShellScriptBuildPhase section */
 
 /* Begin PBXSourcesBuildPhase section */
-		00E356EA1AD99517003FC87E /* Sources */ = {
+		A93E8CBD17A498532401C194C407014E /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				00E356F31AD99517003FC87E /* kirokuTests.m in Sources */,
-				6EB690539DFC242A5AEDCD65 /* ExpoModulesProvider.swift in Sources */,
+				3078B470B1214DFD1DB6E9FAD333C00E /* ExpoModulesProvider.swift in Sources */,
+				EF9D890B86812601ABFEC945C2E3E8C7 /* kirokuTests.m in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
-		13B07F871A680F5B00A75B9A /* Sources */ = {
+		13FFCC6A33C3E3066CB0EF683CE05097 /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				8C84CE192BDB726F00C88D4E /* RCTBootSplash.mm in Sources */,
-				13B07FBC1A68108700A75B9A /* AppDelegate.swift in Sources */,
-				929EAF1A3FD507F3FF2058BF /* ExpoModulesProvider.swift in Sources */,
+				2277E0348F15E2F05F9D299348664B51 /* AppDelegate.swift in Sources */,
+				26D171A980698257B1C52A1C8AC6E6B0 /* ExpoModulesProvider.swift in Sources */,
+				2FC41EC86A043DE6B063268BD4EF74ED /* RCTBootSplash.mm in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
-		8C389EEC2C3031AB00A015D5 /* Sources */ = {
+		69E82C80FFCDE903B70BAF2C5E5BDBAF /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				8CACE1BD2C3058C50051A44C /* SettingsView.swift in Sources */,
-				8C6ACF8D2C3B0CB5002BAD95 /* InitialView.swift in Sources */,
-				8C389EF82C3031AC00A015D5 /* ContentView.swift in Sources */,
-				8CACE1C12C3058C50051A44C /* MainScreenView.swift in Sources */,
-				8CACE1B92C3058C50051A44C /* Helpers.swift in Sources */,
-				8CACE1BA2C3058C50051A44C /* FirebaseConfig.swift in Sources */,
-				8CACE1B82C3058C50051A44C /* Constants.swift in Sources */,
-				8C6ACF892C3B03C3002BAD95 /* CzechTexts.swift in Sources */,
-				8C6ACF7A2C3B01D3002BAD95 /* ImageAssets.swift in Sources */,
-				8CACE1BB2C3058C50051A44C /* Extensions.swift in Sources */,
-				8C6ACF8A2C3B03C3002BAD95 /* EnglishTexts.swift in Sources */,
-				8CACE1BF2C3058C50051A44C /* UnitSelectionView.swift in Sources */,
-				8C6ACF912C3B0D1D002BAD95 /* SessionViewModel.swift in Sources */,
-				8C6ACF782C3AF96C002BAD95 /* Colors.swift in Sources */,
-				8C6ACF8F2C3B0CE5002BAD95 /* StartSessionContent.swift in Sources */,
-				8CACE1B02C3058C50051A44C /* UnitModel.swift in Sources */,
-				8C6ACF932C3B17D5002BAD95 /* SessionTabView.swift in Sources */,
-				8C6ACF822C3B0304002BAD95 /* Translate.swift in Sources */,
-				8CACE1B12C3058C50051A44C /* SessionModel.swift in Sources */,
-				8C389EF62C3031AB00A015D5 /* KirokuApp.swift in Sources */,
-				8CACE1C02C3058C50051A44C /* SessionControlView.swift in Sources */,
+				EFB7AA8916E578EFEB6F9665AF5AF9C7 /* Colors.swift in Sources */,
+				0003B1D50D35F4B29CA69A269A654B52 /* Constants.swift in Sources */,
+				5F2594213B6739843D542E9AD460E687 /* ContentView.swift in Sources */,
+				85D3A2428FB7A384E0E90E056C100D01 /* CzechTexts.swift in Sources */,
+				5E4ACD6C1EE6FBC1E05D75AE525E2969 /* EnglishTexts.swift in Sources */,
+				6F3319D785115B5E3BBC9021CD9C847E /* Extensions.swift in Sources */,
+				2DC4F8962FC8D810ADE1081F0D3C2DAD /* FirebaseConfig.swift in Sources */,
+				F47F8A41F5D448D71B54676D1D4404B1 /* Helpers.swift in Sources */,
+				A2831D15E1FC7975C5D17616AA4B5B50 /* ImageAssets.swift in Sources */,
+				83FC8CE3177C39CBDAA6C289AB66D895 /* InitialView.swift in Sources */,
+				019BCBAE783DCC5846936DD88AB03C7C /* KirokuApp.swift in Sources */,
+				1F91B5D9007998E199916D67139B5ED4 /* MainScreenView.swift in Sources */,
+				43B45031E9C37461A97616988D3E4910 /* SessionControlView.swift in Sources */,
+				D82DC1221CC00D823D0DE5A65FAD639C /* SessionModel.swift in Sources */,
+				96AC25BB9F951774C540913B63BFF33E /* SessionTabView.swift in Sources */,
+				99C0C09ABE98934F6A4CE02AAC233123 /* SessionViewModel.swift in Sources */,
+				DED6357362BCF4B61ACF65076BD05FDE /* SettingsView.swift in Sources */,
+				2F803A034CB24D096891B8A298FF8A5D /* StartSessionContent.swift in Sources */,
+				9BD2C165AA19304B36E83BF41E38849D /* Translate.swift in Sources */,
+				6E05CC7FD00177EE114BE7541BE9EF1A /* UnitModel.swift in Sources */,
+				35346397021C5BB6272FEF86A02996A7 /* UnitSelectionView.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
-		8C389EFE2C3031AC00A015D5 /* Sources */ = {
+		F999D39ECB6826484546DFB0A2890FDB /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				8C389F072C3031AD00A015D5 /* Kiroku_Watch_AppTests.swift in Sources */,
+				8308E9663D6A74638FA6E5CDAEB9E063 /* Kiroku_Watch_AppTests.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
-		8C389F082C3031AD00A015D5 /* Sources */ = {
+		E2535323B00DE8DE797CE7DD84878EF0 /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				8C389F112C3031AE00A015D5 /* Kiroku_Watch_AppUITests.swift in Sources */,
-				8C389F132C3031AE00A015D5 /* Kiroku_Watch_AppUITestsLaunchTests.swift in Sources */,
+				698A9148B06F94922C213C8C768EDC59 /* Kiroku_Watch_AppUITests.swift in Sources */,
+				413CBD8FE514996619387E2F9C8595F8 /* Kiroku_Watch_AppUITestsLaunchTests.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
-		DAE9F7CFD2F38C274A819B19 /* Sources */ = {
+		F39765C6E8D1E19FCB8265B99173064A /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
@@ -970,32 +970,32 @@
 /* End PBXSourcesBuildPhase section */
 
 /* Begin PBXTargetDependency section */
-		00E356F51AD99517003FC87E /* PBXTargetDependency */ = {
+		FA2171A6864D3C461544D7E69D6FDAD8 /* PBXTargetDependency */ = {
 			isa = PBXTargetDependency;
-			target = 13B07F861A680F5B00A75B9A /* kiroku */;
-			targetProxy = 00E356F41AD99517003FC87E /* PBXContainerItemProxy */;
+			target = A0F368BFB24FC009055767B843B48D83 /* kiroku */;
+			targetProxy = 9774B0A8F09340A04D36FAA2284BBD2E /* PBXContainerItemProxy */;
 		};
-		8C389EF32C3031AB00A015D5 /* PBXTargetDependency */ = {
+		96502ED23BA1640FBCDE70E7DF353A82 /* PBXTargetDependency */ = {
 			isa = PBXTargetDependency;
-			target = 8C389EEF2C3031AB00A015D5 /* Kiroku Watch App */;
-			targetProxy = 8C389EF22C3031AB00A015D5 /* PBXContainerItemProxy */;
+			target = 1821A5F349D591C181E1BE15261F44F4 /* Kiroku Watch App */;
+			targetProxy = 255A6392D9E6D2F131947B4C37F1D679 /* PBXContainerItemProxy */;
 		};
-		8C389F042C3031AD00A015D5 /* PBXTargetDependency */ = {
+		0BCD24E46AA06D6D20A6B6FF3FEE19FC /* PBXTargetDependency */ = {
 			isa = PBXTargetDependency;
-			target = 8C389EEF2C3031AB00A015D5 /* Kiroku Watch App */;
-			targetProxy = 8C389F032C3031AD00A015D5 /* PBXContainerItemProxy */;
+			target = 1821A5F349D591C181E1BE15261F44F4 /* Kiroku Watch App */;
+			targetProxy = 169CAF2FC7928E2A3D283E5CCDCA4622 /* PBXContainerItemProxy */;
 		};
-		8C389F0E2C3031AE00A015D5 /* PBXTargetDependency */ = {
+		E4F47FF98EC0179B90BC0E2C8E1214B4 /* PBXTargetDependency */ = {
 			isa = PBXTargetDependency;
-			target = 8C389EEF2C3031AB00A015D5 /* Kiroku Watch App */;
-			targetProxy = 8C389F0D2C3031AE00A015D5 /* PBXContainerItemProxy */;
+			target = 1821A5F349D591C181E1BE15261F44F4 /* Kiroku Watch App */;
+			targetProxy = F3D7B2C73FADEBA793155B833E55028E /* PBXContainerItemProxy */;
 		};
 /* End PBXTargetDependency section */
 
 /* Begin XCBuildConfiguration section */
-		00E356F61AD99517003FC87E /* Debug */ = {
+		3A387BBC63D0E63106722FB267FB04B3 /* Debug */ = {
 			isa = XCBuildConfiguration;
-			baseConfigurationReference = 21F30E77514AC490EEC869BA /* Pods-kiroku-kirokuTests.debug.xcconfig */;
+			baseConfigurationReference = 940E29BAAD0E2B39450F8DEA08D977DC /* Pods-kiroku-kirokuTests.debug.xcconfig */;
 			buildSettings = {
 				BUNDLE_LOADER = "$(TEST_HOST)";
 				DEVELOPMENT_TEAM = L357YP9W28;
@@ -1022,9 +1022,9 @@
 			};
 			name = Debug;
 		};
-		00E356F71AD99517003FC87E /* Release */ = {
+		10755F4913B366E1F51A7CFDF6DAC002 /* Release */ = {
 			isa = XCBuildConfiguration;
-			baseConfigurationReference = 2135C2C0884E915713A05FA4 /* Pods-kiroku-kirokuTests.release.xcconfig */;
+			baseConfigurationReference = 1B073BCE83604D59197935453ACCE810 /* Pods-kiroku-kirokuTests.release.xcconfig */;
 			buildSettings = {
 				BUNDLE_LOADER = "$(TEST_HOST)";
 				COPY_PHASE_STRIP = NO;
@@ -1048,9 +1048,9 @@
 			};
 			name = Release;
 		};
-		13B07F941A680F5B00A75B9A /* Debug */ = {
+		4084784CF9E3019F5086662585D44528 /* Debug */ = {
 			isa = XCBuildConfiguration;
-			baseConfigurationReference = 23EFFC2F81751B98BF10B125 /* Pods-kiroku.debug.xcconfig */;
+			baseConfigurationReference = 1BC997089BCD05EFEEF7618697295B92 /* Pods-kiroku.debug.xcconfig */;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_INCLUDE_ALL_APPICON_ASSETS = YES;
@@ -1087,9 +1087,9 @@
 			};
 			name = Debug;
 		};
-		13B07F951A680F5B00A75B9A /* Release */ = {
+		8ED207EF2A175948388B591C0419BFAA /* Release */ = {
 			isa = XCBuildConfiguration;
-			baseConfigurationReference = 693696E11F1A334E80B22BB2 /* Pods-kiroku.release.xcconfig */;
+			baseConfigurationReference = 30BFAEB5CDC561A8FC2261889B95287B /* Pods-kiroku.release.xcconfig */;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_INCLUDE_ALL_APPICON_ASSETS = YES;
@@ -1124,7 +1124,7 @@
 			};
 			name = Release;
 		};
-		4B8A78672C88EE6B003506E2 /* ReleaseAdHoc */ = {
+		A90F0D3B1DCA4E5F69230E0429520026 /* ReleaseAdHoc */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = NO;
@@ -1232,9 +1232,9 @@
 			};
 			name = ReleaseAdHoc;
 		};
-		4B8A78682C88EE6B003506E2 /* ReleaseAdHoc */ = {
+		BAEC72649D289DD70E5968F93A0AB2B2 /* ReleaseAdHoc */ = {
 			isa = XCBuildConfiguration;
-			baseConfigurationReference = 7F46A2BD4FCD7933B2B6F49B /* Pods-kiroku.releaseadhoc.xcconfig */;
+			baseConfigurationReference = 808A43D92E51BAE16514C24C06578B57 /* Pods-kiroku.releaseadhoc.xcconfig */;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_INCLUDE_ALL_APPICON_ASSETS = YES;
@@ -1269,9 +1269,9 @@
 			};
 			name = ReleaseAdHoc;
 		};
-		4B8A78692C88EE6B003506E2 /* ReleaseAdHoc */ = {
+		B07FB74358F681373842C282CCBEB0A9 /* ReleaseAdHoc */ = {
 			isa = XCBuildConfiguration;
-			baseConfigurationReference = 0B28C983366094AEB9C2B4A5 /* Pods-kiroku-kirokuTests.releaseadhoc.xcconfig */;
+			baseConfigurationReference = 41DA18E074548C9167CB8366E1E84FFA /* Pods-kiroku-kirokuTests.releaseadhoc.xcconfig */;
 			buildSettings = {
 				BUNDLE_LOADER = "$(TEST_HOST)";
 				COPY_PHASE_STRIP = NO;
@@ -1295,7 +1295,7 @@
 			};
 			name = ReleaseAdHoc;
 		};
-		4B8A786A2C88EE6B003506E2 /* ReleaseAdHoc */ = {
+		D2C04473B2427A736EE0108AB229B039 /* ReleaseAdHoc */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS = YES;
@@ -1331,7 +1331,7 @@
 			};
 			name = ReleaseAdHoc;
 		};
-		4B8A786B2C88EE6B003506E2 /* ReleaseAdHoc */ = {
+		2A8F94ED728220269646B28FA16C8A39 /* ReleaseAdHoc */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
@@ -1381,7 +1381,7 @@
 			};
 			name = ReleaseAdHoc;
 		};
-		4B8A786C2C88EE6B003506E2 /* ReleaseAdHoc */ = {
+		323A938B315B51C0B4F575F5CA1E7507 /* ReleaseAdHoc */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS = YES;
@@ -1415,7 +1415,7 @@
 			};
 			name = ReleaseAdHoc;
 		};
-		4B8A786D2C88EE6B003506E2 /* ReleaseAdHoc */ = {
+		B041A3AFC8B4093D1B8E829A36FFEE10 /* ReleaseAdHoc */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS = YES;
@@ -1448,7 +1448,7 @@
 			};
 			name = ReleaseAdHoc;
 		};
-		4B8A786E2C88F0E1003506E2 /* DebugAdHoc */ = {
+		8530664EC3DECC020CAF98033E8A50A4 /* DebugAdHoc */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = NO;
@@ -1561,9 +1561,9 @@
 			};
 			name = DebugAdHoc;
 		};
-		4B8A786F2C88F0E1003506E2 /* DebugAdHoc */ = {
+		2623219C899386B07E5E1732D12218E9 /* DebugAdHoc */ = {
 			isa = XCBuildConfiguration;
-			baseConfigurationReference = 369C3B1C1760381877510E1C /* Pods-kiroku.debugadhoc.xcconfig */;
+			baseConfigurationReference = 8690BB807EE45F07700764C9F93DB4B1 /* Pods-kiroku.debugadhoc.xcconfig */;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_INCLUDE_ALL_APPICON_ASSETS = YES;
@@ -1600,9 +1600,9 @@
 			};
 			name = DebugAdHoc;
 		};
-		4B8A78702C88F0E1003506E2 /* DebugAdHoc */ = {
+		D7FF3050E03151EE682DA4EBA96FFDC4 /* DebugAdHoc */ = {
 			isa = XCBuildConfiguration;
-			baseConfigurationReference = 6F070B9C165B8CC6F81116CB /* Pods-kiroku-kirokuTests.debugadhoc.xcconfig */;
+			baseConfigurationReference = 626F52CEF3B2C5855C78BEB531BBC705 /* Pods-kiroku-kirokuTests.debugadhoc.xcconfig */;
 			buildSettings = {
 				BUNDLE_LOADER = "$(TEST_HOST)";
 				DEVELOPMENT_TEAM = L357YP9W28;
@@ -1629,7 +1629,7 @@
 			};
 			name = DebugAdHoc;
 		};
-		4B8A78712C88F0E1003506E2 /* DebugAdHoc */ = {
+		1FCBE2D7A2E167DF8FA31B9210779FEC /* DebugAdHoc */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS = YES;
@@ -1667,7 +1667,7 @@
 			};
 			name = DebugAdHoc;
 		};
-		4B8A78722C88F0E1003506E2 /* DebugAdHoc */ = {
+		2F230CE45229D2D70FBDBFAB024C84A3 /* DebugAdHoc */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
@@ -1719,7 +1719,7 @@
 			};
 			name = DebugAdHoc;
 		};
-		4B8A78732C88F0E1003506E2 /* DebugAdHoc */ = {
+		3A2B878DCC8E8F978455291787EDBC57 /* DebugAdHoc */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS = YES;
@@ -1755,7 +1755,7 @@
 			};
 			name = DebugAdHoc;
 		};
-		4B8A78742C88F0E1003506E2 /* DebugAdHoc */ = {
+		EE5C37372F92C70EEB6F1C1E89B258CC /* DebugAdHoc */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS = YES;
@@ -1790,7 +1790,7 @@
 			};
 			name = DebugAdHoc;
 		};
-		83CBBA201A601CBA00E9B192 /* Debug */ = {
+		D4BB80F1B7E9516DCFC1557BEADB98C3 /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = NO;
@@ -1904,7 +1904,7 @@
 			};
 			name = Debug;
 		};
-		83CBBA211A601CBA00E9B192 /* Release */ = {
+		0DB5D5FEDC17FACCE359514C3820A71A /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = NO;
@@ -2013,7 +2013,7 @@
 			};
 			name = Release;
 		};
-		8C389F152C3031AE00A015D5 /* Debug */ = {
+		78C4B94D163E9390430964B9DEC13BB8 /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
@@ -2065,7 +2065,7 @@
 			};
 			name = Debug;
 		};
-		8C389F172C3031AE00A015D5 /* DebugProduction */ = {
+		74037BE77A8C0E1A8BC1AE269103626D /* DebugProduction */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
@@ -2117,7 +2117,7 @@
 			};
 			name = DebugProduction;
 		};
-		8C389F182C3031AE00A015D5 /* DebugDevelopment */ = {
+		9EF4FFD3E14E45631A820B30A26E3A4E /* DebugDevelopment */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
@@ -2169,7 +2169,7 @@
 			};
 			name = DebugDevelopment;
 		};
-		8C389F192C3031AE00A015D5 /* Release */ = {
+		D59CA1D1E56310C4BB635297DA55B636 /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
@@ -2219,7 +2219,7 @@
 			};
 			name = Release;
 		};
-		8C389F1B2C3031AE00A015D5 /* ReleaseDevelopment */ = {
+		995BE4D1C05C40F9D4FC088737908FED /* ReleaseDevelopment */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
@@ -2269,7 +2269,7 @@
 			};
 			name = ReleaseDevelopment;
 		};
-		8C389F1C2C3031AE00A015D5 /* ReleaseProduction */ = {
+		8544D26B168CA89BB3E2217B9BB5B85F /* ReleaseProduction */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
@@ -2319,7 +2319,7 @@
 			};
 			name = ReleaseProduction;
 		};
-		8C389F1F2C3031AE00A015D5 /* Debug */ = {
+		C11B788DDB656AC6CBB625F12D096746 /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS = YES;
@@ -2357,7 +2357,7 @@
 			};
 			name = Debug;
 		};
-		8C389F212C3031AE00A015D5 /* DebugProduction */ = {
+		AA65AB1BEB34187F0AC1191987156EEF /* DebugProduction */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS = YES;
@@ -2395,7 +2395,7 @@
 			};
 			name = DebugProduction;
 		};
-		8C389F222C3031AE00A015D5 /* DebugDevelopment */ = {
+		992266C61A35ABF54CBAE0899DC89309 /* DebugDevelopment */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS = YES;
@@ -2433,7 +2433,7 @@
 			};
 			name = DebugDevelopment;
 		};
-		8C389F232C3031AE00A015D5 /* Release */ = {
+		2FD2F460623DCAE6E787850D64B3C623 /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS = YES;
@@ -2469,7 +2469,7 @@
 			};
 			name = Release;
 		};
-		8C389F252C3031AE00A015D5 /* ReleaseDevelopment */ = {
+		006CCD074CEEA6829910A946FB06DDE7 /* ReleaseDevelopment */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS = YES;
@@ -2505,7 +2505,7 @@
 			};
 			name = ReleaseDevelopment;
 		};
-		8C389F262C3031AE00A015D5 /* ReleaseProduction */ = {
+		8C6A6E90CDCD4F2DCC98AEA184EC9362 /* ReleaseProduction */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS = YES;
@@ -2541,7 +2541,7 @@
 			};
 			name = ReleaseProduction;
 		};
-		8C389F282C3031AE00A015D5 /* Debug */ = {
+		E11A28D6742DAFBAF086D9A36EC332AC /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS = YES;
@@ -2577,7 +2577,7 @@
 			};
 			name = Debug;
 		};
-		8C389F2A2C3031AE00A015D5 /* DebugProduction */ = {
+		D2DAE10CBF1AFF9352A8D1172E9B03C0 /* DebugProduction */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS = YES;
@@ -2613,7 +2613,7 @@
 			};
 			name = DebugProduction;
 		};
-		8C389F2B2C3031AE00A015D5 /* DebugDevelopment */ = {
+		44D45B23706284C25C2AD59C37F15CE7 /* DebugDevelopment */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS = YES;
@@ -2649,7 +2649,7 @@
 			};
 			name = DebugDevelopment;
 		};
-		8C389F2C2C3031AE00A015D5 /* Release */ = {
+		BE07C0864CA39D6985E576646AEE437C /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS = YES;
@@ -2683,7 +2683,7 @@
 			};
 			name = Release;
 		};
-		8C389F2E2C3031AE00A015D5 /* ReleaseDevelopment */ = {
+		E86CF4299DB2C75CF84DAFA51A4D3230 /* ReleaseDevelopment */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS = YES;
@@ -2717,7 +2717,7 @@
 			};
 			name = ReleaseDevelopment;
 		};
-		8C389F2F2C3031AE00A015D5 /* ReleaseProduction */ = {
+		B8DE816838DB879C8B9A1FC2E6AF2DA5 /* ReleaseProduction */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS = YES;
@@ -2751,7 +2751,7 @@
 			};
 			name = ReleaseProduction;
 		};
-		8C389F312C3031AE00A015D5 /* Debug */ = {
+		AA5E98AA958F868EC6E012F604858473 /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS = YES;
@@ -2786,7 +2786,7 @@
 			};
 			name = Debug;
 		};
-		8C389F332C3031AE00A015D5 /* DebugProduction */ = {
+		243CBC7A87162AADAFA2F911F37D00C7 /* DebugProduction */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS = YES;
@@ -2821,7 +2821,7 @@
 			};
 			name = DebugProduction;
 		};
-		8C389F342C3031AE00A015D5 /* DebugDevelopment */ = {
+		8E3E7003E06CF15470D9BF823C5DBEF4 /* DebugDevelopment */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS = YES;
@@ -2856,7 +2856,7 @@
 			};
 			name = DebugDevelopment;
 		};
-		8C389F352C3031AE00A015D5 /* Release */ = {
+		F59338298E92C020428E267BF46D68E7 /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS = YES;
@@ -2889,7 +2889,7 @@
 			};
 			name = Release;
 		};
-		8C389F372C3031AE00A015D5 /* ReleaseDevelopment */ = {
+		30558D2B8D31D5055041BB4F66823865 /* ReleaseDevelopment */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS = YES;
@@ -2922,7 +2922,7 @@
 			};
 			name = ReleaseDevelopment;
 		};
-		8C389F382C3031AE00A015D5 /* ReleaseProduction */ = {
+		58BF1D09C4D844A439E313CCA833CBDC /* ReleaseProduction */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS = YES;
@@ -2955,7 +2955,7 @@
 			};
 			name = ReleaseProduction;
 		};
-		8C575B692BB5932C009EF0A5 /* DebugDevelopment */ = {
+		C4CD6B36C91C3179C4F78ECEA974B6F0 /* DebugDevelopment */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = NO;
@@ -3069,9 +3069,9 @@
 			};
 			name = DebugDevelopment;
 		};
-		8C575B6A2BB5932C009EF0A5 /* DebugDevelopment */ = {
+		692CD12082DDDD205B480E167CE902DF /* DebugDevelopment */ = {
 			isa = XCBuildConfiguration;
-			baseConfigurationReference = 802E2F74C2828B9B5E184DCE /* Pods-kiroku.debugdevelopment.xcconfig */;
+			baseConfigurationReference = DC58989E75FA42CFB52CFA57DD74CD6A /* Pods-kiroku.debugdevelopment.xcconfig */;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_INCLUDE_ALL_APPICON_ASSETS = YES;
@@ -3109,9 +3109,9 @@
 			};
 			name = DebugDevelopment;
 		};
-		8C575B6B2BB5932C009EF0A5 /* DebugDevelopment */ = {
+		B93762027BD8243C332E02FA0EA80341 /* DebugDevelopment */ = {
 			isa = XCBuildConfiguration;
-			baseConfigurationReference = FC98FBA4EF484EE6C0C982DE /* Pods-kiroku-kirokuTests.debugdevelopment.xcconfig */;
+			baseConfigurationReference = 937610E9D0162A83E7A4284BBBD373C1 /* Pods-kiroku-kirokuTests.debugdevelopment.xcconfig */;
 			buildSettings = {
 				BUNDLE_LOADER = "$(TEST_HOST)";
 				DEVELOPMENT_TEAM = L357YP9W28;
@@ -3138,7 +3138,7 @@
 			};
 			name = DebugDevelopment;
 		};
-		8C575B752BB594A0009EF0A5 /* ReleaseDevelopment */ = {
+		E50B8D847311A688DC1E6B026996C4C0 /* ReleaseDevelopment */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = NO;
@@ -3247,9 +3247,9 @@
 			};
 			name = ReleaseDevelopment;
 		};
-		8C575B762BB594A0009EF0A5 /* ReleaseDevelopment */ = {
+		1A2B7D80135952A11CFB9B79B3003F00 /* ReleaseDevelopment */ = {
 			isa = XCBuildConfiguration;
-			baseConfigurationReference = 1893362DE81D1050738ACA39 /* Pods-kiroku.releasedevelopment.xcconfig */;
+			baseConfigurationReference = 9A13E951A4D63CD9FF3A57BD6E46773A /* Pods-kiroku.releasedevelopment.xcconfig */;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_INCLUDE_ALL_APPICON_ASSETS = YES;
@@ -3284,9 +3284,9 @@
 			};
 			name = ReleaseDevelopment;
 		};
-		8C575B772BB594A0009EF0A5 /* ReleaseDevelopment */ = {
+		6BE29CF28E5375E92A25DCA2F4EB7505 /* ReleaseDevelopment */ = {
 			isa = XCBuildConfiguration;
-			baseConfigurationReference = CA3A01ADBC1F4E2E2DF19916 /* Pods-kiroku-kirokuTests.releasedevelopment.xcconfig */;
+			baseConfigurationReference = 079861F232F305189FCFB5CFCE752BF0 /* Pods-kiroku-kirokuTests.releasedevelopment.xcconfig */;
 			buildSettings = {
 				BUNDLE_LOADER = "$(TEST_HOST)";
 				COPY_PHASE_STRIP = NO;
@@ -3310,7 +3310,7 @@
 			};
 			name = ReleaseDevelopment;
 		};
-		8C575B782BB594A4009EF0A5 /* ReleaseProduction */ = {
+		4B8EB7FA4003260C25393B98D6902C85 /* ReleaseProduction */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = NO;
@@ -3418,9 +3418,9 @@
 			};
 			name = ReleaseProduction;
 		};
-		8C575B792BB594A4009EF0A5 /* ReleaseProduction */ = {
+		7A0BE35C0C4295BCE6B147E0C502631A /* ReleaseProduction */ = {
 			isa = XCBuildConfiguration;
-			baseConfigurationReference = 5863B10EBBCCDC21D3B3AA65 /* Pods-kiroku.releaseproduction.xcconfig */;
+			baseConfigurationReference = CBBEBF345C4A83E4EE008676C6C2ABF4 /* Pods-kiroku.releaseproduction.xcconfig */;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_INCLUDE_ALL_APPICON_ASSETS = YES;
@@ -3455,9 +3455,9 @@
 			};
 			name = ReleaseProduction;
 		};
-		8C575B7A2BB594A4009EF0A5 /* ReleaseProduction */ = {
+		B9EBB5A80324C58EDA4473433F66B39D /* ReleaseProduction */ = {
 			isa = XCBuildConfiguration;
-			baseConfigurationReference = 8CC6BC76612204E66CEBEB90 /* Pods-kiroku-kirokuTests.releaseproduction.xcconfig */;
+			baseConfigurationReference = 41C49860CF9CB115A5F250852F8975C8 /* Pods-kiroku-kirokuTests.releaseproduction.xcconfig */;
 			buildSettings = {
 				BUNDLE_LOADER = "$(TEST_HOST)";
 				COPY_PHASE_STRIP = NO;
@@ -3481,7 +3481,7 @@
 			};
 			name = ReleaseProduction;
 		};
-		8C575B7B2BB594B2009EF0A5 /* DebugProduction */ = {
+		8958C3E49653F1F005928C57AB36BFF8 /* DebugProduction */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = NO;
@@ -3594,9 +3594,9 @@
 			};
 			name = DebugProduction;
 		};
-		8C575B7C2BB594B2009EF0A5 /* DebugProduction */ = {
+		CE7D307830464E8A54882504A8D81C22 /* DebugProduction */ = {
 			isa = XCBuildConfiguration;
-			baseConfigurationReference = 7E47691371691820D1D4C135 /* Pods-kiroku.debugproduction.xcconfig */;
+			baseConfigurationReference = C8125522733C8CDA669574E9CD0877F9 /* Pods-kiroku.debugproduction.xcconfig */;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_INCLUDE_ALL_APPICON_ASSETS = YES;
@@ -3633,9 +3633,9 @@
 			};
 			name = DebugProduction;
 		};
-		8C575B7D2BB594B2009EF0A5 /* DebugProduction */ = {
+		2D3BEC61D1B53827C79B8A2B0420605E /* DebugProduction */ = {
 			isa = XCBuildConfiguration;
-			baseConfigurationReference = CBFDFB53E37FEB640CDF5598 /* Pods-kiroku-kirokuTests.debugproduction.xcconfig */;
+			baseConfigurationReference = 0023E2B3C39E731E83A026B01F285CBA /* Pods-kiroku-kirokuTests.debugproduction.xcconfig */;
 			buildSettings = {
 				BUNDLE_LOADER = "$(TEST_HOST)";
 				DEVELOPMENT_TEAM = L357YP9W28;
@@ -3665,112 +3665,112 @@
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
-		00E357021AD99517003FC87E /* Build configuration list for PBXNativeTarget "kirokuTests" */ = {
+		15336BC6CCD5CA0D6CBF0EB63D1E57DC /* Build configuration list for PBXNativeTarget "kirokuTests" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
-				00E356F61AD99517003FC87E /* Debug */,
-				4B8A78702C88F0E1003506E2 /* DebugAdHoc */,
-				8C575B7D2BB594B2009EF0A5 /* DebugProduction */,
-				8C575B6B2BB5932C009EF0A5 /* DebugDevelopment */,
-				00E356F71AD99517003FC87E /* Release */,
-				4B8A78692C88EE6B003506E2 /* ReleaseAdHoc */,
-				8C575B772BB594A0009EF0A5 /* ReleaseDevelopment */,
-				8C575B7A2BB594A4009EF0A5 /* ReleaseProduction */,
+				3A387BBC63D0E63106722FB267FB04B3 /* Debug */,
+				D7FF3050E03151EE682DA4EBA96FFDC4 /* DebugAdHoc */,
+				2D3BEC61D1B53827C79B8A2B0420605E /* DebugProduction */,
+				B93762027BD8243C332E02FA0EA80341 /* DebugDevelopment */,
+				10755F4913B366E1F51A7CFDF6DAC002 /* Release */,
+				B07FB74358F681373842C282CCBEB0A9 /* ReleaseAdHoc */,
+				6BE29CF28E5375E92A25DCA2F4EB7505 /* ReleaseDevelopment */,
+				B9EBB5A80324C58EDA4473433F66B39D /* ReleaseProduction */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
-		13B07F931A680F5B00A75B9A /* Build configuration list for PBXNativeTarget "kiroku" */ = {
+		6E44B8D3A96B9B8AAD373500F3DFBCC4 /* Build configuration list for PBXNativeTarget "kiroku" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
-				13B07F941A680F5B00A75B9A /* Debug */,
-				4B8A786F2C88F0E1003506E2 /* DebugAdHoc */,
-				8C575B7C2BB594B2009EF0A5 /* DebugProduction */,
-				8C575B6A2BB5932C009EF0A5 /* DebugDevelopment */,
-				13B07F951A680F5B00A75B9A /* Release */,
-				4B8A78682C88EE6B003506E2 /* ReleaseAdHoc */,
-				8C575B762BB594A0009EF0A5 /* ReleaseDevelopment */,
-				8C575B792BB594A4009EF0A5 /* ReleaseProduction */,
+				4084784CF9E3019F5086662585D44528 /* Debug */,
+				2623219C899386B07E5E1732D12218E9 /* DebugAdHoc */,
+				CE7D307830464E8A54882504A8D81C22 /* DebugProduction */,
+				692CD12082DDDD205B480E167CE902DF /* DebugDevelopment */,
+				8ED207EF2A175948388B591C0419BFAA /* Release */,
+				BAEC72649D289DD70E5968F93A0AB2B2 /* ReleaseAdHoc */,
+				1A2B7D80135952A11CFB9B79B3003F00 /* ReleaseDevelopment */,
+				7A0BE35C0C4295BCE6B147E0C502631A /* ReleaseProduction */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
-		83CBB9FA1A601CBA00E9B192 /* Build configuration list for PBXProject "kiroku" */ = {
+		D33A8A289F34EFB01B84D4B29B1ABA60 /* Build configuration list for PBXProject "kiroku" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
-				83CBBA201A601CBA00E9B192 /* Debug */,
-				4B8A786E2C88F0E1003506E2 /* DebugAdHoc */,
-				8C575B7B2BB594B2009EF0A5 /* DebugProduction */,
-				8C575B692BB5932C009EF0A5 /* DebugDevelopment */,
-				83CBBA211A601CBA00E9B192 /* Release */,
-				4B8A78672C88EE6B003506E2 /* ReleaseAdHoc */,
-				8C575B752BB594A0009EF0A5 /* ReleaseDevelopment */,
-				8C575B782BB594A4009EF0A5 /* ReleaseProduction */,
+				D4BB80F1B7E9516DCFC1557BEADB98C3 /* Debug */,
+				8530664EC3DECC020CAF98033E8A50A4 /* DebugAdHoc */,
+				8958C3E49653F1F005928C57AB36BFF8 /* DebugProduction */,
+				C4CD6B36C91C3179C4F78ECEA974B6F0 /* DebugDevelopment */,
+				0DB5D5FEDC17FACCE359514C3820A71A /* Release */,
+				A90F0D3B1DCA4E5F69230E0429520026 /* ReleaseAdHoc */,
+				E50B8D847311A688DC1E6B026996C4C0 /* ReleaseDevelopment */,
+				4B8EB7FA4003260C25393B98D6902C85 /* ReleaseProduction */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
-		8C389F142C3031AE00A015D5 /* Build configuration list for PBXNativeTarget "Kiroku Watch App" */ = {
+		3B2FC5D1E33A26F1799FD346F65BF815 /* Build configuration list for PBXNativeTarget "Kiroku Watch App" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
-				8C389F152C3031AE00A015D5 /* Debug */,
-				4B8A78722C88F0E1003506E2 /* DebugAdHoc */,
-				8C389F172C3031AE00A015D5 /* DebugProduction */,
-				8C389F182C3031AE00A015D5 /* DebugDevelopment */,
-				8C389F192C3031AE00A015D5 /* Release */,
-				4B8A786B2C88EE6B003506E2 /* ReleaseAdHoc */,
-				8C389F1B2C3031AE00A015D5 /* ReleaseDevelopment */,
-				8C389F1C2C3031AE00A015D5 /* ReleaseProduction */,
+				78C4B94D163E9390430964B9DEC13BB8 /* Debug */,
+				2F230CE45229D2D70FBDBFAB024C84A3 /* DebugAdHoc */,
+				74037BE77A8C0E1A8BC1AE269103626D /* DebugProduction */,
+				9EF4FFD3E14E45631A820B30A26E3A4E /* DebugDevelopment */,
+				D59CA1D1E56310C4BB635297DA55B636 /* Release */,
+				2A8F94ED728220269646B28FA16C8A39 /* ReleaseAdHoc */,
+				995BE4D1C05C40F9D4FC088737908FED /* ReleaseDevelopment */,
+				8544D26B168CA89BB3E2217B9BB5B85F /* ReleaseProduction */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
-		8C389F1E2C3031AE00A015D5 /* Build configuration list for PBXNativeTarget "Kiroku" */ = {
+		8CED10E6FDB8490443708EB94176B348 /* Build configuration list for PBXNativeTarget "Kiroku" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
-				8C389F1F2C3031AE00A015D5 /* Debug */,
-				4B8A78712C88F0E1003506E2 /* DebugAdHoc */,
-				8C389F212C3031AE00A015D5 /* DebugProduction */,
-				8C389F222C3031AE00A015D5 /* DebugDevelopment */,
-				8C389F232C3031AE00A015D5 /* Release */,
-				4B8A786A2C88EE6B003506E2 /* ReleaseAdHoc */,
-				8C389F252C3031AE00A015D5 /* ReleaseDevelopment */,
-				8C389F262C3031AE00A015D5 /* ReleaseProduction */,
+				C11B788DDB656AC6CBB625F12D096746 /* Debug */,
+				1FCBE2D7A2E167DF8FA31B9210779FEC /* DebugAdHoc */,
+				AA65AB1BEB34187F0AC1191987156EEF /* DebugProduction */,
+				992266C61A35ABF54CBAE0899DC89309 /* DebugDevelopment */,
+				2FD2F460623DCAE6E787850D64B3C623 /* Release */,
+				D2C04473B2427A736EE0108AB229B039 /* ReleaseAdHoc */,
+				006CCD074CEEA6829910A946FB06DDE7 /* ReleaseDevelopment */,
+				8C6A6E90CDCD4F2DCC98AEA184EC9362 /* ReleaseProduction */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
-		8C389F272C3031AE00A015D5 /* Build configuration list for PBXNativeTarget "Kiroku Watch AppTests" */ = {
+		BEA60D00EB9C0B85E09A305E72DE141B /* Build configuration list for PBXNativeTarget "Kiroku Watch AppTests" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
-				8C389F282C3031AE00A015D5 /* Debug */,
-				4B8A78732C88F0E1003506E2 /* DebugAdHoc */,
-				8C389F2A2C3031AE00A015D5 /* DebugProduction */,
-				8C389F2B2C3031AE00A015D5 /* DebugDevelopment */,
-				8C389F2C2C3031AE00A015D5 /* Release */,
-				4B8A786C2C88EE6B003506E2 /* ReleaseAdHoc */,
-				8C389F2E2C3031AE00A015D5 /* ReleaseDevelopment */,
-				8C389F2F2C3031AE00A015D5 /* ReleaseProduction */,
+				E11A28D6742DAFBAF086D9A36EC332AC /* Debug */,
+				3A2B878DCC8E8F978455291787EDBC57 /* DebugAdHoc */,
+				D2DAE10CBF1AFF9352A8D1172E9B03C0 /* DebugProduction */,
+				44D45B23706284C25C2AD59C37F15CE7 /* DebugDevelopment */,
+				BE07C0864CA39D6985E576646AEE437C /* Release */,
+				323A938B315B51C0B4F575F5CA1E7507 /* ReleaseAdHoc */,
+				E86CF4299DB2C75CF84DAFA51A4D3230 /* ReleaseDevelopment */,
+				B8DE816838DB879C8B9A1FC2E6AF2DA5 /* ReleaseProduction */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
-		8C389F302C3031AE00A015D5 /* Build configuration list for PBXNativeTarget "Kiroku Watch AppUITests" */ = {
+		D6E0D2B6C656C63C00B7A26BD6E943D1 /* Build configuration list for PBXNativeTarget "Kiroku Watch AppUITests" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
-				8C389F312C3031AE00A015D5 /* Debug */,
-				4B8A78742C88F0E1003506E2 /* DebugAdHoc */,
-				8C389F332C3031AE00A015D5 /* DebugProduction */,
-				8C389F342C3031AE00A015D5 /* DebugDevelopment */,
-				8C389F352C3031AE00A015D5 /* Release */,
-				4B8A786D2C88EE6B003506E2 /* ReleaseAdHoc */,
-				8C389F372C3031AE00A015D5 /* ReleaseDevelopment */,
-				8C389F382C3031AE00A015D5 /* ReleaseProduction */,
+				AA5E98AA958F868EC6E012F604858473 /* Debug */,
+				EE5C37372F92C70EEB6F1C1E89B258CC /* DebugAdHoc */,
+				243CBC7A87162AADAFA2F911F37D00C7 /* DebugProduction */,
+				8E3E7003E06CF15470D9BF823C5DBEF4 /* DebugDevelopment */,
+				F59338298E92C020428E267BF46D68E7 /* Release */,
+				B041A3AFC8B4093D1B8E829A36FFEE10 /* ReleaseAdHoc */,
+				30558D2B8D31D5055041BB4F66823865 /* ReleaseDevelopment */,
+				58BF1D09C4D844A439E313CCA833CBDC /* ReleaseProduction */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
 /* End XCConfigurationList section */
 	};
-	rootObject = 83CBB9F71A601CBA00E9B192 /* Project object */;
+	rootObject = D2A5813054ACA3B6901A52E154E07BC5 /* Project object */;
 }
