@@ -38,26 +38,31 @@ The application uses a nested provider structure for context management:
 ### Core Functionality
 
 1. **Drinking Session Management**
+
    - Session creation, editing, and deletion
    - Real-time session tracking
    - Drink logging within sessions
    - Session notes
 
 2. **Calendar & History**
+
    - Monthly calendar view of past sessions
    - Session history browsing
    - Paginated calendar data loading
 
 3. **User Profile & Account**
+
    - Profile management (display name, username, legal name, date of birth)
    - Account settings and preferences
    - Account deletion flow
 
 4. **Preferences**
+
    - Theme selection (light/dark mode)
    - App-wide preference persistence
 
 5. **Notifications**
+
    - Push notification opt-in/out
    - Focus mode alerts
 
@@ -265,6 +270,18 @@ npm run android
 # Web build
 npm run web
 ```
+
+### iOS dev tooling — `xUnique`
+
+The Podfile's `post_install` hook runs [`xUnique`](https://github.com/truebit/xUnique) after every `pod install` to keep `ios/kiroku.xcodeproj/project.pbxproj` diffs deterministic (CocoaPods otherwise assigns fresh random UUIDs every run, producing hundreds of lines of meaningless churn).
+
+Install once:
+
+```bash
+pip3 install --user xUnique
+```
+
+Then make sure the install location is on your `PATH` (e.g. `~/.local/bin` or `~/Library/Python/3.x/bin`). The post_install hook auto-discovers common locations; if it can't find `xunique`, it prints a warning and continues — the build still works, but the pbxproj will accumulate random-UUID noise on each `pod install` that you'll need to discard manually with `git checkout ios/kiroku.xcodeproj/project.pbxproj`.
 
 ## Architecture Decisions
 
