@@ -49,7 +49,8 @@
     "kill-metro": "lsof -ti:8081 | xargs kill -9 2>/dev/null",
     "bump": "./scripts/bumpVersion.sh",
     "build": "tsc",
-    "generate-icons": "node scripts/generate-icons.mjs"
+    "generate-icons": "node scripts/generate-icons.mjs",
+    "sync-brand-colors": "node scripts/sync-brand-colors.mjs"
   },
   "dependencies": {
     "@babel/plugin-proposal-private-methods": "^7.18.6",
