@@ -7,7 +7,7 @@ import type {
 import type {UserList} from '@src/types/onyx/OnyxCommon';
 import {useCallback, useEffect, useState} from 'react';
 import {useFirebase} from '@context/global/FirebaseContext';
-import {isNonEmptyArray} from '@libs/Validation';
+import {isEmptyArray} from '@src/types/utils/EmptyObject';
 import {searchArrayByText, getNicknameMapping} from '@libs/Search';
 import * as Profile from '@userActions/Profile';
 import SearchResult from '@components/Search/SearchResult';
@@ -145,7 +145,7 @@ function FriendsFriendsScreen({route}: FriendsFriendsScreenProps) {
   const updateHooksBasedOnSearchResults = useCallback(
     async (searchResults: UserSearchResults): Promise<void> => {
       await updateDisplayData(searchResults);
-      const newNoUsersFound = !isNonEmptyArray(searchResults);
+      const newNoUsersFound = isEmptyArray(searchResults);
       setNoUsersFound(newNoUsersFound);
     },
     [updateDisplayData],
@@ -198,7 +198,7 @@ function FriendsFriendsScreen({route}: FriendsFriendsScreenProps) {
 
   useEffect(() => {
     let newNoUsersFound = true;
-    if (isNonEmptyArray(displayedFriends)) {
+    if (!isEmptyArray(displayedFriends)) {
       newNoUsersFound = false;
     }
     setNoUsersFound(newNoUsersFound);
@@ -230,7 +230,7 @@ function FriendsFriendsScreen({route}: FriendsFriendsScreenProps) {
             <FlexibleLoadingIndicator />
           ) : (
             <View>
-              {isNonEmptyArray(displayedFriends) ? (
+              {!isEmptyArray(displayedFriends) ? (
                 <View style={styles.appBG}>
                   <GrayHeader
                     headerText={`${translate('friendsFriendsScreen.commonFriends')} (${getCommonFriendsCount(

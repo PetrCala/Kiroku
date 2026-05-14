@@ -82,42 +82,5 @@ const validateAppVersion = (
   };
 };
 
-/**
- * Check whether an element is a non-empty object of a specific type.
- *
- * @description
- * Validate that the object is a JSON-like type object with at least one key-value pair.
- * For arrays, return false.
- *
- * @param input Element/variable to check
- * @returns True if the element is a non-empty object, false otherwise.
- */
-function isNonEmptyObject<T>(input: unknown): input is T {
-  try {
-    return (
-      input !== null &&
-      typeof input === 'object' &&
-      !Array.isArray(input) &&
-      Object.keys(input).length > 0
-    );
-  } catch (error) {
-    return false;
-  }
-}
-
-/**
- * Checks if the input is a non-empty array of a specific type.
- * @param input - The input to be checked.
- * @returns True if the input is a non-empty array, false otherwise.
- */
-function isNonEmptyArray<T>(input: unknown): input is T[] {
-  return Array.isArray(input) && input.length > 0;
-}
-export {
-  cleanSemver,
-  isNonEmptyObject,
-  isNonEmptyArray,
-  validateAppVersion,
-  validateSemver,
-};
+export {cleanSemver, validateAppVersion, validateSemver};
 export type {ValidationResult};

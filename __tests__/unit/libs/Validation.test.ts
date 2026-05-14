@@ -1,47 +1,49 @@
-import {cleanSemver, isNonEmptyObject, validateSemver} from '@libs/Validation';
+import {cleanSemver, validateSemver} from '@libs/Validation';
+import {isEmptyArray, isEmptyObject} from '@src/types/utils/EmptyObject';
 
-describe('isNonEmptyObject', () => {
-  it('should return true for non-empty objects', () => {
-    const nonEmptyObject = {key: 'value'};
-    expect(isNonEmptyObject(nonEmptyObject)).toBeTruthy();
+describe('isEmptyObject', () => {
+  it('should return false for non-empty objects', () => {
+    expect(isEmptyObject({key: 'value'})).toBeFalsy();
   });
 
-  it('should return false for empty objects', () => {
-    const emptyObject = {};
-    expect(isNonEmptyObject(emptyObject)).toBeFalsy();
+  it('should return true for empty objects', () => {
+    expect(isEmptyObject({})).toBeTruthy();
   });
 
-  it('should return false for non-object types', () => {
+  it('should return true for null and undefined', () => {
+    expect(isEmptyObject(null)).toBeTruthy();
+    expect(isEmptyObject(undefined)).toBeTruthy();
+  });
+
+  it('should not throw for null or undefined', () => {
+    expect(() => isEmptyObject(null)).not.toThrow();
+    expect(() => isEmptyObject(undefined)).not.toThrow();
+  });
+});
+
+describe('isEmptyArray', () => {
+  it('should return false for non-empty arrays', () => {
+    expect(isEmptyArray([1, 2, 3])).toBeFalsy();
+    expect(isEmptyArray(['a'])).toBeFalsy();
+  });
+
+  it('should return true for empty arrays', () => {
+    expect(isEmptyArray([])).toBeTruthy();
+  });
+
+  it('should return true for non-array types', () => {
     const testData = [
       42,
       'string',
       true,
       null,
       undefined,
-      [],
+      {key: 'value'},
       () => {},
-      Symbol('sym'),
     ];
     testData.forEach(value => {
-      expect(isNonEmptyObject(value)).toBeFalsy();
+      expect(isEmptyArray(value)).toBeTruthy();
     });
-  });
-
-  it('should not throw an exception for null or undefined values', () => {
-    const values = [null, undefined];
-    values.forEach(value => {
-      expect(() => isNonEmptyObject(value)).not.toThrow();
-    });
-  });
-
-  it('should return false for arrays, even if they are not empty', () => {
-    const nonEmptyArray = [1, 2, 3];
-    expect(isNonEmptyObject(nonEmptyArray)).toBeFalsy();
-  });
-
-  it('should return false undefined', () => {
-    const nonEmptyArray = undefined;
-    expect(isNonEmptyObject(nonEmptyArray)).toBeFalsy();
   });
 });
 
@@ -106,5 +108,3 @@ describe('Test the cleanSemver function', () => {
     expect(cleanSemver('abc')).toBe('abc');
   });
 });
-
-// TODO test isNonEmptyArray

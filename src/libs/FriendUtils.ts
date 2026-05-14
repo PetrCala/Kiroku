@@ -4,7 +4,7 @@ import type {UserArray, UserList} from '@src/types/onyx/OnyxCommon';
 import type {Database} from 'firebase/database';
 import CONST from '@src/CONST';
 import DBPATHS from '@src/DBPATHS';
-import {isNonEmptyArray} from './Validation';
+import {isEmptyArray} from '@src/types/utils/EmptyObject';
 
 async function fetchUserFriends(
   db: Database,
@@ -27,7 +27,7 @@ function getCommonFriends(
   user2FriendIds: UserArray,
 ): UserArray {
   let commonFriends: UserArray = [];
-  if (!isNonEmptyArray(user1FriendIds) && !isNonEmptyArray(user2FriendIds)) {
+  if (isEmptyArray(user1FriendIds) && isEmptyArray(user2FriendIds)) {
     return commonFriends;
   }
   commonFriends = user2FriendIds.filter(friendId =>
