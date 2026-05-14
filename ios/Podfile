@@ -135,5 +135,30 @@ target 'kiroku' do
         end
       end
     end
+
+    # Normalize project.pbxproj UUIDs so pod install doesn't produce noisy diffs.
+    # xUnique replaces CocoaPods' random per-run UUIDs with deterministic hashes
+    # of object identity. Soft-warns and continues if not installed.
+    xunique_bin = `command -v xunique 2>/dev/null`.strip
+    if xunique_bin.empty?
+      candidate_dirs = [
+        File.expand_path('~/.local/bin'),
+        File.expand_path('~/Library/Python/3.13/bin'),
+        File.expand_path('~/Library/Python/3.12/bin'),
+        File.expand_path('~/Library/Python/3.11/bin'),
+        File.expand_path('~/Library/Python/3.10/bin'),
+        File.expand_path('~/Library/Python/3.9/bin'),
+      ]
+      xunique_bin = candidate_dirs
+        .map { |dir| File.join(dir, 'xunique') }
+        .find { |path| File.executable?(path) } || ''
+    end
+    if xunique_bin.empty?
+      Pod::UI.warn 'xUnique not found on PATH; project.pbxproj UUIDs will not be normalized. Install with `pip3 install --user xUnique` (and ensure its bin directory is on PATH) to keep `pod install` diffs clean.'
+    else
+      project_path = File.expand_path('kiroku.xcodeproj', __dir__)
+      Pod::UI.puts "Normalizing project.pbxproj UUIDs via #{xunique_bin}"
+      system("#{xunique_bin} -u -s '#{project_path}'")
+    end
   end
 end
