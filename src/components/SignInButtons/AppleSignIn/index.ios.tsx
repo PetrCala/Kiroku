@@ -64,10 +64,10 @@ function AppleSignIn({onPress = () => {}}: AppleSignInProps) {
 
   return (
     <AppleButton
-      buttonStyle={AppleButton.Style.WHITE}
+      buttonStyle={AppleButton.Style.BLACK}
       buttonType={AppleButton.Type.SIGN_IN}
-      cornerRadius={22}
-      style={{height: 44, width: 44}}
+      cornerRadius={8}
+      style={{height: 48, width: '100%'}}
       onPress={() => {
         handleSignIn();
       }}

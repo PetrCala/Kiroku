@@ -1,4 +1,5 @@
 import React, {useRef} from 'react';
+import {View} from 'react-native';
 import {useFocusEffect} from '@react-navigation/native';
 import {useFirebase} from '@context/global/FirebaseContext';
 import Navigation from '@navigation/Navigation';
@@ -89,13 +90,14 @@ function InitialScreen() {
             }}
           />
         )}
-        <Button
-          large
-          success
-          text={translate('common.getStarted')}
-          onPress={onGetStarted}
-          style={[styles.mt5, styles.mb5]}
-        />
+        <View style={[styles.mt5, styles.mb5]}>
+          <Button
+            large
+            success
+            text={translate('common.getStarted')}
+            onPress={onGetStarted}
+          />
+        </View>
       </SignUpScreenLayout>
     </ScreenWrapper>
   );

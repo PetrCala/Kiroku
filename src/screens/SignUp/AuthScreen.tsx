@@ -163,13 +163,7 @@ function AuthScreen() {
           welcomeText=""
           ref={currentScreenLayoutRef}
           navigateFocus={navigateFocus}>
-          <View
-            style={[
-              styles.flexRow,
-              styles.justifyContentCenter,
-              styles.gap3,
-              styles.mb4,
-            ]}>
+          <View style={[styles.gap3, styles.mb4]}>
             <AppleSignIn />
             <GoogleSignIn />
           </View>
