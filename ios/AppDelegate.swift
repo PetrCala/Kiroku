@@ -38,6 +38,9 @@ class AppDelegate: ExpoAppDelegate {
     bindReactNativeFactory(factory)
 
     window = UIWindow(frame: UIScreen.main.bounds)
+    // Match BootSplash.storyboard background so there is never a white frame
+    // peeking through during the OS LaunchScreen → RCTBootSplash overlay handoff.
+    window?.backgroundColor = UIColor(red: 0.9607843, green: 0.76862745, blue: 0, alpha: 1)
     factory.startReactNative(
       withModuleName: "kiroku",
       in: window,
@@ -50,7 +53,12 @@ class AppDelegate: ExpoAppDelegate {
 
     _ = super.application(application, didFinishLaunchingWithOptions: launchOptions)
 
-    if let rootView = self.window?.rootViewController?.view as? RCTRootView {
+    // On New Arch the root view is RCTSurfaceHostingProxyRootView, which does
+    // not inherit from RCTRootView — an `as? RCTRootView` cast returns nil and
+    // skips RCTBootSplash entirely, leaving a white gap between the OS
+    // LaunchScreen and React's first paint. Pass the root view as UIView;
+    // RCTBootSplash.mm re-casts to RCTSurfaceHostingProxyRootView internally.
+    if let rootView = self.window?.rootViewController?.view {
       RCTBootSplash.initWithStoryboard("BootSplash", rootView: rootView)
     }
 
