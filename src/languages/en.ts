@@ -80,6 +80,7 @@ export default {
     signInWithApple: 'Sign in with Apple',
     signInWith: 'Sign in with',
     continue: 'Continue',
+    getStarted: 'Get started',
     firstName: 'First name',
     lastName: 'Last name',
     displayName: 'Display name',

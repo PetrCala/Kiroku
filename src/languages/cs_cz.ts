@@ -80,6 +80,7 @@ export default {
     signInWithApple: 'Přihlásit se přes Apple',
     signInWith: 'Přihlásit se přes',
     continue: 'Pokračovat',
+    getStarted: 'Začít',
     firstName: 'Křestní jméno',
     lastName: 'Příjmení',
     displayName: 'Přezdívka',
