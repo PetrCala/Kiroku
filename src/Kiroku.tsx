@@ -17,7 +17,7 @@ import * as User from './libs/actions/User';
 import Navigation from './libs/Navigation/Navigation';
 import NavigationRoot from './libs/Navigation/NavigationRoot';
 // import PushNotification from '@libs/Notification/PushNotification';
-import BootSplash from './libs/BootSplash';
+import SplashScreenHider from './components/SplashScreenHider';
 import Log from './libs/Log';
 import migrateOnyx from './libs/migrateOnyx';
 import * as ActiveClientManager from './libs/ActiveClientManager';
@@ -145,44 +145,17 @@ function Kiroku() {
     Navigation.setIsNavigationReady();
   }, []);
 
-  const hasHiddenSplash = useRef(false);
-
-  const hideSplash = useCallback(() => {
-    if (hasHiddenSplash.current) {
-      return;
-    }
-    hasHiddenSplash.current = true;
-    BootSplash.hide().finally(() => {
-      setSplashScreenState(CONST.BOOT_SPLASH_STATE.HIDDEN);
-    });
+  // Splash hide is driven by <SplashScreenHider /> below. It calls
+  // BootSplash.hide() (the 250ms native crossDissolve under the in-process
+  // storyboard subview) and then runs its own 250ms JS scale+opacity fade
+  // before signaling onHide here. The JS overlay covers the React tree the
+  // whole time, so the home screen's first-paint loading indicator is not
+  // visible to the user before content arrives — the same masking the old
+  // pre-PR #325 design provided. The overlay also owns the 15s force-hide
+  // safety timeout so a stuck gating condition can't pin the splash forever.
+  const onSplashHide = useCallback(() => {
+    setSplashScreenState(CONST.BOOT_SPLASH_STATE.HIDDEN);
   }, [setSplashScreenState]);
-
-  // Drive the native RCTBootSplash hide once startup gating conditions are met.
-  // The native module performs the 250ms crossDissolve in
-  // ios/kiroku/RCTBootSplash.mm — we don't render a JS overlay anymore.
-  useEffect(() => {
-    if (!shouldHideSplash) {
-      return;
-    }
-    hideSplash();
-  }, [shouldHideSplash, hideSplash]);
-
-  // Safety net: if shouldHideSplash never becomes true (e.g. a startup gate
-  // deadlocks), force-hide so the user is never stuck on the splash overlay.
-  useEffect(() => {
-    const timeoutId = setTimeout(() => {
-      if (hasHiddenSplash.current) {
-        return;
-      }
-      Log.alert(
-        '[BootSplash] shouldHideSplash never became true, force-hiding splash',
-        {timeoutMs: 15 * 1000},
-        false,
-      );
-      hideSplash();
-    }, 15 * 1000);
-    return () => clearTimeout(timeoutId);
-  }, [hideSplash]);
 
   useLayoutEffect(() => {
     // Initialize this client as being an active client
@@ -344,6 +317,12 @@ function Kiroku() {
         lastVisitedPath={lastVisitedPath as Route}
         initialUrl={initialUrl}
       />
+      {splashScreenState !== CONST.BOOT_SPLASH_STATE.HIDDEN && (
+        <SplashScreenHider
+          shouldHideSplash={shouldHideSplash}
+          onHide={onSplashHide}
+        />
+      )}
     </>
   );
 }
