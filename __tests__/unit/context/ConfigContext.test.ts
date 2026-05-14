@@ -1,3 +1,7 @@
+/**
+ * @jest-environment node
+ */
+
 import type {AppSettings} from '@src/types/onyx';
 import {validateAppVersion} from '@libs/Validation';
 

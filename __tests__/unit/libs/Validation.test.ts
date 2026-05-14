@@ -1,3 +1,7 @@
+/**
+ * @jest-environment node
+ */
+
 import {cleanSemver, isNonEmptyObject, validateSemver} from '@libs/Validation';
 
 describe('isNonEmptyObject', () => {

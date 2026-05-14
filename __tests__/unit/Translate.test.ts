@@ -1,3 +1,7 @@
+/**
+ * @jest-environment node
+ */
+
 /* eslint-disable @typescript-eslint/naming-convention */
 import CONFIG from '@src/CONFIG';
 import CONST from '@src/CONST';

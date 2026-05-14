@@ -1,3 +1,7 @@
+/**
+ * @jest-environment node
+ */
+
 import type {CommitType} from '@github/libs/GitUtils';
 import GitUtils from '@github/libs/GitUtils';
 import {

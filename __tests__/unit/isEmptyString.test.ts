@@ -1,3 +1,7 @@
+/**
+ * @jest-environment node
+ */
+
 // import enEmojis from '@assets/emojis/en';
 import StringUtils from '@libs/StringUtils';
 
