@@ -69,7 +69,7 @@ function SplashScreenHider({
             duration: 250,
             easing: Easing.out(Easing.ease),
           },
-          runOnJS(onHide),
+          () => runOnJS(onHide)(),
         ),
       );
     });
