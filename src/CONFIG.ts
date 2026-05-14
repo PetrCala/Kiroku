@@ -111,6 +111,19 @@ export default {
     SUFFIX: get(Config, 'PUSHER_DEV_SUFFIX', ''),
     CLUSTER: 'mt1',
   },
+  APPLE_SIGN_IN: {
+    SERVICE_ID: 'org.reactjs.native.example.alcohol-tracker.signin',
+    REDIRECT_URI:
+      'https://dev-alcohol-tracker-db.firebaseapp.com/__/auth/handler',
+  },
+  GOOGLE_SIGN_IN: {
+    WEB_CLIENT_ID:
+      '665512857657-59e75jfp7p7tjt3dn6rqm8pcin0oq4p8.apps.googleusercontent.com',
+    IOS_CLIENT_ID:
+      '200327501992-07u3boj39j65sltumv2lbd2jk5nr416q.apps.googleusercontent.com',
+    ANDROID_CLIENT_ID:
+      '200327501992-dd7hj1pl6rdok1fnka4rb2utfavuj6ds.apps.googleusercontent.com',
+  },
   SEND_CRASH_REPORTS: get(Config, 'SEND_CRASH_REPORTS', 'false') === 'true',
   IS_USING_EMULATORS: get(Config, 'USE_EMULATORS', 'false') === 'true',
   TEST_PROJECT_ID: 'alcohol-tracker-db',

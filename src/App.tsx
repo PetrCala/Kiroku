@@ -21,6 +21,7 @@ import ThemeStylesProvider from './components/ThemeStylesProvider';
 import SafeArea from './components/SafeArea';
 import CustomStatusBarAndBackground from './components/CustomStatusBarAndBackground';
 import CustomStatusBarAndBackgroundContextProvider from './components/CustomStatusBarAndBackground/CustomStatusBarAndBackgroundContextProvider';
+import AppleAuthWrapper from './components/SignInButtons/AppleAuthWrapper';
 import type {Route} from './ROUTES';
 import Kiroku from './Kiroku';
 // import OnyxUpdateManager from './libs/actions/OnyxUpdateManager';
@@ -65,6 +66,7 @@ function App({url}: KirokuProps): React.JSX.Element {
               CustomStatusBarAndBackgroundContextProvider,
               ActiveElementRoleProvider,
             ]}>
+            <AppleAuthWrapper />
             <CustomStatusBarAndBackground />
             <ErrorBoundary errorMessage="Kiroku crash caught by error boundary">
               <ColorSchemeWrapper>

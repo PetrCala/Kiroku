@@ -13,12 +13,13 @@ import type {
   UserStatus,
 } from '@src/types/onyx';
 import type {Timestamp, UserID, UserList} from '@src/types/onyx/OnyxCommon';
-import type {Auth, User, UserCredential} from 'firebase/auth';
+import type {Auth, AuthCredential, User, UserCredential} from 'firebase/auth';
 import {
   EmailAuthProvider,
   createUserWithEmailAndPassword,
   reauthenticateWithCredential,
   sendEmailVerification,
+  signInWithCredential,
   signInWithEmailAndPassword,
   updatePassword as fbUpdatePassword,
   updateProfile,
@@ -556,6 +557,38 @@ async function setAppUpdateDismissed(timestamp: Timestamp): Promise<void> {
   await Onyx.merge(ONYXKEYS.APP_UPDATE_DISMISSED, timestamp);
 }
 
+/**
+ * Sign in (or sign up) using a Firebase OAuth credential from Apple or Google.
+ * If the user does not yet exist in the Realtime Database, creates their profile.
+ *
+ * @param auth The Firebase authentication object
+ * @param db The Firebase Realtime Database object
+ * @param credential The OAuth credential (OAuthProvider or GoogleAuthProvider)
+ * @param displayName Optional display name captured from the OAuth provider response
+ */
+async function signInWithOAuth(
+  auth: Auth,
+  db: Database,
+  credential: AuthCredential,
+  displayName?: string | null,
+): Promise<void> {
+  const userCredential = await signInWithCredential(auth, credential);
+  const {user} = userCredential;
+  const exists = await userExistsInDatabase(db, user.uid);
+  if (!exists) {
+    const name =
+      displayName ?? user.displayName ?? user.email?.split('@').at(0) ?? 'User';
+    const profileData: Profile = {
+      display_name: name,
+      photo_url: user.photoURL ?? '',
+    };
+    await pushNewUserInfo(db, user.uid, profileData);
+    await updateProfile(user, {displayName: name});
+  }
+  Session.clearSignInData();
+  Navigation.navigate(ROUTES.HOME);
+}
+
 /** Attempt to log in to the Firebase authentication service with a user's credentials
  *
  * @param auth The Firebase authentication object
@@ -680,5 +713,6 @@ export {
   updatePassword,
   userExistsInDatabase,
   logIn,
+  signInWithOAuth,
   signUp,
 };

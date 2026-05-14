@@ -1,5 +1,8 @@
 import React, {useCallback, useRef} from 'react';
+import {View} from 'react-native';
 import {useFocusEffect} from '@react-navigation/native';
+import AppleSignIn from '@components/SignInButtons/AppleSignIn';
+import GoogleSignIn from '@components/SignInButtons/GoogleSignIn';
 import {useFirebase} from '@context/global/FirebaseContext';
 import Navigation from '@navigation/Navigation';
 import ROUTES from '@src/ROUTES';
@@ -80,15 +83,11 @@ function InitialScreen() {
     [closeAccount?.success, translate],
   );
 
-  // function getSignInWithStyles() {
-  //   return shouldUseNarrowLayout ? [styles.mt1] : [styles.mt5, styles.mb5];
-  // }
-
-  // const isSigningWithAppleOrGoogle = useRef(false);
-  // const setIsSigningWithAppleOrGoogle = useCallback(
-  //   (isPressed: boolean) => (isSigningWithAppleOrGoogle.current = isPressed),
-  //   [],
-  // );
+  const isSigningWithAppleOrGoogle = useRef(false);
+  const setIsSigningWithAppleOrGoogle = useCallback(
+    (isPressed: boolean) => (isSigningWithAppleOrGoogle.current = isPressed),
+    [],
+  );
 
   useFocusEffect(
     // Redirect to main screen if user is already logged in (from sign up screen only)
@@ -162,33 +161,16 @@ function InitialScreen() {
           )}
         </FormProvider>
         <ChangeSignUpScreenLink navigatesTo={ROUTES.LOG_IN} />
-        {/* --- OR --- */}
-        {/* {
-          // This feature has a few behavioral differences in development mode. To prevent confusion
-          // for developers about possible regressions, we won't render buttons in development mode.
-          // For more information about these differences and how to test in development mode,
-          // see`Expensify/App/contributingGuides/APPLE_GOOGLE_SIGNIN.md`
-          CONFIG.ENVIRONMENT !== CONST.ENVIRONMENT.DEV && (
-              <View style={[getSignInWithStyles()]}>
-                  <Text
-                      accessibilityElementsHidden
-                      importantForAccessibility="no-hide-descendants"
-                      style={[styles.textLabelSupporting, styles.textAlignCenter, styles.mb3, styles.mt2]}
-                  >
-                      {translate('common.signInWith')}
-                  </Text>
-
-                  <View style={shouldUseNarrowLayout ? styles.loginButtonRowSmallScreen : styles.loginButtonRow}>
-                      <View>
-                          <AppleSignIn onPress={() => setIsSigningWithAppleOrGoogle(true)} />
-                      </View>
-                      <View>
-                          <GoogleSignIn onPress={() => setIsSigningWithAppleOrGoogle(true)} />
-                      </View>
-                  </View>
-              </View>
-          )
-      } */}
+        <View
+          style={[
+            styles.flexRow,
+            styles.justifyContentCenter,
+            styles.gap3,
+            styles.mt4,
+          ]}>
+          <AppleSignIn onPress={() => setIsSigningWithAppleOrGoogle(true)} />
+          <GoogleSignIn onPress={() => setIsSigningWithAppleOrGoogle(true)} />
+        </View>
       </SignUpScreenLayout>
     </ScreenWrapper>
   );
