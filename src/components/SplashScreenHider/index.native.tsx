@@ -12,11 +12,17 @@ import * as KirokuIcons from '@components/Icon/KirokuIcons';
 import ImageSVG from '@components/ImageSVG';
 import useThemeStyles from '@hooks/useThemeStyles';
 import BootSplash from '@libs/BootSplash';
+import Log from '@libs/Log';
 import colors from '@src/styles/theme/colors';
 import type {
   SplashScreenHiderProps,
   SplashScreenHiderReturnType,
 } from './types';
+
+// Force-hide the splash if shouldHideSplash hasn't fired by this point.
+// Protects against deadlocks where a gating condition (e.g. hasCheckedAutoLogin)
+// never flips and the user is left staring at the yellow overlay indefinitely.
+const FORCE_HIDE_TIMEOUT_MS = 15 * 1000;
 
 function SplashScreenHider({
   onHide = () => {},
@@ -75,6 +81,22 @@ function SplashScreenHider({
     }
     hide();
   }, [shouldHideSplash, hide]);
+
+  useEffect(() => {
+    const timeoutId = setTimeout(() => {
+      if (hideHasBeenCalled.current) {
+        return;
+      }
+      Log.alert(
+        '[BootSplash] shouldHideSplash never became true, force-hiding splash',
+        {timeoutMs: FORCE_HIDE_TIMEOUT_MS},
+        false,
+      );
+      hide();
+    }, FORCE_HIDE_TIMEOUT_MS);
+
+    return () => clearTimeout(timeoutId);
+  }, [hide]);
 
   return (
     <Reanimated.View
