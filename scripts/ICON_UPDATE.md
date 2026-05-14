@@ -20,21 +20,24 @@ Whenever you want to change the icon, follow the steps below.
 ### Single source of truth
 
 - [`assets/images/app-logo.svg`](../assets/images/app-logo.svg) — the master
-  logo. Square, monochrome (single fill color), 1024×1024.
+  logo. Square, 1024×1024. **The silhouette must be white (`#FFFFFF`)** — the
+  script bakes the brand orange (`#F5C400`) underneath on opaque surfaces and
+  composites the same white art onto separately-configured orange backdrops on
+  transparent surfaces. See [Color model](#color-model) for the full table.
 
 ### Regenerated outputs (do not hand-edit)
 
-| Target | Output |
-|---|---|
-| iOS app icons | `ios/kiroku/Images.xcassets/AppIcon{,Dev,Staging,AdHoc}.appiconset/*.png` + `Contents.json` |
-| iOS boot splash | `ios/kiroku/Images.xcassets/BootSplashLogo{,Dev,Staging,AdHoc}.imageset/*.png` + `Contents.json` |
-| Android launcher | `android/app/src/{main,development,staging,adhoc}/res/mipmap-*/ic_launcher{,_background,_foreground,_monochrome}.png` |
-| Android adaptive XML | `android/app/src/{main,development,staging,adhoc}/res/mipmap-anydpi-v26/ic_launcher{,_round}.xml` |
-| Android boot splash | `android/app/src/{main,development,staging,adhoc}/res/drawable-*/bootsplash_logo.png` |
-| Android notifications | `android/app/src/main/res/drawable-*/ic_notification.png` |
-| In-app SVG logos | `assets/images/app-logo--{prod,dev,staging,adhoc}.svg` (used by [`src/components/KirokuLogo.tsx`](../src/components/KirokuLogo.tsx)) |
-| Web | `web/{favicon.png,apple-touch-icon.png,og-preview-image.png}` |
-| Web manifest | `web/manifest.json` (created on first run only; preserved on subsequent runs) |
+| Target                | Output                                                                                                                               |
+| --------------------- | ------------------------------------------------------------------------------------------------------------------------------------ |
+| iOS app icons         | `ios/kiroku/Images.xcassets/AppIcon{,Dev,Staging,AdHoc}.appiconset/*.png` + `Contents.json`                                          |
+| iOS boot splash       | `ios/kiroku/Images.xcassets/BootSplashLogo{,Dev,Staging,AdHoc}.imageset/*.png` + `Contents.json`                                     |
+| Android launcher      | `android/app/src/{main,development,staging,adhoc}/res/mipmap-*/ic_launcher{,_background,_foreground,_monochrome}.png`                |
+| Android adaptive XML  | `android/app/src/{main,development,staging,adhoc}/res/mipmap-anydpi-v26/ic_launcher{,_round}.xml`                                    |
+| Android boot splash   | `android/app/src/{main,development,staging,adhoc}/res/drawable-*/bootsplash_logo.png`                                                |
+| Android notifications | `android/app/src/main/res/drawable-*/ic_notification.png`                                                                            |
+| In-app SVG logos      | `assets/images/app-logo--{prod,dev,staging,adhoc}.svg` (used by [`src/components/KirokuLogo.tsx`](../src/components/KirokuLogo.tsx)) |
+| Web                   | `web/{favicon.png,apple-touch-icon.png,og-preview-image.png}`                                                                        |
+| Web manifest          | `web/manifest.json` (created on first run only; preserved on subsequent runs)                                                        |
 
 ### Static config you should know about (not regenerated)
 
@@ -78,16 +81,58 @@ git commit -m "Update app icon"
 That is the entire flow for production / dev / staging / adhoc. The script is
 idempotent — re-running it produces identical output for an unchanged source SVG.
 
+### Color model
+
+The pipeline treats the master SVG as a **white silhouette** and the orange
+brand color (`BRAND_BG = '#F5C400'`, defined at the top of
+[`scripts/generate-icons.mjs`](generate-icons.mjs)) as the standard background.
+Different surfaces need different treatments:
+
+| Surface                                     | Logo          | Background                                                                                 |
+| ------------------------------------------- | ------------- | ------------------------------------------------------------------------------------------ |
+| iOS app icons                               | white         | baked orange (Apple requires opaque)                                                       |
+| iOS boot splash                             | white         | transparent — storyboard view bg provides orange                                           |
+| Android legacy launcher (`ic_launcher.png`) | white         | baked orange                                                                               |
+| Android adaptive foreground                 | white         | transparent                                                                                |
+| Android adaptive background                 | —             | solid orange, no logo                                                                      |
+| Android adaptive monochrome                 | white shape   | transparent (OS tints)                                                                     |
+| Android boot splash                         | white         | transparent — `bootsplash_background` color provides orange                                |
+| Android notification icons                  | white shape   | transparent (system tints)                                                                 |
+| Web favicon / apple-touch / og-preview      | white         | baked orange                                                                               |
+| In-app `app-logo--*.svg`                    | white in file | tinted at render time via [`ImageSVG`](../src/components/ImageSVG/) `fill={theme.appLogo}` |
+
+#### If you change `BRAND_BG`
+
+The script reads it from a single constant, but **four** other files contain
+the same color and must be updated together or the launch experience will
+flash a mismatched color:
+
+- `android/app/src/main/res/values/colors.xml` → `bootsplash_background`
+- `android/app/src/main/res/values/ic_launcher_background.xml` → `ic_launcher_background`
+- `ios/kiroku/BootSplash.storyboard` → root view `backgroundColor` (storyboard
+  stores colors as 0–1 floats; `#F5C400` ≈ `red="0.9607843" green="0.76862745" blue="0"`)
+- `scripts/generate-icons.mjs` → `BRAND_BG`
+
+#### Why white master, not dark
+
+In-app rendering uses [`expo-image`](../src/components/ImageSVG/index.ios.tsx)'s
+`tintColor` prop, which replaces the entire image color regardless of the SVG's
+internal fills. So the master color has **no effect** on in-app theming — the
+theme provides whatever color the current screen needs. But the master color
+**directly determines** what color shows up in every rasterized PNG, where
+there is no theme tinting. White is correct because every PNG surface either
+sits on the orange brand background or gets tinted by the OS.
+
 ### Variant badges
 
 Non-production icons get a colored corner triangle so you can tell builds apart:
 
-| Variant | Badge label | Color |
-|---|---|---|
-| prod | _(no badge)_ | — |
-| dev | `DEV` | blue (`#007AFF`) |
-| staging | `STG` | orange (`#FF9500`) |
-| adhoc | `ADHOC` | purple (`#AF52DE`) |
+| Variant | Badge label  | Color              |
+| ------- | ------------ | ------------------ |
+| prod    | _(no badge)_ | —                  |
+| dev     | `DEV`        | blue (`#007AFF`)   |
+| staging | `STG`        | orange (`#FF9500`) |
+| adhoc   | `ADHOC`      | purple (`#AF52DE`) |
 
 To change a badge label or color, edit the `VARIANTS` map at the top of
 [`scripts/generate-icons.mjs`](generate-icons.mjs).

@@ -1,8 +1,8 @@
 <svg width="1024" height="1024" viewBox="0 0 1024 1024" fill="none" xmlns="http://www.w3.org/2000/svg">
-<path d="M129 808L316 480L374 580L243.117 808H129Z" fill="#0D0D0D"/>
-<path d="M895.5 808L708.5 480L650.5 580L781.383 808H895.5Z" fill="#0D0D0D"/>
-<rect x="523" y="618" width="185" height="20" transform="rotate(90 523 618)" fill="#0D0D0D"/>
-<rect x="602" y="808" width="180" height="9.99998" transform="rotate(-180 602 808)" fill="#0D0D0D"/>
-<path d="M636.5 348L512.66 134L389 348H636.5Z" fill="#0D0D0D"/>
-<path d="M388.5 434L512.34 648L636 434L388.5 434Z" fill="#0D0D0D"/>
+<path d="M129 808L316 480L374 580L243.117 808H129Z" fill="#FFFFFF"/>
+<path d="M895.5 808L708.5 480L650.5 580L781.383 808H895.5Z" fill="#FFFFFF"/>
+<rect x="523" y="618" width="185" height="20" transform="rotate(90 523 618)" fill="#FFFFFF"/>
+<rect x="602" y="808" width="180" height="9.99998" transform="rotate(-180 602 808)" fill="#FFFFFF"/>
+<path d="M636.5 348L512.66 134L389 348H636.5Z" fill="#FFFFFF"/>
+<path d="M388.5 434L512.34 648L636 434L388.5 434Z" fill="#FFFFFF"/>
 <polygon points="635,1024 1024,1024 1024,635" fill="#FF9500"/><text x="876.1800000000001" y="953.98" font-size="109" fill="white" font-family="Arial,Helvetica,sans-serif" font-weight="bold" text-anchor="middle">STG</text></svg>
