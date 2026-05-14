@@ -5,6 +5,7 @@
 
 import Expo
 import ExpoModulesCore
+import FirebaseCore
 import React
 import ReactAppDependencyProvider
 import React_RCTAppDelegate
@@ -20,6 +21,14 @@ class AppDelegate: ExpoAppDelegate {
     _ application: UIApplication,
     didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]? = nil
   ) -> Bool {
+    // Initialize the native Firebase iOS SDK before any JS code runs.
+    // @react-native-firebase modules (crashlytics, perf, app) call into the
+    // native default app at JS module-load time; without this configure call
+    // they throw "No Firebase App '[DEFAULT]' has been created", which aborts
+    // module evaluation before AppRegistry.registerComponent and leaves the
+    // app stuck on a white screen.
+    FirebaseApp.configure()
+
     let delegate = ReactNativeDelegate()
     let factory = ExpoReactNativeFactory(delegate: delegate)
     delegate.dependencyProvider = RCTAppDependencyProvider()
