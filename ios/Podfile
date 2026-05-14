@@ -93,6 +93,29 @@ target 'kiroku' do
     )
     __apply_Xcode_14_3_RC_post_install_workaround(installer)
 
+    # Apple Clang 21+ (Xcode 26+) has stricter consteval evaluation that breaks
+    # fmt's FMT_STRING macro. Patch base.h to disable consteval for Clang 21+.
+    fmt_base_h = "#{installer.sandbox.root}/fmt/include/fmt/base.h"
+    if File.exist?(fmt_base_h)
+      content = File.read(fmt_base_h)
+      unless content.include?("__clang_major__ >= 21")
+        patch = <<~'CPP'
+          // Apple Clang 21+ (Xcode 26+) has stricter consteval evaluation that breaks
+          // FMT_STRING. Disable consteval to fall back to the constexpr path.
+          #if FMT_USE_CONSTEVAL && defined(__clang__) && __clang_major__ >= 21 && \
+              defined(__apple_build_version__)
+          #  undef FMT_USE_CONSTEVAL
+          #  define FMT_USE_CONSTEVAL 0
+          #endif
+        CPP
+        content = content.sub(
+          /^#if FMT_USE_CONSTEVAL\n#  define FMT_CONSTEVAL consteval/,
+          patch + "#if FMT_USE_CONSTEVAL\n#  define FMT_CONSTEVAL consteval"
+        )
+        File.write(fmt_base_h, content)
+      end
+    end
+
     installer.pods_project.targets.each do |target|
       target.build_configurations.each do |config|
         config.build_settings['SWIFT_ENABLE_EXPLICIT_MODULES'] = 'NO'
