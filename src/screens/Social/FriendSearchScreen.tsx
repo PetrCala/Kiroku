@@ -8,7 +8,7 @@ import type {
 import Text from '@components/Text';
 import type {UserList} from '@src/types/onyx/OnyxCommon';
 import {useFirebase} from '@src/context/global/FirebaseContext';
-import {isNonEmptyArray} from '@libs/Validation';
+import {isEmptyArray} from '@src/types/utils/EmptyObject';
 import type {Database} from 'firebase/database';
 import {searchDatabaseForUsers} from '@libs/Search';
 import * as ErrorUtils from '@libs/ErrorUtils';
@@ -84,7 +84,7 @@ function FriendSearchScreen() {
         );
         updateRequestStatuses(newData);
         setDisplayData(newDisplayData);
-        setNoUsersFound(!isNonEmptyArray(newData));
+        setNoUsersFound(isEmptyArray(newData));
         setSearchResultData(newData);
       } catch (error) {
         ErrorUtils.raiseAppError(ERRORS.DATABASE.SEARCH_FAILED, error);
