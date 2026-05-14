@@ -1,3 +1,7 @@
+/**
+ * @jest-environment node
+ */
+
 import {cleanStringForFirebaseKey} from '@libs/StringUtilsKiroku';
 
 describe('cleanStringForFirebaseKey', () => {

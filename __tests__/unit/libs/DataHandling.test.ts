@@ -1,3 +1,7 @@
+/**
+ * @jest-environment node
+ */
+
 import type {DateData} from 'react-native-calendars';
 import {
   // calculateThisMonthUnits,

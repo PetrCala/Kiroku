@@ -1,4 +1,6 @@
 /**
+ * @jest-environment node
+ *
  * Verifies the defensive guard added after the staging deploy that posted
  * comments on 58 issues (https://github.com/PetrCala/Kiroku/actions/runs/25757710046).
  * The action must abort without making any API calls when PR_LIST exceeds the cap.
