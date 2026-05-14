@@ -9,9 +9,9 @@ PODS:
   - BVLinearGradient (2.8.3):
     - React-Core
   - DoubleConversion (1.1.6)
-  - EXConstants (18.0.13):
+  - EXConstants (18.0.10):
     - ExpoModulesCore
-  - EXImageLoader (5.1.0):
+  - EXImageLoader (6.0.0):
     - ExpoModulesCore
     - React-Core
   - Expo (54.0.10):
@@ -47,7 +47,7 @@ PODS:
     - Yoga
   - ExpoAsset (12.0.8):
     - ExpoModulesCore
-  - ExpoFont (14.0.11):
+  - ExpoFont (14.0.9):
     - ExpoModulesCore
   - ExpoImage (3.0.8):
     - ExpoModulesCore
@@ -98,6 +98,11 @@ PODS:
   - Firebase/Crashlytics (12.10.0):
     - Firebase/CoreOnly
     - FirebaseCrashlytics (~> 12.10.0)
+  - Firebase/Performance (12.10.0):
+    - Firebase/CoreOnly
+    - FirebasePerformance (~> 12.10.0)
+  - FirebaseABTesting (12.10.0):
+    - FirebaseCore (~> 12.10.0)
   - FirebaseCore (12.10.0):
     - FirebaseCoreInternal (~> 12.10.0)
     - GoogleUtilities/Environment (~> 8.1)
@@ -120,6 +125,24 @@ PODS:
     - GoogleUtilities/Environment (~> 8.1)
     - GoogleUtilities/UserDefaults (~> 8.1)
     - PromisesObjC (~> 2.4)
+  - FirebasePerformance (12.10.0):
+    - FirebaseCore (~> 12.10.0)
+    - FirebaseInstallations (~> 12.10.0)
+    - FirebaseRemoteConfig (~> 12.10.0)
+    - FirebaseSessions (~> 12.10.0)
+    - GoogleDataTransport (~> 10.1)
+    - GoogleUtilities/Environment (~> 8.1)
+    - GoogleUtilities/MethodSwizzler (~> 8.1)
+    - GoogleUtilities/UserDefaults (~> 8.1)
+    - nanopb (~> 3.30910.0)
+  - FirebaseRemoteConfig (12.10.0):
+    - FirebaseABTesting (~> 12.10.0)
+    - FirebaseCore (~> 12.10.0)
+    - FirebaseInstallations (~> 12.10.0)
+    - FirebaseRemoteConfigInterop (~> 12.10.0)
+    - FirebaseSharedSwift (~> 12.10.0)
+    - GoogleUtilities/Environment (~> 8.1)
+    - "GoogleUtilities/NSData+zlib (~> 8.1)"
   - FirebaseRemoteConfigInterop (12.10.0)
   - FirebaseSessions (12.10.0):
     - FirebaseCore (~> 12.10.0)
@@ -130,6 +153,7 @@ PODS:
     - GoogleUtilities/UserDefaults (~> 8.1)
     - nanopb (~> 3.30910.0)
     - PromisesSwift (~> 2.1)
+  - FirebaseSharedSwift (12.10.0)
   - fmt (11.0.2)
   - glog (0.3.5)
   - GoogleDataTransport (10.1.0):
@@ -143,6 +167,9 @@ PODS:
     - GoogleUtilities/Privacy
   - GoogleUtilities/Logger (8.1.0):
     - GoogleUtilities/Environment
+    - GoogleUtilities/Privacy
+  - GoogleUtilities/MethodSwizzler (8.1.0):
+    - GoogleUtilities/Logger
     - GoogleUtilities/Privacy
   - "GoogleUtilities/NSData+zlib (8.1.0)":
     - GoogleUtilities/Privacy
@@ -179,7 +206,7 @@ PODS:
     - nanopb/encode (= 3.30910.0)
   - nanopb/decode (3.30910.0)
   - nanopb/encode (3.30910.0)
-  - NitroModules (0.29.8):
+  - NitroModules (0.29.4):
     - boost
     - DoubleConversion
     - fast_float
@@ -2156,7 +2183,7 @@ PODS:
     - ReactCommon/turbomodule/core
     - SocketRocket
     - Yoga
-  - react-native-slider (4.5.7):
+  - react-native-slider (4.5.5):
     - boost
     - DoubleConversion
     - fast_float
@@ -2174,7 +2201,7 @@ PODS:
     - React-graphics
     - React-ImageManager
     - React-jsi
-    - react-native-slider/common (= 4.5.7)
+    - react-native-slider/common (= 4.5.5)
     - React-NativeModulesApple
     - React-RCTFabric
     - React-renderercss
@@ -2185,7 +2212,7 @@ PODS:
     - ReactCommon/turbomodule/core
     - SocketRocket
     - Yoga
-  - react-native-slider/common (4.5.7):
+  - react-native-slider/common (4.5.5):
     - boost
     - DoubleConversion
     - fast_float
@@ -2864,6 +2891,36 @@ PODS:
     - RNFBApp
     - SocketRocket
     - Yoga
+  - RNFBPerf (24.0.0):
+    - boost
+    - DoubleConversion
+    - fast_float
+    - Firebase/Performance (= 12.10.0)
+    - fmt
+    - glog
+    - hermes-engine
+    - RCT-Folly
+    - RCT-Folly/Fabric
+    - RCTRequired
+    - RCTTypeSafety
+    - React-Core
+    - React-debug
+    - React-Fabric
+    - React-featureflags
+    - React-graphics
+    - React-ImageManager
+    - React-jsi
+    - React-NativeModulesApple
+    - React-RCTFabric
+    - React-renderercss
+    - React-rendererdebug
+    - React-utils
+    - ReactCodegen
+    - ReactCommon/turbomodule/bridging
+    - ReactCommon/turbomodule/core
+    - RNFBApp
+    - SocketRocket
+    - Yoga
   - RNFS (2.20.0):
     - React-Core
   - RNGestureHandler (2.28.0):
@@ -2898,7 +2955,7 @@ PODS:
   - RNGoogleSignin (10.1.2):
     - GoogleSignIn (~> 7.0.0)
     - React-Core
-  - RNLocalize (3.7.0):
+  - RNLocalize (3.6.0):
     - boost
     - DoubleConversion
     - fast_float
@@ -2926,7 +2983,7 @@ PODS:
     - ReactCommon/turbomodule/core
     - SocketRocket
     - Yoga
-  - RNNitroSQLite (9.6.0):
+  - RNNitroSQLite (9.2.0):
     - boost
     - DoubleConversion
     - fast_float
@@ -2955,7 +3012,7 @@ PODS:
     - ReactCommon/turbomodule/core
     - SocketRocket
     - Yoga
-  - RNPermissions (5.5.1):
+  - RNPermissions (5.4.4):
     - boost
     - DoubleConversion
     - fast_float
@@ -2983,7 +3040,7 @@ PODS:
     - ReactCommon/turbomodule/core
     - SocketRocket
     - Yoga
-  - RNReactNativeHapticFeedback (2.3.4):
+  - RNReactNativeHapticFeedback (2.3.3):
     - boost
     - DoubleConversion
     - fast_float
@@ -3419,6 +3476,7 @@ DEPENDENCIES:
   - RNDeviceInfo (from `../node_modules/react-native-device-info`)
   - "RNFBApp (from `../node_modules/@react-native-firebase/app`)"
   - "RNFBCrashlytics (from `../node_modules/@react-native-firebase/crashlytics`)"
+  - "RNFBPerf (from `../node_modules/@react-native-firebase/perf`)"
   - RNFS (from `../node_modules/react-native-fs`)
   - RNGestureHandler (from `../node_modules/react-native-gesture-handler`)
   - "RNGoogleSignin (from `../node_modules/@react-native-google-signin/google-signin`)"
@@ -3437,13 +3495,17 @@ SPEC REPOS:
   trunk:
     - AppAuth
     - Firebase
+    - FirebaseABTesting
     - FirebaseCore
     - FirebaseCoreExtension
     - FirebaseCoreInternal
     - FirebaseCrashlytics
     - FirebaseInstallations
+    - FirebasePerformance
+    - FirebaseRemoteConfig
     - FirebaseRemoteConfigInterop
     - FirebaseSessions
+    - FirebaseSharedSwift
     - GoogleDataTransport
     - GoogleSignIn
     - GoogleUtilities
@@ -3653,6 +3715,8 @@ EXTERNAL SOURCES:
     :path: "../node_modules/@react-native-firebase/app"
   RNFBCrashlytics:
     :path: "../node_modules/@react-native-firebase/crashlytics"
+  RNFBPerf:
+    :path: "../node_modules/@react-native-firebase/perf"
   RNFS:
     :path: "../node_modules/react-native-fs"
   RNGestureHandler:
@@ -3683,11 +3747,11 @@ SPEC CHECKSUMS:
   boost: 7e761d76ca2ce687f7cc98e698152abd03a18f90
   BVLinearGradient: cb006ba232a1f3e4f341bb62c42d1098c284da70
   DoubleConversion: cb417026b2400c8f53ae97020b2be961b59470cb
-  EXConstants: fce59a631a06c4151602843667f7cfe35f81e271
-  EXImageLoader: 4d3d3284141f1a45006cc4d0844061c182daf7ee
+  EXConstants: fd688cef4e401dcf798a021cfb5d87c890c30ba3
+  EXImageLoader: 189e3476581efe3ad4d1d3fb4735b7179eb26f05
   Expo: b2748512b0df06c1e569f93372b53c488f02ffe7
   ExpoAsset: 84810d6fed8179f04d4a7a4a6b37028bbd726e26
-  ExpoFont: f543ce20a228dd702813668b1a07b46f51878d47
+  ExpoFont: cf9d90ec1d3b97c4f513211905724c8171f82961
   ExpoImage: e88f500585913969b930e13a4be47277eb7c6de8
   ExpoImageManipulator: 1e06e7a1e56f454e75d01b7032c1e44963bfc865
   ExpoImagePicker: d251aab45a1b1857e4156fed88511b278b4eee1c
@@ -3695,13 +3759,17 @@ SPEC CHECKSUMS:
   fast_float: b32c788ed9c6a8c584d114d0047beda9664e7cc6
   FBLazyVector: 941bef1c8eeabd9fe1f501e30a5220beee913886
   Firebase: 99f203d3a114c6ba591f3b32263a9626e450af65
+  FirebaseABTesting: fae111fe5476bd9e249968d0c85cd036385404ba
   FirebaseCore: f4428e22415ea3b3eca652c2098413dabf2a23a9
   FirebaseCoreExtension: 3473a6ec16a91aee29fb75994a86c0220d2cddf3
   FirebaseCoreInternal: e7bbaeb00ab73011298f35ed223aa7371e212948
   FirebaseCrashlytics: cd1baeb80302ec5ea1012f732ab94df7d76f09f7
   FirebaseInstallations: 047343aa91fd6a1ebfa3eb374ddecf36a8aaddfd
+  FirebasePerformance: 0d2f76080b03f2c527c56bbd53bc4381c445b5dc
+  FirebaseRemoteConfig: 684a4427fc0ce308cdb63f7b400e353809285b4e
   FirebaseRemoteConfigInterop: a169873f4093b241eb5e27a4fbad91af36d64b8d
   FirebaseSessions: dba7635960740ad77cc2f3387d90ff22a7942f82
+  FirebaseSharedSwift: 3d1e448b7202e36821a492941c84592d1308ea14
   fmt: a40bb5bd0294ea969aaaba240a927bd33d878cdd
   glog: 5683914934d5b6e4240e497e0f4a3b42d1854183
   GoogleDataTransport: aae35b7ea0c09004c3797d53c8c41f66f219d6a7
@@ -3714,7 +3782,7 @@ SPEC CHECKSUMS:
   libdav1d: 23581a4d8ec811ff171ed5e2e05cd27bad64c39f
   libwebp: 02b23773aedb6ff1fd38cec7a77b81414c6842a8
   nanopb: fad817b59e0457d11a5dfbde799381cd727c1275
-  NitroModules: 73c42f3089bd74f411172ea8e69024aac4a2ac9f
+  NitroModules: 8bffd214aa360baba0f2c5718fe0acff5ef94763
   PromisesObjC: f5707f49cb48b9636751c5b2e7d227e43fba9f47
   PromisesSwift: 9d77319bbe72ebf6d872900551f7eeba9bce2851
   RCT-Folly: 846fda9475e61ec7bcbf8a3fe81edfcaeb090669
@@ -3757,7 +3825,7 @@ SPEC CHECKSUMS:
   react-native-performance: d77c7992b9ebf63be75f95bcdcafd12048fac487
   react-native-render-html: 05a7d4490ffc85c88094601207f3e48a90533476
   react-native-safe-area-context: 138d5c5f300c6568f2a64a7c01906ae3fcce0330
-  react-native-slider: 0f87d2b0a6df64094c027e2308b3cd5b490fde74
+  react-native-slider: ef798d9b69f0a76b89fef769c8e428f552a7b2ac
   react-native-webview: cdce419e8022d0ef6f07db21890631258e7a9e6e
   React-NativeModulesApple: 8c7eb6057b00c191a11ad5ced41826ec5a0e4d78
   React-oscompat: 93b5535ea7f7dff46aaee4f78309a70979bdde9d
@@ -3794,13 +3862,14 @@ SPEC CHECKSUMS:
   RNDeviceInfo: 741bb4dcc059bf3ce28a6969acadac1a5fc31fc4
   RNFBApp: 59a5f1280d8c7d48ed5cb658682ed12904bca65e
   RNFBCrashlytics: be487839f66b7339b49e9fd56463bcfbaa43a66d
+  RNFBPerf: 3fe50da0d782e58bbea907bd91842bb56d6941e1
   RNFS: 89de7d7f4c0f6bafa05343c578f61118c8282ed8
   RNGestureHandler: b8d2e75c2e88fc2a1f6be3b3beeeed80b88fa37d
   RNGoogleSignin: c1a22e417bbb2629eb04d458c24e11c84a6cb433
-  RNLocalize: c46dd4008dc8990a098fcafd6ee051122a1ccfda
-  RNNitroSQLite: a9b5965d511ed6e99ce903380e64934d043a0d2c
-  RNPermissions: 91dfda811b106ddd2052d4bf6c1fcf9dfd46b258
-  RNReactNativeHapticFeedback: b9623bdeb59a778ca905e97035d5cc73a15d00f3
+  RNLocalize: a0bf70cf27f116db4e32be09a6f549715db0686d
+  RNNitroSQLite: fb251387cfbee73b100cd484a3c886fda681b3b5
+  RNPermissions: a779c2d1cea11fb46c5a7d2b5162fbf7a3bf2060
+  RNReactNativeHapticFeedback: 5f1542065f0b24c9252bd8cf3e83bc9c548182e4
   RNReanimated: c3de6d69dba4054d4f35562b14c84061699188e5
   RNScreens: 4f2aed147a2775017923789d8a0a2d377712ec2e
   RNSVG: 94a1be05fab4043354bcf7104f0f9b0e2231ef05
@@ -3812,6 +3881,6 @@ SPEC CHECKSUMS:
   SocketRocket: d4aabe649be1e368d1318fdf28a022d714d65748
   Yoga: 9b30b783a17681321b52ac507a37219d7d795ace
 
-PODFILE CHECKSUM: c293d3f42f7347ef838f4e8142f48a55433ff060
+PODFILE CHECKSUM: dcc70ea24fdb6bdfdc782ae2b776dfe7745c8a83
 
 COCOAPODS: 1.16.2
