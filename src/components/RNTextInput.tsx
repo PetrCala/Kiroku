@@ -23,7 +23,7 @@ function RNTextInputWithRef(
       allowFontScaling={false}
       textBreakStrategy="simple"
       keyboardAppearance={theme.colorScheme}
-      ref={refHandle => {
+      ref={(refHandle: AnimatedTextInputRef | null) => {
         if (typeof ref !== 'function') {
           return;
         }
