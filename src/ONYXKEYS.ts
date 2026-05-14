@@ -172,6 +172,8 @@ const ONYXKEYS = {
   FORMS: {
     AUTH_FORM: 'authForm',
     AUTH_FORM_DRAFT: 'authFormDraft',
+    PICK_USERNAME_FORM: 'pickUsernameForm',
+    PICK_USERNAME_FORM_DRAFT: 'pickUsernameFormDraft',
     // ADD_DEBIT_CARD_FORM: 'addDebitCardForm',
     CLOSE_ACCOUNT_FORM: 'closeAccount',
     CLOSE_ACCOUNT_FORM_DRAFT: 'closeAccountDraft',
@@ -209,6 +211,7 @@ type AllOnyxKeys = DeepValueOf<typeof ONYXKEYS>;
 
 type OnyxFormValuesMapping = {
   [ONYXKEYS.FORMS.AUTH_FORM]: FormTypes.AuthForm;
+  [ONYXKEYS.FORMS.PICK_USERNAME_FORM]: FormTypes.PickUsernameForm;
   [ONYXKEYS.FORMS.CLOSE_ACCOUNT_FORM]: FormTypes.CloseAccountForm;
   //   [ONYXKEYS.FORMS.PROFILE_SETTINGS_FORM]: FormTypes.ProfileSettingsForm;
   [ONYXKEYS.FORMS.DISPLAY_NAME_FORM]: FormTypes.DisplayNameForm;

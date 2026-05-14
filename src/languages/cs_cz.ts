@@ -974,6 +974,15 @@ export default {
       sameUsername: 'Toto je stejné uživatelské jméno jako vaše stávající',
     },
   },
+  pickUsernameScreen: {
+    heading: 'Zvolte si uživatelské jméno',
+    explainer: 'Vyberte si uživatelské jméno — pod tímto vás uvidí ostatní.',
+    saving: 'Ukládám...',
+    error: {
+      generic:
+        'Uživatelské jméno se nepodařilo uložit. Zkuste to prosím znovu.',
+    },
+  },
   emailForm: {
     email: 'E-mail',
     error: {

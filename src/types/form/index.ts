@@ -7,6 +7,7 @@ export type {FeedbackForm} from './FeedbackForm';
 export type {ForgotPasswordForm} from './ForgotPasswordForm';
 export type {LegalNameForm} from './LegalNameForm';
 export type {PasswordForm} from './PasswordForm';
+export type {PickUsernameForm} from './PickUsernameForm';
 export type {ProfileSettingsForm} from './ProfileSettingsForm';
 export type {ReportBugForm} from './ReportBugForm';
 export type {SessionDateForm} from './SessionDateForm';

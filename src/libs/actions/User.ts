@@ -558,6 +558,41 @@ async function setAppUpdateDismissed(timestamp: Timestamp): Promise<void> {
 }
 
 /**
+ * Persist the username the user chose on the post-auth username screen.
+ * Writes the new display_name and the `username_chosen` flag in one update so
+ * the routing gate can never observe an inconsistent state.
+ */
+async function setUsername(
+  db: Database,
+  user: User | null,
+  oldDisplayName: string | undefined,
+  newUsername: string,
+): Promise<void> {
+  if (!user) {
+    throw new Error(Localize.translateLocal('common.error.userNull'));
+  }
+  const userID = user.uid;
+  const trimmed = newUsername.trim();
+  const nicknameRef = DBPATHS.NICKNAME_TO_ID_NICKNAME_KEY_USER_ID;
+  const displayNameRef = DBPATHS.USERS_USER_ID_PROFILE_DISPLAY_NAME;
+  const usernameChosenRef = DBPATHS.USERS_USER_ID_PROFILE_USERNAME_CHOSEN;
+
+  const updates: Record<string, string | boolean | null> = {};
+  if (oldDisplayName && oldDisplayName !== trimmed) {
+    updates[
+      nicknameRef.getRoute(cleanStringForFirebaseKey(oldDisplayName), userID)
+    ] = null;
+  }
+  updates[nicknameRef.getRoute(cleanStringForFirebaseKey(trimmed), userID)] =
+    trimmed;
+  updates[displayNameRef.getRoute(userID)] = trimmed;
+  updates[usernameChosenRef.getRoute(userID)] = true;
+
+  await update(ref(db), updates);
+  await updateProfile(user, {displayName: trimmed});
+}
+
+/**
  * Sign in (or sign up) using a Firebase OAuth credential from Apple or Google.
  * If the user does not yet exist in the Realtime Database, creates their profile.
  *
@@ -587,7 +622,7 @@ async function signInWithOAuth(
     await updateProfile(user, {displayName: name});
   }
   Session.clearSignInData();
-  Navigation.navigate(ROUTES.HOME);
+  Navigation.navigate(exists ? ROUTES.HOME : ROUTES.PICK_USERNAME);
 }
 
 /** Attempt to log in to the Firebase authentication service with a user's credentials
@@ -667,7 +702,7 @@ async function signUp(
 
     Session.clearSignInData();
 
-    Navigation.navigate(ROUTES.HOME);
+    Navigation.navigate(ROUTES.PICK_USERNAME);
   } catch (error) {
     // Attempt to rollback the changes if the 'transaction' fails
     await deleteUserData(
@@ -699,6 +734,7 @@ export {
   sendUpdateEmailLink,
   sendVerifyEmailLink,
   setAppUpdateDismissed,
+  setUsername,
   setVerifyEmailDismissed,
   synchronizeUserStatus,
   updateAgreedToTermsAt,
