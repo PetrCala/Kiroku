@@ -14,14 +14,14 @@ import UIKit
 class AppDelegate: ExpoAppDelegate {
   var window: UIWindow?
   var reactNativeDelegate: ExpoReactNativeFactoryDelegate?
-  var reactNativeFactory: RCTReactNativeFactory?
+  var reactNativeFactory: ExpoReactNativeFactory?
 
   override func application(
     _ application: UIApplication,
     didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]? = nil
   ) -> Bool {
     let delegate = ReactNativeDelegate()
-    let factory = RCTReactNativeFactory(delegate: delegate)
+    let factory = ExpoReactNativeFactory(delegate: delegate)
     delegate.dependencyProvider = RCTAppDependencyProvider()
 
     reactNativeDelegate = delegate
@@ -41,9 +41,7 @@ class AppDelegate: ExpoAppDelegate {
 
     _ = super.application(application, didFinishLaunchingWithOptions: launchOptions)
 
-    // RCTSurfaceHostingProxyRootView (New Architecture) inherits from UIView, not RCTRootView.
-    // The method accepts UIView so cast directly without a subclass check.
-    if let rootView = self.window?.rootViewController?.view {
+    if let rootView = self.window?.rootViewController?.view as? RCTRootView {
       RCTBootSplash.initWithStoryboard("BootSplash", rootView: rootView)
     }
 
