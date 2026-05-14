@@ -96,8 +96,13 @@ const webpack = {
 };
 
 // ─── METRO (iOS / Android bundler) ───────────────────────────────────────────
+// Use babel-preset-expo here (it extends @react-native/babel-preset) so the
+// Expo modules we ship — expo-image, expo-image-manipulator, expo-image-picker,
+// expo-modules-core — get process.env.EXPO_OS inlined at compile time. Without
+// this, Expo packages log a "process.env.EXPO_OS is not defined" warning on
+// every Platform.OS lookup and fall back to a slower runtime branch.
 const metro = {
-  presets: [require('@react-native/babel-preset')],
+  presets: [require('babel-preset-expo')],
   plugins: [
     ['babel-plugin-react-compiler', ReactCompilerConfig], // must run first!
 
