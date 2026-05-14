@@ -86,7 +86,7 @@ function ForgotPasswordScreen() {
       <HeaderWithBackButton
         title={translate('forgotPasswordScreen.title')}
         shouldShowBackButton
-        onBackButtonPress={() => Navigation.navigate(ROUTES.LOG_IN)}
+        onBackButtonPress={() => Navigation.navigate(ROUTES.AUTH)}
       />
       {isLoading ? (
         <FullscreenLoadingIndicator

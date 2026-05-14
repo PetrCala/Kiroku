@@ -28,6 +28,14 @@ type Profile = {
 
   /** A full URL to the user's profile photo, as stored in the storage bucket */
   photo_url: string;
+
+  /**
+   * Whether the user has explicitly chosen their username on the post-auth
+   * username screen. New accounts (email signup, Apple, Google) write `false`
+   * here so the gate fires once; legacy users created before this flag was
+   * introduced read as `undefined`, which we treat as `true` (grandfathered).
+   */
+  username_chosen?: boolean;
 };
 
 /** A model of user's private data */

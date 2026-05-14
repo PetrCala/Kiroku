@@ -83,13 +83,13 @@ function searchArrayByText(
  * @returns A mapping of user ids to nicknames
  */
 function getNicknameMapping(
-  object: Record<string, Record<string, string>>,
+  object: Record<string, Record<string, unknown>>,
   displayNameKey = 'display_name',
 ): UserIDToNicknameMapping {
   const mapping: UserIDToNicknameMapping = Object.fromEntries(
     Object.entries(object).map(([userID, user]) => [
       userID,
-      user[displayNameKey],
+      String(user[displayNameKey] ?? ''),
     ]),
   );
 

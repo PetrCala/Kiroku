@@ -13,8 +13,7 @@ const SCREENS = {
   NOT_FOUND: 'not-found',
   // Public screens
   INITIAL: 'Initial',
-  SIGN_UP: 'SignUp',
-  LOG_IN: 'LogIn',
+  AUTH: 'Auth',
   FORGOT_PASSWORD: 'ForgotPassword',
   FORCE_UPDATE: 'ForceUpdate',
 

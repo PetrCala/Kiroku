@@ -37,8 +37,7 @@ function InitialScreen() {
     if (closeAccount?.success) {
       CloseAccount.setDefaultData();
     }
-    // TODO(#323 commit 2): point at SCREENS.AUTH once the combined auth screen lands.
-    Navigation.navigate(ROUTES.SIGN_UP);
+    Navigation.navigate(ROUTES.AUTH);
   };
 
   useFocusEffect(

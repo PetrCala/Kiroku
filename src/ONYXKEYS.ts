@@ -170,10 +170,8 @@ const ONYXKEYS = {
 
   //   /** List of Form ids */
   FORMS: {
-    LOG_IN_FORM: 'logInForm',
-    LOG_IN_FORM_DRAFT: 'logInFormDraft',
-    SIGN_UP_FORM: 'signUpForm',
-    SIGN_UP_FORM_DRAFT: 'signUpFormDraft',
+    AUTH_FORM: 'authForm',
+    AUTH_FORM_DRAFT: 'authFormDraft',
     // ADD_DEBIT_CARD_FORM: 'addDebitCardForm',
     CLOSE_ACCOUNT_FORM: 'closeAccount',
     CLOSE_ACCOUNT_FORM_DRAFT: 'closeAccountDraft',
@@ -210,8 +208,7 @@ const ONYXKEYS = {
 type AllOnyxKeys = DeepValueOf<typeof ONYXKEYS>;
 
 type OnyxFormValuesMapping = {
-  [ONYXKEYS.FORMS.LOG_IN_FORM]: FormTypes.LogInForm;
-  [ONYXKEYS.FORMS.SIGN_UP_FORM]: FormTypes.SignUpForm;
+  [ONYXKEYS.FORMS.AUTH_FORM]: FormTypes.AuthForm;
   [ONYXKEYS.FORMS.CLOSE_ACCOUNT_FORM]: FormTypes.CloseAccountForm;
   //   [ONYXKEYS.FORMS.PROFILE_SETTINGS_FORM]: FormTypes.ProfileSettingsForm;
   [ONYXKEYS.FORMS.DISPLAY_NAME_FORM]: FormTypes.DisplayNameForm;

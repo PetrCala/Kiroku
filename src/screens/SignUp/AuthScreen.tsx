@@ -1,4 +1,5 @@
-import React, {useCallback, useRef} from 'react';
+import React, {useCallback, useRef, useState} from 'react';
+import {View} from 'react-native';
 import {useFirebase} from '@context/global/FirebaseContext';
 import ScreenWrapper from '@components/ScreenWrapper';
 import useThemeStyles from '@hooks/useThemeStyles';
@@ -6,7 +7,7 @@ import useStyleUtils from '@hooks/useStyleUtils';
 import useResponsiveLayout from '@hooks/useResponsiveLayout';
 import useStyledSafeAreaInsets from '@hooks/useStyledSafeAreaInsets';
 import useLocalize from '@hooks/useLocalize';
-import INPUT_IDS from '@src/types/form/LogInForm';
+import INPUT_IDS from '@src/types/form/AuthForm';
 import ONYXKEYS from '@src/ONYXKEYS';
 import FormProvider from '@components/Form/FormProvider';
 import type {FormInputErrors, FormOnyxValues} from '@components/Form/types';
@@ -18,59 +19,60 @@ import * as ValidationUtils from '@libs/ValidationUtils';
 import * as ErrorUtils from '@libs/ErrorUtils';
 import * as Browser from '@libs/Browser';
 import * as User from '@userActions/User';
-import * as Session from '@userActions/Session';
 import Text from '@components/Text';
 import {PressableWithFeedback} from '@components/Pressable';
 import Navigation from '@libs/Navigation/Navigation';
 import ROUTES from '@src/ROUTES';
 import DotIndicatorMessage from '@components/DotIndicatorMessage';
 import {useUserConnection} from '@context/global/UserConnectionContext';
-import {useOnyx} from 'react-native-onyx';
+import AppleSignIn from '@components/SignInButtons/AppleSignIn';
+import GoogleSignIn from '@components/SignInButtons/GoogleSignIn';
 import FullScreenLoadingIndicator from '@components/FullscreenLoadingIndicator';
-import ChangeSignUpScreenLink from './ChangeSignUpScreenLink';
+import type {TranslationPaths} from '@src/languages/types';
+import OrDelimiter from './OrDelimiter';
 import SignUpScreenLayout from './SignUpScreenLayout';
 
-type LoginScreenLayoutRef = {
+type AuthScreenLayoutRef = {
   scrollPageToTop: (animated?: boolean) => void;
 };
 
-function LogInScreen() {
+type AuthMode = 'signUp' | 'logIn';
+
+function AuthScreen() {
   const {isOnline} = useUserConnection();
-  const {auth} = useFirebase();
+  const {db, auth} = useFirebase();
   const {translate} = useLocalize();
   const styles = useThemeStyles();
   const StyleUtils = useStyleUtils();
-  const {shouldUseNarrowLayout, isInNarrowPaneModal} = useResponsiveLayout();
+  const {isInNarrowPaneModal} = useResponsiveLayout();
   const safeAreaInsets = useStyledSafeAreaInsets();
-  const currentScreenLayoutRef = useRef<LoginScreenLayoutRef>(null);
-  const [logInForm] = useOnyx(ONYXKEYS.FORMS.LOG_IN_FORM_DRAFT);
-  const [isLoading, setIsLoading] = React.useState<boolean>(false);
-  const [serverErrorMessage, setServerErrorMessage] = React.useState('');
+  const currentScreenLayoutRef = useRef<AuthScreenLayoutRef>(null);
+  const [mode, setMode] = useState<AuthMode>('signUp');
+  const [isLoading, setIsLoading] = useState(false);
+  const [serverErrorMessage, setServerErrorMessage] = useState('');
 
-  const headerText = translate('login.hero.header');
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  const welcomeHeader = shouldUseNarrowLayout
-    ? headerText
-    : translate('welcomeText.welcome');
-  const welcomeText = `${translate('welcomeText.welcome')} ${translate('welcomeText.enterCredentials')}`;
+  const isSignUp = mode === 'signUp';
 
-  const navigateFocus = () => {
-    currentScreenLayoutRef.current?.scrollPageToTop();
+  const onToggleMode = () => {
+    setServerErrorMessage('');
+    setMode(prev => (prev === 'signUp' ? 'logIn' : 'signUp'));
   };
 
   const onSubmit = (
-    values: FormOnyxValues<typeof ONYXKEYS.FORMS.LOG_IN_FORM>,
+    values: FormOnyxValues<typeof ONYXKEYS.FORMS.AUTH_FORM>,
   ) => {
     (async () => {
       if (!isOnline || isLoading) {
         return;
       }
       setIsLoading(true);
-
       const emailTrim = values.email.trim();
-
       try {
-        await User.logIn(auth, emailTrim, values.password);
+        if (isSignUp) {
+          await User.signUp(db, auth, emailTrim, values.password);
+        } else {
+          await User.logIn(auth, emailTrim, values.password);
+        }
       } catch (error) {
         const appError = ErrorUtils.getAppError(undefined, error);
         setServerErrorMessage(appError.message);
@@ -81,37 +83,54 @@ function LogInScreen() {
   };
 
   const validate = useCallback(
-    (values: FormOnyxValues<typeof ONYXKEYS.FORMS.LOG_IN_FORM>): Errors => {
-      const errors: FormInputErrors<typeof ONYXKEYS.FORMS.LOG_IN_FORM> = {};
-
-      // Hide the server error message each time the form is validated
+    (values: FormOnyxValues<typeof ONYXKEYS.FORMS.AUTH_FORM>): Errors => {
+      const errors: FormInputErrors<typeof ONYXKEYS.FORMS.AUTH_FORM> = {};
       setServerErrorMessage('');
 
-      if (!values.email) {
-        ErrorUtils.addErrorMessage(
-          errors,
-          INPUT_IDS.EMAIL,
-          translate('emailForm.error.pleaseEnterEmail'),
-        );
-      } else if (!ValidationUtils.isValidEmail(values.email)) {
-        ErrorUtils.addErrorMessage(
-          errors,
-          INPUT_IDS.EMAIL,
-          translate('emailForm.error.invalidEmail'),
-        );
-      }
+      type ErrorDataItem = {
+        errorKey: TranslationPaths | null;
+        formKey: keyof typeof errors;
+      };
 
-      if (!values.password) {
-        ErrorUtils.addErrorMessage(
-          errors,
-          INPUT_IDS.PASSWORD,
-          translate('password.pleaseFillPassword'),
-        );
+      const errorData: ErrorDataItem[] = [
+        {
+          errorKey: ValidationUtils.validateEmail(values.email),
+          formKey: INPUT_IDS.EMAIL,
+        },
+        {
+          // Sign-up enforces password complexity; log-in only requires non-empty.
+          errorKey: isSignUp
+            ? ValidationUtils.validatePassword(values.password)
+            : values.password
+              ? null
+              : 'password.pleaseFillPassword',
+          formKey: INPUT_IDS.PASSWORD,
+        },
+      ];
+
+      for (const {errorKey, formKey} of errorData) {
+        if (errorKey) {
+          ErrorUtils.addErrorMessage(errors, formKey, translate(errorKey));
+        }
       }
 
       return errors;
     },
-    [translate],
+    [isSignUp, translate],
+  );
+
+  const navigateFocus = () => {
+    currentScreenLayoutRef.current?.scrollPageToTop();
+  };
+
+  const submitButtonText = translate(
+    isSignUp ? 'common.createAccount' : 'common.logIn',
+  );
+  const toggleHelperText = translate(
+    isSignUp ? 'login.existingAccount' : 'login.noAccount',
+  );
+  const toggleActionText = translate(
+    isSignUp ? 'common.logInHere' : 'common.signUpHere',
   );
 
   return (
@@ -126,25 +145,39 @@ function LogInScreen() {
           isInNarrowPaneModal,
         ),
       ]}
-      testID={LogInScreen.displayName}>
+      testID={AuthScreen.displayName}>
       {isLoading ? (
         <FullScreenLoadingIndicator
-          loadingText={translate('logInScreen.loggingIn')}
+          loadingText={translate(
+            isSignUp ? 'signUpScreen.signingIn' : 'logInScreen.loggingIn',
+          )}
         />
       ) : (
         <SignUpScreenLayout
-          welcomeHeader="" // use welcomeHeader to show the header
-          welcomeText={welcomeText}
+          welcomeHeader=""
+          welcomeText=""
           ref={currentScreenLayoutRef}
           navigateFocus={navigateFocus}>
+          <View
+            style={[
+              styles.flexRow,
+              styles.justifyContentCenter,
+              styles.gap3,
+              styles.mb4,
+            ]}>
+            <AppleSignIn />
+            <GoogleSignIn />
+          </View>
+          <OrDelimiter containerStyle={styles.mb4} />
           <FormProvider
-            formID={ONYXKEYS.FORMS.LOG_IN_FORM}
+            formID={ONYXKEYS.FORMS.AUTH_FORM}
             validate={validate}
             onSubmit={onSubmit}
             shouldValidateOnBlur={false}
-            submitButtonText={translate('common.logIn')}
-            submitButtonStyles={styles.pb5}
+            shouldValidateOnChange
             includeSafeAreaPaddingBottom={false}
+            submitButtonText={submitButtonText}
+            submitButtonStyles={styles.pb5}
             isSubmitButtonVisible={!isLoading}
             shouldUseScrollView={false}
             style={styles.flexGrow1}>
@@ -156,7 +189,7 @@ function LogInScreen() {
               keyboardType="email-address"
               label={translate('login.email')}
               aria-label={translate('login.email')}
-              defaultValue={logInForm?.email ?? ''}
+              defaultValue=""
               spellCheck={false}
             />
             <InputWrapper
@@ -174,6 +207,15 @@ function LogInScreen() {
                   : 'off'
               }
             />
+            {!isSignUp && (
+              <PressableWithFeedback
+                style={[styles.link, styles.mt4]}
+                onPress={() => Navigation.navigate(ROUTES.FORGOT_PASSWORD)}
+                role={CONST.ROLE.LINK}
+                accessibilityLabel={translate('password.forgot')}>
+                <Text style={styles.link}>{translate('password.forgot')}</Text>
+              </PressableWithFeedback>
+            )}
             {!!serverErrorMessage && (
               <DotIndicatorMessage
                 style={[styles.mv2]}
@@ -182,23 +224,22 @@ function LogInScreen() {
                 messages={{0: serverErrorMessage || ''}}
               />
             )}
-            <PressableWithFeedback
-              style={[styles.link, styles.mt4]}
-              onPress={() => Navigation.navigate(ROUTES.FORGOT_PASSWORD)}
-              role={CONST.ROLE.LINK}
-              accessibilityLabel={translate('password.forgot')}>
-              <Text style={styles.link}>{translate('password.forgot')}</Text>
-            </PressableWithFeedback>
           </FormProvider>
-          <ChangeSignUpScreenLink
-            navigatesTo={ROUTES.SIGN_UP}
-            onPress={() => Session.navigateToSignUpFromLoginScreen()}
-          />
+          <View style={styles.changeSignUpScreenLinkContainer}>
+            <Text style={styles.mr1}>{toggleHelperText}</Text>
+            <PressableWithFeedback
+              style={[styles.link]}
+              onPress={onToggleMode}
+              role={CONST.ROLE.BUTTON}
+              accessibilityLabel={toggleActionText}>
+              <Text style={[styles.link]}>{toggleActionText}</Text>
+            </PressableWithFeedback>
+          </View>
         </SignUpScreenLayout>
       )}
     </ScreenWrapper>
   );
 }
 
-LogInScreen.displayName = 'Login Screen';
-export default LogInScreen;
+AuthScreen.displayName = 'Auth Screen';
+export default AuthScreen;

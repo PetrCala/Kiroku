@@ -6,7 +6,7 @@ const INPUT_IDS = {
   PASSWORD: 'password',
 } as const;
 
-type LogInForm = Form<
+type AuthForm = Form<
   ValueOf<typeof INPUT_IDS>,
   {
     [INPUT_IDS.EMAIL]: string;
@@ -14,5 +14,5 @@ type LogInForm = Form<
   }
 >;
 
-export type {LogInForm};
+export type {AuthForm};
 export default INPUT_IDS;
