@@ -114,13 +114,15 @@ RCT_EXPORT_MODULE();
 
     [_rootView addSubview:_loadingView];
 
-    if ([_rootView
-            respondsToSelector:@selector(disableActivityIndicatorAutoHide:)]) {
-      [_rootView disableActivityIndicatorAutoHide:YES];
-    }
-    if ([_rootView respondsToSelector:@selector(setLoadingView:)]) {
-      [_rootView setLoadingView:_loadingView];
-    }
+    // Intentionally do NOT call -disableActivityIndicatorAutoHide: or
+    // -setLoadingView: here. On the New Arch (RCTSurfaceHostingProxyRootView)
+    // those hooks register _loadingView with the React Surface lifecycle,
+    // which on RN 0.81+ holds the loadingView until the surface itself reports
+    // ready. If the JS-side gating condition (e.g. hasCheckedAutoLogin) never
+    // fires, the lifecycle never releases the view — the same deadlock that
+    // pinned f618d0a2 in production. We add _loadingView as a plain subview
+    // and rely on JS calling BootSplash.hide() (with a safety timeout) to
+    // remove it.
 
     [[NSNotificationCenter defaultCenter]
         addObserver:self
