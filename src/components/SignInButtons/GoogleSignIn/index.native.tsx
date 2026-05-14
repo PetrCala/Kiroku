@@ -60,7 +60,8 @@ function GoogleSignIn({onPress = () => {}}: GoogleSignInProps) {
   return (
     <GoogleSigninButton
       color={GoogleSigninButton.Color.Light}
-      size={GoogleSigninButton.Size.Icon}
+      size={GoogleSigninButton.Size.Wide}
+      style={{width: '100%', height: 48}}
       onPress={() => {
         handleSignIn();
       }}
