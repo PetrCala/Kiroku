@@ -226,6 +226,7 @@ type PublicScreensParamList = SharedScreensParamList & {
 type AuthScreensParamList = CentralPaneScreensParamList &
   SharedScreensParamList & {
     [SCREENS.NOT_FOUND]: undefined;
+    [SCREENS.PICK_USERNAME]: undefined;
     [NAVIGATORS.LEFT_MODAL_NAVIGATOR]: NavigatorScreenParams<LeftModalNavigatorParamList>;
     [NAVIGATORS.RIGHT_MODAL_NAVIGATOR]: NavigatorScreenParams<RightModalNavigatorParamList>;
     [NAVIGATORS.TZ_FIX_NAVIGATOR]: NavigatorScreenParams<TzFixModalNavigatorParamList>;

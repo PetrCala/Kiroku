@@ -184,6 +184,11 @@ const DBPATHS = {
     getRoute: (user_id: UserID) =>
       `users/${user_id}/profile/display_name` as const,
   },
+  USERS_USER_ID_PROFILE_USERNAME_CHOSEN: {
+    route: '/users/:user_id/profile/username_chosen',
+    getRoute: (user_id: UserID) =>
+      `users/${user_id}/profile/username_chosen` as const,
+  },
 
   USERS_USER_ID_PRIVATE_DATA: {
     route: '/users/:user_id/private_data',

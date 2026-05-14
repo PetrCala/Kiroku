@@ -973,6 +973,14 @@ export default {
       sameUsername: 'This is the same username as your current one',
     },
   },
+  pickUsernameScreen: {
+    heading: 'Choose a username',
+    explainer: 'Pick a username — this is how others will see you.',
+    saving: 'Saving...',
+    error: {
+      generic: 'Could not save your username. Please try again.',
+    },
+  },
   emailForm: {
     email: 'Email',
     error: {
