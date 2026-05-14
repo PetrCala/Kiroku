@@ -14,7 +14,7 @@ fi
 # Default configuration values
 IOS_MODE="DebugDevelopment"
 IOS_SCHEME="Kiroku (development)"
-IOS_SIMULATOR="iPhone 16 Pro"
+IOS_SIMULATOR="iPhone 17"
 
 ANDROID_MODE="developmentDebug"
 ANDROID_APP_ID="com.alcohol_tracker.dev"
