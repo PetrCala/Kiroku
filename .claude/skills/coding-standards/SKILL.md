@@ -10,11 +10,12 @@ Coding standards for the Kiroku app. Each standard is a standalone file in `rule
 
 ## Categories
 
-| Category | Prefix | Focus |
-|----------|--------|-------|
-| Performance | `PERF-*` | Render optimization, memo patterns, useEffect hygiene, data selection |
-| Consistency | `CONSISTENCY-*` | Platform checks, magic values, unused props, ESLint discipline |
-| Clean React Patterns | `CLEAN-REACT-PATTERNS-*` | Composition, component ownership, state structure |
+| Category             | Prefix                   | Focus                                                                 |
+| -------------------- | ------------------------ | --------------------------------------------------------------------- |
+| Performance          | `PERF-*`                 | Render optimization, memo patterns, useEffect hygiene, data selection |
+| Consistency          | `CONSISTENCY-*`          | Platform checks, magic values, unused props, ESLint discipline        |
+| Clean React Patterns | `CLEAN-REACT-PATTERNS-*` | Composition, component ownership, state structure                     |
+| Styling              | `STYLING-*`              | Theme tokens, semantic color choice, brand color sync                 |
 
 ## Quick Reference
 
@@ -53,6 +54,13 @@ Coding standards for the Kiroku app. Each standard is a standalone file in `rule
 - [CLEAN-REACT-PATTERNS-3](rules/clean-react-3-context-free-contracts.md) — Context-free component contracts
 - [CLEAN-REACT-PATTERNS-4](rules/clean-react-4-no-side-effect-spaghetti.md) — No side-effect spaghetti
 - [CLEAN-REACT-PATTERNS-5](rules/clean-react-5-narrow-state.md) — Keep state narrow
+
+### Styling
+
+- [STYLING-1](rules/styling-1-no-raw-hex.md) — No raw hex codes in components
+- [STYLING-2](rules/styling-2-use-theme-hook.md) — Use the useTheme hook, never import theme files directly
+- [STYLING-3](rules/styling-3-pick-specific-token.md) — Pick the most specific semantic token for the role
+- [STYLING-4](rules/styling-4-brand-color-sync.md) — Brand color edits go through the sync script
 
 ## Usage
 
