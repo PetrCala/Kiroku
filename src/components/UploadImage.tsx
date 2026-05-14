@@ -66,32 +66,40 @@ function UploadImageComponent({
       // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access
       const selectedImage: ImagePickerAsset = result.assets[0];
       // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access
-      const imageUri: string | undefined = selectedImage?.uri;
+      const {uri: imageUri, width: srcWidth, height: srcHeight} = selectedImage;
       if (!imageUri || typeof imageUri !== 'string') {
         ErrorUtils.raiseAppError(ERRORS.IMAGE_UPLOAD.FETCH_FAILED);
         return;
       }
 
-      // Crop and resize the image using expo-image-manipulator
-      const manipulatorActions: ImageManipulator.Action[] = [];
+      // Compute a center-crop rectangle that matches the target aspect ratio.
+      // This is necessary because Android's native crop intent (used by allowsEditing)
+      // does not reliably enforce the aspect constraint — the picker may return an image
+      // with arbitrary dimensions. Cropping in ImageManipulator before resizing ensures
+      // the output is never stretched regardless of platform behaviour.
+      const [ratioW, ratioH] = isProfilePicture ? [1, 1] : [3, 4];
+      const targetRatio = ratioW / ratioH;
+      const srcRatio = srcWidth / srcHeight;
 
-      // For profile pictures, ensure square crop
-      if (isProfilePicture) {
-        manipulatorActions.push({
-          resize: {
-            width: 300,
-            height: 300,
-          },
-        });
-      } else {
-        // Resize to target dimensions (300x400)
-        manipulatorActions.push({
-          resize: {
-            width: 300,
-            height: 400,
-          },
-        });
+      let originX = 0;
+      let originY = 0;
+      let cropWidth = srcWidth;
+      let cropHeight = srcHeight;
+
+      if (srcRatio > targetRatio) {
+        cropWidth = Math.round(srcHeight * targetRatio);
+        originX = Math.round((srcWidth - cropWidth) / 2);
+      } else if (srcRatio < targetRatio) {
+        cropHeight = Math.round(srcWidth / targetRatio);
+        originY = Math.round((srcHeight - cropHeight) / 2);
       }
+
+      // Crop to the exact target ratio first, then resize with only width so
+      // ImageManipulator infers height proportionally — distortion is impossible.
+      const manipulatorActions: ImageManipulator.Action[] = [
+        {crop: {originX, originY, width: cropWidth, height: cropHeight}},
+        {resize: {width: 300}},
+      ];
 
       const manipulatedImage = await ImageManipulator.manipulateAsync(
         imageUri,
