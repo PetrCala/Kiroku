@@ -94,7 +94,7 @@ function InitialScreen() {
           success
           text={translate('common.getStarted')}
           onPress={onGetStarted}
-          style={[styles.mt5, styles.pb5]}
+          style={[styles.mt5, styles.mb5]}
         />
       </SignUpScreenLayout>
     </ScreenWrapper>
