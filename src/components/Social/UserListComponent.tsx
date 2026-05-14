@@ -1,7 +1,7 @@
 import {useFirebase} from '@context/global/FirebaseContext';
 import * as Profile from '@userActions/Profile';
 import useProfileList from '@hooks/useProfileList';
-import {isNonEmptyArray} from '@libs/Validation';
+import {isEmptyArray, isEmptyObject} from '@src/types/utils/EmptyObject';
 import {
   calculateAllUsersPriority,
   orderUsersByPriority,
@@ -12,7 +12,6 @@ import React, {useState, useEffect, useCallback, useMemo} from 'react';
 import type {ListRenderItemInfo} from 'react-native';
 import Navigation from '@libs/Navigation/Navigation';
 import ROUTES from '@src/ROUTES';
-import {isEmptyObject} from '@src/types/utils/EmptyObject';
 import {sleep} from '@libs/TimeUtils';
 import useThemeStyles from '@hooks/useThemeStyles';
 import {View} from 'react-native';
@@ -104,7 +103,7 @@ function UserListComponent({
   // Fetch any missing user statuses for the current full user array.
   useEffect(() => {
     async function fetchUsers() {
-      if (!isNonEmptyArray(fullUserArray)) {
+      if (isEmptyArray(fullUserArray)) {
         // Avoid infinite updates
         if (!isEmptyObject(userStatusList)) {
           setUserStatusList({});
@@ -112,7 +111,7 @@ function UserListComponent({
         return;
       }
       const newUsers = fullUserArray.filter(userID => !userStatusList[userID]);
-      if (!isNonEmptyArray(newUsers)) {
+      if (isEmptyArray(newUsers)) {
         return;
       }
       setIsFetchingStatuses(true);
@@ -133,12 +132,12 @@ function UserListComponent({
   // would show friends in input order and then visibly re-sort.
   useEffect(() => {
     const updateDisplayArray = () => {
-      if (!isNonEmptyArray(fullUserArray)) {
+      if (isEmptyArray(fullUserArray)) {
         setDisplayUserArray([]);
         setHasComputedOrderedList(true);
         return;
       }
-      if (userSubset !== undefined && !isNonEmptyArray(userSubset)) {
+      if (userSubset !== undefined && isEmptyArray(userSubset)) {
         setDisplayUserArray([]);
         setHasComputedOrderedList(true);
         return;
@@ -201,7 +200,7 @@ function UserListComponent({
   }, [loadingMoreUsers, styles.pt2]);
 
   const allStatusesLoaded = useMemo(() => {
-    if (!isNonEmptyArray(fullUserArray)) {
+    if (isEmptyArray(fullUserArray)) {
       return true;
     }
     return (
