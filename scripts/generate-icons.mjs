@@ -37,6 +37,22 @@ const VARIANTS = {
   adhoc: {badge: {label: 'ADHOC', color: '#AF52DE'}},
 };
 
+// ─── Brand colors ─────────────────────────────────────────────────────────────
+// The master SVG (assets/images/app-logo.svg) is intentionally WHITE — it is a
+// silhouette that gets composited onto BRAND_BG for opaque surfaces (iOS app
+// icons, legacy Android launcher, web favicons), or rendered onto a separately
+// configured colored backdrop for transparent surfaces (boot splashes via
+// storyboard / colors.xml). In-app rendering tints the master via expo-image
+// `tintColor` in src/components/ImageSVG, so the same white master themes
+// correctly on light and dark backgrounds.
+//
+// BRAND_BG must stay in sync with:
+//   - android/app/src/main/res/values/colors.xml          (bootsplash_background)
+//   - android/app/src/main/res/values/ic_launcher_background.xml
+//   - ios/kiroku/BootSplash.storyboard                    (root view backgroundColor)
+
+const BRAND_BG = '#F5C400';
+
 // ─── iOS icon specs ───────────────────────────────────────────────────────────
 // Each entry: logical size (pt), scale factor, idiom string
 
@@ -157,12 +173,20 @@ function badgeSvg(canvasSize, label, color) {
 
 /**
  * Rasterizes the master SVG at pixelSize and optionally composites the badge.
+ * Pass `background` to flatten the result onto an opaque color (required for
+ * iOS app icons and any surface that must not have alpha).
  */
-async function renderIcon(svgBuffer, pixelSize, variant) {
-  const base = await sharp(svgBuffer)
-    .resize(pixelSize, pixelSize)
-    .png()
-    .toBuffer();
+async function renderIcon(
+  svgBuffer,
+  pixelSize,
+  variant,
+  {background = null} = {},
+) {
+  let pipeline = sharp(svgBuffer).resize(pixelSize, pixelSize);
+  if (background) {
+    pipeline = pipeline.flatten({background});
+  }
+  const base = await pipeline.png().toBuffer();
 
   if (!variant.badge) {
     return base;
@@ -173,6 +197,23 @@ async function renderIcon(svgBuffer, pixelSize, variant) {
   );
   return sharp(base)
     .composite([{input: overlay, blend: 'over'}])
+    .png()
+    .toBuffer();
+}
+
+/**
+ * Produces a solid-color PNG of the given size. Used for Android adaptive icon
+ * backgrounds, which must be a flat color layer beneath the foreground.
+ */
+async function solidColorPng(pixelSize, color) {
+  return sharp({
+    create: {
+      width: pixelSize,
+      height: pixelSize,
+      channels: 4,
+      background: color,
+    },
+  })
     .png()
     .toBuffer();
 }
@@ -200,7 +241,10 @@ async function generateIosIcons(svgBuffer) {
     for (const spec of IOS_ICON_SPECS) {
       const px = Math.round(spec.size * spec.scale);
       const filename = iosIconFilename(spec, key);
-      const buf = await renderIcon(svgBuffer, px, variant);
+      // iOS app icons must be opaque (Apple rejects alpha). Bake in brand bg.
+      const buf = await renderIcon(svgBuffer, px, variant, {
+        background: BRAND_BG,
+      });
       writeFileSync(join(dir, filename), buf);
 
       images.push({
@@ -286,25 +330,30 @@ async function generateAndroidIcons(svgBuffer) {
       const dir = join(resBase, d.folder);
       ensureDir(dir);
 
-      // Legacy launcher PNG (used on Android < 8 and some launchers)
+      // Legacy launcher PNG (used on Android < 8 and some OEM launchers).
+      // Must be opaque — older launchers don't composite over a system bg.
       writeFileSync(
         join(dir, 'ic_launcher.png'),
-        await renderIcon(svgBuffer, d.iconSize, variant),
+        await renderIcon(svgBuffer, d.iconSize, variant, {
+          background: BRAND_BG,
+        }),
       );
 
-      // Adaptive foreground (larger canvas, gets clipped by shape mask)
+      // Adaptive foreground (larger canvas, gets clipped by shape mask).
+      // Transparent — sits on top of ic_launcher_background.
       writeFileSync(
         join(dir, 'ic_launcher_foreground.png'),
         await renderIcon(svgBuffer, d.foreSize, variant),
       );
 
-      // Background (solid brand color — use production, no badge)
+      // Adaptive background — solid brand color, no logo art.
       writeFileSync(
         join(dir, 'ic_launcher_background.png'),
-        await renderIcon(svgBuffer, d.iconSize, VARIANTS.prod),
+        await solidColorPng(d.iconSize, BRAND_BG),
       );
 
-      // Monochrome (used for themed icons on Android 13+)
+      // Monochrome (Android 13+ themed icons). System tints this, so the
+      // white silhouette becomes whatever color the OS picks.
       writeFileSync(
         join(dir, 'ic_launcher_monochrome.png'),
         await renderIcon(svgBuffer, d.iconSize, variant),
@@ -406,9 +455,13 @@ async function generateWebIcons(svgBuffer) {
   ensureDir(webDir);
 
   for (const spec of WEB_SPECS) {
+    // Web icons render on arbitrary page/OS chrome backgrounds and must be
+    // legible standalone — bake in brand bg.
     writeFileSync(
       join(webDir, spec.name),
-      await renderIcon(svgBuffer, spec.size, VARIANTS.prod),
+      await renderIcon(svgBuffer, spec.size, VARIANTS.prod, {
+        background: BRAND_BG,
+      }),
     );
   }
   console.log('  ✓ Web icons');
