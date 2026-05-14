@@ -34,9 +34,7 @@ jobs:
 
   android:
     name: Build and deploy Android for testing
-    runs-on:
-      - self-hosted
-      - android-large
+    runs-on: ubuntu-latest
     needs: [getBranchRef]
     env:
       PULL_REQUEST_NUMBER: ${{ github.event.number || github.event.inputs.PULL_REQUEST_NUMBER }}
@@ -102,8 +100,8 @@ jobs:
     needs: [getBranchRef]
     env:
       PULL_REQUEST_NUMBER: ${{ github.event.number || github.event.inputs.PULL_REQUEST_NUMBER }}
-      DEVELOPER_DIR: /Applications/Xcode_15.2.0.app/Contents/Developer
-    runs-on: macos-13
+      DEVELOPER_DIR: /Applications/Xcode_26.1.1.app/Contents/Developer
+    runs-on: macos-26
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -119,13 +117,19 @@ jobs:
         id: setup-node
         uses: ./.github/actions/composite/setupNode
 
-      - name: Setup XCode
-        run: sudo xcode-select -switch /Applications/Xcode_15.2.0.app
+      - name: Install Ruby into tool cache (self-hosted runner)
+        run: |
+          RUBY_VERSION="3.3.4"
+          RUBY_PATH="${RUNNER_TOOL_CACHE}/Ruby/${RUBY_VERSION}/arm64"
+          if [[ ! -f "${RUBY_PATH}.complete" ]]; then
+            brew install ruby-build 2>/dev/null || true
+            ruby-build "$RUBY_VERSION" "$RUBY_PATH"
+            touch "${RUBY_PATH}.complete"
+          fi
 
       - name: Setup Ruby
         uses: ruby/setup-ruby@a05e47355e80e57b9a67566a813648fa67d92011
         with:
-          ruby-version: '3.2.2'
           bundler-cache: true
 
       - name: Cache Pod dependencies
