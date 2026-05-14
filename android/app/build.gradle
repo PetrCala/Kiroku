@@ -67,6 +67,8 @@ project.ext.envConfigFiles = [
     adhocRelease: ".env.adhoc",
     developmentDebug: ".env.development",
     developmentRelease: ".env.development",
+    stagingDebug: ".env.staging",
+    stagingRelease: ".env.staging",
 ]
 
 
@@ -100,8 +102,8 @@ android {
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
         multiDexEnabled rootProject.ext.multiDexEnabled
-        versionCode 1000031118
-        versionName "0.3.11-18"
+        versionCode 1000031123
+        versionName "0.3.11-23"
         // Supported language variants must be declared here to avoid from being removed during the compilation.
         // This also helps us to not include unnecessary language variants in the APK.
         resConfigs "en", "cs"
@@ -122,6 +124,12 @@ android {
             // If  are building a version that won't be uploaded to the play store, we don't have to use production keys
             // applies all non-production flavors
             applicationIdSuffix ".dev"
+            signingConfig signingConfigs.debug
+            resValue "string", "build_config_package", "com.alcohol_tracker"
+        }
+        staging {
+            // Staging builds use the debug signing config; intended for QA / pre-release verification
+            applicationIdSuffix ".staging"
             signingConfig signingConfigs.debug
             resValue "string", "build_config_package", "com.alcohol_tracker"
         }
@@ -162,6 +170,8 @@ android {
             }
             // ... except for the development (originally e2e) flavor, which we maybe want to build locally:
             productFlavors.development.signingConfig signingConfigs.debug
+            // ... and staging, which is also built locally / for QA without production keys:
+            productFlavors.staging.signingConfig signingConfigs.debug
         }
     }
 

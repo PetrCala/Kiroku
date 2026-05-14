@@ -1,7 +1,6 @@
-// // /**
-// //  * @jest-environment node
-// //  * @jest-config bail=true
-// //  */
+/**
+ * @jest-environment node
+ */
 
 describe('CIGitLogic', () => {
   it('should pass', () => {

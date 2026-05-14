@@ -23,11 +23,11 @@ function RNTextInputWithRef(
       allowFontScaling={false}
       textBreakStrategy="simple"
       keyboardAppearance={theme.colorScheme}
-      ref={refHandle => {
+      ref={(refHandle: AnimatedTextInputRef | null) => {
         if (typeof ref !== 'function') {
           return;
         }
-        ref(refHandle as AnimatedTextInputRef);
+        ref(refHandle);
       }}
       // eslint-disable-next-line
       {...props}

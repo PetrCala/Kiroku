@@ -11,6 +11,59 @@ const ReactCompilerConfig = {
     !filename.includes('tests/') && !filename.includes('node_modules/'),
 };
 
+// ─── Shared alias list ────────────────────────────────────────────────────────
+// Single source of truth so metro and test configs don't drift.
+const moduleResolverAliases = {
+  '@assets': './assets',
+  '@auth': './src/auth',
+  '@components': './src/components',
+  '@context': './src/context',
+  '@database': './src/database',
+  '@desktop': './desktop',
+  '@hooks': './src/hooks',
+  '@libs': './src/libs',
+  '@navigation': './src/libs/Navigation',
+  '@screens': './src/screens',
+  '@src': './src',
+  '@storage': './src/storage',
+  '@styles': './src/styles',
+  '@utils': './src/utils',
+  '@userActions': './src/libs/actions',
+  '@github': './.github',
+};
+
+// ─── TEST environment (babel-jest) ───────────────────────────────────────────
+// Intentionally lightweight: no React Compiler, no worklets, no Hermes preset.
+// Unit tests run on Node — they don't need any of that.
+// Fewer module-resolver extensions = fewer stat() calls per import resolution.
+const testEnv = {
+  // @react-native/babel-preset handles the full mix of Flow + TypeScript syntax
+  // found in react-native's own .js files (e.g. `number => void` Flow arrow
+  // types, mixed `as`-cast + $Flow$ annotations, etc.). Replacing it with
+  // individual presets breaks on these edge cases, so we keep it as the base.
+  //
+  // What we omit vs. the metro config:
+  //   babel-plugin-react-compiler  — full static analysis pass on every file;
+  //                                   not needed for unit tests (expensive)
+  //   react-native-worklets/plugin — worklet rewriting; not needed for unit tests
+  presets: [require('@react-native/babel-preset')],
+  plugins: [
+    ['@babel/plugin-transform-flow-strip-types'],
+    ['@babel/plugin-proposal-class-properties', {loose: true}],
+    ['@babel/plugin-proposal-private-methods', {loose: true}],
+    ['@babel/plugin-proposal-private-property-in-object', {loose: true}],
+    [
+      'module-resolver',
+      {
+        extensions: ['.native.ts', '.native.tsx', '.ts', '.tsx', '.js', '.jsx'],
+        alias: moduleResolverAliases,
+      },
+    ],
+    '@babel/plugin-transform-export-namespace-from',
+  ],
+};
+
+// ─── WEBPACK (web bundler) ────────────────────────────────────────────────────
 const defaultPresets = [
   '@babel/preset-react',
   ['@babel/preset-env', {targets: {node: 20}}],
@@ -42,8 +95,14 @@ const webpack = {
   plugins: defaultPlugins,
 };
 
+// ─── METRO (iOS / Android bundler) ───────────────────────────────────────────
+// Use babel-preset-expo here (it extends @react-native/babel-preset) so the
+// Expo modules we ship — expo-image, expo-image-manipulator, expo-image-picker,
+// expo-modules-core — get process.env.EXPO_OS inlined at compile time. Without
+// this, Expo packages log a "process.env.EXPO_OS is not defined" warning on
+// every Platform.OS lookup and fall back to a slower runtime branch.
 const metro = {
-  presets: [require('@react-native/babel-preset')],
+  presets: [require('babel-preset-expo')],
   plugins: [
     ['babel-plugin-react-compiler', ReactCompilerConfig], // must run first!
 
@@ -75,24 +134,7 @@ const metro = {
           '.android.ts',
           '.android.tx',
         ],
-        alias: {
-          '@assets': './assets',
-          '@auth': './src/auth',
-          '@components': './src/components',
-          '@context': './src/context',
-          '@database': './src/database',
-          '@desktop': './desktop',
-          '@hooks': './src/hooks',
-          '@libs': './src/libs',
-          '@navigation': './src/libs/Navigation',
-          '@screens': './src/screens',
-          '@src': './src',
-          '@storage': './src/storage',
-          '@styles': './src/styles',
-          '@utils': './src/utils',
-          '@userActions': './src/libs/actions',
-          '@github': './.github',
-        },
+        alias: moduleResolverAliases,
       },
     ],
     '@babel/plugin-transform-export-namespace-from',
@@ -109,19 +151,18 @@ const metro = {
   },
 };
 
+// ─── Entry point ─────────────────────────────────────────────────────────────
+// For `react-native` (iOS/Android) caller will be "metro"
+// For `webpack` (Web) caller will be "@babel-loader"
+// For jest, it will be "babel-jest"
+// For `storybook` there won't be any config at all so we must give default argument of an empty object
 module.exports = api => {
-  console.debug('babel.config.js');
-  console.debug('  - api.version:', api.version);
-  console.debug('  - api.env:', api.env());
-  console.debug('  - process.env.NODE_ENV:', process.env.NODE_ENV);
-  console.debug('  - process.env.BABEL_ENV:', process.env.BABEL_ENV);
-
-  // For `react-native` (iOS/Android) caller will be "metro"
-  // For `webpack` (Web) caller will be "@babel-loader"
-  // For jest, it will be babel-jest
-  // For `storybook` there won't be any config at all so we must give default argument of an empty object
+  // api.caller() implicitly configures caching keyed on the caller name,
+  // so Babel won't re-evaluate this function on every file transform.
   const runningIn = api.caller((args = {}) => args.name);
-  console.debug('  - running in: ', runningIn);
 
-  return ['metro', 'babel-jest'].includes(runningIn) ? metro : webpack;
+  if (runningIn === 'babel-jest') {
+    return testEnv;
+  }
+  return runningIn === 'metro' ? metro : webpack;
 };

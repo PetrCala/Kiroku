@@ -3,11 +3,11 @@ import type {ViewStyle} from 'react-native';
 import {StyleSheet} from 'react-native';
 import Reanimated, {
   Easing,
+  runOnJS,
   useAnimatedStyle,
   useSharedValue,
   withTiming,
 } from 'react-native-reanimated';
-import {scheduleOnRN} from 'react-native-worklets';
 import * as KirokuIcons from '@components/Icon/KirokuIcons';
 import ImageSVG from '@components/ImageSVG';
 import useThemeStyles from '@hooks/useThemeStyles';
@@ -69,7 +69,7 @@ function SplashScreenHider({
             duration: 250,
             easing: Easing.out(Easing.ease),
           },
-          () => scheduleOnRN(onHide),
+          () => runOnJS(onHide)(),
         ),
       );
     });

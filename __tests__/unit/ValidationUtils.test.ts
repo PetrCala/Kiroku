@@ -1,3 +1,7 @@
+/**
+ * @jest-environment node
+ */
+
 import {addDays, format, startOfDay, subYears} from 'date-fns';
 import CONST from '@src/CONST';
 import * as ValidationUtils from '@src/libs/ValidationUtils';

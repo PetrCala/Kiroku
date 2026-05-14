@@ -1,3 +1,7 @@
+/**
+ * @jest-environment node
+ */
+
 import {cleanSemver, validateSemver} from '@libs/Validation';
 import {isEmptyArray, isEmptyObject} from '@src/types/utils/EmptyObject';
 

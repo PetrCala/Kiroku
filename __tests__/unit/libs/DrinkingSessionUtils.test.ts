@@ -1,3 +1,7 @@
+/**
+ * @jest-environment node
+ */
+
 import * as DSUtils from '@libs/DrinkingSessionUtils';
 import type {DrinkingSession, DrinksList, DrinksToUnits} from '@src/types/onyx';
 import CONST from '@src/CONST';

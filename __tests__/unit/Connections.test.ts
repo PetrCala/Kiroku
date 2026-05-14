@@ -1,3 +1,7 @@
+/**
+ * @jest-environment node
+ */
+
 import {randUserIDs} from '../utils/firebase/rand';
 import {randConnections} from '../utils/firebase/connections';
 

@@ -47,9 +47,16 @@ program = gpg
 7. Upon submission, include an explicit manual tests you performed that validates your changes work on all platforms.
 8. You're now ready to submit your pull request for final evaluation. Following your submission, the assigned reviewer will examine your PR. Depending on their assessment, your request may be accepted and merged, rejected, or you might be asked to make changes to your code.
 
+## Developer guides
+
+Specialized workflows are documented in dedicated guides:
+
+- **App icons** — updating the logo, changing badge colors, or adding a build variant: see [`scripts/ICON_UPDATE.md`][icon update guide].
+
 <!-- README links -->
 
 [main README]: https://github.com/PetrCala/Kiroku/blob/master/README.md
 [technology README]: https://github.com/PetrCala/Kiroku/blob/master/contributingGuides/TECHNOLOGY.md
 [deploying guide]: https://github.com/PetrCala/Kiroku/blob/master/contributingGuides/philosophies/DEPLOYING.md
 [Discord invitation]: https://discord.gg/mv8zcQz5
+[icon update guide]: https://github.com/PetrCala/Kiroku/blob/master/scripts/ICON_UPDATE.md

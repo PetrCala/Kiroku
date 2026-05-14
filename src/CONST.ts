@@ -910,7 +910,7 @@ const CONST = {
   },
   TOOLTIP_MAX_LINES: 3,
   THEME: {
-    DEFAULT: 'system',
+    DEFAULT: 'light',
     FALLBACK: 'dark',
     DARK: 'dark',
     LIGHT: 'light',
