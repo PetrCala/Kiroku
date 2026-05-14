@@ -1168,7 +1168,7 @@
 			isa = XCBuildConfiguration;
 			baseConfigurationReference = 97C4A51324B622953C787523 /* Pods-kiroku.releasedevelopment.xcconfig */;
 			buildSettings = {
-				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIconDev;
 				ASSETCATALOG_COMPILER_INCLUDE_ALL_APPICON_ASSETS = YES;
 				CLANG_ENABLE_MODULES = YES;
 				CODE_SIGN_ENTITLEMENTS = kiroku/kiroku.entitlements;
@@ -1278,7 +1278,7 @@
 			isa = XCBuildConfiguration;
 			baseConfigurationReference = 3E1C8089B88D7D9EC368B7A6 /* Pods-kiroku.debugadhoc.xcconfig */;
 			buildSettings = {
-				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIconAdHoc;
 				ASSETCATALOG_COMPILER_INCLUDE_ALL_APPICON_ASSETS = YES;
 				CLANG_ENABLE_MODULES = YES;
 				CODE_SIGN_ENTITLEMENTS = kiroku/kiroku.entitlements;
@@ -1832,7 +1832,7 @@
 			isa = XCBuildConfiguration;
 			baseConfigurationReference = 01112B185E0835AAA06BE64E /* Pods-kiroku.debugdevelopment.xcconfig */;
 			buildSettings = {
-				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIconDev;
 				ASSETCATALOG_COMPILER_INCLUDE_ALL_APPICON_ASSETS = YES;
 				CLANG_ENABLE_MODULES = YES;
 				CODE_SIGN_ENTITLEMENTS = kiroku/kiroku.entitlements;
@@ -2892,7 +2892,7 @@
 			isa = XCBuildConfiguration;
 			baseConfigurationReference = 145A6A969673776F7BA9F007 /* Pods-kiroku.releaseadhoc.xcconfig */;
 			buildSettings = {
-				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIconAdHoc;
 				ASSETCATALOG_COMPILER_INCLUDE_ALL_APPICON_ASSETS = YES;
 				CLANG_ENABLE_MODULES = YES;
 				CODE_SIGN_ENTITLEMENTS = kiroku/kiroku.entitlements;

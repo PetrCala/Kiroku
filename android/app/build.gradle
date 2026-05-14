@@ -67,6 +67,8 @@ project.ext.envConfigFiles = [
     adhocRelease: ".env.adhoc",
     developmentDebug: ".env.development",
     developmentRelease: ".env.development",
+    stagingDebug: ".env.staging",
+    stagingRelease: ".env.staging",
 ]
 
 
@@ -125,6 +127,12 @@ android {
             signingConfig signingConfigs.debug
             resValue "string", "build_config_package", "com.alcohol_tracker"
         }
+        staging {
+            // Staging builds use the debug signing config; intended for QA / pre-release verification
+            applicationIdSuffix ".staging"
+            signingConfig signingConfigs.debug
+            resValue "string", "build_config_package", "com.alcohol_tracker"
+        }
     }
 
     signingConfigs {
@@ -162,6 +170,8 @@ android {
             }
             // ... except for the development (originally e2e) flavor, which we maybe want to build locally:
             productFlavors.development.signingConfig signingConfigs.debug
+            // ... and staging, which is also built locally / for QA without production keys:
+            productFlavors.staging.signingConfig signingConfigs.debug
         }
     }
 
