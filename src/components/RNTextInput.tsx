@@ -27,7 +27,7 @@ function RNTextInputWithRef(
         if (typeof ref !== 'function') {
           return;
         }
-        ref(refHandle!);
+        ref(refHandle);
       }}
       // eslint-disable-next-line
       {...props}
