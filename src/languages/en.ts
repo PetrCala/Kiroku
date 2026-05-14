@@ -16,7 +16,6 @@ import type {
   SessionConfirmTimezoneChangeParams,
   SessionStartTimeParams,
   SessionWindowIdParams,
-  SignUpNewAccountCodeParams,
   UnitCountParams,
   UpdateEmailSentEmailParams,
   VerifyEmailScreenEmailParmas,
@@ -907,33 +906,14 @@ export default {
       `This version of the app is now discontinued. Please update to the latest version using the link below${platform === CONST.PLATFORM.IOS ? ' or from within the TestFlight app' : ''}.`,
     link: 'Update Now',
   },
-  welcomeText: {
-    getStarted: 'Get started below',
-    anotherLoginPageIsOpen: 'Another login page is open',
-    anotherLoginPageIsOpenExplanation:
-      "You've opened the login page in a separate tab. Please log in from that tab.",
-    welcome: 'Welcome!',
-    welcomeWithoutExclamation: 'Welcome',
-    enterCredentials: 'Please enter your credentials.',
-    welcomeNewAccount: ({login}: SignUpNewAccountCodeParams) =>
-      `${login}!\nAre you ready to create your account?`,
-    // welcomeEnterMagicCode: ({login}: WelcomeEnterMagicCodeParams) =>
-    //   `Please enter the magic code sent to ${login}. It should arrive within a minute or two.`,
-  },
   login: {
     hero: {
       header: 'Track your everyday alcohol adventures',
       body: 'Welcome to Kiroku, where you can track, monitor, and share your alcohol consumption',
     },
     email: 'Email',
-    cannotGetAccountDetails:
-      "Couldn't retrieve account details. Please signing in again.",
-    initialForm: 'Initial form',
-    logInForm: 'Log in form',
-    signUpForm: 'Sign up form',
     existingAccount: 'Already have an account?',
     noAccount: 'Don’t have an account yet?',
-    error: {},
   },
   password: {
     changePassword: 'Change password',
@@ -997,10 +977,6 @@ export default {
   },
   signUpScreen: {
     signingIn: 'Signing in...',
-    chooseAnotherMethod: 'Choose another sign in method',
-    error: {
-      generic: 'There was an error creating your account. Please try again.',
-    },
   },
   forgotPasswordScreen: {
     title: 'Forgotten password',

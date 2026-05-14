@@ -41,10 +41,6 @@ type SessionWindowIdParams = {
   sessionId: DrinkingSessionId;
 };
 
-type SignUpNewAccountCodeParams = {
-  login: string;
-};
-
 type UnitCountParams = {
   unitCount: number;
 };
@@ -68,7 +64,6 @@ export type {
   SessionConfirmTimezoneChangeParams,
   SessionStartTimeParams,
   SessionWindowIdParams,
-  SignUpNewAccountCodeParams,
   UnitCountParams,
   UpdateEmailSentEmailParams,
   VerifyEmailScreenEmailParmas,

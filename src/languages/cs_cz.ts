@@ -16,7 +16,6 @@ import type {
   SessionConfirmTimezoneChangeParams,
   SessionStartTimeParams,
   SessionWindowIdParams,
-  SignUpNewAccountCodeParams,
   UnitCountParams,
   UpdateEmailSentEmailParams,
   VerifyEmailScreenEmailParmas,
@@ -910,31 +909,14 @@ export default {
       }.`,
     link: 'Aktualizovat nyní',
   },
-  welcomeText: {
-    getStarted: 'Začněte níže',
-    anotherLoginPageIsOpen: 'Další přihlašovací stránka je otevřená',
-    anotherLoginPageIsOpenExplanation:
-      'Přihlašovací stránku jste otevřeli v jiné záložce. Přihlaste se prosím z této záložky.',
-    welcome: 'Vítejte!',
-    welcomeWithoutExclamation: 'Vítejte',
-    enterCredentials: 'Zadejte prosím své přihlašovací údaje.',
-    welcomeNewAccount: ({login}: SignUpNewAccountCodeParams) =>
-      `${login}!\nJste připraveni vytvořit si účet?`,
-  },
   login: {
     hero: {
       header: 'Mějte přehled o svých alkoholových dobrodružstvích',
       body: 'Vítejte v Kiroku, kde můžete sledovat, monitorovat a sdílet svou konzumaci alkoholu',
     },
     email: 'E-mail',
-    cannotGetAccountDetails:
-      'Nelze načíst detaily účtu. Přihlaste se prosím znovu.',
-    initialForm: 'Počáteční formulář',
-    logInForm: 'Přihlašovací formulář',
-    signUpForm: 'Registrační formulář',
     existingAccount: 'Už máte účet?',
     noAccount: 'Ještě nemáte účet?',
-    error: {},
   },
   password: {
     changePassword: 'Změnit heslo',
@@ -999,10 +981,6 @@ export default {
   },
   signUpScreen: {
     signingIn: 'Přihlašuji...',
-    chooseAnotherMethod: 'Zvolte jiný způsob přihlášení',
-    error: {
-      generic: 'Při vytváření účtu došlo k chybě. Zkuste to prosím znovu.',
-    },
   },
   forgotPasswordScreen: {
     title: 'Zapomenuté heslo',
