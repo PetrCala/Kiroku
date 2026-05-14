@@ -581,6 +581,7 @@ async function signInWithOAuth(
     const profileData: Profile = {
       display_name: name,
       photo_url: user.photoURL ?? '',
+      username_chosen: false,
     };
     await pushNewUserInfo(db, user.uid, profileData);
     await updateProfile(user, {displayName: name});
@@ -600,37 +601,26 @@ async function logIn(
   email: string,
   password: string,
 ): Promise<void> {
-  // Stash the credentials in case the log in fails
-  Onyx.merge(ONYXKEYS.FORMS.LOG_IN_FORM_DRAFT, {
-    email,
-    password,
-  });
   await signInWithEmailAndPassword(auth, email, password);
 }
 
 /**
- * Sign up a user to the authentication service using an email and a password
+ * Sign up a user to the authentication service using an email and a password.
+ * The username is captured separately on the post-auth username screen, so a
+ * placeholder display_name is derived from the email and `username_chosen` is
+ * set to `false` to gate the rest of the app behind that screen.
  *
  * @param db The Firebase database object
  * @param auth The Firebase authentication object
  * @param email The new user's email
- * @param username The new user's username
  * @param password The new user's password
  */
 async function signUp(
   db: Database,
   auth: Auth,
   email: string,
-  username: string,
   password: string,
 ): Promise<void> {
-  // Stash the sign up credentials in case the request fails
-  Onyx.merge(ONYXKEYS.FORMS.SIGN_UP_FORM_DRAFT, {
-    email,
-    username,
-    password,
-    reEnterPassword: password,
-  });
   const appSettings = await readDataOnce<AppSettings>(
     db,
     DBPATHS.CONFIG_APP_SETTINGS,
@@ -650,10 +640,13 @@ async function signUp(
     throw new Error('database/account-creation-limit-exceeded');
   }
 
-  // Pushing initial user data to Realtime Database
+  // Derive a placeholder display name from the email so the username screen
+  // has something to prefill. The user confirms or replaces it before exiting.
+  const derivedName = email.split('@').at(0) ?? 'User';
   const newProfileData: Profile = {
-    display_name: username,
+    display_name: derivedName,
     photo_url: '',
+    username_chosen: false,
   };
 
   // Create the user in the Firebase authentication
@@ -670,7 +663,7 @@ async function signUp(
     await pushNewUserInfo(db, newUserID, newProfileData);
 
     // Update Firebase authentication
-    await updateProfile(newUser, {displayName: username});
+    await updateProfile(newUser, {displayName: derivedName});
 
     Session.clearSignInData();
 

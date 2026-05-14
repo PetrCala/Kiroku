@@ -3,8 +3,7 @@ import {createStackNavigator} from '@react-navigation/stack';
 import React from 'react';
 import type {PublicScreensParamList} from '@navigation/types';
 import ForceUpdateScreen from '@components/Modals/ForceUpdateModal';
-import LogInScreen from '@screens/SignUp/LogInScreen';
-import SignUpScreen from '@screens/SignUp/SignUpScreen';
+import AuthScreen from '@screens/SignUp/AuthScreen';
 import InitialScreen from '@screens/SignUp/InitialScreen';
 import ForgotPasswordScreen from '@screens/SignUp/ForgotPasswordScreen';
 import NAVIGATORS from '@src/NAVIGATORS';
@@ -23,14 +22,9 @@ function PublicScreens() {
         component={InitialScreen}
       />
       <RootStack.Screen
-        name={SCREENS.LOG_IN}
+        name={SCREENS.AUTH}
         options={defaultScreenOptions}
-        component={LogInScreen}
-      />
-      <RootStack.Screen
-        name={SCREENS.SIGN_UP}
-        options={defaultScreenOptions}
-        component={SignUpScreen}
+        component={AuthScreen}
       />
       <RootStack.Screen
         name={SCREENS.FORGOT_PASSWORD}

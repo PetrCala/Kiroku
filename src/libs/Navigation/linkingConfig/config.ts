@@ -14,8 +14,7 @@ const config: LinkingOptions<RootStackParamList>['config'] = {
   screens: {
     // Main Routes
     [SCREENS.INITIAL]: ROUTES.INITIAL,
-    [SCREENS.LOG_IN]: ROUTES.LOG_IN,
-    [SCREENS.SIGN_UP]: ROUTES.SIGN_UP,
+    [SCREENS.AUTH]: ROUTES.AUTH,
     [SCREENS.FORGOT_PASSWORD]: ROUTES.FORGOT_PASSWORD,
     [SCREENS.FORCE_UPDATE]: ROUTES.FORCE_UPDATE,
 

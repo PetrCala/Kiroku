@@ -4,7 +4,6 @@
 import type {Auth} from 'firebase/auth';
 import {signOut as fbSignOut} from 'firebase/auth';
 // import {InteractionManager, Linking, NativeModules} from 'react-native';
-import type * as FormTypes from '@src/types/form';
 import Onyx from 'react-native-onyx';
 // import type {OnyxEntry, OnyxUpdate} from 'react-native-onyx';
 // import type {ValueOf} from 'type-fest';
@@ -76,19 +75,6 @@ import clearCache from './clearCache';
 //   key: ONYXKEYS.STASHED_SESSION,
 //   callback: value => (stashedSession = value ?? {}),
 // });
-
-let logInForm: FormTypes.LogInForm = {
-  email: '',
-  password: '',
-};
-Onyx.connect({
-  key: ONYXKEYS.FORMS.LOG_IN_FORM_DRAFT,
-  callback: value =>
-    (logInForm = value ?? {
-      email: '',
-      password: '',
-    }),
-});
 
 let hasCheckedAutoLogin = false;
 Onyx.connect({
@@ -640,10 +626,8 @@ function checkIfActionIsAllowed<
  */
 function clearSignInData() {
   Onyx.multiSet({
-    [ONYXKEYS.FORMS.SIGN_UP_FORM]: null,
-    [ONYXKEYS.FORMS.SIGN_UP_FORM_DRAFT]: null,
-    [ONYXKEYS.FORMS.LOG_IN_FORM]: null,
-    [ONYXKEYS.FORMS.LOG_IN_FORM_DRAFT]: null,
+    [ONYXKEYS.FORMS.AUTH_FORM]: null,
+    [ONYXKEYS.FORMS.AUTH_FORM_DRAFT]: null,
   });
 }
 
@@ -1067,27 +1051,6 @@ function cleanupSession() {
 // };
 
 /**
- * Navigate to the sign up screen from the initial screen
- *
- * @param values The email form values
- */
-function navigateToSignUpFromInitialScreen(
-  values: FormOnyxValues<typeof ONYXKEYS.FORMS.EMAIL_FORM>,
-) {
-  Onyx.set(ONYXKEYS.FORMS.SIGN_UP_FORM_DRAFT, {email: values.email.trim()});
-  Navigation.navigate(ROUTES.SIGN_UP);
-}
-
-/** Navigate to the sign up screen from the login screen */
-function navigateToSignUpFromLoginScreen() {
-  // Stash the email credentials for the sign up screen
-  Onyx.set(ONYXKEYS.FORMS.SIGN_UP_FORM_DRAFT, {
-    email: logInForm?.email ?? '',
-  });
-  Navigation.navigate(ROUTES.SIGN_UP);
-}
-
-/**
  * Signs out the user from the app. All errors should be handled within this function.
  *
  * @param auth Auth object from firebase
@@ -1136,6 +1099,4 @@ export {
   //   signInWithSupportAuthToken,
   //   isSupportAuthToken,
   //   hasStashedSession,
-  navigateToSignUpFromInitialScreen,
-  navigateToSignUpFromLoginScreen,
 };
