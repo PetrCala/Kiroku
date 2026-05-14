@@ -17,9 +17,6 @@ module.exports = {
   testPathIgnorePatterns: ['<rootDir>/node_modules', '<rootDir>/.claude/'],
   watchPathIgnorePatterns: ['<rootDir>/.claude/'],
   modulePathIgnorePatterns: ['<rootDir>/.claude/'],
-  haste: {
-    blockList: [/\.claude\//],
-  },
   globals: {
     __DEV__: true,
     WebSocket: {},
