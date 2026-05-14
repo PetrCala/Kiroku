@@ -9,6 +9,7 @@ import android.os.Build;
 import android.view.View;
 import android.view.ViewConfiguration;
 import android.view.ViewTreeObserver;
+import android.view.Window;
 import android.window.SplashScreen;
 import android.window.SplashScreenView;
 import androidx.annotation.NonNull;
@@ -168,15 +169,50 @@ public class BootSplashModule extends ReactContextBaseJavaModule {
         } else if (mDialog == null) {
           clearPromiseQueue();
         } else {
-          mDialog.setOnDismissListener(new DialogInterface.OnDismissListener() {
+          // Capture the dialog and clear the static reference so a re-entrant
+          // hide() (e.g. promise queued during the fade) takes the mDialog == null
+          // branch above and resolves immediately, without starting a second
+          // animation against the same window.
+          final BootSplashDialog dialogToHide = mDialog;
+          mDialog = null;
+
+          dialogToHide.setOnDismissListener(new DialogInterface.OnDismissListener() {
             @Override
             public void onDismiss(DialogInterface dialog) {
-              mDialog = null;
               clearPromiseQueue();
             }
           });
 
-          mDialog.dismiss();
+          final Window window = dialogToHide.getWindow();
+
+          if (window == null) {
+            // No window to animate; fall through to instant dismiss.
+            dialogToHide.dismiss();
+            return;
+          }
+
+          // 250ms cross-dissolve to match the iOS RCTBootSplash hide animation.
+          window.getDecorView().animate()
+            .alpha(0f)
+            .setDuration(250)
+            .withEndAction(new Runnable() {
+              @Override
+              public void run() {
+                if (activity.isFinishing() || activity.isDestroyed()) {
+                  // Activity torn down mid-animation — dismiss would throw.
+                  // Still resolve queued promises so JS callers don't hang.
+                  clearPromiseQueue();
+                  return;
+                }
+                try {
+                  dialogToHide.dismiss();
+                } catch (IllegalArgumentException ignored) {
+                  // Window already detached.
+                  clearPromiseQueue();
+                }
+              }
+            })
+            .start();
         }
       }
     });
