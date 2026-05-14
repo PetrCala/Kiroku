@@ -156,6 +156,8 @@ module.exports = api => {
   // so Babel won't re-evaluate this function on every file transform.
   const runningIn = api.caller((args = {}) => args.name);
 
-  if (runningIn === 'babel-jest') return testEnv;
+  if (runningIn === 'babel-jest') {
+    return testEnv;
+  }
   return runningIn === 'metro' ? metro : webpack;
 };
