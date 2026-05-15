@@ -1,15 +1,23 @@
 import Onyx from 'react-native-onyx';
 import ONYXKEYS from '@src/ONYXKEYS';
-import type {TzFix} from '@src/types/onyx';
+import type {OnboardingData as OnboardingNvp, TzFix} from '@src/types/onyx';
 import type Onboarding from '@src/types/onyx/Onboarding';
 // import type TryNewDot from '@src/types/onyx/TryNewDot';
 
 type OnboardingData = Onboarding | [] | undefined;
 type TzFixData = TzFix | [] | undefined;
+type OnboardingNvpData = OnboardingNvp | [] | undefined;
 
 // let tryNewDotData: TryNewDot | undefined;
+// TODO(#352+): the legacy `onboarding` var is fed by NVP_TZ_FIX below — a
+// pre-existing wiring bug. Clean up when the tzFix flow is rewritten.
 let onboarding: OnboardingData;
 let tzFix: TzFixData;
+// Consumed by later issues in the onboarding rebuild epic (#352+).
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+let onboardingData: OnboardingNvpData;
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+let termsAcceptedVersion: number | undefined;
 
 type HasCompletedOnboardingFlowProps = {
   onCompleted?: () => void;
@@ -113,13 +121,19 @@ Onyx.connect({
   },
 });
 
-// Onyx.connect({
-//   key: ONYXKEYS.NVP_ONBOARDING,
-//   callback: value => {
-//     onboarding = value;
-//     checkOnboardingDataReady();
-//   },
-// });
+Onyx.connect({
+  key: ONYXKEYS.NVP_ONBOARDING,
+  callback: value => {
+    onboardingData = value;
+  },
+});
+
+Onyx.connect({
+  key: ONYXKEYS.NVP_TERMS_ACCEPTED_VERSION,
+  callback: value => {
+    termsAcceptedVersion = value;
+  },
+});
 
 function resetAllChecks() {
   isServerDataReadyPromise = new Promise(resolve => {

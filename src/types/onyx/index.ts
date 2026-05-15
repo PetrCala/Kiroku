@@ -61,6 +61,7 @@ import type UserIsTyping from './UserIsTyping';
 import type UserLocation from './UserLocation';
 import type UserData from './UserData';
 import type {
+  OnboardingData,
   Profile,
   ProfileList,
   UserDataList,
@@ -111,6 +112,7 @@ export type {
   NicknameKey,
   NicknameToId,
   NicknameToIdList,
+  OnboardingData,
   OnyxUpdateEvent,
   OnyxUpdatesFromServer,
   Preferences,

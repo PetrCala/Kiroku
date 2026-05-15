@@ -28,6 +28,12 @@ const ONYXKEYS = {
   /** This NVP contains information about whether the timezone fix was completed or not */
   NVP_TZ_FIX: 'nvp_tz_fix',
 
+  /** Onboarding progress for the current user (completed_at, last_visited_path) */
+  NVP_ONBOARDING: 'nvp_onboarding',
+
+  /** Version of the Terms & Conditions the user has most recently accepted */
+  NVP_TERMS_ACCEPTED_VERSION: 'nvp_termsAcceptedVersion',
+
   /** Stores current date */
   CURRENT_DATE: 'currentDate',
 
@@ -253,6 +259,8 @@ type OnyxCollectionValuesMapping = {
 
 type OnyxValuesMapping = {
   [ONYXKEYS.NVP_TZ_FIX]: OnyxTypes.TzFix | [];
+  [ONYXKEYS.NVP_ONBOARDING]: OnyxTypes.OnboardingData | [];
+  [ONYXKEYS.NVP_TERMS_ACCEPTED_VERSION]: number;
   //   [ONYXKEYS.ACCOUNT_MANAGER_REPORT_ID]: string;
   //   [ONYXKEYS.NVP_IS_FIRST_TIME_NEW_EXPENSIFY_USER]: boolean;
   //   [ONYXKEYS.ACTIVE_CLIENTS]: string[];
