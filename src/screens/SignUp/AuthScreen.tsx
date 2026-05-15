@@ -1,5 +1,6 @@
 import React, {useCallback, useRef, useState} from 'react';
 import {View} from 'react-native';
+import type {StackScreenProps} from '@react-navigation/stack';
 import {useFirebase} from '@context/global/FirebaseContext';
 import ScreenWrapper from '@components/ScreenWrapper';
 import useThemeStyles from '@hooks/useThemeStyles';
@@ -23,6 +24,8 @@ import Text from '@components/Text';
 import {PressableWithFeedback} from '@components/Pressable';
 import Navigation from '@libs/Navigation/Navigation';
 import ROUTES from '@src/ROUTES';
+import type SCREENS from '@src/SCREENS';
+import type {PublicScreensParamList} from '@libs/Navigation/types';
 import DotIndicatorMessage from '@components/DotIndicatorMessage';
 import {useUserConnection} from '@context/global/UserConnectionContext';
 import AppleSignIn from '@components/SignInButtons/AppleSignIn';
@@ -38,7 +41,12 @@ type AuthScreenLayoutRef = {
 
 type AuthMode = 'signUp' | 'logIn';
 
-function AuthScreen() {
+type AuthScreenProps = StackScreenProps<
+  PublicScreensParamList,
+  typeof SCREENS.AUTH
+>;
+
+function AuthScreen({route}: AuthScreenProps) {
   const {isOnline} = useUserConnection();
   const {db, auth} = useFirebase();
   const {translate} = useLocalize();
@@ -47,7 +55,7 @@ function AuthScreen() {
   const {isInNarrowPaneModal} = useResponsiveLayout();
   const safeAreaInsets = useStyledSafeAreaInsets();
   const currentScreenLayoutRef = useRef<AuthScreenLayoutRef>(null);
-  const [mode, setMode] = useState<AuthMode>('signUp');
+  const [mode, setMode] = useState<AuthMode>(route.params?.mode ?? 'signUp');
   const [isLoading, setIsLoading] = useState(false);
   const [serverErrorMessage, setServerErrorMessage] = useState('');
 

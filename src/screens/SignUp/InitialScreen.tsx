@@ -1,8 +1,11 @@
 import React, {useRef} from 'react';
+import {View} from 'react-native';
 import {useFocusEffect} from '@react-navigation/native';
 import {useFirebase} from '@context/global/FirebaseContext';
 import Navigation from '@navigation/Navigation';
+import type {Route} from '@src/ROUTES';
 import ROUTES from '@src/ROUTES';
+import CONST from '@src/CONST';
 import * as CloseAccount from '@userActions/CloseAccount';
 import * as Session from '@userActions/Session';
 import useThemeStyles from '@hooks/useThemeStyles';
@@ -14,6 +17,8 @@ import useLocalize from '@hooks/useLocalize';
 import {useOnyx} from 'react-native-onyx';
 import ONYXKEYS from '@src/ONYXKEYS';
 import Button from '@components/Button';
+import Text from '@components/Text';
+import {PressableWithFeedback} from '@components/Pressable';
 import DotIndicatorMessage from '@components/DotIndicatorMessage';
 import SignUpScreenLayout from './SignUpScreenLayout';
 
@@ -32,13 +37,17 @@ function InitialScreen() {
   const currentScreenLayoutRef = useRef<InitialScreenLayoutRef>(null);
 
   const welcomeHeader = translate('login.hero.header');
+  const logInActionText = translate('common.logInHere');
 
-  const onGetStarted = () => {
+  const navigateToAuth = (mode: 'signUp' | 'logIn') => {
     if (closeAccount?.success) {
       CloseAccount.setDefaultData();
     }
-    Navigation.navigate(ROUTES.AUTH);
+    Navigation.navigate(`${ROUTES.AUTH}?mode=${mode}` as Route);
   };
+
+  const onGetStarted = () => navigateToAuth('signUp');
+  const onLogIn = () => navigateToAuth('logIn');
 
   useFocusEffect(
     React.useCallback(() => {
@@ -96,6 +105,16 @@ function InitialScreen() {
           onPress={onGetStarted}
           style={[styles.mt5]}
         />
+        <View style={[styles.changeSignUpScreenLinkContainer, styles.mt4]}>
+          <Text style={styles.mr1}>{translate('login.existingAccount')}</Text>
+          <PressableWithFeedback
+            style={[styles.link]}
+            onPress={onLogIn}
+            role={CONST.ROLE.LINK}
+            accessibilityLabel={logInActionText}>
+            <Text style={[styles.link]}>{logInActionText}</Text>
+          </PressableWithFeedback>
+        </View>
       </SignUpScreenLayout>
     </ScreenWrapper>
   );
