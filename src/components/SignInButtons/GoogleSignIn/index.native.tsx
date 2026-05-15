@@ -37,7 +37,7 @@ const styles = StyleSheet.create({
   },
   label: {
     color: '#1F1F1F',
-    fontSize: 19,
+    fontSize: 17,
     fontWeight: '600',
   },
 });
@@ -106,7 +106,7 @@ function GoogleSignIn({onPress = () => {}}: GoogleSignInProps) {
       accessibilityRole="button"
       accessibilityLabel={translate('common.signInWithGoogle')}>
       <View style={styles.content}>
-        <Icon src={KirokuIcons.GoogleG} width={24} height={24} />
+        <Icon src={KirokuIcons.GoogleG} width={22} height={22} />
         <Text style={styles.label}>{translate('common.signInWithGoogle')}</Text>
       </View>
     </PressableWithFeedback>
