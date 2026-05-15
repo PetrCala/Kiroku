@@ -45,7 +45,7 @@ function SignUpScreenContent({
           ]}
         />
         <View style={[styles.flexGrow2, styles.mb8]}>
-          <FormElement style={[styles.alignSelfStretch]}>
+          <FormElement style={[styles.alignSelfStretch, styles.flex1]}>
             <View
               style={[
                 shouldUseNarrowLayout ? styles.mb8 : styles.mb15,
@@ -85,7 +85,9 @@ function SignUpScreenContent({
                 </Text>
               )}
             </View>
-            {children}
+            <View style={[styles.flexGrow1, styles.justifyContentCenter]}>
+              {children}
+            </View>
           </FormElement>
           {/* <View
             style={[

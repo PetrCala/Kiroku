@@ -185,9 +185,9 @@ function AuthScreen({route}: AuthScreenProps) {
             includeSafeAreaPaddingBottom={false}
             submitButtonText={submitButtonText}
             submitButtonStyles={styles.pb5}
+            submitFlexEnabled={false}
             isSubmitButtonVisible={!isLoading}
-            shouldUseScrollView={false}
-            style={styles.flexGrow1}>
+            shouldUseScrollView={false}>
             <InputWrapper
               InputComponent={TextInput}
               inputID={INPUT_IDS.EMAIL}
