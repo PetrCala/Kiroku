@@ -283,6 +283,32 @@ pip3 install --user xUnique
 
 Then make sure the install location is on your `PATH` (e.g. `~/.local/bin` or `~/Library/Python/3.x/bin`). The post_install hook auto-discovers common locations; if it can't find `xunique`, it prints a warning and continues — the build still works, but the pbxproj will accumulate random-UUID noise on each `pod install` that you'll need to discard manually with `git checkout ios/kiroku.xcodeproj/project.pbxproj`.
 
+## Migrations
+
+One-off Firebase migrations live in `scripts/migrations/<kebab-name>.ts` and run via `ts-node` against a service-account credential. The pattern:
+
+- Use `firebase-admin` (devDependency, script-only — never imported by the app).
+- Take `--dry-run`, `--credentials=<path>`, `--database-url=<url>` flags via `scripts/utils/parseCommandLineArguments`. Fall back to `GOOGLE_APPLICATION_CREDENTIALS` and `FIREBASE_DATABASE_URL` env vars. Never hard-code prod URLs.
+- Must be **idempotent**: re-running is a no-op. Skip records that are already in the target state rather than re-writing them.
+- Read once, batch writes via `ref.update(multiPath)` for atomic per-batch updates.
+- Log a summary (scanned / updated / each skip reason) via `scripts/utils/Logger`.
+
+Run flow: always `--dry-run` first against staging, then real run against staging, then real run against production.
+
+```bash
+# Dry-run
+npx ts-node scripts/migrations/<name>.ts --dry-run \
+  --credentials=/path/to/sa.json --database-url=https://<project>.firebaseio.com
+
+# Live
+npx ts-node scripts/migrations/<name>.ts \
+  --credentials=/path/to/sa.json --database-url=https://<project>.firebaseio.com
+```
+
+### Migration log
+
+- `backfill-onboarding.ts` (#358) — stamps `onboarding.completed_at` and `agreed_to_terms_version` on existing users so they skip onboarding after the onboarding rebuild PR ships. **Must run against production immediately after the rebuild deploys**, before users open the app, or they'll hit onboarding on next launch.
+
 ## Architecture Decisions
 
 ### React Native New Architecture
