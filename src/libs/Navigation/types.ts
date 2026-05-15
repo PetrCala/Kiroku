@@ -215,7 +215,7 @@ type SharedScreensParamList = {
 
 type PublicScreensParamList = SharedScreensParamList & {
   [SCREENS.INITIAL]: undefined;
-  [SCREENS.AUTH]: undefined;
+  [SCREENS.AUTH]: {mode?: 'signUp' | 'logIn'} | undefined;
   [SCREENS.FORGOT_PASSWORD]: undefined;
   [SCREENS.FORCE_UPDATE]: undefined;
   // [SCREENS.SIGN_IN_WITH_APPLE_DESKTOP]: undefined;
