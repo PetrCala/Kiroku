@@ -13,13 +13,11 @@ import {useFirebase} from '@context/global/FirebaseContext';
 import useLocalize from '@hooks/useLocalize';
 import useThemeStyles from '@hooks/useThemeStyles';
 import * as ErrorUtils from '@libs/ErrorUtils';
-import Navigation from '@libs/Navigation/Navigation';
 import type {OnboardingModalNavigatorParamList} from '@libs/Navigation/types';
 import * as ValidationUtils from '@libs/ValidationUtils';
 import * as Onboarding from '@userActions/Onboarding';
 import CONST from '@src/CONST';
 import ONYXKEYS from '@src/ONYXKEYS';
-import ROUTES from '@src/ROUTES';
 import type SCREENS from '@src/SCREENS';
 import INPUT_IDS from '@src/types/form/PickUsernameForm';
 import type {StackScreenProps} from '@react-navigation/stack';
@@ -55,7 +53,8 @@ function DisplayNameScreen({}: DisplayNameScreenProps) {
           currentDisplayName,
           values.username,
         );
-        Navigation.navigate(ROUTES.HOME);
+        await Onboarding.completeOnboarding(db, auth.currentUser);
+        Onboarding.navigateAfterOnboarding();
       } catch (error) {
         const appError = ErrorUtils.getAppError(undefined, error);
         setServerErrorMessage(
