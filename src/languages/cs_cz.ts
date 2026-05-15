@@ -114,6 +114,7 @@ export default {
     termsOfService: 'Podmínky služby',
     kirokuTermsOfService: 'Kiroku Podmínky služby',
     privacyPolicy: 'Zásady ochrany osobních údajů',
+    subscriptionTerms: 'Podmínky předplatného',
     members: 'Členové',
     invite: 'Pozvat',
     here: 'zde',
@@ -607,6 +608,9 @@ export default {
     },
     privacyPolicyScreen: {
       loading: 'Načítám Zásady ochrany osobních údajů...',
+    },
+    subscriptionTermsScreen: {
+      loading: 'Načítám Podmínky předplatného...',
     },
     error: {},
   },
