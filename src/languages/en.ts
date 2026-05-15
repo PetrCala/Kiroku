@@ -114,6 +114,7 @@ export default {
     termsOfService: 'Terms of Service',
     kirokuTermsOfService: 'Kiroku Terms of Service',
     privacyPolicy: 'Privacy Policy',
+    subscriptionTerms: 'Subscription Terms',
     members: 'Members',
     invite: 'Invite',
     here: 'here',
@@ -607,6 +608,9 @@ export default {
     },
     privacyPolicyScreen: {
       loading: 'Loading Privacy Policy...',
+    },
+    subscriptionTermsScreen: {
+      loading: 'Loading Subscription Terms...',
     },
     error: {},
   },
