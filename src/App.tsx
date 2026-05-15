@@ -6,6 +6,7 @@ import {UserConnectionProvider} from '@context/global/UserConnectionContext';
 import {SafeAreaProvider} from 'react-native-safe-area-context';
 import {SplashScreenStateContextProvider} from '@context/global/SplashScreenStateContext';
 import {ConfigProvider} from '@context/global/ConfigContext';
+import {DatabaseDataProvider} from '@context/global/DatabaseDataContext';
 import InitialUrlContext from './libs/InitialUrlContext';
 import ColorSchemeWrapper from './components/ColorSchemeWrapper';
 import ActiveElementRoleProvider from './components/ActiveElementRoleProvider';
@@ -70,7 +71,9 @@ function App({url}: KirokuProps): React.JSX.Element {
             <CustomStatusBarAndBackground />
             <ErrorBoundary errorMessage="Kiroku crash caught by error boundary">
               <ColorSchemeWrapper>
-                <Kiroku />
+                <DatabaseDataProvider>
+                  <Kiroku />
+                </DatabaseDataProvider>
               </ColorSchemeWrapper>
             </ErrorBoundary>
           </ComposeProviders>
