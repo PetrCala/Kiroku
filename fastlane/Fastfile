@@ -124,14 +124,14 @@ platform :ios do
 
       keychain_password = SecureRandom.uuid
 
-      # create_keychain(
-      #     name: "ios-build.keychain",
-      #     password: keychain_password,
-      #     default_keychain: "true",
-      #     unlock: "true",
-      #     timeout: "3600",
-      #     add_to_search_list: "true"
-      # )
+      create_keychain(
+          name: "ios-build.keychain",
+          password: keychain_password,
+          default_keychain: "true",
+          unlock: "true",
+          timeout: "3600",
+          add_to_search_list: "true"
+      )
 
       import_certificate(
           certificate_path: "./ios/Certificates.p12",
