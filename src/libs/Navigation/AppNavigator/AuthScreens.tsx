@@ -115,7 +115,7 @@ const modalScreenListeners = {
   },
 };
 
-function AuthScreens() {
+function AuthScreensContent() {
   const styles = useThemeStyles();
   const StyleUtils = useStyleUtils();
   const {auth} = useFirebase();
@@ -283,31 +283,58 @@ function AuthScreens() {
 
   return (
     // <ComposeProviders components={[OptionsListContextProvider, SearchContextProvider]}>
-    <DatabaseDataProvider>
-      <View style={styles.rootNavigatorContainerStyles(shouldUseNarrowLayout)}>
-        <RootStack.Navigator
-          screenOptions={screenOptions.centralPaneNavigator}
-          isSmallScreenWidth={isSmallScreenWidth}>
+    <View style={styles.rootNavigatorContainerStyles(shouldUseNarrowLayout)}>
+      <RootStack.Navigator
+        screenOptions={screenOptions.centralPaneNavigator}
+        isSmallScreenWidth={isSmallScreenWidth}>
+        <RootStack.Screen
+          name={NAVIGATORS.BOTTOM_TAB_NAVIGATOR}
+          options={screenOptions.bottomTab}
+          component={BottomTabNavigator}
+        />
+        <RootStack.Screen
+          name={SCREENS.NOT_FOUND}
+          options={screenOptions.fullScreen}
+          getComponent={notFoundScreen}
+        />
+        <RootStack.Screen
+          name={NAVIGATORS.RIGHT_MODAL_NAVIGATOR}
+          options={screenOptions.rightModalNavigator}
+          component={RightModalNavigator}
+          listeners={modalScreenListeners}
+        />
+        <RootStack.Screen
+          name={NAVIGATORS.TZ_FIX_NAVIGATOR}
+          options={tzFixModalScreenOptions}
+          component={TzFixModalNavigator}
+          listeners={{
+            focus: () => {
+              Modal.setDisableDismissOnEscape(true);
+            },
+            beforeRemove: () => Modal.setDisableDismissOnEscape(false),
+          }}
+        />
+        {/* <RootStack.Screen
+          name={NAVIGATORS.FULL_SCREEN_NAVIGATOR}
+          options={screenOptions.fullScreen}
+          component={FullScreenNavigator}
+        /> */}
+        {/* <RootStack.Screen
+          name={NAVIGATORS.LEFT_MODAL_NAVIGATOR}
+          options={screenOptions.leftModalNavigator}
+          component={LeftModalNavigator}
+          listeners={modalScreenListeners}
+        /> */}
+        {/* <RootStack.Screen
+          name={SCREENS.DESKTOP_SIGN_IN_REDIRECT}
+          options={screenOptions.fullScreen}
+          component={DesktopSignInRedirectPage}
+        /> */}
+        {shouldFireOnboarding && (
           <RootStack.Screen
-            name={NAVIGATORS.BOTTOM_TAB_NAVIGATOR}
-            options={screenOptions.bottomTab}
-            component={BottomTabNavigator}
-          />
-          <RootStack.Screen
-            name={SCREENS.NOT_FOUND}
-            options={screenOptions.fullScreen}
-            getComponent={notFoundScreen}
-          />
-          <RootStack.Screen
-            name={NAVIGATORS.RIGHT_MODAL_NAVIGATOR}
-            options={screenOptions.rightModalNavigator}
-            component={RightModalNavigator}
-            listeners={modalScreenListeners}
-          />
-          <RootStack.Screen
-            name={NAVIGATORS.TZ_FIX_NAVIGATOR}
-            options={tzFixModalScreenOptions}
-            component={TzFixModalNavigator}
+            name={NAVIGATORS.ONBOARDING_MODAL_NAVIGATOR}
+            options={onboardingModalScreenOptions}
+            component={OnboardingModalNavigator}
             listeners={{
               focus: () => {
                 Modal.setDisableDismissOnEscape(true);
@@ -315,36 +342,8 @@ function AuthScreens() {
               beforeRemove: () => Modal.setDisableDismissOnEscape(false),
             }}
           />
-          {/* <RootStack.Screen
-          name={NAVIGATORS.FULL_SCREEN_NAVIGATOR}
-          options={screenOptions.fullScreen}
-          component={FullScreenNavigator}
-        /> */}
-          {/* <RootStack.Screen
-          name={NAVIGATORS.LEFT_MODAL_NAVIGATOR}
-          options={screenOptions.leftModalNavigator}
-          component={LeftModalNavigator}
-          listeners={modalScreenListeners}
-        /> */}
-          {/* <RootStack.Screen
-          name={SCREENS.DESKTOP_SIGN_IN_REDIRECT}
-          options={screenOptions.fullScreen}
-          component={DesktopSignInRedirectPage}
-        /> */}
-          {shouldFireOnboarding && (
-            <RootStack.Screen
-              name={NAVIGATORS.ONBOARDING_MODAL_NAVIGATOR}
-              options={onboardingModalScreenOptions}
-              component={OnboardingModalNavigator}
-              listeners={{
-                focus: () => {
-                  Modal.setDisableDismissOnEscape(true);
-                },
-                beforeRemove: () => Modal.setDisableDismissOnEscape(false),
-              }}
-            />
-          )}
-          {/* {Object.entries(CENTRAL_PANE_SCREENS).map(
+        )}
+        {/* {Object.entries(CENTRAL_PANE_SCREENS).map(
             ([screenName, componentGetter]) => {
               const centralPaneName = screenName as CentralPaneName;
               return (
@@ -361,12 +360,21 @@ function AuthScreens() {
               );
             },
           )} */}
-        </RootStack.Navigator>
-        <OnboardingGuard />
-        <TermsReConsentGuard />
-      </View>
-    </DatabaseDataProvider>
+      </RootStack.Navigator>
+      <OnboardingGuard />
+      <TermsReConsentGuard />
+    </View>
     // </ComposeProviders>
+  );
+}
+
+AuthScreensContent.displayName = 'AuthScreensContent';
+
+function AuthScreens() {
+  return (
+    <DatabaseDataProvider>
+      <AuthScreensContent />
+    </DatabaseDataProvider>
   );
 }
 
