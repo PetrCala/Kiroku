@@ -1,5 +1,6 @@
 import React, {useRef} from 'react';
-import {View} from 'react-native';
+import {StyleSheet, View} from 'react-native';
+import LinearGradient from 'react-native-linear-gradient';
 import {useFocusEffect} from '@react-navigation/native';
 import {useFirebase} from '@context/global/FirebaseContext';
 import Navigation from '@navigation/Navigation';
@@ -8,6 +9,7 @@ import ROUTES from '@src/ROUTES';
 import CONST from '@src/CONST';
 import * as CloseAccount from '@userActions/CloseAccount';
 import * as Session from '@userActions/Session';
+import useTheme from '@hooks/useTheme';
 import useThemeStyles from '@hooks/useThemeStyles';
 import ScreenWrapper from '@components/ScreenWrapper';
 import useStyleUtils from '@hooks/useStyleUtils';
@@ -29,9 +31,11 @@ type InitialScreenLayoutRef = {
 function InitialScreen() {
   const {auth} = useFirebase();
   const {translate} = useLocalize();
+  const theme = useTheme();
   const styles = useThemeStyles();
   const StyleUtils = useStyleUtils();
   const [closeAccount] = useOnyx(ONYXKEYS.FORMS.CLOSE_ACCOUNT_FORM);
+  const [hasCheckedAutoLogin] = useOnyx(ONYXKEYS.HAS_CHECKED_AUTO_LOGIN);
   const {isInNarrowPaneModal} = useResponsiveLayout();
   const safeAreaInsets = useStyledSafeAreaInsets();
   const currentScreenLayoutRef = useRef<InitialScreenLayoutRef>(null);
@@ -52,6 +56,8 @@ function InitialScreen() {
   useFocusEffect(
     React.useCallback(() => {
       Session.clearSignInData();
+      // Reset on each focus so the spinner reflects the current auth check, not a stale value from a previous mount.
+      Session.setHasCheckedAutoLogin(false);
       const stopListening = auth.onAuthStateChanged(user => {
         if (!user) {
           Session.setHasCheckedAutoLogin(true);
@@ -101,21 +107,31 @@ function InitialScreen() {
         <Button
           large
           success
-          text={translate('common.getStarted')}
+          text={translate('common.createAccount')}
           onPress={onGetStarted}
+          isLoading={!hasCheckedAutoLogin}
+          shouldEnableHapticFeedback
           style={[styles.mt5]}
         />
-        <View style={[styles.changeSignUpScreenLinkContainer, styles.mt4]}>
-          <Text style={styles.mr1}>{translate('login.existingAccount')}</Text>
-          <PressableWithFeedback
-            style={[styles.link]}
-            onPress={onLogIn}
-            role={CONST.ROLE.LINK}
-            accessibilityLabel={logInActionText}>
-            <Text style={[styles.link]}>{logInActionText}</Text>
-          </PressableWithFeedback>
-        </View>
+        {!!hasCheckedAutoLogin && (
+          <View style={[styles.changeSignUpScreenLinkContainer, styles.mt4]}>
+            <Text style={styles.mr1}>{translate('login.existingAccount')}</Text>
+            <PressableWithFeedback
+              style={[styles.link]}
+              onPress={onLogIn}
+              role={CONST.ROLE.LINK}
+              accessibilityLabel={logInActionText}>
+              <Text style={[styles.link]}>{logInActionText}</Text>
+            </PressableWithFeedback>
+          </View>
+        )}
       </SignUpScreenLayout>
+      {/* Overlays SignUpScreenLayout's iOS narrow-layout background; alpha kept very low to avoid tinting text. */}
+      <LinearGradient
+        colors={[`${theme.success}00`, `${theme.success}0A`]}
+        style={StyleSheet.absoluteFillObject}
+        pointerEvents="none"
+      />
     </ScreenWrapper>
   );
 }
