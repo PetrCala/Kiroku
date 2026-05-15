@@ -27,6 +27,11 @@ const SCREENS = {
     SUCCESS: 'TZFix_Success',
   },
 
+  ONBOARDING: {
+    TERMS: 'Onboarding_Terms',
+    DISPLAY_NAME: 'Onboarding_DisplayName',
+  },
+
   RIGHT_MODAL: {
     ACHIEVEMENTS: 'Achievements',
     DAY_OVERVIEW: 'DayOverview',

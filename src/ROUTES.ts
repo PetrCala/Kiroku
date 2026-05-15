@@ -91,6 +91,9 @@ const ROUTES = {
   TZ_FIX_SELECTION: 'tz-fix/selection',
   TZ_FIX_SUCCESS: 'tz-fix/success',
 
+  ONBOARDING_TERMS: 'onboarding/terms',
+  ONBOARDING_DISPLAY_NAME: 'onboarding/display-name',
+
   SETTINGS: 'settings',
 
   SETTINGS_ABOUT: 'settings/about',
