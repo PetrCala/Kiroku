@@ -48,6 +48,7 @@ import NewWindow from '@assets/images/new-window.svg';
 import Pencil from '@assets/images/pencil.png';
 import Plus from '@assets/images/plus.svg';
 import Gear from '@assets/images/gear.svg';
+import GoogleG from '@assets/images/google-g.svg';
 import QrCode from '@assets/images/qrcode.svg';
 import Profile from '@assets/images/profile.svg';
 import Remove from '@assets/images/remove.png';
@@ -106,6 +107,7 @@ export {
   FileDocument,
   FriendList,
   Gear,
+  GoogleG,
   Idea,
   Info,
   KirokuQrCode,
