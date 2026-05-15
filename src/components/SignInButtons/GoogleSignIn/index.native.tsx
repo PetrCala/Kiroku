@@ -106,7 +106,7 @@ function GoogleSignIn({onPress = () => {}}: GoogleSignInProps) {
       accessibilityRole="button"
       accessibilityLabel={translate('common.signInWithGoogle')}>
       <View style={styles.content}>
-        <Icon src={KirokuIcons.GoogleG} width={22} height={22} />
+        <Icon src={KirokuIcons.GoogleG} width={16} height={16} />
         <Text style={styles.label}>{translate('common.signInWithGoogle')}</Text>
       </View>
     </PressableWithFeedback>
