@@ -9,6 +9,7 @@ import React, {
 import type {NativeEventSubscription} from 'react-native';
 import {AppState, Linking, Platform} from 'react-native';
 import Onyx, {useOnyx} from 'react-native-onyx';
+import {useDatabaseData} from '@context/global/DatabaseDataContext';
 import {useFirebase} from '@context/global/FirebaseContext';
 import {useUserConnection} from '@context/global/UserConnectionContext';
 import SplashScreenStateContext from '@context/global/SplashScreenStateContext';
@@ -66,10 +67,7 @@ function Kiroku() {
     ONYXKEYS.PREFERRED_THEME,
   );
   const [isLoadingApp] = useOnyx(ONYXKEYS.IS_LOADING_APP);
-  const currentUserID = auth?.currentUser?.uid;
-  const [hasUserData] = useOnyx(ONYXKEYS.USER_DATA_LIST, {
-    selector: list => (currentUserID ? !!list?.[currentUserID] : false),
-  });
+  const {userData} = useDatabaseData();
   const {config} = useConfig();
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [authenticationChecked, setAuthenticationChecked] = useState(false);
@@ -131,7 +129,7 @@ function Kiroku() {
   // IS_LOADING_APP to flip false and their userData entry to arrive so the
   // OnboardingGuard can route into the flow without a flicker.
   const isOnboardingDataReady =
-    !isAuthenticated || (isLoadingApp === false && hasUserData);
+    !isAuthenticated || (isLoadingApp === false && userData !== undefined);
 
   const shouldHideSplash = !!(
     shouldInit &&
