@@ -129,14 +129,6 @@ function HomeScreen({route}: HomeScreenProps) {
         return;
       }
 
-      // Gate HOME behind the username screen for accounts that haven't picked
-      // one yet (covers returning sessions where the new-user flow was
-      // interrupted before completion).
-      if (userData.profile?.username_chosen === false) {
-        Navigation.navigate(ROUTES.PICK_USERNAME);
-        return;
-      }
-
       try {
         synchronizeUserStatus(db, user.uid, drinkingSessionData);
       } catch (error) {

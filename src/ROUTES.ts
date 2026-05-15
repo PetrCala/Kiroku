@@ -30,7 +30,6 @@ const ROUTES = {
   ...PUBLIC_SCREENS_ROUTES,
 
   HOME: 'home',
-  PICK_USERNAME: 'pick-username',
 
   ACHIEVEMENTS: 'achievements',
 
