@@ -75,20 +75,24 @@ jobs:
         env:
           LARGE_SECRET_PASSPHRASE: ${{ secrets.LARGE_SECRET_PASSPHRASE }}
 
+      - name: Run Fastlane - Build Android
+        run: bundle exec fastlane android build_android
+        env:
+          MYAPP_UPLOAD_STORE_PASSWORD: ${{ secrets.MYAPP_UPLOAD_STORE_PASSWORD }}
+          MYAPP_UPLOAD_KEY_PASSWORD: ${{ secrets.MYAPP_UPLOAD_KEY_PASSWORD }}
+
       - name: Configure AWS Credentials
         uses: aws-actions/configure-aws-credentials@v4
         with:
           role-to-assume: arn:aws:iam::${{ secrets.AWS_ACCOUNT_ID }}:role/KirokuS3Upload
           aws-region: ${{ secrets.AWS_REGION }}
 
-      - name: Run Fastlane beta test
+      - name: Upload Android to S3
         id: runFastlaneBetaTest
-        run: bundle exec fastlane android build_internal
+        run: bundle exec fastlane android upload_android_to_s3
         env:
           S3_BUCKET: ${{ secrets.AWS_DEV_ARTIFACTS_BUCKET }}
           S3_REGION: ${{ secrets.AWS_REGION }}
-          MYAPP_UPLOAD_STORE_PASSWORD: ${{ secrets.MYAPP_UPLOAD_STORE_PASSWORD }}
-          MYAPP_UPLOAD_KEY_PASSWORD: ${{ secrets.MYAPP_UPLOAD_KEY_PASSWORD }}
 
       - name: Upload Artifact
         uses: actions/upload-artifact@v4
