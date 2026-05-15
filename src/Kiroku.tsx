@@ -62,7 +62,9 @@ function Kiroku() {
   const [loadingText] = useOnyx(ONYXKEYS.APP_LOADING_TEXT);
   const [initialUrl, setInitialUrl] = useState<string | null>(null);
   const [hasCheckedAutoLogin] = useOnyx(ONYXKEYS.HAS_CHECKED_AUTO_LOGIN);
-  const [preferredTheme] = useOnyx(ONYXKEYS.PREFERRED_THEME);
+  const [preferredTheme, preferredThemeMetadata] = useOnyx(
+    ONYXKEYS.PREFERRED_THEME,
+  );
   const [isLoadingApp] = useOnyx(ONYXKEYS.IS_LOADING_APP);
   const currentUserID = auth?.currentUser?.uid;
   const [hasUserData] = useOnyx(ONYXKEYS.USER_DATA_LIST, {
@@ -118,9 +120,11 @@ function Kiroku() {
 
   const shouldInit = isNavigationReady && hasCheckedAutoLogin;
 
-  // For logged-in users, wait for theme to be loaded from Firebase before hiding splash
-  // For logged-out users, theme is ready immediately (system default will be used)
-  const isThemeReady = !isAuthenticated || preferredTheme !== undefined;
+  // Wait until Onyx has finished hydrating PREFERRED_THEME from local storage
+  // before hiding the splash. Otherwise the ThemeProvider renders one frame
+  // with the default light theme and then re-renders with the stored dark
+  // preference, producing a visible white flash.
+  const isThemeReady = preferredThemeMetadata.status === 'loaded';
 
   // Mirror Expensify's onServerDataReady: keep the splash up until we know
   // whether the user needs onboarding. Authenticated users wait for
