@@ -13,6 +13,16 @@ const PLATFORM_OS_MACOS = 'Mac OS';
 const PLATFORM_IOS = 'iOS';
 const ANDROID_PACKAGE_NAME = 'com.alcohol_tracker';
 const GH_PAGES_URL = 'https://petrcala.github.io/Kiroku';
+// Public-facing Kiroku website (privacy policy, terms of service, etc.).
+// TODO: swap to https://dev.kiroku.cz / https://kiroku.cz once DNS is live.
+const KIROKU_WEB_URLS = {
+  DEV: 'https://kiroku-web-dev.web.app',
+  PROD: 'https://kiroku-web-prod.web.app',
+};
+const KIROKU_WEB_URL =
+  Config?.ENVIRONMENT === 'production'
+    ? KIROKU_WEB_URLS.PROD
+    : KIROKU_WEB_URLS.DEV;
 const PULL_REQUEST_NUMBER = Config?.PULL_REQUEST_NUMBER ?? '';
 const MAX_DATE = dateAdd(new Date(), {years: 1});
 const MIN_DATE = dateSubtract(new Date(), {years: 20});
@@ -68,8 +78,9 @@ const CONST = {
   KIROKU_URL: 'https://kiroku.com',
   GITHUB_URL: 'https://github.com/PetrCala/Kiroku',
   DISCORD_INVITE_URL: 'https://discord.gg/YYR5bQhS',
-  TERMS_URL: `${GH_PAGES_URL}/assets/html/terms-of-service.html`,
-  PRIVACY_URL: `${GH_PAGES_URL}/assets/html/privacy-policy.html`,
+  KIROKU_WEB_URL,
+  TERMS_URL: `${KIROKU_WEB_URL}/terms`,
+  PRIVACY_URL: `${KIROKU_WEB_URL}/privacy`,
   GITHUB_RELEASE_URL:
     'https://api.github.com/repos/PetrCala/Kiroku/releases/latest',
   ADMIN_SDK: {
