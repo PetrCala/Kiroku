@@ -67,6 +67,11 @@ function Kiroku() {
   const [initialUrl, setInitialUrl] = useState<string | null>(null);
   const [hasCheckedAutoLogin] = useOnyx(ONYXKEYS.HAS_CHECKED_AUTO_LOGIN);
   const [preferredTheme] = useOnyx(ONYXKEYS.PREFERRED_THEME);
+  const [isLoadingApp] = useOnyx(ONYXKEYS.IS_LOADING_APP);
+  const currentUserID = auth?.currentUser?.uid;
+  const [hasUserData] = useOnyx(ONYXKEYS.USER_DATA_LIST, {
+    selector: list => (currentUserID ? !!list?.[currentUserID] : false),
+  });
   const {config} = useConfig();
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [authenticationChecked, setAuthenticationChecked] = useState(false);
@@ -123,10 +128,18 @@ function Kiroku() {
   // For logged-out users, theme is ready immediately (system default will be used)
   const isThemeReady = !isAuthenticated || preferredTheme !== undefined;
 
+  // Mirror Expensify's onServerDataReady: keep the splash up until we know
+  // whether the user needs onboarding. Authenticated users wait for
+  // IS_LOADING_APP to flip false and their userData entry to arrive so the
+  // OnboardingGuard can route into the flow without a flicker.
+  const isOnboardingDataReady =
+    !isAuthenticated || (isLoadingApp === false && hasUserData);
+
   const shouldHideSplash = !!(
     shouldInit &&
     authenticationChecked &&
     isThemeReady &&
+    isOnboardingDataReady &&
     splashScreenState === CONST.BOOT_SPLASH_STATE.VISIBLE
   );
 
