@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>CLIENT_ID</key>
+	<string>806896865950-0fnpmkppokk0epailj6u83psrfot197s.apps.googleusercontent.com</string>
+	<key>REVERSED_CLIENT_ID</key>
+	<string>com.googleusercontent.apps.806896865950-0fnpmkppokk0epailj6u83psrfot197s</string>
+	<key>ANDROID_CLIENT_ID</key>
+	<string>806896865950-d0uvplo5k964gm1rpfdhojhvb6pr9o4p.apps.googleusercontent.com</string>
+	<key>API_KEY</key>
+	<string>AIzaSyDGTMdcL1BdnBwC_q2lnKj50rFUnUH5Bnc</string>
+	<key>GCM_SENDER_ID</key>
+	<string>806896865950</string>
+	<key>PLIST_VERSION</key>
+	<string>1</string>
+	<key>BUNDLE_ID</key>
+	<string>org.reactjs.native.example.alcohol-tracker</string>
+	<key>PROJECT_ID</key>
+	<string>dev-alcohol-tracker-db</string>
+	<key>STORAGE_BUCKET</key>
+	<string>dev-alcohol-tracker-db.appspot.com</string>
+	<key>IS_ADS_ENABLED</key>
+	<false></false>
+	<key>IS_ANALYTICS_ENABLED</key>
+	<false></false>
+	<key>IS_APPINVITE_ENABLED</key>
+	<true></true>
+	<key>IS_GCM_ENABLED</key>
+	<true></true>
+	<key>IS_SIGNIN_ENABLED</key>
+	<true></true>
+	<key>GOOGLE_APP_ID</key>
+	<string>1:806896865950:ios:e2ccddc1f660a2cfb1618f</string>
+	<key>DATABASE_URL</key>
+	<string>https://dev-alcohol-tracker-db-default-rtdb.europe-west1.firebasedatabase.app</string>
+</dict>
+</plist>
