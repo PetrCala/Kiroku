@@ -31,6 +31,7 @@ import type ReactComponentModule from '@src/types/utils/ReactComponentModule';
 import useResponsiveLayout from '@hooks/useResponsiveLayout';
 import {useFirebase} from '@context/global/FirebaseContext';
 import OnboardingGuard from '@libs/Navigation/guards/OnboardingGuard';
+import TermsReConsentGuard from '@libs/Navigation/guards/TermsReConsentGuard';
 import useOnboardingFlow from '@hooks/useOnboardingFlow';
 import createCustomStackNavigator from './createCustomStackNavigator';
 import getRootNavigatorScreenOptions from './getRootNavigatorScreenOptions';
@@ -370,6 +371,7 @@ function AuthScreens() {
           )} */}
         </RootStack.Navigator>
         <OnboardingGuard />
+        <TermsReConsentGuard />
       </View>
     </DatabaseDataProvider>
     // </ComposeProviders>

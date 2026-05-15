@@ -675,6 +675,10 @@ export default {
       hasMore,
     }: OnboardingStepCounterParams) =>
       `Step ${currentStep} of ${totalSteps}${hasMore ? '+' : ''}`,
+    terms: {
+      title: 'Terms of service',
+      heading: 'Please review our terms of service',
+    },
   },
   tzFix: {
     introduction: {
