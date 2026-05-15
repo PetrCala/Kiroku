@@ -5,6 +5,7 @@ import type {
   AppleError,
   AppleRequestResponse,
 } from '@invertase/react-native-apple-authentication';
+import * as Crypto from 'expo-crypto';
 import {OAuthProvider} from 'firebase/auth';
 import React from 'react';
 import {useFirebase} from '@context/global/FirebaseContext';
@@ -15,15 +16,41 @@ type AppleSignInProps = {
   onPress?: () => void;
 };
 
+type AppleSignInResult = {
+  response: AppleRequestResponse;
+  rawNonce: string;
+};
+
+/**
+ * Generates a cryptographically random nonce and its SHA-256 hash.
+ * Firebase requires the raw nonce to verify the hashed nonce claim Apple embeds
+ * in the identity token — without it, signInWithCredential rejects the credential.
+ */
+async function generateNonce(): Promise<{raw: string; hashed: string}> {
+  const bytes = Crypto.getRandomBytes(32);
+  const raw = Array.from(bytes)
+    .map(b => b.toString(16).padStart(2, '0'))
+    .join('');
+  const hashed = await Crypto.digestStringAsync(
+    Crypto.CryptoDigestAlgorithm.SHA256,
+    raw,
+  );
+  return {raw, hashed};
+}
+
 /**
  * Performs the native Apple Sign In request and validates the credential state.
- * Returns the raw response (identityToken + fullName) or null on failure.
+ * Returns the raw response (identityToken + fullName) plus the raw nonce that
+ * must be forwarded to Firebase, or null on failure.
  */
-async function appleSignInRequest(): Promise<AppleRequestResponse | null> {
+async function appleSignInRequest(): Promise<AppleSignInResult | null> {
+  const {raw: rawNonce, hashed: hashedNonce} = await generateNonce();
+
   const response = await appleAuth.performRequest({
     requestedOperation: appleAuth.Operation.LOGIN,
     // FULL_NAME must come first — see https://github.com/invertase/react-native-apple-authentication/issues/293
     requestedScopes: [appleAuth.Scope.FULL_NAME, appleAuth.Scope.EMAIL],
+    nonce: hashedNonce,
   });
 
   const credentialState = await appleAuth.getCredentialStateForUser(
@@ -36,7 +63,7 @@ async function appleSignInRequest(): Promise<AppleRequestResponse | null> {
     return null;
   }
 
-  return response;
+  return {response, rawNonce};
 }
 
 /**
@@ -49,11 +76,12 @@ function AppleSignIn({onPress = () => {}}: AppleSignInProps) {
 
   const handleSignIn = async () => {
     try {
-      const response = await appleSignInRequest();
-      if (!response) {
+      const result = await appleSignInRequest();
+      if (!result) {
         return;
       }
 
+      const {response, rawNonce} = result;
       const {identityToken, fullName} = response;
       // Apple only provides the full name on the very first sign-in
       const displayName =
@@ -61,7 +89,10 @@ function AppleSignIn({onPress = () => {}}: AppleSignInProps) {
         null;
 
       const provider = new OAuthProvider('apple.com');
-      const credential = provider.credential({idToken: identityToken ?? ''});
+      const credential = provider.credential({
+        idToken: identityToken ?? '',
+        rawNonce,
+      });
 
       onPress();
       await User.signInWithOAuth(auth, db, credential, displayName);
