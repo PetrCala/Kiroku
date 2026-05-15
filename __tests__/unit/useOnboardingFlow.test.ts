@@ -1,14 +1,20 @@
 import {renderHook} from '@testing-library/react-native';
 import {useOnyx} from 'react-native-onyx';
 import type * as RNOnyx from 'react-native-onyx';
+import {useDatabaseData} from '@context/global/DatabaseDataContext';
 import {useFirebase} from '@context/global/FirebaseContext';
 import useOnboardingFlow from '@hooks/useOnboardingFlow';
 import CONFIG from '@src/CONFIG';
 import ONYXKEYS from '@src/ONYXKEYS';
 import ROUTES from '@src/ROUTES';
+import type {UserData} from '@src/types/onyx';
 
 jest.mock('@context/global/FirebaseContext', () => ({
   useFirebase: jest.fn(),
+}));
+
+jest.mock('@context/global/DatabaseDataContext', () => ({
+  useDatabaseData: jest.fn(),
 }));
 
 jest.mock('react-native-onyx', () => {
@@ -20,49 +26,10 @@ jest.mock('react-native-onyx', () => {
 });
 
 const mockedUseFirebase = jest.mocked(useFirebase);
+const mockedUseDatabaseData = jest.mocked(useDatabaseData);
 const mockedUseOnyx = jest.mocked(useOnyx);
 
-type OnyxFixtures = {
-  isLoadingApp?: boolean;
-  onboarding?: unknown;
-  acceptedTermsVersion?: number;
-  displayName?: string;
-  hasUserData?: boolean;
-};
-
 const TEST_UID = 'user-123';
-
-function setupOnyx(fixtures: OnyxFixtures): void {
-  // Cast through unknown because the real useOnyx signature is heavily
-  // overloaded and we are only exercising the runtime behaviour here.
-  const impl = (
-    key: string,
-    options?: {selector?: (l: unknown) => unknown},
-  ) => {
-    switch (key) {
-      case ONYXKEYS.IS_LOADING_APP:
-        return [fixtures.isLoadingApp, {status: 'loaded'}];
-      case ONYXKEYS.NVP_ONBOARDING:
-        return [fixtures.onboarding, {status: 'loaded'}];
-      case ONYXKEYS.NVP_TERMS_ACCEPTED_VERSION:
-        return [fixtures.acceptedTermsVersion, {status: 'loaded'}];
-      case ONYXKEYS.USER_DATA_LIST: {
-        // The hook calls useOnyx twice on USER_DATA_LIST with different
-        // selectors — once for displayName, once for hasUserData. We can
-        // distinguish by probing the selector against a synthetic list.
-        const fakeList = {[TEST_UID]: {profile: {display_name: 'name'}}};
-        const probe = options?.selector?.(fakeList);
-        if (typeof probe === 'boolean') {
-          return [fixtures.hasUserData ?? false, {status: 'loaded'}];
-        }
-        return [fixtures.displayName, {status: 'loaded'}];
-      }
-      default:
-        return [undefined, {status: 'loaded'}];
-    }
-  };
-  mockedUseOnyx.mockImplementation(impl as unknown as typeof useOnyx);
-}
 
 function setAuth(uid: string | undefined): void {
   mockedUseFirebase.mockReturnValue({
@@ -70,15 +37,42 @@ function setAuth(uid: string | undefined): void {
   } as unknown as ReturnType<typeof useFirebase>);
 }
 
+function setIsLoadingApp(value: boolean | undefined): void {
+  mockedUseOnyx.mockImplementation(((key: string) => {
+    if (key === ONYXKEYS.IS_LOADING_APP) {
+      return [value, {status: 'loaded'}];
+    }
+    return [undefined, {status: 'loaded'}];
+  }) as unknown as typeof useOnyx);
+}
+
+function setUserData(userData: UserData | undefined): void {
+  mockedUseDatabaseData.mockReturnValue({
+    userData,
+  } as unknown as ReturnType<typeof useDatabaseData>);
+}
+
+function makeUserData(overrides: Partial<UserData> = {}): UserData {
+  return {
+    profile: {
+      display_name: 'placeholder',
+      photo_url: '',
+    },
+    role: 'open_beta_user',
+    ...overrides,
+  };
+}
+
 describe('useOnboardingFlow', () => {
   beforeEach(() => {
     jest.clearAllMocks();
     (CONFIG as {SKIP_ONBOARDING: boolean}).SKIP_ONBOARDING = false;
+    setIsLoadingApp(false);
+    setUserData(undefined);
   });
 
   test('unauthenticated → ready, no fire', () => {
     setAuth(undefined);
-    setupOnyx({isLoadingApp: false, hasUserData: false});
 
     const {result} = renderHook(() => useOnboardingFlow());
 
@@ -87,9 +81,10 @@ describe('useOnboardingFlow', () => {
     expect(result.current.currentOnboardingRoute).toBeNull();
   });
 
-  test('authenticated but app still loading → not ready (splash gate)', () => {
+  test('authenticated + app still loading → not ready (splash gate)', () => {
     setAuth(TEST_UID);
-    setupOnyx({isLoadingApp: true, hasUserData: true});
+    setIsLoadingApp(true);
+    setUserData(makeUserData());
 
     const {result} = renderHook(() => useOnboardingFlow());
 
@@ -97,9 +92,10 @@ describe('useOnboardingFlow', () => {
     expect(result.current.shouldFireOnboarding).toBe(false);
   });
 
-  test('authenticated but user data not yet hydrated → not ready (splash gate)', () => {
+  test('authenticated + userData not hydrated → not ready (splash gate)', () => {
     setAuth(TEST_UID);
-    setupOnyx({isLoadingApp: false, hasUserData: false});
+    setIsLoadingApp(false);
+    setUserData(undefined);
 
     const {result} = renderHook(() => useOnboardingFlow());
 
@@ -107,15 +103,20 @@ describe('useOnboardingFlow', () => {
     expect(result.current.shouldFireOnboarding).toBe(false);
   });
 
-  test('authenticated + completed_at set → no fire', () => {
+  test('completed_at set → no fire', () => {
     setAuth(TEST_UID);
-    setupOnyx({
-      isLoadingApp: false,
-      hasUserData: true,
-      onboarding: {completed_at: 1_700_000_000_000},
-      acceptedTermsVersion: 1,
-      displayName: 'name',
-    });
+    setUserData(
+      makeUserData({
+        agreed_to_terms_at: 1_700_000_000_000,
+        agreed_to_terms_version: 1,
+        onboarding: {completed_at: 1_700_000_000_000},
+        profile: {
+          display_name: 'name',
+          photo_url: '',
+          username_chosen: true,
+        },
+      }),
+    );
 
     const {result} = renderHook(() => useOnboardingFlow());
 
@@ -124,30 +125,48 @@ describe('useOnboardingFlow', () => {
     expect(result.current.currentOnboardingRoute).toBeNull();
   });
 
-  test('authenticated + undefined onboarding (legacy) → no fire', () => {
+  test('legacy grandfathered (terms_at set, username_chosen true, no completed_at) → no fire', () => {
     setAuth(TEST_UID);
-    setupOnyx({
-      isLoadingApp: false,
-      hasUserData: true,
-      onboarding: undefined,
-      acceptedTermsVersion: 1,
-      displayName: 'name',
-    });
+    setUserData(
+      makeUserData({
+        agreed_to_terms_at: 1_700_000_000_000,
+        profile: {
+          display_name: 'name',
+          photo_url: '',
+          username_chosen: true,
+        },
+      }),
+    );
 
     const {result} = renderHook(() => useOnboardingFlow());
 
     expect(result.current.shouldFireOnboarding).toBe(false);
   });
 
-  test('authenticated + incomplete + no terms version → routes to TERMS', () => {
+  test('legacy grandfathered (terms_at set, username_chosen undefined) → no fire', () => {
     setAuth(TEST_UID);
-    setupOnyx({
-      isLoadingApp: false,
-      hasUserData: true,
-      onboarding: {last_visited_path: undefined},
-      acceptedTermsVersion: undefined,
-      displayName: undefined,
-    });
+    setUserData(
+      makeUserData({
+        agreed_to_terms_at: 1_700_000_000_000,
+      }),
+    );
+
+    const {result} = renderHook(() => useOnboardingFlow());
+
+    expect(result.current.shouldFireOnboarding).toBe(false);
+  });
+
+  test('brand-new account (no terms_at, no onboarding, username_chosen=false) → fires TERMS', () => {
+    setAuth(TEST_UID);
+    setUserData(
+      makeUserData({
+        profile: {
+          display_name: 'foo@example.com',
+          photo_url: '',
+          username_chosen: false,
+        },
+      }),
+    );
 
     const {result} = renderHook(() => useOnboardingFlow());
 
@@ -155,15 +174,18 @@ describe('useOnboardingFlow', () => {
     expect(result.current.currentOnboardingRoute).toBe(ROUTES.ONBOARDING_TERMS);
   });
 
-  test('authenticated + terms accepted + no display name → routes to DISPLAY_NAME', () => {
+  test('terms accepted + username_chosen=false → routes to DISPLAY_NAME', () => {
     setAuth(TEST_UID);
-    setupOnyx({
-      isLoadingApp: false,
-      hasUserData: true,
-      onboarding: {last_visited_path: undefined},
-      acceptedTermsVersion: 1,
-      displayName: undefined,
-    });
+    setUserData(
+      makeUserData({
+        agreed_to_terms_version: 1,
+        profile: {
+          display_name: 'foo@example.com',
+          photo_url: '',
+          username_chosen: false,
+        },
+      }),
+    );
 
     const {result} = renderHook(() => useOnboardingFlow());
 
@@ -176,13 +198,15 @@ describe('useOnboardingFlow', () => {
   test('SKIP_ONBOARDING bypass overrides incomplete state', () => {
     setAuth(TEST_UID);
     (CONFIG as {SKIP_ONBOARDING: boolean}).SKIP_ONBOARDING = true;
-    setupOnyx({
-      isLoadingApp: false,
-      hasUserData: true,
-      onboarding: {last_visited_path: undefined},
-      acceptedTermsVersion: undefined,
-      displayName: undefined,
-    });
+    setUserData(
+      makeUserData({
+        profile: {
+          display_name: 'foo@example.com',
+          photo_url: '',
+          username_chosen: false,
+        },
+      }),
+    );
 
     const {result} = renderHook(() => useOnboardingFlow());
 
@@ -192,13 +216,17 @@ describe('useOnboardingFlow', () => {
 
   test('surfaces lastVisitedPath from onboarding state', () => {
     setAuth(TEST_UID);
-    setupOnyx({
-      isLoadingApp: false,
-      hasUserData: true,
-      onboarding: {last_visited_path: ROUTES.ONBOARDING_DISPLAY_NAME},
-      acceptedTermsVersion: 1,
-      displayName: undefined,
-    });
+    setUserData(
+      makeUserData({
+        agreed_to_terms_version: 1,
+        onboarding: {last_visited_path: ROUTES.ONBOARDING_DISPLAY_NAME},
+        profile: {
+          display_name: 'foo@example.com',
+          photo_url: '',
+          username_chosen: false,
+        },
+      }),
+    );
 
     const {result} = renderHook(() => useOnboardingFlow());
 

@@ -1,8 +1,8 @@
 import React, {useCallback, useMemo} from 'react';
-import {useOnyx} from 'react-native-onyx';
 import Modal from '@components/Modal';
 import SafeAreaConsumer from '@components/SafeAreaConsumer';
 import TermsScreenContent from '@components/TermsScreenContent';
+import {useDatabaseData} from '@context/global/DatabaseDataContext';
 import {useFirebase} from '@context/global/FirebaseContext';
 import useLocalize from '@hooks/useLocalize';
 import * as Onboarding from '@userActions/Onboarding';
@@ -11,7 +11,6 @@ import {
   hasCompletedOnboarding,
 } from '@libs/OnboardingSelectors';
 import CONST from '@src/CONST';
-import ONYXKEYS from '@src/ONYXKEYS';
 import {View} from 'react-native';
 
 /**
@@ -23,18 +22,20 @@ import {View} from 'react-native';
 function TermsReConsentGuard() {
   const {auth, db} = useFirebase();
   const {translate} = useLocalize();
-  const [onboarding] = useOnyx(ONYXKEYS.NVP_ONBOARDING);
-  const [acceptedTermsVersion] = useOnyx(ONYXKEYS.NVP_TERMS_ACCEPTED_VERSION);
+  const {userData} = useDatabaseData();
 
   const shouldPrompt = useMemo(() => {
     if (!auth?.currentUser) {
       return false;
     }
-    if (!hasCompletedOnboarding(onboarding)) {
+    if (userData === undefined) {
       return false;
     }
-    return !hasAcceptedCurrentTerms(acceptedTermsVersion);
-  }, [auth?.currentUser, onboarding, acceptedTermsVersion]);
+    if (!hasCompletedOnboarding(userData)) {
+      return false;
+    }
+    return !hasAcceptedCurrentTerms(userData);
+  }, [auth?.currentUser, userData]);
 
   const handleAccept = useCallback(async () => {
     await Onboarding.acceptTerms(db, auth.currentUser);

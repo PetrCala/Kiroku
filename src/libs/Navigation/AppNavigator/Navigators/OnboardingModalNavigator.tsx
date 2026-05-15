@@ -1,8 +1,8 @@
 import {createStackNavigator} from '@react-navigation/stack';
 import React, {useCallback, useEffect} from 'react';
 import {View} from 'react-native';
-import {useOnyx} from 'react-native-onyx';
 import FocusTrapForScreens from '@components/FocusTrap/FocusTrapForScreen';
+import {useDatabaseData} from '@context/global/DatabaseDataContext';
 import useKeyboardShortcut from '@hooks/useKeyboardShortcut';
 import useOnboardingLayout from '@hooks/useOnboardingLayout';
 import useResponsiveLayout from '@hooks/useResponsiveLayout';
@@ -11,12 +11,14 @@ import useThemeStyles from '@hooks/useThemeStyles';
 import getOnboardingModalScreenOptions from '@libs/Navigation/getTzFixModalScreenOptions';
 import Navigation from '@libs/Navigation/Navigation';
 import type {OnboardingModalNavigatorParamList} from '@libs/Navigation/types';
-import {hasCompletedOnboarding} from '@libs/OnboardingSelectors';
+import {
+  hasCompletedOnboarding,
+  isLegacyGrandfatheredUser,
+} from '@libs/OnboardingSelectors';
 import OnboardingRefManager from '@libs/OnboardingRefManager';
 import DisplayNameScreen from '@screens/Onboarding/DisplayNameScreen';
 import TermsScreen from '@screens/Onboarding/TermsScreen';
 import CONST from '@src/CONST';
-import ONYXKEYS from '@src/ONYXKEYS';
 import ROUTES from '@src/ROUTES';
 import SCREENS from '@src/SCREENS';
 import Overlay from './Overlay';
@@ -27,9 +29,9 @@ function OnboardingModalNavigator() {
   const styles = useThemeStyles();
   const StyleUtils = useStyleUtils();
   const {isMediumOrLargerScreenWidth} = useOnboardingLayout();
-  const [isOnboardingCompleted] = useOnyx(ONYXKEYS.NVP_ONBOARDING, {
-    selector: hasCompletedOnboarding,
-  });
+  const {userData} = useDatabaseData();
+  const isOnboardingCompleted =
+    hasCompletedOnboarding(userData) || isLegacyGrandfatheredUser(userData);
   const {shouldUseNarrowLayout} = useResponsiveLayout();
 
   useEffect(() => {
