@@ -1,9 +1,12 @@
 import {useMemo} from 'react';
 import {useOnyx} from 'react-native-onyx';
+import {useDatabaseData} from '@context/global/DatabaseDataContext';
 import {useFirebase} from '@context/global/FirebaseContext';
 import {
+  getOnboardingLastVisitedPath,
   hasAcceptedCurrentTerms,
   hasCompletedOnboarding,
+  isLegacyGrandfatheredUser,
 } from '@libs/OnboardingSelectors';
 import CONFIG from '@src/CONFIG';
 import ONYXKEYS from '@src/ONYXKEYS';
@@ -30,23 +33,15 @@ type OnboardingFlowState = {
 function useOnboardingFlow(): OnboardingFlowState {
   const {auth} = useFirebase();
   const userID = auth?.currentUser?.uid;
+  const {userData} = useDatabaseData();
 
   const [isLoadingApp] = useOnyx(ONYXKEYS.IS_LOADING_APP);
-  const [onboarding] = useOnyx(ONYXKEYS.NVP_ONBOARDING);
-  const [acceptedTermsVersion] = useOnyx(ONYXKEYS.NVP_TERMS_ACCEPTED_VERSION);
-  const [displayName] = useOnyx(ONYXKEYS.USER_DATA_LIST, {
-    selector: list =>
-      userID ? list?.[userID]?.profile?.display_name : undefined,
-  });
-  const [hasUserData] = useOnyx(ONYXKEYS.USER_DATA_LIST, {
-    selector: list => (userID ? !!list?.[userID] : false),
-  });
 
   return useMemo<OnboardingFlowState>(() => {
     const skipOnboarding = CONFIG.SKIP_ONBOARDING;
     const isAuthenticated = !!userID;
     const isReady =
-      !isAuthenticated || (isLoadingApp === false && hasUserData === true);
+      !isAuthenticated || (isLoadingApp === false && userData !== undefined);
 
     if (skipOnboarding || !isAuthenticated || !isReady) {
       return {
@@ -58,8 +53,10 @@ function useOnboardingFlow(): OnboardingFlowState {
       };
     }
 
-    const completed = hasCompletedOnboarding(onboarding);
-    if (completed) {
+    if (
+      hasCompletedOnboarding(userData) ||
+      isLegacyGrandfatheredUser(userData)
+    ) {
       return {
         isReady,
         shouldFireOnboarding: false,
@@ -69,15 +66,10 @@ function useOnboardingFlow(): OnboardingFlowState {
       };
     }
 
-    const lastVisitedPath =
-      onboarding && !Array.isArray(onboarding)
-        ? onboarding.last_visited_path
-        : undefined;
-
     let currentOnboardingRoute: Route;
-    if (!hasAcceptedCurrentTerms(acceptedTermsVersion)) {
+    if (!hasAcceptedCurrentTerms(userData)) {
       currentOnboardingRoute = ROUTES.ONBOARDING_TERMS;
-    } else if (!displayName) {
+    } else if (userData?.profile?.username_chosen === false) {
       currentOnboardingRoute = ROUTES.ONBOARDING_DISPLAY_NAME;
     } else {
       currentOnboardingRoute = ROUTES.ONBOARDING_TERMS;
@@ -87,17 +79,10 @@ function useOnboardingFlow(): OnboardingFlowState {
       isReady,
       shouldFireOnboarding: true,
       currentOnboardingRoute,
-      lastVisitedPath,
+      lastVisitedPath: getOnboardingLastVisitedPath(userData),
       skipOnboarding,
     };
-  }, [
-    userID,
-    isLoadingApp,
-    hasUserData,
-    onboarding,
-    acceptedTermsVersion,
-    displayName,
-  ]);
+  }, [userID, isLoadingApp, userData]);
 }
 
 export default useOnboardingFlow;
