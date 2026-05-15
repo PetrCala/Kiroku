@@ -29,8 +29,8 @@ platform :android do
   end
 
 
-  desc "Build app for testing"
-  lane :build_internal do
+  desc "Build Android APK for testing (no upload)"
+  lane :build_android do
     ENV["ENVFILE"]=".env.adhoc"
 
     gradle(
@@ -40,17 +40,30 @@ platform :android do
       build_type: 'Release',
     )
 
-    # A role should have been assumed before this step
+    # Persist APK path for the separate upload step (avoids AWS token expiry
+    # on long cold-cache builds by letting the workflow re-assume the role).
+    sh("echo '#{lane_context[SharedValues::GRADLE_APK_OUTPUT_PATH]}' > ../android_apk_path.txt")
+  end
+
+  desc "Upload built Android APK to S3 (requires fresh AWS credentials)"
+  lane :upload_android_to_s3 do
+    apk_path = File.read('../android_apk_path.txt').strip
+
     aws_s3(
       bucket: ENV['S3_BUCKET'],
       region: ENV['S3_REGION'],
 
-      apk: lane_context[SharedValues::GRADLE_APK_OUTPUT_PATH],
+      apk: apk_path,
       app_directory: "android/#{ENV['PULL_REQUEST_NUMBER']}",
     )
 
-
     sh("echo '{\"apk_path\": \"#{lane_context[SharedValues::S3_APK_OUTPUT_PATH]}\",\"html_path\": \"#{lane_context[SharedValues::S3_HTML_OUTPUT_PATH]}\"}' > ../android_paths.json")
+  end
+
+  desc "Build app for testing"
+  lane :build_internal do
+    build_android
+    upload_android_to_s3
   end
 
   desc "Build and upload app to Google Play"
