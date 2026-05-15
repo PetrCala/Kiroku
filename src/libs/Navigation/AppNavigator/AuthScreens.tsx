@@ -30,13 +30,15 @@ import {getFirebaseAuth} from '@libs/Firebase/FirebaseApp';
 import type ReactComponentModule from '@src/types/utils/ReactComponentModule';
 import useResponsiveLayout from '@hooks/useResponsiveLayout';
 import {useFirebase} from '@context/global/FirebaseContext';
+import OnboardingGuard from '@libs/Navigation/guards/OnboardingGuard';
+import useOnboardingFlow from '@hooks/useOnboardingFlow';
 import createCustomStackNavigator from './createCustomStackNavigator';
 import getRootNavigatorScreenOptions from './getRootNavigatorScreenOptions';
 import BottomTabNavigator from './Navigators/BottomTabNavigator';
 // import CentralPaneNavigator from './Navigators/CentralPaneNavigator';
 // import FullScreenNavigator from './Navigators/FullScreenNavigator';
 // import LeftModalNavigator from './Navigators/LeftModalNavigator';
-// import OnboardingModalNavigator from './Navigators/OnboardingModalNavigator';
+import OnboardingModalNavigator from './Navigators/OnboardingModalNavigator';
 import TzFixModalNavigator from './Navigators/TzFixModalNavigator';
 import RightModalNavigator from './Navigators/RightModalNavigator';
 // import WelcomeVideoModalNavigator from './Navigators/WelcomeVideoModalNavigator';
@@ -133,7 +135,8 @@ function AuthScreens() {
     StyleUtils,
   );
 
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  const {shouldFireOnboarding} = useOnboardingFlow();
+
   const onboardingModalScreenOptions = useMemo(
     () =>
       screenOptions.onboardingModalNavigator(
@@ -335,19 +338,19 @@ function AuthScreens() {
           options={screenOptions.fullScreen}
           component={DesktopSignInRedirectPage}
         /> */}
-          {/* {isOnboardingCompleted === false && (
-                        <RootStack.Screen
-                            name={NAVIGATORS.ONBOARDING_MODAL_NAVIGATOR}
-                            options={onboardingScreenOptions}
-                            component={OnboardingModalNavigator}
-                            listeners={{
-                                focus: () => {
-                                    Modal.setDisableDismissOnEscape(true);
-                                },
-                                beforeRemove: () => Modal.setDisableDismissOnEscape(false),
-                            }}
-                        />
-                    )} */}
+          {shouldFireOnboarding && (
+            <RootStack.Screen
+              name={NAVIGATORS.ONBOARDING_MODAL_NAVIGATOR}
+              options={onboardingModalScreenOptions}
+              component={OnboardingModalNavigator}
+              listeners={{
+                focus: () => {
+                  Modal.setDisableDismissOnEscape(true);
+                },
+                beforeRemove: () => Modal.setDisableDismissOnEscape(false),
+              }}
+            />
+          )}
           {/* {Object.entries(CENTRAL_PANE_SCREENS).map(
             ([screenName, componentGetter]) => {
               const centralPaneName = screenName as CentralPaneName;
@@ -366,6 +369,7 @@ function AuthScreens() {
             },
           )} */}
         </RootStack.Navigator>
+        <OnboardingGuard />
       </View>
     </DatabaseDataProvider>
     // </ComposeProviders>
