@@ -187,6 +187,11 @@ type TzFixModalNavigatorParamList = {
   [SCREENS.TZ_FIX.SUCCESS]: undefined;
 };
 
+type OnboardingModalNavigatorParamList = {
+  [SCREENS.ONBOARDING.TERMS]: undefined;
+  [SCREENS.ONBOARDING.DISPLAY_NAME]: undefined;
+};
+
 type BottomTabNavigatorParamList = {
   [SCREENS.HOME]: undefined;
   // [SCREENS.ALL_SETTINGS]: undefined;
@@ -256,6 +261,7 @@ export type {
   // FullScreenName,
   // FullScreenNavigatorParamList,
   LeftModalNavigatorParamList,
+  OnboardingModalNavigatorParamList,
   NavigationStateRoute,
   NavigationPartialRoute,
   NavigationRef,
