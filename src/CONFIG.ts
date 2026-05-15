@@ -122,6 +122,7 @@ export default {
   },
   SEND_CRASH_REPORTS: get(Config, 'SEND_CRASH_REPORTS', 'false') === 'true',
   IS_USING_EMULATORS: get(Config, 'USE_EMULATORS', 'false') === 'true',
+  SKIP_ONBOARDING: get(Config, 'SKIP_ONBOARDING', 'false') === 'true',
   TEST_PROJECT_ID: 'alcohol-tracker-db',
   SITE_TITLE: 'Kiroku',
   EMULATORS: {
