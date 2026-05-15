@@ -1,5 +1,6 @@
 name: Build and deploy apps for testing
 
+# Debug branch: claude/recursing-hawking-2800a1
 on:
   workflow_dispatch:
     inputs:
