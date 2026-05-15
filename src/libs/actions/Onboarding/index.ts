@@ -1,9 +1,10 @@
 import type {Database} from 'firebase/database';
-import {ref, update} from 'firebase/database';
+import {ref, set, update} from 'firebase/database';
 import type {User} from 'firebase/auth';
 import Onyx from 'react-native-onyx';
 import * as Localize from '@libs/Localize';
 import Log from '@libs/Log';
+import Navigation from '@libs/Navigation/Navigation';
 import {setUsername} from '@userActions/User';
 import CONST from '@src/CONST';
 import DBPATHS from '@src/DBPATHS';
@@ -101,12 +102,48 @@ async function setDisplayName(
   await Onyx.merge(ONYXKEYS.NVP_ONBOARDING, {last_visited_path: path});
 }
 
-function completeOnboarding(): void {
-  Log.info('[Onboarding] completeOnboarding stub — not yet implemented');
+/**
+ * Mark the onboarding flow complete for the given user.
+ *
+ * Performs the Onyx merge first so the modal navigator unmounts via
+ * `useOnboardingFlow` even when the device is offline. The Firebase write is
+ * fired without `await` — Firebase RTDB queues offline writes and replays
+ * them on reconnect, so blocking the caller would defeat the optimistic
+ * guarantee.
+ */
+async function completeOnboarding(
+  db: Database,
+  user: User | null,
+): Promise<void> {
+  if (!user) {
+    throw new Error(Localize.translateLocal('common.error.userNull'));
+  }
+
+  const userID = user.uid;
+  const now = Date.now();
+
+  await Onyx.merge(ONYXKEYS.NVP_ONBOARDING, {completed_at: now});
+  await Onyx.merge(ONYXKEYS.USER_DATA_LIST, {
+    [userID]: {onboarding: {completed_at: now}},
+  });
+
+  const completedAtPath =
+    DBPATHS.USERS_USER_ID_ONBOARDING_COMPLETED_AT.getRoute(userID);
+  set(ref(db, completedAtPath), now).catch(error => {
+    Log.warn('[Onboarding] Failed to persist onboarding completion', {error});
+  });
 }
 
+/**
+ * Navigate the user out of the onboarding modal after completion.
+ *
+ * The modal screen is conditionally rendered in `AuthScreens` based on
+ * `shouldFireOnboarding`, so it unmounts automatically once `completed_at`
+ * lands in Onyx. We just navigate to Home; resuming the last-attempted
+ * protected route is a v2 nice-to-have.
+ */
 function navigateAfterOnboarding(): void {
-  Log.info('[Onboarding] navigateAfterOnboarding stub — not yet implemented');
+  Navigation.navigate(ROUTES.HOME);
 }
 
 function setLastVisitedPath(path: string): void {
