@@ -142,6 +142,25 @@ const DBPATHS = {
     getRoute: (user_id: UserID) =>
       `users/${user_id}/agreed_to_terms_at` as const,
   },
+  USERS_USER_ID_AGREED_TO_TERMS_VERSION: {
+    route: '/users/:user_id/agreed_to_terms_version',
+    getRoute: (user_id: UserID) =>
+      `users/${user_id}/agreed_to_terms_version` as const,
+  },
+  USERS_USER_ID_ONBOARDING: {
+    route: '/users/:user_id/onboarding',
+    getRoute: (user_id: UserID) => `users/${user_id}/onboarding` as const,
+  },
+  USERS_USER_ID_ONBOARDING_COMPLETED_AT: {
+    route: '/users/:user_id/onboarding/completed_at',
+    getRoute: (user_id: UserID) =>
+      `users/${user_id}/onboarding/completed_at` as const,
+  },
+  USERS_USER_ID_ONBOARDING_LAST_VISITED_PATH: {
+    route: '/users/:user_id/onboarding/last_visited_path',
+    getRoute: (user_id: UserID) =>
+      `users/${user_id}/onboarding/last_visited_path` as const,
+  },
   USERS_USER_ID_FRIENDS: {
     route: '/users/:user_id/friends',
     getRoute: (user_id: UserID) => `users/${user_id}/friends` as const,
