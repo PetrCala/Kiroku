@@ -99,10 +99,7 @@ function SignUpScreenContent({
         </View>
         <View
           pointerEvents="box-none"
-          style={[
-            StyleSheet.absoluteFillObject,
-            styles.justifyContentCenter,
-          ]}>
+          style={[StyleSheet.absoluteFillObject, styles.justifyContentCenter]}>
           {children}
         </View>
       </View>
