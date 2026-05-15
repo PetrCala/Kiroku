@@ -1,4 +1,4 @@
-import ScreenWrapper from '@components/ScreenWrapper';
+import OnboardingScreenLayout from '@components/OnboardingScreenLayout';
 import Text from '@components/Text';
 import type {OnboardingModalNavigatorParamList} from '@libs/Navigation/types';
 import type {StackScreenProps} from '@react-navigation/stack';
@@ -12,9 +12,13 @@ type DisplayNameScreenProps = StackScreenProps<
 // eslint-disable-next-line no-empty-pattern
 function DisplayNameScreen({}: DisplayNameScreenProps) {
   return (
-    <ScreenWrapper testID={DisplayNameScreen.displayName}>
+    <OnboardingScreenLayout
+      testID={DisplayNameScreen.displayName}
+      currentStep={2}
+      totalSteps={2}
+      hasMore>
       <Text>TODO: Onboarding Display Name</Text>
-    </ScreenWrapper>
+    </OnboardingScreenLayout>
   );
 }
 

@@ -1,4 +1,4 @@
-import ScreenWrapper from '@components/ScreenWrapper';
+import OnboardingScreenLayout from '@components/OnboardingScreenLayout';
 import Text from '@components/Text';
 import type {OnboardingModalNavigatorParamList} from '@libs/Navigation/types';
 import type {StackScreenProps} from '@react-navigation/stack';
@@ -12,9 +12,14 @@ type TermsScreenProps = StackScreenProps<
 // eslint-disable-next-line no-empty-pattern
 function TermsScreen({}: TermsScreenProps) {
   return (
-    <ScreenWrapper testID={TermsScreen.displayName}>
+    <OnboardingScreenLayout
+      testID={TermsScreen.displayName}
+      currentStep={1}
+      totalSteps={2}
+      hasMore
+      isFirstScreen>
       <Text>TODO: Onboarding Terms</Text>
-    </ScreenWrapper>
+    </OnboardingScreenLayout>
   );
 }
 
