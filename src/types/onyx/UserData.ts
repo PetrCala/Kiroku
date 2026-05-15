@@ -56,10 +56,25 @@ type UserPublicData = {
   last_active?: Timestamp;
 };
 
+/** Onboarding progress data */
+type OnboardingData = {
+  /** Timestamp when the user completed onboarding */
+  completed_at?: Timestamp;
+
+  /** The last onboarding path visited, used to resume progress */
+  last_visited_path?: string;
+};
+
 /** A collection of a single user's data */
 type UserData = {
   /** A timestamp marking when the user agreed to the terms and conditions */
   agreed_to_terms_at?: Timestamp;
+
+  /** Version of the Terms & Conditions the user agreed to */
+  agreed_to_terms_version?: number;
+
+  /** Onboarding progress data */
+  onboarding?: OnboardingData;
 
   /** A list of friend requests of this user */
   friend_requests?: FriendRequestList;
@@ -97,6 +112,7 @@ type UserDataMetadata = {
 
 export default UserData;
 export type {
+  OnboardingData,
   Profile,
   Timezone,
   SelectedTimezone,

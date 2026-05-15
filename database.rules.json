@@ -75,7 +75,7 @@
         "drinks_to_units": {
           ".validate": "newData.hasChildren(['beer', 'cocktail', 'other', 'strong_shot', 'weak_shot', 'wine'])"
         },
-        "locale":  {
+        "locale": {
           ".validate": "newData.isString() || newData.val() === null"
         },
         "theme": {
@@ -123,6 +123,20 @@
         "agreed_to_terms_at": {
           ".validate": "(newData.isNumber() && newData.val() > 0) || newData.val() === null",
           ".write": "auth != null && auth.uid === $uid"
+        },
+        "agreed_to_terms_version": {
+          ".validate": "(newData.isNumber() && newData.val() > 0) || newData.val() === null",
+          ".write": "auth != null && auth.uid === $uid"
+        },
+        "onboarding": {
+          ".validate": "newData.val() === null || newData.hasChildren()",
+          ".write": "auth != null && auth.uid === $uid",
+          "completed_at": {
+            ".validate": "(newData.isNumber() && newData.val() > 0) || newData.val() === null"
+          },
+          "last_visited_path": {
+            ".validate": "newData.val() === null || newData.isString()"
+          }
         },
         "friends": {
           ".validate": "newData.val() === null || newData.hasChildren()",

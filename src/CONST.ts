@@ -81,6 +81,7 @@ const CONST = {
   KIROKU_WEB_URL,
   TERMS_URL: `${KIROKU_WEB_URL}/terms`,
   PRIVACY_URL: `${KIROKU_WEB_URL}/privacy`,
+  CURRENT_TERMS_VERSION: 1,
   GITHUB_RELEASE_URL:
     'https://api.github.com/repos/PetrCala/Kiroku/releases/latest',
   ADMIN_SDK: {

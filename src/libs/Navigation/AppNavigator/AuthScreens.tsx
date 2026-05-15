@@ -24,19 +24,21 @@ import ONYXKEYS from '@src/ONYXKEYS';
 // import ROUTES from '@src/ROUTES';
 import SCREENS from '@src/SCREENS';
 import getOnboardingModalScreenOptions from '@libs/Navigation/getOnboardingModalScreenOptions';
-import {DatabaseDataProvider} from '@context/global/DatabaseDataContext';
 import type {SelectedTimezone, Timezone} from '@src/types/onyx/UserData';
 import {getFirebaseAuth} from '@libs/Firebase/FirebaseApp';
 import type ReactComponentModule from '@src/types/utils/ReactComponentModule';
 import useResponsiveLayout from '@hooks/useResponsiveLayout';
 import {useFirebase} from '@context/global/FirebaseContext';
+import OnboardingGuard from '@libs/Navigation/guards/OnboardingGuard';
+import TermsReConsentGuard from '@libs/Navigation/guards/TermsReConsentGuard';
+import useOnboardingFlow from '@hooks/useOnboardingFlow';
 import createCustomStackNavigator from './createCustomStackNavigator';
 import getRootNavigatorScreenOptions from './getRootNavigatorScreenOptions';
 import BottomTabNavigator from './Navigators/BottomTabNavigator';
 // import CentralPaneNavigator from './Navigators/CentralPaneNavigator';
 // import FullScreenNavigator from './Navigators/FullScreenNavigator';
 // import LeftModalNavigator from './Navigators/LeftModalNavigator';
-// import OnboardingModalNavigator from './Navigators/OnboardingModalNavigator';
+import OnboardingModalNavigator from './Navigators/OnboardingModalNavigator';
 import TzFixModalNavigator from './Navigators/TzFixModalNavigator';
 import RightModalNavigator from './Navigators/RightModalNavigator';
 // import WelcomeVideoModalNavigator from './Navigators/WelcomeVideoModalNavigator';
@@ -44,9 +46,6 @@ import RightModalNavigator from './Navigators/RightModalNavigator';
 // eslint-disable-next-line rulesdir/no-negated-variables
 const notFoundScreen = () =>
   require<ReactComponentModule>('@screens/ErrorScreen/NotFoundScreen').default;
-
-const pickUsernameScreen = () =>
-  require<ReactComponentModule>('@screens/SignUp/PickUsernameScreen').default;
 
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 let lastUpdateIDAppliedToClient: OnyxEntry<number>;
@@ -133,7 +132,8 @@ function AuthScreens() {
     StyleUtils,
   );
 
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  const {shouldFireOnboarding} = useOnboardingFlow();
+
   const onboardingModalScreenOptions = useMemo(
     () =>
       screenOptions.onboardingModalNavigator(
@@ -282,36 +282,58 @@ function AuthScreens() {
 
   return (
     // <ComposeProviders components={[OptionsListContextProvider, SearchContextProvider]}>
-    <DatabaseDataProvider>
-      <View style={styles.rootNavigatorContainerStyles(shouldUseNarrowLayout)}>
-        <RootStack.Navigator
-          screenOptions={screenOptions.centralPaneNavigator}
-          isSmallScreenWidth={isSmallScreenWidth}>
+    <View style={styles.rootNavigatorContainerStyles(shouldUseNarrowLayout)}>
+      <RootStack.Navigator
+        screenOptions={screenOptions.centralPaneNavigator}
+        isSmallScreenWidth={isSmallScreenWidth}>
+        <RootStack.Screen
+          name={NAVIGATORS.BOTTOM_TAB_NAVIGATOR}
+          options={screenOptions.bottomTab}
+          component={BottomTabNavigator}
+        />
+        <RootStack.Screen
+          name={SCREENS.NOT_FOUND}
+          options={screenOptions.fullScreen}
+          getComponent={notFoundScreen}
+        />
+        <RootStack.Screen
+          name={NAVIGATORS.RIGHT_MODAL_NAVIGATOR}
+          options={screenOptions.rightModalNavigator}
+          component={RightModalNavigator}
+          listeners={modalScreenListeners}
+        />
+        <RootStack.Screen
+          name={NAVIGATORS.TZ_FIX_NAVIGATOR}
+          options={tzFixModalScreenOptions}
+          component={TzFixModalNavigator}
+          listeners={{
+            focus: () => {
+              Modal.setDisableDismissOnEscape(true);
+            },
+            beforeRemove: () => Modal.setDisableDismissOnEscape(false),
+          }}
+        />
+        {/* <RootStack.Screen
+          name={NAVIGATORS.FULL_SCREEN_NAVIGATOR}
+          options={screenOptions.fullScreen}
+          component={FullScreenNavigator}
+        /> */}
+        {/* <RootStack.Screen
+          name={NAVIGATORS.LEFT_MODAL_NAVIGATOR}
+          options={screenOptions.leftModalNavigator}
+          component={LeftModalNavigator}
+          listeners={modalScreenListeners}
+        /> */}
+        {/* <RootStack.Screen
+          name={SCREENS.DESKTOP_SIGN_IN_REDIRECT}
+          options={screenOptions.fullScreen}
+          component={DesktopSignInRedirectPage}
+        /> */}
+        {shouldFireOnboarding && (
           <RootStack.Screen
-            name={NAVIGATORS.BOTTOM_TAB_NAVIGATOR}
-            options={screenOptions.bottomTab}
-            component={BottomTabNavigator}
-          />
-          <RootStack.Screen
-            name={SCREENS.NOT_FOUND}
-            options={screenOptions.fullScreen}
-            getComponent={notFoundScreen}
-          />
-          <RootStack.Screen
-            name={SCREENS.PICK_USERNAME}
-            options={screenOptions.fullScreen}
-            getComponent={pickUsernameScreen}
-          />
-          <RootStack.Screen
-            name={NAVIGATORS.RIGHT_MODAL_NAVIGATOR}
-            options={screenOptions.rightModalNavigator}
-            component={RightModalNavigator}
-            listeners={modalScreenListeners}
-          />
-          <RootStack.Screen
-            name={NAVIGATORS.TZ_FIX_NAVIGATOR}
-            options={tzFixModalScreenOptions}
-            component={TzFixModalNavigator}
+            name={NAVIGATORS.ONBOARDING_MODAL_NAVIGATOR}
+            options={onboardingModalScreenOptions}
+            component={OnboardingModalNavigator}
             listeners={{
               focus: () => {
                 Modal.setDisableDismissOnEscape(true);
@@ -319,36 +341,8 @@ function AuthScreens() {
               beforeRemove: () => Modal.setDisableDismissOnEscape(false),
             }}
           />
-          {/* <RootStack.Screen
-          name={NAVIGATORS.FULL_SCREEN_NAVIGATOR}
-          options={screenOptions.fullScreen}
-          component={FullScreenNavigator}
-        /> */}
-          {/* <RootStack.Screen
-          name={NAVIGATORS.LEFT_MODAL_NAVIGATOR}
-          options={screenOptions.leftModalNavigator}
-          component={LeftModalNavigator}
-          listeners={modalScreenListeners}
-        /> */}
-          {/* <RootStack.Screen
-          name={SCREENS.DESKTOP_SIGN_IN_REDIRECT}
-          options={screenOptions.fullScreen}
-          component={DesktopSignInRedirectPage}
-        /> */}
-          {/* {isOnboardingCompleted === false && (
-                        <RootStack.Screen
-                            name={NAVIGATORS.ONBOARDING_MODAL_NAVIGATOR}
-                            options={onboardingScreenOptions}
-                            component={OnboardingModalNavigator}
-                            listeners={{
-                                focus: () => {
-                                    Modal.setDisableDismissOnEscape(true);
-                                },
-                                beforeRemove: () => Modal.setDisableDismissOnEscape(false),
-                            }}
-                        />
-                    )} */}
-          {/* {Object.entries(CENTRAL_PANE_SCREENS).map(
+        )}
+        {/* {Object.entries(CENTRAL_PANE_SCREENS).map(
             ([screenName, componentGetter]) => {
               const centralPaneName = screenName as CentralPaneName;
               return (
@@ -365,9 +359,10 @@ function AuthScreens() {
               );
             },
           )} */}
-        </RootStack.Navigator>
-      </View>
-    </DatabaseDataProvider>
+      </RootStack.Navigator>
+      <OnboardingGuard />
+      <TermsReConsentGuard />
+    </View>
     // </ComposeProviders>
   );
 }

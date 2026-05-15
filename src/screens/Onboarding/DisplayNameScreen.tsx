@@ -5,23 +5,30 @@ import FormProvider from '@components/Form/FormProvider';
 import InputWrapper from '@components/Form/InputWrapper';
 import type {FormInputErrors, FormOnyxValues} from '@components/Form/types';
 import FullScreenLoadingIndicator from '@components/FullscreenLoadingIndicator';
-import ScreenWrapper from '@components/ScreenWrapper';
+import OnboardingScreenLayout from '@components/OnboardingScreenLayout';
 import Text from '@components/Text';
 import TextInput from '@components/TextInput';
+import {useDatabaseData} from '@context/global/DatabaseDataContext';
+import {useFirebase} from '@context/global/FirebaseContext';
 import useLocalize from '@hooks/useLocalize';
 import useThemeStyles from '@hooks/useThemeStyles';
 import * as ErrorUtils from '@libs/ErrorUtils';
+import type {OnboardingModalNavigatorParamList} from '@libs/Navigation/types';
 import * as ValidationUtils from '@libs/ValidationUtils';
-import Navigation from '@libs/Navigation/Navigation';
+import * as Onboarding from '@userActions/Onboarding';
 import CONST from '@src/CONST';
 import ONYXKEYS from '@src/ONYXKEYS';
-import ROUTES from '@src/ROUTES';
+import type SCREENS from '@src/SCREENS';
 import INPUT_IDS from '@src/types/form/PickUsernameForm';
-import {useDatabaseData} from '@context/global/DatabaseDataContext';
-import {useFirebase} from '@context/global/FirebaseContext';
-import {setUsername} from '@userActions/User';
+import type {StackScreenProps} from '@react-navigation/stack';
 
-function PickUsernameScreen() {
+type DisplayNameScreenProps = StackScreenProps<
+  OnboardingModalNavigatorParamList,
+  typeof SCREENS.ONBOARDING.DISPLAY_NAME
+>;
+
+// eslint-disable-next-line no-empty-pattern
+function DisplayNameScreen({}: DisplayNameScreenProps) {
   const styles = useThemeStyles();
   const {translate} = useLocalize();
   const {db, auth} = useFirebase();
@@ -40,13 +47,14 @@ function PickUsernameScreen() {
       }
       setIsSaving(true);
       try {
-        await setUsername(
+        await Onboarding.setDisplayName(
           db,
           auth.currentUser,
           currentDisplayName,
           values.username,
         );
-        Navigation.navigate(ROUTES.HOME);
+        await Onboarding.completeOnboarding(db, auth.currentUser);
+        Onboarding.navigateAfterOnboarding();
       } catch (error) {
         const appError = ErrorUtils.getAppError(undefined, error);
         setServerErrorMessage(
@@ -76,10 +84,11 @@ function PickUsernameScreen() {
   };
 
   return (
-    <ScreenWrapper
-      includeSafeAreaPaddingBottom={false}
-      shouldEnableMaxHeight
-      testID={PickUsernameScreen.displayName}>
+    <OnboardingScreenLayout
+      testID={DisplayNameScreen.displayName}
+      currentStep={2}
+      totalSteps={2}
+      hasMore={false}>
       {isSaving || !!loadingText ? (
         <FullScreenLoadingIndicator
           style={[styles.flex1]}
@@ -121,9 +130,10 @@ function PickUsernameScreen() {
           )}
         </FormProvider>
       )}
-    </ScreenWrapper>
+    </OnboardingScreenLayout>
   );
 }
 
-PickUsernameScreen.displayName = 'PickUsernameScreen';
-export default PickUsernameScreen;
+DisplayNameScreen.displayName = 'DisplayNameScreen';
+
+export default DisplayNameScreen;

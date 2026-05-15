@@ -6,7 +6,6 @@ import type DeepValueOf from './types/utils/DeepValueOf';
 
 const PROTECTED_SCREENS = {
   HOME: 'Home',
-  PICK_USERNAME: 'PickUsername',
 } as const;
 
 const SCREENS = {
@@ -25,6 +24,11 @@ const SCREENS = {
     SELECTION: 'TZFix_Selection',
     CONFIRMATION: 'TZFix_Confirmation',
     SUCCESS: 'TZFix_Success',
+  },
+
+  ONBOARDING: {
+    TERMS: 'Onboarding_Terms',
+    DISPLAY_NAME: 'Onboarding_DisplayName',
   },
 
   RIGHT_MODAL: {

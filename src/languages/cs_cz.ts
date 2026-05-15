@@ -13,6 +13,7 @@ import type {
   ForgotPasswordSuccessParams,
   FriendRequestsCountParams,
   NoDrinkingSessionsParams,
+  OnboardingStepCounterParams,
   SessionConfirmTimezoneChangeParams,
   SessionStartTimeParams,
   SessionWindowIdParams,
@@ -659,6 +660,18 @@ export default {
     headerTitle: 'Přezdívka',
     isShownOnProfile: 'Vaše přezdívka se zobrazuje na vašem profilu.',
     updatingDisplayName: 'Aktualizujeme vaši přezdívku...',
+  },
+  onboarding: {
+    stepCounter: ({
+      currentStep,
+      totalSteps,
+      hasMore,
+    }: OnboardingStepCounterParams) =>
+      `Krok ${currentStep} z ${totalSteps}${hasMore ? '+' : ''}`,
+    terms: {
+      title: 'Podmínky služby',
+      heading: 'Seznamte se prosím s našimi podmínkami služby',
+    },
   },
   tzFix: {
     introduction: {

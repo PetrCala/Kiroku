@@ -440,19 +440,6 @@ async function fetchUserNicknames(
   }, {} as NicknameToId);
 }
 
-/** Fetch the timestamp of when a user last agreed to terms and conditions */
-async function fetchLastAgreedToTermsAt(
-  db: Database,
-  userID: UserID,
-): Promise<Timestamp | null> {
-  const agreedToTermsAtRef = DBPATHS.USERS_USER_ID_AGREED_TO_TERMS_AT;
-  const agreedToTermsAt = await readDataOnce<Timestamp>(
-    db,
-    agreedToTermsAtRef.getRoute(userID),
-  );
-  return agreedToTermsAt;
-}
-
 /**
  * Change a user's automatic timezone setting.
  *
@@ -487,33 +474,6 @@ async function updateAutomaticTimezone(
 
   await Onyx.merge(ONYXKEYS.USER_DATA_LIST, {
     [userID]: {timezone: newData},
-  });
-}
-
-/**
- * Update the agreed to terms at timestamp for a user.
- *
- * @param db The Firebase database object
- * @param user The user to update the agreed to terms at timestamp for
- */
-async function updateAgreedToTermsAt(
-  db: Database,
-  user: User | null,
-): Promise<void> {
-  if (!user) {
-    throw new Error(Localize.translateLocal('common.error.userNull'));
-  }
-
-  const userID = user.uid;
-  const agreedToTermsAtRef = DBPATHS.USERS_USER_ID_AGREED_TO_TERMS_AT;
-
-  const updates: Record<string, number> = {};
-  updates[agreedToTermsAtRef.getRoute(userID)] = Date.now();
-
-  await update(ref(db), updates);
-
-  await Onyx.merge(ONYXKEYS.USER_DATA_LIST, {
-    [userID]: {agreed_to_terms_at: Date.now()},
   });
 }
 
@@ -622,7 +582,7 @@ async function signInWithOAuth(
     await updateProfile(user, {displayName: name});
   }
   Session.clearSignInData();
-  Navigation.navigate(exists ? ROUTES.HOME : ROUTES.PICK_USERNAME);
+  Navigation.navigate(ROUTES.HOME);
 }
 
 /** Attempt to log in to the Firebase authentication service with a user's credentials
@@ -702,7 +662,7 @@ async function signUp(
 
     Session.clearSignInData();
 
-    Navigation.navigate(ROUTES.PICK_USERNAME);
+    Navigation.navigate(ROUTES.HOME);
   } catch (error) {
     // Attempt to rollback the changes if the 'transaction' fails
     await deleteUserData(
@@ -723,7 +683,6 @@ export {
   changeDisplayName,
   changeUserName,
   deleteUserData,
-  fetchLastAgreedToTermsAt,
   fetchUserNicknames,
   getDefaultPreferences,
   getDefaultUserData,
@@ -737,7 +696,6 @@ export {
   setUsername,
   setVerifyEmailDismissed,
   synchronizeUserStatus,
-  updateAgreedToTermsAt,
   updateAutomaticTimezone,
   updatePassword,
   userExistsInDatabase,
