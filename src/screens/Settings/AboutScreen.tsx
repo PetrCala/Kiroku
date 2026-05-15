@@ -89,6 +89,11 @@ function AboutScreen() {
         icon: KirokuIcons.FileDocument,
         onPress: () => Navigation.navigate(ROUTES.SETTINGS_PRIVACY_POLICY),
       },
+      {
+        translationKey: 'common.subscriptionTerms',
+        icon: KirokuIcons.FileDocument,
+        onPress: () => Navigation.navigate(ROUTES.SETTINGS_SUBSCRIPTION_TERMS),
+      },
     ];
 
     return baseMenuItems.map(

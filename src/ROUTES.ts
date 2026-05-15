@@ -120,6 +120,7 @@ const ROUTES = {
 
   SETTINGS_TERMS_OF_SERVICE: 'settings/terms-of-service',
   SETTINGS_PRIVACY_POLICY: 'settings/privacy-policy',
+  SETTINGS_SUBSCRIPTION_TERMS: 'settings/subscription-terms',
   SETTINGS_REPORT_BUG: 'settings/report-bug',
   SETTINGS_FEEDBACK: 'settings/feedback',
   SETTINGS_DELETE: 'settings/delete',
