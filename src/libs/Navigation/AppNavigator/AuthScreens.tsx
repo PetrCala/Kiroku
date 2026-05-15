@@ -48,9 +48,6 @@ import RightModalNavigator from './Navigators/RightModalNavigator';
 const notFoundScreen = () =>
   require<ReactComponentModule>('@screens/ErrorScreen/NotFoundScreen').default;
 
-const pickUsernameScreen = () =>
-  require<ReactComponentModule>('@screens/SignUp/PickUsernameScreen').default;
-
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 let lastUpdateIDAppliedToClient: OnyxEntry<number>;
 let timezone: Timezone | null;
@@ -300,11 +297,6 @@ function AuthScreens() {
             name={SCREENS.NOT_FOUND}
             options={screenOptions.fullScreen}
             getComponent={notFoundScreen}
-          />
-          <RootStack.Screen
-            name={SCREENS.PICK_USERNAME}
-            options={screenOptions.fullScreen}
-            getComponent={pickUsernameScreen}
           />
           <RootStack.Screen
             name={NAVIGATORS.RIGHT_MODAL_NAVIGATOR}

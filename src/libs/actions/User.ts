@@ -582,7 +582,7 @@ async function signInWithOAuth(
     await updateProfile(user, {displayName: name});
   }
   Session.clearSignInData();
-  Navigation.navigate(exists ? ROUTES.HOME : ROUTES.PICK_USERNAME);
+  Navigation.navigate(ROUTES.HOME);
 }
 
 /** Attempt to log in to the Firebase authentication service with a user's credentials
@@ -662,7 +662,7 @@ async function signUp(
 
     Session.clearSignInData();
 
-    Navigation.navigate(ROUTES.PICK_USERNAME);
+    Navigation.navigate(ROUTES.HOME);
   } catch (error) {
     // Attempt to rollback the changes if the 'transaction' fails
     await deleteUserData(

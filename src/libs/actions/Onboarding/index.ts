@@ -4,9 +4,11 @@ import type {User} from 'firebase/auth';
 import Onyx from 'react-native-onyx';
 import * as Localize from '@libs/Localize';
 import Log from '@libs/Log';
+import {setUsername} from '@userActions/User';
 import CONST from '@src/CONST';
 import DBPATHS from '@src/DBPATHS';
 import ONYXKEYS from '@src/ONYXKEYS';
+import ROUTES from '@src/ROUTES';
 
 /**
  * Persist a user's acceptance of the current Terms & Conditions.
@@ -63,10 +65,40 @@ async function acceptTerms(
   }
 }
 
-function setDisplayName(displayName: string): void {
-  Log.info(
-    `[Onboarding] setDisplayName stub — not yet implemented (displayName="${displayName}")`,
-  );
+/**
+ * Persist the display name chosen during the onboarding flow.
+ *
+ * Wraps {@link setUsername} (which atomically writes the new
+ * `profile.display_name`, flips `profile.username_chosen`, and updates the
+ * nickname index + Firebase auth profile) and additionally records the
+ * onboarding resume path so the flow can be picked up where it left off.
+ */
+async function setDisplayName(
+  db: Database,
+  user: User | null,
+  currentDisplayName: string | undefined,
+  newDisplayName: string,
+): Promise<void> {
+  if (!user) {
+    throw new Error(Localize.translateLocal('common.error.userNull'));
+  }
+
+  await setUsername(db, user, currentDisplayName, newDisplayName);
+
+  const userID = user.uid;
+  const path = ROUTES.ONBOARDING_DISPLAY_NAME;
+  const updates: Record<string, string> = {};
+  updates[DBPATHS.USERS_USER_ID_ONBOARDING_LAST_VISITED_PATH.getRoute(userID)] =
+    path;
+
+  await update(ref(db), updates);
+
+  await Onyx.merge(ONYXKEYS.USER_DATA_LIST, {
+    [userID]: {
+      onboarding: {last_visited_path: path},
+    },
+  });
+  await Onyx.merge(ONYXKEYS.NVP_ONBOARDING, {last_visited_path: path});
 }
 
 function completeOnboarding(): void {
