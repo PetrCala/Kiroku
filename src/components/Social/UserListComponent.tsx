@@ -1,7 +1,7 @@
 import {useFirebase} from '@context/global/FirebaseContext';
 import * as Profile from '@userActions/Profile';
 import useProfileList from '@hooks/useProfileList';
-import {isNonEmptyArray} from '@libs/Validation';
+import {isEmptyArray, isEmptyObject} from '@src/types/utils/EmptyObject';
 import {
   calculateAllUsersPriority,
   orderUsersByPriority,
@@ -12,7 +12,6 @@ import React, {useState, useEffect, useCallback, useMemo} from 'react';
 import type {ListRenderItemInfo} from 'react-native';
 import Navigation from '@libs/Navigation/Navigation';
 import ROUTES from '@src/ROUTES';
-import {isEmptyObject} from '@src/types/utils/EmptyObject';
 import {sleep} from '@libs/TimeUtils';
 import useThemeStyles from '@hooks/useThemeStyles';
 import FlatList from '@components/FlatList';
@@ -102,7 +101,7 @@ function UserListComponent({
   // Monitor the user status list
   useEffect(() => {
     async function fetchUsers() {
-      if (!isNonEmptyArray(fullUserArray)) {
+      if (isEmptyArray(fullUserArray)) {
         // Avoid infinite updates
         if (!isEmptyObject(userStatusList)) {
           setUserStatusList({});
@@ -110,7 +109,7 @@ function UserListComponent({
         return;
       }
       const newUsers = fullUserArray.filter(userID => !userStatusList[userID]);
-      if (isNonEmptyArray(newUsers)) {
+      if (!isEmptyArray(newUsers)) {
         const newUserStatusList: UserStatusList =
           await Profile.fetchUserStatuses(db, newUsers);
         setUserStatusList({...userStatusList, ...newUserStatusList});
@@ -125,8 +124,8 @@ function UserListComponent({
     const updateDisplayArray = () => {
       // No users to display
       if (
-        (!isNonEmptyArray(fullUserArray) && fullUserArray) ??
-        (!isNonEmptyArray(userSubset) && userSubset) ??
+        (isEmptyArray(fullUserArray) && fullUserArray) ??
+        (isEmptyArray(userSubset) && userSubset) ??
         isEmptyObject(userStatusList)
       ) {
         setDisplayUserArray([]);

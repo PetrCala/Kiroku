@@ -4,7 +4,7 @@ import type {ProfileList} from '@src/types/onyx';
 import type {UserArray} from '@src/types/onyx/OnyxCommon';
 import * as Profile from '@userActions/Profile';
 import * as ErrorUtils from '@libs/ErrorUtils';
-import {isNonEmptyArray} from '@libs/Validation';
+import {isEmptyArray} from '@src/types/utils/EmptyObject';
 import ERRORS from '@src/ERRORS';
 
 /**
@@ -27,7 +27,7 @@ const useProfileList = (userArray: UserArray) => {
 
   const updateDisplayData = useCallback(async (): Promise<void> => {
     // console.log('userArray', userArray);
-    if (!isNonEmptyArray(userArray)) {
+    if (isEmptyArray(userArray)) {
       setProfileList({});
       setLoadingDisplayData(false);
       return;
@@ -36,7 +36,7 @@ const useProfileList = (userArray: UserArray) => {
     try {
       // Filter out the users that are already in the profile list
       const newUsers = userArray.filter(userID => !profileList[userID]);
-      if (isNonEmptyArray(newUsers)) {
+      if (!isEmptyArray(newUsers)) {
         const newProfileList: ProfileList = await Profile.fetchUserProfiles(
           db,
           newUsers,
