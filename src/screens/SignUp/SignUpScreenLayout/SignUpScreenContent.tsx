@@ -1,5 +1,5 @@
 import React from 'react';
-import {View} from 'react-native';
+import {StyleSheet, View} from 'react-native';
 import FormElement from '@components/FormElement';
 // import OfflineIndicator from '@components/OfflineIndicator';
 import Text from '@components/Text';
@@ -45,7 +45,7 @@ function SignUpScreenContent({
           ]}
         />
         <View style={[styles.flexGrow2, styles.mb8]}>
-          <FormElement style={[styles.alignSelfStretch, styles.flex1]}>
+          <FormElement style={[styles.alignSelfStretch]}>
             <View
               style={[
                 shouldUseNarrowLayout ? styles.mb8 : styles.mb15,
@@ -85,9 +85,6 @@ function SignUpScreenContent({
                 </Text>
               )}
             </View>
-            <View style={[styles.flexGrow1, styles.justifyContentCenter]}>
-              {children}
-            </View>
           </FormElement>
           {/* <View
             style={[
@@ -99,6 +96,14 @@ function SignUpScreenContent({
               style={[styles.m0, styles.pl0, styles.alignItemsStart]}
             />
           </View> */}
+        </View>
+        <View
+          pointerEvents="box-none"
+          style={[
+            StyleSheet.absoluteFillObject,
+            styles.justifyContentCenter,
+          ]}>
+          {children}
         </View>
       </View>
     </View>
