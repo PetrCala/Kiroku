@@ -668,6 +668,10 @@ export default {
       hasMore,
     }: OnboardingStepCounterParams) =>
       `Krok ${currentStep} z ${totalSteps}${hasMore ? '+' : ''}`,
+    terms: {
+      title: 'Podmínky služby',
+      heading: 'Seznamte se prosím s našimi podmínkami služby',
+    },
   },
   tzFix: {
     introduction: {

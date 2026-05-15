@@ -1,15 +1,66 @@
+import type {Database} from 'firebase/database';
+import {ref, update} from 'firebase/database';
+import type {User} from 'firebase/auth';
+import Onyx from 'react-native-onyx';
+import * as Localize from '@libs/Localize';
 import Log from '@libs/Log';
+import CONST from '@src/CONST';
+import DBPATHS from '@src/DBPATHS';
+import ONYXKEYS from '@src/ONYXKEYS';
 
 /**
- * Stubbed action module for the onboarding rebuild (issues #350–#359).
+ * Persist a user's acceptance of the current Terms & Conditions.
  *
- * These functions intentionally have no side effects yet — real
- * implementations land in later slices of the epic. They exist now so that
- * later issues can import them without churning callers.
+ * Writes `agreed_to_terms_at`, `agreed_to_terms_version`, and (when a
+ * resume path is supplied) `onboarding.last_visited_path` to Firebase, then
+ * mirrors the same values into Onyx so the UI updates without waiting for
+ * the server round-trip.
+ *
+ * @param onboardingPath When acceptance happens inside the onboarding flow,
+ *  pass the route to record as the resume point. Omit for standalone
+ *  re-consent so onboarding state is not mutated for users who have
+ *  already finished onboarding.
  */
+async function acceptTerms(
+  db: Database,
+  user: User | null,
+  onboardingPath?: string,
+): Promise<void> {
+  if (!user) {
+    throw new Error(Localize.translateLocal('common.error.userNull'));
+  }
 
-function acceptTerms(): void {
-  Log.info('[Onboarding] acceptTerms stub — not yet implemented');
+  const userID = user.uid;
+  const now = Date.now();
+  const version = CONST.CURRENT_TERMS_VERSION;
+
+  const updates: Record<string, number | string> = {};
+  updates[DBPATHS.USERS_USER_ID_AGREED_TO_TERMS_AT.getRoute(userID)] = now;
+  updates[DBPATHS.USERS_USER_ID_AGREED_TO_TERMS_VERSION.getRoute(userID)] =
+    version;
+  if (onboardingPath !== undefined) {
+    updates[
+      DBPATHS.USERS_USER_ID_ONBOARDING_LAST_VISITED_PATH.getRoute(userID)
+    ] = onboardingPath;
+  }
+
+  await update(ref(db), updates);
+
+  await Onyx.merge(ONYXKEYS.USER_DATA_LIST, {
+    [userID]: {
+      agreed_to_terms_at: now,
+      agreed_to_terms_version: version,
+      ...(onboardingPath !== undefined && {
+        onboarding: {last_visited_path: onboardingPath},
+      }),
+    },
+  });
+  await Onyx.merge(ONYXKEYS.NVP_TERMS_ACCEPTED_VERSION, version);
+  if (onboardingPath !== undefined) {
+    await Onyx.merge(ONYXKEYS.NVP_ONBOARDING, {
+      last_visited_path: onboardingPath,
+    });
+  }
 }
 
 function setDisplayName(displayName: string): void {
