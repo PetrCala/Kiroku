@@ -70,6 +70,7 @@ const CONST = {
   DISCORD_INVITE_URL: 'https://discord.gg/YYR5bQhS',
   TERMS_URL: `${GH_PAGES_URL}/assets/html/terms-of-service.html`,
   PRIVACY_URL: `${GH_PAGES_URL}/assets/html/privacy-policy.html`,
+  CURRENT_TERMS_VERSION: 1,
   GITHUB_RELEASE_URL:
     'https://api.github.com/repos/PetrCala/Kiroku/releases/latest',
   ADMIN_SDK: {
