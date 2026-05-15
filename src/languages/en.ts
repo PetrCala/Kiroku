@@ -14,6 +14,7 @@ import type {
   ForgotPasswordSuccessParams,
   FriendRequestsCountParams,
   NoDrinkingSessionsParams,
+  OnboardingStepCounterParams,
   SessionConfirmTimezoneChangeParams,
   SessionStartTimeParams,
   SessionWindowIdParams,
@@ -666,6 +667,14 @@ export default {
     headerTitle: 'Nickname',
     isShownOnProfile: 'Your nickname is shown on your profile.',
     updatingDisplayName: 'Updating your nickname...',
+  },
+  onboarding: {
+    stepCounter: ({
+      currentStep,
+      totalSteps,
+      hasMore,
+    }: OnboardingStepCounterParams) =>
+      `Step ${currentStep} of ${totalSteps}${hasMore ? '+' : ''}`,
   },
   tzFix: {
     introduction: {

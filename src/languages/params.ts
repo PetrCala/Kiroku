@@ -33,6 +33,12 @@ type NoDrinkingSessionsParams = {
   isSelf: boolean;
 };
 
+type OnboardingStepCounterParams = {
+  currentStep: number;
+  totalSteps: number;
+  hasMore: boolean;
+};
+
 type SessionConfirmTimezoneChangeParams = {
   newTimezone: string;
 };
@@ -66,6 +72,7 @@ export type {
   ForgotPasswordSuccessParams,
   FriendRequestsCountParams,
   NoDrinkingSessionsParams,
+  OnboardingStepCounterParams,
   SessionConfirmTimezoneChangeParams,
   SessionStartTimeParams,
   SessionWindowIdParams,
