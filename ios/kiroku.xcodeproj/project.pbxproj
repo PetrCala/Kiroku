@@ -38,7 +38,6 @@
 		8308E9663D6A74638FA6E5CDAEB9E063 /* Kiroku_Watch_AppTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5AFE612BFBD88D03D71A637ED725B1C6 /* Kiroku_Watch_AppTests.swift */; };
 		83FC8CE3177C39CBDAA6C289AB66D895 /* InitialView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 672DB160CC5BB29428AC67E4E2129203 /* InitialView.swift */; };
 		85D3A2428FB7A384E0E90E056C100D01 /* CzechTexts.swift in Sources */ = {isa = PBXBuildFile; fileRef = 36534A287E6B0F7321F76D2E4AE78B47 /* CzechTexts.swift */; };
-		8D816A8A45007ECEC6023F2B1611E96F /* GoogleService-Info.plist in Resources */ = {isa = PBXBuildFile; fileRef = 20B93213AADC988803A5E898F274F872 /* GoogleService-Info.plist */; };
 		94CA446E046559D1D80B3A7A /* Pods_kiroku.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 43F816E208743DB026B23A30 /* Pods_kiroku.framework */; };
 		96AC25BB9F951774C540913B63BFF33E /* SessionTabView.swift in Sources */ = {isa = PBXBuildFile; fileRef = DA84EB4D89EE659667E5AE7A7E79CEDE /* SessionTabView.swift */; };
 		99C0C09ABE98934F6A4CE02AAC233123 /* SessionViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4FB608088F2E6A985BD942B01309E2CA /* SessionViewModel.swift */; };
@@ -109,7 +108,6 @@
 		1777A343F31D8EAE6EB90ABA5CC06332 /* ExpensifyNeue-Bold.otf */ = {isa = PBXFileReference; includeInIndex = 1; path = "ExpensifyNeue-Bold.otf"; sourceTree = "<group>"; };
 		1826C61302EE56C205D75D50 /* Pods-kiroku-kirokuTests.debugadhoc.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-kiroku-kirokuTests.debugadhoc.xcconfig"; path = "Target Support Files/Pods-kiroku-kirokuTests/Pods-kiroku-kirokuTests.debugadhoc.xcconfig"; sourceTree = "<group>"; };
 		1B6C89C296C5EE51CAEA9F599877E10F /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
-		20B93213AADC988803A5E898F274F872 /* GoogleService-Info.plist */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.xml; path = "GoogleService-Info.plist"; sourceTree = "<group>"; };
 		21DD778E0182447ABC5084CA24728F34 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		23D208995320DA55DFBD5707B1041726 /* SessionModel.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = SessionModel.swift; sourceTree = "<group>"; };
 		23F8FAF4E5F3844745702042BF927A6B /* Images.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; name = Images.xcassets; path = kiroku/Images.xcassets; sourceTree = "<group>"; };
@@ -447,7 +445,6 @@
 				F29D5C17DC725F51699881F3CDFF95F4 /* Products */,
 				4067ED857C908ED36A15A7A90DA27989 /* kiroku */,
 				06C4DCA3C5D22106DA115FD361AC0880 /* kirokuTests */,
-				20B93213AADC988803A5E898F274F872 /* GoogleService-Info.plist */,
 				2807A7F093875785C9B9FD52DF99D726 /* PrivacyInfo.xcprivacy */,
 			);
 			indentWidth = 2;
@@ -538,6 +535,7 @@
 				13FFCC6A33C3E3066CB0EF683CE05097 /* Sources */,
 				96EE1767D138A900D6E3A4421BAD14EF /* Frameworks */,
 				B9F8269ED055C5C64E7601A97DC265CB /* Resources */,
+				7C3F1E8B9D0A4B6E5F128A4D /* [User] Copy GoogleService-Info.plist */,
 				F3EDCA035BBAB0CF568F51A01F8CD5C4 /* Bundle React Native code and images */,
 				1FE842BF4A606783ADC47F33 /* [CP] Embed Pods Frameworks */,
 				B75458C7AC138A4C2D4ACD38 /* [CP] Copy Pods Resources */,
@@ -666,7 +664,6 @@
 				3045C3F8DEFEF19445042F36559AF357 /* ExpensifyNeue-Regular.otf in Resources */,
 				6F94F2AA7E288ADCCF00F2E294B5735A /* ExpensifyNewKansas-Medium.otf in Resources */,
 				193F7A25C49440E7ED264BE3769398DD /* ExpensifyNewKansas-MediumItalic.otf in Resources */,
-				8D816A8A45007ECEC6023F2B1611E96F /* GoogleService-Info.plist in Resources */,
 				7923E1C1CB31B61783462D0D2F40F726 /* Images.xcassets in Resources */,
 				C1EBD956700E09BF2140DEC98EFAF04F /* PrivacyInfo.xcprivacy in Resources */,
 			);
@@ -692,6 +689,24 @@
 /* End PBXResourcesBuildPhase section */
 
 /* Begin PBXShellScriptBuildPhase section */
+		7C3F1E8B9D0A4B6E5F128A4D /* [User] Copy GoogleService-Info.plist */ = {
+			isa = PBXShellScriptBuildPhase;
+			alwaysOutOfDate = 1;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputPaths = (
+				"$(SRCROOT)/config/GoogleService-Info.dev.plist",
+				"$(SRCROOT)/config/GoogleService-Info.prod.plist",
+			);
+			name = "[User] Copy GoogleService-Info.plist";
+			outputPaths = (
+				"$(BUILT_PRODUCTS_DIR)/$(PRODUCT_NAME).app/GoogleService-Info.plist",
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "#!/usr/bin/env bash\n# Copy the GoogleService-Info.plist that matches the active Xcode\n# configuration into the built .app bundle. Source files live under\n# ios/config/ and are committed to the repo.\nset -euo pipefail\n\ncase \"${CONFIGURATION}\" in\n  *Development*|*AdHoc*)\n    SRC_NAME=\"GoogleService-Info.dev.plist\"\n    ;;\n  *Production*)\n    SRC_NAME=\"GoogleService-Info.prod.plist\"\n    ;;\n  Debug)\n    SRC_NAME=\"GoogleService-Info.dev.plist\"\n    ;;\n  Release)\n    SRC_NAME=\"GoogleService-Info.prod.plist\"\n    ;;\n  *)\n    echo \"warning: Unknown CONFIGURATION '${CONFIGURATION}', defaulting to prod plist\"\n    SRC_NAME=\"GoogleService-Info.prod.plist\"\n    ;;\nesac\n\nSRC=\"${SRCROOT}/config/${SRC_NAME}\"\nDEST=\"${BUILT_PRODUCTS_DIR}/${PRODUCT_NAME}.app/GoogleService-Info.plist\"\n\nif [[ ! -f \"${SRC}\" ]]; then\n  echo \"error: GoogleService-Info source plist not found at ${SRC}\"\n  exit 1\nfi\n\nmkdir -p \"$(dirname \"${DEST}\")\"\ncp -v \"${SRC}\" \"${DEST}\"\necho \"info: Copied ${SRC_NAME} into .app for configuration ${CONFIGURATION}\"\n";
+		};
 		091E884F7D350D566B9CD718 /* [CP-User] [RNFB] Core Configuration */ = {
 			isa = PBXShellScriptBuildPhase;
 			buildActionMask = 2147483647;
