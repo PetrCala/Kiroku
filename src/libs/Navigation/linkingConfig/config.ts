@@ -70,6 +70,20 @@ const config: LinkingOptions<RootStackParamList>['config'] = {
         },
       },
     },
+    [NAVIGATORS.ONBOARDING_MODAL_NAVIGATOR]: {
+      path: ROUTES.ONBOARDING_TERMS,
+      initialRouteName: SCREENS.ONBOARDING.TERMS,
+      screens: {
+        [SCREENS.ONBOARDING.TERMS]: {
+          path: ROUTES.ONBOARDING_TERMS,
+          exact: true,
+        },
+        [SCREENS.ONBOARDING.DISPLAY_NAME]: {
+          path: ROUTES.ONBOARDING_DISPLAY_NAME,
+          exact: true,
+        },
+      },
+    },
     [NAVIGATORS.RIGHT_MODAL_NAVIGATOR]: {
       screens: {
         [SCREENS.RIGHT_MODAL.ACHIEVEMENTS]: {
