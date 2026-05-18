@@ -58,12 +58,14 @@ function InitialScreen() {
       Session.clearSignInData();
       // Reset on each focus so the spinner reflects the current auth check, not a stale value from a previous mount.
       Session.setHasCheckedAutoLogin(false);
-      const stopListening = auth.onAuthStateChanged(user => {
-        if (!user) {
-          Session.setHasCheckedAutoLogin(true);
-          return;
-        }
-        Navigation.navigate(ROUTES.HOME);
+      const stopListening = auth.onAuthStateChanged(() => {
+        // Either branch (user present or absent) clears the "still checking"
+        // spinner. Routing into the authenticated tree is owned by the
+        // top-level isAuthenticated state in Kiroku.tsx (which swaps
+        // PublicScreens → AuthScreens) and by OnboardingGuard — navigating
+        // here would race with the guard for accounts that still owe
+        // onboarding.
+        Session.setHasCheckedAutoLogin(true);
       });
 
       return () => {
