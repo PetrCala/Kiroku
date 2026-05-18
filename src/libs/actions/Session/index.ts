@@ -648,6 +648,10 @@ function setHasCheckedAutoLogin(val: boolean) {
   if (hasCheckedAutoLogin === val) {
     return;
   }
+  // Update the in-memory cache synchronously so subsequent calls in the same tick observe the new value
+  // before the Onyx.merge callback runs. Without this, a rapid false→true sequence on InitialScreen focus
+  // can collapse to false because the second call still sees the old cache and short-circuits.
+  hasCheckedAutoLogin = val;
   Onyx.merge(ONYXKEYS.HAS_CHECKED_AUTO_LOGIN, val);
 }
 
