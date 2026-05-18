@@ -58,7 +58,9 @@ async function getAppleCredential(): Promise<AuthCredential | null> {
 }
 
 const getOAuthCredentialForDeletion: Record<string, GetOAuthCredential> = {
+  // eslint-disable-next-line @typescript-eslint/naming-convention
   'google.com': getGoogleCredential,
+  // eslint-disable-next-line @typescript-eslint/naming-convention
   'apple.com': getAppleCredential,
 };
 
