@@ -66,7 +66,6 @@ function Kiroku() {
   const [preferredTheme, preferredThemeMetadata] = useOnyx(
     ONYXKEYS.PREFERRED_THEME,
   );
-  const [isLoadingApp] = useOnyx(ONYXKEYS.IS_LOADING_APP);
   const {userData} = useDatabaseData();
   const {config} = useConfig();
   const [isAuthenticated, setIsAuthenticated] = useState(false);
@@ -124,12 +123,13 @@ function Kiroku() {
   // preference, producing a visible white flash.
   const isThemeReady = preferredThemeMetadata.status === 'loaded';
 
-  // Mirror Expensify's onServerDataReady: keep the splash up until we know
-  // whether the user needs onboarding. Authenticated users wait for
-  // IS_LOADING_APP to flip false and their userData entry to arrive so the
-  // OnboardingGuard can route into the flow without a flicker.
-  const isOnboardingDataReady =
-    !isAuthenticated || (isLoadingApp === false && userData !== undefined);
+  // Keep the splash up until we know whether the user needs onboarding so
+  // OnboardingGuard can route into the flow without a flicker. The signal is
+  // the user's RTDB record arriving in `useDatabaseData()`; `IS_LOADING_APP`
+  // is intentionally not consulted because `App.openApp()` (which would write
+  // that key) is not currently wired up — gating on it would deadlock the
+  // splash on every launch.
+  const isOnboardingDataReady = !isAuthenticated || userData !== undefined;
 
   const shouldHideSplash = !!(
     shouldInit &&

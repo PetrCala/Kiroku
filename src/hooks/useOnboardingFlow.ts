@@ -1,5 +1,4 @@
 import {useMemo} from 'react';
-import {useOnyx} from 'react-native-onyx';
 import {useDatabaseData} from '@context/global/DatabaseDataContext';
 import {useFirebase} from '@context/global/FirebaseContext';
 import {
@@ -9,7 +8,6 @@ import {
   isLegacyGrandfatheredUser,
 } from '@libs/OnboardingSelectors';
 import CONFIG from '@src/CONFIG';
-import ONYXKEYS from '@src/ONYXKEYS';
 import ROUTES from '@src/ROUTES';
 import type {Route} from '@src/ROUTES';
 
@@ -35,13 +33,10 @@ function useOnboardingFlow(): OnboardingFlowState {
   const userID = auth?.currentUser?.uid;
   const {userData} = useDatabaseData();
 
-  const [isLoadingApp] = useOnyx(ONYXKEYS.IS_LOADING_APP);
-
   return useMemo<OnboardingFlowState>(() => {
     const skipOnboarding = CONFIG.SKIP_ONBOARDING;
     const isAuthenticated = !!userID;
-    const isReady =
-      !isAuthenticated || (isLoadingApp === false && userData !== undefined);
+    const isReady = !isAuthenticated || userData !== undefined;
 
     if (skipOnboarding || !isAuthenticated || !isReady) {
       return {
@@ -82,7 +77,7 @@ function useOnboardingFlow(): OnboardingFlowState {
       lastVisitedPath: getOnboardingLastVisitedPath(userData),
       skipOnboarding,
     };
-  }, [userID, isLoadingApp, userData]);
+  }, [userID, userData]);
 }
 
 export default useOnboardingFlow;
