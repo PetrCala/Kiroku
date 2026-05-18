@@ -27,6 +27,7 @@ import {
 } from 'firebase/auth';
 import {getUniqueId} from 'react-native-device-info';
 import {cleanStringForFirebaseKey} from '@libs/StringUtilsKiroku';
+import {getOAuthCredentialForDeletion} from '@libs/OAuthCredential';
 import DBPATHS from '@src/DBPATHS';
 import {readDataOnce} from '@database/baseFunctions';
 import type {FirebaseUpdates} from '@database/updates';
@@ -251,6 +252,23 @@ async function reauthentificateUser(
   const credential = EmailAuthProvider.credential(email, password);
   const result = await reauthenticateWithCredential(user, credential);
   return result;
+}
+
+async function reauthenticateWithOAuth(
+  user: User,
+  providerId: string,
+): Promise<UserCredential | null> {
+  const getCredential = getOAuthCredentialForDeletion[providerId];
+  if (!getCredential) {
+    throw new Error(
+      Localize.translateLocal('deleteAccountScreen.error.unsupportedProvider'),
+    );
+  }
+  const credential = await getCredential();
+  if (!credential) {
+    return null;
+  }
+  return reauthenticateWithCredential(user, credential);
 }
 
 /**
@@ -730,6 +748,7 @@ export {
   getDefaultUserStatus,
   pushNewUserInfo,
   reauthentificateUser,
+  reauthenticateWithOAuth,
   saveSelectedTimezone,
   sendUpdateEmailLink,
   sendVerifyEmailLink,
