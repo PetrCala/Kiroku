@@ -38,6 +38,11 @@ function DeleteAccountScreen({route}: DeleteAccountScreenProps) {
   const {db, auth} = useFirebase();
   const {userData} = useDatabaseData();
 
+  const currentUser = auth?.currentUser;
+  const providerId =
+    currentUser?.providerData[0]?.providerId ?? CONST.AUTH_PROVIDER.PASSWORD;
+  const isOAuthUser = providerId !== CONST.AUTH_PROVIDER.PASSWORD;
+
   const [isLoading, setIsLoading] = useState(false);
   const [loadingText, setLoadingText] = useState('');
   const [isConfirmModalVisible, setConfirmModalVisibility] = useState(false);
@@ -65,11 +70,13 @@ function DeleteAccountScreen({route}: DeleteAccountScreenProps) {
           userData,
           reasonForLeaving,
           password,
+          providerId,
         );
         hideConfirmModal();
         setLoadingText('');
         setIsLoading(false);
       } catch (error) {
+        setIsLoading(false);
         // The navigation back to the public screens happens automatically upon Auth state change, so there is no need to call it here
         ErrorUtils.raiseAppError(ERRORS.AUTH.ACCOUNT_DELETION_FAILED, error);
       }
@@ -87,13 +94,20 @@ function DeleteAccountScreen({route}: DeleteAccountScreenProps) {
   const validate = (
     values: FormOnyxValues<typeof ONYXKEYS.FORMS.CLOSE_ACCOUNT_FORM>,
   ): FormInputErrors<typeof ONYXKEYS.FORMS.CLOSE_ACCOUNT_FORM> => {
-    const errors = ValidationUtils.getFieldRequiredErrors(values, ['password']);
-    return errors;
+    if (isOAuthUser) {
+      return {};
+    }
+    return ValidationUtils.getFieldRequiredErrors(values, ['password']);
   };
 
   if (isLoading) {
     return <FullScreenLoadingIndicator loadingText={loadingText} />;
   }
+
+  const providerName =
+    providerId === CONST.AUTH_PROVIDER.GOOGLE
+      ? translate('common.google')
+      : translate('common.apple');
 
   return (
     <ScreenWrapper
@@ -122,21 +136,31 @@ function DeleteAccountScreen({route}: DeleteAccountScreenProps) {
             role={CONST.ROLE.PRESENTATION}
             containerStyles={[styles.mt5]}
           />
-          <Text style={[styles.mt5]}>
-            {translate('deleteAccountScreen.enterPasswordToConfirm')}
-          </Text>
-          <InputWrapper
-            InputComponent={TextInput}
-            inputID={INPUT_IDS.PASSWORD}
-            autoCapitalize="none"
-            label={translate('deleteAccountScreen.enterPassword')}
-            aria-label={translate('deleteAccountScreen.enterPassword')}
-            role={CONST.ROLE.PRESENTATION}
-            containerStyles={[styles.mt5]}
-            autoCorrect={false}
-            inputMode={CONST.INPUT_MODE.TEXT}
-            secureTextEntry
-          />
+          {!isOAuthUser ? (
+            <>
+              <Text style={[styles.mt5]}>
+                {translate('deleteAccountScreen.enterPasswordToConfirm')}
+              </Text>
+              <InputWrapper
+                InputComponent={TextInput}
+                inputID={INPUT_IDS.PASSWORD}
+                autoCapitalize="none"
+                label={translate('deleteAccountScreen.enterPassword')}
+                aria-label={translate('deleteAccountScreen.enterPassword')}
+                role={CONST.ROLE.PRESENTATION}
+                containerStyles={[styles.mt5]}
+                autoCorrect={false}
+                inputMode={CONST.INPUT_MODE.TEXT}
+                secureTextEntry
+              />
+            </>
+          ) : (
+            <Text style={[styles.mt5]}>
+              {translate('deleteAccountScreen.confirmWithProviderPrompt', {
+                provider: providerName,
+              })}
+            </Text>
+          )}
           <ConfirmModal
             danger
             title={translate('deleteAccountScreen.deleteAccountWarning')}

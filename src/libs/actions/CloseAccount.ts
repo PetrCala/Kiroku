@@ -6,7 +6,11 @@ import CONST from '@src/CONST';
 import ONYXKEYS from '@src/ONYXKEYS';
 import type {UserData} from '@src/types/onyx';
 import * as Localize from '@libs/Localize';
-import {deleteUserData, reauthentificateUser} from './User';
+import {
+  deleteUserData,
+  reauthentificateUser,
+  reauthenticateWithOAuth,
+} from './User';
 
 /**
  * Clear CloseAccount error message to hide modal
@@ -36,6 +40,7 @@ async function closeAccount(
   userData: UserData | undefined,
   reasonForLeaving: string,
   password: string,
+  providerId: string,
 ) {
   const user = auth?.currentUser;
 
@@ -43,12 +48,18 @@ async function closeAccount(
     throw new Error('Missing data. Try reloading the page');
   }
 
-  const authentificationResult = await reauthentificateUser(user, password);
-
-  if (!authentificationResult) {
-    throw new Error(
-      Localize.translateLocal('common.error.reauthenticationFailed'),
-    );
+  if (providerId === CONST.AUTH_PROVIDER.PASSWORD) {
+    const authentificationResult = await reauthentificateUser(user, password);
+    if (!authentificationResult) {
+      throw new Error(
+        Localize.translateLocal('common.error.reauthenticationFailed'),
+      );
+    }
+  } else {
+    const oauthResult = await reauthenticateWithOAuth(user, providerId);
+    if (oauthResult === null) {
+      return;
+    }
   }
 
   const userNickname = userData.profile.display_name;

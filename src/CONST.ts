@@ -751,6 +751,12 @@ const CONST = {
   DEFAULT_NETWORK_DATA: {isOffline: false},
   DEFAULT_CLOSE_ACCOUNT_DATA: {errors: null, success: '', isLoading: false},
 
+  AUTH_PROVIDER: {
+    PASSWORD: 'password',
+    GOOGLE: 'google.com',
+    APPLE: 'apple.com',
+  } as const,
+
   MICROSECONDS_PER_MS: 1000,
   RED_BRICK_ROAD_PENDING_ACTION: {
     ADD: 'add',

@@ -7,6 +7,7 @@ import type {
 } from './types';
 import type {
   CommonFriendsLabelParams,
+  ConfirmWithProviderPromptParams,
   DiscardSessionParams,
   DrinkingSessionsParams,
   ForceUpdateTextParams,
@@ -75,6 +76,8 @@ export default {
     unknown: 'Unknown',
     authentication: 'Authentication',
     signIn: 'Sign in',
+    google: 'Google',
+    apple: 'Apple',
     signInWithGoogle: 'Sign in with Google',
     signInWithApple: 'Sign in with Apple',
     signInWith: 'Sign in with',
@@ -779,6 +782,12 @@ export default {
     enterPasswordToConfirm: 'Please enter your password to confirm deletion.',
     enterPassword: 'Enter your password',
     deletingAccount: 'Deleting account...',
+    confirmWithProviderPrompt: ({provider}: ConfirmWithProviderPromptParams) =>
+      `To confirm deletion, you'll be asked to sign in with ${provider}.`,
+    error: {
+      unsupportedProvider:
+        'Your sign-in method is not supported for account deletion. Please contact support.',
+    },
   },
   profileScreen: {
     title: 'Profile',

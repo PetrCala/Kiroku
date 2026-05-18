@@ -5,6 +5,10 @@ type CommonFriendsLabelParams = {
   hasCommonFriends: boolean;
 };
 
+type ConfirmWithProviderPromptParams = {
+  provider: string;
+};
+
 type DiscardSessionParams = {
   discardWord: string;
 };
@@ -55,6 +59,7 @@ type VerifyEmailScreenEmailParmas = {
 
 export type {
   CommonFriendsLabelParams,
+  ConfirmWithProviderPromptParams,
   DiscardSessionParams,
   DrinkingSessionsParams,
   ForceUpdateTextParams,
