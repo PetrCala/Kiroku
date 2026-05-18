@@ -666,15 +666,10 @@ export default {
     updatingDisplayName: 'Aktualizujeme vaši přezdívku...',
   },
   onboarding: {
-    overline: 'Onboarding',
-    stepCounter: ({
-      currentStep,
-      totalSteps,
-      hasMore,
-    }: OnboardingStepCounterParams) =>
-      `Krok ${currentStep} z ${totalSteps}${hasMore ? '+' : ''}`,
+    title: 'Onboarding',
+    stepCounter: ({currentStep, totalSteps}: OnboardingStepCounterParams) =>
+      `Krok ${currentStep} z ${totalSteps}`,
     terms: {
-      title: 'Podmínky služby',
       heading: 'Přečtěte si prosím naše podmínky služby',
       description:
         'Před pokračováním si prosím přečtěte podmínky služby a zásady ochrany osobních údajů.',

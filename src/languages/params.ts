@@ -36,7 +36,6 @@ type NoDrinkingSessionsParams = {
 type OnboardingStepCounterParams = {
   currentStep: number;
   totalSteps: number;
-  hasMore: boolean;
 };
 
 type SessionConfirmTimezoneChangeParams = {

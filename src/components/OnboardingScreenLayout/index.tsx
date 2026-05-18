@@ -16,17 +16,11 @@ import Navigation from '@libs/Navigation/Navigation';
 import * as Session from '@userActions/Session';
 
 type OnboardingScreenLayoutProps = {
-  /** Title rendered in the header */
-  title?: string;
-
   /** 1-based position of this screen in the flow */
   currentStep: number;
 
   /** Total number of screens currently known in the flow */
   totalSteps: number;
-
-  /** Whether more screens may follow — renders the trailing "+" in "Step N of M+" */
-  hasMore?: boolean;
 
   /** First screen blocks the back arrow and the hardware back press */
   isFirstScreen?: boolean;
@@ -39,10 +33,8 @@ type OnboardingScreenLayoutProps = {
 };
 
 function OnboardingScreenLayout({
-  title,
   currentStep,
   totalSteps,
-  hasMore = true,
   isFirstScreen = false,
   testID,
   children,
@@ -111,19 +103,13 @@ function OnboardingScreenLayout({
             </PressableWithoutFeedback>
           )}
           <View style={[styles.flex1]}>
-            <Text
-              style={[
-                styles.textLabelSupporting,
-                {textTransform: 'uppercase'},
-              ]}>
-              {translate('onboarding.overline')}
+            <Text style={[styles.textHeadlineH1]}>
+              {translate('onboarding.title')}
             </Text>
-            <Text style={[styles.textHeadlineH1]}>{title}</Text>
             <Text style={[styles.textLabelSupporting]}>
               {translate('onboarding.stepCounter', {
                 currentStep,
                 totalSteps,
-                hasMore,
               })}
             </Text>
           </View>

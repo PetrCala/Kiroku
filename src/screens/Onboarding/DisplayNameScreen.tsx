@@ -87,8 +87,7 @@ function DisplayNameScreen({}: DisplayNameScreenProps) {
     <OnboardingScreenLayout
       testID={DisplayNameScreen.displayName}
       currentStep={2}
-      totalSteps={2}
-      hasMore={false}>
+      totalSteps={2}>
       {isSaving || !!loadingText ? (
         <FullScreenLoadingIndicator
           style={[styles.flex1]}

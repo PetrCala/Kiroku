@@ -669,15 +669,10 @@ export default {
     updatingDisplayName: 'Updating your nickname...',
   },
   onboarding: {
-    overline: 'Onboarding',
-    stepCounter: ({
-      currentStep,
-      totalSteps,
-      hasMore,
-    }: OnboardingStepCounterParams) =>
-      `Step ${currentStep} of ${totalSteps}${hasMore ? '+' : ''}`,
+    title: 'Onboarding',
+    stepCounter: ({currentStep, totalSteps}: OnboardingStepCounterParams) =>
+      `Step ${currentStep} of ${totalSteps}`,
     terms: {
-      title: 'Terms of service',
       heading: 'Please read our terms of service',
       description:
         'Please read the terms of service and privacy policy before continuing.',

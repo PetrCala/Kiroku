@@ -28,10 +28,8 @@ function TermsScreen({}: TermsScreenProps) {
   return (
     <OnboardingScreenLayout
       testID={TermsScreen.displayName}
-      title={translate('onboarding.terms.title')}
       currentStep={1}
       totalSteps={2}
-      hasMore
       isFirstScreen>
       <TermsScreenContent
         title={translate('onboarding.terms.heading')}
