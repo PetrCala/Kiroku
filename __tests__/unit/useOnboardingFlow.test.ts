@@ -1,11 +1,8 @@
 import {renderHook} from '@testing-library/react-native';
-import {useOnyx} from 'react-native-onyx';
-import type * as RNOnyx from 'react-native-onyx';
 import {useDatabaseData} from '@context/global/DatabaseDataContext';
 import {useFirebase} from '@context/global/FirebaseContext';
 import useOnboardingFlow from '@hooks/useOnboardingFlow';
 import CONFIG from '@src/CONFIG';
-import ONYXKEYS from '@src/ONYXKEYS';
 import ROUTES from '@src/ROUTES';
 import type {UserData} from '@src/types/onyx';
 
@@ -17,17 +14,8 @@ jest.mock('@context/global/DatabaseDataContext', () => ({
   useDatabaseData: jest.fn(),
 }));
 
-jest.mock('react-native-onyx', () => {
-  const actual = jest.requireActual<typeof RNOnyx>('react-native-onyx');
-  return {
-    ...actual,
-    useOnyx: jest.fn(),
-  };
-});
-
 const mockedUseFirebase = jest.mocked(useFirebase);
 const mockedUseDatabaseData = jest.mocked(useDatabaseData);
-const mockedUseOnyx = jest.mocked(useOnyx);
 
 const TEST_UID = 'user-123';
 
@@ -35,15 +23,6 @@ function setAuth(uid: string | undefined): void {
   mockedUseFirebase.mockReturnValue({
     auth: uid ? {currentUser: {uid}} : {currentUser: null},
   } as unknown as ReturnType<typeof useFirebase>);
-}
-
-function setIsLoadingApp(value: boolean | undefined): void {
-  mockedUseOnyx.mockImplementation(((key: string) => {
-    if (key === ONYXKEYS.IS_LOADING_APP) {
-      return [value, {status: 'loaded'}];
-    }
-    return [undefined, {status: 'loaded'}];
-  }) as unknown as typeof useOnyx);
 }
 
 function setUserData(userData: UserData | undefined): void {
@@ -67,7 +46,6 @@ describe('useOnboardingFlow', () => {
   beforeEach(() => {
     jest.clearAllMocks();
     (CONFIG as {SKIP_ONBOARDING: boolean}).SKIP_ONBOARDING = false;
-    setIsLoadingApp(false);
     setUserData(undefined);
   });
 
@@ -81,20 +59,8 @@ describe('useOnboardingFlow', () => {
     expect(result.current.currentOnboardingRoute).toBeNull();
   });
 
-  test('authenticated + app still loading → not ready (splash gate)', () => {
-    setAuth(TEST_UID);
-    setIsLoadingApp(true);
-    setUserData(makeUserData());
-
-    const {result} = renderHook(() => useOnboardingFlow());
-
-    expect(result.current.isReady).toBe(false);
-    expect(result.current.shouldFireOnboarding).toBe(false);
-  });
-
   test('authenticated + userData not hydrated → not ready (splash gate)', () => {
     setAuth(TEST_UID);
-    setIsLoadingApp(false);
     setUserData(undefined);
 
     const {result} = renderHook(() => useOnboardingFlow());
