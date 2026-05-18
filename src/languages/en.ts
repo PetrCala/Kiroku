@@ -669,6 +669,7 @@ export default {
     updatingDisplayName: 'Updating your nickname...',
   },
   onboarding: {
+    overline: 'Onboarding',
     stepCounter: ({
       currentStep,
       totalSteps,
@@ -677,7 +678,9 @@ export default {
       `Step ${currentStep} of ${totalSteps}${hasMore ? '+' : ''}`,
     terms: {
       title: 'Terms of service',
-      heading: 'Please review our terms of service',
+      heading: 'Please read our terms of service',
+      description:
+        'Please read the terms of service and privacy policy before continuing.',
     },
   },
   tzFix: {

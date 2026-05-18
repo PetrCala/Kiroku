@@ -1,12 +1,16 @@
 import React, {useCallback, useEffect, useState} from 'react';
-import {BackHandler} from 'react-native';
+import {BackHandler, View} from 'react-native';
 import Button from '@components/Button';
 import ConfirmModal from '@components/ConfirmModal';
 import FullScreenLoadingIndicator from '@components/FullscreenLoadingIndicator';
-import HeaderWithBackButton from '@components/HeaderWithBackButton';
+import Icon from '@components/Icon';
+import * as KirokuIcons from '@components/Icon/KirokuIcons';
+import PressableWithoutFeedback from '@components/Pressable/PressableWithoutFeedback';
 import ScreenWrapper from '@components/ScreenWrapper';
+import Text from '@components/Text';
 import {useFirebase} from '@context/global/FirebaseContext';
 import useLocalize from '@hooks/useLocalize';
+import useTheme from '@hooks/useTheme';
 import useThemeStyles from '@hooks/useThemeStyles';
 import Navigation from '@libs/Navigation/Navigation';
 import * as Session from '@userActions/Session';
@@ -44,6 +48,7 @@ function OnboardingScreenLayout({
   children,
 }: OnboardingScreenLayoutProps) {
   const styles = useThemeStyles();
+  const theme = useTheme();
   const {translate} = useLocalize();
   const {auth} = useFirebase();
   const [isSignOutConfirmVisible, setIsSignOutConfirmVisible] = useState(false);
@@ -87,23 +92,49 @@ function OnboardingScreenLayout({
 
   return (
     <ScreenWrapper testID={testID}>
-      <HeaderWithBackButton
-        title={title}
-        subtitle={translate('onboarding.stepCounter', {
-          currentStep,
-          totalSteps,
-          hasMore,
-        })}
-        shouldShowBackButton={!isFirstScreen}
-        customRightButton={
-          <Button
-            small
-            text={translate('settingsScreen.signOut')}
-            onPress={() => setIsSignOutConfirmVisible(true)}
-            style={styles.buttonSmall}
-          />
-        }
-      />
+      <View
+        style={[
+          styles.flexRow,
+          styles.justifyContentBetween,
+          styles.alignItemsCenter,
+          styles.ph5,
+          styles.pv3,
+        ]}>
+        <View style={[styles.flexRow, styles.alignItemsCenter, styles.flex1]}>
+          {!isFirstScreen && (
+            <PressableWithoutFeedback
+              onPress={() => Navigation.goBack()}
+              accessibilityLabel={translate('common.back')}
+              role="button"
+              style={[styles.mr2]}>
+              <Icon src={KirokuIcons.BackArrow} fill={theme.icon} />
+            </PressableWithoutFeedback>
+          )}
+          <View style={[styles.flex1]}>
+            <Text
+              style={[
+                styles.textLabelSupporting,
+                {textTransform: 'uppercase'},
+              ]}>
+              {translate('onboarding.overline')}
+            </Text>
+            <Text style={[styles.textHeadlineH1]}>{title}</Text>
+            <Text style={[styles.textLabelSupporting]}>
+              {translate('onboarding.stepCounter', {
+                currentStep,
+                totalSteps,
+                hasMore,
+              })}
+            </Text>
+          </View>
+        </View>
+        <Button
+          small
+          text={translate('settingsScreen.signOut')}
+          onPress={() => setIsSignOutConfirmVisible(true)}
+          style={styles.buttonSmall}
+        />
+      </View>
       {children}
       <ConfirmModal
         danger

@@ -666,6 +666,7 @@ export default {
     updatingDisplayName: 'Aktualizujeme vaši přezdívku...',
   },
   onboarding: {
+    overline: 'Onboarding',
     stepCounter: ({
       currentStep,
       totalSteps,
@@ -674,7 +675,9 @@ export default {
       `Krok ${currentStep} z ${totalSteps}${hasMore ? '+' : ''}`,
     terms: {
       title: 'Podmínky služby',
-      heading: 'Seznamte se prosím s našimi podmínkami služby',
+      heading: 'Přečtěte si prosím naše podmínky služby',
+      description:
+        'Před pokračováním si prosím přečtěte podmínky služby a zásady ochrany osobních údajů.',
     },
   },
   tzFix: {

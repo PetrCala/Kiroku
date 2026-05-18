@@ -35,6 +35,7 @@ function TermsScreen({}: TermsScreenProps) {
       isFirstScreen>
       <TermsScreenContent
         title={translate('onboarding.terms.heading')}
+        description={translate('onboarding.terms.description')}
         onAccept={handleAccept}
       />
     </OnboardingScreenLayout>

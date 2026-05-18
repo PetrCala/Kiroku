@@ -14,11 +14,18 @@ type TermsScreenContentProps = {
   /** Heading text displayed above the description */
   title: string;
 
+  /** Body copy under the heading. Defaults to the re-consent ("updated") wording. */
+  description?: string;
+
   /** Called when the user confirms acceptance. May be async. */
   onAccept: () => Promise<void> | void;
 };
 
-function TermsScreenContent({title, onAccept}: TermsScreenContentProps) {
+function TermsScreenContent({
+  title,
+  description,
+  onAccept,
+}: TermsScreenContentProps) {
   const styles = useThemeStyles();
   const {translate} = useLocalize();
   const [isChecked, setIsChecked] = useState(false);
@@ -59,7 +66,7 @@ function TermsScreenContent({title, onAccept}: TermsScreenContentProps) {
       <View style={styles.mb4}>
         <Text style={[styles.textHeadlineH1]}>{title}</Text>
         <Text style={[styles.mv4, styles.textNormal]}>
-          {translate('agreeToTerms.description')}
+          {description ?? translate('agreeToTerms.description')}
         </Text>
         <TextLink style={linkStyles} href={CONST.TERMS_URL}>
           {translate('common.termsOfService')}
