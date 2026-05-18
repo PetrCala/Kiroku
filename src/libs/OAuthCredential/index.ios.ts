@@ -1,5 +1,6 @@
 import appleAuth from '@invertase/react-native-apple-authentication';
 import type {AppleError} from '@invertase/react-native-apple-authentication';
+import * as Crypto from 'expo-crypto';
 import {GoogleAuthProvider, OAuthProvider} from 'firebase/auth';
 import type {AuthCredential} from 'firebase/auth';
 import {
@@ -33,11 +34,33 @@ async function getGoogleCredential(): Promise<AuthCredential | null> {
   }
 }
 
+/**
+ * Generates a cryptographically random nonce and its SHA-256 hash.
+ * Firebase requires the raw nonce to verify the hashed nonce claim Apple
+ * embeds in the identity token — without it, reauthenticateWithCredential
+ * rejects the credential.
+ */
+async function generateNonce(): Promise<{raw: string; hashed: string}> {
+  const bytes = Crypto.getRandomBytes(32);
+  const raw = Array.from(bytes)
+    .map(b => b.toString(16).padStart(2, '0'))
+    .join('');
+  const hashed = await Crypto.digestStringAsync(
+    Crypto.CryptoDigestAlgorithm.SHA256,
+    raw,
+  );
+  return {raw, hashed};
+}
+
 async function getAppleCredential(): Promise<AuthCredential | null> {
   try {
+    const {raw: rawNonce, hashed: hashedNonce} = await generateNonce();
+
     const response = await appleAuth.performRequest({
       requestedOperation: appleAuth.Operation.LOGIN,
+      // FULL_NAME must come first — see https://github.com/invertase/react-native-apple-authentication/issues/293
       requestedScopes: [appleAuth.Scope.FULL_NAME, appleAuth.Scope.EMAIL],
+      nonce: hashedNonce,
     });
     const credentialState = await appleAuth.getCredentialStateForUser(
       response.user,
@@ -46,7 +69,10 @@ async function getAppleCredential(): Promise<AuthCredential | null> {
       return null;
     }
     const provider = new OAuthProvider('apple.com');
-    return provider.credential({idToken: response.identityToken ?? ''});
+    return provider.credential({
+      idToken: response.identityToken ?? '',
+      rawNonce,
+    });
   } catch (error: unknown) {
     const e = error as {code?: AppleError};
     if (e.code === appleAuth.Error.CANCELED) {

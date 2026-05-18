@@ -104,10 +104,14 @@ function DeleteAccountScreen({route}: DeleteAccountScreenProps) {
     return <FullScreenLoadingIndicator loadingText={loadingText} />;
   }
 
-  const providerName =
-    providerId === CONST.AUTH_PROVIDER.GOOGLE
-      ? translate('common.google')
-      : translate('common.apple');
+  let providerName: string;
+  if (providerId === CONST.AUTH_PROVIDER.GOOGLE) {
+    providerName = translate('common.google');
+  } else if (providerId === CONST.AUTH_PROVIDER.APPLE) {
+    providerName = translate('common.apple');
+  } else {
+    providerName = translate('common.signInWith');
+  }
 
   return (
     <ScreenWrapper
