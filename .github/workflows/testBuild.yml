@@ -7,6 +7,8 @@ on:
       PULL_REQUEST_NUMBER:
         description: Pull Request number for correct placement of apps
         required: true
+  pull_request:
+    types: [labeled]
 
 permissions:
   id-token: write
@@ -15,6 +17,7 @@ permissions:
 
 jobs:
   getBranchRef:
+    if: ${{ github.event_name == 'workflow_dispatch' || github.event.label.name == 'Ready To Build' }}
     runs-on: ubuntu-latest
     outputs:
       REF: ${{steps.getHeadRef.outputs.REF}}
@@ -35,6 +38,7 @@ jobs:
 
   android:
     name: Build and deploy Android for testing
+    if: ${{ github.event_name == 'workflow_dispatch' || github.event.label.name == 'Ready To Build' }}
     runs-on: ubuntu-latest
     needs: [getBranchRef]
     env:
@@ -102,6 +106,7 @@ jobs:
 
   iOS:
     name: Build and deploy iOS for testing
+    if: ${{ github.event_name == 'workflow_dispatch' || github.event.label.name == 'Ready To Build' }}
     needs: [getBranchRef]
     env:
       PULL_REQUEST_NUMBER: ${{ github.event.number || github.event.inputs.PULL_REQUEST_NUMBER }}
@@ -204,7 +209,7 @@ jobs:
     runs-on: ubuntu-latest
     name: Post a GitHub comment with app download links for testing
     needs: [getBranchRef, android, iOS]
-    if: ${{ always() }}
+    if: ${{ always() && (github.event_name == 'workflow_dispatch' || github.event.label.name == 'Ready To Build') }}
     env:
       PULL_REQUEST_NUMBER: ${{ github.event.number || github.event.inputs.PULL_REQUEST_NUMBER }}
     steps:
