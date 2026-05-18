@@ -36,8 +36,6 @@ import * as Localize from '@libs/Localize';
 import type {SelectedTimezone, Timezone} from '@src/types/onyx/UserData';
 import {validateAppVersion} from '@libs/Validation';
 import {checkAccountCreationLimit} from '@database/protection';
-import Navigation from '@libs/Navigation/Navigation';
-import ROUTES from '@src/ROUTES';
 import type {OnyxEntry} from 'react-native-onyx';
 import Onyx from 'react-native-onyx';
 import ONYXKEYS from '@src/ONYXKEYS';
@@ -600,7 +598,10 @@ async function signInWithOAuth(
     await updateProfile(user, {displayName: name});
   }
   Session.clearSignInData();
-  Navigation.navigate(ROUTES.HOME);
+  // Post-auth routing is owned by OnboardingGuard. Navigating here would
+  // race with the guard's redirect to onboarding/terms for accounts that
+  // still owe the flow (i.e. a fresh OAuth signup whose Firebase record was
+  // just created with `username_chosen: false`).
 }
 
 /** Attempt to log in to the Firebase authentication service with a user's credentials
@@ -680,7 +681,10 @@ async function signUp(
 
     Session.clearSignInData();
 
-    Navigation.navigate(ROUTES.HOME);
+    // Post-auth routing is owned by OnboardingGuard. Navigating here would
+    // race with the guard's redirect to onboarding/terms and the guard would
+    // lose (its useEffect runs after this synchronous nav, then its own
+    // lastTargetRef debounce blocks any retry).
   } catch (error) {
     // Attempt to rollback the changes if the 'transaction' fails
     await deleteUserData(
