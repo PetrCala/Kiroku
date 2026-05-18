@@ -1,5 +1,5 @@
 import {createStackNavigator} from '@react-navigation/stack';
-import React, {useCallback, useEffect} from 'react';
+import React, {useCallback} from 'react';
 import {View} from 'react-native';
 import FocusTrapForScreens from '@components/FocusTrap/FocusTrapForScreen';
 import {useDatabaseData} from '@context/global/DatabaseDataContext';
@@ -9,7 +9,6 @@ import useResponsiveLayout from '@hooks/useResponsiveLayout';
 import useStyleUtils from '@hooks/useStyleUtils';
 import useThemeStyles from '@hooks/useThemeStyles';
 import getOnboardingModalScreenOptions from '@libs/Navigation/getTzFixModalScreenOptions';
-import Navigation from '@libs/Navigation/Navigation';
 import type {OnboardingModalNavigatorParamList} from '@libs/Navigation/types';
 import {
   hasCompletedOnboarding,
@@ -19,7 +18,6 @@ import OnboardingRefManager from '@libs/OnboardingRefManager';
 import DisplayNameScreen from '@screens/Onboarding/DisplayNameScreen';
 import TermsScreen from '@screens/Onboarding/TermsScreen';
 import CONST from '@src/CONST';
-import ROUTES from '@src/ROUTES';
 import SCREENS from '@src/SCREENS';
 import Overlay from './Overlay';
 
@@ -33,20 +31,6 @@ function OnboardingModalNavigator() {
   const isOnboardingCompleted =
     hasCompletedOnboarding(userData) || isLegacyGrandfatheredUser(userData);
   const {shouldUseNarrowLayout} = useResponsiveLayout();
-
-  useEffect(() => {
-    if (!isOnboardingCompleted) {
-      return;
-    }
-    Navigation.isNavigationReady().then(() => {
-      if (shouldUseNarrowLayout) {
-        Navigation.setShouldPopAllStateOnUP(true);
-        Navigation.goBack(ROUTES.HOME, true, true);
-      } else {
-        Navigation.goBack();
-      }
-    });
-  }, [isOnboardingCompleted, shouldUseNarrowLayout]);
 
   const outerViewRef = React.useRef<View>(null);
 
