@@ -156,7 +156,7 @@
 		B94F00812C8D3DD9BC10FC1D /* Pods-kiroku-kirokuTests.debugdevelopment.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-kiroku-kirokuTests.debugdevelopment.xcconfig"; path = "Target Support Files/Pods-kiroku-kirokuTests/Pods-kiroku-kirokuTests.debugdevelopment.xcconfig"; sourceTree = "<group>"; };
 		BA6939CB91B9F4FF63C2946A0B76CF49 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		BB25A7D871D3CF6578C3E000FCCE4D70 /* kiroku.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = kiroku.app; sourceTree = BUILT_PRODUCTS_DIR; };
-		BC57D7BDBD22330433BB32D58C66F350 /* Kiroku.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Kiroku.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		BC57D7BDBD22330433BB32D58C66F350 /* KirokuContainer.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = KirokuContainer.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		BD563DF2BC10EA495DB4C8CA94903344 /* AppDelegate.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = AppDelegate.h; path = kiroku/AppDelegate.h; sourceTree = "<group>"; };
 		BDE37520D28FFB693C07E6CD4B8C554D /* Kiroku Watch AppTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = "Kiroku Watch AppTests.xctest"; sourceTree = BUILT_PRODUCTS_DIR; };
 		CC7C19AE3E870A9024372C0D /* Pods-kiroku.debugproduction.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-kiroku.debugproduction.xcconfig"; path = "Target Support Files/Pods-kiroku/Pods-kiroku.debugproduction.xcconfig"; sourceTree = "<group>"; };
@@ -409,7 +409,7 @@
 				FCC932AE708BEAD1D1F250D3CC3196F3 /* Kiroku Watch App.app */,
 				BDE37520D28FFB693C07E6CD4B8C554D /* Kiroku Watch AppTests.xctest */,
 				579905A8BB8DCE18E94D427DC261E8D3 /* Kiroku Watch AppUITests.xctest */,
-				BC57D7BDBD22330433BB32D58C66F350 /* Kiroku.app */,
+				BC57D7BDBD22330433BB32D58C66F350 /* KirokuContainer.app */,
 				BB25A7D871D3CF6578C3E000FCCE4D70 /* kiroku.app */,
 				685FF1D72D7A49104164E4BB3E1EE42F /* kirokuTests.xctest */,
 			);
@@ -523,7 +523,7 @@
 			);
 			name = Kiroku;
 			productName = Kiroku;
-			productReference = BC57D7BDBD22330433BB32D58C66F350 /* Kiroku.app */;
+			productReference = BC57D7BDBD22330433BB32D58C66F350 /* KirokuContainer.app */;
 			productType = "com.apple.product-type.application.watchapp2-container";
 		};
 		A0F368BFB24FC009055767B843B48D83 /* kiroku */ = {
@@ -1033,7 +1033,7 @@
 				MTL_FAST_MATH = YES;
 				OTHER_SWIFT_FLAGS = "$(inherited) -D EXPO_CONFIGURATION_RELEASE";
 				PRODUCT_BUNDLE_IDENTIFIER = "org.reactjs.native.example.alcohol-tracker";
-				PRODUCT_NAME = "$(TARGET_NAME)";
+				PRODUCT_NAME = KirokuContainer;
 				PROVISIONING_PROFILE_SPECIFIER = Kiroku;
 				"PROVISIONING_PROFILE_SPECIFIER[sdk=iphoneos*]" = Kiroku;
 				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
@@ -1241,7 +1241,7 @@
 				MTL_FAST_MATH = YES;
 				OTHER_SWIFT_FLAGS = "$(inherited) -D EXPO_CONFIGURATION_DEBUG";
 				PRODUCT_BUNDLE_IDENTIFIER = "org.reactjs.native.example.alcohol-tracker";
-				PRODUCT_NAME = "$(TARGET_NAME)";
+				PRODUCT_NAME = KirokuContainer;
 				PROVISIONING_PROFILE_SPECIFIER = Kiroku_Development;
 				"PROVISIONING_PROFILE_SPECIFIER[sdk=iphoneos*]" = Kiroku_Development;
 				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
@@ -1484,7 +1484,7 @@
 				MTL_FAST_MATH = YES;
 				OTHER_SWIFT_FLAGS = "$(inherited) -D EXPO_CONFIGURATION_RELEASE";
 				PRODUCT_BUNDLE_IDENTIFIER = "org.reactjs.native.example.alcohol-tracker";
-				PRODUCT_NAME = "$(TARGET_NAME)";
+				PRODUCT_NAME = KirokuContainer;
 				PROVISIONING_PROFILE_SPECIFIER = Kiroku;
 				"PROVISIONING_PROFILE_SPECIFIER[sdk=iphoneos*]" = Kiroku;
 				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
@@ -2351,7 +2351,7 @@
 				MTL_FAST_MATH = YES;
 				OTHER_SWIFT_FLAGS = "$(inherited) -D EXPO_CONFIGURATION_RELEASE";
 				PRODUCT_BUNDLE_IDENTIFIER = "org.reactjs.native.example.alcohol-tracker";
-				PRODUCT_NAME = "$(TARGET_NAME)";
+				PRODUCT_NAME = KirokuContainer;
 				PROVISIONING_PROFILE_SPECIFIER = Kiroku;
 				"PROVISIONING_PROFILE_SPECIFIER[sdk=iphoneos*]" = Kiroku;
 				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
@@ -2459,7 +2459,7 @@
 				MTL_FAST_MATH = YES;
 				OTHER_SWIFT_FLAGS = "$(inherited) -D EXPO_CONFIGURATION_DEBUG";
 				PRODUCT_BUNDLE_IDENTIFIER = "org.reactjs.native.example.alcohol-tracker";
-				PRODUCT_NAME = "$(TARGET_NAME)";
+				PRODUCT_NAME = KirokuContainer;
 				PROVISIONING_PROFILE_SPECIFIER = Kiroku_Development;
 				"PROVISIONING_PROFILE_SPECIFIER[sdk=iphoneos*]" = Kiroku_Development;
 				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
@@ -2742,7 +2742,7 @@
 				MTL_FAST_MATH = YES;
 				OTHER_SWIFT_FLAGS = "$(inherited) -D EXPO_CONFIGURATION_DEBUG";
 				PRODUCT_BUNDLE_IDENTIFIER = "org.reactjs.native.example.alcohol-tracker";
-				PRODUCT_NAME = "$(TARGET_NAME)";
+				PRODUCT_NAME = KirokuContainer;
 				PROVISIONING_PROFILE_SPECIFIER = Kiroku_Development;
 				"PROVISIONING_PROFILE_SPECIFIER[sdk=iphoneos*]" = Kiroku_Development;
 				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
@@ -2999,7 +2999,7 @@
 				MTL_FAST_MATH = YES;
 				OTHER_SWIFT_FLAGS = "$(inherited) -D EXPO_CONFIGURATION_DEBUG";
 				PRODUCT_BUNDLE_IDENTIFIER = "org.reactjs.native.example.alcohol-tracker";
-				PRODUCT_NAME = "$(TARGET_NAME)";
+				PRODUCT_NAME = KirokuContainer;
 				PROVISIONING_PROFILE_SPECIFIER = Kiroku_Development;
 				"PROVISIONING_PROFILE_SPECIFIER[sdk=iphoneos*]" = Kiroku_Development;
 				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
@@ -3190,7 +3190,7 @@
 				MTL_FAST_MATH = YES;
 				OTHER_SWIFT_FLAGS = "$(inherited) -D EXPO_CONFIGURATION_RELEASE";
 				PRODUCT_BUNDLE_IDENTIFIER = "org.reactjs.native.example.alcohol-tracker";
-				PRODUCT_NAME = "$(TARGET_NAME)";
+				PRODUCT_NAME = KirokuContainer;
 				PROVISIONING_PROFILE_SPECIFIER = Kiroku;
 				"PROVISIONING_PROFILE_SPECIFIER[sdk=iphoneos*]" = Kiroku;
 				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
