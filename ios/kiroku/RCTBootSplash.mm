@@ -107,9 +107,27 @@ RCT_EXPORT_MODULE();
     _loadingView = [[storyboard instantiateInitialViewController] view];
     _loadingView.autoresizingMask =
         UIViewAutoresizingFlexibleWidth | UIViewAutoresizingFlexibleHeight;
-    _loadingView.frame = _rootView.bounds;
-    _loadingView.center = (CGPoint){CGRectGetMidX(_rootView.bounds),
-                                    CGRectGetMidY(_rootView.bounds)};
+
+    // _rootView is RCTSurfaceHostingProxyRootView (New Arch). Its bounds are
+    // CGRectZero until React reports a measured surface size — which on cold
+    // launch happens only after the JS bundle is parsed and the first render
+    // commits. If we size the loadingView from _rootView.bounds at that
+    // moment, the view is added zero-sized; the autoresizing mask only
+    // inflates it later when _rootView finally gets a real size. Between OS
+    // LaunchScreen dismissal and that first React measure, the user sees the
+    // window's yellow backgroundColor *without the logo* — the "logo
+    // disappears then reappears" gap that's especially visible in dev mode
+    // (Metro fetch + parse extends the gap to several hundred ms).
+    //
+    // Fall back to UIScreen.mainScreen.bounds so the loadingView is
+    // screen-sized from frame zero. The autoresizing mask still keeps it
+    // matched to _rootView for any later size change.
+    CGRect initialFrame = !CGRectIsEmpty(_rootView.bounds)
+                              ? _rootView.bounds
+                              : [UIScreen mainScreen].bounds;
+    _loadingView.frame = initialFrame;
+    _loadingView.center = (CGPoint){CGRectGetMidX(initialFrame),
+                                    CGRectGetMidY(initialFrame)};
     _loadingView.hidden = NO;
 
     [_rootView addSubview:_loadingView];
