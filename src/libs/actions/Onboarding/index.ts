@@ -1,16 +1,13 @@
 import type {Database} from 'firebase/database';
 import {ref, set, update} from 'firebase/database';
 import type {User} from 'firebase/auth';
-import {StackActions} from '@react-navigation/native';
 import Onyx from 'react-native-onyx';
 import * as Localize from '@libs/Localize';
 import Log from '@libs/Log';
 import Navigation from '@libs/Navigation/Navigation';
-import navigationRef from '@libs/Navigation/navigationRef';
 import {setUsername} from '@userActions/User';
 import CONST from '@src/CONST';
 import DBPATHS from '@src/DBPATHS';
-import NAVIGATORS from '@src/NAVIGATORS';
 import ONYXKEYS from '@src/ONYXKEYS';
 import ROUTES from '@src/ROUTES';
 
@@ -155,19 +152,7 @@ async function completeOnboarding(
  * Resuming the last-attempted protected route is a v2 nice-to-have.
  */
 function navigateAfterOnboarding(): void {
-  const rootState = navigationRef.current?.getRootState();
-  const lastRoute = rootState?.routes.at(-1);
-  if (rootState && lastRoute?.name === NAVIGATORS.ONBOARDING_MODAL_NAVIGATOR) {
-    navigationRef.current?.dispatch({
-      ...StackActions.pop(),
-      target: rootState.key,
-    });
-    return;
-  }
-  // Fallback for unexpected entry points (e.g. caller not on the onboarding
-  // modal). Falls back to the shared linker; visually imperfect, but the
-  // onboarding modal won't be on screen anyway.
-  Navigation.navigate(ROUTES.HOME);
+  Navigation.dismissModal();
 }
 
 function setLastVisitedPath(path: string): void {
