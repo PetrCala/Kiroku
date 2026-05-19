@@ -172,8 +172,8 @@ function AuthScreen({route}: AuthScreenProps) {
           ref={currentScreenLayoutRef}
           navigateFocus={navigateFocus}>
           <View style={[styles.gap3, styles.mb4]}>
-            <AppleSignIn />
-            <GoogleSignIn />
+            <AppleSignIn onError={setServerErrorMessage} />
+            <GoogleSignIn onError={setServerErrorMessage} />
           </View>
           <OrDelimiter containerStyle={styles.mb4} />
           <FormProvider

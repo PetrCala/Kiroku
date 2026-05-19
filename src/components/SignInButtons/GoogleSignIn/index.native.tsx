@@ -11,12 +11,14 @@ import PressableWithFeedback from '@components/Pressable/PressableWithFeedback';
 import Text from '@components/Text';
 import {useFirebase} from '@context/global/FirebaseContext';
 import useLocalize from '@hooks/useLocalize';
+import * as ErrorUtils from '@libs/ErrorUtils';
 import Log from '@libs/Log';
 import * as User from '@userActions/User';
 import CONFIG from '@src/CONFIG';
 
 type GoogleSignInProps = {
   onPress?: () => void;
+  onError?: (message: string) => void;
 };
 
 const styles = StyleSheet.create({
@@ -69,7 +71,10 @@ async function googleSignInRequest(): Promise<string | null> {
  * geometry (height, radius, width) and follows Google's brand guidelines
  * (white fill, #DADCE0 border, 4-color G logo, near-black label).
  */
-function GoogleSignIn({onPress = () => {}}: GoogleSignInProps) {
+function GoogleSignIn({
+  onPress = () => {},
+  onError = () => {},
+}: GoogleSignInProps) {
   const {auth, db} = useFirebase();
   const {translate} = useLocalize();
 
@@ -78,6 +83,7 @@ function GoogleSignIn({onPress = () => {}}: GoogleSignInProps) {
       const idToken = await googleSignInRequest();
       if (!idToken) {
         Log.alert('[Google Sign In] No ID token received from Google');
+        onError(ErrorUtils.getAppError().message);
         return;
       }
 
@@ -94,6 +100,7 @@ function GoogleSignIn({onPress = () => {}}: GoogleSignInProps) {
         {},
         false,
       );
+      onError(ErrorUtils.getAppError(undefined, error).message);
     }
   };
 

@@ -5,12 +5,14 @@ import {
 import {OAuthProvider} from 'firebase/auth';
 import React from 'react';
 import {useFirebase} from '@context/global/FirebaseContext';
+import * as ErrorUtils from '@libs/ErrorUtils';
 import Log from '@libs/Log';
 import * as User from '@userActions/User';
 import CONFIG from '@src/CONFIG';
 
 type AppleSignInProps = {
   onPress?: () => void;
+  onError?: (message: string) => void;
 };
 
 type AppleAndroidSignInResult = {
@@ -53,7 +55,10 @@ async function appleSignInRequestAndroid(): Promise<AppleAndroidSignInResult | n
  * Drives Apple's web-based OAuth flow via appleAuthAndroid, then passes the
  * resulting identity token to Firebase the same way the iOS variant does.
  */
-function AppleSignIn({onPress = () => {}}: AppleSignInProps) {
+function AppleSignIn({
+  onPress = () => {},
+  onError = () => {},
+}: AppleSignInProps) {
   const {auth, db} = useFirebase();
 
   const handleSignIn = async () => {
@@ -80,6 +85,7 @@ function AppleSignIn({onPress = () => {}}: AppleSignInProps) {
         '[Apple Sign In] Apple authentication failed',
         error as Record<string, unknown>,
       );
+      onError(ErrorUtils.getAppError(undefined, error).message);
     }
   };
 
