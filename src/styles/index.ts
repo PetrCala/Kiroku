@@ -159,8 +159,8 @@ const baseCodeTagStyles = (theme: ThemeColors) =>
   }) satisfies ViewStyle & MixedStyleDeclaration;
 
 const headlineFont = {
-  ...FontUtils.fontFamily.platform.EXP_NEW_KANSAS_MEDIUM,
-  fontWeight: '500',
+  ...FontUtils.fontFamily.platform.EXP_NEUE_BOLD,
+  fontWeight: '700',
 } satisfies TextStyle;
 
 // const modalNavigatorContainer = (isSmallScreenWidth: boolean) =>
