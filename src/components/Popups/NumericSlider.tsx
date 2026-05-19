@@ -45,6 +45,13 @@ function NumericSlider({
     setLocalValue(newValue);
   };
 
+  const safeMaxValue = Number.isFinite(maxValue) && maxValue > 0 ? maxValue : 1;
+  const safeStep =
+    Number.isFinite(step) && step > 0 && step <= safeMaxValue ? step : 1;
+  const safeValue = Math.min(Math.max(localValue, 0), safeMaxValue);
+  const tintColor =
+    typeof theme.text === 'string' && theme.text ? theme.text : '#000000';
+
   return (
     <FullScreenModal visible={visible} onClose={onRequestClose} hideCloseButton>
       <View style={styles.fullScreenCenteredContent}>
@@ -54,14 +61,14 @@ function NumericSlider({
         </View>
         <View style={styles.m4}>
           <Slider
-            value={localValue}
+            value={safeValue}
             style={styles.numericSlider}
             minimumValue={0}
-            maximumValue={maxValue}
-            step={step}
-            minimumTrackTintColor={theme.text}
-            maximumTrackTintColor={theme.text}
-            thumbTintColor={theme.text}
+            maximumValue={safeMaxValue}
+            step={safeStep}
+            minimumTrackTintColor={tintColor}
+            maximumTrackTintColor={tintColor}
+            thumbTintColor={tintColor}
             onValueChange={handleSliderChange}
             tapToSeek
           />
