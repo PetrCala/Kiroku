@@ -8,12 +8,9 @@ import Reanimated, {
   useSharedValue,
   withTiming,
 } from 'react-native-reanimated';
-import * as KirokuIcons from '@components/Icon/KirokuIcons';
-import ImageSVG from '@components/ImageSVG';
 import useThemeStyles from '@hooks/useThemeStyles';
 import BootSplash from '@libs/BootSplash';
 import Log from '@libs/Log';
-import colors from '@src/styles/theme/colors';
 import type {
   SplashScreenHiderProps,
   SplashScreenHiderReturnType,
@@ -24,14 +21,6 @@ import type {
 // never flips and the user is left staring at the yellow overlay indefinitely.
 const FORCE_HIDE_TIMEOUT_MS = 15 * 1000;
 
-// Storyboard asset is 108pt (108/216/324 at 1×/2×/3×). The JS overlay must
-// render the logo at the SAME size as the storyboard so the handoff from the
-// in-process native splash to this JS overlay is visually seamless. Before
-// PR #325 this was read from the native module's constantsToExport, but iOS
-// never exported it, so it fell back to 100pt and produced a visible ~7.4%
-// size jump. Hardcoding 108pt eliminates that mismatch.
-const LOGO_SIZE = 108;
-
 function SplashScreenHider({
   onHide = () => {},
   shouldHideSplash,
@@ -39,13 +28,9 @@ function SplashScreenHider({
   const styles = useThemeStyles();
 
   const opacity = useSharedValue(1);
-  const scale = useSharedValue(1);
 
   const opacityStyle = useAnimatedStyle<ViewStyle>(() => ({
     opacity: opacity.get(),
-  }));
-  const scaleStyle = useAnimatedStyle<ViewStyle>(() => ({
-    transform: [{scale: scale.get()}],
   }));
 
   const hideHasBeenCalled = useRef(false);
@@ -58,19 +43,15 @@ function SplashScreenHider({
 
     hideHasBeenCalled.current = true;
 
+    // Native BootSplash owns the logo: RCTBootSplash crossfades the
+    // in-process storyboard subview (PNG logo on yellow) to hidden over
+    // 250ms. This JS overlay is a logo-less yellow card sitting underneath
+    // the entire time; we only fade the card out *after* the native fade
+    // resolves, so the overall sequence is "logo fades out → yellow card
+    // fades out → home content". No second logo means no PNG↔SVG handoff
+    // flicker, and the card still masks HomeScreen's first-paint loading
+    // state until real content can paint.
     BootSplash.hide().then(() => {
-      // Straight shrink to 0. Previously used Easing.back(2), but `back`
-      // dips negative in the middle of the eased curve, which (when
-      // interpolating from 1 to 0) pushes the scale above 1 — the logo
-      // visibly "pops" outward by ~13% before shrinking. Reads as a brief
-      // flash now that the rest of the cold-start is smooth.
-      scale.set(
-        withTiming(0, {
-          duration: 200,
-          easing: Easing.out(Easing.ease),
-        }),
-      );
-
       opacity.set(
         withTiming(
           0,
@@ -82,7 +63,7 @@ function SplashScreenHider({
         ),
       );
     });
-  }, [opacity, scale, onHide]);
+  }, [opacity, onHide]);
 
   useEffect(() => {
     if (!shouldHideSplash) {
@@ -109,19 +90,8 @@ function SplashScreenHider({
 
   return (
     <Reanimated.View
-      style={[StyleSheet.absoluteFill, styles.splashScreenHider, opacityStyle]}>
-      <Reanimated.View style={scaleStyle}>
-        <ImageSVG
-          contentFit="fill"
-          style={{
-            width: LOGO_SIZE,
-            height: LOGO_SIZE,
-          }}
-          fill={colors.white}
-          src={KirokuIcons.Logo}
-        />
-      </Reanimated.View>
-    </Reanimated.View>
+      style={[StyleSheet.absoluteFill, styles.splashScreenHider, opacityStyle]}
+    />
   );
 }
 
