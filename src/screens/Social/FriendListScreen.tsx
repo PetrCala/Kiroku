@@ -23,7 +23,7 @@ function FriendListScreen() {
   const [friendsToDisplay, setFriendsToDisplay] = useState<UserArray>([]);
   const [userHasFriends, setUserHasFriends] = useState<boolean>(false);
   const {profileList} = useProfileList(friends);
-  const [isLoading, setIsLoading] = useState<boolean>(true);
+  const [isLoading, setIsLoading] = useState<boolean>(false);
 
   const localSearch = useCallback(
     (searchText: string): void => {

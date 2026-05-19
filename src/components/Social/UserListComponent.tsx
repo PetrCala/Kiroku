@@ -18,6 +18,7 @@ import useThemeStyles from '@hooks/useThemeStyles';
 import FlatList from '@components/FlatList';
 import {PressableWithFeedback} from '@components/Pressable';
 import FlexibleLoadingIndicator from '@components/FlexibleLoadingIndicator';
+import OptionsListSkeletonView from '@components/OptionsListSkeletonView';
 import {useDatabaseData} from '@context/global/DatabaseDataContext';
 import useLocalize from '@hooks/useLocalize';
 import UserOverview from './UserOverview';
@@ -61,7 +62,8 @@ function UserListComponent({
     useState<number>(initialLoadSize);
   const {loadingDisplayData, profileList} = useProfileList(displayUserArray);
   const [loadingMoreUsers, setLoadingMoreUsers] = useState<boolean>(false);
-  const [initialLoadFinished, setInitialLoadFinished] =
+  const [isFetchingStatuses, setIsFetchingStatuses] = useState<boolean>(false);
+  const [hasComputedOrderedList, setHasComputedOrderedList] =
     useState<boolean>(false);
 
   const loadMoreUsers = useCallback(
@@ -99,7 +101,7 @@ function UserListComponent({
     Navigation.navigate(ROUTES.PROFILE.getRoute(userID));
   };
 
-  // Monitor the user status list
+  // Fetch any missing user statuses for the current full user array.
   useEffect(() => {
     async function fetchUsers() {
       if (!isNonEmptyArray(fullUserArray)) {
@@ -110,27 +112,40 @@ function UserListComponent({
         return;
       }
       const newUsers = fullUserArray.filter(userID => !userStatusList[userID]);
-      if (isNonEmptyArray(newUsers)) {
+      if (!isNonEmptyArray(newUsers)) {
+        return;
+      }
+      setIsFetchingStatuses(true);
+      try {
         const newUserStatusList: UserStatusList =
           await Profile.fetchUserStatuses(db, newUsers);
         setUserStatusList({...userStatusList, ...newUserStatusList});
+      } finally {
+        setIsFetchingStatuses(false);
       }
     }
     fetchUsers();
-    // }, [db, initialLoadSize, fullUserArray, userStatusList]);
   }, [db, initialLoadSize, fullUserArray, userStatusList]);
 
-  // Update the display list when the user status list changes
+  // Update the display list when the user status list changes.
+  // Defer marking the list as "ready" until the priority sort has actually
+  // run against a populated userStatusList — otherwise the initial render
+  // would show friends in input order and then visibly re-sort.
   useEffect(() => {
     const updateDisplayArray = () => {
-      // No users to display
-      if (
-        (!isNonEmptyArray(fullUserArray) && fullUserArray) ??
-        (!isNonEmptyArray(userSubset) && userSubset) ??
-        isEmptyObject(userStatusList)
-      ) {
+      if (!isNonEmptyArray(fullUserArray)) {
         setDisplayUserArray([]);
-        setInitialLoadFinished(true);
+        setHasComputedOrderedList(true);
+        return;
+      }
+      if (userSubset !== undefined && !isNonEmptyArray(userSubset)) {
+        setDisplayUserArray([]);
+        setHasComputedOrderedList(true);
+        return;
+      }
+      if (isEmptyObject(userStatusList)) {
+        // Wait for status data before computing the ordered list so we don't
+        // briefly render an unsorted slice and then re-order it.
         return;
       }
       let arrayToSlice = userSubset ?? fullUserArray;
@@ -143,18 +158,11 @@ function UserListComponent({
       }
       const newDisplayArray = arrayToSlice.slice(0, currentLoadSize);
       setDisplayUserArray(newDisplayArray);
-      setInitialLoadFinished(true);
+      setHasComputedOrderedList(true);
     };
 
     updateDisplayArray();
-  }, [
-    userStatusList,
-    userSubset,
-    currentLoadSize,
-    fullUserArray,
-    orderUsers,
-    initialLoadFinished,
-  ]); // Full array changes change the status list
+  }, [userStatusList, userSubset, currentLoadSize, fullUserArray, orderUsers]);
 
   const renderItem = useCallback(
     ({item, index}: ListRenderItemInfo<string>) => {
@@ -192,12 +200,21 @@ function UserListComponent({
     return <FlexibleLoadingIndicator style={[styles.pt2]} />;
   }, [loadingMoreUsers, styles.pt2]);
 
-  const listEmptyComponent = useMemo(() => {
-    if (isLoading ?? loadingDisplayData ?? !initialLoadFinished) {
-      return <FlexibleLoadingIndicator />;
+  const allStatusesLoaded = useMemo(() => {
+    if (!isNonEmptyArray(fullUserArray)) {
+      return true;
     }
-    return emptyListComponent;
-  }, [emptyListComponent, isLoading, loadingDisplayData, initialLoadFinished]);
+    return (
+      !isFetchingStatuses && fullUserArray.every(id => id in userStatusList)
+    );
+  }, [fullUserArray, isFetchingStatuses, userStatusList]);
+
+  const isListReady =
+    hasComputedOrderedList && allStatusesLoaded && !loadingDisplayData;
+
+  if (!isListReady || isLoading) {
+    return <OptionsListSkeletonView />;
+  }
 
   return (
     <FlatList
@@ -209,7 +226,7 @@ function UserListComponent({
       contentContainerStyle={[styles.pt1]}
       onEndReached={onEndReached}
       onEndReachedThreshold={0.75}
-      ListEmptyComponent={listEmptyComponent}
+      ListEmptyComponent={emptyListComponent}
       ListFooterComponent={listFooterComponent}
     />
   );
