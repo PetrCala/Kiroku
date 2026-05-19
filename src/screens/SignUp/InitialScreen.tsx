@@ -134,13 +134,16 @@ function InitialScreen() {
             styles.r0,
             styles.b0,
             styles.ph5,
-            styles.alignItemsCenter,
+            styles.flexRow,
+            styles.justifyContentCenter,
             safeAreaPaddingBottomStyle.paddingBottom
               ? safeAreaPaddingBottomStyle
               : styles.pb5,
           ]}>
           <DotIndicatorMessage
             type="success"
+            style={styles.flexShrink1}
+            textStyles={styles.textAlignCenter}
             messages={{
               // eslint-disable-next-line @typescript-eslint/naming-convention,@typescript-eslint/prefer-nullish-coalescing
               0: closeAccount?.success || '',
