@@ -22,6 +22,7 @@ import {convertUnitsToColors} from '@libs/DataHandling';
 import ScrollView from '@components/ScrollView';
 import FlexibleLoadingIndicator from '@components/FlexibleLoadingIndicator';
 import SuccessIndicator from '@components/SuccessIndicator';
+import HapticFeedback from '@libs/HapticFeedback';
 import Log from '@libs/Log';
 import DateUtils from '@libs/DateUtils';
 import {isEqual} from 'lodash';
@@ -75,6 +76,10 @@ function DrinkingSessionWindow({
       if (totalUnits <= 0) {
         // TODO inform the user why the they can not save their session - 0 units
         return;
+      }
+
+      if (sessionIsLive) {
+        HapticFeedback.success();
       }
 
       await App.setLoadingText(translate('liveSessionScreen.saving'));
