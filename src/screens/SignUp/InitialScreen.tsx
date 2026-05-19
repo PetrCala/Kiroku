@@ -134,6 +134,7 @@ function InitialScreen() {
             styles.r0,
             styles.b0,
             styles.ph5,
+            styles.alignItemsCenter,
             safeAreaPaddingBottomStyle.paddingBottom
               ? safeAreaPaddingBottomStyle
               : styles.pb5,
