@@ -7,12 +7,12 @@ import React, {
 } from 'react';
 import {
   interpolateColor,
-  runOnJS,
   useAnimatedReaction,
   useSharedValue,
   withDelay,
   withTiming,
 } from 'react-native-reanimated';
+import {scheduleOnRN} from 'react-native-worklets';
 import usePrevious from '@hooks/usePrevious';
 import useTheme from '@hooks/useTheme';
 import {navigationRef} from '@libs/Navigation/Navigation';
@@ -82,7 +82,7 @@ function CustomStatusBarAndBackground({
         [0, 1],
         [prevColor, currColor],
       );
-      runOnJS(updateStatusBarAppearance)({backgroundColor});
+      scheduleOnRN(updateStatusBarAppearance, {backgroundColor});
     },
   );
 
