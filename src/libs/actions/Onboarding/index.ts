@@ -1,13 +1,16 @@
 import type {Database} from 'firebase/database';
 import {ref, set, update} from 'firebase/database';
 import type {User} from 'firebase/auth';
+import {StackActions} from '@react-navigation/native';
 import Onyx from 'react-native-onyx';
 import * as Localize from '@libs/Localize';
 import Log from '@libs/Log';
 import Navigation from '@libs/Navigation/Navigation';
+import navigationRef from '@libs/Navigation/navigationRef';
 import {setUsername} from '@userActions/User';
 import CONST from '@src/CONST';
 import DBPATHS from '@src/DBPATHS';
+import NAVIGATORS from '@src/NAVIGATORS';
 import ONYXKEYS from '@src/ONYXKEYS';
 import ROUTES from '@src/ROUTES';
 
@@ -135,15 +138,33 @@ async function completeOnboarding(
 }
 
 /**
- * Navigate the user out of the onboarding modal after completion.
+ * Dismiss the onboarding modal and reveal the Home screen underneath.
  *
- * The onboarding screen is always mounted in `AuthScreens`; this navigation
- * is what tears it down (with the closing stack animation). Call this BEFORE
- * `completeOnboarding` so the transition plays before Onyx state flips and
- * downstream consumers re-render. Resuming the last-attempted protected
- * route is a v2 nice-to-have.
+ * Pops the `ONBOARDING_MODAL_NAVIGATOR` route directly off the root stack.
+ * Going through `Navigation.navigate(ROUTES.HOME)` is wrong here: the
+ * shared `linkTo` resolver treats `/home` as a bottom-tab destination and
+ * dispatches BOTH a PUSH onto the BottomTabNavigator's stack AND a
+ * POP_TO_TOP on the root, producing two simultaneous rightward animations
+ * (the modal flying out while a duplicate HOME slides in) and leaving a
+ * stale duplicate `HOME` route on the bottom-tab stack.
+ *
+ * Call this BEFORE `completeOnboarding` so the dismissal transition plays
+ * while the screen content is still mounted. Resuming the last-attempted
+ * protected route is a v2 nice-to-have.
  */
 function navigateAfterOnboarding(): void {
+  const rootState = navigationRef.current?.getRootState();
+  const lastRoute = rootState?.routes.at(-1);
+  if (rootState && lastRoute?.name === NAVIGATORS.ONBOARDING_MODAL_NAVIGATOR) {
+    navigationRef.current?.dispatch({
+      ...StackActions.pop(),
+      target: rootState.key,
+    });
+    return;
+  }
+  // Fallback for unexpected entry points (e.g. caller not on the onboarding
+  // modal). Falls back to the shared linker; visually imperfect, but the
+  // onboarding modal won't be on screen anyway.
   Navigation.navigate(ROUTES.HOME);
 }
 
