@@ -23,7 +23,7 @@ import type {
   VerifyEmailScreenEmailParmas,
 } from './params';
 
-/* eslint-disable max-len */
+ 
 export default {
   common: {
     cancel: 'Cancel',
@@ -971,6 +971,16 @@ export default {
     error: {
       generic: 'There was an error when attempting to reset your password.',
     },
+  },
+  oauthLinkModal: {
+    appleTitle: 'Connect your Apple account',
+    googleTitle: 'Connect your Google account',
+    body: ({email}: ForgotPasswordSuccessParams) =>
+      `An account with ${email} already exists. Enter your password to connect.`,
+    appleSubmit: 'Connect Apple account',
+    googleSubmit: 'Connect Google account',
+    resetEmailSent: ({email}: ForgotPasswordSuccessParams) =>
+      `We sent a reset link to ${email}. Check your inbox.`,
   },
   passwordScreen: {
     title: 'Change your password',

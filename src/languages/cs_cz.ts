@@ -22,7 +22,7 @@ import type {
   VerifyEmailScreenEmailParmas,
 } from './params';
 
-/* eslint-disable max-len */
+ 
 export default {
   common: {
     cancel: 'Zrušit',
@@ -966,6 +966,16 @@ export default {
     error: {
       generic: 'Při pokusu o reset hesla došlo k chybě.',
     },
+  },
+  oauthLinkModal: {
+    appleTitle: 'Propojit účet Apple',
+    googleTitle: 'Propojit účet Google',
+    body: ({email}: ForgotPasswordSuccessParams) =>
+      `Účet s adresou ${email} již existuje. Zadejte heslo pro propojení.`,
+    appleSubmit: 'Propojit účet Apple',
+    googleSubmit: 'Propojit účet Google',
+    resetEmailSent: ({email}: ForgotPasswordSuccessParams) =>
+      `Odkaz pro reset hesla byl odeslán na adresu ${email}. Zkontrolujte si schránku.`,
   },
   passwordScreen: {
     title: 'Změnit heslo',
