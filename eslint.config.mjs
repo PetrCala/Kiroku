@@ -423,6 +423,7 @@ export default defineConfig([
       '**/*.cjs',
     ],
     rules: {
+      '@typescript-eslint/ban-types': 'off',
       '@typescript-eslint/brace-style': 'off',
       '@typescript-eslint/comma-dangle': 'off',
       '@typescript-eslint/comma-spacing': 'off',
@@ -430,6 +431,7 @@ export default defineConfig([
       '@typescript-eslint/indent': 'off',
       '@typescript-eslint/keyword-spacing': 'off',
       '@typescript-eslint/lines-between-class-members': 'off',
+      '@typescript-eslint/no-empty-interface': 'off',
       '@typescript-eslint/no-extra-semi': 'off',
       '@typescript-eslint/no-throw-literal': 'off',
       '@typescript-eslint/object-curly-spacing': 'off',
