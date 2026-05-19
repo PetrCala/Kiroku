@@ -30,6 +30,7 @@ import DotIndicatorMessage from '@components/DotIndicatorMessage';
 import {useUserConnection} from '@context/global/UserConnectionContext';
 import AppleSignIn from '@components/SignInButtons/AppleSignIn';
 import GoogleSignIn from '@components/SignInButtons/GoogleSignIn';
+import OAuthLinkModal from '@components/OAuthLinkModal';
 import FullScreenLoadingIndicator from '@components/FullscreenLoadingIndicator';
 import type {TranslationPaths} from '@src/languages/types';
 import OrDelimiter from './OrDelimiter';
@@ -175,6 +176,7 @@ function AuthScreen({route}: AuthScreenProps) {
             <AppleSignIn onError={setServerErrorMessage} />
             <GoogleSignIn onError={setServerErrorMessage} />
           </View>
+          <OAuthLinkModal />
           <OrDelimiter containerStyle={styles.mb4} />
           <FormProvider
             formID={ONYXKEYS.FORMS.AUTH_FORM}
@@ -227,7 +229,7 @@ function AuthScreen({route}: AuthScreenProps) {
               <DotIndicatorMessage
                 style={[styles.mv2]}
                 type="error"
-                // eslint-disable-next-line @typescript-eslint/naming-convention,@typescript-eslint/prefer-nullish-coalescing
+                // eslint-disable-next-line @typescript-eslint/naming-convention
                 messages={{0: serverErrorMessage || ''}}
               />
             )}
