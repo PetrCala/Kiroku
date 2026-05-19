@@ -3,23 +3,47 @@ import {context} from '@actions/github';
 import CONST from '@github/libs/CONST';
 import GithubUtils from '@github/libs/GithubUtils';
 
+function renderLinkCell(result: string, link: string): string {
+  if (result === 'success') {
+    return link;
+  }
+  if (result === 'skipped') {
+    return '⏭️ Not built';
+  }
+  return '❌ FAILED ❌';
+}
+
+function renderQRCell(
+  result: string,
+  link: string,
+  platformLabel: string,
+): string {
+  if (result === 'success') {
+    return `![${platformLabel}](https://api.qrserver.com/v1/create-qr-code/?size=120x120&data=${link})`;
+  }
+  if (result === 'skipped') {
+    return '—';
+  }
+  return `The QR code can't be generated, because the ${platformLabel} build failed`;
+}
+
 function getTestBuildMessage(): string {
   console.log('Input for android', core.getInput('ANDROID', {required: true}));
-  const androidSuccess =
-    core.getInput('ANDROID', {required: true}) === 'success';
-  const iOSSuccess = core.getInput('IOS', {required: true}) === 'success';
+  const androidResult = core.getInput('ANDROID', {required: true});
+  const iOSResult = core.getInput('IOS', {required: true});
 
-  const androidLink = androidSuccess
-    ? core.getInput('ANDROID_LINK')
-    : '❌ FAILED ❌';
-  const iOSLink = iOSSuccess ? core.getInput('IOS_LINK') : '❌ FAILED ❌';
+  const androidLink = renderLinkCell(
+    androidResult,
+    core.getInput('ANDROID_LINK'),
+  );
+  const iOSLink = renderLinkCell(iOSResult, core.getInput('IOS_LINK'));
 
-  const androidQRCode = androidSuccess
-    ? `![Android](https://api.qrserver.com/v1/create-qr-code/?size=120x120&data=${androidLink})`
-    : "The QR code can't be generated, because the android build failed";
-  const iOSQRCode = iOSSuccess
-    ? `![iOS](https://api.qrserver.com/v1/create-qr-code/?size=120x120&data=${iOSLink})`
-    : "The QR code can't be generated, because the iOS build failed";
+  const androidQRCode = renderQRCell(
+    androidResult,
+    core.getInput('ANDROID_LINK'),
+    'android',
+  );
+  const iOSQRCode = renderQRCell(iOSResult, core.getInput('IOS_LINK'), 'iOS');
 
   const message = `:test_tube::test_tube: Use the links below to test this adhoc build on Android and iOS. Happy testing! :test_tube::test_tube:
 | Android :robot:  | iOS :apple: |
