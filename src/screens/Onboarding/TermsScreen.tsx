@@ -3,11 +3,10 @@ import OnboardingScreenLayout from '@components/OnboardingScreenLayout';
 import TermsScreenContent from '@components/TermsScreenContent';
 import {useFirebase} from '@context/global/FirebaseContext';
 import useLocalize from '@hooks/useLocalize';
-import Navigation from '@libs/Navigation/Navigation';
 import type {OnboardingModalNavigatorParamList} from '@libs/Navigation/types';
 import * as Onboarding from '@userActions/Onboarding';
 import ROUTES from '@src/ROUTES';
-import type SCREENS from '@src/SCREENS';
+import SCREENS from '@src/SCREENS';
 import type {StackScreenProps} from '@react-navigation/stack';
 
 type TermsScreenProps = StackScreenProps<
@@ -15,15 +14,19 @@ type TermsScreenProps = StackScreenProps<
   typeof SCREENS.ONBOARDING.TERMS
 >;
 
-// eslint-disable-next-line no-empty-pattern
-function TermsScreen({}: TermsScreenProps) {
+function TermsScreen({navigation}: TermsScreenProps) {
   const {auth, db} = useFirebase();
   const {translate} = useLocalize();
 
+  // Navigate within the OnboardingModalNavigator's inner stack instead of
+  // through the global `Navigation` helper. The global helper routes through
+  // `linkTo`, which dispatches PUSH on the root stack and would append a
+  // duplicate `ONBOARDING_MODAL_NAVIGATOR` entry — `dismissModal()` only pops
+  // one, exposing the duplicate Terms screen below.
   const handleAccept = useCallback(async () => {
     await Onboarding.acceptTerms(db, auth.currentUser, ROUTES.ONBOARDING_TERMS);
-    Navigation.navigate(ROUTES.ONBOARDING_DISPLAY_NAME);
-  }, [auth, db]);
+    navigation.navigate(SCREENS.ONBOARDING.DISPLAY_NAME);
+  }, [auth, db, navigation]);
 
   return (
     <OnboardingScreenLayout
