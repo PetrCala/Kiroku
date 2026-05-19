@@ -23,7 +23,6 @@ import NAVIGATORS from '@src/NAVIGATORS';
 import ONYXKEYS from '@src/ONYXKEYS';
 // import ROUTES from '@src/ROUTES';
 import SCREENS from '@src/SCREENS';
-import getOnboardingModalScreenOptions from '@libs/Navigation/getOnboardingModalScreenOptions';
 import {
   DatabaseDataProvider,
   useDatabaseData,
@@ -168,22 +167,6 @@ function AuthScreensContent() {
         onboardingIsMediumOrLargerScreenWidth,
       ),
     [screenOptions, onboardingIsMediumOrLargerScreenWidth],
-  );
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  const onboardingScreenOptions = useMemo(
-    () =>
-      getOnboardingModalScreenOptions(
-        shouldUseNarrowLayout,
-        styles,
-        StyleUtils,
-        onboardingIsMediumOrLargerScreenWidth,
-      ),
-    [
-      StyleUtils,
-      shouldUseNarrowLayout,
-      onboardingIsMediumOrLargerScreenWidth,
-      styles,
-    ],
   );
   const isInitialRender = useRef(true);
 
