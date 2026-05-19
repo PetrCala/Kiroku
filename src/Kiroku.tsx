@@ -25,6 +25,7 @@ import Visibility from './libs/Visibility';
 import ONYXKEYS from './ONYXKEYS';
 import type {Route} from './ROUTES';
 import {updateLastRoute} from './libs/actions/App';
+import * as Subscriptions from './libs/actions/Subscriptions';
 import setCrashlyticsUserId from './libs/setCrashlyticsUserId';
 import {checkIfUnderMaintenance} from './libs/Maintenance';
 import {validateAppVersion} from './libs/Validation';
@@ -82,6 +83,10 @@ function Kiroku() {
     const unsubscribe = auth.onAuthStateChanged(user => {
       setIsAuthenticated(!!user);
       setAuthenticationChecked(true);
+
+      if (user?.uid) {
+        Subscriptions.identify(user.uid);
+      }
 
       // Re-evaluate on every auth change: sign-out must drop the modal so it
       // doesn't reappear over the public stack after the user taps "Sign out"

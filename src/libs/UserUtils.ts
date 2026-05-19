@@ -8,6 +8,7 @@ import type {Timestamp, UserID} from '@src/types/onyx/OnyxCommon';
 import type IconAsset from '@src/types/utils/IconAsset';
 import ONYXKEYS from '@src/ONYXKEYS';
 import type {User} from 'firebase/auth';
+import type {UserDataList, UserPrivateData} from '@src/types/onyx/UserData';
 import hashCode from './hashCode';
 
 let appUpdateDismissed: OnyxEntry<Timestamp | null> = null;
@@ -255,6 +256,55 @@ function setDevBypassEmailVerification(bypass: boolean): void {
   devBypassEmailVerification = bypass;
 }
 
+/**
+ * Returns the current user's supporter status from private data, with safe
+ * defaults. Undefined fields read as a non-supporter — mirrors the
+ * onboarding-epic convention of treating absent flags as the "off" state.
+ * Pass the value of `ONYXKEYS.USER_PRIVATE_DATA` from the caller (e.g. via
+ * `useOnyx`) to keep this selector pure.
+ */
+function getCurrentUserSupporterStatus(
+  privateData: OnyxEntry<UserPrivateData>,
+): Required<Pick<UserPrivateData, 'is_supporter'>> &
+  Pick<
+    UserPrivateData,
+    | 'supporter_since'
+    | 'supporter_tier'
+    | 'supporter_expires_at'
+    | 'supporter_status'
+  > {
+  return {
+    is_supporter: privateData?.is_supporter ?? false,
+    supporter_since: privateData?.supporter_since ?? null,
+    supporter_tier: privateData?.supporter_tier ?? null,
+    supporter_expires_at: privateData?.supporter_expires_at ?? null,
+    supporter_status: privateData?.supporter_status ?? null,
+  };
+}
+
+/**
+ * Public-facing supporter check that works for any user (current or friend).
+ * Reads the public mirror written server-side by the RevenueCat webhook.
+ * Falls back to the caller-supplied private flag when querying self, so the
+ * badge renders correctly even before the webhook has caught up. Pass Onyx
+ * data in from `useOnyx` to keep this selector pure.
+ */
+function getUserIsSupporter(
+  userId: UserID | undefined,
+  userDataList: OnyxEntry<UserDataList>,
+  currentUserId?: UserID,
+  currentUserPrivateData?: OnyxEntry<UserPrivateData>,
+): boolean {
+  if (!userId) {
+    return false;
+  }
+  const publicFlag = userDataList?.[userId]?.is_supporter ?? false;
+  if (userId === currentUserId) {
+    return currentUserPrivateData?.is_supporter ?? publicFlag;
+  }
+  return publicFlag;
+}
+
 function shouldShowVerifyEmailModal(user: User | null): boolean {
   if (devBypassEmailVerification) {
     return false;
@@ -283,12 +333,14 @@ export {
   generateUserID,
   getAvatar,
   getAvatarUrl,
+  getCurrentUserSupporterStatus,
   getDefaultAvatar,
   getDefaultAvatarURL,
   getFullSizeAvatar,
   // getLoginListBrickRoadIndicator,
   // getSecondaryPhoneLogin,
   getSmallSizeAvatar,
+  getUserIsSupporter,
   // hasLoginListError,
   // hasLoginListInfo,
   hashText,

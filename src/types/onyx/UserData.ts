@@ -38,6 +38,9 @@ type Profile = {
   username_chosen?: boolean;
 };
 
+/** Lifecycle state of a supporter subscription, mirrored from RevenueCat. */
+type SupporterStatus = 'active' | 'grace_period' | 'expired' | 'cancelled';
+
 /** A model of user's private data */
 type UserPrivateData = {
   /** User birthdate, stored as a timestamp */
@@ -48,6 +51,21 @@ type UserPrivateData = {
 
   /** User gender */
   gender?: string;
+
+  /** Whether the user currently has an active supporter subscription. Undefined is treated as false. */
+  is_supporter?: boolean;
+
+  /** ISO timestamp of when the user first became a supporter, or null if never. */
+  supporter_since?: string | null;
+
+  /** Subscription tier identifier (kept open for future tiers). */
+  supporter_tier?: string | null;
+
+  /** ISO timestamp of when the current entitlement expires, or null if not applicable. */
+  supporter_expires_at?: string | null;
+
+  /** Detailed lifecycle status of the supporter subscription. */
+  supporter_status?: SupporterStatus | null;
 };
 
 /** A model of user's public data */
@@ -105,6 +123,13 @@ type UserData = {
 
   /** User's timezone settings */
   timezone?: Timezone;
+
+  /**
+   * Public mirror of the supporter flag — readable by friends so the badge
+   * can render. Renewal dates and detailed status stay private. Written
+   * server-side by the RevenueCat webhook; undefined is treated as false.
+   */
+  is_supporter?: boolean;
 };
 
 /** A collection of user data of multiple users */
@@ -123,6 +148,7 @@ export default UserData;
 export type {
   OnboardingData,
   Profile,
+  SupporterStatus,
   Timezone,
   SelectedTimezone,
   UserPublicData,

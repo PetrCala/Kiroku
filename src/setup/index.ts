@@ -1,6 +1,7 @@
 import {I18nManager} from 'react-native';
 import Onyx from 'react-native-onyx';
 import * as Device from '@userActions/Device';
+import * as Subscriptions from '@userActions/Subscriptions';
 import CONST from '@src/CONST';
 import ONYXKEYS from '@src/ONYXKEYS';
 import intlPolyfill from '@libs/IntlPolyfill';
@@ -48,6 +49,10 @@ export default function () {
   });
 
   Device.setDeviceID();
+
+  // No-op until RevenueCat keys land via env (#364); scaffolded ahead so the
+  // internal-track AAB carries the BILLING permission today.
+  Subscriptions.initialize();
 
   // Force app layout to work left to right because our design does not currently support devices using this mode
   I18nManager.allowRTL(false);
