@@ -205,6 +205,23 @@ jobs:
           VERSION: ${{ env.IOS_VERSION }}
           TESTFLIGHT_CHANGELOG: ${{ env.TESTFLIGHT_CHANGELOG }}
 
+      # Preserve the dSYM as a workflow artifact so we can symbolicate native
+      # crash reports later without trips to App Store Connect. Fastlane's
+      # build_app emits *.app.dSYM.zip next to the IPA in the workspace; the
+      # path glob also catches ios/ in case future changes move the output.
+      # Runs on always() so failures in upload_to_testflight still preserve
+      # the dSYM for debugging.
+      - name: Stash iOS dSYM as workflow artifact
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ios-dsym-${{ inputs.APP_VERSION }}
+          path: |
+            ./*.app.dSYM.zip
+            ios/*.app.dSYM.zip
+          retention-days: 90
+          if-no-files-found: warn
+
       # - name: Upload iOS build to Browser Stack
       #   if: ${{ !inputs.SHOULD_DEPLOY_PRODUCTION }}
       #   run: curl -u "$BROWSERSTACK" -X POST "https://api-cloud.browserstack.com/app-live/upload" -F "file=@/Users/runner/work/App/App/kiroku.ipa"
