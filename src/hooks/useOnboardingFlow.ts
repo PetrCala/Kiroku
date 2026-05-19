@@ -36,7 +36,15 @@ function useOnboardingFlow(): OnboardingFlowState {
   return useMemo<OnboardingFlowState>(() => {
     const skipOnboarding = CONFIG.SKIP_ONBOARDING;
     const isAuthenticated = !!userID;
-    const isReady = !isAuthenticated || userData !== undefined;
+    // Treat both `undefined` (listener not yet emitted) and `null` (RTDB node
+    // missing — either pre-write during signup or post-delete during account
+    // closure) as "not enough info, defer." Without this, account deletion
+    // briefly flashes the T&C screen: `deleteUserData` wipes the RTDB node
+    // before `signOut` runs, the listener emits `null`, and the onboarding
+    // selectors interpret that as "needs onboarding" while the user is still
+    // authenticated.
+    const isReady =
+      !isAuthenticated || (userData !== undefined && userData !== null);
 
     if (skipOnboarding || !isAuthenticated || !isReady) {
       return {
