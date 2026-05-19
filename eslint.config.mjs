@@ -442,6 +442,70 @@ export default defineConfig([
     },
   },
 
+  // Rule prunes triggered by the ESLint v9 / eslint-config-expensify v3 upgrade.
+  // Each block below is a deliberate decision to drop rules that either
+  // (a) Expensify themselves turned off in their flat config, (b) come from a
+  // plugin Kiroku never used, or (c) reflect opinionated Expensify-product
+  // preferences that don't match Kiroku's style. See PR description for the
+  // numbers and rationale.
+  {
+    files: [
+      '**/*.ts',
+      '**/*.tsx',
+      '**/*.js',
+      '**/*.jsx',
+      '**/*.mjs',
+      '**/*.cjs',
+    ],
+    rules: {
+      // === Tier 1: mirror Expensify's TS-only off block ===
+      // The jsdoc plugin enforces declarations that aren't useful for TS code
+      // — TS already documents param names and types. Expensify drops these.
+      'jsdoc/require-param': 'off',
+      'jsdoc/require-param-type': 'off',
+      'jsdoc/check-param-names': 'off',
+      'jsdoc/check-tag-names': 'off',
+      'jsdoc/check-types': 'off',
+
+      // typescript-eslint v8 enabled these via recommendedTypeChecked /
+      // stylisticTypeChecked. They produce a lot of noise on legitimate code
+      // patterns (e.g. `.indexOf(x) !== -1` instead of `.includes(x)`).
+      // Expensify turns them off.
+      '@typescript-eslint/prefer-find': 'off',
+      '@typescript-eslint/prefer-includes': 'off',
+      '@typescript-eslint/prefer-optional-chain': 'off',
+      '@typescript-eslint/prefer-regexp-exec': 'off',
+      '@typescript-eslint/no-require-imports': 'off',
+
+      // @typescript-eslint/prefer-promise-reject-errors is duplicated by the
+      // base `prefer-promise-reject-errors` rule; keep one. Expensify keeps
+      // the base rule.
+      '@typescript-eslint/prefer-promise-reject-errors': 'off',
+      'prefer-promise-reject-errors': 'error',
+
+      // === Tier 2: drop unicorn entirely ===
+      // `eslint-config-expensify` v3 transitively pulls in eslint-plugin-unicorn
+      // and enables 5 rules. Kiroku never used unicorn; adopting it is its own
+      // decision, not a side-effect of the ESLint upgrade.
+      'unicorn/no-array-for-each': 'off',
+      'unicorn/prefer-array-find': 'off',
+      'unicorn/prefer-set-has': 'off',
+      'unicorn/prefer-set-size': 'off',
+      'unicorn/prefer-string-replace-all': 'off',
+
+      // === Tier 3: drop opinionated rulesdir rules Kiroku didn't ask for ===
+      // These are Expensify-product style preferences shipped via
+      // `eslint-config-expensify`. We keep the ones with clear Kiroku value
+      // (onyx-connect bans, narrow-hook-dependencies, useState initializers,
+      // context-provider-split-values, no-deep-equal-in-memo) but drop the
+      // pure-style ones.
+      'rulesdir/prefer-early-return': 'off',
+      'rulesdir/use-double-negation-instead-of-boolean': 'off',
+      'rulesdir/no-acc-spread-in-reduce': 'off',
+      'rulesdir/no-negated-variables': 'off',
+    },
+  },
+
   // Disable formatting rules that conflict with Prettier. Must be last.
   prettierConfig,
 
