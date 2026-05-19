@@ -31,7 +31,6 @@ import useResponsiveLayout from '@hooks/useResponsiveLayout';
 import {useFirebase} from '@context/global/FirebaseContext';
 import OnboardingGuard from '@libs/Navigation/guards/OnboardingGuard';
 import TermsReConsentGuard from '@libs/Navigation/guards/TermsReConsentGuard';
-import useOnboardingFlow from '@hooks/useOnboardingFlow';
 import createCustomStackNavigator from './createCustomStackNavigator';
 import getRootNavigatorScreenOptions from './getRootNavigatorScreenOptions';
 import BottomTabNavigator from './Navigators/BottomTabNavigator';
@@ -141,8 +140,6 @@ function AuthScreens() {
     styles,
     StyleUtils,
   );
-
-  const {shouldFireOnboarding} = useOnboardingFlow();
 
   const onboardingModalScreenOptions = useMemo(
     () =>
@@ -323,19 +320,17 @@ function AuthScreens() {
           options={screenOptions.fullScreen}
           component={DesktopSignInRedirectPage}
         /> */}
-        {shouldFireOnboarding && (
-          <RootStack.Screen
-            name={NAVIGATORS.ONBOARDING_MODAL_NAVIGATOR}
-            options={onboardingModalScreenOptions}
-            component={OnboardingModalNavigator}
-            listeners={{
-              focus: () => {
-                Modal.setDisableDismissOnEscape(true);
-              },
-              beforeRemove: () => Modal.setDisableDismissOnEscape(false),
-            }}
-          />
-        )}
+        <RootStack.Screen
+          name={NAVIGATORS.ONBOARDING_MODAL_NAVIGATOR}
+          options={onboardingModalScreenOptions}
+          component={OnboardingModalNavigator}
+          listeners={{
+            focus: () => {
+              Modal.setDisableDismissOnEscape(true);
+            },
+            beforeRemove: () => Modal.setDisableDismissOnEscape(false),
+          }}
+        />
         {/* {Object.entries(CENTRAL_PANE_SCREENS).map(
             ([screenName, componentGetter]) => {
               const centralPaneName = screenName as CentralPaneName;
