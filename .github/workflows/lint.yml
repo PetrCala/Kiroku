@@ -16,9 +16,16 @@ jobs:
     name: ESLint check
     if: ${{ github.actor != 'KirokuAdmin' || github.event_name == 'workflow_call' }}
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+        with:
+          # Checkout the PR head ref (not the merge ref) so the bootstrap
+          # step below can push the seatbelt baseline back to the branch.
+          ref: ${{ github.event.pull_request.head.ref || github.ref }}
+          repository: ${{ github.event.pull_request.head.repo.full_name || github.repository }}
 
       - name: Setup Node
         uses: ./.github/actions/composite/setupNode
@@ -31,10 +38,40 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-eslint-
 
+      # First-time bootstrap: when `eslint.seatbelt.tsv` is missing or empty,
+      # run `SEATBELT_INCREASE=ALL` to write a baseline entry for every
+      # current error, commit the TSV back to the branch, and skip the
+      # regular lint step (the SEATBELT_INCREASE run is the verification).
+      # After the baseline lands, this step is inert on subsequent runs.
+      #
+      # Note: commits made by GITHUB_TOKEN don't trigger downstream workflows,
+      # so the bot push doesn't re-fire this workflow — which is what we want
+      # (no infinite loop).
+      - name: Check eslint-seatbelt baseline
+        id: check_baseline
+        run: |
+          if [ -s eslint.seatbelt.tsv ]; then
+            echo "exists=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "exists=false" >> "$GITHUB_OUTPUT"
+            echo "::notice::eslint.seatbelt.tsv missing or empty; will bootstrap."
+          fi
+
+      - name: Bootstrap eslint-seatbelt baseline
+        if: steps.check_baseline.outputs.exists == 'false' && github.event_name == 'pull_request'
+        run: |
+          SEATBELT_INCREASE=ALL ./scripts/lint.sh
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add eslint.seatbelt.tsv
+          git commit -m "chore(lint): bootstrap eslint-seatbelt baseline"
+          git push origin HEAD:${{ github.event.pull_request.head.ref }}
+
       # ESLint's cache doesn't track cross-file TypeScript dependencies, which
       # can cause stale errors. If lint fails, clear the cache and retry to
       # rule out false positives.
       - name: Lint JavaScript and Typescript with ESLint
+        if: steps.check_baseline.outputs.exists == 'true'
         run: |
           if ! npm run lint; then
             echo "Lint failed, clearing cache and retrying..."
