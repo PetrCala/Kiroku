@@ -161,6 +161,17 @@ const restrictedImportPatterns = [
 ];
 
 export default defineConfig([
+  // Flat config defaults `reportUnusedDisableDirectives` to 'error', which
+  // surfaces hundreds of stale `// eslint-disable-next-line <rule>` comments
+  // referencing rules that no longer exist (e.g. `@typescript-eslint/ban-types`,
+  // `@typescript-eslint/no-empty-interface`). Demote to 'warn' so eslint-seatbelt
+  // can baseline them as warnings and we clean them up gradually.
+  {
+    linterOptions: {
+      reportUnusedDisableDirectives: 'warn',
+    },
+  },
+
   expensifyConfig,
   typescriptEslint.configs.recommendedTypeChecked,
   typescriptEslint.configs.stylisticTypeChecked,
