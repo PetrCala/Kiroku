@@ -44,32 +44,6 @@ const config: LinkingOptions<RootStackParamList>['config'] = {
       },
     },
 
-    [NAVIGATORS.TZ_FIX_NAVIGATOR]: {
-      path: ROUTES.TZ_FIX_INTRODUCTION,
-      initialRouteName: SCREENS.TZ_FIX.INTRODUCTION,
-      screens: {
-        [SCREENS.TZ_FIX.INTRODUCTION]: {
-          path: ROUTES.TZ_FIX_INTRODUCTION,
-          exact: true,
-        },
-        [SCREENS.TZ_FIX.DETECTION]: {
-          path: ROUTES.TZ_FIX_DETECTION,
-          exact: true,
-        },
-        [SCREENS.TZ_FIX.SELECTION]: {
-          path: ROUTES.TZ_FIX_SELECTION,
-          exact: true,
-        },
-        [SCREENS.TZ_FIX.CONFIRMATION]: {
-          path: ROUTES.TZ_FIX_CONFIRMATION,
-          exact: true,
-        },
-        [SCREENS.TZ_FIX.SUCCESS]: {
-          path: ROUTES.TZ_FIX_SUCCESS,
-          exact: true,
-        },
-      },
-    },
     [NAVIGATORS.ONBOARDING_MODAL_NAVIGATOR]: {
       path: ROUTES.ONBOARDING_TERMS,
       initialRouteName: SCREENS.ONBOARDING.TERMS,

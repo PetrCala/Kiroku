@@ -8,7 +8,7 @@ import useOnboardingLayout from '@hooks/useOnboardingLayout';
 import useResponsiveLayout from '@hooks/useResponsiveLayout';
 import useStyleUtils from '@hooks/useStyleUtils';
 import useThemeStyles from '@hooks/useThemeStyles';
-import getOnboardingModalScreenOptions from '@libs/Navigation/getTzFixModalScreenOptions';
+import getOnboardingModalScreenOptions from '@libs/Navigation/getOnboardingModalScreenOptions';
 import type {OnboardingModalNavigatorParamList} from '@libs/Navigation/types';
 import {
   hasCompletedOnboarding,
@@ -63,6 +63,7 @@ function OnboardingModalNavigator() {
                 shouldUseNarrowLayout,
                 styles,
                 StyleUtils,
+                isMediumOrLargerScreenWidth,
               )}>
               <Stack.Screen
                 name={SCREENS.ONBOARDING.TERMS}

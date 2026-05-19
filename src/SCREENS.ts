@@ -17,15 +17,6 @@ const SCREENS = {
   FORGOT_PASSWORD: 'ForgotPassword',
   FORCE_UPDATE: 'ForceUpdate',
 
-  TZ_FIX: {
-    ROOT: 'TZFix_Root',
-    INTRODUCTION: 'TZFix_Introduction',
-    DETECTION: 'TZFix_Detection',
-    SELECTION: 'TZFix_Selection',
-    CONFIRMATION: 'TZFix_Confirmation',
-    SUCCESS: 'TZFix_Success',
-  },
-
   ONBOARDING: {
     TERMS: 'Onboarding_Terms',
     DISPLAY_NAME: 'Onboarding_DisplayName',

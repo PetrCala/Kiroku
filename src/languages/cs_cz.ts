@@ -675,49 +675,6 @@ export default {
         'Před pokračováním si prosím přečtěte podmínky služby a zásady ochrany osobních údajů.',
     },
   },
-  tzFix: {
-    introduction: {
-      title: 'Důležité!',
-      text1:
-        'Ahoj! Chceme vás informovat o důležité aktualizaci týkající se toho, jak vaše data v naší aplikaci zpracováváme.',
-      troubleWithTimezones: 'Problémy s časovými pásmy',
-      text2:
-        'Doposud shromažďovaná data neobsahovala informace o časovém pásmu, což může ovlivňovat přesnost a konzistenci vašich dat v různých regionech.',
-      whatDoesThisMean: 'Co to znamená?',
-      text3:
-        'Abychom zlepšili váš uživatelský zážitek a zajistili přesné časové údaje, potřebujeme do všech vašich stávajících relací přidat časové pásmo. V následujících krocích zjistíme vaše aktuální časové pásmo a požádáme vás o svolení k synchronizaci.',
-      confirmButtonText: 'Dobře, rozumím!',
-    },
-    detection: {
-      title: 'Začněme!',
-      isTimezoneCorrect:
-        'Automaticky jsme zjistili, že vaše časové pásmo je následující. Je to správně?',
-      correct: 'Ano, to je správné',
-      incorrect: 'Ne, mé obvyklé časové pásmo je jiné',
-    },
-    confirmation: {
-      title: 'Připraveni synchronizovat?',
-      text: 'Chcete pokračovat v synchronizaci všech vašich stávajících dat do UTC pomocí vámi zvoleného časového pásma?',
-      cancelPrompt:
-        'Pokud data nesynchronizujete, mohou se zobrazovat nesprávné časy.',
-      cancel: 'Udělám to později',
-      resume: 'Rozmyslel(a) jsem si to, pojďme to udělat!',
-      syncNow: 'Jasně, jdeme na to!',
-      syncLater: 'Ne, teď ne',
-      syncing: 'Synchronizuji vaše data...',
-      error: {
-        generic: 'Chyba při synchronizaci vašich dat',
-      },
-    },
-    success: {
-      title: 'Hotovo!',
-      text1:
-        'Vaše data byla úspěšně označena časovými razítky. Můžete pokračovat!',
-      text2:
-        'Pokud budete mít jakékoli dotazy nebo budete potřebovat pomoci ohledně této synchronizace, neváhejte se na nás obrátit na kiroku.alcohol.tracker@gmail.com.',
-      finishButton: 'Skvělé!',
-    },
-  },
   timezoneScreen: {
     timezone: 'Časové pásmo',
     isShownOnProfile: 'Vaše časové pásmo je zobrazeno na vašem profilu.',

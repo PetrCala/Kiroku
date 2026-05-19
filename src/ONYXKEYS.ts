@@ -25,9 +25,6 @@ const ONYXKEYS = {
   CREDENTIALS: 'credentials',
   STASHED_CREDENTIALS: 'stashedCredentials',
 
-  /** This NVP contains information about whether the timezone fix was completed or not */
-  NVP_TZ_FIX: 'nvp_tz_fix',
-
   /** Onboarding progress for the current user (completed_at, last_visited_path) */
   NVP_ONBOARDING: 'nvp_onboarding',
 
@@ -258,7 +255,6 @@ type OnyxCollectionValuesMapping = {
 };
 
 type OnyxValuesMapping = {
-  [ONYXKEYS.NVP_TZ_FIX]: OnyxTypes.TzFix | [];
   [ONYXKEYS.NVP_ONBOARDING]: OnyxTypes.OnboardingData | [];
   [ONYXKEYS.NVP_TERMS_ACCEPTED_VERSION]: number;
   //   [ONYXKEYS.ACCOUNT_MANAGER_REPORT_ID]: string;
