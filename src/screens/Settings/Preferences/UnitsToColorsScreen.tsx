@@ -100,41 +100,44 @@ function UnitsToColorsScreen() {
       },
     ];
 
-    return unitsHelperData.map((detail, index) => (
-      <MenuItem
-        // eslint-disable-next-line react/no-array-index-key
-        key={`${detail.title}_${index}`}
-        title={detail.title}
-        titleStyle={styles.plainSectionTitle}
-        wrapperStyle={styles.sectionMenuItemTopDescription}
-        disabled
-        shouldGreyOutWhenDisabled={false}
-        shouldUseRowFlexDirection
-        shouldShowRightIcon={false}
-        shouldShowRightComponent
-        rightComponent={
-          <Button
-            text={detail.currentValue.toString()}
-            style={styles.settingValueButton}
-            onPress={() => {
-              setSliderConfig(prev => ({
-                ...prev,
-                visible: true,
-                heading: detail.title ?? '',
-                value: detail.currentValue ?? 0,
-                key: detail.key ?? '',
-                onSave: (value: number) => {
-                  setCurrentValues(prevVal => ({
-                    ...prevVal,
-                    [detail.key]: value,
-                  }));
-                },
-              }));
-            }}
-          />
-        }
-      />
-    ));
+    return unitsHelperData.map((detail, index) => {
+      const openSlider = () => {
+        setSliderConfig(prev => ({
+          ...prev,
+          visible: true,
+          heading: detail.title ?? '',
+          value: detail.currentValue ?? 0,
+          key: detail.key ?? '',
+          onSave: (value: number) => {
+            setCurrentValues(prevVal => ({
+              ...prevVal,
+              [detail.key]: value,
+            }));
+          },
+        }));
+      };
+
+      return (
+        <MenuItem
+          // eslint-disable-next-line react/no-array-index-key
+          key={`${detail.title}_${index}`}
+          title={detail.title}
+          titleStyle={styles.plainSectionTitle}
+          wrapperStyle={styles.sectionMenuItemTopDescription}
+          shouldUseRowFlexDirection
+          shouldShowRightIcon={false}
+          shouldShowRightComponent
+          onPress={openSlider}
+          rightComponent={
+            <Button
+              text={detail.currentValue.toString()}
+              style={styles.settingValueButton}
+              onPress={openSlider}
+            />
+          }
+        />
+      );
+    });
   }, [
     currentValues.orange,
     currentValues.yellow,
