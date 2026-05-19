@@ -1,6 +1,7 @@
 import {createStackNavigator} from '@react-navigation/stack';
-import React, {useCallback} from 'react';
-import {View} from 'react-native';
+import type {StackCardStyleInterpolator} from '@react-navigation/stack';
+import React, {useCallback, useMemo} from 'react';
+import {Animated, View} from 'react-native';
 import FocusTrapForScreens from '@components/FocusTrap/FocusTrapForScreen';
 import useKeyboardShortcut from '@hooks/useKeyboardShortcut';
 import useOnboardingLayout from '@hooks/useOnboardingLayout';
@@ -18,6 +19,42 @@ import Overlay from './Overlay';
 
 const Stack = createStackNavigator<OnboardingModalNavigatorParamList>();
 
+// Drives the inner Terms → DisplayName transition as a 1:1 horizontal swap:
+// the outgoing screen slides off to the left while the incoming screen
+// slides in from the right at the same rate. The default modal interpolator
+// only animates the incoming card, which made the new screen appear to slide
+// over a static old one.
+const horizontalSwapInterpolator: StackCardStyleInterpolator = ({
+  current,
+  next,
+  inverted,
+  layouts: {screen},
+}) => {
+  const focusedTranslate = Animated.multiply(
+    current.progress.interpolate({
+      inputRange: [0, 1],
+      outputRange: [screen.width, 0],
+      extrapolate: 'clamp',
+    }),
+    inverted,
+  );
+  const unfocusedTranslate = next
+    ? Animated.multiply(
+        next.progress.interpolate({
+          inputRange: [0, 1],
+          outputRange: [0, -screen.width],
+          extrapolate: 'clamp',
+        }),
+        inverted,
+      )
+    : 0;
+  return {
+    cardStyle: {
+      transform: [{translateX: next ? unfocusedTranslate : focusedTranslate}],
+    },
+  };
+};
+
 function OnboardingModalNavigator() {
   const styles = useThemeStyles();
   const StyleUtils = useStyleUtils();
@@ -33,6 +70,24 @@ function OnboardingModalNavigator() {
   useKeyboardShortcut(CONST.KEYBOARD_SHORTCUTS.ESCAPE, handleOuterClick, {
     shouldBubble: true,
   });
+
+  const outerScreenOptions = useMemo(
+    () =>
+      getOnboardingModalScreenOptions(
+        shouldUseNarrowLayout,
+        styles,
+        StyleUtils,
+        isMediumOrLargerScreenWidth,
+      ),
+    [StyleUtils, isMediumOrLargerScreenWidth, shouldUseNarrowLayout, styles],
+  );
+  const innerStackScreenOptions = useMemo(
+    () => ({
+      ...outerScreenOptions,
+      cardStyleInterpolator: horizontalSwapInterpolator,
+    }),
+    [outerScreenOptions],
+  );
 
   // Visibility is owned by React Navigation focus state, not Onyx. Do NOT add
   // an `isOnboardingCompleted ? null` short-circuit here — it races the
@@ -51,13 +106,7 @@ function OnboardingModalNavigator() {
             style={styles.OnboardingNavigatorInnerView(
               isMediumOrLargerScreenWidth,
             )}>
-            <Stack.Navigator
-              screenOptions={getOnboardingModalScreenOptions(
-                shouldUseNarrowLayout,
-                styles,
-                StyleUtils,
-                isMediumOrLargerScreenWidth,
-              )}>
+            <Stack.Navigator screenOptions={innerStackScreenOptions}>
               <Stack.Screen
                 name={SCREENS.ONBOARDING.TERMS}
                 component={TermsScreen}
