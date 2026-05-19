@@ -54,7 +54,7 @@ function Kiroku() {
   const appStateChangeListener = useRef<NativeEventSubscription | null>(null);
   const [isNavigationReady, setIsNavigationReady] = useState(false);
   const [isOnyxMigrated, setIsOnyxMigrated] = useState(false);
-  const {splashScreenState, setSplashScreenState} = useContext(
+  const {splashScreenState, setSplashScreenState, isAuthDataReady} = useContext(
     SplashScreenStateContext,
   );
   const [lastVisitedPath] = useOnyx(ONYXKEYS.LAST_VISITED_PATH);
@@ -121,15 +121,20 @@ function Kiroku() {
   // preference, producing a visible white flash.
   const isThemeReady = preferredThemeMetadata.status === 'loaded';
 
-  // DatabaseDataProvider lives inside AuthScreens, so we cannot wait for the
-  // user's RTDB record from up here — OnboardingGuard handles onboarding
-  // redirection downstream once the listener emits. HomeScreen and the
-  // onboarding screens render their own loading indicators while userData is
-  // still hydrating, so the brief flash is acceptable.
+  // For authenticated users, wait for the user's RTDB data (userData +
+  // preferences) to hydrate before hiding the splash, so the home screen
+  // can paint real content immediately and OnboardingGuard can redirect
+  // without flicker. The signal is set from inside AuthScreens (which
+  // lives below DatabaseDataProvider) via `setIsAuthDataReady`. For
+  // unauthenticated users this condition is bypassed — the public stack
+  // is ready as soon as nav + theme are ready.
+  const isAuthScreenReady = !isAuthenticated || isAuthDataReady;
+
   const shouldHideSplash = !!(
     shouldInit &&
     authenticationChecked &&
     isThemeReady &&
+    isAuthScreenReady &&
     splashScreenState === CONST.BOOT_SPLASH_STATE.VISIBLE
   );
 
