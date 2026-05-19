@@ -1044,6 +1044,11 @@ export default {
         title: 'E-mail se již používá',
         message: 'Tato e-mailová adresa je již spojena s jiným účtem.',
       },
+      accountExistsWithDifferentCredential: {
+        title: 'Účet již existuje',
+        message:
+          'Účet s touto e-mailovou adresou již existuje. Přihlaste se prosím metodou, kterou jste použili při jeho vytvoření.',
+      },
       userNotFound: {
         title: 'Uživatel nenalezen',
         message:

@@ -1055,6 +1055,11 @@ export default {
         message:
           'The email address is already associated with another account.',
       },
+      accountExistsWithDifferentCredential: {
+        title: 'Account Already Exists',
+        message:
+          'An account with this email already exists. Please sign in with the method you originally used to create your account.',
+      },
       userNotFound: {
         title: 'User Not Found',
         message:
