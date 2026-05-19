@@ -105,11 +105,11 @@ async function setDisplayName(
 /**
  * Mark the onboarding flow complete for the given user.
  *
- * Performs the Onyx merge first so the modal navigator unmounts via
- * `useOnboardingFlow` even when the device is offline. The Firebase write is
- * fired without `await` — Firebase RTDB queues offline writes and replays
- * them on reconnect, so blocking the caller would defeat the optimistic
- * guarantee.
+ * Callers should invoke `navigateAfterOnboarding()` BEFORE awaiting this
+ * function so the modal dismissal animation plays while the screen is still
+ * mounted. The Firebase write is fired without `await` — Firebase RTDB queues
+ * offline writes and replays them on reconnect, so blocking the caller would
+ * defeat the optimistic guarantee.
  */
 async function completeOnboarding(
   db: Database,
@@ -137,10 +137,11 @@ async function completeOnboarding(
 /**
  * Navigate the user out of the onboarding modal after completion.
  *
- * The modal screen is conditionally rendered in `AuthScreens` based on
- * `shouldFireOnboarding`, so it unmounts automatically once `completed_at`
- * lands in Onyx. We just navigate to Home; resuming the last-attempted
- * protected route is a v2 nice-to-have.
+ * The onboarding screen is always mounted in `AuthScreens`; this navigation
+ * is what tears it down (with the closing stack animation). Call this BEFORE
+ * `completeOnboarding` so the transition plays before Onyx state flips and
+ * downstream consumers re-render. Resuming the last-attempted protected
+ * route is a v2 nice-to-have.
  */
 function navigateAfterOnboarding(): void {
   Navigation.navigate(ROUTES.HOME);

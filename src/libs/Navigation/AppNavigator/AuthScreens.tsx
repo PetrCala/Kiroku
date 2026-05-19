@@ -36,7 +36,6 @@ import useResponsiveLayout from '@hooks/useResponsiveLayout';
 import {useFirebase} from '@context/global/FirebaseContext';
 import OnboardingGuard from '@libs/Navigation/guards/OnboardingGuard';
 import TermsReConsentGuard from '@libs/Navigation/guards/TermsReConsentGuard';
-import useOnboardingFlow from '@hooks/useOnboardingFlow';
 import createCustomStackNavigator from './createCustomStackNavigator';
 import getRootNavigatorScreenOptions from './getRootNavigatorScreenOptions';
 import BottomTabNavigator from './Navigators/BottomTabNavigator';
@@ -146,8 +145,6 @@ function AuthScreensContent() {
     styles,
     StyleUtils,
   );
-
-  const {shouldFireOnboarding} = useOnboardingFlow();
 
   // Signal "auth data ready" to the boot splash gate in Kiroku.tsx. The
   // splash hides only once these two fields have arrived from the live
@@ -344,19 +341,25 @@ function AuthScreensContent() {
           options={screenOptions.fullScreen}
           component={DesktopSignInRedirectPage}
         /> */}
-        {shouldFireOnboarding && (
-          <RootStack.Screen
-            name={NAVIGATORS.ONBOARDING_MODAL_NAVIGATOR}
-            options={onboardingModalScreenOptions}
-            component={OnboardingModalNavigator}
-            listeners={{
-              focus: () => {
-                Modal.setDisableDismissOnEscape(true);
-              },
-              beforeRemove: () => Modal.setDisableDismissOnEscape(false),
-            }}
-          />
-        )}
+        {/*
+          The onboarding modal screen is ALWAYS mounted. Visibility is owned by
+          React Navigation focus state, not Onyx. Conditionally mounting on
+          `shouldFireOnboarding` causes the screen to disappear synchronously
+          the moment `completed_at` lands in Onyx, which kills the dismissal
+          transition and produces a Home-flash. Entry is driven by
+          `OnboardingGuard`; exit by `navigateAfterOnboarding()`.
+        */}
+        <RootStack.Screen
+          name={NAVIGATORS.ONBOARDING_MODAL_NAVIGATOR}
+          options={onboardingModalScreenOptions}
+          component={OnboardingModalNavigator}
+          listeners={{
+            focus: () => {
+              Modal.setDisableDismissOnEscape(true);
+            },
+            beforeRemove: () => Modal.setDisableDismissOnEscape(false),
+          }}
+        />
         {/* {Object.entries(CENTRAL_PANE_SCREENS).map(
             ([screenName, componentGetter]) => {
               const centralPaneName = screenName as CentralPaneName;

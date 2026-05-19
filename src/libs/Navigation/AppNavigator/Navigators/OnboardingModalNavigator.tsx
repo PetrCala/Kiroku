@@ -2,7 +2,6 @@ import {createStackNavigator} from '@react-navigation/stack';
 import React, {useCallback} from 'react';
 import {View} from 'react-native';
 import FocusTrapForScreens from '@components/FocusTrap/FocusTrapForScreen';
-import {useDatabaseData} from '@context/global/DatabaseDataContext';
 import useKeyboardShortcut from '@hooks/useKeyboardShortcut';
 import useOnboardingLayout from '@hooks/useOnboardingLayout';
 import useResponsiveLayout from '@hooks/useResponsiveLayout';
@@ -10,10 +9,6 @@ import useStyleUtils from '@hooks/useStyleUtils';
 import useThemeStyles from '@hooks/useThemeStyles';
 import getOnboardingModalScreenOptions from '@libs/Navigation/getOnboardingModalScreenOptions';
 import type {OnboardingModalNavigatorParamList} from '@libs/Navigation/types';
-import {
-  hasCompletedOnboarding,
-  isLegacyGrandfatheredUser,
-} from '@libs/OnboardingSelectors';
 import OnboardingRefManager from '@libs/OnboardingRefManager';
 import DisplayNameScreen from '@screens/Onboarding/DisplayNameScreen';
 import TermsScreen from '@screens/Onboarding/TermsScreen';
@@ -27,9 +22,6 @@ function OnboardingModalNavigator() {
   const styles = useThemeStyles();
   const StyleUtils = useStyleUtils();
   const {isMediumOrLargerScreenWidth} = useOnboardingLayout();
-  const {userData} = useDatabaseData();
-  const isOnboardingCompleted =
-    hasCompletedOnboarding(userData) || isLegacyGrandfatheredUser(userData);
   const {shouldUseNarrowLayout} = useResponsiveLayout();
 
   const outerViewRef = React.useRef<View>(null);
@@ -42,9 +34,10 @@ function OnboardingModalNavigator() {
     shouldBubble: true,
   });
 
-  if (isOnboardingCompleted) {
-    return null;
-  }
+  // Visibility is owned by React Navigation focus state, not Onyx. Do NOT add
+  // an `isOnboardingCompleted ? null` short-circuit here — it races the
+  // dismissal transition and produces a Home-flash on completion. Entry is
+  // gated by `OnboardingGuard`; exit by `navigateAfterOnboarding()`.
   return (
     <>
       <Overlay />
