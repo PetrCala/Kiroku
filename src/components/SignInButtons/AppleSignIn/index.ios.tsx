@@ -9,6 +9,7 @@ import {getRandomBytes} from 'expo-crypto';
 import {OAuthProvider} from 'firebase/auth';
 import React from 'react';
 import {useFirebase} from '@context/global/FirebaseContext';
+import ERRORS from '@src/ERRORS';
 import * as ErrorUtils from '@libs/ErrorUtils';
 import Log from '@libs/Log';
 import * as User from '@userActions/User';
@@ -92,7 +93,24 @@ function AppleSignIn({
       });
 
       onPress();
-      await User.signInWithOAuth(auth, db, credential, displayName);
+      try {
+        await User.signInWithOAuth(auth, db, credential, displayName);
+      } catch (firebaseError: unknown) {
+        const fe = firebaseError as {code?: string};
+        if (
+          fe.code === ERRORS.AUTH.ACCOUNT_EXISTS_WITH_DIFFERENT_CREDENTIAL &&
+          User.stashPendingOAuthCredential(firebaseError, {
+            providerId: 'apple.com',
+            idToken: identityToken ?? '',
+            rawNonce,
+            displayName,
+          })
+        ) {
+          // Collision modal will take over from here.
+          return;
+        }
+        throw firebaseError;
+      }
     } catch (error: unknown) {
       const e = error as {code?: AppleError};
       if (e.code === appleAuth.Error.CANCELED) {

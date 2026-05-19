@@ -25,6 +25,14 @@ const ONYXKEYS = {
   CREDENTIALS: 'credentials',
   STASHED_CREDENTIALS: 'stashedCredentials',
 
+  /**
+   * Raw OAuth materials stashed when Apple/Google sign-in collides with an
+   * existing email/password account. Read by the collision-resolution modal
+   * to prompt for the existing password and call linkWithCredential.
+   * Ephemeral: cleared on link, cancel, and cleanupSession.
+   */
+  PENDING_OAUTH_CREDENTIAL: 'pendingOAuthCredential',
+
   /** Onboarding progress for the current user (completed_at, last_visited_path) */
   NVP_ONBOARDING: 'nvp_onboarding',
 
@@ -267,6 +275,7 @@ type OnyxValuesMapping = {
   [ONYXKEYS.CURRENT_DATE]: string;
   [ONYXKEYS.CREDENTIALS]: OnyxTypes.Credentials;
   [ONYXKEYS.STASHED_CREDENTIALS]: OnyxTypes.Credentials;
+  [ONYXKEYS.PENDING_OAUTH_CREDENTIAL]: OnyxTypes.PendingOAuthCredential;
   [ONYXKEYS.START_SESSION_GLOBAL_CREATE]: OnyxTypes.StartSession;
   [ONYXKEYS.MODAL]: OnyxTypes.Modal;
   [ONYXKEYS.NETWORK]: OnyxTypes.Network;

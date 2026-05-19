@@ -801,7 +801,6 @@
 "src/libs/actions/PushNotification.ts"	"rulesdir/no-onyx-connect"	1
 "src/libs/actions/Session/index.ts"	"rulesdir/no-onyx-connect"	1
 "src/libs/actions/TestTool.ts"	"rulesdir/no-onyx-connect"	1
-"src/libs/actions/User.ts"	"arrow-body-style"	2
 "src/libs/actions/User.ts"	"rulesdir/no-onyx-connect"	1
 "src/libs/actions/Welcome.ts"	"rulesdir/no-onyx-connect"	3
 "src/libs/compose.ts"	"@typescript-eslint/ban-types"	1
