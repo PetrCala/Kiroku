@@ -5,6 +5,7 @@ import type {
   DrinkingSessionList,
   FriendRequestList,
   NicknameToId,
+  PendingOAuthCredential,
   Preferences,
   Profile,
   ReasonForLeaving,
@@ -16,7 +17,10 @@ import type {Timestamp, UserID, UserList} from '@src/types/onyx/OnyxCommon';
 import type {Auth, AuthCredential, User, UserCredential} from 'firebase/auth';
 import {
   EmailAuthProvider,
+  GoogleAuthProvider,
+  OAuthProvider,
   createUserWithEmailAndPassword,
+  linkWithCredential,
   reauthenticateWithCredential,
   sendEmailVerification,
   signInWithCredential,
@@ -54,25 +58,23 @@ Onyx.connect({
   },
 });
 
-const getDefaultPreferences = (): Preferences => {
-  return {
-    first_day_of_week: 'Monday',
-    units_to_colors: {
-      orange: 10,
-      yellow: 5,
-    },
-    drinks_to_units: {
-      small_beer: 0.5,
-      beer: 1,
-      cocktail: 1.5,
-      other: 1,
-      strong_shot: 1,
-      weak_shot: 0.5,
-      wine: 1,
-    },
-    theme: CONST.THEME.SYSTEM,
-  };
-};
+const getDefaultPreferences = (): Preferences => ({
+  first_day_of_week: 'Monday',
+  units_to_colors: {
+    orange: 10,
+    yellow: 5,
+  },
+  drinks_to_units: {
+    small_beer: 0.5,
+    beer: 1,
+    cocktail: 1.5,
+    other: 1,
+    strong_shot: 1,
+    weak_shot: 0.5,
+    wine: 1,
+  },
+  theme: CONST.THEME.SYSTEM,
+});
 
 const getDefaultUserData = (profileData: Profile): UserData => {
   const userRole = 'open_beta_user';
@@ -88,11 +90,9 @@ const getDefaultUserData = (profileData: Profile): UserData => {
   };
 };
 
-const getDefaultUserStatus = (): {last_online: number} => {
-  return {
-    last_online: new Date().getTime(),
-  };
-};
+const getDefaultUserStatus = (): {last_online: number} => ({
+  last_online: new Date().getTime(),
+});
 
 /**
  * Check if a user exists in the realtime database.
@@ -604,6 +604,83 @@ async function signInWithOAuth(
   // just created with `username_chosen: false`).
 }
 
+/**
+ * Stash the raw OAuth materials when Firebase reports that the email already
+ * belongs to a different account (`auth/account-exists-with-different-credential`).
+ * The caller extracts the idToken/rawNonce/displayName from the OAuth response;
+ * this helper extracts the existing-account email from the FirebaseError and
+ * writes the combined record so the collision-resolution modal can pick it up.
+ *
+ * Returns true if the stash was written, false if the error did not carry an
+ * email (caller should fall back to the generic error path).
+ */
+function stashPendingOAuthCredential(
+  error: unknown,
+  data: {
+    providerId: PendingOAuthCredential['providerId'];
+    idToken: string;
+    rawNonce?: string;
+    displayName?: string | null;
+  },
+): boolean {
+  const email = (error as {customData?: {email?: string}}).customData?.email;
+  if (!email) {
+    return false;
+  }
+  Onyx.set(ONYXKEYS.PENDING_OAUTH_CREDENTIAL, {email, ...data});
+  return true;
+}
+
+/** Drop the stashed OAuth credential — call on cancel, successful link, or unrecoverable error. */
+function clearPendingOAuthCredential(): void {
+  Onyx.set(ONYXKEYS.PENDING_OAUTH_CREDENTIAL, null);
+}
+
+/**
+ * Resolve an OAuth sign-in collision by signing the user in with their existing
+ * email/password account and linking the pending OAuth credential to it. After
+ * this completes, both methods sign into the same Firebase account.
+ *
+ * The caller passes in the pending credential (read via `useOnyx` in the
+ * collision modal) so this action stays pure and doesn't depend on module
+ * state.
+ *
+ * - Wrong password → throws Firebase's wrong-password error; the caller should
+ *   keep the pending credential stash so the user can retry.
+ * - linkWithCredential failure → clears the stash and re-throws; the user must
+ *   re-OAuth because the token is likely stale.
+ */
+async function linkPendingOAuthCredential(
+  auth: Auth,
+  password: string,
+  pending: PendingOAuthCredential,
+): Promise<void> {
+  const userCredential = await signInWithEmailAndPassword(
+    auth,
+    pending.email,
+    password,
+  );
+
+  const credential: AuthCredential =
+    pending.providerId === 'apple.com'
+      ? new OAuthProvider('apple.com').credential({
+          idToken: pending.idToken,
+          rawNonce: pending.rawNonce,
+        })
+      : GoogleAuthProvider.credential(pending.idToken);
+
+  try {
+    await linkWithCredential(userCredential.user, credential);
+  } catch (linkError) {
+    // Stale/invalid token — drop the stash; the user must re-OAuth.
+    clearPendingOAuthCredential();
+    throw linkError;
+  }
+
+  clearPendingOAuthCredential();
+  Session.clearSignInData();
+}
+
 /** Attempt to log in to the Firebase authentication service with a user's credentials
  *
  * @param auth The Firebase authentication object
@@ -724,5 +801,8 @@ export {
   userExistsInDatabase,
   logIn,
   signInWithOAuth,
+  stashPendingOAuthCredential,
+  clearPendingOAuthCredential,
+  linkPendingOAuthCredential,
   signUp,
 };

@@ -28,6 +28,7 @@ import type Login from './Login';
 import type Modal from './Modal';
 import type Network from './Network';
 import type NicknameToId from './NicknameToId';
+import type PendingOAuthCredential from './PendingOAuthCredential';
 import type {Nickname, NicknameKey, NicknameToIdList} from './NicknameToId';
 import type {
   OnyxUpdateEvent,
@@ -111,6 +112,7 @@ export type {
   NicknameKey,
   NicknameToId,
   NicknameToIdList,
+  PendingOAuthCredential,
   OnboardingData,
   OnyxUpdateEvent,
   OnyxUpdatesFromServer,

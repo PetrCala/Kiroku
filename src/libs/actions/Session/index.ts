@@ -671,6 +671,8 @@ function cleanupSession() {
   // NetworkConnection.clearReconnectionCallbacks();
   // SessionUtils.resetDidUserLogInDuringSession();
   resetHomeRouteParams();
+  // Drop any in-flight OAuth-link state so credentials don't leak across users.
+  Onyx.set(ONYXKEYS.PENDING_OAUTH_CREDENTIAL, null);
   clearCache().then(() => {
     Log.info('Cleared all cache data', true, {}, true);
   });

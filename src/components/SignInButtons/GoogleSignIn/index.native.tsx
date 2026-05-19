@@ -11,6 +11,7 @@ import PressableWithFeedback from '@components/Pressable/PressableWithFeedback';
 import Text from '@components/Text';
 import {useFirebase} from '@context/global/FirebaseContext';
 import useLocalize from '@hooks/useLocalize';
+import ERRORS from '@src/ERRORS';
 import * as ErrorUtils from '@libs/ErrorUtils';
 import Log from '@libs/Log';
 import * as User from '@userActions/User';
@@ -89,7 +90,22 @@ function GoogleSignIn({
 
       const credential = GoogleAuthProvider.credential(idToken);
       onPress();
-      await User.signInWithOAuth(auth, db, credential);
+      try {
+        await User.signInWithOAuth(auth, db, credential);
+      } catch (firebaseError: unknown) {
+        const fe = firebaseError as {code?: string};
+        if (
+          fe.code === ERRORS.AUTH.ACCOUNT_EXISTS_WITH_DIFFERENT_CREDENTIAL &&
+          User.stashPendingOAuthCredential(firebaseError, {
+            providerId: 'google.com',
+            idToken,
+          })
+        ) {
+          // Collision modal will take over from here.
+          return;
+        }
+        throw firebaseError;
+      }
     } catch (error: unknown) {
       const e = error as {code?: string; message?: string};
       if (e.code === statusCodes.SIGN_IN_CANCELLED) {
