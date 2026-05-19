@@ -63,6 +63,8 @@ function DrinkingSessionWindow({
     return !isEqual(sessionRef.current, session);
   };
 
+  const isSaveDisabled = totalUnits <= 0;
+
   const saveSession = (database: Database, usr: User | null) => {
     (async () => {
       if (!session || !usr) {
@@ -72,8 +74,7 @@ function DrinkingSessionWindow({
         Log.warn('DrinkingSessionWindow - saveSession - Max units exceeded');
         return null;
       }
-      if (totalUnits <= 0) {
-        // TODO inform the user why the they can not save their session - 0 units
+      if (isSaveDisabled) {
         return;
       }
 
@@ -252,6 +253,7 @@ function DrinkingSessionWindow({
         <Button
           success
           large
+          isDisabled={isSaveDisabled}
           text={translate('liveSessionScreen.saveSession')}
           style={styles.buttonLargeSuccess}
           onPress={() => saveSession(db, user)}
