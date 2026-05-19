@@ -1,12 +1,6 @@
 // DatabaseDataContext.tsx
 import type {ReactNode} from 'react';
-import React, {
-  createContext,
-  useContext,
-  useEffect,
-  useMemo,
-  useState,
-} from 'react';
+import React, {createContext, useContext, useEffect, useMemo} from 'react';
 import Onyx from 'react-native-onyx';
 import type {
   DrinkingSessionList,
@@ -49,21 +43,8 @@ type DatabaseDataProviderProps = {
 
 function DatabaseDataProvider({children}: DatabaseDataProviderProps) {
   const {auth} = useFirebase();
-
-  // Subscribe to auth state changes so the provider re-renders (and re-attaches
-  // listeners) when Firebase restores a persisted session, when the user signs
-  // in, or when they sign out. Reading `auth.currentUser` directly during
-  // render is not safe because the Firebase SDK mutates that property without
-  // notifying React; the provider would otherwise stay stuck with whatever
-  // value was current at mount time.
-  const [userID, setUserID] = useState<string>(
-    () => auth.currentUser?.uid ?? '',
-  );
-
-  useEffect(
-    () => auth.onAuthStateChanged(nextUser => setUserID(nextUser?.uid ?? '')),
-    [auth],
-  );
+  const user = auth.currentUser;
+  const userID = user ? user.uid : '';
 
   const dataTypes: FetchDataKeys = [
     'userStatusData',

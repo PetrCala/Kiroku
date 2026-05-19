@@ -9,7 +9,6 @@ import React, {
 import type {NativeEventSubscription} from 'react-native';
 import {AppState, Linking, Platform} from 'react-native';
 import Onyx, {useOnyx} from 'react-native-onyx';
-import {useDatabaseData} from '@context/global/DatabaseDataContext';
 import {useFirebase} from '@context/global/FirebaseContext';
 import {useUserConnection} from '@context/global/UserConnectionContext';
 import SplashScreenStateContext from '@context/global/SplashScreenStateContext';
@@ -66,7 +65,6 @@ function Kiroku() {
   const [preferredTheme, preferredThemeMetadata] = useOnyx(
     ONYXKEYS.PREFERRED_THEME,
   );
-  const {userData} = useDatabaseData();
   const {config} = useConfig();
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [authenticationChecked, setAuthenticationChecked] = useState(false);
@@ -123,19 +121,15 @@ function Kiroku() {
   // preference, producing a visible white flash.
   const isThemeReady = preferredThemeMetadata.status === 'loaded';
 
-  // Keep the splash up until we know whether the user needs onboarding so
-  // OnboardingGuard can route into the flow without a flicker. The signal is
-  // the user's RTDB record arriving in `useDatabaseData()`; `IS_LOADING_APP`
-  // is intentionally not consulted because `App.openApp()` (which would write
-  // that key) is not currently wired up — gating on it would deadlock the
-  // splash on every launch.
-  const isOnboardingDataReady = !isAuthenticated || userData !== undefined;
-
+  // DatabaseDataProvider lives inside AuthScreens, so we cannot wait for the
+  // user's RTDB record from up here — OnboardingGuard handles onboarding
+  // redirection downstream once the listener emits. HomeScreen and the
+  // onboarding screens render their own loading indicators while userData is
+  // still hydrating, so the brief flash is acceptable.
   const shouldHideSplash = !!(
     shouldInit &&
     authenticationChecked &&
     isThemeReady &&
-    isOnboardingDataReady &&
     splashScreenState === CONST.BOOT_SPLASH_STATE.VISIBLE
   );
 
