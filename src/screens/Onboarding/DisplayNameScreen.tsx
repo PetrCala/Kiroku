@@ -53,12 +53,8 @@ function DisplayNameScreen({}: DisplayNameScreenProps) {
           currentDisplayName,
           values.username,
         );
-        // Navigate FIRST so the modal dismissal animation plays while the
-        // screen is still mounted. Flipping `completed_at` in Onyx before
-        // the transition starts causes downstream consumers to re-render
-        // synchronously and blank the modal mid-animation.
-        Onboarding.navigateAfterOnboarding();
         await Onboarding.completeOnboarding(db, auth.currentUser);
+        Onboarding.navigateAfterOnboarding();
       } catch (error) {
         const appError = ErrorUtils.getAppError(undefined, error);
         setServerErrorMessage(
