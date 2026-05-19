@@ -7,6 +7,7 @@ import * as ErrorUtils from '@libs/ErrorUtils';
 import CONST from '@src/CONST';
 import Button from './Button';
 import CheckboxWithLabel from './CheckboxWithLabel';
+import SafeAreaConsumer from './SafeAreaConsumer';
 import ScrollView from './ScrollView';
 import Text from './Text';
 import TextLink from './TextLink';
@@ -108,15 +109,26 @@ function TermsScreenContent({
 
   if (fillContainer) {
     return (
-      <View style={[styles.flex1, styles.mt3, styles.mh5]}>
-        <ScrollView
-          style={[styles.flex1]}
-          contentContainerStyle={styles.mb4}
-          showsVerticalScrollIndicator={false}>
-          {textBlock}
-        </ScrollView>
-        <View>{controls}</View>
-      </View>
+      <SafeAreaConsumer>
+        {({safeAreaPaddingBottomStyle}) => (
+          <View style={[styles.flex1, styles.mt3, styles.mh5]}>
+            <ScrollView
+              style={[styles.flex1]}
+              contentContainerStyle={styles.mb4}
+              showsVerticalScrollIndicator={false}>
+              {textBlock}
+            </ScrollView>
+            <View
+              style={
+                safeAreaPaddingBottomStyle.paddingBottom
+                  ? safeAreaPaddingBottomStyle
+                  : styles.pb5
+              }>
+              {controls}
+            </View>
+          </View>
+        )}
+      </SafeAreaConsumer>
     );
   }
 
