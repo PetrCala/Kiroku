@@ -286,6 +286,20 @@ export default defineConfig([
         },
       ],
       '@typescript-eslint/no-use-before-define': ['error', {functions: false}],
+      '@typescript-eslint/no-unused-vars': [
+        'error',
+        {
+          vars: 'all',
+          args: 'after-used',
+          // `caughtErrors: 'none'` allows `catch (e) {}` without flagging `e`
+          // when it's intentionally ignored. `ignoreRestSiblings: true` allows
+          // `const { a, ...rest } = obj` patterns where the named property is
+          // pulled off solely to exclude it from the rest. Both mirror
+          // Expensify's config.
+          caughtErrors: 'none',
+          ignoreRestSiblings: true,
+        },
+      ],
 
       // ESLint core rules
       'es/no-nullish-coalescing-operators': 'off',
