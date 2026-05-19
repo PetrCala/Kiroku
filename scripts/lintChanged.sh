@@ -9,10 +9,10 @@ readonly TOP
 source "${TOP}/scripts/shellUtils.sh"
 
 # Fetch the commit history to include the merge-base commit
-info "Fetching origin/main"
-git fetch origin main --no-tags
+info "Fetching origin/master"
+git fetch origin master --no-tags
 
-MERGE_BASE_SHA_HASH="$(git merge-base origin/main HEAD)"
+MERGE_BASE_SHA_HASH="$(git merge-base origin/master HEAD)"
 readonly MERGE_BASE_SHA_HASH
 
 # Check if output is empty or malformed
