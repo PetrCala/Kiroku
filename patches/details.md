@@ -28,6 +28,15 @@ Patches are named `<package>+<version>+<NNN>+<short-description>.patch` so `patc
 - **Upstream PR/issue**: 🛑
 - **Removable when**: documented behavior is fixed upstream.
 
+## `react-native-reanimated`
+
+### `react-native-reanimated+4.2.1+001+catch-all-exceptions-on-stoi.patch`
+
+- **Reason**: Reanimated's `LayoutAnimationsProxy_Legacy::transferConfigFromNativeID` parses a `nativeID` string via `std::stoi`. The original code caught only `std::invalid_argument` and `std::out_of_range`, but the implementation can throw other exception types (e.g. `std::bad_alloc`) which propagate up and crash the app. This patch broadens the `catch` clause to catch-all (`...`) so layout-animation registration never aborts the process due to a malformed nativeID.
+- **Upstream PR/issue**: 🛑
+- **Cherry-picked from**: [Expensify/App `patches/react-native-reanimated/`](https://github.com/Expensify/App/tree/main/patches/react-native-reanimated) — introduced in their [RN 0.76 upgrade PR](https://github.com/Expensify/App/pull/51475).
+- **Removable when**: Reanimated upstream broadens or removes the `stoi` call in a future release.
+
 ## `react-native-worklets`
 
 ### `react-native-worklets+0.7.2+001+fix-app-crash-SerializableRemoteFunction.patch`
