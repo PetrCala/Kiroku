@@ -96,16 +96,6 @@ function InitialScreen() {
         welcomeText=""
         ref={currentScreenLayoutRef}
         navigateFocus={navigateFocus}>
-        {!!closeAccount?.success && (
-          <DotIndicatorMessage
-            style={[styles.mv2]}
-            type="success"
-            messages={{
-              // eslint-disable-next-line @typescript-eslint/naming-convention,@typescript-eslint/prefer-nullish-coalescing
-              0: closeAccount?.success || '',
-            }}
-          />
-        )}
         <Button
           large
           success
@@ -126,6 +116,16 @@ function InitialScreen() {
               <Text style={[styles.link]}>{logInActionText}</Text>
             </PressableWithFeedback>
           </View>
+        )}
+        {!!closeAccount?.success && (
+          <DotIndicatorMessage
+            style={[styles.mv2]}
+            type="success"
+            messages={{
+              // eslint-disable-next-line @typescript-eslint/naming-convention,@typescript-eslint/prefer-nullish-coalescing
+              0: closeAccount?.success || '',
+            }}
+          />
         )}
       </SignUpScreenLayout>
       {/* Overlays SignUpScreenLayout's iOS narrow-layout background; alpha kept very low to avoid tinting text. */}
