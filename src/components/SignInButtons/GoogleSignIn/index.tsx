@@ -3,6 +3,8 @@
 type GoogleSignInProps = {
   // eslint-disable-next-line react/no-unused-prop-types
   onPress?: () => void;
+  // eslint-disable-next-line react/no-unused-prop-types
+  onError?: (message: string) => void;
 };
 
 // eslint-disable-next-line @typescript-eslint/no-unused-vars

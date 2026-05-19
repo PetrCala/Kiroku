@@ -9,11 +9,13 @@ import * as Crypto from 'expo-crypto';
 import {OAuthProvider} from 'firebase/auth';
 import React from 'react';
 import {useFirebase} from '@context/global/FirebaseContext';
+import * as ErrorUtils from '@libs/ErrorUtils';
 import Log from '@libs/Log';
 import * as User from '@userActions/User';
 
 type AppleSignInProps = {
   onPress?: () => void;
+  onError?: (message: string) => void;
 };
 
 type AppleSignInResult = {
@@ -71,7 +73,10 @@ async function appleSignInRequest(): Promise<AppleSignInResult | null> {
  * Uses @invertase/react-native-apple-authentication to perform the native sign-in request,
  * then passes the resulting identity token to Firebase via OAuthProvider.
  */
-function AppleSignIn({onPress = () => {}}: AppleSignInProps) {
+function AppleSignIn({
+  onPress = () => {},
+  onError = () => {},
+}: AppleSignInProps) {
   const {auth, db} = useFirebase();
 
   const handleSignIn = async () => {
@@ -105,6 +110,7 @@ function AppleSignIn({onPress = () => {}}: AppleSignInProps) {
         '[Apple Sign In] Apple authentication failed',
         error as Record<string, unknown>,
       );
+      onError(ErrorUtils.getAppError(undefined, error).message);
     }
   };
 
