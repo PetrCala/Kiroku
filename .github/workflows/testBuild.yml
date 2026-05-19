@@ -17,7 +17,7 @@ permissions:
 
 jobs:
   getBranchRef:
-    if: ${{ github.event_name == 'workflow_dispatch' || github.event.label.name == 'Ready To Build' }}
+    if: ${{ github.event_name == 'workflow_dispatch' || contains(fromJson('["Ready To Build", "Ready To Build - iOS", "Ready To Build - Android"]'), github.event.label.name) }}
     runs-on: ubuntu-latest
     outputs:
       REF: ${{steps.getHeadRef.outputs.REF}}
@@ -38,7 +38,7 @@ jobs:
 
   android:
     name: Build and deploy Android for testing
-    if: ${{ github.event_name == 'workflow_dispatch' || github.event.label.name == 'Ready To Build' }}
+    if: ${{ github.event_name == 'workflow_dispatch' || contains(fromJson('["Ready To Build", "Ready To Build - Android"]'), github.event.label.name) }}
     runs-on: ubuntu-latest
     needs: [getBranchRef]
     env:
@@ -106,7 +106,7 @@ jobs:
 
   iOS:
     name: Build and deploy iOS for testing
-    if: ${{ github.event_name == 'workflow_dispatch' || github.event.label.name == 'Ready To Build' }}
+    if: ${{ github.event_name == 'workflow_dispatch' || contains(fromJson('["Ready To Build", "Ready To Build - iOS"]'), github.event.label.name) }}
     needs: [getBranchRef]
     env:
       PULL_REQUEST_NUMBER: ${{ github.event.number || github.event.inputs.PULL_REQUEST_NUMBER }}
@@ -209,7 +209,7 @@ jobs:
     runs-on: ubuntu-latest
     name: Post a GitHub comment with app download links for testing
     needs: [getBranchRef, android, iOS]
-    if: ${{ always() && (github.event_name == 'workflow_dispatch' || github.event.label.name == 'Ready To Build') }}
+    if: ${{ always() && (github.event_name == 'workflow_dispatch' || contains(fromJson('["Ready To Build", "Ready To Build - iOS", "Ready To Build - Android"]'), github.event.label.name)) }}
     env:
       PULL_REQUEST_NUMBER: ${{ github.event.number || github.event.inputs.PULL_REQUEST_NUMBER }}
     steps:
