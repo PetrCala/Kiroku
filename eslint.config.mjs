@@ -161,17 +161,6 @@ const restrictedImportPatterns = [
 ];
 
 export default defineConfig([
-  // Flat config defaults `reportUnusedDisableDirectives` to 'error', which
-  // surfaces hundreds of stale `// eslint-disable-next-line <rule>` comments
-  // referencing rules that no longer exist (e.g. `@typescript-eslint/ban-types`,
-  // `@typescript-eslint/no-empty-interface`). Demote to 'warn' so eslint-seatbelt
-  // can baseline them as warnings and we clean them up gradually.
-  {
-    linterOptions: {
-      reportUnusedDisableDirectives: 'warn',
-    },
-  },
-
   expensifyConfig,
   typescriptEslint.configs.recommendedTypeChecked,
   typescriptEslint.configs.stylisticTypeChecked,
@@ -519,6 +508,19 @@ export default defineConfig([
       'rulesdir/use-double-negation-instead-of-boolean': 'off',
       'rulesdir/no-acc-spread-in-reduce': 'off',
       'rulesdir/no-negated-variables': 'off',
+    },
+  },
+
+  // `eslint-config-expensify` v3 sets
+  // `linterOptions.reportUnusedDisableDirectives: 'error'`, which surfaces
+  // hundreds of stale `// eslint-disable-next-line <rule>` comments that
+  // reference rules removed in tseslint v8 (e.g. `ban-types`,
+  // `no-empty-interface`). Demote to 'warn' so eslint-seatbelt and `--quiet`
+  // handle them and we clean up gradually. Must come after `expensifyConfig`
+  // — flat config picks the last-wins linterOptions for each file.
+  {
+    linterOptions: {
+      reportUnusedDisableDirectives: 'warn',
     },
   },
 
