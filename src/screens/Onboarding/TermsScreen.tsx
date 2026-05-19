@@ -38,6 +38,7 @@ function TermsScreen({navigation}: TermsScreenProps) {
         title={translate('onboarding.terms.heading')}
         description={translate('onboarding.terms.description')}
         onAccept={handleAccept}
+        fillContainer
       />
     </OnboardingScreenLayout>
   );

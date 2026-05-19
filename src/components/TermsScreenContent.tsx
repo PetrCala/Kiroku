@@ -1,6 +1,6 @@
 import React, {useCallback, useMemo, useState} from 'react';
 import type {StyleProp, TextStyle} from 'react-native';
-import {View} from 'react-native';
+import {ScrollView, View} from 'react-native';
 import useLocalize from '@hooks/useLocalize';
 import useThemeStyles from '@hooks/useThemeStyles';
 import * as ErrorUtils from '@libs/ErrorUtils';
@@ -19,12 +19,19 @@ type TermsScreenContentProps = {
 
   /** Called when the user confirms acceptance. May be async. */
   onAccept: () => Promise<void> | void;
+
+  /**
+   * When true, the component grows to fill its parent and pushes the
+   * checkbox + Confirm button to the bottom. Default false (modal-friendly).
+   */
+  fillContainer?: boolean;
 };
 
 function TermsScreenContent({
   title,
   description,
   onAccept,
+  fillContainer = false,
 }: TermsScreenContentProps) {
   const styles = useThemeStyles();
   const {translate} = useLocalize();
@@ -61,20 +68,23 @@ function TermsScreenContent({
     })();
   }, [isChecked, onAccept, translate]);
 
-  return (
-    <View style={[styles.mt3, styles.mh5]}>
-      <View style={styles.mb4}>
-        <Text style={[styles.textHeadlineH1]}>{title}</Text>
-        <Text style={[styles.mv4, styles.textNormal]}>
-          {description ?? translate('agreeToTerms.description')}
-        </Text>
-        <TextLink style={linkStyles} href={CONST.TERMS_URL}>
-          {translate('common.termsOfService')}
-        </TextLink>
-        <TextLink style={linkStyles} href={CONST.PRIVACY_URL}>
-          {translate('common.privacyPolicy')}
-        </TextLink>
-      </View>
+  const textBlock = (
+    <>
+      <Text style={[styles.textHeadlineH1]}>{title}</Text>
+      <Text style={[styles.mv4, styles.textNormal]}>
+        {description ?? translate('agreeToTerms.description')}
+      </Text>
+      <TextLink style={linkStyles} href={CONST.TERMS_URL}>
+        {translate('common.termsOfService')}
+      </TextLink>
+      <TextLink style={linkStyles} href={CONST.PRIVACY_URL}>
+        {translate('common.privacyPolicy')}
+      </TextLink>
+    </>
+  );
+
+  const controls = (
+    <>
       <CheckboxWithLabel
         label={translate('agreeToTerms.iHaveRead')}
         accessibilityLabel={translate('agreeToTerms.iHaveRead')}
@@ -92,6 +102,27 @@ function TermsScreenContent({
         onPress={onConfirm}
         text={translate('common.confirm')}
       />
+    </>
+  );
+
+  if (fillContainer) {
+    return (
+      <View style={[styles.flex1, styles.mt3, styles.mh5]}>
+        <ScrollView
+          style={[styles.flex1]}
+          contentContainerStyle={styles.mb4}
+          showsVerticalScrollIndicator={false}>
+          {textBlock}
+        </ScrollView>
+        <View>{controls}</View>
+      </View>
+    );
+  }
+
+  return (
+    <View style={[styles.mt3, styles.mh5]}>
+      <View style={styles.mb4}>{textBlock}</View>
+      {controls}
     </View>
   );
 }
