@@ -33,18 +33,12 @@ const getLocaleDigits = _.memoize((locale: Locale): string[] => {
     localeDigits[i] = NumberFormatUtils.format(locale, i);
   }
   NumberFormatUtils.formatToParts(locale, 1000000.5).forEach(part => {
-    switch (part.type) {
-      case 'decimal':
-        localeDigits[INDEX_DECIMAL] = part.value;
-        break;
-      case 'minusSign':
-        localeDigits[INDEX_MINUS_SIGN] = part.value;
-        break;
-      case 'group':
-        localeDigits[INDEX_GROUP] = part.value;
-        break;
-      default:
-        break;
+    if (part.type === 'decimal') {
+      localeDigits[INDEX_DECIMAL] = part.value;
+    } else if (part.type === 'minusSign') {
+      localeDigits[INDEX_MINUS_SIGN] = part.value;
+    } else if (part.type === 'group') {
+      localeDigits[INDEX_GROUP] = part.value;
     }
   });
   return localeDigits;
