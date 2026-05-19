@@ -18,6 +18,8 @@ const ERROR_MAPPING: ErrorMapping = {
   [ERRORS.AUTH.INVALID_CREDENTIAL]: 'errors.auth.invalidCredential',
   [ERRORS.AUTH.WEAK_PASSWORD]: 'errors.auth.weakPassword',
   [ERRORS.AUTH.EMAIL_ALREADY_IN_USE]: 'errors.auth.emailAlreadyInUse',
+  [ERRORS.AUTH.ACCOUNT_EXISTS_WITH_DIFFERENT_CREDENTIAL]:
+    'errors.auth.accountExistsWithDifferentCredential',
   [ERRORS.AUTH.USER_NOT_FOUND]: 'errors.auth.userNotFound',
   [ERRORS.AUTH.WRONG_PASSWORD]: 'errors.auth.wrongPassword',
   [ERRORS.AUTH.NETWORK_REQUEST_FAILED]: 'errors.auth.networkRequestFailed',

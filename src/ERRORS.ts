@@ -23,6 +23,8 @@ const ERRORS = {
     INVALID_CREDENTIAL: 'auth/invalid-credential',
     WEAK_PASSWORD: 'auth/weak-password',
     EMAIL_ALREADY_IN_USE: 'auth/email-already-in-use',
+    ACCOUNT_EXISTS_WITH_DIFFERENT_CREDENTIAL:
+      'auth/account-exists-with-different-credential',
     USER_NOT_FOUND: 'auth/user-not-found',
     WRONG_PASSWORD: 'auth/wrong-password',
     NETWORK_REQUEST_FAILED: 'auth/network-request-failed',
