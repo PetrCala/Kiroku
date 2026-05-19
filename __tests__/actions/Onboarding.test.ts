@@ -37,7 +37,7 @@ jest.mock('@userActions/User', () => ({
 
 jest.mock('@libs/Navigation/Navigation', () => ({
   __esModule: true,
-  default: {navigate: jest.fn()},
+  default: {navigate: jest.fn(), dismissModal: jest.fn()},
 }));
 
 jest.mock('@libs/Log', () => ({
