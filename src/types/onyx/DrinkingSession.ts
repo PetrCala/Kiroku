@@ -62,9 +62,6 @@ type DrinkingSession = {
 
   /** The type of this session */
   type?: DrinkingSessionType;
-
-  /** DEPRECATED The old way of denoting the session type */
-  session_type?: string; // TODO: remove in 0.4.x
 };
 
 /** A collection of drinking sessions */

@@ -678,49 +678,6 @@ export default {
         'Please read the terms of service and privacy policy before continuing.',
     },
   },
-  tzFix: {
-    introduction: {
-      title: 'Important!',
-      text1:
-        'Hello! We want to inform you about an important update regarding how your data is handled in our app.',
-      troubleWithTimezones: 'Trouble with timezones',
-      text2:
-        "Until now, the data we've collected hasn't included timezone information, which can affect the accuracy and consistency of your data across different regions.",
-      whatDoesThisMean: 'What does this mean?',
-      text3:
-        "To enhance your experience and ensure all your data is accurately timestamped, we need to add a timezone to all of your existing sessions. In the following steps, we'll determine your current timezone and ask for your permission to proceed with the synchronization.",
-      confirmButtonText: 'Okay, got it!',
-    },
-    detection: {
-      title: "Let's get started!",
-      isTimezoneCorrect:
-        'We have automatically detected your timezone as the following. Is this correct?',
-      correct: 'Yes, this is correct',
-      incorrect: 'No, my usual timezone is different',
-    },
-    confirmation: {
-      title: 'Ready to sync?',
-      text: 'Do you wish to proceed with syncing all your existing data to UTC using your selected timezone?',
-      cancelPrompt:
-        'Failing to synchronize your data may result in inaccurate timestamps.',
-      cancel: "I'll do this later",
-      resume: 'I changed my mind, let’s do this!',
-      syncNow: "Yeah, let's do it!",
-      syncLater: 'No, not now',
-      syncing: 'Syncing your data...',
-      error: {
-        generic: 'Error synchronizing your data',
-      },
-    },
-    success: {
-      title: 'Success!',
-      text1:
-        "Your data has been successfully marked with timesamps. You're all set!",
-      text2:
-        "In case you have any questions or need help regarding this synchronization, don't hesitate to reach out to us at kiroku.alcohol.tracker@gmail.com.",
-      finishButton: 'Awesome!',
-    },
-  },
   timezoneScreen: {
     timezone: 'Timezone',
     isShownOnProfile: 'Your timezone is shown on your profile.',

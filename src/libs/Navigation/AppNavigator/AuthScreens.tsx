@@ -7,7 +7,6 @@ import useStyleUtils from '@hooks/useStyleUtils';
 import useThemeStyles from '@hooks/useThemeStyles';
 // import type {AuthScreensParamList} from '@libs/Navigation/types';
 // import PusherConnectionManager from '@libs/PusherConnectionManager';
-import getTzFixModalScreenOptions from '@libs/Navigation/getTzFixModalScreenOptions';
 // import DesktopSignInRedirectPage from '@pages/signin/DesktopSignInRedirectPage';
 import * as App from '@userActions/App';
 // import * as Download from '@userActions/Download';
@@ -16,7 +15,8 @@ import * as UserData from '@userActions/UserData';
 // import * as PriorityMode from '@userActions/PriorityMode';
 import * as Session from '@userActions/Session';
 import Timing from '@userActions/Timing';
-// import * as User from '@userActions/User';
+import * as User from '@userActions/User';
+import {getDatabase} from 'firebase/database';
 // import CONFIG from '@src/CONFIG';
 import CONST from '@src/CONST';
 import NAVIGATORS from '@src/NAVIGATORS';
@@ -25,7 +25,7 @@ import ONYXKEYS from '@src/ONYXKEYS';
 import SCREENS from '@src/SCREENS';
 import getOnboardingModalScreenOptions from '@libs/Navigation/getOnboardingModalScreenOptions';
 import type {SelectedTimezone, Timezone} from '@src/types/onyx/UserData';
-import {getFirebaseAuth} from '@libs/Firebase/FirebaseApp';
+import {FirebaseApp, getFirebaseAuth} from '@libs/Firebase/FirebaseApp';
 import type ReactComponentModule from '@src/types/utils/ReactComponentModule';
 import useResponsiveLayout from '@hooks/useResponsiveLayout';
 import {useFirebase} from '@context/global/FirebaseContext';
@@ -39,7 +39,6 @@ import BottomTabNavigator from './Navigators/BottomTabNavigator';
 // import FullScreenNavigator from './Navigators/FullScreenNavigator';
 // import LeftModalNavigator from './Navigators/LeftModalNavigator';
 import OnboardingModalNavigator from './Navigators/OnboardingModalNavigator';
-import TzFixModalNavigator from './Navigators/TzFixModalNavigator';
 import RightModalNavigator from './Navigators/RightModalNavigator';
 // import WelcomeVideoModalNavigator from './Navigators/WelcomeVideoModalNavigator';
 
@@ -64,6 +63,17 @@ Onyx.connect({
     timezone = value?.[auth.currentUser?.uid]?.timezone ?? {};
     const currentTimezone = Intl.DateTimeFormat().resolvedOptions()
       .timeZone as SelectedTimezone;
+
+    if (!timezone?.selected) {
+      timezone = {automatic: true, selected: currentTimezone};
+      User.updateAutomaticTimezone(
+        getDatabase(FirebaseApp),
+        auth.currentUser,
+        true,
+        currentTimezone,
+      );
+      return;
+    }
 
     // If the current timezone is different than the user's timezone, and their timezone is set to automatic, then update their timezone.
     if (timezone?.automatic && timezone?.selected !== currentTimezone) {
@@ -158,11 +168,6 @@ function AuthScreens() {
     ],
   );
   const isInitialRender = useRef(true);
-
-  const tzFixModalScreenOptions = useMemo(
-    () => getTzFixModalScreenOptions(isSmallScreenWidth, styles, StyleUtils),
-    [StyleUtils, isSmallScreenWidth, styles],
-  );
 
   if (isInitialRender.current) {
     Timing.start(CONST.TIMING.HOMEPAGE_INITIAL_RENDER);
@@ -301,17 +306,6 @@ function AuthScreens() {
           options={screenOptions.rightModalNavigator}
           component={RightModalNavigator}
           listeners={modalScreenListeners}
-        />
-        <RootStack.Screen
-          name={NAVIGATORS.TZ_FIX_NAVIGATOR}
-          options={tzFixModalScreenOptions}
-          component={TzFixModalNavigator}
-          listeners={{
-            focus: () => {
-              Modal.setDisableDismissOnEscape(true);
-            },
-            beforeRemove: () => Modal.setDisableDismissOnEscape(false),
-          }}
         />
         {/* <RootStack.Screen
           name={NAVIGATORS.FULL_SCREEN_NAVIGATOR}

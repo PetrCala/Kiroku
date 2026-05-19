@@ -10,12 +10,9 @@ import type {
   DrinksList,
   DrinksToUnits,
 } from '@src/types/onyx';
-import {ref, update} from 'firebase/database';
-import type {Database} from 'firebase/database';
 import {isEmptyObject} from '@src/types/utils/EmptyObject';
 import type {UserID} from '@src/types/onyx/OnyxCommon';
 import type {SelectedTimezone, Timezone} from '@src/types/onyx/UserData';
-import DBPATHS from '@src/DBPATHS';
 import type {OnyxKey} from 'react-native-onyx';
 import Onyx from 'react-native-onyx';
 import ONYXKEYS from '@src/ONYXKEYS';
@@ -707,22 +704,6 @@ function getUserTrackingStartDate(
 }
 
 /**
- * Check if all sessions contain a timezone.
- *
- * @param sessions The list of drinking sessions to check
- * @returns Whether all sessions contain a timezone
- */
-function allSessionsContainTimezone(sessions?: DrinkingSessionList): boolean {
-  if (isEmptyObject(sessions)) {
-    return true; // No session to fix
-  }
-
-  return Object.values(sessions).every(
-    session => 'timezone' in session && session.timezone,
-  );
-}
-
-/**
  * Modify all timestamps of a drinking session and return the updated session
  *
  * @param session The session to update
@@ -770,50 +751,6 @@ function shiftSessionTimestamps(
   }
 
   return convertedSession;
-}
-
-async function fixTimezoneSessions(
-  db: Database,
-  userID: UserID | undefined,
-  sessions: DrinkingSessionList | undefined,
-  tz: SelectedTimezone,
-) {
-  if (!userID) {
-    throw new Error('Invalid user. Try reloading the app.');
-  }
-  if (isEmptyObject(sessions)) {
-    return;
-  }
-  const convertedSessions: DrinkingSessionList = {};
-  Object.entries(sessions).forEach(([sessionId, session]) => {
-    const convertedSession = {...session};
-    if (!convertedSession.timezone) {
-      convertedSession.timezone = tz;
-    }
-
-    if ('session_type' in session) {
-      convertedSession.type = session.session_type as DrinkingSessionType;
-      delete convertedSession.session_type;
-    }
-
-    convertedSessions[sessionId] = convertedSession;
-  });
-
-  // We flag the sessions with the TZ the user chose, but for the app, we automatically assign the automatic timezone
-  const userTimezone: Timezone = {
-    selected: Intl.DateTimeFormat().resolvedOptions()
-      .timeZone as SelectedTimezone,
-    automatic: true,
-  };
-
-  const sessionsRef = DBPATHS.USER_DRINKING_SESSIONS_USER_ID;
-  const timezoneRef = DBPATHS.USERS_USER_ID_TIMEZONE;
-
-  const updates: Record<string, DrinkingSessionList | Timezone> = {};
-  updates[sessionsRef.getRoute(userID)] = convertedSessions;
-  updates[timezoneRef.getRoute(userID)] = userTimezone;
-
-  await update(ref(db), updates);
 }
 
 /** Based on a session type, return the icon that should be associated with this session */
@@ -864,13 +801,11 @@ function getSessionTypeDescription(
 export {
   PlaceholderDrinks,
   addDrinksToList,
-  allSessionsContainTimezone,
   calculateAvailableUnits,
   calculateSessionLength,
   calculateTotalUnits,
   determineSessionMostCommonDrink,
   extractSessionOrEmpty,
-  fixTimezoneSessions,
   getDisplayNameForParticipant,
   getDrinkingSessionData,
   getDrinkingSessionOnyxKey,

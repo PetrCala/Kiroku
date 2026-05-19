@@ -1,21 +1,12 @@
 import Onyx from 'react-native-onyx';
 import ONYXKEYS from '@src/ONYXKEYS';
-import type {OnboardingData as OnboardingNvp, TzFix} from '@src/types/onyx';
-import type Onboarding from '@src/types/onyx/Onboarding';
+import type {OnboardingData as OnboardingNvp} from '@src/types/onyx';
 // import type TryNewDot from '@src/types/onyx/TryNewDot';
 
-type OnboardingData = Onboarding | [] | undefined;
-type TzFixData = TzFix | [] | undefined;
 type OnboardingNvpData = OnboardingNvp | [] | undefined;
 
 // let tryNewDotData: TryNewDot | undefined;
-// TODO(#352+): the legacy `onboarding` var is fed by NVP_TZ_FIX below — a
-// pre-existing wiring bug. Clean up when the tzFix flow is rewritten.
-let onboarding: OnboardingData;
-let tzFix: TzFixData;
-// Consumed by later issues in the onboarding rebuild epic (#352+).
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
-let onboardingData: OnboardingNvpData;
+let onboarding: OnboardingNvpData;
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 let termsAcceptedVersion: number | undefined;
 
@@ -48,34 +39,11 @@ function isOnboardingFlowCompleted({
   onNotCompleted,
 }: HasCompletedOnboardingFlowProps) {
   isOnboardingFlowStatusKnownPromise.then(() => {
-    if (
-      Array.isArray(onboarding) ||
-      onboarding?.hasCompletedGuidedSetupFlow === undefined
-    ) {
+    if (Array.isArray(onboarding) || onboarding?.completed_at === undefined) {
       return;
     }
 
-    if (onboarding?.hasCompletedGuidedSetupFlow) {
-      onCompleted?.();
-    } else {
-      onNotCompleted?.();
-    }
-  });
-}
-
-function isTzFixFlowCompleted({
-  onCompleted,
-  onNotCompleted,
-}: HasCompletedOnboardingFlowProps) {
-  isOnboardingFlowStatusKnownPromise.then(() => {
-    if (
-      Array.isArray(tzFix) ||
-      tzFix?.hasCompletedGuidedSetupFlow === undefined
-    ) {
-      return;
-    }
-
-    if (tzFix?.hasCompletedGuidedSetupFlow) {
+    if (onboarding?.completed_at) {
       onCompleted?.();
     } else {
       onNotCompleted?.();
@@ -114,17 +82,10 @@ function checkOnboardingDataReady() {
 // }
 
 Onyx.connect({
-  key: ONYXKEYS.NVP_TZ_FIX,
+  key: ONYXKEYS.NVP_ONBOARDING,
   callback: value => {
     onboarding = value;
     checkOnboardingDataReady();
-  },
-});
-
-Onyx.connect({
-  key: ONYXKEYS.NVP_ONBOARDING,
-  callback: value => {
-    onboardingData = value;
   },
 });
 
@@ -148,6 +109,5 @@ export {
   checkServerDataReady,
   onServerDataReady,
   isOnboardingFlowCompleted,
-  isTzFixFlowCompleted,
   resetAllChecks,
 };

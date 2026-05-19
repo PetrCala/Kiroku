@@ -169,9 +169,6 @@ function getAdaptedState(
   const lhpNavigator = state.routes.find(
     route => route.name === NAVIGATORS.LEFT_MODAL_NAVIGATOR,
   );
-  const tzFixNavigator = state.routes.find(
-    route => route.name === NAVIGATORS.TZ_FIX_NAVIGATOR,
-  );
   // const onboardingModalNavigator = state.routes.find((route) => route.name === NAVIGATORS.ONBOARDING_MODAL_NAVIGATOR);
 
   if (rhpNavigator) {
@@ -215,7 +212,7 @@ function getAdaptedState(
       metainfo,
     };
   }
-  if (lhpNavigator ?? tzFixNavigator) {
+  if (lhpNavigator) {
     // ?OnboardingNavigator
     // Routes
     // - default bottom tab
@@ -232,14 +229,7 @@ function getAdaptedState(
       }),
     );
 
-    // Separate ifs are necessary for typescript to see that we are not pushing undefined to the array.
-    if (lhpNavigator) {
-      routes.push(lhpNavigator);
-    }
-
-    if (tzFixNavigator) {
-      routes.push(tzFixNavigator);
-    }
+    routes.push(lhpNavigator);
 
     // if (onboardingModalNavigator) {
     //     routes.push(onboardingModalNavigator);

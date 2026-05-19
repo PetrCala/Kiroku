@@ -65,8 +65,6 @@ function HomeScreen({route}: HomeScreenProps) {
   const [drinkingSessionsCount, setDrinkingSessionsCount] = useState<number>(0);
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [unitsConsumed, setUnitsConsumed] = useState<number>(0);
-  const [shouldNavigateToTzFix, setShouldNavigateToTzFix] =
-    useState<boolean>(false);
 
   const statsData: StatData = [
     {
@@ -107,16 +105,6 @@ function HomeScreen({route}: HomeScreenProps) {
   }, [drinkingSessionData, visibleDate, preferences]);
 
   useEffect(() => {
-    const sessionsAreMissingTz =
-      !DSUtils.allSessionsContainTimezone(drinkingSessionData);
-
-    // Only navigate in case the user is setting up TZ for the first time
-    const shouldNavigate = sessionsAreMissingTz && !userData?.timezone;
-
-    setShouldNavigateToTzFix(shouldNavigate);
-  }, [drinkingSessionData, userData?.timezone]);
-
-  useEffect(() => {
     // Update the ongoing session local data
     const ongoingSessionId = DSUtils.getOngoingSessionId(drinkingSessionData);
     DS.syncLocalLiveSessionData(ongoingSessionId, drinkingSessionData);
@@ -134,19 +122,7 @@ function HomeScreen({route}: HomeScreenProps) {
       } catch (error) {
         ErrorUtils.raiseAppError(ERRORS.USER.STATUS_UPDATE_FAILED, error);
       }
-
-      // TZFIX (09-2024) - Redirect to TZ_FIX_INTRODUCTION if user has not set timezone
-      if (shouldNavigateToTzFix) {
-        Navigation.navigate(ROUTES.TZ_FIX_INTRODUCTION);
-      }
-    }, [
-      db,
-      user,
-      userData,
-      preferences,
-      drinkingSessionData,
-      shouldNavigateToTzFix,
-    ]),
+    }, [db, user, userData, preferences, drinkingSessionData]),
   );
 
   useEffect(() => {

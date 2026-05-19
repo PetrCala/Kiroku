@@ -71,7 +71,6 @@ import type {
 } from './UserData';
 import type UserStatus from './UserStatus';
 import type {UserStatusList} from './UserStatus';
-import type TzFix from './TzFix';
 
 export type {
   AccountCreations,
@@ -129,7 +128,6 @@ export type {
   SessionPlaceholderList,
   StartSession,
   Theme,
-  TzFix,
   UnconfirmedDayKey,
   UnconfirmedDays,
   UnconfirmedDaysList,
