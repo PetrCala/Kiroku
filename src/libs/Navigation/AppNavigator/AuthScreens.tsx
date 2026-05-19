@@ -24,7 +24,11 @@ import ONYXKEYS from '@src/ONYXKEYS';
 // import ROUTES from '@src/ROUTES';
 import SCREENS from '@src/SCREENS';
 import getOnboardingModalScreenOptions from '@libs/Navigation/getOnboardingModalScreenOptions';
-import {DatabaseDataProvider} from '@context/global/DatabaseDataContext';
+import {
+  DatabaseDataProvider,
+  useDatabaseData,
+} from '@context/global/DatabaseDataContext';
+import {useSplashScreenStateContext} from '@context/global/SplashScreenStateContext';
 import type {SelectedTimezone, Timezone} from '@src/types/onyx/UserData';
 import {FirebaseApp, getFirebaseAuth} from '@libs/Firebase/FirebaseApp';
 import type ReactComponentModule from '@src/types/utils/ReactComponentModule';
@@ -144,6 +148,22 @@ function AuthScreensContent() {
   );
 
   const {shouldFireOnboarding} = useOnboardingFlow();
+
+  // Signal "auth data ready" to the boot splash gate in Kiroku.tsx. The
+  // splash hides only once these two fields have arrived from the live
+  // listener — matches HomeScreen's own render gate so the user sees the
+  // splash continuously until real content can paint.
+  const {userData, preferences} = useDatabaseData();
+  const {setIsAuthDataReady} = useSplashScreenStateContext();
+  useEffect(() => {
+    if (userData === undefined || preferences === undefined) {
+      return;
+    }
+    setIsAuthDataReady(true);
+  }, [userData, preferences, setIsAuthDataReady]);
+  // Reset on sign-out (AuthScreens unmounts) so a subsequent sign-in
+  // re-gates the splash on fresh data.
+  useEffect(() => () => setIsAuthDataReady(false), [setIsAuthDataReady]);
 
   const onboardingModalScreenOptions = useMemo(
     () =>
