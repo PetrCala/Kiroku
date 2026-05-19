@@ -50,10 +50,15 @@ if [[ "$SHOW_WARNINGS" == "false" ]]; then
     ESLINT_ARGS+=(--quiet)
 fi
 ESLINT_ARGS+=(
+    --concurrency=auto
+    --no-warn-ignored
     "${PASSTHROUGH_ARGS[@]}"
 )
 
 # Run ESLint with the repo's default memory ceiling and seatbelt behavior.
-NODE_OPTIONS="${NODE_OPTIONS:---max_old_space_size=8192}" \
+# `--experimental-require-module` lets CJS plugins (notably `eslint-plugin-rulesdir`)
+# require() ESM rule files shipped by `eslint-config-expensify`. Enabled by default
+# in Node 22.12+; we set it explicitly so Node 20.x continues to work.
+NODE_OPTIONS="${NODE_OPTIONS:---max_old_space_size=8192 --experimental-require-module}" \
 SEATBELT_FROZEN="${SEATBELT_FROZEN:-0}" \
     exec npx eslint "${ESLINT_ARGS[@]}"
