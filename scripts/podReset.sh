@@ -12,6 +12,11 @@
 
 set -e
 
+# CocoaPods 1.16.2 + Ruby 3.3 crashes on Encoding::CompatibilityError when
+# LANG/LC_ALL aren't UTF-8. Set them defensively before any `pod` call.
+export LANG="${LANG:-en_US.UTF-8}"
+export LC_ALL="${LC_ALL:-en_US.UTF-8}"
+
 SCRIPTS_DIR=$(dirname "${BASH_SOURCE[0]}")
 source "$SCRIPTS_DIR/shellUtils.sh"
 
