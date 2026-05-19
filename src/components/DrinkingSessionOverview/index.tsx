@@ -40,7 +40,11 @@ function DrinkingSessionOverview({
         );
         return;
       }
-      await DS.updateLocalData(ONYXKEYS.ONGOING_SESSION_DATA, session);
+      await DS.updateLocalData(
+        ONYXKEYS.ONGOING_SESSION_DATA,
+        session,
+        sessionId,
+      );
       DS.navigateToOngoingSessionScreen();
     })();
   };
