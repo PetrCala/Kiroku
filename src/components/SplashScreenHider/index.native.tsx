@@ -1,4 +1,4 @@
-import {useCallback, useEffect, useRef} from 'react';
+import {useCallback, useEffect, useRef, useState} from 'react';
 import type {ViewStyle} from 'react-native';
 import {Image, StyleSheet} from 'react-native';
 import Reanimated, {
@@ -40,6 +40,21 @@ function SplashScreenHider({
 
   const opacity = useSharedValue(1);
   const scale = useSharedValue(1);
+
+  // Native RCTBootSplash covers the React surface, so iOS doesn't rasterize
+  // the JS <Image> until the cover is removed. If we call BootSplash.hide()
+  // the moment shouldHideSplash flips, the native overlay disappears before
+  // the JS <Image> has decoded + painted — the user sees the yellow
+  // background alone for one or more frames (especially in dev where the
+  // PNG is served by Metro over HTTP). Gate hide() on the image's onLoad
+  // so the JS overlay is already paint-ready when the native overlay leaves.
+  const [isImageReady, setIsImageReady] = useState(false);
+
+  const onImageLoad = useCallback(() => {
+    // onLoad fires after decode but before the next paint. Defer one frame
+    // so isImageReady flips on a tick where the image is also on screen.
+    requestAnimationFrame(() => setIsImageReady(true));
+  }, []);
 
   const opacityStyle = useAnimatedStyle<ViewStyle>(() => ({
     opacity: opacity.get(),
@@ -85,11 +100,11 @@ function SplashScreenHider({
   }, [opacity, scale, onHide]);
 
   useEffect(() => {
-    if (!shouldHideSplash) {
+    if (!shouldHideSplash || !isImageReady) {
       return;
     }
     hide();
-  }, [shouldHideSplash, hide]);
+  }, [shouldHideSplash, isImageReady, hide]);
 
   useEffect(() => {
     const timeoutId = setTimeout(() => {
@@ -115,6 +130,7 @@ function SplashScreenHider({
           source={LOGO_SOURCE}
           style={{width: LOGO_SIZE, height: LOGO_SIZE}}
           resizeMode="contain"
+          onLoad={onImageLoad}
         />
       </Reanimated.View>
     </Reanimated.View>
