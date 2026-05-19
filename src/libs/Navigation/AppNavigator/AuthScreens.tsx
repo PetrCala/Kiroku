@@ -24,6 +24,7 @@ import ONYXKEYS from '@src/ONYXKEYS';
 // import ROUTES from '@src/ROUTES';
 import SCREENS from '@src/SCREENS';
 import getOnboardingModalScreenOptions from '@libs/Navigation/getOnboardingModalScreenOptions';
+import {DatabaseDataProvider} from '@context/global/DatabaseDataContext';
 import type {SelectedTimezone, Timezone} from '@src/types/onyx/UserData';
 import {FirebaseApp, getFirebaseAuth} from '@libs/Firebase/FirebaseApp';
 import type ReactComponentModule from '@src/types/utils/ReactComponentModule';
@@ -124,7 +125,7 @@ const modalScreenListeners = {
   },
 };
 
-function AuthScreens() {
+function AuthScreensContent() {
   const styles = useThemeStyles();
   const StyleUtils = useStyleUtils();
   const {auth} = useFirebase();
@@ -358,6 +359,16 @@ function AuthScreens() {
       <TermsReConsentGuard />
     </View>
     // </ComposeProviders>
+  );
+}
+
+AuthScreensContent.displayName = 'AuthScreensContent';
+
+function AuthScreens() {
+  return (
+    <DatabaseDataProvider>
+      <AuthScreensContent />
+    </DatabaseDataProvider>
   );
 }
 
