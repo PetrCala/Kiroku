@@ -9,7 +9,6 @@ import * as Crypto from 'expo-crypto';
 import {OAuthProvider} from 'firebase/auth';
 import React from 'react';
 import {useFirebase} from '@context/global/FirebaseContext';
-import * as ErrorUtils from '@libs/ErrorUtils';
 import Log from '@libs/Log';
 import * as User from '@userActions/User';
 
@@ -102,7 +101,11 @@ function AppleSignIn({
       onPress();
       await User.signInWithOAuth(auth, db, credential, displayName);
     } catch (error: unknown) {
-      const e = error as {code?: AppleError};
+      const e = error as {
+        code?: AppleError | string;
+        message?: string;
+        name?: string;
+      };
       if (e.code === appleAuth.Error.CANCELED) {
         return;
       }
@@ -110,7 +113,22 @@ function AppleSignIn({
         '[Apple Sign In] Apple authentication failed',
         error as Record<string, unknown>,
       );
-      onError(ErrorUtils.getAppError(undefined, error).message);
+      // DEBUG: surface raw error so we can diagnose the "unknown error" wrapper.
+      // Revert before shipping.
+      const rawJson = (() => {
+        try {
+          const keys =
+            error && typeof error === 'object'
+              ? Object.getOwnPropertyNames(error)
+              : [];
+          return JSON.stringify(error, keys);
+        } catch {
+          return String(error);
+        }
+      })();
+      onError(
+        `[DEBUG] name=${e.name ?? '?'} code=${e.code ?? '?'} msg=${e.message ?? '?'} raw=${rawJson}`,
+      );
     }
   };
 
