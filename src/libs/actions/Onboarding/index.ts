@@ -108,11 +108,12 @@ async function setDisplayName(
 /**
  * Mark the onboarding flow complete for the given user.
  *
- * Callers should invoke `navigateAfterOnboarding()` BEFORE awaiting this
- * function so the modal dismissal animation plays while the screen is still
- * mounted. The Firebase write is fired without `await` — Firebase RTDB queues
- * offline writes and replays them on reconnect, so blocking the caller would
- * defeat the optimistic guarantee.
+ * Performs the Onyx merge first so `shouldFireOnboarding` flips to false
+ * before any subsequent navigation — this lets `OnboardingGuard`
+ * deactivate before the dismissal pop, preventing it from re-routing the
+ * user back into onboarding. The Firebase write is fired without `await`
+ * — Firebase RTDB queues offline writes and replays them on reconnect, so
+ * blocking the caller would defeat the optimistic guarantee.
  */
 async function completeOnboarding(
   db: Database,
@@ -148,9 +149,10 @@ async function completeOnboarding(
  * (the modal flying out while a duplicate HOME slides in) and leaving a
  * stale duplicate `HOME` route on the bottom-tab stack.
  *
- * Call this BEFORE `completeOnboarding` so the dismissal transition plays
- * while the screen content is still mounted. Resuming the last-attempted
- * protected route is a v2 nice-to-have.
+ * Call this AFTER `completeOnboarding` so `shouldFireOnboarding` has
+ * already flipped to false by the time the pop dispatches — otherwise
+ * `OnboardingGuard` races us and re-routes the user back into onboarding.
+ * Resuming the last-attempted protected route is a v2 nice-to-have.
  */
 function navigateAfterOnboarding(): void {
   const rootState = navigationRef.current?.getRootState();

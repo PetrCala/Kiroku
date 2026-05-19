@@ -2,7 +2,6 @@ import {useEffect, useRef} from 'react';
 import useOnboardingFlow from '@hooks/useOnboardingFlow';
 import Log from '@libs/Log';
 import Navigation from '@libs/Navigation/Navigation';
-import navigationRef from '@libs/Navigation/navigationRef';
 import type {Route} from '@src/ROUTES';
 
 const ONBOARDING_ROUTE_PREFIX = 'onboarding/';
@@ -22,10 +21,16 @@ function pickResumeRoute(
 }
 
 /**
- * Watches onboarding state and re-routes the user to the active onboarding
- * step whenever the flow should fire. Renders nothing. Mounted as a sibling
- * of the root `RootStack.Navigator` so it can call `Navigation.navigate` once
- * the container is ready and continue to re-evaluate on nav state changes.
+ * Re-routes the user to the active onboarding step whenever the flow should
+ * fire. Renders nothing. Mounted as a sibling of the root `RootStack.Navigator`
+ * so it can call `Navigation.navigate` once the container is ready and
+ * re-evaluate when the target step changes (e.g. Terms → DisplayName).
+ *
+ * Intentionally does NOT subscribe to navigation state changes: the only
+ * supported way to leave the onboarding modal is `navigateAfterOnboarding()`
+ * after `completeOnboarding`, and a state listener races that dismissal —
+ * the listener fires on the dismissal pop before React has cleaned up the
+ * old effect closure, and re-navigates the user back into onboarding.
  */
 function OnboardingGuard() {
   const {
@@ -39,12 +44,12 @@ function OnboardingGuard() {
   useEffect(() => {
     if (!isReady || !shouldFireOnboarding || !currentOnboardingRoute) {
       lastTargetRef.current = null;
-      return undefined;
+      return;
     }
 
     const target = pickResumeRoute(currentOnboardingRoute, lastVisitedPath);
 
-    const redirectIfNeeded = () => {
+    Navigation.isNavigationReady().then(() => {
       const active = Navigation.getActiveRoute().replace(/^\//, '');
       if (isOnboardingPath(active)) {
         return;
@@ -55,17 +60,7 @@ function OnboardingGuard() {
       lastTargetRef.current = target;
       Log.info(`[OnboardingGuard] Redirecting to ${target}`);
       Navigation.navigate(target);
-    };
-
-    Navigation.isNavigationReady().then(redirectIfNeeded);
-
-    const unsubscribe = navigationRef.current?.addListener('state', () => {
-      redirectIfNeeded();
     });
-
-    return () => {
-      unsubscribe?.();
-    };
   }, [isReady, shouldFireOnboarding, currentOnboardingRoute, lastVisitedPath]);
 
   return null;
