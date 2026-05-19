@@ -15,10 +15,10 @@ import ROUTES from '@src/ROUTES';
 import {isEmptyObject} from '@src/types/utils/EmptyObject';
 import {sleep} from '@libs/TimeUtils';
 import useThemeStyles from '@hooks/useThemeStyles';
+import {View} from 'react-native';
 import FlatList from '@components/FlatList';
 import {PressableWithFeedback} from '@components/Pressable';
 import FlexibleLoadingIndicator from '@components/FlexibleLoadingIndicator';
-import OptionsListSkeletonView from '@components/OptionsListSkeletonView';
 import {useDatabaseData} from '@context/global/DatabaseDataContext';
 import useLocalize from '@hooks/useLocalize';
 import UserOverview from './UserOverview';
@@ -213,7 +213,16 @@ function UserListComponent({
     hasComputedOrderedList && allStatusesLoaded && !loadingDisplayData;
 
   if (!isListReady || isLoading) {
-    return <OptionsListSkeletonView />;
+    return (
+      <View
+        style={[
+          styles.flex1,
+          styles.justifyContentCenter,
+          styles.alignItemsCenter,
+        ]}>
+        <FlexibleLoadingIndicator />
+      </View>
+    );
   }
 
   return (
