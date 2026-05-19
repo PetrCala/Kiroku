@@ -68,10 +68,19 @@ function CustomStatusBarAndBackground({
       if (previous === null || current === null || current <= previous) {
         return;
       }
+      // interpolateColor throws on the UI runtime if either color is undefined
+      // or an unparseable string. Bail out instead of letting the worklet
+      // crash the process — this is the suspected source of the cold-start
+      // SIGABRT inside AnimationFrameBatchinator::flush().
+      const prevColor = prevStatusBarBackgroundColor.get();
+      const currColor = statusBarBackgroundColor.get();
+      if (!prevColor || !currColor) {
+        return;
+      }
       const backgroundColor = interpolateColor(
         statusBarAnimation.get(),
         [0, 1],
-        [prevStatusBarBackgroundColor.get(), statusBarBackgroundColor.get()],
+        [prevColor, currColor],
       );
       runOnJS(updateStatusBarAppearance)({backgroundColor});
     },
