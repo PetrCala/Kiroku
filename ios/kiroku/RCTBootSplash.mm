@@ -132,6 +132,24 @@ RCT_EXPORT_MODULE();
 
     [_rootView addSubview:_loadingView];
 
+    // Force the storyboard view's layout + draw passes synchronously before
+    // returning. Without this, iOS may dismiss the OS LaunchScreen one frame
+    // before _loadingView's layer has been rasterized — the view is sized
+    // correctly (per the screen-bounds fallback above) but hasn't been
+    // *drawn* yet, so the user sees the window's yellow background alone
+    // for one frame before the logo appears. This is the residual
+    // intermittent flicker that survives the sizing fix: it's a paint-
+    // readiness race, not a sizing problem.
+    //
+    // layoutIfNeeded resolves any pending Auto Layout / autoresizing work;
+    // CATransaction flush commits any pending layer-tree changes to the
+    // render server immediately. After these return, the loadingView's
+    // backing store is populated and the next display sync will composite
+    // it correctly.
+    [_loadingView setNeedsLayout];
+    [_loadingView layoutIfNeeded];
+    [CATransaction flush];
+
     // Intentionally do NOT call -disableActivityIndicatorAutoHide: or
     // -setLoadingView: here. On the New Arch (RCTSurfaceHostingProxyRootView)
     // those hooks register _loadingView with the React Surface lifecycle,
