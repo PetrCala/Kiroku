@@ -38,6 +38,7 @@ function InitialScreen() {
   const [hasCheckedAutoLogin] = useOnyx(ONYXKEYS.HAS_CHECKED_AUTO_LOGIN);
   const {isInNarrowPaneModal} = useResponsiveLayout();
   const safeAreaInsets = useStyledSafeAreaInsets();
+  const {safeAreaPaddingBottomStyle} = safeAreaInsets;
   const currentScreenLayoutRef = useRef<InitialScreenLayoutRef>(null);
 
   const welcomeHeader = translate('login.hero.header');
@@ -117,16 +118,6 @@ function InitialScreen() {
             </PressableWithFeedback>
           </View>
         )}
-        {!!closeAccount?.success && (
-          <DotIndicatorMessage
-            style={[styles.mv2]}
-            type="success"
-            messages={{
-              // eslint-disable-next-line @typescript-eslint/naming-convention,@typescript-eslint/prefer-nullish-coalescing
-              0: closeAccount?.success || '',
-            }}
-          />
-        )}
       </SignUpScreenLayout>
       {/* Overlays SignUpScreenLayout's iOS narrow-layout background; alpha kept very low to avoid tinting text. */}
       <LinearGradient
@@ -134,6 +125,28 @@ function InitialScreen() {
         style={StyleSheet.absoluteFillObject}
         pointerEvents="none"
       />
+      {!!closeAccount?.success && (
+        <View
+          pointerEvents="box-none"
+          style={[
+            styles.pAbsolute,
+            styles.l0,
+            styles.r0,
+            styles.b0,
+            styles.ph5,
+            safeAreaPaddingBottomStyle.paddingBottom
+              ? safeAreaPaddingBottomStyle
+              : styles.pb5,
+          ]}>
+          <DotIndicatorMessage
+            type="success"
+            messages={{
+              // eslint-disable-next-line @typescript-eslint/naming-convention,@typescript-eslint/prefer-nullish-coalescing
+              0: closeAccount?.success || '',
+            }}
+          />
+        </View>
+      )}
     </ScreenWrapper>
   );
 }
