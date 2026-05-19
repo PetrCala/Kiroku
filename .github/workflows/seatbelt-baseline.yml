@@ -1,0 +1,56 @@
+name: Seatbelt baseline
+
+# Manually-dispatched workflow that regenerates `eslint.seatbelt.tsv` from
+# scratch and commits the result back to the branch it ran on. Use when:
+#   - Bootstrapping eslint-seatbelt on a branch (first-time baseline).
+#   - After a deliberate rule-set change that meaningfully shifts the set
+#     of grandfathered violations.
+#
+# Trigger from the CLI:
+#   gh workflow run seatbelt-baseline.yml --ref <branch-name>
+#
+# The commit is authored by github-actions[bot] using the default
+# GITHUB_TOKEN. Because GitHub does not trigger downstream workflow runs on
+# commits made by GITHUB_TOKEN, you may need to push a follow-up commit (or
+# re-run the lint check manually) to get the regular `lint.yml` workflow to
+# reflect the new baseline on the PR.
+
+on:
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  baseline:
+    name: Regenerate eslint-seatbelt baseline
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.ref }}
+
+      - name: Setup Node
+        uses: ./.github/actions/composite/setupNode
+
+      - name: Generate eslint-seatbelt baseline
+        # `SEATBELT_INCREASE=ALL` tells the seatbelt plugin to write a baseline
+        # entry for every current error, exiting 0. Subsequent lint runs use
+        # the TSV to reclassify those errors as warnings.
+        run: SEATBELT_INCREASE=ALL ./scripts/lint.sh
+
+      - name: Commit and push baseline if changed
+        run: |
+          if git diff --quiet -- eslint.seatbelt.tsv; then
+            echo "::notice::eslint.seatbelt.tsv unchanged; nothing to commit."
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add eslint.seatbelt.tsv
+          git commit -m "chore(lint): regenerate eslint-seatbelt baseline"
+          git push origin HEAD:${{ github.ref_name }}
