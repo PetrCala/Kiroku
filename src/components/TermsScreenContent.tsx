@@ -1,12 +1,13 @@
 import React, {useCallback, useMemo, useState} from 'react';
 import type {StyleProp, TextStyle} from 'react-native';
-import {ScrollView, View} from 'react-native';
+import {View} from 'react-native';
 import useLocalize from '@hooks/useLocalize';
 import useThemeStyles from '@hooks/useThemeStyles';
 import * as ErrorUtils from '@libs/ErrorUtils';
 import CONST from '@src/CONST';
 import Button from './Button';
 import CheckboxWithLabel from './CheckboxWithLabel';
+import ScrollView from './ScrollView';
 import Text from './Text';
 import TextLink from './TextLink';
 
