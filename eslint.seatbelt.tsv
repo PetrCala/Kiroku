@@ -795,7 +795,7 @@
 "src/libs/actions/Session/index.ts"	"rulesdir/no-onyx-connect"	1
 "src/libs/actions/TestTool.ts"	"rulesdir/no-onyx-connect"	1
 "src/libs/actions/User.ts"	"rulesdir/no-onyx-connect"	1
-"src/libs/actions/Welcome.ts"	"rulesdir/no-onyx-connect"	3
+"src/libs/actions/Welcome.ts"	"rulesdir/no-onyx-connect"	2
 "src/libs/compose.ts"	"@typescript-eslint/ban-types"	1
 "src/libs/compose.ts"	"@typescript-eslint/no-unsafe-call"	2
 "src/libs/compose.ts"	"@typescript-eslint/no-unsafe-function-type"	4

@@ -244,6 +244,8 @@ PODS:
   - PromisesObjC (2.4.0)
   - PromisesSwift (2.4.0):
     - PromisesObjC (= 2.4.0)
+  - PurchasesHybridCommon (18.6.0):
+    - RevenueCat (= 5.72.0)
   - RCT-Folly (2024.11.18.00):
     - boost
     - DoubleConversion
@@ -2189,7 +2191,7 @@ PODS:
     - ReactCommon/turbomodule/core
     - SocketRocket
     - Yoga
-  - react-native-slider (4.5.5):
+  - react-native-slider (5.2.0):
     - boost
     - DoubleConversion
     - fast_float
@@ -2207,7 +2209,7 @@ PODS:
     - React-graphics
     - React-ImageManager
     - React-jsi
-    - react-native-slider/common (= 4.5.5)
+    - react-native-slider/common (= 5.2.0)
     - React-NativeModulesApple
     - React-RCTFabric
     - React-renderercss
@@ -2218,7 +2220,7 @@ PODS:
     - ReactCommon/turbomodule/core
     - SocketRocket
     - Yoga
-  - react-native-slider/common (4.5.5):
+  - react-native-slider/common (5.2.0):
     - boost
     - DoubleConversion
     - fast_float
@@ -2779,6 +2781,7 @@ PODS:
     - React-perflogger (= 0.81.4)
     - React-utils (= 0.81.4)
     - SocketRocket
+  - RevenueCat (5.72.0)
   - RNAppleAuthentication (2.5.1):
     - React-Core
   - RNCAsyncStorage (2.2.0):
@@ -3048,6 +3051,9 @@ PODS:
     - ReactCommon/turbomodule/core
     - SocketRocket
     - Yoga
+  - RNPurchases (10.1.1):
+    - PurchasesHybridCommon (= 18.6.0)
+    - React-Core
   - RNReactNativeHapticFeedback (2.3.3):
     - boost
     - DoubleConversion
@@ -3494,6 +3500,7 @@ DEPENDENCIES:
   - RNLocalize (from `../node_modules/react-native-localize`)
   - RNNitroSQLite (from `../node_modules/react-native-nitro-sqlite`)
   - RNPermissions (from `../node_modules/react-native-permissions`)
+  - RNPurchases (from `../node_modules/react-native-purchases`)
   - RNReactNativeHapticFeedback (from `../node_modules/react-native-haptic-feedback`)
   - RNReanimated (from `../node_modules/react-native-reanimated`)
   - RNScreens (from `../node_modules/react-native-screens`)
@@ -3528,6 +3535,8 @@ SPEC REPOS:
     - nanopb
     - PromisesObjC
     - PromisesSwift
+    - PurchasesHybridCommon
+    - RevenueCat
     - SDWebImage
     - SDWebImageAVIFCoder
     - SDWebImageSVGCoder
@@ -3746,6 +3755,8 @@ EXTERNAL SOURCES:
     :path: "../node_modules/react-native-nitro-sqlite"
   RNPermissions:
     :path: "../node_modules/react-native-permissions"
+  RNPurchases:
+    :path: "../node_modules/react-native-purchases"
   RNReactNativeHapticFeedback:
     :path: "../node_modules/react-native-haptic-feedback"
   RNReanimated:
@@ -3804,6 +3815,7 @@ SPEC CHECKSUMS:
   NitroModules: 8bffd214aa360baba0f2c5718fe0acff5ef94763
   PromisesObjC: f5707f49cb48b9636751c5b2e7d227e43fba9f47
   PromisesSwift: 9d77319bbe72ebf6d872900551f7eeba9bce2851
+  PurchasesHybridCommon: 89a3ddba365c20457a4712bc3d6377b0ea3c9b4f
   RCT-Folly: 846fda9475e61ec7bcbf8a3fe81edfcaeb090669
   RCTDeprecation: c0ed3249a97243002615517dff789bf4666cf585
   RCTRequired: 58719f5124f9267b5f9649c08bf23d9aea845b23
@@ -3844,7 +3856,7 @@ SPEC CHECKSUMS:
   react-native-performance: d77c7992b9ebf63be75f95bcdcafd12048fac487
   react-native-render-html: 05a7d4490ffc85c88094601207f3e48a90533476
   react-native-safe-area-context: 138d5c5f300c6568f2a64a7c01906ae3fcce0330
-  react-native-slider: ef798d9b69f0a76b89fef769c8e428f552a7b2ac
+  react-native-slider: 205c30f4f19af8469c1c24bd4e3ec74038576a67
   react-native-webview: cdce419e8022d0ef6f07db21890631258e7a9e6e
   React-NativeModulesApple: 8c7eb6057b00c191a11ad5ced41826ec5a0e4d78
   React-oscompat: 93b5535ea7f7dff46aaee4f78309a70979bdde9d
@@ -3876,6 +3888,7 @@ SPEC CHECKSUMS:
   ReactAppDependencyProvider: 433ddfb4536948630aadd5bd925aff8a632d2fe3
   ReactCodegen: 2cfa890e84ecf7f3a708f1ed9c0f2c0b22a23c9a
   ReactCommon: e9ab32f1d1482d207867b4fdd139361302b9dcc6
+  RevenueCat: 136390ad99039cdd692156af5e479293ae83b2a9
   RNAppleAuthentication: a89c9804592b38ed4ab11f0aee68d05ba12ad432
   RNCAsyncStorage: fd44f4b03e007e642e98df6726737bc66e9ba609
   RNCClipboard: e560338bf6cc4656a09ff90610b62ddc0dbdad65
@@ -3889,6 +3902,7 @@ SPEC CHECKSUMS:
   RNLocalize: a0bf70cf27f116db4e32be09a6f549715db0686d
   RNNitroSQLite: fb251387cfbee73b100cd484a3c886fda681b3b5
   RNPermissions: a779c2d1cea11fb46c5a7d2b5162fbf7a3bf2060
+  RNPurchases: fdfc89518d91bce4577bc4b9c9b5cb750341ced0
   RNReactNativeHapticFeedback: 5f1542065f0b24c9252bd8cf3e83bc9c548182e4
   RNReanimated: e79d7f42b76ba026e7dc5fb3e3f81991c590d3af
   RNScreens: 4f2aed147a2775017923789d8a0a2d377712ec2e

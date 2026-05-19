@@ -116,6 +116,10 @@ export default {
     IOS_CLIENT_ID: get(Config, 'GOOGLE_IOS_CLIENT_ID', ''),
     ANDROID_CLIENT_ID: get(Config, 'GOOGLE_ANDROID_CLIENT_ID', ''),
   },
+  REVENUECAT: {
+    IOS_API_KEY: get(Config, 'REVENUECAT_IOS_API_KEY', ''),
+    ANDROID_API_KEY: get(Config, 'REVENUECAT_ANDROID_API_KEY', ''),
+  },
   SEND_CRASH_REPORTS: get(Config, 'SEND_CRASH_REPORTS', 'false') === 'true',
   IS_USING_EMULATORS: get(Config, 'USE_EMULATORS', 'false') === 'true',
   SKIP_ONBOARDING: get(Config, 'SKIP_ONBOARDING', 'false') === 'true',

@@ -9,6 +9,7 @@ import Onyx from 'react-native-onyx';
 // import type {ValueOf} from 'type-fest';
 import * as ErrorUtils from '@libs/ErrorUtils';
 import * as PersistedRequests from '@userActions/PersistedRequests';
+import * as Subscriptions from '@userActions/Subscriptions';
 // import * as API from '@libs/API';
 // import type {UserID} from '@src/types/onyx/OnyxCommon';
 // import type {
@@ -1066,6 +1067,7 @@ function cleanupSession() {
 async function signOut(auth: Auth) {
   try {
     await fbSignOut(auth);
+    Subscriptions.forget();
   } catch (error) {
     ErrorUtils.raiseAppError(ERRORS.AUTH.SIGN_OUT_FAILED, error);
   }
