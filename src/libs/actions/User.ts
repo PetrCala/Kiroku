@@ -749,6 +749,22 @@ async function signUp(
   const newUser = userCredential.user;
   const newUserID = newUser.uid;
 
+  // Fire-and-forget the verification email. Without this, the account's
+  // email stays unverified — and Firebase's "single account per email"
+  // policy will then silently OVERWRITE the password provider if the same
+  // user later signs in via Apple/Google with the same email (because
+  // OAuth verifies the email and Firebase trusts the verified claim over
+  // the unverified password account). The takeover is irreversible: the
+  // user gets locked out of email/password sign-in with no error. Sending
+  // verification immediately on signup means the collision path goes
+  // through `auth/account-exists-with-different-credential` instead and
+  // triggers the OAuthLinkModal.
+  sendEmailVerification(newUser).catch(error => {
+    Log.alert('[signUp] failed to send verification email', {
+      error,
+    });
+  });
+
   try {
     // Realtime Database updates
     await pushNewUserInfo(db, newUserID, newProfileData);
