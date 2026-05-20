@@ -15,6 +15,7 @@ const ERRORS = {
     UNAUTHORIZED: 'storage/unauthorized',
   },
   AUTH: {
+    ACCOUNT_CREATION_LIMIT_EXCEEDED: 'auth/account-creation-limit-exceeded',
     ACCOUNT_DELETION_FAILED: 'user/account-deletion-failed',
     MISSING_EMAIL: 'auth/missing-email',
     INVALID_EMAIL: 'auth/invalid-email',
@@ -38,7 +39,6 @@ const ERRORS = {
     LAST_PROVIDER: 'auth/last-provider',
   },
   DATABASE: {
-    ACCOUNT_CREATION_LIMIT_EXCEEDED: 'database/account-creation-limit-exceeded',
     DATA_FETCH_FAILED: 'database/data-fetch-failed',
     OUTDATED_APP_VERSION: 'database/outdated-app-version',
     SEARCH_FAILED: 'database/search-failed',

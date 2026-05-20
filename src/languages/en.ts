@@ -1195,6 +1195,11 @@ export default {
         message:
           'You have made too many requests. Please wait a while before trying again.',
       },
+      accountCreationLimitExceeded: {
+        title: 'Rate Limit Exceeded',
+        message:
+          'You have exceeded the rate limit for account creation. Please try again later.',
+      },
       signOutFailed: {
         title: 'Sign Out Failed',
         message: 'There was an issue signing you out. Please try again.',
@@ -1220,11 +1225,6 @@ export default {
       },
     },
     database: {
-      accountCreationLimitExceeded: {
-        title: 'Rate Limit Exceeded',
-        message:
-          'You have exceeded the rate limit for account creation. Please try again later.',
-      },
       dataFetchFailed: {
         title: 'Data Fetch Failed',
         message:

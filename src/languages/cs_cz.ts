@@ -1184,6 +1184,11 @@ export default {
         message:
           'Odeslali jste příliš mnoho požadavků. Počkejte chvíli a zkuste to znovu.',
       },
+      accountCreationLimitExceeded: {
+        title: 'Překročen limit pro vytváření účtů',
+        message:
+          'Překročili jste limit pro vytváření účtů. Zkuste to znovu později.',
+      },
       signOutFailed: {
         title: 'Odhlášení se nezdařilo',
         message: 'Při odhlašování nastal problém. Zkuste to prosím znovu.',
@@ -1208,11 +1213,6 @@ export default {
       },
     },
     database: {
-      accountCreationLimitExceeded: {
-        title: 'Překročen limit pro vytváření účtů',
-        message:
-          'Překročili jste limit pro vytváření účtů. Zkuste to znovu později.',
-      },
       dataFetchFailed: {
         title: 'Nepodařilo se načíst data',
         message: 'Při načítání dat došlo k chybě. Zkuste to prosím později.',

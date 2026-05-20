@@ -1,5 +1,3 @@
-import type AccountCreations from './AccountCreations';
-import type {AccountCreationsList, DeviceId} from './AccountCreations';
 import type Bug from './Bug';
 import type {BugList, BugId} from './Bug';
 import type Config from './Config';
@@ -75,8 +73,6 @@ import type UserStatus from './UserStatus';
 import type {UserStatusList} from './UserStatus';
 
 export type {
-  AccountCreations,
-  AccountCreationsList,
   AppSettings,
   Bug,
   BugId,
@@ -85,7 +81,6 @@ export type {
   Config,
   Credentials,
   DatabaseProps,
-  DeviceId,
   Download,
   DrinkingSession,
   DrinkingSessionArray,

@@ -10,6 +10,8 @@ import type {ErrorMapping} from './types';
 const ERROR_MAPPING: ErrorMapping = {
   [ERRORS.STORAGE.OBJECT_NOT_FOUND]: 'errors.storage.objectNotFound',
   [ERRORS.STORAGE.UNAUTHORIZED]: 'errors.storage.unauthorized',
+  [ERRORS.AUTH.ACCOUNT_CREATION_LIMIT_EXCEEDED]:
+    'errors.auth.accountCreationLimitExceeded',
   [ERRORS.AUTH.ACCOUNT_DELETION_FAILED]: 'errors.auth.accountDeletionFailed',
   [ERRORS.AUTH.MISSING_EMAIL]: 'errors.auth.missingEmail',
   [ERRORS.AUTH.INVALID_EMAIL]: 'errors.auth.invalidEmail',
@@ -31,8 +33,6 @@ const ERROR_MAPPING: ErrorMapping = {
   [ERRORS.AUTH.CREDENTIAL_ALREADY_IN_USE]: 'errors.auth.credentialAlreadyInUse',
   [ERRORS.AUTH.NO_SUCH_PROVIDER]: 'errors.auth.noSuchProvider',
   [ERRORS.AUTH.LAST_PROVIDER]: 'errors.auth.lastProvider',
-  [ERRORS.DATABASE.ACCOUNT_CREATION_LIMIT_EXCEEDED]:
-    'errors.database.accountCreationLimitExceeded',
   [ERRORS.DATABASE.DATA_FETCH_FAILED]: 'errors.database.dataFetchFailed',
   [ERRORS.DATABASE.OUTDATED_APP_VERSION]: 'errors.database.outdatedAppVersion',
   [ERRORS.DATABASE.SEARCH_FAILED]: 'errors.database.searchFailed',

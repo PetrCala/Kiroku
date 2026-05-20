@@ -9,16 +9,12 @@ import type {UserStatusList} from './UserStatus';
 import type {SessionPlaceholderList} from './SessionPlaceholder';
 import type {ReasonForLeavingList} from './ReasonForLeaving';
 import type {BugList} from './Bug';
-import type {AccountCreationsList} from './AccountCreations';
 
 /** Main database props object
  *
  * Not named "Database" to avoid confusion with the Firebase database object.
  */
 type DatabaseProps = {
-  /** A collection of user creations */
-  account_creations: AccountCreationsList;
-
   /** A bug collection */
   bugs: BugList;
 

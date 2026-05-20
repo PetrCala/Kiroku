@@ -30,7 +30,6 @@ import {
   updateProfile,
   verifyBeforeUpdateEmail,
 } from 'firebase/auth';
-import {getUniqueId} from 'react-native-device-info';
 import {cleanStringForFirebaseKey} from '@libs/StringUtilsKiroku';
 import {getOAuthCredential} from '@libs/OAuthCredential';
 import DBPATHS from '@src/DBPATHS';
@@ -40,7 +39,6 @@ import {getLastStartedSessionId} from '@libs/DataHandling';
 import * as Localize from '@libs/Localize';
 import type {SelectedTimezone, Timezone} from '@src/types/onyx/UserData';
 import {validateAppVersion} from '@libs/Validation';
-import {checkAccountCreationLimit} from '@database/protection';
 import type {OnyxEntry} from 'react-native-onyx';
 import Onyx from 'react-native-onyx';
 import ONYXKEYS from '@src/ONYXKEYS';
@@ -130,17 +128,13 @@ async function pushNewUserInfo(
 ): Promise<void> {
   const userNickname = profileData.display_name;
   const nicknameKey = cleanStringForFirebaseKey(userNickname);
-  // Allowed types
-  const deviceId = await getUniqueId(); // Use a device identifier
 
-  const accountCreationsRef = DBPATHS.ACCOUNT_CREATIONS_DEVICE_ID_USER_ID;
   const nicknameRef = DBPATHS.NICKNAME_TO_ID_NICKNAME_KEY_USER_ID;
   const userStatusRef = DBPATHS.USER_STATUS_USER_ID;
   const userPreferencesRef = DBPATHS.USER_PREFERENCES_USER_ID;
   const userRef = DBPATHS.USERS_USER_ID;
 
   const updates: FirebaseUpdates = {};
-  updates[accountCreationsRef.getRoute(deviceId, userID)] = Date.now();
   updates[nicknameRef.getRoute(nicknameKey, userID)] = userNickname;
   updates[userStatusRef.getRoute(userID)] = getDefaultUserStatus();
   updates[userPreferencesRef.getRoute(userID)] = getDefaultPreferences();
@@ -787,12 +781,6 @@ async function signUp(
     throw new Error('database/outdated-app-version');
   }
 
-  // Validate that the user is not spamming account creation
-  const isWithinCreationLimit = await checkAccountCreationLimit(db);
-  if (!isWithinCreationLimit) {
-    throw new Error('database/account-creation-limit-exceeded');
-  }
-
   // Derive a placeholder display name from the email so the username screen
   // has something to prefill. The user confirms or replaces it before exiting.
   const derivedName = email.split('@').at(0) ?? 'User';
@@ -802,12 +790,28 @@ async function signUp(
     username_chosen: false,
   };
 
-  // Create the user in the Firebase authentication
-  const userCredential = await createUserWithEmailAndPassword(
-    auth,
-    email,
-    password,
-  );
+  // Create the user in the Firebase authentication. Firebase Auth enforces
+  // its own abuse rate limit and returns `auth/too-many-requests` once
+  // tripped — rethrow as the dedicated account-creation key so the UI can
+  // surface the existing "rate limit exceeded for account creation" copy
+  // instead of the generic too-many-requests message.
+  let userCredential: UserCredential;
+  try {
+    userCredential = await createUserWithEmailAndPassword(
+      auth,
+      email,
+      password,
+    );
+  } catch (error) {
+    const code =
+      typeof error === 'object' && error !== null && 'code' in error
+        ? (error as {code?: unknown}).code
+        : undefined;
+    if (code === ERRORS.AUTH.TOO_MANY_REQUESTS) {
+      throw new Error(ERRORS.AUTH.ACCOUNT_CREATION_LIMIT_EXCEEDED);
+    }
+    throw error;
+  }
   const newUser = userCredential.user;
   const newUserID = newUser.uid;
 
