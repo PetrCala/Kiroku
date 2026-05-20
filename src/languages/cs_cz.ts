@@ -707,7 +707,7 @@ export default {
     iHaveVerified: 'E-mail mám ověřený',
     oneMoreStep: 'Ještě jeden krok!',
     checkYourInbox:
-      "Zkontrolujte svou e-mailovou schránku a ověřte svůj e-mail.\nPoté buď restartujte aplikaci, abyste viděli změny, nebo stiskněte tlačítko 'E-mail mám ověřený' níže.",
+      "Zkontrolujte svou e-mailovou schránku a ověřte svůj e-mail.\nNevidíte ho? Podívejte se do složky spamu.\nPoté buď restartujte aplikaci, abyste viděli změny, nebo stiskněte tlačítko 'E-mail mám ověřený' níže.",
     error: {
       generic: 'Chyba při ověřování vašeho e-mailu',
       sending: 'Chyba při odesílání ověřovacího e-mailu',
@@ -961,7 +961,7 @@ export default {
     submit: 'Resetovat heslo',
     enterEmail: 'Zadejte sem svůj e-mail',
     success: ({email}: ForgotPasswordSuccessParams) =>
-      `E-mail s pokyny pro reset hesla byl odeslán na adresu ${email}.`,
+      `E-mail s pokyny pro reset hesla byl odeslán na adresu ${email}. Nevidíte ho? Podívejte se do složky spamu.`,
     error: {
       generic: 'Při pokusu o reset hesla došlo k chybě.',
     },
@@ -974,7 +974,7 @@ export default {
     appleSubmit: 'Propojit účet Apple',
     googleSubmit: 'Propojit účet Google',
     resetEmailSent: ({email}: ForgotPasswordSuccessParams) =>
-      `Odkaz pro reset hesla byl odeslán na adresu ${email}. Zkontrolujte si schránku.`,
+      `Odkaz pro reset hesla byl odeslán na adresu ${email}. Zkontrolujte si schránku — a složku spamu, pokud ho nevidíte.`,
   },
   passwordScreen: {
     title: 'Změnit heslo',
