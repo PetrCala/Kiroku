@@ -710,7 +710,7 @@ export default {
     iHaveVerified: 'I have verified my email',
     oneMoreStep: 'One more step!',
     checkYourInbox:
-      "Please check your inbox and verify your email.\nAfterwards, either restart the app to see changes, or press the 'I have verified my email' button below.",
+      "Please check your inbox and verify your email.\nDon't see it? Check your spam folder.\nAfterwards, either restart the app to see changes, or press the 'I have verified my email' button below.",
     error: {
       generic: 'Error verifying your email',
       sending: 'Error sending verification email',
@@ -966,7 +966,7 @@ export default {
     submit: 'Reset your password',
     enterEmail: 'Enter your email here',
     success: ({email}: ForgotPasswordSuccessParams) =>
-      `An email with password reset instructions has been sent to ${email}.`,
+      `An email with password reset instructions has been sent to ${email}. Don't see it? Check your spam folder.`,
     error: {
       generic: 'There was an error when attempting to reset your password.',
     },
@@ -979,7 +979,7 @@ export default {
     appleSubmit: 'Connect Apple account',
     googleSubmit: 'Connect Google account',
     resetEmailSent: ({email}: ForgotPasswordSuccessParams) =>
-      `We sent a reset link to ${email}. Check your inbox.`,
+      `We sent a reset link to ${email}. Check your inbox — and your spam folder if you don't see it.`,
   },
   passwordScreen: {
     title: 'Change your password',
