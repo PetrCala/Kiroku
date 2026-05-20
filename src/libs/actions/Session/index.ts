@@ -673,6 +673,11 @@ function cleanupSession() {
   resetHomeRouteParams();
   // Drop any in-flight OAuth-link state so credentials don't leak across users.
   Onyx.set(ONYXKEYS.PENDING_OAUTH_CREDENTIAL, null);
+  // Clear verification-email tracking so the next user on this device starts
+  // with a clean slate (VERIFY_EMAIL_SENT drives the modal's initial UI state;
+  // VERIFY_EMAIL_DISMISSED gates whether the modal appears at all).
+  Onyx.set(ONYXKEYS.VERIFY_EMAIL_SENT, null);
+  Onyx.set(ONYXKEYS.VERIFY_EMAIL_DISMISSED, null);
   clearCache().then(() => {
     Log.info('Cleared all cache data', true, {}, true);
   });

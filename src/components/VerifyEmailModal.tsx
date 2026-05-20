@@ -2,6 +2,7 @@ import useThemeStyles from '@hooks/useThemeStyles';
 import * as User from '@userActions/User';
 import {useEffect, useState} from 'react';
 import {View} from 'react-native';
+import {useOnyx} from 'react-native-onyx';
 import useLocalize from '@hooks/useLocalize';
 import Navigation from '@libs/Navigation/Navigation';
 import ROUTES from '@src/ROUTES';
@@ -9,6 +10,7 @@ import useTheme from '@hooks/useTheme';
 import {sleep} from '@libs/TimeUtils';
 import {useFirebase} from '@context/global/FirebaseContext';
 import CONST from '@src/CONST';
+import ONYXKEYS from '@src/ONYXKEYS';
 import Icon from './Icon';
 import SuccessAnimation from './SuccessAnimation';
 import Modal from './Modal';
@@ -24,8 +26,16 @@ function VerifyEmailModal() {
   const styles = useThemeStyles();
   const {translate} = useLocalize();
   const theme = useTheme();
+  // `VERIFY_EMAIL_SENT` is written by `User.sendVerifyEmailLink` (including the
+  // signup auto-send in `User.signUp`). When set, the modal should open in the
+  // "Check your inbox" state instead of asking the user to send an email that
+  // has already been sent. We derive `emailSent` from this so the modal
+  // updates reactively if the Onyx write lands AFTER the modal has mounted
+  // (which happens with slice D's fire-and-forget send during signup).
+  const [verifyEmailSent] = useOnyx(ONYXKEYS.VERIFY_EMAIL_SENT);
   const [isVisible, setIsVisible] = useState(true);
-  const [emailSent, setEmailSent] = useState(false);
+  const [locallySent, setLocallySent] = useState(false);
+  const emailSent = !!verifyEmailSent || locallySent;
   const [emailVerified, setEmailVerified] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [errorText, setErrorText] = useState('');
@@ -36,7 +46,7 @@ function VerifyEmailModal() {
         setErrorText('');
         setIsLoading(true);
         await User.sendVerifyEmailLink(user);
-        setEmailSent(true);
+        setLocallySent(true);
       } catch (error) {
         const errorMessage = error instanceof Error ? error.message : '';
         setErrorText(errorMessage);
@@ -147,7 +157,7 @@ function VerifyEmailModal() {
                       style={[styles.mv2]}
                       type="success"
                       messages={{
-                        // eslint-disable-next-line @typescript-eslint/naming-convention,@typescript-eslint/prefer-nullish-coalescing
+                        // eslint-disable-next-line @typescript-eslint/naming-convention
                         0: translate('verifyEmailScreen.emailSent'),
                       }}
                     />
@@ -156,7 +166,7 @@ function VerifyEmailModal() {
                     <DotIndicatorMessage
                       style={[styles.mv2]}
                       type="error"
-                      // eslint-disable-next-line @typescript-eslint/naming-convention,@typescript-eslint/prefer-nullish-coalescing
+                      // eslint-disable-next-line @typescript-eslint/naming-convention
                       messages={{0: errorText || ''}}
                     />
                   )}

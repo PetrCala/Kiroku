@@ -322,21 +322,30 @@ async function updatePassword(
 /**
  * Send an email verification link to a user.
  *
- * @params user The user to send the email to
+ * @param user The user to send the email to
+ * @param options Optional behavior overrides:
+ *   - `bypassCooldown`: skip the per-device cooldown check. Used by `signUp` so
+ *     the very first verification email always fires regardless of a prior
+ *     user's send timestamp on the same device.
  * @returns A promise that resolves when the email is sent.
  */
-async function sendVerifyEmailLink(user: User | null): Promise<void> {
+async function sendVerifyEmailLink(
+  user: User | null,
+  options: {bypassCooldown?: boolean} = {},
+): Promise<void> {
   if (!user) {
     throw new Error(Localize.translateLocal('common.error.userNull'));
   }
-  const hasSentEmailRecently =
-    verifyEmailSent &&
-    verifyEmailSent > Date.now() - CONST.VERIFY_EMAIL.COOLDOWN;
+  if (!options.bypassCooldown) {
+    const hasSentEmailRecently =
+      verifyEmailSent &&
+      verifyEmailSent > Date.now() - CONST.VERIFY_EMAIL.COOLDOWN;
 
-  if (hasSentEmailRecently) {
-    throw new Error(
-      Localize.translateLocal('verifyEmailScreen.error.emailSentRecently'),
-    );
+    if (hasSentEmailRecently) {
+      throw new Error(
+        Localize.translateLocal('verifyEmailScreen.error.emailSentRecently'),
+      );
+    }
   }
   await sendEmailVerification(user);
   await Onyx.set(ONYXKEYS.VERIFY_EMAIL_SENT, new Date().getTime());
@@ -758,8 +767,13 @@ async function signUp(
   // user gets locked out of email/password sign-in with no error. Sending
   // verification immediately on signup means the collision path goes
   // through `auth/account-exists-with-different-credential` instead and
-  // triggers the OAuthLinkModal.
-  sendEmailVerification(newUser).catch(error => {
+  // triggers the OAuthLinkModal. We bypass the cooldown because this is
+  // the canonical first send for a brand-new account; the cooldown is
+  // device-global and otherwise blocks first-sends after a different user
+  // recently sent on this device. Routing through the wrapper (instead of
+  // the bare Firebase call) ensures `VERIFY_EMAIL_SENT` is written so the
+  // VerifyEmailModal opens in the truthful "Check your inbox" state.
+  sendVerifyEmailLink(newUser, {bypassCooldown: true}).catch(error => {
     Log.alert('[signUp] failed to send verification email', {
       error,
     });
