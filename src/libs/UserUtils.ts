@@ -10,14 +10,6 @@ import ONYXKEYS from '@src/ONYXKEYS';
 import type {User} from 'firebase/auth';
 import hashCode from './hashCode';
 
-let verifyEmailDismissed: OnyxEntry<Timestamp | null> = null;
-Onyx.connect({
-  key: ONYXKEYS.VERIFY_EMAIL_DISMISSED,
-  callback: val => {
-    verifyEmailDismissed = val;
-  },
-});
-
 let appUpdateDismissed: OnyxEntry<Timestamp | null> = null;
 Onyx.connect({
   key: ONYXKEYS.APP_UPDATE_DISMISSED,
@@ -250,13 +242,7 @@ function getSmallSizeAvatar(
 // }
 
 function shouldShowVerifyEmailModal(user: User | null): boolean {
-  if (!user || user.emailVerified) {
-    return false; // Already verified
-  }
-  if (!verifyEmailDismissed) {
-    return true; // Has not dismissed the modal yet
-  }
-  return verifyEmailDismissed < Date.now() - CONST.VERIFY_EMAIL.DISMISS_TIME;
+  return !!user && !user.emailVerified;
 }
 
 /**

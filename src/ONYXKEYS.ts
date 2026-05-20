@@ -128,9 +128,6 @@ const ONYXKEYS = {
   /** The last time a user has sent a verification email */
   VERIFY_EMAIL_SENT: 'verifyEmailSent',
 
-  /** The last time a user dismissed the verify email value */
-  VERIFY_EMAIL_DISMISSED: 'verifyEmailDismissed',
-
   /** Is app in beta version */
   IS_BETA: 'isBeta',
 
@@ -306,7 +303,6 @@ type OnyxValuesMapping = {
   [ONYXKEYS.SHOULD_SHOW_COMPOSE_INPUT]: boolean;
   [ONYXKEYS.APP_UPDATE_DISMISSED]: Timestamp;
   [ONYXKEYS.VERIFY_EMAIL_SENT]: Timestamp;
-  [ONYXKEYS.VERIFY_EMAIL_DISMISSED]: Timestamp;
   [ONYXKEYS.IS_BETA]: boolean;
   [ONYXKEYS.HAS_CHECKED_AUTO_LOGIN]: boolean;
   [ONYXKEYS.PREFERRED_THEME]: ValueOf<typeof CONST.THEME>;
