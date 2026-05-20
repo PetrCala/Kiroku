@@ -22,6 +22,18 @@ const KIROKU_WEB_URL =
   Config?.ENVIRONMENT === 'production'
     ? KIROKU_WEB_URLS.PROD
     : KIROKU_WEB_URLS.DEV;
+// Custom sender domains for Firebase Authentication transactional mail
+// (email verification, password reset, email-change confirmation). Configured
+// in the Firebase Console per project with matching DNS records (DKIM/SPF).
+// Subdomain isolates transactional mail reputation from the apex domain.
+const TRANSACTIONAL_MAIL_DOMAINS = {
+  DEV: 'mail.dev.kiroku.cz',
+  PROD: 'mail.kiroku.cz',
+};
+const TRANSACTIONAL_MAIL_DOMAIN =
+  Config?.ENVIRONMENT === 'production'
+    ? TRANSACTIONAL_MAIL_DOMAINS.PROD
+    : TRANSACTIONAL_MAIL_DOMAINS.DEV;
 const PULL_REQUEST_NUMBER = Config?.PULL_REQUEST_NUMBER ?? '';
 const MAX_DATE = dateAdd(new Date(), {years: 1});
 const MIN_DATE = dateSubtract(new Date(), {years: 20});
@@ -271,6 +283,9 @@ const CONST = {
   EMAIL: {
     KIROKU: 'kiroku.alcohol.tracker@gmail.com',
     KIROKU_EMAIL_DOMAIN: '@kiroku.cz',
+    TRANSACTIONAL_MAIL_DOMAIN,
+    TRANSACTIONAL_MAIL_DOMAINS,
+    TRANSACTIONAL_NOREPLY_ADDRESS: `noreply@${TRANSACTIONAL_MAIL_DOMAIN}`,
   },
   EMPTY_ARRAY,
   EMPTY_OBJECT,
