@@ -698,23 +698,16 @@ export default {
     enterPassword: 'Enter your password',
   },
   verifyEmailScreen: {
-    youAreNotVerified: "Let's verify your email!",
-    wouldYouLikeToVerify: ({email}: VerifyEmailScreenEmailParmas) =>
-      `Would you like to verify ${email ?? 'your email'} now?`,
-    illDoItLater: "I'll do it later",
-    verifyEmail: 'Verify email',
-    changeEmail: 'Change email',
+    title: 'Verify your email',
+    body: ({email}: VerifyEmailScreenEmailParmas) =>
+      `We sent a verification link to ${email ?? 'your email'}. Open it to confirm your address, then come back here. Don't see it? Check your spam folder.`,
     resendEmail: 'Resend email',
-    emailSent: 'A verification email has been sent to your email address.',
+    emailSent: 'Verification email sent.',
     emailVerified: 'Email verified!',
     iHaveVerified: 'I have verified my email',
-    oneMoreStep: 'One more step!',
-    checkYourInbox:
-      "Please check your inbox and verify your email.\nDon't see it? Check your spam folder.\nAfterwards, either restart the app to see changes, or press the 'I have verified my email' button below.",
     error: {
       generic: 'Error verifying your email',
       sending: 'Error sending verification email',
-      dismissing: 'Error dismissing verification email',
       emailSentRecently:
         'Please wait before sending another verification email.',
       emailNotVerified: 'Your email has not been verified yet.',

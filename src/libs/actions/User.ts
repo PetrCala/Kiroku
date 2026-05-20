@@ -532,11 +532,6 @@ async function saveSelectedTimezone(
   });
 }
 
-/** Set the information about when the verify email modal was last dismissed */
-async function setVerifyEmailDismissed(timestamp: Timestamp): Promise<void> {
-  await Onyx.merge(ONYXKEYS.VERIFY_EMAIL_DISMISSED, timestamp);
-}
-
 /** Set the information about when the app update was last dimmissed */
 async function setAppUpdateDismissed(timestamp: Timestamp): Promise<void> {
   await Onyx.merge(ONYXKEYS.APP_UPDATE_DISMISSED, timestamp);
@@ -824,7 +819,6 @@ export {
   sendVerifyEmailLink,
   setAppUpdateDismissed,
   setUsername,
-  setVerifyEmailDismissed,
   synchronizeUserStatus,
   updateAutomaticTimezone,
   updatePassword,

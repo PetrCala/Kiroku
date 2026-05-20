@@ -695,23 +695,16 @@ export default {
     enterPassword: 'Zadejte heslo',
   },
   verifyEmailScreen: {
-    youAreNotVerified: 'Ověřte svůj e-mail!',
-    wouldYouLikeToVerify: ({email}: VerifyEmailScreenEmailParmas) =>
-      `Chcete ověřit e-mail ${email ?? 'vaši adresu'} rovnou?`,
-    illDoItLater: 'Udělám to později',
-    verifyEmail: 'Ověřit e-mail',
-    changeEmail: 'Změnit e-mail',
+    title: 'Ověřte svůj e-mail',
+    body: ({email}: VerifyEmailScreenEmailParmas) =>
+      `Poslali jsme ověřovací odkaz na adresu ${email ?? 'vaši adresu'}. Otevřete jej pro potvrzení a vraťte se zpět. Nevidíte ho? Podívejte se do složky spamu.`,
     resendEmail: 'Znovu odeslat e-mail',
-    emailSent: 'Ověřovací e-mail byl odeslán na vaši adresu.',
+    emailSent: 'Ověřovací e-mail byl odeslán.',
     emailVerified: 'E-mail byl ověřen!',
     iHaveVerified: 'E-mail mám ověřený',
-    oneMoreStep: 'Ještě jeden krok!',
-    checkYourInbox:
-      "Zkontrolujte svou e-mailovou schránku a ověřte svůj e-mail.\nNevidíte ho? Podívejte se do složky spamu.\nPoté buď restartujte aplikaci, abyste viděli změny, nebo stiskněte tlačítko 'E-mail mám ověřený' níže.",
     error: {
       generic: 'Chyba při ověřování vašeho e-mailu',
       sending: 'Chyba při odesílání ověřovacího e-mailu',
-      dismissing: 'Chyba při zrušení ověřovacího e-mailu',
       emailSentRecently:
         'Před odesláním dalšího ověřovacího e-mailu chvíli vyčkejte.',
       emailNotVerified: 'Váš e-mail stále nebyl ověřen.',

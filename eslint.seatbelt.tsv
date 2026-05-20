@@ -788,7 +788,7 @@
 "src/libs/Search.ts"	"@typescript-eslint/no-base-to-string"	1
 "src/libs/ShortcutManager/index.ts"	"@typescript-eslint/no-unnecessary-type-assertion"	1
 "src/libs/UserDataUtils.ts"	"rulesdir/no-onyx-connect"	1
-"src/libs/UserUtils.ts"	"rulesdir/no-onyx-connect"	2
+"src/libs/UserUtils.ts"	"rulesdir/no-onyx-connect"	1
 "src/libs/actions/App.ts"	"rulesdir/no-onyx-connect"	3
 "src/libs/actions/Device/index.ts"	"rulesdir/no-onyx-connect"	1
 "src/libs/actions/DrinkingSession.ts"	"rulesdir/no-onyx-connect"	1

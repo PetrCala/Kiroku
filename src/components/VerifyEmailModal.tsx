@@ -1,90 +1,109 @@
-import useThemeStyles from '@hooks/useThemeStyles';
-import * as User from '@userActions/User';
 import {useEffect, useState} from 'react';
 import {View} from 'react-native';
-import {useOnyx} from 'react-native-onyx';
-import useLocalize from '@hooks/useLocalize';
-import Navigation from '@libs/Navigation/Navigation';
-import ROUTES from '@src/ROUTES';
-import useTheme from '@hooks/useTheme';
-import {sleep} from '@libs/TimeUtils';
 import {useFirebase} from '@context/global/FirebaseContext';
+import useLocalize from '@hooks/useLocalize';
+import useTheme from '@hooks/useTheme';
+import useThemeStyles from '@hooks/useThemeStyles';
+import * as Session from '@libs/actions/Session';
+import {sleep} from '@libs/TimeUtils';
+import * as User from '@userActions/User';
 import CONST from '@src/CONST';
-import ONYXKEYS from '@src/ONYXKEYS';
-import Icon from './Icon';
-import SuccessAnimation from './SuccessAnimation';
-import Modal from './Modal';
-import SafeAreaConsumer from './SafeAreaConsumer';
-import DotIndicatorMessage from './DotIndicatorMessage';
-import * as KirokuIcons from './Icon/KirokuIcons';
-import Text from './Text';
 import Button from './Button';
+import DotIndicatorMessage from './DotIndicatorMessage';
+import Icon from './Icon';
+import * as KirokuIcons from './Icon/KirokuIcons';
+import Modal from './Modal';
+import {PressableWithFeedback} from './Pressable';
+import SafeAreaConsumer from './SafeAreaConsumer';
+import SuccessAnimation from './SuccessAnimation';
+import Text from './Text';
 
+type ResendStatus = 'idle' | 'success' | 'error';
+
+/**
+ * Mandatory email-verification modal. Shown immediately after signup (and on
+ * any subsequent sign-in if the email is still unverified) and stays in front
+ * of the rest of the app until the user verifies — there is no defer/dismiss
+ * affordance, because an unverified email is the exact state that triggers
+ * Firebase's silent OAuth provider takeover (see PR #439 context). The only
+ * way out without verifying is the tertiary "Sign out" link, which doesn't
+ * compromise mandatory-ness: the modal reappears on the next sign-in.
+ */
 function VerifyEmailModal() {
   const {auth} = useFirebase();
   const user = auth.currentUser;
   const styles = useThemeStyles();
   const {translate} = useLocalize();
   const theme = useTheme();
-  // `VERIFY_EMAIL_SENT` is written by `User.sendVerifyEmailLink` (including the
-  // signup auto-send in `User.signUp`). When set, the modal should open in the
-  // "Check your inbox" state instead of asking the user to send an email that
-  // has already been sent. We derive `emailSent` from this so the modal
-  // updates reactively if the Onyx write lands AFTER the modal has mounted
-  // (which happens with slice D's fire-and-forget send during signup).
-  const [verifyEmailSent] = useOnyx(ONYXKEYS.VERIFY_EMAIL_SENT);
   const [isVisible, setIsVisible] = useState(true);
-  const [locallySent, setLocallySent] = useState(false);
-  const emailSent = !!verifyEmailSent || locallySent;
   const [emailVerified, setEmailVerified] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [resendStatus, setResendStatus] = useState<ResendStatus>('idle');
   const [errorText, setErrorText] = useState('');
 
-  const onVerifyEmailButtonPress = () => {
+  // On mount, reload the user to pick up any verification that happened
+  // out-of-band (e.g. user clicked the link in another tab/app before
+  // returning here).
+  useEffect(() => {
+    const checkStatus = async () => {
+      if (!user) {
+        return;
+      }
+      await user.reload();
+      setEmailVerified(user.emailVerified);
+    };
+    checkStatus();
+  }, [user, auth]);
+
+  const onVerifyButtonPress = () => {
     (async () => {
+      if (!user) {
+        return;
+      }
       try {
         setErrorText('');
+        setResendStatus('idle');
         setIsLoading(true);
-        await User.sendVerifyEmailLink(user);
-        setLocallySent(true);
+        await user.reload();
+        if (user.emailVerified) {
+          setEmailVerified(true);
+        } else {
+          setErrorText(translate('verifyEmailScreen.error.emailNotVerified'));
+        }
       } catch (error) {
         const errorMessage = error instanceof Error ? error.message : '';
-        setErrorText(errorMessage);
+        setErrorText(
+          errorMessage || translate('verifyEmailScreen.error.generic'),
+        );
       } finally {
         setIsLoading(false);
       }
     })();
   };
 
-  const onChangeEmailButtonPress = () => {
+  const onResendButtonPress = () => {
     (async () => {
-      if (!emailSent) {
-        setIsVisible(false);
-        Navigation.navigate(ROUTES.SETTINGS_EMAIL);
-        return;
-      }
-      if (user) {
-        await user.reload();
-        setEmailVerified(user.emailVerified);
-        if (!user.emailVerified) {
-          setErrorText(translate('verifyEmailScreen.error.emailNotVerified'));
-        }
-      } else {
-        setErrorText(translate('verifyEmailScreen.error.emailNotVerified'));
+      try {
+        setErrorText('');
+        await User.sendVerifyEmailLink(user);
+        setResendStatus('success');
+      } catch (error) {
+        const errorMessage = error instanceof Error ? error.message : '';
+        setErrorText(
+          errorMessage || translate('verifyEmailScreen.error.sending'),
+        );
+        setResendStatus('error');
       }
     })();
   };
 
-  const onDismissVerifyEmail = () => {
-    const dismissTime = new Date().getTime();
-    User.setVerifyEmailDismissed(dismissTime)
-      .then(() => {
-        setIsVisible(false);
-      })
-      .catch(error => {
-        const errorMessage = error instanceof Error ? error.message : '';
-        setErrorText(errorMessage);
-      });
+  const onSignOutPress = () => {
+    Session.signOut(auth).catch(error => {
+      const errorMessage = error instanceof Error ? error.message : '';
+      setErrorText(
+        errorMessage || translate('verifyEmailScreen.error.generic'),
+      );
+    });
   };
 
   const onSuccessAnimationEnd = async () => {
@@ -92,19 +111,6 @@ function VerifyEmailModal() {
       setIsVisible(false);
     });
   };
-
-  // Redirect to home screen if user is verified
-  useEffect(() => {
-    const checkStatus = async () => {
-      if (!user) {
-        return;
-      }
-
-      await user.reload();
-      setEmailVerified(user.emailVerified);
-    };
-    checkStatus();
-  }, [user, auth]);
 
   return (
     <SafeAreaConsumer>
@@ -137,22 +143,16 @@ function VerifyEmailModal() {
                   <Text
                     textAlign="center"
                     style={[styles.textHeadlineH2, styles.mt3]}>
-                    {translate(
-                      emailSent
-                        ? 'verifyEmailScreen.oneMoreStep'
-                        : 'verifyEmailScreen.youAreNotVerified',
-                    )}
+                    {translate('verifyEmailScreen.title')}
                   </Text>
                   <Text textAlign="center" style={styles.mt3}>
-                    {emailSent
-                      ? translate('verifyEmailScreen.checkYourInbox')
-                      : translate('verifyEmailScreen.wouldYouLikeToVerify', {
-                          email: user?.email ?? '',
-                        })}
+                    {translate('verifyEmailScreen.body', {
+                      email: user?.email ?? '',
+                    })}
                   </Text>
                 </View>
                 <View style={styles.pb1}>
-                  {!!emailSent && !errorText && (
+                  {resendStatus === 'success' && (
                     <DotIndicatorMessage
                       style={[styles.mv2]}
                       type="success"
@@ -167,46 +167,32 @@ function VerifyEmailModal() {
                       style={[styles.mv2]}
                       type="error"
                       // eslint-disable-next-line @typescript-eslint/naming-convention
-                      messages={{0: errorText || ''}}
+                      messages={{0: errorText}}
                     />
                   )}
                   <Button
                     success
-                    isLoading={isLoading && !emailSent}
+                    large
+                    isLoading={isLoading}
                     style={styles.mt1}
-                    text={translate(
-                      emailSent
-                        ? 'verifyEmailScreen.iHaveVerified'
-                        : 'verifyEmailScreen.verifyEmail',
-                    )}
-                    onPress={
-                      emailSent
-                        ? onChangeEmailButtonPress
-                        : onVerifyEmailButtonPress
-                    }
-                    large
+                    text={translate('verifyEmailScreen.iHaveVerified')}
+                    onPress={onVerifyButtonPress}
                   />
                   <Button
-                    style={[styles.mt1]}
-                    text={translate(
-                      emailSent
-                        ? 'verifyEmailScreen.resendEmail'
-                        : 'verifyEmailScreen.changeEmail',
-                    )}
-                    onPress={
-                      emailSent
-                        ? onVerifyEmailButtonPress
-                        : onChangeEmailButtonPress
-                    }
                     large
+                    style={styles.mt1}
+                    text={translate('verifyEmailScreen.resendEmail')}
+                    onPress={onResendButtonPress}
                   />
-                  <Button
-                    text={translate('verifyEmailScreen.illDoItLater')}
-                    style={styles.bgTransparent}
-                    textStyles={styles.textAppColor}
-                    onPress={onDismissVerifyEmail}
-                    large
-                  />
+                  <PressableWithFeedback
+                    style={[styles.mt4, styles.alignItemsCenter]}
+                    onPress={onSignOutPress}
+                    role={CONST.ROLE.BUTTON}
+                    accessibilityLabel={translate('settingsScreen.signOut')}>
+                    <Text style={styles.link}>
+                      {translate('settingsScreen.signOut')}
+                    </Text>
+                  </PressableWithFeedback>
                 </View>
               </View>
             ) : (
