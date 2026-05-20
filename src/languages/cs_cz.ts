@@ -22,7 +22,6 @@ import type {
   VerifyEmailScreenEmailParmas,
 } from './params';
 
- 
 export default {
   common: {
     cancel: 'Zrušit',
@@ -1041,9 +1040,9 @@ export default {
         message: 'K pokračování je vyžadováno heslo. Zadejte prosím své heslo.',
       },
       invalidCredential: {
-        title: 'Neplatné přihlašovací údaje',
+        title: 'Nesprávný e-mail nebo heslo',
         message:
-          'Zadané údaje jsou nesprávné. Zkontrolujte je a zkuste to znovu.',
+          'Zkontrolujte e-mail a heslo. Pokud jste se zaregistrovali pomocí Apple nebo Google, přihlaste se tímto způsobem.',
       },
       weakPassword: {
         title: 'Slabé heslo',

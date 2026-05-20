@@ -23,7 +23,6 @@ import type {
   VerifyEmailScreenEmailParmas,
 } from './params';
 
- 
 export default {
   common: {
     cancel: 'Cancel',
@@ -1051,9 +1050,9 @@ export default {
           'A password is required to proceed. Please enter your password.',
       },
       invalidCredential: {
-        title: 'Invalid Credentials',
+        title: 'Wrong email or password',
         message:
-          'The credentials provided are incorrect. Please check and try again.',
+          'Check your email and password. If you originally signed up with Apple or Google, sign in with those instead.',
       },
       weakPassword: {
         title: 'Weak Password',
