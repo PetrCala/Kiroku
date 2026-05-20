@@ -210,7 +210,7 @@ export default {
     areYouSure: 'Are you sure?',
     verify: 'Verify',
     yesContinue: 'Yes, continue',
-    websiteExample: 'e.g. https://www.kiroku.com',
+    websiteExample: 'e.g. https://www.kiroku.cz',
     description: 'Description',
     with: 'with',
     shareCode: 'Share code',

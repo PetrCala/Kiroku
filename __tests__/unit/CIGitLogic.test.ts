@@ -53,7 +53,7 @@ describe('CIGitLogic', () => {
 // function setupGitAsKirokuAdmin() {
 //   Log.info('Switching to KirokuAdmin git user');
 //   exec(`git config --local user.name ${CONST.KIROKU_ADMIN}`);
-//   exec('git config --local user.email infra+kirokuadmin@kiroku.com');
+//   exec('git config --local user.email infra+kirokuadmin@kiroku.cz');
 // }
 
 // function getVersion(): string {
