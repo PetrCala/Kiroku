@@ -14,7 +14,6 @@ const PLATFORM_IOS = 'iOS';
 const ANDROID_PACKAGE_NAME = 'com.alcohol_tracker';
 const GH_PAGES_URL = 'https://petrcala.github.io/Kiroku';
 // Public-facing Kiroku website (privacy policy, terms of service, etc.).
-// TODO: swap to https://dev.kiroku.cz / https://kiroku.cz once DNS is live.
 const KIROKU_WEB_URLS = {
   DEV: 'https://kiroku-web-dev.web.app',
   PROD: 'https://kiroku-web-prod.web.app',
@@ -69,13 +68,13 @@ const CONST = {
   APP_DOWNLOAD_LINK: `${GH_PAGES_URL}/assets/html/qr-link.html`,
   APP_QR_CODE_LINK: `${GH_PAGES_URL}/assets/images/kiroku-qr-code.png`,
   APP_URLS: {
-    DEV: 'https://dev.kiroku.com',
-    STAGING: 'https://staging.kiroku.com',
-    PROD: 'https://kiroku.com',
-    ADHOC: 'https://adhoc.kiroku.com',
-    TEST: 'https://test.kiroku.com',
+    DEV: 'https://dev.kiroku.cz',
+    STAGING: 'https://staging.kiroku.cz',
+    PROD: 'https://kiroku.cz',
+    ADHOC: 'https://adhoc.kiroku.cz',
+    TEST: 'https://test.kiroku.cz',
   },
-  KIROKU_URL: 'https://kiroku.com',
+  KIROKU_URL: 'https://kiroku.cz',
   GITHUB_URL: 'https://github.com/PetrCala/Kiroku',
   DISCORD_INVITE_URL: 'https://discord.gg/YYR5bQhS',
   KIROKU_WEB_URL,
@@ -271,7 +270,7 @@ const CONST = {
   SEARCH_SKELETON_VIEW_ITEM_HEIGHT: 108,
   EMAIL: {
     KIROKU: 'kiroku.alcohol.tracker@gmail.com',
-    KIROKU_EMAIL_DOMAIN: '@kiroku.com',
+    KIROKU_EMAIL_DOMAIN: '@kiroku.cz',
   },
   EMPTY_ARRAY,
   EMPTY_OBJECT,

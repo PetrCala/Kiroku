@@ -12,24 +12,20 @@ const get = (config: NativeConfig, key: string, defaultValue: string): string =>
 // Set default values to contributor friendly values to make development work out of the box without an .env file
 const ENVIRONMENT = get(Config, 'ENVIRONMENT', CONST.ENVIRONMENT.DEV);
 const kirokuURL = Url.addTrailingForwardSlash(
-  get(Config, 'KIROKU_URL', 'https://www.kiroku.com/'),
+  get(Config, 'KIROKU_URL', 'https://www.kiroku.cz/'),
 );
 const stagingKirokuURL = Url.addTrailingForwardSlash(
-  get(Config, 'STAGING_KIROKU_URL', 'https://staging.kiroku.com/'),
+  get(Config, 'STAGING_KIROKU_URL', 'https://staging.kiroku.cz/'),
 );
 const stagingSecureKirokuUrl = Url.addTrailingForwardSlash(
-  get(
-    Config,
-    'STAGING_SECURE_KIROKU_URL',
-    'https://staging-secure.kiroku.com/',
-  ),
+  get(Config, 'STAGING_SECURE_KIROKU_URL', 'https://staging-secure.kiroku.cz/'),
 );
 const ngrokURL = Url.addTrailingForwardSlash(get(Config, 'NGROK_URL', ''));
 const secureNgrokURL = Url.addTrailingForwardSlash(
   get(Config, 'SECURE_NGROK_URL', ''),
 );
 const secureKirokuUrl = Url.addTrailingForwardSlash(
-  get(Config, 'SECURE_KIROKU_URL', 'https://secure.kiroku.com/'),
+  get(Config, 'SECURE_KIROKU_URL', 'https://secure.kiroku.cz/'),
 );
 const useNgrok = get(Config, 'USE_NGROK', 'false') === 'true';
 const useWebProxy = get(Config, 'USE_WEB_PROXY', 'true') === 'true';

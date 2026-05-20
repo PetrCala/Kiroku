@@ -208,7 +208,7 @@ export default {
     areYouSure: 'Jste si jisti?',
     verify: 'Ověřit',
     yesContinue: 'Ano, pokračovat',
-    websiteExample: 'např. https://www.kiroku.com',
+    websiteExample: 'např. https://www.kiroku.cz',
     description: 'Popis',
     with: 's',
     shareCode: 'Sdílet kód',
