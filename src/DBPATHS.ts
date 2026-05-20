@@ -1,10 +1,5 @@
 import type {IsEqual} from 'type-fest';
-import type {
-  DeviceId,
-  FeedbackId,
-  BugId,
-  ReasonForLeavingId,
-} from './types/onyx';
+import type {FeedbackId, BugId, ReasonForLeavingId} from './types/onyx';
 import type {UserID} from './types/onyx/OnyxCommon';
 import type {NicknameKey} from './types/onyx/NicknameToId';
 
@@ -14,17 +9,6 @@ import type {NicknameKey} from './types/onyx/NicknameToId';
 const DBPATHS = {
   ROOT: '',
 
-  ACCOUNT_CREATIONS: 'account_creations',
-  ACCOUNT_CREATIONS_DEVICE_ID: {
-    route: '/account_creations/:device_id',
-    getRoute: (device_id: DeviceId) =>
-      `account_creations/${device_id}` as const,
-  },
-  ACCOUNT_CREATIONS_DEVICE_ID_USER_ID: {
-    route: '/account_creations/:device_id/:user_id',
-    getRoute: (device_id: DeviceId, user_id: UserID) =>
-      `account_creations/${device_id}/${user_id}` as const,
-  },
   BUGS: 'bugs',
   BUGS_BUG_ID: {
     route: '/bugs/:bug_id',
