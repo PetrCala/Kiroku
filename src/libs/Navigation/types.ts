@@ -1,4 +1,3 @@
- 
 import type {
   CommonActions,
   NavigationContainerRefWithCurrent,
@@ -120,6 +119,7 @@ type SettingsNavigatorParamList = {
   [SCREENS.SETTINGS.PREFERENCES.FIRST_DAY_OF_WEEK]: undefined;
   [SCREENS.SETTINGS.PREFERENCES.UNITS_TO_COLORS]: undefined;
   [SCREENS.SETTINGS.PREFERENCES.DRINKS_TO_UNITS]: undefined;
+  [SCREENS.SETTINGS.PREFERENCES.COLOR_PALETTE]: undefined;
   [SCREENS.SETTINGS.ADMIN.ROOT]: undefined;
   [SCREENS.SETTINGS.ADMIN.FEEDBACK]: undefined;
   [SCREENS.SETTINGS.ADMIN.BUGS]: undefined;

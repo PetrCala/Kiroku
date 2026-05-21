@@ -73,6 +73,7 @@ const SCREENS = {
       FIRST_DAY_OF_WEEK: 'Settings_Preferences_FirstDayOfWeek',
       UNITS_TO_COLORS: 'Settings_Preferences_UnitsToColors',
       DRINKS_TO_UNITS: 'Settings_Preferences_DrinksToUnits',
+      COLOR_PALETTE: 'Settings_Preferences_ColorPalette',
     },
 
     ADMIN: {

@@ -20,7 +20,7 @@ import CONST from '@src/CONST';
 import type {StyledSafeAreaInsets} from '@hooks/useStyledSafeAreaInsets';
 import type {Theme as RNCalendarsTheme} from 'react-native-calendars/src/types';
 import type {MarkingProps} from 'react-native-calendars/src/calendar/day/marking';
-import type {LightCalendarColors} from '@components/SessionsCalendar/DayComponent/types';
+import {isLightHex} from '@libs/SessionColorPalettes';
 import {defaultStyles} from '..';
 import type {ThemeStyles} from '..';
 import containerComposeStyles from './containerComposeStyles';
@@ -1370,11 +1370,7 @@ const createStyleUtils = (theme: ThemeColors, styles: ThemeStyles) => ({
   getSessionsCalendarDayMarkingTextStyle: (
     marking: MarkingProps | undefined,
   ): TextStyle => {
-    const isLightColor =
-      marking?.color &&
-      Object.values(CONST.CALENDAR_COLORS.LIGHT).includes(
-        marking.color as LightCalendarColors,
-      );
+    const isLightColor = !!marking?.color && isLightHex(marking.color);
     const textColor = isLightColor ? theme.textDark : theme.textLight;
     return {
       ...styles.textNormal,

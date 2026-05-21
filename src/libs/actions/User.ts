@@ -46,6 +46,7 @@ import Onyx from 'react-native-onyx';
 import ONYXKEYS from '@src/ONYXKEYS';
 import CONST from '@src/CONST';
 import {getReasonForLeavingID} from '@libs/ReasonForLeaving';
+import {PALETTES} from '@libs/SessionColorPalettes';
 import Log from '@libs/Log';
 import ERRORS from '@src/ERRORS';
 import {isEmptyObject} from '@src/types/utils/EmptyObject';
@@ -75,6 +76,7 @@ const getDefaultPreferences = (): Preferences => ({
     wine: 1,
   },
   theme: CONST.THEME.SYSTEM,
+  session_color_palette: PALETTES.CLASSIC,
 });
 
 const getDefaultUserData = (profileData: Profile): UserData => {

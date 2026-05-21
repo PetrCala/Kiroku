@@ -2,6 +2,7 @@ import React from 'react';
 import {View} from 'react-native';
 import * as KirokuIcons from '@components/Icon/KirokuIcons';
 import {convertUnitsToColors} from '@libs/DataHandling';
+import {resolvePalette} from '@libs/SessionColorPalettes';
 import Navigation from '@libs/Navigation/Navigation';
 import ROUTES from '@src/ROUTES';
 import {useDatabaseData} from '@context/global/DatabaseDataContext';
@@ -64,9 +65,10 @@ function DrinkingSessionOverview({
   let sessionColor = convertUnitsToColors(
     totalUnits,
     preferences?.units_to_colors,
+    preferences?.session_color_palette,
   );
   if (session.blackout === true) {
-    sessionColor = 'black';
+    sessionColor = resolvePalette(preferences?.session_color_palette).black;
   }
 
   return (

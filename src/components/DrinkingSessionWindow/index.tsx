@@ -25,7 +25,6 @@ import SuccessIndicator from '@components/SuccessIndicator';
 import Log from '@libs/Log';
 import DateUtils from '@libs/DateUtils';
 import {isEqual} from 'lodash';
-import type {CalendarColors} from '@components/SessionsCalendar/types';
 import type {User} from 'firebase/auth';
 import {useFocusEffect} from '@react-navigation/native';
 import ERRORS from '@src/ERRORS';
@@ -59,9 +58,7 @@ function DrinkingSessionWindow({
     ? translate('common.discard')
     : translate('common.delete');
 
-  const hasSessionChanged = () => {
-    return !isEqual(sessionRef.current, session);
-  };
+  const hasSessionChanged = () => !isEqual(sessionRef.current, session);
 
   const isSaveDisabled = totalUnits <= 0;
 
@@ -165,6 +162,7 @@ function DrinkingSessionWindow({
     const newSessionColor = convertUnitsToColors(
       totalUnits,
       preferences.units_to_colors,
+      preferences.session_color_palette,
     );
     setTotalUnits(newTotalUnits);
     setSessionColor(newSessionColor);
@@ -220,7 +218,7 @@ function DrinkingSessionWindow({
           ]}>
           <Text
             style={[
-              styles.sessionUnitCountText(sessionColor as CalendarColors),
+              styles.sessionUnitCountText(sessionColor),
               styles.shadowStrong,
             ]}>
             {totalUnits}

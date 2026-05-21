@@ -19,6 +19,24 @@ type UnitsToColors = {
 /** A model mapping drinks to unit values */
 type DrinksToUnits = Record<DrinkKey, number>;
 
+/** A model mapping session band names to hex colors */
+type SessionColorPalette = {
+  /** Hex color for zero-unit (green) band */
+  green: string;
+
+  /** Hex color for low-unit (yellow) band */
+  yellow: string;
+
+  /** Hex color for mid-unit (orange) band */
+  orange: string;
+
+  /** Hex color for high-unit (red) band */
+  red: string;
+
+  /** Hex color for blackout sessions */
+  black: string;
+};
+
 /** User's preferences */
 type Preferences = {
   /** User's preferred first day of week */
@@ -35,10 +53,19 @@ type Preferences = {
 
   /** User's preferred theme */
   theme?: Theme;
+
+  /** User's selected session color palette */
+  session_color_palette?: SessionColorPalette;
 };
 
 /** A collection of preferences of multiple users */
 type PreferencesList = Record<UserID, Preferences>;
 
 export default Preferences;
-export type {UnitsToColors, DrinksToUnits, PreferencesList, Theme};
+export type {
+  UnitsToColors,
+  DrinksToUnits,
+  PreferencesList,
+  Theme,
+  SessionColorPalette,
+};

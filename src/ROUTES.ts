@@ -113,6 +113,7 @@ const ROUTES = {
   SETTINGS_FIRST_DAY_OF_WEEK: 'settings/preferences/first-day-of-week',
   SETTINGS_UNITS_TO_COLORS: 'settings/preferences/units-to-colors',
   SETTINGS_DRINKS_TO_UNITS: 'settings/preferences/drinks-to-units',
+  SETTINGS_COLOR_PALETTE: 'settings/preferences/color-palette',
 
   SETTINGS_TERMS_OF_SERVICE: 'settings/terms-of-service',
   SETTINGS_PRIVACY_POLICY: 'settings/privacy-policy',

@@ -5,6 +5,7 @@ import {
   sumDrinksOfSingleType,
   convertUnitsToColors,
 } from '@libs/DataHandling';
+import {resolvePalette} from '@libs/SessionColorPalettes';
 import useLocalize from '@hooks/useLocalize';
 import * as KirokuIcons from '@components/Icon/KirokuIcons';
 import type {DrinkingSession} from '@src/types/onyx';
@@ -103,11 +104,15 @@ function SessionSummaryScreen({route}: SessionSummaryScreenProps) {
   };
 
   const sessionColor = session.blackout
-    ? 'black'
-    : convertUnitsToColors(totalUnits, preferences?.units_to_colors);
+    ? resolvePalette(preferences?.session_color_palette).black
+    : convertUnitsToColors(
+        totalUnits,
+        preferences?.units_to_colors,
+        preferences?.session_color_palette,
+      );
 
-  const generalMenuItemsData: Menu = useMemo(() => {
-    return {
+  const generalMenuItemsData: Menu = useMemo(
+    () => ({
       sectionTranslationKey: 'sessionSummaryScreen.generalSection.title',
       items: [
         {
@@ -152,19 +157,21 @@ function SessionSummaryScreen({route}: SessionSummaryScreenProps) {
           shouldHide: !session.note,
         },
       ],
-    };
-  }, [
-    translate,
-    session,
-    lastDrinkAdded,
-    sessionColor,
-    sessionDay,
-    sessionEndTime,
-    sessionStartTime,
-    totalUnits,
-    wasLiveSession,
-    styles,
-  ]);
+    }),
+    [
+      translate,
+      session.blackout,
+      session.note,
+      lastDrinkAdded,
+      sessionColor,
+      sessionDay,
+      sessionEndTime,
+      sessionStartTime,
+      totalUnits,
+      wasLiveSession,
+      styles,
+    ],
+  );
 
   const drinkMenuItemsData: Menu = useMemo(() => {
     const drinkSums = {
@@ -198,8 +205,8 @@ function SessionSummaryScreen({route}: SessionSummaryScreenProps) {
     };
   }, [session.drinks]);
 
-  const otherMenuItemsData: Menu = useMemo(() => {
-    return {
+  const otherMenuItemsData: Menu = useMemo(
+    () => ({
       sectionTranslationKey: 'sessionSummaryScreen.otherSection.title',
       items: [
         {
@@ -215,53 +222,52 @@ function SessionSummaryScreen({route}: SessionSummaryScreenProps) {
           ),
         },
       ],
-    };
-  }, [session, translate, wasLiveSession]);
+    }),
+    [session.timezone, translate, wasLiveSession],
+  );
 
   const getSessionSummarySection = useCallback(
-    (menuItemsData: Menu) => {
-      return (
-        <Section
-          title={translate(menuItemsData.sectionTranslationKey)}
-          titleStyles={styles.sectionTitleSimple}
-          containerStyles={styles.pb0}
-          childrenStyles={styles.pt3}>
-          <View>
-            {menuItemsData.items.map(
-              (detail, index) =>
-                !detail?.shouldHide && (
-                  <MenuItem
-                    // eslint-disable-next-line react/no-array-index-key
-                    key={`${detail.titleKey}_${index}`}
-                    title={detail.titleKey && translate(detail.titleKey)}
-                    titleStyle={styles.plainSectionTitle}
-                    description={detail.description}
-                    descriptionTextStyle={[
-                      styles.textNormalThemeText,
-                      styles.mw75,
-                      styles.textAlignRight,
-                    ]}
-                    numberOfLinesDescription={5}
-                    wrapperStyle={styles.sectionMenuItemTopDescription}
-                    style={[
-                      styles.pt0,
-                      index !== menuItemsData.items.length - 1 && styles.pb0,
-                      // Enable the following to add borders in between items
-                      // styles.borderBottomRounded,
-                      // {borderBottomLeftRadius: 35, borderBottomRightRadius: 35},
-                    ]}
-                    disabled
-                    shouldGreyOutWhenDisabled={false}
-                    shouldUseRowFlexDirection
-                    shouldShowRightComponent={!!detail.rightComponent}
-                    rightComponent={detail.rightComponent}
-                  />
-                ),
-            )}
-          </View>
-        </Section>
-      );
-    },
+    (menuItemsData: Menu) => (
+      <Section
+        title={translate(menuItemsData.sectionTranslationKey)}
+        titleStyles={styles.sectionTitleSimple}
+        containerStyles={styles.pb0}
+        childrenStyles={styles.pt3}>
+        <View>
+          {menuItemsData.items.map(
+            (detail, index) =>
+              !detail?.shouldHide && (
+                <MenuItem
+                  // eslint-disable-next-line react/no-array-index-key
+                  key={`${detail.titleKey}_${index}`}
+                  title={detail.titleKey && translate(detail.titleKey)}
+                  titleStyle={styles.plainSectionTitle}
+                  description={detail.description}
+                  descriptionTextStyle={[
+                    styles.textNormalThemeText,
+                    styles.mw75,
+                    styles.textAlignRight,
+                  ]}
+                  numberOfLinesDescription={5}
+                  wrapperStyle={styles.sectionMenuItemTopDescription}
+                  style={[
+                    styles.pt0,
+                    index !== menuItemsData.items.length - 1 && styles.pb0,
+                    // Enable the following to add borders in between items
+                    // styles.borderBottomRounded,
+                    // {borderBottomLeftRadius: 35, borderBottomRightRadius: 35},
+                  ]}
+                  disabled
+                  shouldGreyOutWhenDisabled={false}
+                  shouldUseRowFlexDirection
+                  shouldShowRightComponent={!!detail.rightComponent}
+                  rightComponent={detail.rightComponent}
+                />
+              ),
+          )}
+        </View>
+      </Section>
+    ),
     [
       styles.pb0,
       styles.plainSectionTitle,

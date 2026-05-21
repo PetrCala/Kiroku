@@ -20,6 +20,11 @@ import LocaleUtils from '@libs/LocaleUtils';
 import Section from '@components/Section';
 import MenuItem from '@components/MenuItem';
 import CONST from '@src/CONST';
+import type {PaletteId} from '@libs/SessionColorPalettes';
+import {
+  DEFAULT_PALETTE_ID,
+  getPaletteIdFromColors,
+} from '@libs/SessionColorPalettes';
 
 type MenuData = {
   title?: string;
@@ -53,8 +58,8 @@ function PreferencesScreen({route}: PreferencesScreenProps) {
   //   setCurrentPreferences(prev => ({...prev, first_day_of_week: newValue}));
   // };
 
-  const generalMenuItemsData: Menu = useMemo(() => {
-    return {
+  const generalMenuItemsData: Menu = useMemo(
+    () => ({
       sectionTranslationKey: 'preferencesScreen.generalSection.title',
       items: [
         // {
@@ -75,10 +80,25 @@ function PreferencesScreen({route}: PreferencesScreenProps) {
           pageRoute: ROUTES.SETTINGS_THEME,
         },
       ],
-    };
-  }, [translate, preferences?.theme, preferredLocale]); // Check whether preferred locale does not cause infinite re-render
+    }),
+    [translate, preferences?.theme, preferredLocale],
+  ); // Check whether preferred locale does not cause infinite re-render
+
+  const activePaletteId: PaletteId =
+    getPaletteIdFromColors(preferences?.session_color_palette) ??
+    DEFAULT_PALETTE_ID;
 
   const drinksAndUnitsMenuItemsData: Menu = useMemo(() => {
+    const paletteNameKeys: Record<
+      PaletteId,
+      'classic' | 'sunset' | 'ocean' | 'mono' | 'colorblindSafe'
+    > = {
+      CLASSIC: 'classic',
+      SUNSET: 'sunset',
+      OCEAN: 'ocean',
+      MONO: 'mono',
+      COLORBLIND_SAFE: 'colorblindSafe',
+    };
     return {
       sectionTranslationKey: 'preferencesScreen.drinksAndUnitsSection.title',
       subtitle: translate(
@@ -97,9 +117,18 @@ function PreferencesScreen({route}: PreferencesScreenProps) {
           ),
           pageRoute: ROUTES.SETTINGS_UNITS_TO_COLORS,
         },
+        {
+          title: translate(
+            'preferencesScreen.drinksAndUnitsSection.colorPalette',
+          ),
+          description: translate(
+            `colorPaletteScreen.palettes.${paletteNameKeys[activePaletteId]}`,
+          ),
+          pageRoute: ROUTES.SETTINGS_COLOR_PALETTE,
+        },
       ],
     };
-  }, [translate]);
+  }, [translate, activePaletteId]);
 
   /**
    * Retuns JSX.Element with menu items
@@ -107,41 +136,39 @@ function PreferencesScreen({route}: PreferencesScreenProps) {
    * @returns the menu items for passed data
    */
   const getMenuItemsSection = useCallback(
-    (menuItemsData: Menu) => {
-      return (
-        <Section
-          title={translate(menuItemsData.sectionTranslationKey)}
-          titleStyles={styles.generalSectionTitle}
-          subtitle={menuItemsData.subtitle}
-          subtitleMuted
-          isCentralPane
-          childrenStyles={styles.pt3}>
-          <>
-            {menuItemsData.items.map((detail, index) => (
-              <MenuItem
-                // eslint-disable-next-line react/no-array-index-key
-                key={`${detail.title}_${index}`}
-                title={detail.title}
-                titleStyle={styles.plainSectionTitle}
-                description={detail.description}
-                wrapperStyle={styles.sectionMenuItemTopDescription}
-                disabled={detail.disabled}
-                shouldGreyOutWhenDisabled={false}
-                shouldUseRowFlexDirection
-                shouldShowRightIcon={!detail.rightComponent}
-                shouldShowRightComponent={!!detail.rightComponent}
-                rightComponent={detail.rightComponent}
-                onPress={singleExecution(() => {
-                  waitForNavigate(() => {
-                    Navigation.navigate(detail.pageRoute);
-                  })();
-                })}
-              />
-            ))}
-          </>
-        </Section>
-      );
-    },
+    (menuItemsData: Menu) => (
+      <Section
+        title={translate(menuItemsData.sectionTranslationKey)}
+        titleStyles={styles.generalSectionTitle}
+        subtitle={menuItemsData.subtitle}
+        subtitleMuted
+        isCentralPane
+        childrenStyles={styles.pt3}>
+        <>
+          {menuItemsData.items.map((detail, index) => (
+            <MenuItem
+              // eslint-disable-next-line react/no-array-index-key
+              key={`${detail.title}_${index}`}
+              title={detail.title}
+              titleStyle={styles.plainSectionTitle}
+              description={detail.description}
+              wrapperStyle={styles.sectionMenuItemTopDescription}
+              disabled={detail.disabled}
+              shouldGreyOutWhenDisabled={false}
+              shouldUseRowFlexDirection
+              shouldShowRightIcon={!detail.rightComponent}
+              shouldShowRightComponent={!!detail.rightComponent}
+              rightComponent={detail.rightComponent}
+              onPress={singleExecution(() => {
+                waitForNavigate(() => {
+                  Navigation.navigate(detail.pageRoute);
+                })();
+              })}
+            />
+          ))}
+        </>
+      </Section>
+    ),
     [
       singleExecution,
       styles.generalSectionTitle,

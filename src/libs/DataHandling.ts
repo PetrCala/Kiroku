@@ -9,6 +9,7 @@ import type {
   DrinkingSessionArray,
   DrinkingSessionList,
   Preferences,
+  SessionColorPalette,
   UnitsToColors,
   DrinksToUnits,
   DrinksList,
@@ -21,6 +22,7 @@ import _ from 'lodash';
 import type {TranslationPaths} from '@src/languages/types';
 import * as DSUtils from './DrinkingSessionUtils';
 import {getRandomInt} from './Choice';
+import {isLightHex, resolvePalette} from './SessionColorPalettes';
 
 function formatDate(date: Date): DateString {
   return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(
@@ -232,23 +234,27 @@ function sessionsToDayMarking(
   if (isEmptyObject(sessions)) {
     return null;
   }
-  const totalUnits = sessions.reduce((sum, session) => {
-    return (
+  const totalUnits = sessions.reduce(
+    (sum, session) =>
       sum +
-      DSUtils.calculateTotalUnits(session.drinks, preferences.drinks_to_units)
-    );
-  }, 0);
+      DSUtils.calculateTotalUnits(session.drinks, preferences.drinks_to_units),
+    0,
+  );
 
   const hasBlackout = sessions.some(obj => obj.blackout === true);
+  const palette = resolvePalette(preferences.session_color_palette);
   const color: CalendarColors = hasBlackout
-    ? CONST.CALENDAR_COLORS.DARK.BLACK
-    : convertUnitsToColors(totalUnits, preferences.units_to_colors);
+    ? palette.black
+    : convertUnitsToColors(
+        totalUnits,
+        preferences.units_to_colors,
+        preferences.session_color_palette,
+      );
 
-  // Determine text color based on background color
-  const shouldUseContrast = color in Object.values(CONST.CALENDAR_COLORS.DARK);
-  const textColor = shouldUseContrast
-    ? CONST.CALENDAR_COLORS.TEXT.WHITE
-    : CONST.CALENDAR_COLORS.TEXT.BLACK;
+  // Determine text color based on background color luminance
+  const textColor = isLightHex(color)
+    ? CONST.CALENDAR_COLORS.TEXT.BLACK
+    : CONST.CALENDAR_COLORS.TEXT.WHITE;
 
   const markingObject: SessionsCalendarDayMarking = {
     units: totalUnits,
@@ -269,15 +275,15 @@ function sumAllDrinks(drinks: DrinksList | undefined): number {
   if (isEmptyObject(drinks)) {
     return 0;
   }
-  return Object.values(drinks).reduce((total, drinkTypes) => {
-    return (
+  return Object.values(drinks).reduce(
+    (total, drinkTypes) =>
       total +
       Object.values(drinkTypes).reduce(
         (subTotal, drinkCount) => subTotal + (drinkCount ?? 0),
         0,
-      )
-    );
-  }, 0);
+      ),
+    0,
+  );
 }
 
 /** Sum up drinks of a specific type of alcohol across multiple sessions
@@ -481,21 +487,22 @@ function getZeroDrinksList(): DrinksList {
 function convertUnitsToColors(
   units: number,
   unitsToColors: UnitsToColors | undefined,
+  palette?: SessionColorPalette,
 ): CalendarColors {
+  const p = resolvePalette(palette);
   if (!unitsToColors) {
-    return CONST.CALENDAR_COLORS.DARK.GREEN;
+    return p.green;
   }
-  let sessionColor: CalendarColors;
   if (units === 0) {
-    sessionColor = CONST.CALENDAR_COLORS.DARK.GREEN;
-  } else if (units <= unitsToColors.yellow) {
-    sessionColor = CONST.CALENDAR_COLORS.LIGHT.YELLOW;
-  } else if (units <= unitsToColors.orange) {
-    sessionColor = CONST.CALENDAR_COLORS.LIGHT.ORANGE;
-  } else {
-    sessionColor = CONST.CALENDAR_COLORS.DARK.RED;
+    return p.green;
   }
-  return sessionColor;
+  if (units <= unitsToColors.yellow) {
+    return p.yellow;
+  }
+  if (units <= unitsToColors.orange) {
+    return p.orange;
+  }
+  return p.red;
 }
 
 /** Insert the key of a drink and find its matching verbose name.

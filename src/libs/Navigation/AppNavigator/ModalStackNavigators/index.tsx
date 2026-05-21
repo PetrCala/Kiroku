@@ -137,6 +137,9 @@ const SettingsModalStackNavigator =
     [SCREENS.SETTINGS.PREFERENCES.DRINKS_TO_UNITS]: () =>
       require<ReactComponentModule>('@screens/Settings/Preferences/DrinksToUnitsScreen')
         .default,
+    [SCREENS.SETTINGS.PREFERENCES.COLOR_PALETTE]: () =>
+      require<ReactComponentModule>('@screens/Settings/Preferences/ColorPaletteScreen')
+        .default,
     [SCREENS.SETTINGS.ADMIN.ROOT]: () =>
       require<ReactComponentModule>('@screens/Settings/Admin/AdminScreen')
         .default,

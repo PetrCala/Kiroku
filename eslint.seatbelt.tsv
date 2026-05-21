@@ -669,7 +669,6 @@
 "src/components/DatePicker/CalendarPicker/index.tsx"	"rulesdir/no-use-state-initializer-functions"	4
 "src/components/DatePicker/index.tsx"	"react-hooks/set-state-in-effect"	1
 "src/components/DisplayNames/DisplayNamesWithTooltip.tsx"	"react-hooks/refs"	6
-"src/components/DrinkingSessionWindow/index.tsx"	"arrow-body-style"	1
 "src/components/DrinkingSessionWindow/index.tsx"	"react-hooks/set-state-in-render"	2
 "src/components/FlatList/index.tsx"	"react-hooks/refs"	1
 "src/components/FloatingActionButton.tsx"	"rulesdir/prefer-narrow-hook-dependencies"	1
@@ -748,7 +747,6 @@
 "src/libs/ApiUtils.ts"	"rulesdir/no-onyx-connect"	1
 "src/libs/Console/index.ts"	"@typescript-eslint/no-base-to-string"	2
 "src/libs/Console/index.ts"	"rulesdir/no-onyx-connect"	1
-"src/libs/DataHandling.ts"	"arrow-body-style"	2
 "src/libs/DateUtils.ts"	"@typescript-eslint/switch-exhaustiveness-check"	1
 "src/libs/DateUtils.ts"	"arrow-body-style"	1
 "src/libs/DateUtils.ts"	"rulesdir/no-onyx-connect"	2
@@ -814,10 +812,8 @@
 "src/screens/DrinkingSession/EditSessionScreen.tsx"	"@typescript-eslint/no-unnecessary-type-assertion"	1
 "src/screens/DrinkingSession/LiveSessionScreen.tsx"	"@typescript-eslint/no-unnecessary-type-assertion"	1
 "src/screens/DrinkingSession/SessionDateScreen.tsx"	"@typescript-eslint/no-unnecessary-type-assertion"	1
-"src/screens/DrinkingSession/SessionSummaryScreen.tsx"	"arrow-body-style"	3
 "src/screens/DrinkingSession/SessionSummaryScreen.tsx"	"react-hooks/set-state-in-effect"	1
 "src/screens/DrinkingSession/SessionSummaryScreen.tsx"	"rulesdir/no-use-state-initializer-functions"	2
-"src/screens/DrinkingSession/SessionSummaryScreen.tsx"	"rulesdir/prefer-narrow-hook-dependencies"	2
 "src/screens/HomeScreen.tsx"	"react-hooks/set-state-in-effect"	3
 "src/screens/HomeScreen.tsx"	"rulesdir/no-use-state-initializer-functions"	2
 "src/screens/Profile/FriendsFriendsScreen.tsx"	"react-hooks/set-state-in-effect"	2
@@ -832,7 +828,6 @@
 "src/screens/Settings/AppShareScreen.tsx"	"react-hooks/refs"	1
 "src/screens/Settings/AppShareScreen.tsx"	"rulesdir/prefer-narrow-hook-dependencies"	1
 "src/screens/Settings/Preferences/DrinksToUnitsScreen.tsx"	"arrow-body-style"	1
-"src/screens/Settings/Preferences/PreferencesScreen.tsx"	"arrow-body-style"	3
 "src/screens/Settings/Preferences/UnitsToColorsScreen.tsx"	"arrow-body-style"	1
 "src/screens/Settings/SettingsScreen.tsx"	"arrow-body-style"	3
 "src/screens/SignUp/SignUpScreenLayout/index.tsx"	"rulesdir/prefer-narrow-hook-dependencies"	1

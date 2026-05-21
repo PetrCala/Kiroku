@@ -1,4 +1,3 @@
- 
 import type {LinkingOptions} from '@react-navigation/native';
 import type {RootStackParamList} from '@navigation/types';
 import NAVIGATORS from '@src/NAVIGATORS';
@@ -129,6 +128,10 @@ const config: LinkingOptions<RootStackParamList>['config'] = {
             },
             [SCREENS.SETTINGS.PREFERENCES.DRINKS_TO_UNITS]: {
               path: ROUTES.SETTINGS_DRINKS_TO_UNITS,
+              exact: true,
+            },
+            [SCREENS.SETTINGS.PREFERENCES.COLOR_PALETTE]: {
+              path: ROUTES.SETTINGS_COLOR_PALETTE,
               exact: true,
             },
             [SCREENS.SETTINGS.ACCOUNT.USER_NAME]: {
