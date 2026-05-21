@@ -216,7 +216,9 @@ function VerifyEmailModal() {
                       {translate('settingsScreen.signOut')}
                     </Text>
                   </PressableWithFeedback>
-                  {!CONFIG.IS_IN_PRODUCTION && (
+                  {(CONFIG.IS_IN_DEVELOPMENT ||
+                    CONFIG.IS_IN_STAGING ||
+                    CONFIG.IS_IN_ADHOC) && (
                     <PressableWithFeedback
                       style={[styles.mt2, styles.alignItemsCenter]}
                       onPress={onDevSkipPress}
