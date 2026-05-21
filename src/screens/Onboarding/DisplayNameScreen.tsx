@@ -113,6 +113,7 @@ function DisplayNameScreen({}: DisplayNameScreenProps) {
               InputComponent={TextInput}
               inputID={INPUT_IDS.USERNAME}
               name="username"
+              testID={CONST.TEST_IDS.ONBOARDING.DISPLAY_NAME_INPUT}
               label={translate('common.username')}
               aria-label={translate('common.username')}
               role={CONST.ROLE.PRESENTATION}

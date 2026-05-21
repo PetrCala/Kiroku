@@ -15,6 +15,7 @@ import INPUT_IDS from '@src/types/form/ForgotPasswordForm';
 import FormProvider from '@components/Form/FormProvider';
 import Text from '@components/Text';
 import type {Errors} from '@src/types/onyx/OnyxCommon';
+import CONST from '@src/CONST';
 import InputWrapper from '@components/Form/InputWrapper';
 import variables from '@src/styles/variables';
 import TextInput from '@components/TextInput';
@@ -107,6 +108,7 @@ function ForgotPasswordScreen() {
               InputComponent={TextInput}
               inputID={INPUT_IDS.EMAIL}
               name="email"
+              testID={CONST.TEST_IDS.FORGOT_PASSWORD.EMAIL_INPUT}
               shouldShowClearButton
               shouldSaveDraft
               maxAutoGrowHeight={variables.textInputAutoGrowMaxHeight}
@@ -120,7 +122,7 @@ function ForgotPasswordScreen() {
               <DotIndicatorMessage
                 style={[styles.mv2]}
                 type="error"
-                // eslint-disable-next-line @typescript-eslint/naming-convention,@typescript-eslint/prefer-nullish-coalescing
+                // eslint-disable-next-line @typescript-eslint/naming-convention
                 messages={{0: serverErrorMessage || ''}}
               />
             )}
@@ -128,7 +130,7 @@ function ForgotPasswordScreen() {
               <DotIndicatorMessage
                 style={[styles.mv2]}
                 type="success"
-                // eslint-disable-next-line @typescript-eslint/naming-convention,@typescript-eslint/prefer-nullish-coalescing
+                // eslint-disable-next-line @typescript-eslint/naming-convention
                 messages={{0: successMessage || ''}}
               />
             )}

@@ -192,6 +192,7 @@ function AuthScreen({route}: AuthScreenProps) {
               InputComponent={TextInput}
               inputID={INPUT_IDS.EMAIL}
               name="email"
+              testID={CONST.TEST_IDS.AUTH.EMAIL_INPUT}
               textContentType="emailAddress"
               keyboardType="email-address"
               label={translate('login.email')}
@@ -203,6 +204,7 @@ function AuthScreen({route}: AuthScreenProps) {
               InputComponent={TextInput}
               inputID={INPUT_IDS.PASSWORD}
               name="password"
+              testID={CONST.TEST_IDS.AUTH.PASSWORD_INPUT}
               label={translate('common.password')}
               aria-label={translate('common.password')}
               defaultValue=""
@@ -217,6 +219,7 @@ function AuthScreen({route}: AuthScreenProps) {
             {!isSignUp && (
               <PressableWithFeedback
                 style={[styles.link, styles.mt4]}
+                testID={CONST.TEST_IDS.AUTH.FORGOT_PASSWORD_LINK}
                 onPress={() => Navigation.navigate(ROUTES.FORGOT_PASSWORD)}
                 role={CONST.ROLE.LINK}
                 accessibilityLabel={translate('password.forgot')}>
@@ -227,7 +230,7 @@ function AuthScreen({route}: AuthScreenProps) {
               <DotIndicatorMessage
                 style={[styles.mv2]}
                 type="error"
-                // eslint-disable-next-line @typescript-eslint/naming-convention,@typescript-eslint/prefer-nullish-coalescing
+                // eslint-disable-next-line @typescript-eslint/naming-convention
                 messages={{0: serverErrorMessage || ''}}
               />
             )}
@@ -236,6 +239,7 @@ function AuthScreen({route}: AuthScreenProps) {
             <Text style={styles.mr1}>{toggleHelperText}</Text>
             <PressableWithFeedback
               style={[styles.link]}
+              testID={CONST.TEST_IDS.AUTH.TOGGLE_MODE}
               onPress={onToggleMode}
               role={CONST.ROLE.BUTTON}
               accessibilityLabel={toggleActionText}>

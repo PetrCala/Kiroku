@@ -952,6 +952,23 @@ const CONST = {
     // Number of concurrent taps to open then the Test modal menu
     NUMBER_OF_TAPS: 4,
   },
+  // Stable identifiers for end-to-end tests (Maestro). Reference these from
+  // both the screens and the .maestro/ flows so element targeting survives
+  // copy and translation changes. See contributingGuides/E2E_TESTING.md.
+  TEST_IDS: {
+    AUTH: {
+      EMAIL_INPUT: 'auth-email-input',
+      PASSWORD_INPUT: 'auth-password-input',
+      FORGOT_PASSWORD_LINK: 'auth-forgot-password-link',
+      TOGGLE_MODE: 'auth-toggle-mode',
+    },
+    FORGOT_PASSWORD: {
+      EMAIL_INPUT: 'forgot-password-email-input',
+    },
+    ONBOARDING: {
+      DISPLAY_NAME_INPUT: 'onboarding-display-name-input',
+    },
+  },
   TIMING: {
     HOMEPAGE_INITIAL_RENDER: 'homepage_initial_render',
     SEARCH_RENDER: 'search_render',

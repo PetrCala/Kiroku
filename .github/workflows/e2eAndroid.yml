@@ -1,0 +1,95 @@
+name: E2E Android (Maestro)
+
+# Runs Maestro flows in .maestro/flows/ on every PR. Targets the staging
+# Android variant against the dev Firebase project. iOS coverage and
+# additional flows (email verification, OAuth providers) are tracked
+# separately — see contributingGuides/E2E_TESTING.md.
+on:
+  pull_request:
+    types: [opened, synchronize, reopened, ready_for_review]
+  workflow_dispatch:
+
+# Cancel in-progress runs when a new commit is pushed to the same PR.
+concurrency:
+  group: e2e-android-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+  pull-requests: write
+
+jobs:
+  maestro:
+    name: Run Maestro flows on Android emulator
+    if: github.event.pull_request.draft != true
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    env:
+      # Reuse the staging .env so the build talks to the dev Firebase project.
+      STAGING_ENV_FILE: ${{ secrets.STAGING_ENV_FILE }}
+      FIREBASE_DEV_ADMIN_SA: ${{ secrets.FIREBASE_DEV_ADMIN_SA }}
+      MAESTRO_RUN_ID: pr-${{ github.event.pull_request.number || github.run_id }}-${{ github.run_attempt }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+
+      - name: Setup Node
+        uses: ./.github/actions/composite/setupNode
+
+      - name: Setup Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'oracle'
+          java-version: '17'
+          cache: 'gradle'
+
+      - name: Hydrate .env.staging
+        run: |
+          if [ -z "$STAGING_ENV_FILE" ]; then
+            echo "::error::STAGING_ENV_FILE secret is not set"
+            exit 1
+          fi
+          echo "$STAGING_ENV_FILE" > .env.staging
+
+      - name: Install Maestro CLI
+        run: |
+          curl -Ls https://get.maestro.mobile.dev | bash
+          echo "$HOME/.maestro/bin" >> "$GITHUB_PATH"
+
+      - name: Enable KVM
+        run: |
+          echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
+          sudo udevadm control --reload-rules
+          sudo udevadm trigger --name-match=kvm
+
+      - name: Build staging debug APK
+        run: |
+          cd android
+          ./gradlew :app:assembleStagingDebug --no-daemon
+
+      - name: Run Maestro flows on emulator
+        uses: reactivecircus/android-emulator-runner@v2
+        with:
+          api-level: 33
+          target: google_apis
+          arch: x86_64
+          profile: pixel_6
+          disable-animations: true
+          script: |
+            adb install -r android/app/build/outputs/apk/staging/debug/app-staging-debug.apk
+            npm run e2e:android
+
+      - name: Upload Maestro artifacts on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: maestro-debug-${{ github.run_attempt }}
+          path: |
+            ~/.maestro/tests/**/*.png
+            ~/.maestro/tests/**/*.mp4
+            ~/.maestro/tests/**/*.xml
+            ~/.maestro/tests/**/commands*.json
+          if-no-files-found: ignore
+          retention-days: 7

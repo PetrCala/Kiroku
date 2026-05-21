@@ -50,7 +50,9 @@
     "bump": "./scripts/bumpVersion.sh",
     "build": "tsc",
     "generate-icons": "node scripts/generate-icons.mjs",
-    "sync-brand-colors": "node scripts/sync-brand-colors.mjs"
+    "sync-brand-colors": "node scripts/sync-brand-colors.mjs",
+    "e2e:setup": "curl -Ls 'https://get.maestro.mobile.dev' | bash",
+    "e2e:android": "ts-node scripts/maestro/run.ts"
   },
   "dependencies": {
     "@babel/plugin-proposal-private-methods": "^7.18.6",

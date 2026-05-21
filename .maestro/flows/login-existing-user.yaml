@@ -1,0 +1,30 @@
+# Existing user log-in:
+#   Pre-seeded user (scripts/maestro/run.ts uses Admin SDK to create +
+#   mark verified before this flow runs) -> AuthScreen (logIn) -> Home.
+appId: com.alcohol_tracker.staging
+env:
+  EMAIL: ''
+  PASSWORD: ''
+tags:
+  - login
+  - smoke
+---
+- launchApp:
+    clearState: true
+- assertVisible:
+    id: 'Auth Screen'
+
+# Switch from sign-up to log-in mode
+- tapOn:
+    id: 'auth-toggle-mode'
+
+- tapOn:
+    id: 'auth-email-input'
+- inputText: ${EMAIL}
+- tapOn:
+    id: 'auth-password-input'
+- inputText: ${PASSWORD}
+- hideKeyboard
+- tapOn: 'Log in'
+
+- assertVisible: 'Today'

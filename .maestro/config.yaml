@@ -1,0 +1,7 @@
+# Maestro workspace config. Flows in flows/ default to the staging build's
+# Android applicationId (com.alcohol_tracker.staging). Override per-flow if
+# you need to target a different variant or platform.
+#
+# Docs: https://maestro.mobile.dev/cli/test-suites-and-reports#flow-configuration
+flows:
+  - flows/
