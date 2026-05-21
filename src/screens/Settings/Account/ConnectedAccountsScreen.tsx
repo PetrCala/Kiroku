@@ -7,6 +7,8 @@ import FullScreenLoadingIndicator from '@components/FullscreenLoadingIndicator';
 import HeaderWithBackButton from '@components/HeaderWithBackButton';
 import Icon from '@components/Icon';
 import * as KirokuIcons from '@components/Icon/KirokuIcons';
+import LinkAnimation from '@components/LinkAnimation';
+import Modal from '@components/Modal';
 import ScreenWrapper from '@components/ScreenWrapper';
 import ScrollView from '@components/ScrollView';
 import Text from '@components/Text';
@@ -45,7 +47,18 @@ type PendingReauth = {
   providerId: string;
 };
 
+type SuccessOverlay = {
+  mode: 'link' | 'unlink';
+  providerId: string;
+};
+
 const APPLE_PRIVATE_RELAY_SUFFIX = '.privaterelay.appleid.com';
+
+/**
+ * How long the success animation overlay lingers after the animation reports
+ * complete. Gives the user a beat to read the text before the modal dismisses.
+ */
+const SUCCESS_OVERLAY_HOLD_MS = 600;
 
 function rowStatusText(
   row: ProviderRow,
@@ -83,6 +96,11 @@ function ConnectedAccountsScreen({route}: ConnectedAccountsScreenProps) {
   // below don't need to reference themselves — sidesteps a TDZ that
   // react-hooks/immutability would otherwise flag.
   const [pendingReauth, setPendingReauth] = useState<PendingReauth | null>(
+    null,
+  );
+  // The brief celebratory animation that plays after a successful link/unlink.
+  // Cleared by the animation's onAnimationEnd → SUCCESS_OVERLAY_HOLD_MS timer.
+  const [successOverlay, setSuccessOverlay] = useState<SuccessOverlay | null>(
     null,
   );
 
@@ -159,6 +177,7 @@ function ConnectedAccountsScreen({route}: ConnectedAccountsScreenProps) {
         }
         await User.linkOAuthProvider(auth, credential);
         bumpVersion();
+        setSuccessOverlay({mode: 'link', providerId});
       } catch (error) {
         const code = (error as {code?: string}).code;
         if (code === ERRORS.AUTH.REQUIRES_RECENT_LOGIN) {
@@ -180,6 +199,7 @@ function ConnectedAccountsScreen({route}: ConnectedAccountsScreenProps) {
       try {
         await User.unlinkOAuthProvider(auth, providerId);
         bumpVersion();
+        setSuccessOverlay({mode: 'unlink', providerId});
       } catch (error) {
         const code =
           (error as {code?: string}).code ?? (error as Error).message;
@@ -289,7 +309,69 @@ function ConnectedAccountsScreen({route}: ConnectedAccountsScreenProps) {
           onReauthenticated={handleReauthenticated}
         />
       ) : null}
+      <SuccessOverlayModal
+        overlay={successOverlay}
+        rows={rows}
+        translate={translate}
+        onDismiss={() => setSuccessOverlay(null)}
+      />
     </ScreenWrapper>
+  );
+}
+
+type SuccessOverlayModalProps = {
+  overlay: SuccessOverlay | null;
+  rows: ProviderRow[];
+  translate: ReturnType<typeof useLocalize>['translate'];
+  onDismiss: () => void;
+};
+
+/**
+ * Centered modal that wraps `LinkAnimation` for the brief post-action moment.
+ * After the animation reports complete, holds for `SUCCESS_OVERLAY_HOLD_MS`
+ * so the user can read the text, then unmounts via `onDismiss`. Tap-anywhere
+ * dismissal is intentionally disabled — the animation is short, and accidental
+ * dismissal in the middle of a transform looks jarring.
+ */
+function SuccessOverlayModal({
+  overlay,
+  rows,
+  translate,
+  onDismiss,
+}: SuccessOverlayModalProps) {
+  const styles = useThemeStyles();
+  if (!overlay) {
+    return null;
+  }
+  const row = rows.find(r => r.providerId === overlay.providerId);
+  if (!row?.icon) {
+    return null;
+  }
+  const text =
+    overlay.mode === 'link'
+      ? translate('connectedAccounts.success.connected', {provider: row.label})
+      : translate('connectedAccounts.success.disconnected', {
+          provider: row.label,
+        });
+  return (
+    <Modal
+      isVisible
+      type={CONST.MODAL.MODAL_TYPE.CENTERED_UNSWIPEABLE}
+      onClose={() => {}}>
+      <View style={[styles.p5, styles.alignItemsCenter]}>
+        <LinkAnimation
+          mode={overlay.mode}
+          providerIcon={KirokuIcons[row.icon]}
+          shouldTintProviderIcon={
+            overlay.providerId === CONST.AUTH_PROVIDER.APPLE
+          }
+          text={text}
+          onAnimationEnd={() => {
+            setTimeout(onDismiss, SUCCESS_OVERLAY_HOLD_MS);
+          }}
+        />
+      </View>
+    </Modal>
   );
 }
 
