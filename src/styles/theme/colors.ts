@@ -102,41 +102,64 @@ const colors: Record<string, Color> = {
 };
 
 /**
- * Hex tokens for session severity palettes (green → yellow → orange → red → black).
- * Consumed by `src/libs/SessionColorPalettes.ts` — keep hex values here, not in logic code.
+ * Session severity palettes (green → yellow → orange → red → black).
+ * Consumed by `src/libs/SessionColorPalettes.ts`. The keys here are the palette ids —
+ * adding a new palette = one new entry. PaletteId, PALETTE_IDS, and PALETTES all derive from this.
+ *
+ * "Classic" uses hex equivalents of the CSS named colors so existing users see no visual change.
+ * "Brand" and "pink" pull from the shared color tokens above to stay consistent with app theming.
  */
 const sessionPaletteColors = {
-  // Hex equivalents of CSS named colors so existing users see no visual change
-  classicGreen: '#008000',
-  classicYellow: '#FFFF00',
-  classicOrange: '#FFA500',
-  classicRed: '#FF0000',
-  classicBlack: '#000000',
-
-  sunsetGreen: '#5C8A3A',
-  sunsetYellow: '#F2C14E',
-  sunsetOrange: '#F08A4B',
-  sunsetRed: '#C8412B',
-  sunsetBlack: '#1A0F0A',
-
-  oceanGreen: '#3B9C8B',
-  oceanYellow: '#6FB8D6',
-  oceanOrange: '#3F7EA5',
-  oceanRed: '#1F3A6E',
-  oceanBlack: '#0A1530',
-
-  monoGreen: '#D0D0D0',
-  monoYellow: '#9A9A9A',
-  monoOrange: '#6A6A6A',
-  monoRed: '#3A3A3A',
-  monoBlack: '#000000',
-
-  colorblindSafeGreen: '#117733',
-  colorblindSafeYellow: '#DDCC77',
-  colorblindSafeOrange: '#E69F00',
-  colorblindSafeRed: '#CC3311',
-  colorblindSafeBlack: '#000000',
-} as const;
+  classic: {
+    green: '#008000',
+    yellow: '#FFFF00',
+    orange: '#FFA500',
+    red: '#FF0000',
+    black: '#000000',
+  },
+  sunset: {
+    green: '#5C8A3A',
+    yellow: '#F2C14E',
+    orange: '#F08A4B',
+    red: '#C8412B',
+    black: '#1A0F0A',
+  },
+  ocean: {
+    green: '#3B9C8B',
+    yellow: '#6FB8D6',
+    orange: '#3F7EA5',
+    red: '#1F3A6E',
+    black: '#0A1530',
+  },
+  mono: {
+    green: '#D0D0D0',
+    yellow: '#9A9A9A',
+    orange: '#6A6A6A',
+    red: '#3A3A3A',
+    black: '#000000',
+  },
+  colorblindSafe: {
+    green: '#117733',
+    yellow: '#DDCC77',
+    orange: '#E69F00',
+    red: '#CC3311',
+    black: '#000000',
+  },
+  brand: {
+    green: colors.tangerine100,
+    yellow: colors.tangerine300,
+    orange: colors.tangerine400,
+    red: colors.tangerine600,
+    black: '#000000',
+  },
+  pink: {
+    green: colors.pink100,
+    yellow: colors.pink300,
+    orange: colors.pink500,
+    red: colors.red,
+    black: '#000000',
+  },
+};
 
 export {sessionPaletteColors};
 export default colors;

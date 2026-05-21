@@ -1,55 +1,13 @@
 import type {SessionColorPalette} from '@src/types/onyx';
-import {sessionPaletteColors as c} from '@styles/theme/colors';
+import {sessionPaletteColors} from '@styles/theme/colors';
 
-type PaletteId = 'CLASSIC' | 'SUNSET' | 'OCEAN' | 'MONO' | 'COLORBLIND_SAFE';
+type PaletteId = keyof typeof sessionPaletteColors;
 
-const PALETTE_IDS: readonly PaletteId[] = [
-  'CLASSIC',
-  'SUNSET',
-  'OCEAN',
-  'MONO',
-  'COLORBLIND_SAFE',
-] as const;
+const PALETTES: Record<PaletteId, SessionColorPalette> = sessionPaletteColors;
 
-const PALETTES: Record<PaletteId, SessionColorPalette> = {
-  CLASSIC: {
-    green: c.classicGreen,
-    yellow: c.classicYellow,
-    orange: c.classicOrange,
-    red: c.classicRed,
-    black: c.classicBlack,
-  },
-  SUNSET: {
-    green: c.sunsetGreen,
-    yellow: c.sunsetYellow,
-    orange: c.sunsetOrange,
-    red: c.sunsetRed,
-    black: c.sunsetBlack,
-  },
-  OCEAN: {
-    green: c.oceanGreen,
-    yellow: c.oceanYellow,
-    orange: c.oceanOrange,
-    red: c.oceanRed,
-    black: c.oceanBlack,
-  },
-  MONO: {
-    green: c.monoGreen,
-    yellow: c.monoYellow,
-    orange: c.monoOrange,
-    red: c.monoRed,
-    black: c.monoBlack,
-  },
-  COLORBLIND_SAFE: {
-    green: c.colorblindSafeGreen,
-    yellow: c.colorblindSafeYellow,
-    orange: c.colorblindSafeOrange,
-    red: c.colorblindSafeRed,
-    black: c.colorblindSafeBlack,
-  },
-};
+const PALETTE_IDS = Object.keys(PALETTES) as PaletteId[];
 
-const DEFAULT_PALETTE_ID: PaletteId = 'CLASSIC';
+const DEFAULT_PALETTE_ID: PaletteId = 'classic';
 
 function getPaletteIdFromColors(
   palette: SessionColorPalette | undefined,

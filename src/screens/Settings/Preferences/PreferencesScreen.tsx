@@ -88,18 +88,8 @@ function PreferencesScreen({route}: PreferencesScreenProps) {
     getPaletteIdFromColors(preferences?.session_color_palette) ??
     DEFAULT_PALETTE_ID;
 
-  const drinksAndUnitsMenuItemsData: Menu = useMemo(() => {
-    const paletteNameKeys: Record<
-      PaletteId,
-      'classic' | 'sunset' | 'ocean' | 'mono' | 'colorblindSafe'
-    > = {
-      CLASSIC: 'classic',
-      SUNSET: 'sunset',
-      OCEAN: 'ocean',
-      MONO: 'mono',
-      COLORBLIND_SAFE: 'colorblindSafe',
-    };
-    return {
+  const drinksAndUnitsMenuItemsData: Menu = useMemo(
+    () => ({
       sectionTranslationKey: 'preferencesScreen.drinksAndUnitsSection.title',
       subtitle: translate(
         'preferencesScreen.drinksAndUnitsSection.description',
@@ -122,13 +112,14 @@ function PreferencesScreen({route}: PreferencesScreenProps) {
             'preferencesScreen.drinksAndUnitsSection.colorPalette',
           ),
           description: translate(
-            `colorPaletteScreen.palettes.${paletteNameKeys[activePaletteId]}`,
+            `colorPaletteScreen.palettes.${activePaletteId}` as const,
           ),
           pageRoute: ROUTES.SETTINGS_COLOR_PALETTE,
         },
       ],
-    };
-  }, [translate, activePaletteId]);
+    }),
+    [translate, activePaletteId],
+  );
 
   /**
    * Retuns JSX.Element with menu items
