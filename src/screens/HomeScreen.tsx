@@ -1,4 +1,4 @@
-import React, {useEffect, useState} from 'react';
+import React, {useEffect, useMemo, useState} from 'react';
 import {View} from 'react-native';
 import SessionsCalendar from '@components/SessionsCalendar';
 import type {DateData} from 'react-native-calendars';
@@ -62,9 +62,33 @@ function HomeScreen({route}: HomeScreenProps) {
   const [visibleDate, setVisibleDate] = useState<DateData>(
     dateToDateData(new Date()),
   );
-  const [drinkingSessionsCount, setDrinkingSessionsCount] = useState<number>(0);
   const [isLoading, setIsLoading] = useState<boolean>(true);
-  const [unitsConsumed, setUnitsConsumed] = useState<number>(0);
+
+  // Derive stats synchronously from the visible month + drink unit mapping.
+  // Narrowed to `drinksToUnits` so unrelated preference updates (e.g. picking
+  // a color palette) don't recompute the stats.
+  const drinksToUnits = preferences?.drinks_to_units;
+  const {drinkingSessionsCount, unitsConsumed} = useMemo(() => {
+    if (!drinksToUnits || !drinkingSessionData) {
+      return {drinkingSessionsCount: 0, unitsConsumed: 0};
+    }
+    const drinkingSessionArray: DrinkingSessionArray =
+      Object.values(drinkingSessionData);
+    const monthUnits = calculateThisMonthUnits(
+      visibleDate,
+      drinkingSessionArray,
+      drinksToUnits,
+    );
+    const monthSessionCount = DSUtils.getSingleMonthDrinkingSessions(
+      timestampToDate(visibleDate.timestamp),
+      drinkingSessionArray,
+      false,
+    ).length;
+    return {
+      drinkingSessionsCount: monthSessionCount,
+      unitsConsumed: monthUnits,
+    };
+  }, [drinkingSessionData, visibleDate, drinksToUnits]);
 
   const statsData: StatData = [
     {
@@ -80,29 +104,6 @@ function HomeScreen({route}: HomeScreenProps) {
       content: String(roundToTwoDecimalPlaces(unitsConsumed)),
     },
   ];
-
-  // Monitor visible month and various statistics
-  useEffect(() => {
-    if (!preferences) {
-      return;
-    }
-    const drinkingSessionArray: DrinkingSessionArray = drinkingSessionData
-      ? Object.values(drinkingSessionData)
-      : [];
-    const thisMonthUnits = calculateThisMonthUnits(
-      visibleDate,
-      drinkingSessionArray,
-      preferences.drinks_to_units,
-    );
-    const thisMonthSessionCount = DSUtils.getSingleMonthDrinkingSessions(
-      timestampToDate(visibleDate.timestamp),
-      drinkingSessionArray,
-      false,
-    ).length; // Replace this in the future
-
-    setDrinkingSessionsCount(thisMonthSessionCount);
-    setUnitsConsumed(thisMonthUnits);
-  }, [drinkingSessionData, visibleDate, preferences]);
 
   useEffect(() => {
     // Update the ongoing session local data
@@ -185,7 +186,7 @@ function HomeScreen({route}: HomeScreenProps) {
             <SessionsCalendar
               userID={user.uid}
               visibleDate={visibleDate}
-              onDateChange={(date: DateData) => setVisibleDate(date)}
+              onDateChange={setVisibleDate}
               drinkingSessionData={drinkingSessionData}
               preferences={preferences}
             />
