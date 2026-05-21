@@ -185,6 +185,195 @@ function VerifyEmailModal() {
 
   const displayEmail = pendingEmail ?? user?.email ?? '';
 
+  const renderModalContent = () => {
+    if (emailVerified) {
+      return (
+        <SuccessAnimation
+          iconSource={KirokuIcons.Checkmark}
+          text={translate('verifyEmailScreen.emailVerified')}
+          visible
+          onAnimationEnd={onSuccessAnimationEnd}
+          style={styles.flexGrow1}
+        />
+      );
+    }
+    if (view === 'changeEmail') {
+      return (
+        <View style={styles.flex1}>
+          <View style={[styles.flexGrow1, styles.justifyContentCenter]}>
+            <Text
+              textAlign="center"
+              style={[styles.textHeadlineH2, styles.mb3]}>
+              {translate('verifyEmailScreen.changeEmail.title')}
+            </Text>
+            <Text textAlign="center" style={styles.mb4}>
+              {translate('verifyEmailScreen.changeEmail.prompt')}
+            </Text>
+            <TextInput
+              label={translate('verifyEmailScreen.changeEmail.newEmailLabel')}
+              accessibilityLabel={translate(
+                'verifyEmailScreen.changeEmail.newEmailLabel',
+              )}
+              value={newEmailInput}
+              onChangeText={text => {
+                setNewEmailInput(text);
+                setChangeEmailError('');
+              }}
+              inputMode={CONST.INPUT_MODE.EMAIL}
+              autoCapitalize="none"
+              autoCorrect={false}
+              spellCheck={false}
+            />
+            <TextInput
+              label={translate('verifyEmailScreen.changeEmail.passwordLabel')}
+              accessibilityLabel={translate(
+                'verifyEmailScreen.changeEmail.passwordLabel',
+              )}
+              value={passwordInput}
+              onChangeText={text => {
+                setPasswordInput(text);
+                setChangeEmailError('');
+              }}
+              secureTextEntry
+              autoCapitalize="none"
+              autoCorrect={false}
+              containerStyles={[styles.mt3]}
+            />
+            {!!changeEmailError && (
+              <DotIndicatorMessage
+                style={[styles.mv2]}
+                type="error"
+                // eslint-disable-next-line @typescript-eslint/naming-convention
+                messages={{0: changeEmailError}}
+              />
+            )}
+          </View>
+          <View style={styles.pb1}>
+            <Button
+              success
+              large
+              isLoading={isChangeEmailLoading}
+              style={styles.mt1}
+              text={translate('verifyEmailScreen.changeEmail.submit')}
+              onPress={onChangeEmailSubmit}
+            />
+            <PressableWithFeedback
+              style={[styles.mt4, styles.alignItemsCenter]}
+              onPress={() => {
+                setChangeEmailError('');
+                setView('verify');
+              }}
+              role={CONST.ROLE.BUTTON}
+              accessibilityLabel={translate(
+                'verifyEmailScreen.changeEmail.back',
+              )}>
+              <Text style={styles.link}>
+                {translate('verifyEmailScreen.changeEmail.back')}
+              </Text>
+            </PressableWithFeedback>
+          </View>
+        </View>
+      );
+    }
+    return (
+      <View>
+        <View
+          style={[
+            styles.flexGrow1,
+            styles.justifyContentCenter,
+            styles.alignItemsCenter,
+          ]}>
+          <Icon src={KirokuIcons.Mail} fill={theme.appColor} large />
+          <Text textAlign="center" style={[styles.textHeadlineH2, styles.mt3]}>
+            {translate('verifyEmailScreen.title')}
+          </Text>
+          <Text textAlign="center" style={styles.mt3}>
+            {translate('verifyEmailScreen.body', {email: displayEmail})}
+          </Text>
+        </View>
+        <View style={styles.pb1}>
+          {resendStatus === 'success' && (
+            <DotIndicatorMessage
+              style={[styles.mv2]}
+              type="success"
+              messages={{
+                // eslint-disable-next-line @typescript-eslint/naming-convention
+                0: translate('verifyEmailScreen.emailSent'),
+              }}
+            />
+          )}
+          {!!pendingEmail && resendStatus === 'idle' && (
+            <DotIndicatorMessage
+              style={[styles.mv2]}
+              type="success"
+              messages={{
+                // eslint-disable-next-line @typescript-eslint/naming-convention
+                0: translate('verifyEmailScreen.changeEmail.sent', {
+                  email: pendingEmail,
+                }),
+              }}
+            />
+          )}
+          {!!errorText && (
+            <DotIndicatorMessage
+              style={[styles.mv2]}
+              type="error"
+              // eslint-disable-next-line @typescript-eslint/naming-convention
+              messages={{0: errorText}}
+            />
+          )}
+          <Button
+            success
+            large
+            isLoading={isLoading}
+            style={styles.mt1}
+            text={translate('verifyEmailScreen.iHaveVerified')}
+            onPress={onVerifyButtonPress}
+          />
+          <Button
+            large
+            style={styles.mt1}
+            text={translate('verifyEmailScreen.resendEmail')}
+            onPress={onResendButtonPress}
+          />
+          <PressableWithFeedback
+            style={[styles.mt3, styles.alignItemsCenter]}
+            onPress={() => setView('changeEmail')}
+            role={CONST.ROLE.BUTTON}
+            accessibilityLabel={translate(
+              'verifyEmailScreen.useADifferentEmail',
+            )}>
+            <Text style={[styles.link, styles.textSupporting]}>
+              {translate('verifyEmailScreen.useADifferentEmail')}
+            </Text>
+          </PressableWithFeedback>
+          <PressableWithFeedback
+            style={[styles.mt4, styles.alignItemsCenter]}
+            onPress={onSignOutPress}
+            role={CONST.ROLE.BUTTON}
+            accessibilityLabel={translate('settingsScreen.signOut')}>
+            <Text style={styles.link}>
+              {translate('settingsScreen.signOut')}
+            </Text>
+          </PressableWithFeedback>
+          {(CONFIG.IS_IN_DEVELOPMENT ||
+            CONFIG.IS_IN_STAGING ||
+            CONFIG.IS_IN_ADHOC) && (
+            <PressableWithFeedback
+              style={[styles.mt2, styles.alignItemsCenter]}
+              onPress={onDevSkipPress}
+              role={CONST.ROLE.BUTTON}
+              accessibilityLabel="Skip verification (dev only)">
+              <Text style={[styles.link, styles.textSupporting]}>
+                Skip verification (dev only)
+              </Text>
+            </PressableWithFeedback>
+          )}
+        </View>
+      </View>
+    );
+  };
+
   return (
     <SafeAreaConsumer>
       {({safeAreaPaddingBottomStyle}) => (
@@ -209,190 +398,7 @@ function VerifyEmailModal() {
                 ? safeAreaPaddingBottomStyle
                 : styles.pb5,
             ]}>
-            {!emailVerified ? (
-              view === 'changeEmail' ? (
-                <View style={styles.flex1}>
-                  <View style={[styles.flexGrow1, styles.justifyContentCenter]}>
-                    <Text
-                      textAlign="center"
-                      style={[styles.textHeadlineH2, styles.mb3]}>
-                      {translate('verifyEmailScreen.changeEmail.title')}
-                    </Text>
-                    <Text textAlign="center" style={styles.mb4}>
-                      {translate('verifyEmailScreen.changeEmail.prompt')}
-                    </Text>
-                    <TextInput
-                      label={translate(
-                        'verifyEmailScreen.changeEmail.newEmailLabel',
-                      )}
-                      value={newEmailInput}
-                      onChangeText={text => {
-                        setNewEmailInput(text);
-                        setChangeEmailError('');
-                      }}
-                      inputMode={CONST.INPUT_MODE.EMAIL}
-                      autoCapitalize="none"
-                      autoCorrect={false}
-                      spellCheck={false}
-                    />
-                    <TextInput
-                      label={translate(
-                        'verifyEmailScreen.changeEmail.passwordLabel',
-                      )}
-                      value={passwordInput}
-                      onChangeText={text => {
-                        setPasswordInput(text);
-                        setChangeEmailError('');
-                      }}
-                      secureTextEntry
-                      autoCapitalize="none"
-                      autoCorrect={false}
-                      containerStyles={[styles.mt3]}
-                    />
-                    {!!changeEmailError && (
-                      <DotIndicatorMessage
-                        style={[styles.mv2]}
-                        type="error"
-                        // eslint-disable-next-line @typescript-eslint/naming-convention
-                        messages={{0: changeEmailError}}
-                      />
-                    )}
-                  </View>
-                  <View style={styles.pb1}>
-                    <Button
-                      success
-                      large
-                      isLoading={isChangeEmailLoading}
-                      style={styles.mt1}
-                      text={translate('verifyEmailScreen.changeEmail.submit')}
-                      onPress={onChangeEmailSubmit}
-                    />
-                    <PressableWithFeedback
-                      style={[styles.mt4, styles.alignItemsCenter]}
-                      onPress={() => {
-                        setChangeEmailError('');
-                        setView('verify');
-                      }}
-                      role={CONST.ROLE.BUTTON}
-                      accessibilityLabel={translate(
-                        'verifyEmailScreen.changeEmail.back',
-                      )}>
-                      <Text style={styles.link}>
-                        {translate('verifyEmailScreen.changeEmail.back')}
-                      </Text>
-                    </PressableWithFeedback>
-                  </View>
-                </View>
-              ) : (
-                <View>
-                  <View
-                    style={[
-                      styles.flexGrow1,
-                      styles.justifyContentCenter,
-                      styles.alignItemsCenter,
-                    ]}>
-                    <Icon src={KirokuIcons.Mail} fill={theme.appColor} large />
-                    <Text
-                      textAlign="center"
-                      style={[styles.textHeadlineH2, styles.mt3]}>
-                      {translate('verifyEmailScreen.title')}
-                    </Text>
-                    <Text textAlign="center" style={styles.mt3}>
-                      {translate('verifyEmailScreen.body', {
-                        email: displayEmail,
-                      })}
-                    </Text>
-                  </View>
-                  <View style={styles.pb1}>
-                    {resendStatus === 'success' && (
-                      <DotIndicatorMessage
-                        style={[styles.mv2]}
-                        type="success"
-                        messages={{
-                          // eslint-disable-next-line @typescript-eslint/naming-convention
-                          0: translate('verifyEmailScreen.emailSent'),
-                        }}
-                      />
-                    )}
-                    {!!pendingEmail && resendStatus === 'idle' && (
-                      <DotIndicatorMessage
-                        style={[styles.mv2]}
-                        type="success"
-                        messages={{
-                          // eslint-disable-next-line @typescript-eslint/naming-convention
-                          0: translate('verifyEmailScreen.changeEmail.sent', {
-                            email: pendingEmail,
-                          }),
-                        }}
-                      />
-                    )}
-                    {!!errorText && (
-                      <DotIndicatorMessage
-                        style={[styles.mv2]}
-                        type="error"
-                        // eslint-disable-next-line @typescript-eslint/naming-convention
-                        messages={{0: errorText}}
-                      />
-                    )}
-                    <Button
-                      success
-                      large
-                      isLoading={isLoading}
-                      style={styles.mt1}
-                      text={translate('verifyEmailScreen.iHaveVerified')}
-                      onPress={onVerifyButtonPress}
-                    />
-                    <Button
-                      large
-                      style={styles.mt1}
-                      text={translate('verifyEmailScreen.resendEmail')}
-                      onPress={onResendButtonPress}
-                    />
-                    <PressableWithFeedback
-                      style={[styles.mt3, styles.alignItemsCenter]}
-                      onPress={() => setView('changeEmail')}
-                      role={CONST.ROLE.BUTTON}
-                      accessibilityLabel={translate(
-                        'verifyEmailScreen.useADifferentEmail',
-                      )}>
-                      <Text style={[styles.link, styles.textSupporting]}>
-                        {translate('verifyEmailScreen.useADifferentEmail')}
-                      </Text>
-                    </PressableWithFeedback>
-                    <PressableWithFeedback
-                      style={[styles.mt4, styles.alignItemsCenter]}
-                      onPress={onSignOutPress}
-                      role={CONST.ROLE.BUTTON}
-                      accessibilityLabel={translate('settingsScreen.signOut')}>
-                      <Text style={styles.link}>
-                        {translate('settingsScreen.signOut')}
-                      </Text>
-                    </PressableWithFeedback>
-                    {(CONFIG.IS_IN_DEVELOPMENT ||
-                      CONFIG.IS_IN_STAGING ||
-                      CONFIG.IS_IN_ADHOC) && (
-                      <PressableWithFeedback
-                        style={[styles.mt2, styles.alignItemsCenter]}
-                        onPress={onDevSkipPress}
-                        role={CONST.ROLE.BUTTON}
-                        accessibilityLabel="Skip verification (dev only)">
-                        <Text style={[styles.link, styles.textSupporting]}>
-                          Skip verification (dev only)
-                        </Text>
-                      </PressableWithFeedback>
-                    )}
-                  </View>
-                </View>
-              )
-            ) : (
-              <SuccessAnimation
-                iconSource={KirokuIcons.Checkmark}
-                text={translate('verifyEmailScreen.emailVerified')}
-                visible
-                onAnimationEnd={onSuccessAnimationEnd}
-                style={styles.flexGrow1}
-              />
-            )}
+            {renderModalContent()}
           </View>
         </Modal>
       )}
