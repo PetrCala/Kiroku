@@ -1,9 +1,6 @@
 import {useEffect, useState} from 'react';
-import {subMonths} from 'date-fns';
-import {get, orderByChild, query, ref, startAt} from 'firebase/database';
 import {readDataOnce} from '@database/baseFunctions'; // Ensure this import is added
 import {useFirebase} from '@context/global/FirebaseContext';
-import CONST from '@src/CONST';
 import type RefetchDatabaseData from '@src/types/utils/RefetchDatabaseData';
 import type {FetchData, FetchDataKey, FetchDataKeys} from './types';
 import {fetchDataKeyToDbPath} from './utils';
@@ -64,27 +61,17 @@ const useFetchData = (
 
     const fetchData = async () => {
       setIsLoading(true);
+      // NOTE: `drinkingSessionData` is intentionally NOT handled here — that
+      // key has been pulled out into the dedicated `useDrinkingSessionsFetch`
+      // hook, which owns the windowed `start_time` query and the per-UID
+      // re-fetch loop. Consumers (e.g. ProfileScreen) call both hooks side
+      // by side.
       const promises = keysToFetch.map(async dataType => {
         const path = fetchDataKeyToDbPath(dataType, userID);
         if (!path) {
           return {};
         }
-        let fetchedData: unknown = null;
-        if (dataType === 'drinkingSessionData') {
-          const startAtMillis = subMonths(
-            new Date(),
-            CONST.SESSIONS_INITIAL_FETCH_MONTHS,
-          ).getTime();
-          const sessionsQuery = query(
-            ref(db, path),
-            orderByChild('start_time'),
-            startAt(startAtMillis),
-          );
-          const snapshot = await get(sessionsQuery);
-          fetchedData = snapshot.exists() ? snapshot.val() : null;
-        } else {
-          fetchedData = await readDataOnce(db, path);
-        }
+        const fetchedData = await readDataOnce(db, path);
         return {[dataType]: fetchedData};
       });
 

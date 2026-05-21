@@ -52,7 +52,11 @@ const useListenToData = (
   const {db} = useFirebase();
   const {translate} = useLocalize();
   const [data, setData] = useState<Partial<Record<FetchDataKey, unknown>>>({});
-  const [monthsLoaded] = useOnyx(ONYXKEYS.SESSIONS_CALENDAR_MONTHS_LOADED);
+  const [monthsLoaded, monthsLoadedMeta] = useOnyx(
+    // `userID` may be empty during the auth-resolving window; the suffix is
+    // tolerated by Onyx and the effect below gates on its loaded status.
+    `${ONYXKEYS.COLLECTION.SESSIONS_CALENDAR_MONTHS_BY_USER_ID}${userID ?? ''}`,
+  );
 
   // Months of session history to subscribe to. Keeps the fetch window at least
   // as wide as the user's saved calendar scroll depth so cold-start coverage
@@ -98,6 +102,11 @@ const useListenToData = (
     if (!db || !dataTypes.includes(DRINKING_SESSIONS_KEY)) {
       return;
     }
+    // Wait for Onyx to hydrate so we don't subscribe with the default 3-month
+    // window and then immediately resubscribe with the saved wider value.
+    if (monthsLoadedMeta.status !== 'loaded') {
+      return;
+    }
     const path = fetchDataKeyToDbPath(DRINKING_SESSIONS_KEY, userID);
     if (!path) {
       return;
@@ -119,7 +128,7 @@ const useListenToData = (
 
     return unsubscribe;
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [db, userID, sessionsMonthsBack]);
+  }, [db, userID, sessionsMonthsBack, monthsLoadedMeta.status]);
 
   return {
     data: data as FetchData,

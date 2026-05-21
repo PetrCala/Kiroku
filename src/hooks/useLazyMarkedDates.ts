@@ -16,14 +16,13 @@ import {
 } from 'date-fns';
 import {sessionsToDayMarking} from '@libs/DataHandling';
 import {resolvePalette} from '@libs/SessionColorPalettes';
+import lodashDebounce from 'lodash/debounce';
 import type {MarkingProps} from 'react-native-calendars/src/calendar/day/marking';
 import type {MarkedDates} from 'react-native-calendars/src/types';
 import {useOnyx} from 'react-native-onyx';
 import ONYXKEYS from '@src/ONYXKEYS';
 import * as Calendar from '@userActions/Calendar';
-import {useFirebase} from '@context/global/FirebaseContext';
 import type {UserID, DateString} from '@src/types/onyx/OnyxCommon';
-import {useIsFocused} from '@react-navigation/native';
 
 /**
  * Custom hook to derive a calendar's markedDates and per-day unit counts from a
@@ -50,20 +49,24 @@ function useLazyMarkedDates(
   sessions: DrinkingSessionList,
   preferences: Preferences,
 ) {
-  const {auth} = useFirebase();
-  const user = auth?.currentUser;
-  const isFocused = useIsFocused();
-  const [monthsLoaded] = useOnyx(ONYXKEYS.SESSIONS_CALENDAR_MONTHS_LOADED);
+  const [monthsLoaded, monthsLoadedMeta] = useOnyx(
+    `${ONYXKEYS.COLLECTION.SESSIONS_CALENDAR_MONTHS_BY_USER_ID}${userID}`,
+  );
   const defaultTimezone = CONST.DEFAULT_TIME_ZONE.selected;
 
-  // For a different user (e.g. friend profile) start fresh; otherwise resume from the saved scroll depth.
-  const initialMonths = user?.uid !== userID ? 0 : monthsLoaded ?? 0;
-  const [loadedMonths, setLoadedMonths] = useState<number>(initialMonths);
+  // Resume the user's saved scroll depth (or 0 if this is the first visit).
+  // Same logic for auth user and friends — state is per-UID now.
+  const [loadedMonths, setLoadedMonths] = useState<number>(monthsLoaded ?? 0);
 
-  // Resync `loadedMonths` if the source user changes or Onyx delivers a different saved scroll depth.
+  // Resync `loadedMonths` when the source UID changes or when Onyx finishes
+  // hydrating with a different saved depth. Gated on `metadata.status` so we
+  // don't reset to 0 during the brief window where Onyx hasn't hydrated yet.
   useEffect(() => {
-    setLoadedMonths(user?.uid !== userID ? 0 : monthsLoaded ?? 0);
-  }, [userID, user?.uid, monthsLoaded]);
+    if (monthsLoadedMeta.status !== 'loaded') {
+      return;
+    }
+    setLoadedMonths(monthsLoaded ?? 0);
+  }, [userID, monthsLoaded, monthsLoadedMeta.status]);
 
   // First pass — rebuild the session-by-day index only when sessions or the
   // visible range change. Preferences are *not* a dependency here: a palette
@@ -135,30 +138,29 @@ function useLazyMarkedDates(
     loadedFrom.current = loadedFromDate;
   }, [loadedFromDate]);
 
+  // Debounce the Onyx write so a rapid left-arrow scroll fires only one
+  // listener-resubscribe / one friend-fetcher refetch at the end of the run.
+  // The local visible window still updates synchronously below via setState,
+  // so the calendar itself stays responsive.
+  const persistMonthsLoaded = useMemo(
+    () =>
+      lodashDebounce((uid: UserID, next: number) => {
+        Calendar.setSessionsCalendarMonthsLoadedForUser(uid, next);
+      }, CONST.SESSIONS_CALENDAR_PERSIST_DEBOUNCE_MS),
+    [],
+  );
+
+  // Cancel any pending debounced write on unmount so we don't leak a stale
+  // timer (or write a depth that belongs to a previously-viewed user).
+  useEffect(() => () => persistMonthsLoaded.cancel(), [persistMonthsLoaded]);
+
   const loadMoreMonths = (newMonthsToLoad = 1) => {
     setLoadedMonths(prev => {
       const next = prev + newMonthsToLoad;
-      // Eagerly persist for the auth user so the Firebase session listener can
-      // widen its `start_time` window in lockstep with the calendar. The
-      // friend-profile path (`user?.uid !== userID`) uses a one-shot fetch
-      // and therefore doesn't extend — its calendar simply shows empty days
-      // past the initial fetch window.
-      if (user?.uid === userID) {
-        Calendar.setSessionsCalendarMonthsLoaded(next);
-      }
+      persistMonthsLoaded(userID, next);
       return next;
     });
   };
-
-  // On blur, persist the user's scroll depth so the next mount can resume.
-  useEffect(() => {
-    if (isFocused) {
-      return;
-    }
-    if (user?.uid === userID) {
-      Calendar.setSessionsCalendarMonthsLoaded(loadedMonths);
-    }
-  }, [isFocused, user?.uid, userID, loadedMonths]);
 
   return {
     markedDates,

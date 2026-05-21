@@ -338,6 +338,12 @@ const CONST = {
   // and extends the window when the user scrolls back past the loaded edge.
   SESSIONS_INITIAL_FETCH_MONTHS: 3,
 
+  // Debounce window (ms) for persisting the calendar's scroll depth. Coalesces
+  // rapid left-arrow scrolls into a single Firebase listener resubscribe /
+  // friend-profile refetch at the end of the run. Long enough to absorb a
+  // burst, short enough to feel responsive.
+  SESSIONS_CALENDAR_PERSIST_DEBOUNCE_MS: 150,
+
   FIREBASE_STORAGE_URL: 'https://firebasestorage.googleapis.com',
   FRIEND_REQUEST_STATUS: {
     SELF: 'self',
