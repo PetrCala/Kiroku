@@ -1,7 +1,6 @@
-import React, {memo, useCallback, useEffect, useState} from 'react';
+import React, {memo, useCallback, useEffect} from 'react';
 import {Calendar} from 'react-native-calendars';
 import type {DateData} from 'react-native-calendars';
-import type {MarkingTypes} from 'react-native-calendars/src/types';
 import type {MarkedDates} from 'react-native-calendars/src/types';
 import {useOnyx} from 'react-native-onyx';
 import {format} from 'date-fns';
@@ -68,13 +67,11 @@ function SessionsCalendarView({
   const styles = useThemeStyles();
   const StyleUtils = useStyleUtils();
   const [preferredLocale] = useOnyx(ONYXKEYS.NVP_PREFERRED_LOCALE);
-  const [locale, setLocale] = useState<string>(CONST.LOCALES.DEFAULT);
+  const locale = preferredLocale ?? CONST.LOCALES.DEFAULT;
 
   useEffect(() => {
-    const newLocale = preferredLocale ?? CONST.LOCALES.DEFAULT;
-    setCalendarLocale(newLocale);
-    setLocale(newLocale);
-  }, [preferredLocale]);
+    setCalendarLocale(locale);
+  }, [locale]);
 
   const dayComponent = useCallback(
     ({date, state, marking, theme}: DayComponentProps) => (
@@ -100,7 +97,7 @@ function SessionsCalendarView({
       onPressArrowLeft={onLeftArrowPress}
       onPressArrowRight={onRightArrowPress}
       markedDates={markedDates}
-      markingType={'period' as MarkingTypes}
+      markingType="period"
       firstDay={CONST.WEEK_STARTS_ON}
       enableSwipeMonths={false}
       hideArrows={hideArrows}
