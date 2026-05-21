@@ -90,6 +90,25 @@ platform :android do
   end
 
 
+  desc "Capture Play Store screenshots on phone + tablet across locales"
+  lane :screenshots do
+    ENV["ENVFILE"] = ".env.production"
+
+    # Build the production APK + the androidTest APK. screengrab needs both.
+    gradle(
+      project_dir: './android',
+      task: 'assemble',
+      flavor: 'Production',
+      build_type: 'Release',
+    )
+    gradle(
+      project_dir: './android',
+      task: 'assembleProductionReleaseAndroidTest',
+    )
+
+    capture_android_screenshots   # reads Screengrabfile
+  end
+
   desc "Deploy app to Google Play open beta"
   lane :production do
     # Google is very unreliable, so we retry a few times
@@ -334,10 +353,17 @@ platform :ios do
 
   end
 
-  # https://docs.fastlane.tools/getting-started/ios/screenshots/
-  # lane :screenshots do
-  #   capture_screenshots
-  #   upload_to_app_store
-  # end
+  desc "Capture App Store screenshots across the device + locale matrix"
+  lane :screenshots do
+    ENV["ENVFILE"] = ".env.production"
+
+    # Demo credentials must be exported in the shell before invoking the lane —
+    # the same env vars the :production lane already uses for App Store Review.
+    UI.user_error!("APPLE_DEMO_EMAIL not set") unless ENV["APPLE_DEMO_EMAIL"]
+    UI.user_error!("APPLE_DEMO_PASSWORD not set") unless ENV["APPLE_DEMO_PASSWORD"]
+
+    capture_ios_screenshots         # reads Snapfile
+    # frame_screenshots(white: true) # uncomment once you've installed `frameit`
+  end
 
 end
