@@ -33,6 +33,9 @@ const ERRORS = {
     TOO_MANY_REQUESTS: 'auth/too-many-requests',
     SIGN_OUT_FAILED: 'auth/sign-out-failed',
     USER_IS_NULL: 'auth/user-is-null',
+    CREDENTIAL_ALREADY_IN_USE: 'auth/credential-already-in-use',
+    NO_SUCH_PROVIDER: 'auth/no-such-provider',
+    LAST_PROVIDER: 'auth/last-provider',
   },
   DATABASE: {
     ACCOUNT_CREATION_LIMIT_EXCEEDED: 'database/account-creation-limit-exceeded',

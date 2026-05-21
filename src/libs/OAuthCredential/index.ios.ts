@@ -29,7 +29,7 @@ async function getGoogleCredential(): Promise<AuthCredential | null> {
     if (e.code === statusCodes.SIGN_IN_CANCELLED) {
       return null;
     }
-    Log.warn('[OAuthCredential] Google reauthentication failed', {error});
+    Log.warn('[OAuthCredential] Google credential fetch failed', {error});
     throw error;
   }
 }
@@ -69,17 +69,17 @@ async function getAppleCredential(): Promise<AuthCredential | null> {
     if (e.code === appleAuth.Error.CANCELED) {
       return null;
     }
-    Log.warn('[OAuthCredential] Apple reauthentication failed', {error});
+    Log.warn('[OAuthCredential] Apple credential fetch failed', {error});
     throw error;
   }
 }
 
-const getOAuthCredentialForDeletion: Record<string, GetOAuthCredential> = {
+const getOAuthCredential: Record<string, GetOAuthCredential> = {
   // eslint-disable-next-line @typescript-eslint/naming-convention
   'google.com': getGoogleCredential,
   // eslint-disable-next-line @typescript-eslint/naming-convention
   'apple.com': getAppleCredential,
 };
 
-export {getOAuthCredentialForDeletion};
+export {getOAuthCredential};
 export type {GetOAuthCredential};

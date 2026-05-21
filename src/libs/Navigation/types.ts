@@ -1,4 +1,4 @@
-/* eslint-disable @typescript-eslint/naming-convention  */
+ 
 import type {
   CommonActions,
   NavigationContainerRefWithCurrent,
@@ -111,6 +111,7 @@ type SettingsNavigatorParamList = {
   [SCREENS.SETTINGS.ACCOUNT.DISPLAY_NAME]: undefined;
   [SCREENS.SETTINGS.ACCOUNT.EMAIL]: undefined;
   [SCREENS.SETTINGS.ACCOUNT.PASSWORD]: undefined;
+  [SCREENS.SETTINGS.ACCOUNT.CONNECTED_ACCOUNTS]: undefined;
   [SCREENS.SETTINGS.ACCOUNT.TIMEZONE]: undefined;
   [SCREENS.SETTINGS.ACCOUNT.TIMEZONE_SELECT]: undefined;
   [SCREENS.SETTINGS.PREFERENCES.ROOT]: undefined;

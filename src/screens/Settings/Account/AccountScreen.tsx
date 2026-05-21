@@ -37,6 +37,25 @@ function AccountScreen({route}: AccountScreenProps) {
   const {userData} = useDatabaseData();
   const profileData = userData?.profile;
 
+  // providerData is not a React-tracked value; this snapshot is acceptable for
+  // the menu summary because mutations land on the dedicated Connected Accounts
+  // screen, which reloads auth.currentUser before rendering its own rows.
+  const linkedProviderLabels = (user?.providerData ?? [])
+    .map(info => {
+      switch (info.providerId) {
+        case 'password':
+          return translate('connectedAccounts.providers.password');
+        case 'apple.com':
+          return translate('connectedAccounts.providers.apple');
+        case 'google.com':
+          return translate('connectedAccounts.providers.google');
+        default:
+          return null;
+      }
+    })
+    .filter((label): label is string => label !== null)
+    .join(', ');
+
   const generalOptions = [
     {
       description: translate('common.name'),
@@ -57,6 +76,11 @@ function AccountScreen({route}: AccountScreenProps) {
       description: translate('common.password'),
       title: '••••••••',
       pageRoute: ROUTES.SETTINGS_PASSWORD,
+    },
+    {
+      description: translate('connectedAccounts.title'),
+      title: linkedProviderLabels,
+      pageRoute: ROUTES.SETTINGS_CONNECTED_ACCOUNTS,
     },
     {
       description: translate('timezoneScreen.timezone'),
