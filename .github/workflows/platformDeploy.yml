@@ -60,6 +60,20 @@ jobs:
         with:
           bundler-cache: true
 
+      - name: Set REACT_NATIVE_DOWNLOADS_DIR
+        run: echo "REACT_NATIVE_DOWNLOADS_DIR=$HOME/.rn-downloads" >> "$GITHUB_ENV"
+
+      - name: Cache Gradle and React Native downloads (Boost, etc.)
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.gradle/caches
+            ~/.gradle/wrapper
+            ~/.rn-downloads
+          key: ${{ runner.os }}-android-gradle-${{ hashFiles('android/**/*.gradle*', 'android/gradle/wrapper/gradle-wrapper.properties', 'package-lock.json', 'patches/**') }}
+          restore-keys: |
+            ${{ runner.os }}-android-gradle-
+
       - name: Decrypt keystore
         run: cd android/app && gpg --quiet --batch --yes --decrypt --passphrase="$LARGE_SECRET_PASSPHRASE" --output kiroku-play-key.keystore kiroku-play-key.keystore.gpg
         env:
