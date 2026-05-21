@@ -17,6 +17,7 @@ import {
   subMonths,
 } from 'date-fns';
 import {sessionsToDayMarking} from '@libs/DataHandling';
+import {resolvePalette} from '@libs/SessionColorPalettes';
 import type {MarkingProps} from 'react-native-calendars/src/calendar/day/marking';
 import type {MarkedDates} from 'react-native-calendars/src/types';
 import {useOnyx} from 'react-native-onyx';
@@ -61,7 +62,9 @@ function useLazyMarkedDates(
     return subDays(startOfMonth(dateInCorrectMonth), 1);
   };
 
-  // Internal function to load sessions for a specific day into provided maps
+  // Internal function to load sessions for a specific day into provided maps.
+  // Days without sessions still get a marking so the palette-green background
+  // updates when the user switches palette (or when viewing a friend's calendar).
   const loadSessionsForDayInternal = (
     dayKey: DateString,
     markedDatesMapToUpdate: Map<DateString, MarkingProps>,
@@ -70,6 +73,8 @@ function useLazyMarkedDates(
     const relevantSessions = sessionIndex.current.get(dayKey) ?? [];
     const newMarking = sessionsToDayMarking(relevantSessions, preferences);
     if (!newMarking) {
+      const palette = resolvePalette(preferences.session_color_palette);
+      markedDatesMapToUpdate.set(dayKey, {color: palette.green});
       return;
     }
     markedDatesMapToUpdate.set(dayKey, newMarking.marking);

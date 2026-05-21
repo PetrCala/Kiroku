@@ -19,6 +19,7 @@ import ConfirmModal from '@components/ConfirmModal';
 import * as ErrorUtils from '@libs/ErrorUtils';
 import * as App from '@userActions/App';
 import {convertUnitsToColors} from '@libs/DataHandling';
+import {resolvePalette} from '@libs/SessionColorPalettes';
 import ScrollView from '@components/ScrollView';
 import FlexibleLoadingIndicator from '@components/FlexibleLoadingIndicator';
 import SuccessIndicator from '@components/SuccessIndicator';
@@ -47,7 +48,9 @@ function DrinkingSessionWindow({
   const sessionRef = useRef<DrinkingSession | undefined>(session);
   // Session details
   const [totalUnits, setTotalUnits] = useState<number>(0);
-  const [sessionColor, setSessionColor] = useState<string>('green');
+  const [sessionColor, setSessionColor] = useState<string>(
+    () => resolvePalette(preferences?.session_color_palette).green,
+  );
   // const [dbSyncSuccessful, setDbSyncSuccessful] = useState(false);
   const [discardModalVisible, setDiscardModalVisible] =
     useState<boolean>(false);

@@ -101,4 +101,42 @@ const colors: Record<string, Color> = {
   orange900: '#E65100',
 };
 
+/**
+ * Hex tokens for session severity palettes (green → yellow → orange → red → black).
+ * Consumed by `src/libs/SessionColorPalettes.ts` — keep hex values here, not in logic code.
+ */
+const sessionPaletteColors = {
+  // Hex equivalents of CSS named colors so existing users see no visual change
+  classicGreen: '#008000',
+  classicYellow: '#FFFF00',
+  classicOrange: '#FFA500',
+  classicRed: '#FF0000',
+  classicBlack: '#000000',
+
+  sunsetGreen: '#5C8A3A',
+  sunsetYellow: '#F2C14E',
+  sunsetOrange: '#F08A4B',
+  sunsetRed: '#C8412B',
+  sunsetBlack: '#1A0F0A',
+
+  oceanGreen: '#3B9C8B',
+  oceanYellow: '#6FB8D6',
+  oceanOrange: '#3F7EA5',
+  oceanRed: '#1F3A6E',
+  oceanBlack: '#0A1530',
+
+  monoGreen: '#D0D0D0',
+  monoYellow: '#9A9A9A',
+  monoOrange: '#6A6A6A',
+  monoRed: '#3A3A3A',
+  monoBlack: '#000000',
+
+  colorblindSafeGreen: '#117733',
+  colorblindSafeYellow: '#DDCC77',
+  colorblindSafeOrange: '#E69F00',
+  colorblindSafeRed: '#CC3311',
+  colorblindSafeBlack: '#000000',
+} as const;
+
+export {sessionPaletteColors};
 export default colors;

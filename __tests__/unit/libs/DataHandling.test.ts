@@ -32,6 +32,7 @@ import type {
   UnitsToColors,
 } from '@src/types/onyx';
 import CONST from '@src/CONST';
+import {PALETTES} from '@libs/SessionColorPalettes';
 import {randDrinkingSession} from '../../utils/collections/drinkingSessions';
 
 describe('formatDate function', () => {
@@ -737,21 +738,44 @@ describe('unitsToColors', () => {
   };
 
   it('should return green for 0 units', () => {
-    expect(convertUnitsToColors(0, mockUnitsToColors)).toBe('green');
+    expect(convertUnitsToColors(0, mockUnitsToColors)).toBe(
+      PALETTES.CLASSIC.green,
+    );
   });
 
   it('should return yellow for units up to yellow limit', () => {
-    expect(convertUnitsToColors(1, mockUnitsToColors)).toBe('yellow');
-    expect(convertUnitsToColors(2, mockUnitsToColors)).toBe('yellow');
+    expect(convertUnitsToColors(1, mockUnitsToColors)).toBe(
+      PALETTES.CLASSIC.yellow,
+    );
+    expect(convertUnitsToColors(2, mockUnitsToColors)).toBe(
+      PALETTES.CLASSIC.yellow,
+    );
   });
 
   it('should return orange for units between yellow and orange limits', () => {
-    expect(convertUnitsToColors(3, mockUnitsToColors)).toBe('orange');
-    expect(convertUnitsToColors(4, mockUnitsToColors)).toBe('orange');
+    expect(convertUnitsToColors(3, mockUnitsToColors)).toBe(
+      PALETTES.CLASSIC.orange,
+    );
+    expect(convertUnitsToColors(4, mockUnitsToColors)).toBe(
+      PALETTES.CLASSIC.orange,
+    );
   });
 
   it('should return red for units above the orange limit', () => {
-    expect(convertUnitsToColors(5, mockUnitsToColors)).toBe('red');
-    expect(convertUnitsToColors(6, mockUnitsToColors)).toBe('red');
+    expect(convertUnitsToColors(5, mockUnitsToColors)).toBe(
+      PALETTES.CLASSIC.red,
+    );
+    expect(convertUnitsToColors(6, mockUnitsToColors)).toBe(
+      PALETTES.CLASSIC.red,
+    );
+  });
+
+  it('should honor a custom palette when provided', () => {
+    expect(convertUnitsToColors(0, mockUnitsToColors, PALETTES.OCEAN)).toBe(
+      PALETTES.OCEAN.green,
+    );
+    expect(convertUnitsToColors(5, mockUnitsToColors, PALETTES.OCEAN)).toBe(
+      PALETTES.OCEAN.red,
+    );
   });
 });

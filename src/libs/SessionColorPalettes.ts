@@ -1,4 +1,5 @@
 import type {SessionColorPalette} from '@src/types/onyx';
+import {sessionPaletteColors as c} from '@styles/theme/colors';
 
 type PaletteId = 'CLASSIC' | 'SUNSET' | 'OCEAN' | 'MONO' | 'COLORBLIND_SAFE';
 
@@ -11,41 +12,40 @@ const PALETTE_IDS: readonly PaletteId[] = [
 ] as const;
 
 const PALETTES: Record<PaletteId, SessionColorPalette> = {
-  // Hex equivalents of CSS named colors so existing users see no visual change
   CLASSIC: {
-    green: '#008000',
-    yellow: '#FFFF00',
-    orange: '#FFA500',
-    red: '#FF0000',
-    black: '#000000',
+    green: c.classicGreen,
+    yellow: c.classicYellow,
+    orange: c.classicOrange,
+    red: c.classicRed,
+    black: c.classicBlack,
   },
   SUNSET: {
-    green: '#5C8A3A',
-    yellow: '#F2C14E',
-    orange: '#F08A4B',
-    red: '#C8412B',
-    black: '#1A0F0A',
+    green: c.sunsetGreen,
+    yellow: c.sunsetYellow,
+    orange: c.sunsetOrange,
+    red: c.sunsetRed,
+    black: c.sunsetBlack,
   },
   OCEAN: {
-    green: '#3B9C8B',
-    yellow: '#6FB8D6',
-    orange: '#3F7EA5',
-    red: '#1F3A6E',
-    black: '#0A1530',
+    green: c.oceanGreen,
+    yellow: c.oceanYellow,
+    orange: c.oceanOrange,
+    red: c.oceanRed,
+    black: c.oceanBlack,
   },
   MONO: {
-    green: '#D0D0D0',
-    yellow: '#9A9A9A',
-    orange: '#6A6A6A',
-    red: '#3A3A3A',
-    black: '#000000',
+    green: c.monoGreen,
+    yellow: c.monoYellow,
+    orange: c.monoOrange,
+    red: c.monoRed,
+    black: c.monoBlack,
   },
   COLORBLIND_SAFE: {
-    green: '#117733',
-    yellow: '#DDCC77',
-    orange: '#E69F00',
-    red: '#CC3311',
-    black: '#000000',
+    green: c.colorblindSafeGreen,
+    yellow: c.colorblindSafeYellow,
+    orange: c.colorblindSafeOrange,
+    red: c.colorblindSafeRed,
+    black: c.colorblindSafeBlack,
   },
 };
 
