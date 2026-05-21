@@ -201,6 +201,9 @@ jobs:
       - name: Set iOS version in ENV
         run: echo "IOS_VERSION=$(echo '${{ inputs.APP_VERSION }}' | tr '-' '.')" >> "$GITHUB_ENV"
 
+      - name: Install iOS platform SDK
+        run: xcodebuild -downloadPlatform iOS
+
       - name: Generate release notes
         if: ${{ inputs.SHOULD_DEPLOY_PRODUCTION }}
         continue-on-error: true
