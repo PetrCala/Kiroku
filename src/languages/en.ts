@@ -965,6 +965,54 @@ export default {
       generic: 'There was an error when attempting to reset your password.',
     },
   },
+  connectedAccounts: {
+    title: 'Connected accounts',
+    subtitle:
+      'Choose how you want to sign in. You can connect more than one — any of them will sign you into the same account.',
+    providers: {
+      password: 'Email & password',
+      apple: 'Apple',
+      google: 'Google',
+    },
+    status: {
+      signedInWith: 'Signed in with this',
+      connected: 'Connected',
+      notConnected: 'Not connected',
+    },
+    actions: {
+      connect: 'Connect',
+      disconnect: 'Disconnect',
+      cancel: 'Cancel',
+    },
+    unlinkConfirm: {
+      title: ({provider}: {provider: string}) => `Disconnect ${provider}?`,
+      prompt: ({remaining}: {remaining: string}) =>
+        `You'll only be able to sign in with ${remaining} from now on.`,
+      confirm: 'Disconnect',
+    },
+    reauth: {
+      title: "Confirm it's you",
+      passwordPrompt:
+        'For your security, please re-enter your password to make this change.',
+      oauthPrompt: ({provider}: {provider: string}) =>
+        `For your security, please sign in again with ${provider} to make this change.`,
+      submit: 'Confirm',
+      reauthWith: ({provider}: {provider: string}) =>
+        `Continue with ${provider}`,
+      error: "We couldn't confirm your identity. Please try again.",
+    },
+    privateRelay:
+      'Apple is hiding your real email with a relay address. If you disconnect and reconnect Apple later, the relay address will be different.',
+    success: {
+      connected: ({provider}: {provider: string}) =>
+        `${provider} is now connected.`,
+      disconnected: ({provider}: {provider: string}) =>
+        `${provider} has been disconnected.`,
+    },
+    error: {
+      generic: "We couldn't update your connected accounts. Please try again.",
+    },
+  },
   oauthLinkModal: {
     appleTitle: 'Connect your Apple account',
     googleTitle: 'Connect your Google account',
@@ -1099,6 +1147,20 @@ export default {
         title: 'User Not Found',
         message:
           'Your account could not be identified. Please restart the app.',
+      },
+      credentialAlreadyInUse: {
+        title: 'Already Connected',
+        message:
+          'This account is already linked to another Kiroku account. Sign out and sign in with that account instead.',
+      },
+      noSuchProvider: {
+        title: 'Not Connected',
+        message: "That sign-in method isn't connected to your account.",
+      },
+      lastProvider: {
+        title: "Can't Remove",
+        message:
+          "You can't disconnect your last sign-in method — you'd be locked out. Connect another method first.",
       },
     },
     database: {

@@ -94,6 +94,7 @@ const ROUTES = {
   SETTINGS_DISPLAY_NAME: 'settings/display-name',
   SETTINGS_EMAIL: 'settings/email',
   SETTINGS_PASSWORD: 'settings/password',
+  SETTINGS_CONNECTED_ACCOUNTS: 'settings/connected-accounts',
   SETTINGS_TIMEZONE: 'settings/timezone',
   SETTINGS_TIMEZONE_SELECT: 'settings/timezone-select',
   // SETTINGS_TIMEZONE_SELECT: {

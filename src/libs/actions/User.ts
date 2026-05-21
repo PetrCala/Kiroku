@@ -25,13 +25,14 @@ import {
   sendEmailVerification,
   signInWithCredential,
   signInWithEmailAndPassword,
+  unlink,
   updatePassword as fbUpdatePassword,
   updateProfile,
   verifyBeforeUpdateEmail,
 } from 'firebase/auth';
 import {getUniqueId} from 'react-native-device-info';
 import {cleanStringForFirebaseKey} from '@libs/StringUtilsKiroku';
-import {getOAuthCredentialForDeletion} from '@libs/OAuthCredential';
+import {getOAuthCredential} from '@libs/OAuthCredential';
 import DBPATHS from '@src/DBPATHS';
 import {readDataOnce} from '@database/baseFunctions';
 import type {FirebaseUpdates} from '@database/updates';
@@ -256,7 +257,7 @@ async function reauthenticateWithOAuth(
   user: User,
   providerId: string,
 ): Promise<UserCredential | null> {
-  const getCredential = getOAuthCredentialForDeletion[providerId];
+  const getCredential = getOAuthCredential[providerId];
   if (!getCredential) {
     throw new Error(
       Localize.translateLocal('deleteAccountScreen.error.unsupportedProvider'),
@@ -685,6 +686,60 @@ async function linkPendingOAuthCredential(
   Session.clearSignInData();
 }
 
+/**
+ * Link an OAuth credential to the currently signed-in user. This is the
+ * "Connected Accounts" / proactive path — distinct from
+ * `linkPendingOAuthCredential`, which is the reactive sign-in-collision path
+ * that first signs the user in with email/password.
+ *
+ * After a successful link, `auth.currentUser.providerData` is refreshed so
+ * callers can re-render the linked-providers list without a separate reload.
+ *
+ * Common errors the caller should handle:
+ * - `auth/credential-already-in-use` / `auth/email-already-in-use` — the OAuth
+ *   identity is already attached to a different Firebase account. We do not
+ *   auto-merge; the caller should show a localized error.
+ * - `auth/requires-recent-login` — sign-in is too old; the caller should
+ *   reauthenticate and retry.
+ */
+async function linkOAuthProvider(
+  auth: Auth,
+  credential: AuthCredential,
+): Promise<void> {
+  if (!auth.currentUser) {
+    throw new Error(ERRORS.AUTH.USER_IS_NULL);
+  }
+  await linkWithCredential(auth.currentUser, credential);
+  // providerData is not auto-refreshed after link/unlink — reload so the
+  // caller sees the new provider list immediately.
+  await auth.currentUser.reload();
+}
+
+/**
+ * Unlink a provider (Apple/Google, or `password`) from the currently signed-in
+ * user. Refuses to unlink the last remaining provider — that would lock the
+ * user out of their account.
+ *
+ * Common errors the caller should handle:
+ * - `auth/requires-recent-login` — sign-in is too old; the caller should
+ *   reauthenticate and retry.
+ * - `auth/no-such-provider` — the provider isn't linked (should not happen if
+ *   the UI is driven off `providerData`, but defensive).
+ */
+async function unlinkOAuthProvider(
+  auth: Auth,
+  providerId: string,
+): Promise<void> {
+  if (!auth.currentUser) {
+    throw new Error(ERRORS.AUTH.USER_IS_NULL);
+  }
+  if (auth.currentUser.providerData.length <= 1) {
+    throw new Error(ERRORS.AUTH.LAST_PROVIDER);
+  }
+  await unlink(auth.currentUser, providerId);
+  await auth.currentUser.reload();
+}
+
 /** Attempt to log in to the Firebase authentication service with a user's credentials
  *
  * @param auth The Firebase authentication object
@@ -828,5 +883,7 @@ export {
   stashPendingOAuthCredential,
   clearPendingOAuthCredential,
   linkPendingOAuthCredential,
+  linkOAuthProvider,
+  unlinkOAuthProvider,
   signUp,
 };

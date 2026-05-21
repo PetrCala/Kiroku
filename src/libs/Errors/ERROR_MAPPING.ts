@@ -28,6 +28,9 @@ const ERROR_MAPPING: ErrorMapping = {
   [ERRORS.AUTH.TOO_MANY_REQUESTS]: 'errors.auth.tooManyRequests',
   [ERRORS.AUTH.SIGN_OUT_FAILED]: 'errors.auth.signOutFailed',
   [ERRORS.AUTH.USER_IS_NULL]: 'errors.auth.userIsNull',
+  [ERRORS.AUTH.CREDENTIAL_ALREADY_IN_USE]: 'errors.auth.credentialAlreadyInUse',
+  [ERRORS.AUTH.NO_SUCH_PROVIDER]: 'errors.auth.noSuchProvider',
+  [ERRORS.AUTH.LAST_PROVIDER]: 'errors.auth.lastProvider',
   [ERRORS.DATABASE.ACCOUNT_CREATION_LIMIT_EXCEEDED]:
     'errors.database.accountCreationLimitExceeded',
   [ERRORS.DATABASE.DATA_FETCH_FAILED]: 'errors.database.dataFetchFailed',

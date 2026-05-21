@@ -60,6 +60,7 @@ const SCREENS = {
       DISPLAY_NAME: 'Settings_DisplayName',
       EMAIL: 'Settings_Email',
       PASSWORD: 'Settings_Password',
+      CONNECTED_ACCOUNTS: 'Settings_ConnectedAccounts',
       TIMEZONE: 'Settings_Timezone',
       TIMEZONE_SELECT: 'Settings_Timezone_Select',
       // ...

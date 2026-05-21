@@ -1,4 +1,4 @@
-/* eslint-disable @typescript-eslint/naming-convention */
+ 
 import type {LinkingOptions} from '@react-navigation/native';
 import type {RootStackParamList} from '@navigation/types';
 import NAVIGATORS from '@src/NAVIGATORS';
@@ -145,6 +145,10 @@ const config: LinkingOptions<RootStackParamList>['config'] = {
             },
             [SCREENS.SETTINGS.ACCOUNT.PASSWORD]: {
               path: ROUTES.SETTINGS_PASSWORD,
+              exact: true,
+            },
+            [SCREENS.SETTINGS.ACCOUNT.CONNECTED_ACCOUNTS]: {
+              path: ROUTES.SETTINGS_CONNECTED_ACCOUNTS,
               exact: true,
             },
             [SCREENS.SETTINGS.ACCOUNT.TIMEZONE]: {

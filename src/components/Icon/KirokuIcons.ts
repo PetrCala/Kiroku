@@ -47,6 +47,7 @@ import Minus from '@assets/images/minus.png';
 import NewWindow from '@assets/images/new-window.svg';
 import Pencil from '@assets/images/pencil.png';
 import Plus from '@assets/images/plus.svg';
+import AppleLogo from '@assets/images/apple-logo.svg';
 import Gear from '@assets/images/gear.svg';
 import GoogleG from '@assets/images/google-g.svg';
 import QrCode from '@assets/images/qrcode.svg';
@@ -72,6 +73,7 @@ export {
   AddImage,
   AddUser,
   AlcoholAssortment,
+  AppleLogo,
   ArrowBack,
   ArrowDown,
   ArrowDownLong,

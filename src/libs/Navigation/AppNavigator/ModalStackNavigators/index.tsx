@@ -110,6 +110,9 @@ const SettingsModalStackNavigator =
     [SCREENS.SETTINGS.ACCOUNT.PASSWORD]: () =>
       require<ReactComponentModule>('@screens/Settings/Account/PasswordScreen')
         .default,
+    [SCREENS.SETTINGS.ACCOUNT.CONNECTED_ACCOUNTS]: () =>
+      require<ReactComponentModule>('@screens/Settings/Account/ConnectedAccountsScreen')
+        .default,
     [SCREENS.SETTINGS.ACCOUNT.TIMEZONE]: () =>
       require<ReactComponentModule>('@screens/Settings/Account/TimezoneInitialScreen')
         .default,

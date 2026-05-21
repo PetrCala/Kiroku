@@ -960,6 +960,55 @@ export default {
       generic: 'Při pokusu o reset hesla došlo k chybě.',
     },
   },
+  connectedAccounts: {
+    title: 'Propojené účty',
+    subtitle:
+      'Vyberte si, jak se chcete přihlašovat. Můžete propojit více způsobů — všechny vás přihlásí ke stejnému účtu.',
+    providers: {
+      password: 'E-mail a heslo',
+      apple: 'Apple',
+      google: 'Google',
+    },
+    status: {
+      signedInWith: 'Aktuálně přihlášeni tímto způsobem',
+      connected: 'Propojeno',
+      notConnected: 'Nepropojeno',
+    },
+    actions: {
+      connect: 'Propojit',
+      disconnect: 'Odpojit',
+      cancel: 'Zrušit',
+    },
+    unlinkConfirm: {
+      title: ({provider}: {provider: string}) => `Odpojit ${provider}?`,
+      prompt: ({remaining}: {remaining: string}) =>
+        `Od této chvíle se budete moci přihlásit pouze pomocí: ${remaining}.`,
+      confirm: 'Odpojit',
+    },
+    reauth: {
+      title: 'Ověřte se',
+      passwordPrompt:
+        'Z bezpečnostních důvodů prosím znovu zadejte své heslo, než provedeme tuto změnu.',
+      oauthPrompt: ({provider}: {provider: string}) =>
+        `Z bezpečnostních důvodů se prosím znovu přihlaste pomocí ${provider}, než provedeme tuto změnu.`,
+      submit: 'Potvrdit',
+      reauthWith: ({provider}: {provider: string}) =>
+        `Pokračovat pomocí ${provider}`,
+      error: 'Nepodařilo se ověřit vaši identitu. Zkuste to prosím znovu.',
+    },
+    privateRelay:
+      'Apple skrývá vaši skutečnou e-mailovou adresu pomocí přeposílací adresy. Pokud Apple odpojíte a později znovu propojíte, přeposílací adresa bude jiná.',
+    success: {
+      connected: ({provider}: {provider: string}) =>
+        `${provider} byl propojen.`,
+      disconnected: ({provider}: {provider: string}) =>
+        `${provider} byl odpojen.`,
+    },
+    error: {
+      generic:
+        'Propojené účty se nepodařilo aktualizovat. Zkuste to prosím znovu.',
+    },
+  },
   oauthLinkModal: {
     appleTitle: 'Propojit účet Apple',
     googleTitle: 'Propojit účet Google',
@@ -1087,6 +1136,20 @@ export default {
       userIsNull: {
         title: 'Uživatel nenalezen',
         message: 'Nepodařilo se identifikovat váš účet. Restartujte aplikaci.',
+      },
+      credentialAlreadyInUse: {
+        title: 'Již propojeno',
+        message:
+          'Tento účet je již propojen s jiným účtem Kiroku. Odhlaste se a přihlaste se prosím tím druhým účtem.',
+      },
+      noSuchProvider: {
+        title: 'Není propojeno',
+        message: 'Tento způsob přihlášení nemáte k účtu připojen.',
+      },
+      lastProvider: {
+        title: 'Nelze odpojit',
+        message:
+          'Nelze odpojit poslední způsob přihlášení — ztratili byste přístup k účtu. Nejprve přidejte jiný způsob.',
       },
     },
     database: {
