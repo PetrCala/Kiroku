@@ -65,14 +65,15 @@ function useLazyMarkedDates(
     setLoadedMonths(user?.uid !== userID ? 0 : monthsLoaded ?? 0);
   }, [userID, user?.uid, monthsLoaded]);
 
-  // Synchronously derive markedDates + unitsMap from the inputs.
-  // No effect, no setState — the next render has the new payload.
-  const {markedDatesMap, unitsMap, loadedFromDate} = useMemo(() => {
+  // First pass — rebuild the session-by-day index only when sessions or the
+  // visible range change. Preferences are *not* a dependency here: a palette
+  // or threshold change must not trigger the O(N) session filter+index pass.
+  const {sessionIndex, dayKeys, loadedFromDate} = useMemo(() => {
     const today = new Date();
     const start = subDays(startOfMonth(subMonths(today, loadedMonths)), 1);
     const end = today;
 
-    const sessionIndex = new Map<DateString, DrinkingSessionArray>();
+    const index = new Map<DateString, DrinkingSessionArray>();
     Object.values(sessions)
       .filter(session => isWithinInterval(session.start_time, {start, end}))
       .forEach(session => {
@@ -84,20 +85,30 @@ function useLazyMarkedDates(
           sessionDate,
           CONST.DATE.FNS_FORMAT_STRING,
         ) as DateString;
-        const existing = sessionIndex.get(dayKey);
+        const existing = index.get(dayKey);
         if (existing) {
           existing.push(session);
         } else {
-          sessionIndex.set(dayKey, [session]);
+          index.set(dayKey, [session]);
         }
       });
 
+    const days = eachDayOfInterval({start, end}).map(
+      day => format(day, CONST.DATE.FNS_FORMAT_STRING) as DateString,
+    );
+
+    return {sessionIndex: index, dayKeys: days, loadedFromDate: start};
+  }, [sessions, loadedMonths, defaultTimezone]);
+
+  // Second pass — build markedDates + unitsMap from the pre-built index.
+  // This is the only memo that needs `preferences`; on a palette change it
+  // walks the day list (~30 entries) instead of re-filtering N sessions.
+  const {markedDatesMap, unitsMap} = useMemo(() => {
     const newMarkedDatesMap = new Map<DateString, MarkingProps>();
     const newUnitsMap = new Map<DateString, number>();
     const palette = resolvePalette(preferences.session_color_palette);
 
-    eachDayOfInterval({start, end}).forEach(day => {
-      const dayKey = format(day, CONST.DATE.FNS_FORMAT_STRING) as DateString;
+    dayKeys.forEach(dayKey => {
       const dailySessions = sessionIndex.get(dayKey) ?? [];
       const newMarking = sessionsToDayMarking(dailySessions, preferences);
       if (!newMarking) {
@@ -108,12 +119,8 @@ function useLazyMarkedDates(
       newUnitsMap.set(dayKey, newMarking.units);
     });
 
-    return {
-      markedDatesMap: newMarkedDatesMap,
-      unitsMap: newUnitsMap,
-      loadedFromDate: start,
-    };
-  }, [sessions, preferences, loadedMonths, defaultTimezone]);
+    return {markedDatesMap: newMarkedDatesMap, unitsMap: newUnitsMap};
+  }, [sessionIndex, dayKeys, preferences]);
 
   const markedDates: MarkedDates = useMemo(
     () => Object.fromEntries(markedDatesMap),
