@@ -159,6 +159,8 @@ function ColorPaletteScreen() {
               unitsMap={previewData.unitsMap}
               visibleDate={visibleDate}
               hideArrows
+              hideMonthHeader
+              hideDayNames
             />
           </View>
           <View>
