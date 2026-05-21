@@ -677,6 +677,9 @@ function cleanupSession() {
   // immediately receive a fresh verification email without hitting the
   // previous user's send timestamp.
   Onyx.set(ONYXKEYS.VERIFY_EMAIL_SENT, null);
+  // Drop the cached drinking sessions snapshot so the next account on this
+  // device can't briefly render the previous user's data on cold launch.
+  Onyx.set(ONYXKEYS.CACHED_DRINKING_SESSIONS, null);
   clearCache().then(() => {
     Log.info('Cleared all cache data', true, {}, true);
   });
