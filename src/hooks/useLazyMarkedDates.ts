@@ -180,11 +180,12 @@ function useLazyMarkedDates(
   }, [isFocused, user?.uid, userID]);
 
   useEffect(() => {
-    // Calculate only upon refocus
-    if (!isFocused) {
-      return;
-    }
-
+    // Rebuild markedDates whenever the underlying inputs change. Previously this
+    // bailed out when the screen wasn't focused as a perceived optimization, but
+    // that left the home calendar stale after a palette/threshold change made
+    // from an overlay screen — and depending on navigation behavior the effect
+    // didn't always re-fire on refocus. The useEffect dep array already keeps
+    // this cheap (it only runs when inputs actually change).
     setIsLoading(true);
     loadedFrom.current = null;
 
@@ -200,7 +201,7 @@ function useLazyMarkedDates(
 
     // TODOcheck the validity of loadMoreMonths and monthsLoaded for re-renders
     // eslint-disable-next-line react-compiler/react-compiler, react-hooks/exhaustive-deps
-  }, [sessions, preferences, userID, user?.uid, isFocused, monthsLoaded]);
+  }, [sessions, preferences, userID, user?.uid, monthsLoaded]);
 
   return {
     markedDates,
