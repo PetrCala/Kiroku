@@ -25,6 +25,7 @@ import Navigation from '@libs/Navigation/Navigation';
 import DBPATHS from '@src/DBPATHS';
 import ROUTES from '@src/ROUTES';
 import useFetchData from '@hooks/useFetchData';
+import useDrinkingSessionsFetch from '@hooks/useDrinkingSessionsFetch';
 import ScreenWrapper from '@components/ScreenWrapper';
 import type {FetchDataKeys} from '@hooks/useFetchData/types';
 import HeaderWithBackButton from '@components/HeaderWithBackButton';
@@ -47,15 +48,20 @@ function ProfileScreen({route}: ProfileScreenProps) {
   const {auth, db} = useFirebase();
   const {userID} = route.params;
   const user = auth.currentUser;
-  const relevantDataKeys: FetchDataKeys = [
-    'userData',
-    'drinkingSessionData',
-    'preferences',
-  ];
+  // `drinkingSessionData` is fetched separately via `useDrinkingSessionsFetch`
+  // — that hook windows the Firebase query by `start_time` and re-fetches when
+  // the calendar widens. `useFetchData` stays for the non-windowed keys.
+  const relevantDataKeys: FetchDataKeys = ['userData', 'preferences'];
   const {translate} = useLocalize();
   const styles = useThemeStyles();
   const StyleUtils = useStyleUtils();
-  const {data: fetchedData, isLoading} = useFetchData(userID, relevantDataKeys);
+  const {data: fetchedData, isLoading: isFetchLoading} = useFetchData(
+    userID,
+    relevantDataKeys,
+  );
+  const {data: drinkingSessionData, isLoading: isSessionsLoading} =
+    useDrinkingSessionsFetch(userID);
+  const isLoading = isFetchLoading || isSessionsLoading;
   const [selfFriends, setSelfFriends] = useState<UserList | null | undefined>();
   const [friendCount, setFriendCount] = useState(0);
   const [commonFriendCount, setCommonFriendCount] = useState(0);
@@ -67,7 +73,6 @@ function ProfileScreen({route}: ProfileScreenProps) {
   const [manageFriendModalVisible, setManageFriendModalVisible] =
     useState(false);
   const userData = fetchedData?.userData;
-  const drinkingSessionData = fetchedData?.drinkingSessionData;
   const preferences = fetchedData?.preferences;
   const profileData = userData?.profile;
   const friends = userData?.friends;

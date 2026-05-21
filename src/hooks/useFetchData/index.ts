@@ -35,15 +35,15 @@ const useFetchData = (
   const {db} = useFirebase();
   const [refetchIndex, setRefetchIndex] = useState(0); // Used to trigger refetch
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const [data, setData] = useState<{[key in FetchDataKey]?: any}>({});
+  const [data, setData] = useState<Partial<Record<FetchDataKey, any>>>({});
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [resolveRefetch, setResolveRefetch] = useState<() => void>(
     () => () => {},
   );
   const [keysToFetch, setKeysToFetch] = useState<FetchDataKeys>(dataTypes);
 
-  const refetch = (keys?: FetchDataKeys): Promise<void> => {
-    return new Promise<void>(resolve => {
+  const refetch = (keys?: FetchDataKeys): Promise<void> =>
+    new Promise<void>(resolve => {
       setResolveRefetch(() => resolve);
       if (keys) {
         setKeysToFetch(keys);
@@ -52,7 +52,6 @@ const useFetchData = (
       }
       setRefetchIndex(prev => prev + 1);
     });
-  };
 
   useEffect(() => {
     if (!userID || !db) {
@@ -62,13 +61,18 @@ const useFetchData = (
 
     const fetchData = async () => {
       setIsLoading(true);
+      // NOTE: `drinkingSessionData` is intentionally NOT handled here — that
+      // key has been pulled out into the dedicated `useDrinkingSessionsFetch`
+      // hook, which owns the windowed `start_time` query and the per-UID
+      // re-fetch loop. Consumers (e.g. ProfileScreen) call both hooks side
+      // by side.
       const promises = keysToFetch.map(async dataType => {
         const path = fetchDataKeyToDbPath(dataType, userID);
-        if (path) {
-          const fetchedData = await readDataOnce(db, path);
-          return {[dataType]: fetchedData};
+        if (!path) {
+          return {};
         }
-        return {};
+        const fetchedData = await readDataOnce(db, path);
+        return {[dataType]: fetchedData};
       });
 
       const results = await Promise.all(promises);

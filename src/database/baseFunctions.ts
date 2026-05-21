@@ -1,4 +1,4 @@
-import type {Database} from 'firebase/database';
+import type {Database, Query} from 'firebase/database';
 import {get, ref, child, push, onValue, off} from 'firebase/database';
 import type {Profile, ProfileList, UserStatusList} from '@src/types/onyx';
 import type {UserID} from '@src/types/onyx/OnyxCommon';
@@ -46,6 +46,30 @@ function listenForDataChanges<T>(
   });
 
   return () => off(dbRef, 'value', listener);
+}
+
+/**
+ * Listen for changes on an arbitrary Firebase Query (e.g. one built with
+ * `orderByChild` / `startAt`). The caller owns the query object — when it
+ * changes shape (different filter window), tear down the old listener and
+ * subscribe again with a fresh one.
+ *
+ * @param query A Firebase Database Query (or Reference)
+ * @param onDataChange Callback invoked with the filtered snapshot
+ */
+function listenForQueryChanges<T>(
+  query: Query,
+  onDataChange: (data: T | null) => void,
+) {
+  const listener = onValue(query, snapshot => {
+    let data: T | null = null;
+    if (snapshot.exists()) {
+      data = snapshot.val() as T;
+    }
+    onDataChange(data);
+  });
+
+  return () => off(query, 'value', listener);
 }
 
 /**
@@ -117,5 +141,6 @@ export {
   fetchDisplayDataForUsers,
   generateDatabaseKey,
   listenForDataChanges,
+  listenForQueryChanges,
   readDataOnce,
 };

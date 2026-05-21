@@ -178,6 +178,12 @@ const ONYXKEYS = {
     DRINKING_SESSION: 'drinkingSession_',
     FEEDBACK: 'feedback_',
     BUG: 'bug_',
+    /**
+     * Per-user count of months the sessions calendar has been scrolled back.
+     * Drives the Firebase `start_time` window for both the auth-user live
+     * listener and the friend-profile one-shot fetcher.
+     */
+    SESSIONS_CALENDAR_MONTHS_BY_USER_ID: 'sessionsCalendarMonthsByUserID_',
     //     POLICY: 'policy_',
     //     POLICY_TAGS: 'policyTags_',
     //     POLICY_RECENTLY_USED_TAGS: 'nvp_recentlyUsedTags_',
@@ -261,6 +267,7 @@ type OnyxCollectionValuesMapping = {
   [ONYXKEYS.COLLECTION.DRINKING_SESSION]: OnyxTypes.DrinkingSession;
   [ONYXKEYS.COLLECTION.FEEDBACK]: OnyxTypes.Feedback;
   [ONYXKEYS.COLLECTION.BUG]: OnyxTypes.Bug;
+  [ONYXKEYS.COLLECTION.SESSIONS_CALENDAR_MONTHS_BY_USER_ID]: number;
   //   [ONYXKEYS.COLLECTION.POLICY]: OnyxTypes.Policy;
   //   [ONYXKEYS.COLLECTION.POLICY_DRAFTS]: OnyxTypes.Policy;
   //     .POLICY_RECENTLY_USED_CATEGORIES]: OnyxTypes.RecentlyUsedCategories;

@@ -36,7 +36,6 @@ import Timing from '@userActions/Timing';
 import ScrollView from '@components/ScrollView';
 import useLocalize from '@hooks/useLocalize';
 import {roundToTwoDecimalPlaces} from '@libs/NumberUtils';
-import NoSessionsInfo from '@components/NoSessionsInfo';
 import Text from '@components/Text';
 import BottomTabBar from '@libs/Navigation/AppNavigator/createCustomBottomTabNavigator/BottomTabBar';
 import {useOnyx} from 'react-native-onyx';
@@ -164,11 +163,12 @@ function HomeScreen({route}: HomeScreenProps) {
   }
 
   // Render the shell + skeletons immediately. Real components swap in for
-  // their skeletons as each piece of data resolves from Firebase.
+  // their skeletons as each piece of data resolves from Firebase. The
+  // calendar renders even when the user has no sessions yet — empty days
+  // are still a valid view of their history.
   const isPreferencesReady = !!preferences;
   const isUserDataReady = !!userData;
   const isSessionsReady = drinkingSessionData !== undefined;
-  const hasSessions = isSessionsReady && !!drinkingSessionData;
   const showSkeletonContent = !isPreferencesReady || !isSessionsReady;
 
   const renderMainContent = () => {
@@ -180,21 +180,18 @@ function HomeScreen({route}: HomeScreenProps) {
         </>
       );
     }
-    if (hasSessions) {
-      return (
-        <>
-          <StatOverview statsData={statsData} />
-          <SessionsCalendar
-            userID={user.uid}
-            visibleDate={visibleDate}
-            onDateChange={setVisibleDate}
-            drinkingSessionData={drinkingSessionData}
-            preferences={preferences}
-          />
-        </>
-      );
-    }
-    return <NoSessionsInfo />;
+    return (
+      <>
+        <StatOverview statsData={statsData} />
+        <SessionsCalendar
+          userID={user.uid}
+          visibleDate={visibleDate}
+          onDateChange={setVisibleDate}
+          drinkingSessionData={drinkingSessionData}
+          preferences={preferences}
+        />
+      </>
+    );
   };
 
   return (

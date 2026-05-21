@@ -56,7 +56,8 @@
       "$uid": {
         ".validate": "newData.val() === null || newData.hasChildren()",
         ".read": "auth != null && (auth.uid === $uid || root.child('users').child(auth.uid).child('friends').child($uid).exists())",
-        ".write": "auth != null && auth.uid === $uid"
+        ".write": "auth != null && auth.uid === $uid",
+        ".indexOn": ["start_time"]
       }
     },
     "user_preferences": {
