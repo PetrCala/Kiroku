@@ -45,7 +45,10 @@ async function getAppleCredential(): Promise<AuthCredential | null> {
       return null;
     }
     const provider = new OAuthProvider('apple.com');
-    return provider.credential({idToken: response.id_token});
+    return provider.credential({
+      idToken: response.id_token,
+      rawNonce: response.nonce ?? undefined,
+    });
   } catch (error: unknown) {
     const e = error as {message?: string};
     if (e.message === appleAuthAndroid.Error.SIGNIN_CANCELLED) {

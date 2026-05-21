@@ -20,6 +20,7 @@ type AppleSignInProps = {
 
 type AppleAndroidSignInResult = {
   idToken: string | undefined;
+  rawNonce: string | undefined;
   displayName: string | null;
 };
 
@@ -50,7 +51,11 @@ async function appleSignInRequestAndroid(): Promise<AppleAndroidSignInResult | n
   const displayName =
     [name?.firstName, name?.lastName].filter(Boolean).join(' ') || null;
 
-  return {idToken: response.id_token, displayName};
+  return {
+    idToken: response.id_token,
+    rawNonce: response.nonce ?? undefined,
+    displayName,
+  };
 }
 
 /**
@@ -73,10 +78,13 @@ function AppleSignIn({
         return;
       }
 
-      const {idToken, displayName} = result;
+      const {idToken, rawNonce, displayName} = result;
 
       const provider = new OAuthProvider('apple.com');
-      const credential = provider.credential({idToken: idToken ?? ''});
+      const credential = provider.credential({
+        idToken: idToken ?? '',
+        rawNonce,
+      });
 
       onPress();
       // Shown at the Kiroku-level overlay so it stays visible across the
@@ -92,6 +100,7 @@ function AppleSignIn({
           User.stashPendingOAuthCredential(firebaseError, {
             providerId: 'apple.com',
             idToken: idToken ?? '',
+            rawNonce,
             displayName,
           })
         ) {
