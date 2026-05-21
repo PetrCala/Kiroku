@@ -193,12 +193,7 @@ function ColorPaletteScreen() {
                     },
                   ]}>
                   <View style={[styles.flexColumn, styles.flex1]}>
-                    <Text
-                      style={[
-                        styles.textNormal,
-                        styles.textStrong,
-                        isActive ? {color: accent} : null,
-                      ]}>
+                    <Text style={[styles.textNormal, styles.textStrong]}>
                       {paletteName}
                     </Text>
                     <Text style={[styles.textMicroSupporting, styles.mt1]}>
