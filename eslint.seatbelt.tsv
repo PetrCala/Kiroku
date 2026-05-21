@@ -811,7 +811,6 @@
 "src/screens/DrinkingSession/SessionDateScreen.tsx"	"@typescript-eslint/no-unnecessary-type-assertion"	1
 "src/screens/DrinkingSession/SessionSummaryScreen.tsx"	"react-hooks/set-state-in-effect"	1
 "src/screens/DrinkingSession/SessionSummaryScreen.tsx"	"rulesdir/no-use-state-initializer-functions"	2
-"src/screens/HomeScreen.tsx"	"react-hooks/set-state-in-effect"	1
 "src/screens/HomeScreen.tsx"	"rulesdir/no-use-state-initializer-functions"	2
 "src/screens/Profile/FriendsFriendsScreen.tsx"	"react-hooks/set-state-in-effect"	2
 "src/screens/Profile/ProfileScreen.tsx"	"arrow-body-style"	2

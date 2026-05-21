@@ -110,6 +110,14 @@ const ONYXKEYS = {
   /** How many months of the calendar the user has loaded already */
   SESSIONS_CALENDAR_MONTHS_LOADED: 'sessionsCalendarMonthsLoaded',
 
+  /**
+   * Cached snapshot of the Firebase `user_drinking_sessions/{uid}` node, keyed
+   * by userID. Used to seed the in-memory state on cold launch so the home
+   * screen can render before the live listener resolves. Firebase remains the
+   * source of truth; this is a render-time accelerator only.
+   */
+  CACHED_DRINKING_SESSIONS: 'cachedDrinkingSessions',
+
   /** Is the app loading? */
   IS_LOADING_APP: 'isLoadingApp',
 
@@ -302,6 +310,7 @@ type OnyxValuesMapping = {
   [ONYXKEYS.EDIT_SESSION_DATA]: OnyxTypes.DrinkingSession;
   [ONYXKEYS.IS_CREATING_NEW_SESSION]: boolean;
   [ONYXKEYS.SESSIONS_CALENDAR_MONTHS_LOADED]: number;
+  [ONYXKEYS.CACHED_DRINKING_SESSIONS]: OnyxTypes.UserDrinkingSessionsList;
   [ONYXKEYS.APP_LOADING_TEXT]: string;
   //   [ONYXKEYS.IS_TEST_TOOLS_MODAL_OPEN]: boolean;
   //   [ONYXKEYS.APP_PROFILING_IN_PROGRESS]: boolean;
