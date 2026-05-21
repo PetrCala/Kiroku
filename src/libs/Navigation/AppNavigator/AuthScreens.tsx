@@ -54,7 +54,8 @@ let lastUpdateIDAppliedToClient: OnyxEntry<number>;
 let timezone: Timezone | null;
 
 Onyx.connect({
-  key: ONYXKEYS.USER_DATA_LIST,
+  key: ONYXKEYS.COLLECTION.USER_DATA,
+  waitForCollectionCallback: true,
   callback: value => {
     // Safe to call getFirebaseAuth() here - Onyx callbacks run after app initialization
     const auth = getFirebaseAuth();
@@ -63,7 +64,9 @@ Onyx.connect({
       return;
     }
 
-    timezone = value?.[auth.currentUser?.uid]?.timezone ?? {};
+    const currentUserEntry =
+      value?.[`${ONYXKEYS.COLLECTION.USER_DATA}${auth.currentUser.uid}`];
+    timezone = currentUserEntry?.timezone ?? {};
     const currentTimezone = Intl.DateTimeFormat().resolvedOptions()
       .timeZone as SelectedTimezone;
 

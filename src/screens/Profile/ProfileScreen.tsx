@@ -24,10 +24,10 @@ import type SCREENS from '@src/SCREENS';
 import Navigation from '@libs/Navigation/Navigation';
 import DBPATHS from '@src/DBPATHS';
 import ROUTES from '@src/ROUTES';
-import useFetchData from '@hooks/useFetchData';
 import useDrinkingSessionsFetch from '@hooks/useDrinkingSessionsFetch';
+import usePreferencesFetch from '@hooks/usePreferencesFetch';
+import useUserDataFetch from '@hooks/useUserDataFetch';
 import ScreenWrapper from '@components/ScreenWrapper';
-import type {FetchDataKeys} from '@hooks/useFetchData/types';
 import HeaderWithBackButton from '@components/HeaderWithBackButton';
 import useLocalize from '@hooks/useLocalize';
 import FullScreenLoadingIndicator from '@components/FullscreenLoadingIndicator';
@@ -48,20 +48,21 @@ function ProfileScreen({route}: ProfileScreenProps) {
   const {auth, db} = useFirebase();
   const {userID} = route.params;
   const user = auth.currentUser;
-  // `drinkingSessionData` is fetched separately via `useDrinkingSessionsFetch`
-  // — that hook windows the Firebase query by `start_time` and re-fetches when
-  // the calendar widens. `useFetchData` stays for the non-windowed keys.
-  const relevantDataKeys: FetchDataKeys = ['userData', 'preferences'];
+  // All three pieces are now backed by per-user Onyx collections: a friend
+  // revisit renders from cache immediately while a background fetch refreshes
+  // silently. Sessions use the windowed `start_time` query; preferences and
+  // userData are one-shot `get()` with stale-while-revalidate.
   const {translate} = useLocalize();
   const styles = useThemeStyles();
   const StyleUtils = useStyleUtils();
-  const {data: fetchedData, isLoading: isFetchLoading} = useFetchData(
-    userID,
-    relevantDataKeys,
-  );
   const {data: drinkingSessionData, isLoading: isSessionsLoading} =
     useDrinkingSessionsFetch(userID);
-  const isLoading = isFetchLoading || isSessionsLoading;
+  const {data: userData, isLoading: isUserDataLoading} =
+    useUserDataFetch(userID);
+  const {data: preferences, isLoading: isPreferencesLoading} =
+    usePreferencesFetch(userID);
+  const isLoading =
+    isSessionsLoading || isUserDataLoading || isPreferencesLoading;
   const [selfFriends, setSelfFriends] = useState<UserList | null | undefined>();
   const [friendCount, setFriendCount] = useState(0);
   const [commonFriendCount, setCommonFriendCount] = useState(0);
@@ -72,8 +73,6 @@ function ProfileScreen({route}: ProfileScreenProps) {
   const [unitsConsumed, setUnitsConsumed] = useState(0);
   const [manageFriendModalVisible, setManageFriendModalVisible] =
     useState(false);
-  const userData = fetchedData?.userData;
-  const preferences = fetchedData?.preferences;
   const profileData = userData?.profile;
   const friends = userData?.friends;
 

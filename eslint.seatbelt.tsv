@@ -747,7 +747,6 @@
 "src/libs/DateUtils.ts"	"@typescript-eslint/switch-exhaustiveness-check"	1
 "src/libs/DateUtils.ts"	"arrow-body-style"	1
 "src/libs/DateUtils.ts"	"rulesdir/no-onyx-connect"	2
-"src/libs/DrinkingSessionUtils.ts"	"@typescript-eslint/prefer-nullish-coalescing"	1
 "src/libs/DrinkingSessionUtils.ts"	"@typescript-eslint/switch-exhaustiveness-check"	1
 "src/libs/DrinkingSessionUtils.ts"	"rulesdir/no-onyx-connect"	3
 "src/libs/Environment/betaChecker/index.android.ts"	"rulesdir/no-onyx-connect"	1

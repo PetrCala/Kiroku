@@ -5,6 +5,7 @@ import ONYXKEYS from '@src/ONYXKEYS';
 import * as Localize from '@libs/Localize';
 import Navigation from '@libs/Navigation/Navigation';
 import type {Preferences, Theme} from '@src/types/onyx';
+import type {UserID} from '@src/types/onyx/OnyxCommon';
 import DBPATHS from '@src/DBPATHS';
 import type {User} from '@firebase/auth';
 
@@ -64,4 +65,19 @@ async function updateTheme(db: Database, user: User | null, theme: Theme) {
   Navigation.goBack();
 }
 
-export {updatePreferences, updateTheme};
+/**
+ * Mirror an authoritative `user_preferences/{uid}` snapshot (from the live
+ * listener or a one-shot `get()`) into the per-user Onyx collection entry so
+ * consumers can read it via `useOnyx(\`${COLLECTION.PREFERENCES}${uid}\`)`.
+ *
+ * Pass `null` to clear the entry (e.g. when the listener reports the node is
+ * gone).
+ */
+function setLivePreferencesForUser(
+  userID: UserID,
+  preferences: Preferences | null,
+): void {
+  Onyx.set(`${ONYXKEYS.COLLECTION.PREFERENCES}${userID}`, preferences ?? null);
+}
+
+export {updatePreferences, updateTheme, setLivePreferencesForUser};

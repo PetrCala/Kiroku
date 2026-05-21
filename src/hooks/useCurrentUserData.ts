@@ -1,17 +1,23 @@
 import {useMemo} from 'react';
-import {useUserData} from '@components/OnyxProvider';
-import CONST from '@src/CONST';
+import {useOnyx} from 'react-native-onyx';
+import ONYXKEYS from '@src/ONYXKEYS';
 import type {UserData} from '@src/types/onyx';
 import {useFirebase} from '@context/global/FirebaseContext';
 
 type CurrentUserData = UserData | Record<string, never>;
 
+/**
+ * Read the auth user's `users/{uid}` entry from the per-user Onyx collection.
+ * Returns an empty object before the entry has been hydrated so callers don't
+ * have to nullable-guard every field access (matches the previous semantics).
+ */
 function useCurrentUserData() {
   const {auth} = useFirebase();
   const user = auth?.currentUser;
-  const userData = useUserData() ?? CONST.EMPTY_OBJECT;
-  const userID = user?.uid ?? 0;
-  const accountUserData = userData?.[userID];
+  const userID = user?.uid;
+  const [accountUserData] = useOnyx(
+    `${ONYXKEYS.COLLECTION.USER_DATA}${userID ?? ''}`,
+  );
   const currentUserData: CurrentUserData = useMemo(
     () =>
       (accountUserData ? {...accountUserData, userID} : {}) as CurrentUserData,

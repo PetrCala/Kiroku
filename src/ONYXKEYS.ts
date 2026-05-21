@@ -184,6 +184,18 @@ const ONYXKEYS = {
      * listener and the friend-profile one-shot fetcher.
      */
     SESSIONS_CALENDAR_MONTHS_BY_USER_ID: 'sessionsCalendarMonthsByUserID_',
+    /**
+     * Per-user preferences snapshot. Written through by the auth-user
+     * listener and the friend-profile fetcher; read directly by
+     * `DatabaseDataContext` (auth user) and `usePreferencesFetch` (friend).
+     */
+    PREFERENCES: 'preferences_',
+    /**
+     * Per-user `users/{uid}` snapshot. Replaces the legacy single-key
+     * `USER_DATA_LIST` `Record<UserID, UserData>` — that lookup blob is
+     * migrated entry-by-entry into this collection at boot.
+     */
+    USER_DATA: 'userData_',
     //     POLICY: 'policy_',
     //     POLICY_TAGS: 'policyTags_',
     //     POLICY_RECENTLY_USED_TAGS: 'nvp_recentlyUsedTags_',
@@ -268,6 +280,8 @@ type OnyxCollectionValuesMapping = {
   [ONYXKEYS.COLLECTION.FEEDBACK]: OnyxTypes.Feedback;
   [ONYXKEYS.COLLECTION.BUG]: OnyxTypes.Bug;
   [ONYXKEYS.COLLECTION.SESSIONS_CALENDAR_MONTHS_BY_USER_ID]: number;
+  [ONYXKEYS.COLLECTION.PREFERENCES]: OnyxTypes.Preferences;
+  [ONYXKEYS.COLLECTION.USER_DATA]: OnyxTypes.UserData;
   //   [ONYXKEYS.COLLECTION.POLICY]: OnyxTypes.Policy;
   //   [ONYXKEYS.COLLECTION.POLICY_DRAFTS]: OnyxTypes.Policy;
   //     .POLICY_RECENTLY_USED_CATEGORIES]: OnyxTypes.RecentlyUsedCategories;

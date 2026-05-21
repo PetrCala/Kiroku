@@ -11,9 +11,15 @@ import type {
 import {fetchDataKeyToDbPath} from '@hooks/useFetchData/utils';
 import useLocalize from '@hooks/useLocalize';
 import * as App from '@userActions/App';
+import * as Preferences from '@userActions/Preferences';
+import * as UserData from '@userActions/UserData';
 import CONST from '@src/CONST';
 import ONYXKEYS from '@src/ONYXKEYS';
-import type {DrinkingSessionList} from '@src/types/onyx';
+import type {
+  DrinkingSessionList,
+  Preferences as PreferencesType,
+  UserData as UserDataType,
+} from '@src/types/onyx';
 import {subMonths} from 'date-fns';
 import {orderByChild, query, ref, startAt} from 'firebase/database';
 import {useEffect, useState} from 'react';
@@ -129,6 +135,25 @@ const useListenToData = (
               ...prevData,
               [dataTypeKey]: fetchedData,
             }));
+
+            if (!userID) {
+              return;
+            }
+            // Write through authoritative live data to the matching per-user
+            // Onyx slot. Cold launches and friend revisits can then render
+            // from cache before Firebase responds. Firebase stays the source
+            // of truth.
+            if (dataTypeKey === 'preferences') {
+              Preferences.setLivePreferencesForUser(
+                userID,
+                (fetchedData ?? null) as PreferencesType | null,
+              );
+            } else if (dataTypeKey === 'userData') {
+              UserData.setLiveUserDataForUser(
+                userID,
+                (fetchedData ?? null) as UserDataType | null,
+              );
+            }
           });
         }
         return () => {};

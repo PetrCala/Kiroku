@@ -49,14 +49,12 @@ async function acceptTerms(
 
   await update(ref(db), updates);
 
-  await Onyx.merge(ONYXKEYS.USER_DATA_LIST, {
-    [userID]: {
-      agreed_to_terms_at: now,
-      agreed_to_terms_version: version,
-      ...(onboardingPath !== undefined && {
-        onboarding: {last_visited_path: onboardingPath},
-      }),
-    },
+  await Onyx.merge(`${ONYXKEYS.COLLECTION.USER_DATA}${userID}`, {
+    agreed_to_terms_at: now,
+    agreed_to_terms_version: version,
+    ...(onboardingPath !== undefined && {
+      onboarding: {last_visited_path: onboardingPath},
+    }),
   });
   await Onyx.merge(ONYXKEYS.NVP_TERMS_ACCEPTED_VERSION, version);
   if (onboardingPath !== undefined) {
@@ -94,10 +92,8 @@ async function setDisplayName(
 
   await update(ref(db), updates);
 
-  await Onyx.merge(ONYXKEYS.USER_DATA_LIST, {
-    [userID]: {
-      onboarding: {last_visited_path: path},
-    },
+  await Onyx.merge(`${ONYXKEYS.COLLECTION.USER_DATA}${userID}`, {
+    onboarding: {last_visited_path: path},
   });
   await Onyx.merge(ONYXKEYS.NVP_ONBOARDING, {last_visited_path: path});
 }
@@ -124,8 +120,8 @@ async function completeOnboarding(
   const now = Date.now();
 
   await Onyx.merge(ONYXKEYS.NVP_ONBOARDING, {completed_at: now});
-  await Onyx.merge(ONYXKEYS.USER_DATA_LIST, {
-    [userID]: {onboarding: {completed_at: now}},
+  await Onyx.merge(`${ONYXKEYS.COLLECTION.USER_DATA}${userID}`, {
+    onboarding: {completed_at: now},
   });
 
   const completedAtPath =

@@ -5,12 +5,11 @@ import type {UserData} from '@src/types/onyx';
 import * as Localize from './Localize';
 
 let userData: Array<UserData | null> = [];
-// let allUserData: OnyxEntry<UserDataList> = {};
 Onyx.connect({
-  key: ONYXKEYS.USER_DATA_LIST,
+  key: ONYXKEYS.COLLECTION.USER_DATA,
+  waitForCollectionCallback: true,
   callback: val => {
-    userData = Object.values(val ?? {});
-    // allUserData = val;
+    userData = Object.values(val ?? {}) as Array<UserData | null>;
   },
 });
 

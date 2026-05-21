@@ -500,8 +500,8 @@ async function updateAutomaticTimezone(
 
   await update(ref(db), updates);
 
-  await Onyx.merge(ONYXKEYS.USER_DATA_LIST, {
-    [userID]: {timezone: newData},
+  await Onyx.merge(`${ONYXKEYS.COLLECTION.USER_DATA}${userID}`, {
+    timezone: newData,
   });
 }
 
@@ -530,8 +530,8 @@ async function saveSelectedTimezone(
 
   await update(ref(db), updates);
 
-  await Onyx.merge(ONYXKEYS.USER_DATA_LIST, {
-    [userID]: {timezone: {selected: selectedTimezone}},
+  await Onyx.merge(`${ONYXKEYS.COLLECTION.USER_DATA}${userID}`, {
+    timezone: {selected: selectedTimezone},
   });
 }
 

@@ -1,7 +1,7 @@
 // DatabaseDataContext.tsx
 import type {ReactNode} from 'react';
 import React, {createContext, useContext, useEffect, useMemo} from 'react';
-import Onyx from 'react-native-onyx';
+import Onyx, {useOnyx} from 'react-native-onyx';
 import type {
   DrinkingSessionList,
   Preferences,
@@ -54,40 +54,40 @@ function DatabaseDataProvider({children}: DatabaseDataProviderProps) {
     'userData',
   ];
 
+  // The listener still subscribes for *all* keys (so write-through fires for
+  // preferences/userData), but we read those two from Onyx via `useOnyx`
+  // below — they're cached per-user. The listener's React state is the
+  // primary source for the remaining keys.
   const {data} = useListenToData(dataTypes, userID);
+
+  const [preferencesFromOnyx] = useOnyx(
+    `${ONYXKEYS.COLLECTION.PREFERENCES}${userID}`,
+  );
+  const [userDataFromOnyx] = useOnyx(
+    `${ONYXKEYS.COLLECTION.USER_DATA}${userID}`,
+  );
 
   const value = useMemo(
     () => ({
       userStatusData: data.userStatusData,
       drinkingSessionData: data.drinkingSessionData,
-      preferences: data.preferences,
+      preferences: preferencesFromOnyx ?? undefined,
       unconfirmedDays: data.unconfirmedDays,
-      userData: data.userData,
+      userData: userDataFromOnyx ?? undefined,
     }),
-    [data],
+    [data, preferencesFromOnyx, userDataFromOnyx],
   );
 
   // Sync theme preference from Firebase to Onyx when preferences are loaded
   // This ensures the app theme is consistent with the user's saved preference
   useEffect(() => {
-    if (data.preferences === undefined) {
+    if (!preferencesFromOnyx) {
       return;
     }
-    const theme = data.preferences?.theme ?? CONST.THEME.DEFAULT;
+    const theme = preferencesFromOnyx.theme ?? CONST.THEME.DEFAULT;
     // eslint-disable-next-line rulesdir/prefer-actions-set-data
     Onyx.set(ONYXKEYS.PREFERRED_THEME, theme);
-  }, [data.preferences]);
-
-  // Monitor local data for changes - TODO rewrite this later
-  // useEffect(() => {
-  //   Object.entries(data).forEach(([key, value]) => {
-  //     if (key === 'userData') {
-  //       Onyx.merge(ONYXKEYS.USER_DATA_LIST, {
-  //         [userID]: value as UserData,
-  //       });
-  //     }
-  //   });
-  // }, [data.userData]);
+  }, [preferencesFromOnyx]);
 
   return (
     <DatabaseDataContext.Provider value={value}>

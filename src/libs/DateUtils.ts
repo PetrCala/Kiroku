@@ -54,15 +54,17 @@ type WeekDay = 0 | 1 | 2 | 3 | 4 | 5 | 6;
 
 let timezone: Required<Timezone> = CONST.DEFAULT_TIME_ZONE;
 Onyx.connect({
-  key: ONYXKEYS.USER_DATA_LIST,
+  key: ONYXKEYS.COLLECTION.USER_DATA,
+  waitForCollectionCallback: true,
   callback: value => {
     // Safe to call getFirebaseAuth() here - Onyx callbacks run after app initialization
     const auth = getFirebaseAuth();
     if (!auth?.currentUser) {
       return;
     }
-    const currentUserID = auth?.currentUser?.uid;
-    const userDataTimezone = value?.[currentUserID]?.timezone;
+    const currentUserID = auth.currentUser.uid;
+    const userDataTimezone =
+      value?.[`${ONYXKEYS.COLLECTION.USER_DATA}${currentUserID}`]?.timezone;
     timezone = {
       selected: userDataTimezone?.selected ?? CONST.DEFAULT_TIME_ZONE.selected,
       automatic:

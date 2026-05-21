@@ -25,6 +25,8 @@ import DateUtils from '@libs/DateUtils';
 // import type {UserData, UserDataList} from '@src/types/onyx';
 // import type {UserID} from '@src/types/onyx/OnyxCommon';
 import type {Timezone} from '@src/types/onyx/UserData';
+import type {UserData} from '@src/types/onyx';
+import type {UserID} from '@src/types/onyx/OnyxCommon';
 import Onyx from 'react-native-onyx';
 import ONYXKEYS from '@src/ONYXKEYS';
 
@@ -180,10 +182,8 @@ function updateAutomaticTimezone(timezone: Timezone) {
   //   timezone: JSON.stringify(formatedTimezone),
   // };
 
-  Onyx.merge(ONYXKEYS.USER_DATA_LIST, {
-    [currentUserID]: {
-      timezone: formatedTimezone,
-    },
+  Onyx.merge(`${ONYXKEYS.COLLECTION.USER_DATA}${currentUserID}`, {
+    timezone: formatedTimezone,
   });
 
   // TODO enable this
@@ -419,13 +419,27 @@ function updateAutomaticTimezone(timezone: Timezone) {
 //   });
 // }
 
+/**
+ * Mirror an authoritative `users/{uid}` snapshot (from the live listener or a
+ * one-shot `get()`) into the per-user Onyx collection entry. Consumers read
+ * the same entry via `useOnyx(\`${COLLECTION.USER_DATA}${uid}\`)`.
+ *
+ * Pass `null` to clear the entry (e.g. listener reports the node deleted).
+ */
+function setLiveUserDataForUser(
+  userID: UserID,
+  userData: UserData | null,
+): void {
+  Onyx.set(`${ONYXKEYS.COLLECTION.USER_DATA}${userID}`, userData ?? null);
+}
+
 export {
   // clearAvatarErrors,
   // deleteAvatar,
   // openPublicProfilePage,
   // updateAddress,
-  // eslint-disable-next-line import/prefer-default-export
   updateAutomaticTimezone,
+  setLiveUserDataForUser,
   // updateAvatar,
   // updateDateOfBirth,
   // updateDisplayName,
