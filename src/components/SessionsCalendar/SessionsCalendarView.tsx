@@ -40,6 +40,12 @@ type SessionsCalendarViewProps = {
 
   /** Hide month-nav arrows entirely (e.g. for an inline preview) */
   hideArrows?: boolean;
+
+  /** Hide the month-year text header (e.g. for an inline preview) */
+  hideMonthHeader?: boolean;
+
+  /** Hide the day-name row (M T W T F S S) */
+  hideDayNames?: boolean;
 };
 
 /**
@@ -63,6 +69,8 @@ function SessionsCalendarView({
   onLeftArrowPress,
   onRightArrowPress,
   hideArrows,
+  hideMonthHeader,
+  hideDayNames,
 }: SessionsCalendarViewProps) {
   const styles = useThemeStyles();
   const StyleUtils = useStyleUtils();
@@ -101,6 +109,8 @@ function SessionsCalendarView({
       firstDay={CONST.WEEK_STARTS_ON}
       enableSwipeMonths={false}
       hideArrows={hideArrows}
+      hideDayNames={hideDayNames}
+      renderHeader={hideMonthHeader ? () => null : undefined}
       disableAllTouchEventsForDisabledDays
       renderArrow={(direction: Direction) => CalendarArrow(direction)}
       style={styles.sessionsCalendarContainer}
