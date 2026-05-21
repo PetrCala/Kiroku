@@ -950,6 +950,7 @@ export default {
   },
   signUpScreen: {
     signingIn: 'Signing in...',
+    almostThere: 'Almost there...',
   },
   forgotPasswordScreen: {
     title: 'Forgotten password',

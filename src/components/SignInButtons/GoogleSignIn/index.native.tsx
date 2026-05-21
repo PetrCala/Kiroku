@@ -14,6 +14,7 @@ import useLocalize from '@hooks/useLocalize';
 import ERRORS from '@src/ERRORS';
 import * as ErrorUtils from '@libs/ErrorUtils';
 import Log from '@libs/Log';
+import * as App from '@userActions/App';
 import * as User from '@userActions/User';
 import CONFIG from '@src/CONFIG';
 
@@ -80,6 +81,7 @@ function GoogleSignIn({
   const {translate} = useLocalize();
 
   const handleSignIn = async () => {
+    let loadingShown = false;
     try {
       const idToken = await googleSignInRequest();
       if (!idToken) {
@@ -90,6 +92,10 @@ function GoogleSignIn({
 
       const credential = GoogleAuthProvider.credential(idToken);
       onPress();
+      // Shown at the Kiroku-level overlay so it stays visible across the
+      // post-auth screen swap (AuthScreen → OnboardingGuard → next stack).
+      await App.setLoadingText(translate('signUpScreen.almostThere'));
+      loadingShown = true;
       try {
         await User.signInWithOAuth(auth, db, credential);
       } catch (firebaseError: unknown) {
@@ -104,6 +110,9 @@ function GoogleSignIn({
           // Collision modal will take over from here.
           return;
         }
+        Log.alert('[Google Sign In] Firebase signInWithCredential failed', {
+          code: fe.code ?? 'unknown',
+        });
         throw firebaseError;
       }
     } catch (error: unknown) {
@@ -117,6 +126,10 @@ function GoogleSignIn({
         false,
       );
       onError(ErrorUtils.getAppError(undefined, error).message);
+    } finally {
+      if (loadingShown) {
+        await App.setLoadingText(null);
+      }
     }
   };
 

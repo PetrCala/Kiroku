@@ -945,6 +945,7 @@ export default {
   },
   signUpScreen: {
     signingIn: 'Přihlašuji...',
+    almostThere: 'Už jen chvilku...',
   },
   forgotPasswordScreen: {
     title: 'Zapomenuté heslo',
