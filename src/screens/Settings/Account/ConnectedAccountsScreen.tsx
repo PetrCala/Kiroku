@@ -135,9 +135,7 @@ function ConnectedAccountsScreen({route}: ConnectedAccountsScreenProps) {
     APPLE_PRIVATE_RELAY_SUFFIX,
   );
 
-  const remainingProvidersDescription = (
-    excludeProviderId: string,
-  ): string =>
+  const remainingProvidersDescription = (excludeProviderId: string): string =>
     rows
       .filter(r => r.isLinked && r.providerId !== excludeProviderId)
       .map(r => r.label)
@@ -246,8 +244,7 @@ function ConnectedAccountsScreen({route}: ConnectedAccountsScreenProps) {
             }}
           />
         ))}
-        {appleUsesPrivateRelay &&
-        linkedSet.has(CONST.AUTH_PROVIDER.APPLE) ? (
+        {appleUsesPrivateRelay && linkedSet.has(CONST.AUTH_PROVIDER.APPLE) ? (
           <Text style={[styles.textSupporting, styles.mt3, styles.mb5]}>
             {translate('connectedAccounts.privateRelay')}
           </Text>
@@ -360,6 +357,15 @@ function ProviderRowView({
             width={20}
             height={20}
             additionalStyles={styles.mr3}
+            // The Apple logo is monochrome and needs theme tinting to stay
+            // visible in dark mode. The Google "G" is multi-color (brand
+            // requirement) and must not be tinted, so we only set fill on
+            // providers whose SVG uses `currentColor`.
+            fill={
+              row.providerId === CONST.AUTH_PROVIDER.APPLE
+                ? theme.icon
+                : undefined
+            }
           />
         ) : null}
         <View style={[styles.flex1]}>
