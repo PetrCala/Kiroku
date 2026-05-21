@@ -76,7 +76,7 @@ const getDefaultPreferences = (): Preferences => ({
     wine: 1,
   },
   theme: CONST.THEME.SYSTEM,
-  session_color_palette: PALETTES.CLASSIC,
+  session_color_palette: PALETTES.classic,
 });
 
 const getDefaultUserData = (profileData: Profile): UserData => {

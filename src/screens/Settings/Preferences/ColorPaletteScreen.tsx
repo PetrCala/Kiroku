@@ -25,17 +25,6 @@ import {
 } from '@libs/SessionColorPalettes';
 import useTheme from '@hooks/useTheme';
 
-const PALETTE_NAME_KEYS: Record<
-  PaletteId,
-  'classic' | 'sunset' | 'ocean' | 'mono' | 'colorblindSafe'
-> = {
-  CLASSIC: 'classic',
-  SUNSET: 'sunset',
-  OCEAN: 'ocean',
-  MONO: 'mono',
-  COLORBLIND_SAFE: 'colorblindSafe',
-};
-
 const PREVIEW_KEYS: ReadonlyArray<keyof SessionColorPalette> = [
   'green',
   'yellow',
@@ -103,7 +92,7 @@ function ColorPaletteScreen() {
               const palette = PALETTES[id];
               const isActive = id === activePaletteId;
               const paletteName = translate(
-                `colorPaletteScreen.palettes.${PALETTE_NAME_KEYS[id]}`,
+                `colorPaletteScreen.palettes.${id}` as const,
               );
               return (
                 <PressableWithFeedback

@@ -739,43 +739,43 @@ describe('unitsToColors', () => {
 
   it('should return green for 0 units', () => {
     expect(convertUnitsToColors(0, mockUnitsToColors)).toBe(
-      PALETTES.CLASSIC.green,
+      PALETTES.classic.green,
     );
   });
 
   it('should return yellow for units up to yellow limit', () => {
     expect(convertUnitsToColors(1, mockUnitsToColors)).toBe(
-      PALETTES.CLASSIC.yellow,
+      PALETTES.classic.yellow,
     );
     expect(convertUnitsToColors(2, mockUnitsToColors)).toBe(
-      PALETTES.CLASSIC.yellow,
+      PALETTES.classic.yellow,
     );
   });
 
   it('should return orange for units between yellow and orange limits', () => {
     expect(convertUnitsToColors(3, mockUnitsToColors)).toBe(
-      PALETTES.CLASSIC.orange,
+      PALETTES.classic.orange,
     );
     expect(convertUnitsToColors(4, mockUnitsToColors)).toBe(
-      PALETTES.CLASSIC.orange,
+      PALETTES.classic.orange,
     );
   });
 
   it('should return red for units above the orange limit', () => {
     expect(convertUnitsToColors(5, mockUnitsToColors)).toBe(
-      PALETTES.CLASSIC.red,
+      PALETTES.classic.red,
     );
     expect(convertUnitsToColors(6, mockUnitsToColors)).toBe(
-      PALETTES.CLASSIC.red,
+      PALETTES.classic.red,
     );
   });
 
   it('should honor a custom palette when provided', () => {
-    expect(convertUnitsToColors(0, mockUnitsToColors, PALETTES.OCEAN)).toBe(
-      PALETTES.OCEAN.green,
+    expect(convertUnitsToColors(0, mockUnitsToColors, PALETTES.ocean)).toBe(
+      PALETTES.ocean.green,
     );
-    expect(convertUnitsToColors(5, mockUnitsToColors, PALETTES.OCEAN)).toBe(
-      PALETTES.OCEAN.red,
+    expect(convertUnitsToColors(5, mockUnitsToColors, PALETTES.ocean)).toBe(
+      PALETTES.ocean.red,
     );
   });
 });

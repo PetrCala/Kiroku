@@ -518,6 +518,8 @@ export default {
       ocean: 'Ocean',
       mono: 'Monochrome',
       colorblindSafe: 'Colorblind-safe',
+      brand: 'Brand',
+      pink: 'Pink',
     },
   },
   drinksToUnitsScreen: {

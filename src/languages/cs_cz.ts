@@ -516,6 +516,8 @@ export default {
       ocean: 'Oceán',
       mono: 'Monochromatická',
       colorblindSafe: 'Pro barvoslepé',
+      brand: 'Značka',
+      pink: 'Růžová',
     },
   },
   drinksToUnitsScreen: {
