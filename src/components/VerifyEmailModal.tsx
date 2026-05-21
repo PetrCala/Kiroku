@@ -145,9 +145,14 @@ function VerifyEmailModal() {
             style={[
               styles.flex1,
               styles.mh4,
-              styles.pb1,
               styles.alignItemsCenter,
-              safeAreaPaddingBottomStyle,
+              // Match the bottom-padding pattern used by TermsScreenContent:
+              // respect the device's safe area inset, and fall back to pb5
+              // (not pb1) on devices where the inset is 0 so the buttons
+              // don't sit flush against the screen edge.
+              safeAreaPaddingBottomStyle.paddingBottom
+                ? safeAreaPaddingBottomStyle
+                : styles.pb5,
             ]}>
             {!emailVerified ? (
               <View>
