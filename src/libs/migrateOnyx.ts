@@ -1,10 +1,5 @@
 import Log from './Log';
-// import CheckForPreviousReportActionID from './migrations/CheckForPreviousReportActionID';
-// import KeyReportActionsDraftByReportActionID from './migrations/KeyReportActionsDraftByReportActionID';
-// import NVPMigration from './migrations/NVPMigration';
-// import RemoveEmptyReportActionsDrafts from './migrations/RemoveEmptyReportActionsDrafts';
-// import RenameReceiptFilename from './migrations/RenameReceiptFilename';
-// import TransactionBackupsToCollection from './migrations/TransactionBackupsToCollection';
+import DropLegacySessionsCalendarMonthsLoaded from './migrations/DropLegacySessionsCalendarMonthsLoaded';
 
 export default function () {
   const startTime = Date.now();
@@ -12,26 +7,15 @@ export default function () {
 
   return new Promise<void>(resolve => {
     // Add all migrations to an array so they are executed in order
-    // const migrationPromises = [
-    //   CheckForPreviousReportActionID,
-    //   RenameReceiptFilename,
-    //   KeyReportActionsDraftByReportActionID,
-    //   TransactionBackupsToCollection,
-    //   RemoveEmptyReportActionsDrafts,
-    //   NVPMigration,
-    // ];
+    const migrationPromises = [DropLegacySessionsCalendarMonthsLoaded];
 
     // Reduce all promises down to a single promise. All promises run in a linear fashion, waiting for the
     // previous promise to finish before moving onto the next one.
-    /* eslint-disable arrow-body-style */
-    // migrationPromises
-    //   .reduce<Promise<void | void[]>>((previousPromise, migrationPromise) => {
-    //     return previousPromise.then(() => {
-    //       return migrationPromise();
-    //     });
-    //   }, Promise.resolve())
-    // TODO add migrations if necessary
-    Promise.resolve()
+    migrationPromises
+      // eslint-disable-next-line arrow-body-style
+      .reduce<Promise<void | void[]>>((previousPromise, migrationPromise) => {
+        return previousPromise.then(() => migrationPromise());
+      }, Promise.resolve())
 
       // Once all migrations are done, resolve the main promise
       .then(() => {
