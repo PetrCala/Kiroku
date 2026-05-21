@@ -1,6 +1,9 @@
 import {useEffect, useState} from 'react';
+import {subMonths} from 'date-fns';
+import {get, orderByChild, query, ref, startAt} from 'firebase/database';
 import {readDataOnce} from '@database/baseFunctions'; // Ensure this import is added
 import {useFirebase} from '@context/global/FirebaseContext';
+import CONST from '@src/CONST';
 import type RefetchDatabaseData from '@src/types/utils/RefetchDatabaseData';
 import type {FetchData, FetchDataKey, FetchDataKeys} from './types';
 import {fetchDataKeyToDbPath} from './utils';
@@ -35,15 +38,15 @@ const useFetchData = (
   const {db} = useFirebase();
   const [refetchIndex, setRefetchIndex] = useState(0); // Used to trigger refetch
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const [data, setData] = useState<{[key in FetchDataKey]?: any}>({});
+  const [data, setData] = useState<Partial<Record<FetchDataKey, any>>>({});
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [resolveRefetch, setResolveRefetch] = useState<() => void>(
     () => () => {},
   );
   const [keysToFetch, setKeysToFetch] = useState<FetchDataKeys>(dataTypes);
 
-  const refetch = (keys?: FetchDataKeys): Promise<void> => {
-    return new Promise<void>(resolve => {
+  const refetch = (keys?: FetchDataKeys): Promise<void> =>
+    new Promise<void>(resolve => {
       setResolveRefetch(() => resolve);
       if (keys) {
         setKeysToFetch(keys);
@@ -52,7 +55,6 @@ const useFetchData = (
       }
       setRefetchIndex(prev => prev + 1);
     });
-  };
 
   useEffect(() => {
     if (!userID || !db) {
@@ -64,11 +66,26 @@ const useFetchData = (
       setIsLoading(true);
       const promises = keysToFetch.map(async dataType => {
         const path = fetchDataKeyToDbPath(dataType, userID);
-        if (path) {
-          const fetchedData = await readDataOnce(db, path);
-          return {[dataType]: fetchedData};
+        if (!path) {
+          return {};
         }
-        return {};
+        let fetchedData: unknown = null;
+        if (dataType === 'drinkingSessionData') {
+          const startAtMillis = subMonths(
+            new Date(),
+            CONST.SESSIONS_INITIAL_FETCH_MONTHS,
+          ).getTime();
+          const sessionsQuery = query(
+            ref(db, path),
+            orderByChild('start_time'),
+            startAt(startAtMillis),
+          );
+          const snapshot = await get(sessionsQuery);
+          fetchedData = snapshot.exists() ? snapshot.val() : null;
+        } else {
+          fetchedData = await readDataOnce(db, path);
+        }
+        return {[dataType]: fetchedData};
       });
 
       const results = await Promise.all(promises);

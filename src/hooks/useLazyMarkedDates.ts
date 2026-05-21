@@ -136,7 +136,18 @@ function useLazyMarkedDates(
   }, [loadedFromDate]);
 
   const loadMoreMonths = (newMonthsToLoad = 1) => {
-    setLoadedMonths(prev => prev + newMonthsToLoad);
+    setLoadedMonths(prev => {
+      const next = prev + newMonthsToLoad;
+      // Eagerly persist for the auth user so the Firebase session listener can
+      // widen its `start_time` window in lockstep with the calendar. The
+      // friend-profile path (`user?.uid !== userID`) uses a one-shot fetch
+      // and therefore doesn't extend — its calendar simply shows empty days
+      // past the initial fetch window.
+      if (user?.uid === userID) {
+        Calendar.setSessionsCalendarMonthsLoaded(next);
+      }
+      return next;
+    });
   };
 
   // On blur, persist the user's scroll depth so the next mount can resume.

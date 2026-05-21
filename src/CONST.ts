@@ -333,6 +333,11 @@ const CONST = {
   DESCRIPTION_LIMIT: 1000,
   SESSION_NAME_CHARACTER_LIMIT: 80,
 
+  // Default window for the initial Firebase RTDB fetch of a user's drinking
+  // sessions. The home calendar starts by streaming only the last N months
+  // and extends the window when the user scrolls back past the loaded edge.
+  SESSIONS_INITIAL_FETCH_MONTHS: 3,
+
   FIREBASE_STORAGE_URL: 'https://firebasestorage.googleapis.com',
   FRIEND_REQUEST_STATUS: {
     SELF: 'self',

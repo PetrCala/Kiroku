@@ -730,8 +730,6 @@
 "src/hooks/useBatchedUpdates.ts"	"arrow-body-style"	1
 "src/hooks/useBatchedUpdates.ts"	"react-hooks/immutability"	1
 "src/hooks/useDebouncedState.ts"	"react-hooks/refs"	2
-"src/hooks/useFetchData/index.ts"	"@typescript-eslint/consistent-indexed-object-style"	1
-"src/hooks/useFetchData/index.ts"	"arrow-body-style"	1
 "src/hooks/useFetchData/index.ts"	"react-hooks/set-state-in-effect"	1
 "src/hooks/useLazyMarkedDates.ts"	"react-hooks/set-state-in-effect"	1
 "src/hooks/useMouseContext.tsx"	"rulesdir/context-provider-split-values"	1
