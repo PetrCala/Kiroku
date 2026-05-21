@@ -160,91 +160,88 @@ function AuthScreen({route}: AuthScreenProps) {
         ),
       ]}
       testID={AuthScreen.displayName}>
-      {isLoading ? (
+      <SignUpScreenLayout
+        welcomeHeader=""
+        welcomeText=""
+        ref={currentScreenLayoutRef}
+        navigateFocus={navigateFocus}>
+        <View style={[styles.gap3, styles.mb4]}>
+          <AppleSignIn onError={setServerErrorMessage} />
+          <GoogleSignIn onError={setServerErrorMessage} />
+        </View>
+        <OAuthLinkModal />
+        <OrDelimiter containerStyle={styles.mb4} />
+        <FormProvider
+          formID={ONYXKEYS.FORMS.AUTH_FORM}
+          validate={validate}
+          onSubmit={onSubmit}
+          shouldValidateOnBlur={false}
+          shouldValidateOnChange
+          includeSafeAreaPaddingBottom={false}
+          submitButtonText={submitButtonText}
+          submitButtonStyles={styles.pb5}
+          submitFlexEnabled={false}
+          isSubmitButtonVisible={!isLoading}
+          shouldUseScrollView={false}>
+          <InputWrapper
+            InputComponent={TextInput}
+            inputID={INPUT_IDS.EMAIL}
+            name="email"
+            textContentType="emailAddress"
+            keyboardType="email-address"
+            label={translate('login.email')}
+            aria-label={translate('login.email')}
+            defaultValue=""
+            spellCheck={false}
+          />
+          <InputWrapper
+            InputComponent={TextInput}
+            inputID={INPUT_IDS.PASSWORD}
+            name="password"
+            label={translate('common.password')}
+            aria-label={translate('common.password')}
+            defaultValue=""
+            spellCheck={false}
+            secureTextEntry
+            autoComplete={
+              Browser.getBrowser() === CONST.BROWSER.SAFARI ? 'username' : 'off'
+            }
+          />
+          {!isSignUp && (
+            <PressableWithFeedback
+              style={[styles.link, styles.mt4]}
+              onPress={() => Navigation.navigate(ROUTES.FORGOT_PASSWORD)}
+              role={CONST.ROLE.LINK}
+              accessibilityLabel={translate('password.forgot')}>
+              <Text style={styles.link}>{translate('password.forgot')}</Text>
+            </PressableWithFeedback>
+          )}
+          {!!serverErrorMessage && (
+            <DotIndicatorMessage
+              style={[styles.mv2]}
+              type="error"
+              // eslint-disable-next-line @typescript-eslint/naming-convention
+              messages={{0: serverErrorMessage || ''}}
+            />
+          )}
+        </FormProvider>
+        <View style={styles.changeSignUpScreenLinkContainer}>
+          <Text style={styles.mr1}>{toggleHelperText}</Text>
+          <PressableWithFeedback
+            style={[styles.link]}
+            onPress={onToggleMode}
+            role={CONST.ROLE.BUTTON}
+            accessibilityLabel={toggleActionText}>
+            <Text style={[styles.link]}>{toggleActionText}</Text>
+          </PressableWithFeedback>
+        </View>
+      </SignUpScreenLayout>
+      {isLoading && (
         <FullScreenLoadingIndicator
           loadingText={translate(
             isSignUp ? 'signUpScreen.signingIn' : 'logInScreen.loggingIn',
           )}
         />
-      ) : (
-        <SignUpScreenLayout
-          welcomeHeader=""
-          welcomeText=""
-          ref={currentScreenLayoutRef}
-          navigateFocus={navigateFocus}>
-          <View style={[styles.gap3, styles.mb4]}>
-            <AppleSignIn onError={setServerErrorMessage} />
-            <GoogleSignIn onError={setServerErrorMessage} />
-          </View>
-          <OAuthLinkModal />
-          <OrDelimiter containerStyle={styles.mb4} />
-          <FormProvider
-            formID={ONYXKEYS.FORMS.AUTH_FORM}
-            validate={validate}
-            onSubmit={onSubmit}
-            shouldValidateOnBlur={false}
-            shouldValidateOnChange
-            includeSafeAreaPaddingBottom={false}
-            submitButtonText={submitButtonText}
-            submitButtonStyles={styles.pb5}
-            submitFlexEnabled={false}
-            isSubmitButtonVisible={!isLoading}
-            shouldUseScrollView={false}>
-            <InputWrapper
-              InputComponent={TextInput}
-              inputID={INPUT_IDS.EMAIL}
-              name="email"
-              textContentType="emailAddress"
-              keyboardType="email-address"
-              label={translate('login.email')}
-              aria-label={translate('login.email')}
-              defaultValue=""
-              spellCheck={false}
-            />
-            <InputWrapper
-              InputComponent={TextInput}
-              inputID={INPUT_IDS.PASSWORD}
-              name="password"
-              label={translate('common.password')}
-              aria-label={translate('common.password')}
-              defaultValue=""
-              spellCheck={false}
-              secureTextEntry
-              autoComplete={
-                Browser.getBrowser() === CONST.BROWSER.SAFARI
-                  ? 'username'
-                  : 'off'
-              }
-            />
-            {!isSignUp && (
-              <PressableWithFeedback
-                style={[styles.link, styles.mt4]}
-                onPress={() => Navigation.navigate(ROUTES.FORGOT_PASSWORD)}
-                role={CONST.ROLE.LINK}
-                accessibilityLabel={translate('password.forgot')}>
-                <Text style={styles.link}>{translate('password.forgot')}</Text>
-              </PressableWithFeedback>
-            )}
-            {!!serverErrorMessage && (
-              <DotIndicatorMessage
-                style={[styles.mv2]}
-                type="error"
-                // eslint-disable-next-line @typescript-eslint/naming-convention
-                messages={{0: serverErrorMessage || ''}}
-              />
-            )}
-          </FormProvider>
-          <View style={styles.changeSignUpScreenLinkContainer}>
-            <Text style={styles.mr1}>{toggleHelperText}</Text>
-            <PressableWithFeedback
-              style={[styles.link]}
-              onPress={onToggleMode}
-              role={CONST.ROLE.BUTTON}
-              accessibilityLabel={toggleActionText}>
-              <Text style={[styles.link]}>{toggleActionText}</Text>
-            </PressableWithFeedback>
-          </View>
-        </SignUpScreenLayout>
       )}
     </ScreenWrapper>
   );
