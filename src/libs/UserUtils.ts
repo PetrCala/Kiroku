@@ -241,7 +241,24 @@ function getSmallSizeAvatar(
 //   return parsedLoginList.find(login => Str.isValidE164Phone(login));
 // }
 
+/**
+ * Non-production-only session bypass for the mandatory email-verification modal.
+ * Set by the "Skip verification (dev only)" affordance inside VerifyEmailModal.
+ * Module-scoped so it resets on every cold app restart — there is no Onyx
+ * persistence by design, and no clearing on logout (the bypass is per-device
+ * session, not per-user, so QA cycles don't re-trigger the modal on every
+ * sign-out/sign-in).
+ */
+let devBypassEmailVerification = false;
+
+function setDevBypassEmailVerification(bypass: boolean): void {
+  devBypassEmailVerification = bypass;
+}
+
 function shouldShowVerifyEmailModal(user: User | null): boolean {
+  if (devBypassEmailVerification) {
+    return false;
+  }
   return !!user && !user.emailVerified;
 }
 
@@ -276,6 +293,7 @@ export {
   // hasLoginListInfo,
   hashText,
   isDefaultAvatar,
+  setDevBypassEmailVerification,
   shouldShowVerifyEmailModal,
   shouldShowUpdateModal,
 };

@@ -4,9 +4,12 @@ import {useFirebase} from '@context/global/FirebaseContext';
 import useLocalize from '@hooks/useLocalize';
 import useTheme from '@hooks/useTheme';
 import useThemeStyles from '@hooks/useThemeStyles';
+import Log from '@libs/Log';
 import * as Session from '@libs/actions/Session';
 import {sleep} from '@libs/TimeUtils';
+import * as UserUtils from '@libs/UserUtils';
 import * as User from '@userActions/User';
+import CONFIG from '@src/CONFIG';
 import CONST from '@src/CONST';
 import Button from './Button';
 import DotIndicatorMessage from './DotIndicatorMessage';
@@ -106,6 +109,21 @@ function VerifyEmailModal() {
     });
   };
 
+  // Non-production-only: lets QA skip past the modal without verifying.
+  // Sets a module-level flag in UserUtils so the modal also doesn't re-mount
+  // on subsequent sign-in cycles within the same app session. Cold restart
+  // clears the flag and brings the modal back.
+  const onDevSkipPress = () => {
+    UserUtils.setDevBypassEmailVerification(true);
+    setIsVisible(false);
+    Log.info(
+      '[VerifyEmailModal] dev-skip activated for this session',
+      true,
+      {},
+      true,
+    );
+  };
+
   const onSuccessAnimationEnd = async () => {
     await sleep(1000).then(() => {
       setIsVisible(false);
@@ -193,6 +211,17 @@ function VerifyEmailModal() {
                       {translate('settingsScreen.signOut')}
                     </Text>
                   </PressableWithFeedback>
+                  {!CONFIG.IS_IN_PRODUCTION && (
+                    <PressableWithFeedback
+                      style={[styles.mt2, styles.alignItemsCenter]}
+                      onPress={onDevSkipPress}
+                      role={CONST.ROLE.BUTTON}
+                      accessibilityLabel="Skip verification (dev only)">
+                      <Text style={[styles.link, styles.textSupporting]}>
+                        Skip verification (dev only)
+                      </Text>
+                    </PressableWithFeedback>
+                  )}
                 </View>
               </View>
             ) : (
