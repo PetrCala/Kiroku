@@ -167,7 +167,13 @@ function HomeScreen({route}: HomeScreenProps) {
   // calendar renders even when the user has no sessions yet — empty days
   // are still a valid view of their history.
   const isPreferencesReady = !!preferences;
-  const isUserDataReady = !!userData;
+  // `userData` is sourced from a per-user Onyx collection slot that can be
+  // written either by the live listener (full snapshot) or by optimistic
+  // action merges (partial fields like timezone/onboarding). Gate on
+  // `profile` specifically so a transient partial entry doesn't slip past
+  // the readiness check and crash the avatar render below on
+  // `userData.profile.photo_url`.
+  const isUserDataReady = !!userData?.profile;
   const isSessionsReady = drinkingSessionData !== undefined;
   const showSkeletonContent = !isPreferencesReady || !isSessionsReady;
 

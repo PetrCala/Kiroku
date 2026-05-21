@@ -1,6 +1,6 @@
 import Log from './Log';
 import DropLegacySessionsCalendarMonthsLoaded from './migrations/DropLegacySessionsCalendarMonthsLoaded';
-import MigrateUserDataListToCollection from './migrations/MigrateUserDataListToCollection';
+import DropLegacyUserDataList from './migrations/DropLegacyUserDataList';
 
 export default function () {
   const startTime = Date.now();
@@ -10,7 +10,7 @@ export default function () {
     // Add all migrations to an array so they are executed in order
     const migrationPromises = [
       DropLegacySessionsCalendarMonthsLoaded,
-      MigrateUserDataListToCollection,
+      DropLegacyUserDataList,
     ];
 
     // Reduce all promises down to a single promise. All promises run in a linear fashion, waiting for the
