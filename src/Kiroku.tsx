@@ -84,10 +84,10 @@ function Kiroku() {
       setIsAuthenticated(!!user);
       setAuthenticationChecked(true);
 
-      // Check only once after the user is authenticated
-      if (UserUtils.shouldShowVerifyEmailModal(user)) {
-        setShouldShowVerifyEmailModal(true);
-      }
+      // Re-evaluate on every auth change: sign-out must drop the modal so it
+      // doesn't reappear over the public stack after the user taps "Sign out"
+      // from inside VerifyEmailModal itself.
+      setShouldShowVerifyEmailModal(UserUtils.shouldShowVerifyEmailModal(user));
     });
 
     return () => unsubscribe();
