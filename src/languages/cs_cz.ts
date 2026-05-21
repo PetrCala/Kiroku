@@ -519,6 +519,15 @@ export default {
       brand: 'Značka',
       pink: 'Růžová',
     },
+    descriptions: {
+      classic: 'Jasné barvy semaforu',
+      sunset: 'Teplé zemité tóny',
+      ocean: 'Klidné modré a tyrkysové',
+      mono: 'Pouze odstíny šedé',
+      colorblindSafe: 'Rozlišitelné pro barvoslepé',
+      brand: 'Značkové barvy Kiroku',
+      pink: 'Růžová až po červenou',
+    },
   },
   drinksToUnitsScreen: {
     title: 'Drinky na jednotky',
