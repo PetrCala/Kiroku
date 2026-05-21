@@ -23,7 +23,12 @@ import {
   DEFAULT_PALETTE_ID,
   getPaletteIdFromColors,
 } from '@libs/SessionColorPalettes';
-import useTheme from '@hooks/useTheme';
+import {sessionPaletteColors} from '@styles/theme/colors';
+
+// Brand orange (tangerine400) — fixed across themes so the selection accent stays on-brand.
+const ACCENT = sessionPaletteColors.brand.orange;
+// ~8% opacity orange wash for the selected-row background.
+const ACCENT_TINT = `${ACCENT}1F`;
 
 const PREVIEW_KEYS: ReadonlyArray<keyof SessionColorPalette> = [
   'green',
@@ -35,7 +40,6 @@ const PREVIEW_KEYS: ReadonlyArray<keyof SessionColorPalette> = [
 
 function ColorPaletteScreen() {
   const styles = useThemeStyles();
-  const theme = useTheme();
   const {translate} = useLocalize();
   const {auth, db} = useFirebase();
   const user = auth.currentUser;
@@ -94,32 +98,49 @@ function ColorPaletteScreen() {
               const paletteName = translate(
                 `colorPaletteScreen.palettes.${id}` as const,
               );
+              const paletteDescription = translate(
+                `colorPaletteScreen.descriptions.${id}` as const,
+              );
               return (
                 <PressableWithFeedback
                   key={id}
                   accessibilityLabel={paletteName}
+                  accessibilityState={{selected: isActive}}
                   onPress={() => onSelectPalette(id)}
                   style={[
                     styles.flexRow,
                     styles.alignItemsCenter,
                     styles.justifyContentBetween,
                     styles.p4,
-                    styles.border,
                     styles.mb2,
+                    {
+                      borderRadius: 12,
+                      borderLeftWidth: 4,
+                      borderLeftColor: isActive ? ACCENT : 'transparent',
+                      backgroundColor: isActive ? ACCENT_TINT : 'transparent',
+                    },
                   ]}>
                   <View style={[styles.flexColumn, styles.flex1]}>
-                    <Text style={[styles.textNormal, styles.textStrong]}>
+                    <Text
+                      style={[
+                        styles.textNormal,
+                        styles.textStrong,
+                        isActive ? {color: ACCENT} : null,
+                      ]}>
                       {paletteName}
+                    </Text>
+                    <Text style={[styles.textMicroSupporting, styles.mt1]}>
+                      {paletteDescription}
                     </Text>
                     <View style={[styles.flexRow, styles.mt2]}>
                       {PREVIEW_KEYS.map(key => (
                         <View
                           key={key}
                           style={{
-                            width: 16,
-                            height: 16,
-                            borderRadius: 4,
-                            marginRight: 4,
+                            width: 40,
+                            height: 22,
+                            borderRadius: 6,
+                            marginRight: 8,
                             backgroundColor: palette[key],
                           }}
                         />
@@ -129,7 +150,7 @@ function ColorPaletteScreen() {
                   {isActive && (
                     <Icon
                       src={KirokuIcons.Checkmark}
-                      fill={theme.iconSuccessFill}
+                      fill={ACCENT}
                       width={20}
                       height={20}
                     />

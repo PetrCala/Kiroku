@@ -521,6 +521,15 @@ export default {
       brand: 'Brand',
       pink: 'Pink',
     },
+    descriptions: {
+      classic: 'Bright traffic-light hues',
+      sunset: 'Warm earth tones',
+      ocean: 'Calm blues and teals',
+      mono: 'Shades of grey only',
+      colorblindSafe: 'Distinguishable for colorblind users',
+      brand: "Kiroku's brand colors",
+      pink: 'Soft pinks to red',
+    },
   },
   drinksToUnitsScreen: {
     title: 'Drinks to Units',
