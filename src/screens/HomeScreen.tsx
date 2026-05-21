@@ -1,4 +1,4 @@
-import React, {useEffect, useMemo, useState} from 'react';
+import React, {useEffect, useMemo, useRef, useState} from 'react';
 import {View} from 'react-native';
 import SessionsCalendar from '@components/SessionsCalendar';
 import type {DateData} from 'react-native-calendars';
@@ -43,6 +43,11 @@ import {useOnyx} from 'react-native-onyx';
 import ONYXKEYS from '@src/ONYXKEYS';
 import ERRORS from '@src/ERRORS';
 import Button from '@components/Button';
+import {
+  HomeHeaderSkeleton,
+  SessionsCalendarSkeleton,
+  StatOverviewSkeleton,
+} from './HomeScreenSkeleton';
 
 type HomeScreenProps = StackScreenProps<
   BottomTabNavigatorParamList,
@@ -62,7 +67,7 @@ function HomeScreen({route}: HomeScreenProps) {
   const [visibleDate, setVisibleDate] = useState<DateData>(
     dateToDateData(new Date()),
   );
-  const [isLoading, setIsLoading] = useState<boolean>(true);
+  const hasMarkedReadyRef = useRef(false);
 
   // Derive stats synchronously from the visible month + drink unit mapping.
   // Narrowed to `drinksToUnits` so unrelated preference updates (e.g. picking
@@ -126,12 +131,21 @@ function HomeScreen({route}: HomeScreenProps) {
     }, [db, user, userData, preferences, drinkingSessionData]),
   );
 
+  // Fire the "home is ready" side effects exactly once, when all the initial
+  // data has arrived. The screen renders skeletons in the meantime, so these
+  // side effects no longer gate the visible UI.
   useEffect(() => {
-    if (!!loadingText || !preferences || !userData || !user) {
+    if (
+      hasMarkedReadyRef.current ||
+      !!loadingText ||
+      !preferences ||
+      !userData ||
+      !user
+    ) {
       return;
     }
+    hasMarkedReadyRef.current = true;
     Session.setHasCheckedAutoLogin(true);
-    setIsLoading(false);
     Timing.end(CONST.TIMING.HOMEPAGE_INITIAL_RENDER);
   }, [loadingText, preferences, userData, user]);
 
@@ -143,9 +157,45 @@ function HomeScreen({route}: HomeScreenProps) {
     return <UserOffline />;
   }
 
-  if (isLoading || !preferences || !userData) {
+  // Active operations (e.g. saving a session) still take a full-screen overlay
+  // so they don't compete with the home UI for attention.
+  if (loadingText) {
     return <FullScreenLoadingIndicator loadingText={loadingText} />;
   }
+
+  // Render the shell + skeletons immediately. Real components swap in for
+  // their skeletons as each piece of data resolves from Firebase.
+  const isPreferencesReady = !!preferences;
+  const isUserDataReady = !!userData;
+  const isSessionsReady = drinkingSessionData !== undefined;
+  const hasSessions = isSessionsReady && !!drinkingSessionData;
+  const showSkeletonContent = !isPreferencesReady || !isSessionsReady;
+
+  const renderMainContent = () => {
+    if (showSkeletonContent) {
+      return (
+        <>
+          <StatOverviewSkeleton />
+          <SessionsCalendarSkeleton />
+        </>
+      );
+    }
+    if (hasSessions) {
+      return (
+        <>
+          <StatOverview statsData={statsData} />
+          <SessionsCalendar
+            userID={user.uid}
+            visibleDate={visibleDate}
+            onDateChange={setVisibleDate}
+            drinkingSessionData={drinkingSessionData}
+            preferences={preferences}
+          />
+        </>
+      );
+    }
+    return <NoSessionsInfo />;
+  };
 
   return (
     <ScreenWrapper
@@ -153,25 +203,29 @@ function HomeScreen({route}: HomeScreenProps) {
       includePaddingTop={false}
       includeSafeAreaPaddingBottom={getPlatform() !== CONST.PLATFORM.IOS}>
       {/* // TODO rewrite this into the HeaderWithBackButton component */}
-      <View style={[styles.headerBar, styles.borderBottom]}>
-        <Button
-          style={[styles.flexRow, styles.bgTransparent]}
-          onPress={() =>
-            Navigation.navigate(ROUTES.PROFILE.getRoute(user.uid))
-          }>
-          <ProfileImage
-            storage={storage}
-            userID={user.uid}
-            downloadPath={userData.profile.photo_url}
-            style={styles.avatarMedium}
-            // refreshTrigger={refreshCounter}
-            refreshTrigger={0}
-          />
-          <Text style={[styles.headerText, styles.textLarge, styles.ml3]}>
-            {userData?.profile?.display_name ?? ''}
-          </Text>
-        </Button>
-      </View>
+      {isUserDataReady ? (
+        <View style={[styles.headerBar, styles.borderBottom]}>
+          <Button
+            style={[styles.flexRow, styles.bgTransparent]}
+            onPress={() =>
+              Navigation.navigate(ROUTES.PROFILE.getRoute(user.uid))
+            }>
+            <ProfileImage
+              storage={storage}
+              userID={user.uid}
+              downloadPath={userData.profile.photo_url}
+              style={styles.avatarMedium}
+              // refreshTrigger={refreshCounter}
+              refreshTrigger={0}
+            />
+            <Text style={[styles.headerText, styles.textLarge, styles.ml3]}>
+              {userData?.profile?.display_name ?? ''}
+            </Text>
+          </Button>
+        </View>
+      ) : (
+        <HomeHeaderSkeleton />
+      )}
       <ScrollView>
         {!!ongoingSessionData?.ongoing && (
           <MessageBanner
@@ -180,20 +234,7 @@ function HomeScreen({route}: HomeScreenProps) {
             onPress={() => DS.navigateToOngoingSessionScreen()}
           />
         )}
-        {drinkingSessionData ? (
-          <>
-            <StatOverview statsData={statsData} />
-            <SessionsCalendar
-              userID={user.uid}
-              visibleDate={visibleDate}
-              onDateChange={setVisibleDate}
-              drinkingSessionData={drinkingSessionData}
-              preferences={preferences}
-            />
-          </>
-        ) : (
-          <NoSessionsInfo />
-        )}
+        {renderMainContent()}
       </ScrollView>
       <BottomTabBar />
     </ScreenWrapper>
