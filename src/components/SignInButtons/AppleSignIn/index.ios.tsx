@@ -9,9 +9,11 @@ import {getRandomBytes} from 'expo-crypto';
 import {OAuthProvider} from 'firebase/auth';
 import React from 'react';
 import {useFirebase} from '@context/global/FirebaseContext';
+import useLocalize from '@hooks/useLocalize';
 import ERRORS from '@src/ERRORS';
 import * as ErrorUtils from '@libs/ErrorUtils';
 import Log from '@libs/Log';
+import * as App from '@userActions/App';
 import * as User from '@userActions/User';
 
 type AppleSignInProps = {
@@ -71,8 +73,10 @@ function AppleSignIn({
   onError = () => {},
 }: AppleSignInProps) {
   const {auth, db} = useFirebase();
+  const {translate} = useLocalize();
 
   const handleSignIn = async () => {
+    let loadingShown = false;
     try {
       const result = await appleSignInRequest();
       if (!result) {
@@ -93,6 +97,10 @@ function AppleSignIn({
       });
 
       onPress();
+      // Shown at the Kiroku-level overlay so it stays visible across the
+      // post-auth screen swap (AuthScreen → OnboardingGuard → next stack).
+      await App.setLoadingText(translate('signUpScreen.almostThere'));
+      loadingShown = true;
       try {
         await User.signInWithOAuth(auth, db, credential, displayName);
       } catch (firebaseError: unknown) {
@@ -109,6 +117,9 @@ function AppleSignIn({
           // Collision modal will take over from here.
           return;
         }
+        Log.alert('[Apple Sign In] Firebase signInWithCredential failed', {
+          code: fe.code ?? 'unknown',
+        });
         throw firebaseError;
       }
     } catch (error: unknown) {
@@ -121,6 +132,10 @@ function AppleSignIn({
         error as Record<string, unknown>,
       );
       onError(ErrorUtils.getAppError(undefined, error).message);
+    } finally {
+      if (loadingShown) {
+        await App.setLoadingText(null);
+      }
     }
   };
 
