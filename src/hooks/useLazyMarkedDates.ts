@@ -6,9 +6,7 @@ import type {
   Preferences,
 } from '@src/types/onyx';
 import CONST from '@src/CONST';
-import _ from 'lodash';
 import {
-  differenceInMonths,
   eachDayOfInterval,
   format,
   isWithinInterval,
@@ -28,10 +26,24 @@ import type {UserID, DateString} from '@src/types/onyx/OnyxCommon';
 import {useIsFocused} from '@react-navigation/native';
 
 /**
- * Custom hook to manage and memoize drinking session data with lazy loading
- * @param sessions Record of sessions keyed by session ID, can be null or undefined
- * @param preferences User's preferences
- * @returns Marked dates and units for the calendar
+ * Custom hook to derive a calendar's markedDates and per-day unit counts from a
+ * session list and the user's preferences.
+ *
+ * `markedDates` is computed synchronously via `useMemo` — when any input
+ * changes (sessions, preferences, the loaded month range), the next render
+ * already carries the new payload. The earlier state-based pipeline left the
+ * home calendar stale after a palette change because the state update path
+ * had several failure modes (focus gating, batched setState during overlay
+ * navigation, react-native-calendars memoization races). Synchronous
+ * derivation is the same pattern the palette-picker preview uses, which is
+ * why that path was reliable.
+ *
+ * `loadMoreMonths(N)` extends the visible range by N months by bumping
+ * `loadedMonths` state, which triggers the memo to recompute.
+ *
+ * @param userID  ID of the user whose sessions/preferences these are
+ * @param sessions Session list to render
+ * @param preferences Preferences driving thresholds and palette
  */
 function useLazyMarkedDates(
   userID: UserID,
@@ -41,174 +53,101 @@ function useLazyMarkedDates(
   const {auth} = useFirebase();
   const user = auth?.currentUser;
   const isFocused = useIsFocused();
-  const [markedDatesMap, setMarkedDatesMap] = useState<
-    Map<DateString, MarkingProps>
-  >(new Map());
-  const [unitsMap, setUnitsMap] = useState<Map<DateString, number>>(new Map());
-  const sessionIndex = useRef<Map<DateString, DrinkingSessionArray>>(new Map()); // synchronous
   const [monthsLoaded] = useOnyx(ONYXKEYS.SESSIONS_CALENDAR_MONTHS_LOADED);
-  const loadedFrom = useRef<Date | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
   const defaultTimezone = CONST.DEFAULT_TIME_ZONE.selected;
 
-  /** Check up to which data the data has already loaded and return the date to load from. This date will capture one more month than the last loaded month. Always load one more day than the first day of the month in order to handle timezone modifications.
-   */
-  const getDateToLoadFrom = (monthsToLoad = 1): Date => {
+  // For a different user (e.g. friend profile) start fresh; otherwise resume from the saved scroll depth.
+  const initialMonths = user?.uid !== userID ? 0 : monthsLoaded ?? 0;
+  const [loadedMonths, setLoadedMonths] = useState<number>(initialMonths);
+
+  // Resync `loadedMonths` if the source user changes or Onyx delivers a different saved scroll depth.
+  useEffect(() => {
+    setLoadedMonths(user?.uid !== userID ? 0 : monthsLoaded ?? 0);
+  }, [userID, user?.uid, monthsLoaded]);
+
+  // Synchronously derive markedDates + unitsMap from the inputs.
+  // No effect, no setState — the next render has the new payload.
+  const {markedDatesMap, unitsMap, loadedFromDate} = useMemo(() => {
     const today = new Date();
-    const alreadyLoaded = loadedFrom.current;
-    const monthsDifference = differenceInMonths(today, alreadyLoaded ?? today);
-    const monthsToSubtract = monthsDifference + monthsToLoad;
-    const dateInCorrectMonth = subMonths(today, monthsToSubtract);
-    return subDays(startOfMonth(dateInCorrectMonth), 1);
-  };
+    const start = subDays(startOfMonth(subMonths(today, loadedMonths)), 1);
+    const end = today;
 
-  // Internal function to load sessions for a specific day into provided maps.
-  // Days without sessions still get a marking so the palette-green background
-  // updates when the user switches palette (or when viewing a friend's calendar).
-  const loadSessionsForDayInternal = (
-    dayKey: DateString,
-    markedDatesMapToUpdate: Map<DateString, MarkingProps>,
-    unitsMapToUpdate: Map<DateString, number>,
-  ) => {
-    const relevantSessions = sessionIndex.current.get(dayKey) ?? [];
-    const newMarking = sessionsToDayMarking(relevantSessions, preferences);
-    if (!newMarking) {
-      const palette = resolvePalette(preferences.session_color_palette);
-      markedDatesMapToUpdate.set(dayKey, {color: palette.green});
-      return;
-    }
-    markedDatesMapToUpdate.set(dayKey, newMarking.marking);
-    unitsMapToUpdate.set(dayKey, newMarking.units);
-  };
+    const sessionIndex = new Map<DateString, DrinkingSessionArray>();
+    Object.values(sessions)
+      .filter(session => isWithinInterval(session.start_time, {start, end}))
+      .forEach(session => {
+        const sessionDate = toZonedTime(
+          session.start_time,
+          session.timezone ?? defaultTimezone,
+        );
+        const dayKey = format(
+          sessionDate,
+          CONST.DATE.FNS_FORMAT_STRING,
+        ) as DateString;
+        const existing = sessionIndex.get(dayKey);
+        if (existing) {
+          existing.push(session);
+        } else {
+          sessionIndex.set(dayKey, [session]);
+        }
+      });
 
-  // Internal function to load sessions for a specific month into provided maps
-  const loadSessionsForMonthsInternal = (
-    newMonthsToLoad: number,
-    markedDatesMapToUpdate: Map<DateString, MarkingProps>,
-    unitsMapToUpdate: Map<DateString, number>,
-  ) => {
-    const index = sessionIndex.current;
-    const start = getDateToLoadFrom(newMonthsToLoad);
-    const end = loadedFrom.current ?? new Date();
+    const newMarkedDatesMap = new Map<DateString, MarkingProps>();
+    const newUnitsMap = new Map<DateString, number>();
+    const palette = resolvePalette(preferences.session_color_palette);
 
-    const relevantSessions = Object.values(sessions).filter(session =>
-      isWithinInterval(session.start_time, {start, end}),
-    );
-
-    // Build the sessionIndex for relevant sessions - do not use the in-built forEach method, as it introduces an erro into the assignment
-    // eslint-disable-next-line you-dont-need-lodash-underscore/for-each
-    _.forEach(relevantSessions, session => {
-      const sessionDate = toZonedTime(
-        session.start_time,
-        session.timezone ?? defaultTimezone,
-      );
-      const dayKey = format(
-        sessionDate,
-        CONST.DATE.FNS_FORMAT_STRING,
-      ) as DateString;
-
-      if (!index.has(dayKey)) {
-        index.set(dayKey, []);
+    eachDayOfInterval({start, end}).forEach(day => {
+      const dayKey = format(day, CONST.DATE.FNS_FORMAT_STRING) as DateString;
+      const dailySessions = sessionIndex.get(dayKey) ?? [];
+      const newMarking = sessionsToDayMarking(dailySessions, preferences);
+      if (!newMarking) {
+        newMarkedDatesMap.set(dayKey, {color: palette.green});
+        return;
       }
-
-      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-      index.get(dayKey)!.push(session);
+      newMarkedDatesMap.set(dayKey, newMarking.marking);
+      newUnitsMap.set(dayKey, newMarking.units);
     });
 
-    const datesToLoad = eachDayOfInterval({start, end});
-    const dayStrings = datesToLoad.map(
-      date => format(date, CONST.DATE.FNS_FORMAT_STRING) as DateString,
-    );
+    return {
+      markedDatesMap: newMarkedDatesMap,
+      unitsMap: newUnitsMap,
+      loadedFromDate: start,
+    };
+  }, [sessions, preferences, loadedMonths, defaultTimezone]);
 
-    // Mark the dates and units for each day - do not use the in-built forEach method, as it introduces an erro into the assignment
-    // eslint-disable-next-line you-dont-need-lodash-underscore/for-each
-    _.forEach(dayStrings, dayKey => {
-      loadSessionsForDayInternal(
-        dayKey,
-        markedDatesMapToUpdate,
-        unitsMapToUpdate,
-      );
-    });
-
-    loadedFrom.current = start;
-  };
-
-  /** Create a new map either using an existing object, or an empty object if the reset argument is set to true. Return the relevant map. */
-  function createNewMap<K, V>(
-    reset: boolean,
-    existingMap: Map<K, V>,
-  ): Map<K, V> {
-    return reset ? new Map<K, V>() : new Map(existingMap);
-  }
-
-  // Here, set the 'reset' argument to true if empty maps are needed
-  const loadMoreMonths = (newMonthsToLoad = 1, reset = false) => {
-    const newMarkedDatesMap = createNewMap<DateString, MarkingProps>(
-      reset,
-      markedDatesMap,
-    );
-    const newUnitsMap = createNewMap<DateString, number>(reset, unitsMap);
-
-    loadSessionsForMonthsInternal(
-      newMonthsToLoad,
-      newMarkedDatesMap,
-      newUnitsMap,
-    );
-
-    setMarkedDatesMap(newMarkedDatesMap);
-    setUnitsMap(newUnitsMap);
-  };
-
-  // Memoize the markedDates to avoid unnecessary re-renders
   const markedDates: MarkedDates = useMemo(
     () => Object.fromEntries(markedDatesMap),
     [markedDatesMap],
   );
 
+  // Mirror `loadedFromDate` into a ref for the orchestrator's arrow handler,
+  // which needs a stable reference (preserves the existing public interface).
+  // Only read in event handlers, so an effect-driven update is safe.
+  const loadedFrom = useRef<Date | null>(null);
   useEffect(() => {
-    // For the current user, save the number of months loaded when focus is lost
+    loadedFrom.current = loadedFromDate;
+  }, [loadedFromDate]);
+
+  const loadMoreMonths = (newMonthsToLoad = 1) => {
+    setLoadedMonths(prev => prev + newMonthsToLoad);
+  };
+
+  // On blur, persist the user's scroll depth so the next mount can resume.
+  useEffect(() => {
     if (isFocused) {
       return;
     }
     if (user?.uid === userID) {
-      const newMonthsLoaded = differenceInMonths(
-        new Date(),
-        loadedFrom.current ?? new Date(),
-      );
-      Calendar.setSessionsCalendarMonthsLoaded(newMonthsLoaded);
+      Calendar.setSessionsCalendarMonthsLoaded(loadedMonths);
     }
-  }, [isFocused, user?.uid, userID]);
-
-  useEffect(() => {
-    // Rebuild markedDates whenever the underlying inputs change. Previously this
-    // bailed out when the screen wasn't focused as a perceived optimization, but
-    // that left the home calendar stale after a palette/threshold change made
-    // from an overlay screen — and depending on navigation behavior the effect
-    // didn't always re-fire on refocus. The useEffect dep array already keeps
-    // this cheap (it only runs when inputs actually change).
-    setIsLoading(true);
-    loadedFrom.current = null;
-
-    // Resetting the session index causes recalculation of of dependent hooks when necssary, so it is not needed to reset them here
-    sessionIndex.current = new Map<DateString, DrinkingSessionArray>();
-
-    // If the current user has already loaded data, reload the same amount of months
-    // If this is the first time loading, or the user is different load the current month only
-    const newMonthsToLoad = user?.uid !== userID ? 0 : monthsLoaded ?? 0;
-
-    loadMoreMonths(newMonthsToLoad, true);
-    setIsLoading(false);
-
-    // TODOcheck the validity of loadMoreMonths and monthsLoaded for re-renders
-    // eslint-disable-next-line react-compiler/react-compiler, react-hooks/exhaustive-deps
-  }, [sessions, preferences, userID, user?.uid, monthsLoaded]);
+  }, [isFocused, user?.uid, userID, loadedMonths]);
 
   return {
     markedDates,
     unitsMap,
     loadedFrom,
     loadMoreMonths,
-    isLoading,
+    isLoading: false,
   };
 }
 
