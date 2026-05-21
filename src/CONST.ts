@@ -719,6 +719,15 @@ const CONST = {
     HIDDEN: `hidden`,
   },
 
+  // Cap how long the boot splash waits for the authed user's RTDB data
+  // (userData + preferences) to hydrate. Past this point, splash hides
+  // and HomeScreen falls back to its skeleton state. Without the cap an
+  // incomplete RTDB document, slow network, or offline cold start would
+  // keep the splash up until the 15 s force-hide safety net in
+  // SplashScreenHider, which is poor UX. 3 s is comfortably longer than
+  // a warm listener (typically <500 ms) and shorter than the safety net.
+  BOOT_SPLASH_AUTH_DATA_TIMEOUT_MS: 3 * 1000,
+
   KEYBOARD_TYPE: {
     VISIBLE_PASSWORD: 'visible-password',
     ASCII_CAPABLE: 'ascii-capable',

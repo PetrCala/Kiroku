@@ -157,6 +157,17 @@ function AuthScreensContent() {
     }
     setIsAuthDataReady(true);
   }, [userData, preferences, setIsAuthDataReady]);
+  // Safety: if the listener doesn't deliver both fields within the
+  // timeout (offline cold start, slow network, or missing fields in the
+  // user's RTDB document), flip the gate anyway. HomeScreen renders
+  // skeletons until real data arrives, so this falls back to a brief
+  // skeleton flash instead of leaving the user staring at the splash.
+  useEffect(() => {
+    const timeoutId = setTimeout(() => {
+      setIsAuthDataReady(true);
+    }, CONST.BOOT_SPLASH_AUTH_DATA_TIMEOUT_MS);
+    return () => clearTimeout(timeoutId);
+  }, [setIsAuthDataReady]);
   // Reset on sign-out (AuthScreens unmounts) so a subsequent sign-in
   // re-gates the splash on fresh data.
   useEffect(() => () => setIsAuthDataReady(false), [setIsAuthDataReady]);
