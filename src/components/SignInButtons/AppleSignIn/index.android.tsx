@@ -81,7 +81,7 @@ function AppleSignIn({
       onPress();
       // Shown at the Kiroku-level overlay so it stays visible across the
       // post-auth screen swap (AuthScreen → OnboardingGuard → next stack).
-      await App.setLoadingText(translate('signUpScreen.almostThere'));
+      await App.setLoadingText(translate('signUpScreen.signingYouIn'));
       loadingShown = true;
       try {
         await User.signInWithOAuth(auth, db, credential, displayName);
