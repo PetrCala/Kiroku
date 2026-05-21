@@ -705,6 +705,21 @@ export default {
     emailSent: 'Verification email sent.',
     emailVerified: 'Email verified!',
     iHaveVerified: 'I have verified my email',
+    useADifferentEmail: 'Wrong email? Use a different one',
+    changeEmail: {
+      title: 'Use a different email',
+      prompt:
+        "Enter a new address and your password — we'll send the verification link there instead.",
+      newEmailLabel: 'New email address',
+      passwordLabel: 'Your password',
+      submit: 'Send verification link',
+      sent: ({email}: VerifyEmailScreenEmailParmas) =>
+        `Verification link sent to ${email}. Open it, then tap 'I have verified my email'.`,
+      back: 'Back',
+      error: {
+        passwordRequired: 'Please enter your password.',
+      },
+    },
     error: {
       generic: 'Error verifying your email',
       sending: 'Error sending verification email',

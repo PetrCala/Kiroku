@@ -702,6 +702,20 @@ export default {
     emailSent: 'Ověřovací e-mail byl odeslán.',
     emailVerified: 'E-mail byl ověřen!',
     iHaveVerified: 'E-mail mám ověřený',
+    useADifferentEmail: 'Špatný e-mail? Použijte jiný',
+    changeEmail: {
+      title: 'Použít jiný e-mail',
+      prompt: 'Zadejte novou adresu a heslo — ověřovací odkaz vám pošleme tam.',
+      newEmailLabel: 'Nová e-mailová adresa',
+      passwordLabel: 'Vaše heslo',
+      submit: 'Odeslat ověřovací odkaz',
+      sent: ({email}: VerifyEmailScreenEmailParmas) =>
+        `Ověřovací odkaz byl odeslán na ${email}. Otevřete jej a pak klepněte na 'E-mail mám ověřený'.`,
+      back: 'Zpět',
+      error: {
+        passwordRequired: 'Zadejte prosím heslo.',
+      },
+    },
     error: {
       generic: 'Chyba při ověřování vašeho e-mailu',
       sending: 'Chyba při odesílání ověřovacího e-mailu',
