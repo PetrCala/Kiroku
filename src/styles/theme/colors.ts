@@ -146,10 +146,12 @@ const sessionPaletteColors = {
     black: '#000000',
   },
   brand: {
-    green: colors.tangerine100,
-    yellow: colors.tangerine300,
-    orange: colors.tangerine400,
-    red: colors.tangerine600,
+    // Anchored on yellowStrong (the actual app brand color used by theme.appColor)
+    // so the Brand palette feels native against the rest of the UI.
+    green: colors.yellow200,
+    yellow: colors.yellowStrong,
+    orange: colors.yellow600,
+    red: colors.yellow700,
     black: '#000000',
   },
   pink: {
