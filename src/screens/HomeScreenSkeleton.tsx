@@ -61,33 +61,54 @@ function StatOverviewSkeleton() {
             styles.alignItemsCenter,
             styles.justifyContentCenter,
           ]}>
-          <Block width={56} height={28} style={styles.mb2} />
-          <Block width={96} height={12} />
+          {/* Matches fontSizeXXXXLarge (36px) bold value text */}
+          <Block width={72} height={44} style={styles.mb2} />
+          {/* Matches fontSizeNormal (15px) label, 2 lines, max-width 150 */}
+          <Block width={130} height={36} />
         </View>
       ))}
     </View>
   );
 }
 
-const CALENDAR_WEEKS = [0, 1, 2, 3, 4, 5] as const;
+const CALENDAR_WEEKS = [0, 1, 2, 3, 4] as const;
 const CALENDAR_DAYS = [0, 1, 2, 3, 4, 5, 6] as const;
 
-/** Placeholder for the sessions calendar (rough 6×7 day grid). */
+/** Placeholder for the sessions calendar matching react-native-calendars layout. */
 function SessionsCalendarSkeleton() {
   const styles = useThemeStyles();
   return (
     <View style={[styles.sessionsCalendarContainer, styles.p4]}>
+      {/* Month header: left arrow + month name + right arrow */}
+      <View
+        style={[
+          styles.flexRow,
+          styles.alignItemsCenter,
+          styles.justifyContentBetween,
+          styles.mb3,
+        ]}>
+        <Block width={24} height={24} radius={4} />
+        <Block width={100} height={18} />
+        <Block width={24} height={24} radius={4} />
+      </View>
+      {/* Day-name row (Mon Tue Wed …) */}
+      <View style={[styles.flexRow, styles.justifyContentBetween, styles.mb3]}>
+        {CALENDAR_DAYS.map(day => (
+          <Block key={`name-${day}`} width={20} height={12} />
+        ))}
+      </View>
+      {/* Week rows — each cell mirrors DayComponent: day number + marking box */}
       {CALENDAR_WEEKS.map(week => (
         <View
           key={`week-${week}`}
           style={[styles.flexRow, styles.justifyContentBetween, styles.mb3]}>
           {CALENDAR_DAYS.map(day => (
-            <Block
+            <View
               key={`day-${week}-${day}`}
-              width={32}
-              height={32}
-              radius={16}
-            />
+              style={[styles.flexColumn, styles.alignItemsCenter]}>
+              <Block width={16} height={12} style={styles.mb1} />
+              <Block width={28} height={28} radius={4} />
+            </View>
           ))}
         </View>
       ))}
