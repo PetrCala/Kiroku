@@ -706,8 +706,7 @@
 "src/components/SelectionList/BaseSelectionList.tsx"	"react-hooks/immutability"	1
 "src/components/SelectionList/BaseSelectionList.tsx"	"react-hooks/set-state-in-effect"	2
 "src/components/SelectionList/types.ts"	"@typescript-eslint/no-duplicate-type-constituents"	1
-"src/components/SessionsCalendar/index.tsx"	"@typescript-eslint/no-unnecessary-type-assertion"	1
-"src/components/SessionsCalendar/index.tsx"	"react-hooks/set-state-in-effect"	2
+"src/components/SessionsCalendar/index.tsx"	"react-hooks/set-state-in-effect"	1
 "src/components/Skeletons/ItemListSkeletonView.tsx"	"rulesdir/prefer-narrow-hook-dependencies"	2
 "src/components/StartSessionButtonAndPopover.tsx"	"react-hooks/set-state-in-effect"	1
 "src/components/StartSessionButtonAndPopover.tsx"	"rulesdir/prefer-narrow-hook-dependencies"	1

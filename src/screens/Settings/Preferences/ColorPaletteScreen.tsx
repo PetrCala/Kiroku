@@ -26,14 +26,10 @@ import {
   DEFAULT_PALETTE_ID,
   getPaletteIdFromColors,
 } from '@libs/SessionColorPalettes';
-import {sessionPaletteColors} from '@styles/theme/colors';
 import SessionsCalendarView from '@components/SessionsCalendar/SessionsCalendarView';
+import useTheme from '@hooks/useTheme';
 import type {DateString} from '@src/types/onyx/OnyxCommon';
 import CONST from '@src/CONST';
-
-// Brand orange (tangerine400) — fixed across themes so the selection accent stays on-brand.
-const ACCENT = sessionPaletteColors.brand.orange;
-const ACCENT_TINT = `${ACCENT}1F`;
 
 const PREVIEW_KEYS: ReadonlyArray<keyof SessionColorPalette> = [
   'green',
@@ -92,6 +88,7 @@ function buildPreviewMarkedData(
 
 function ColorPaletteScreen() {
   const styles = useThemeStyles();
+  const theme = useTheme();
   const {translate} = useLocalize();
   const {auth, db} = useFirebase();
   const user = auth.currentUser;
@@ -99,6 +96,12 @@ function ColorPaletteScreen() {
   const [pendingPaletteId, setPendingPaletteId] = useState<PaletteId | null>(
     null,
   );
+  const [saving, setSaving] = useState(false);
+
+  // Selection accent uses the app brand color (yellowStrong) so the picker stays
+  // visually integrated with the rest of the app.
+  const accent = theme.appColor;
+  const accentTint = `${accent}1F`;
 
   const activePaletteId =
     getPaletteIdFromColors(preferences?.session_color_palette) ??
@@ -113,22 +116,20 @@ function ColorPaletteScreen() {
   );
 
   const onSelectPalette = (id: PaletteId) => {
-    if (id === displayPaletteId) {
+    if (saving || id === displayPaletteId) {
       return;
     }
     setPendingPaletteId(id);
-    (async () => {
-      try {
-        await Preferences.updatePreferences(db, user, {
-          session_color_palette: PALETTES[id],
-        });
-        Navigation.goBack();
-      } catch (error) {
+    setSaving(true);
+    Preferences.updatePreferences(db, user, {
+      session_color_palette: PALETTES[id],
+    })
+      .catch(error => {
         setPendingPaletteId(null);
         const errorMessage = error instanceof Error ? error.message : '';
         Alert.alert(translate('preferencesScreen.error.save'), errorMessage);
-      }
-    })();
+      })
+      .finally(() => setSaving(false));
   };
 
   return (
@@ -151,7 +152,7 @@ function ColorPaletteScreen() {
             style={[
               styles.mb4,
               styles.overflowHidden,
-              {borderRadius: 12, borderWidth: 1, borderColor: ACCENT_TINT},
+              {borderRadius: 12, borderWidth: 1, borderColor: accentTint},
             ]}>
             <SessionsCalendarView
               markedDates={previewData.markedDates}
@@ -185,8 +186,8 @@ function ColorPaletteScreen() {
                     {
                       borderRadius: 12,
                       borderLeftWidth: 4,
-                      borderLeftColor: isActive ? ACCENT : 'transparent',
-                      backgroundColor: isActive ? ACCENT_TINT : 'transparent',
+                      borderLeftColor: isActive ? accent : 'transparent',
+                      backgroundColor: isActive ? accentTint : 'transparent',
                     },
                   ]}>
                   <View style={[styles.flexColumn, styles.flex1]}>
@@ -194,7 +195,7 @@ function ColorPaletteScreen() {
                       style={[
                         styles.textNormal,
                         styles.textStrong,
-                        isActive ? {color: ACCENT} : null,
+                        isActive ? {color: accent} : null,
                       ]}>
                       {paletteName}
                     </Text>
@@ -219,7 +220,7 @@ function ColorPaletteScreen() {
                   {isActive && (
                     <Icon
                       src={KirokuIcons.Checkmark}
-                      fill={ACCENT}
+                      fill={accent}
                       width={20}
                       height={20}
                     />
