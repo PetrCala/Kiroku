@@ -41,6 +41,7 @@ import type {
   UnitsToColors,
   DrinksToUnits,
   Theme,
+  SessionColorPalette,
 } from './Preferences';
 import type Request from './Request';
 import type ReasonForLeaving from './ReasonForLeaving';
@@ -126,6 +127,7 @@ export type {
   Request,
   Response,
   Session,
+  SessionColorPalette,
   SessionPlaceholder,
   SessionPlaceholderList,
   StartSession,

@@ -493,6 +493,7 @@ export default {
         "Set how many units each drink is worth and when the session's color changes",
       drinksToUnits: 'Drinks to units',
       unitsToColors: 'Units to colors',
+      colorPalette: 'Color palette',
     },
     save: 'Save preferences',
     saving: 'Saving your preferences...',
@@ -506,6 +507,18 @@ export default {
     title: 'Units to Colors',
     description:
       'Set cutoff points where session colors change; each is the maximum value up to which the session retains that color',
+  },
+  colorPaletteScreen: {
+    title: 'Session colors',
+    description:
+      'Choose a color palette for your session indicators across the calendar and session screens.',
+    palettes: {
+      classic: 'Classic',
+      sunset: 'Sunset',
+      ocean: 'Ocean',
+      mono: 'Monochrome',
+      colorblindSafe: 'Colorblind-safe',
+    },
   },
   drinksToUnitsScreen: {
     title: 'Drinks to Units',

@@ -492,6 +492,7 @@ export default {
         'Nastavte přepočet drinků na jednotky a kdy se mění barva relace',
       drinksToUnits: 'Drinky na jednotky',
       unitsToColors: 'Jednotky na barvy',
+      colorPalette: 'Barevná paleta',
     },
     save: 'Uložit předvolby',
     saving: 'Ukládání vašich předvoleb...',
@@ -504,6 +505,18 @@ export default {
     title: 'Jednotky na barvy',
     description:
       'Nastavte hraniční body, při kterých se mění barvy relace; tyto body představují maximální hodnotu, do které zůstane relace v dané barvě',
+  },
+  colorPaletteScreen: {
+    title: 'Barvy relací',
+    description:
+      'Vyberte si barevnou paletu pro ukazatele relací v kalendáři i na obrazovkách relací.',
+    palettes: {
+      classic: 'Klasická',
+      sunset: 'Západ slunce',
+      ocean: 'Oceán',
+      mono: 'Monochromatická',
+      colorblindSafe: 'Pro barvoslepé',
+    },
   },
   drinksToUnitsScreen: {
     title: 'Drinky na jednotky',
