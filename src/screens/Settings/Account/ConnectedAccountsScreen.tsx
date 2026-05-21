@@ -356,16 +356,15 @@ function SuccessOverlayModal({
   return (
     <Modal
       isVisible
-      type={CONST.MODAL.MODAL_TYPE.CENTERED_UNSWIPEABLE}
-      // Override the type's default slideInRight/slideOutRight transition on
-      // small screens — the celebratory animation reads better when the
-      // surface fades in rather than races in from the side.
-      animationIn="fadeIn"
-      animationOut="fadeOut"
+      // CONFIRM gives us exactly the geometry we want for the success moment:
+      // a fixed-width self-sized card with a fadeIn/fadeOut transition (no
+      // slide-in-from-right on small screens) and swipe disabled by default.
+      // react-native-modal vertically centers a self-sized card automatically,
+      // so we don't need a flex chain through the modal internals.
+      type={CONST.MODAL.MODAL_TYPE.CONFIRM}
       onClose={() => {}}>
       <View
         style={[
-          styles.flex1,
           styles.alignItemsCenter,
           styles.justifyContentCenter,
           styles.p5,
