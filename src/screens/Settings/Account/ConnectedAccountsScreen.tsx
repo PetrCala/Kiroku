@@ -357,8 +357,19 @@ function SuccessOverlayModal({
     <Modal
       isVisible
       type={CONST.MODAL.MODAL_TYPE.CENTERED_UNSWIPEABLE}
+      // Override the type's default slideInRight/slideOutRight transition on
+      // small screens — the celebratory animation reads better when the
+      // surface fades in rather than races in from the side.
+      animationIn="fadeIn"
+      animationOut="fadeOut"
       onClose={() => {}}>
-      <View style={[styles.p5, styles.alignItemsCenter]}>
+      <View
+        style={[
+          styles.flex1,
+          styles.alignItemsCenter,
+          styles.justifyContentCenter,
+          styles.p5,
+        ]}>
         <LinkAnimation
           mode={overlay.mode}
           providerIcon={KirokuIcons[row.icon]}
