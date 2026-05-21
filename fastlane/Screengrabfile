@@ -1,0 +1,20 @@
+app_package_name("com.alcohol_tracker")
+
+# Test runner FQCN — matches the package + class in android/app/src/androidTest.
+# See SCREENSHOTS.md for the one-time gradle setup that wires this up.
+use_tests_in_packages(["com.alcohol_tracker.screenshots"])
+
+# Locales for Play Console listing. Mirrors the iOS Snapfile.
+# The UI test maps these to the app's internal codes (en -> "en", cs-CZ -> "cs_cz").
+locales(["en-US", "cs-CZ"])
+
+# Device-class buckets the Play Console asks for. The actual emulator size is
+# chosen at runtime via the AVD you boot before invoking screengrab.
+device_type("phone")
+
+clear_previous_screenshots(true)
+
+output_directory("./fastlane/screenshots/android")
+
+app_apk_path("android/app/build/outputs/apk/production/release/app-production-release.apk")
+tests_apk_path("android/app/build/outputs/apk/androidTest/production/release/app-production-release-androidTest.apk")

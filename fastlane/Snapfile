@@ -1,0 +1,37 @@
+# Device matrix for App Store screenshots.
+# Sizes are picked to satisfy App Store Connect's required resolutions:
+#   6.9" — iPhone 16 Pro Max
+#   6.5" — iPhone 15 Pro Max (covers 6.7" requirement too)
+#   5.5" — iPhone 8 Plus (still required for legacy listings)
+#   13"  — iPad Pro M4 (required if the app supports iPad)
+devices([
+  "iPhone 16 Pro Max",
+  "iPhone 15 Pro Max",
+  "iPhone 8 Plus",
+  "iPad Pro 13-inch (M4)",
+])
+
+# Kiroku uses an in-app locale switcher (Settings -> Language), not OS locale.
+# These language codes are mapped to the app's internal codes inside the UI test
+# (en-US -> "en", cs-CZ -> "cs_cz"). See ios/KirokuUITests/ScreenshotTests.swift.
+languages([
+  "en-US",
+  "cs-CZ",
+])
+
+scheme("Kiroku (production)")
+
+output_directory("./fastlane/screenshots/ios")
+clear_previous_screenshots(true)
+
+# UI test target name — must match the target you create in Xcode.
+# See SCREENSHOTS.md for the one-time manual setup step.
+# scheme is taken from the workspace; the test target is referenced by the scheme's Test action.
+
+# Stop the test run on the first failure so you don't waste 15 min finding out
+# screen 2 broke on every device.
+stop_after_first_error(true)
+
+# Reinstall the app between runs so each capture starts from a clean state.
+reinstall_app(true)
+app_identifier("org.reactjs.native.example.alcohol-tracker")
