@@ -54,18 +54,28 @@ function useLazyMarkedDates(
   );
   const defaultTimezone = CONST.DEFAULT_TIME_ZONE.selected;
 
-  // Resume the user's saved scroll depth (or 0 if this is the first visit).
-  // Same logic for auth user and friends — state is per-UID now.
-  const [loadedMonths, setLoadedMonths] = useState<number>(monthsLoaded ?? 0);
+  // Resume the user's saved scroll depth, never below the listener's initial
+  // fetch window — the listener already streams the last
+  // `SESSIONS_INITIAL_FETCH_MONTHS` months on cold start, so the visible
+  // window should cover the same range. Otherwise users whose sessions all
+  // sit outside the current month see an empty calendar even though the data
+  // is already in memory.
+  const initialLoadedMonths = Math.max(
+    CONST.SESSIONS_INITIAL_FETCH_MONTHS,
+    monthsLoaded ?? 0,
+  );
+  const [loadedMonths, setLoadedMonths] = useState<number>(initialLoadedMonths);
 
   // Resync `loadedMonths` when the source UID changes or when Onyx finishes
   // hydrating with a different saved depth. Gated on `metadata.status` so we
-  // don't reset to 0 during the brief window where Onyx hasn't hydrated yet.
+  // don't reset during the brief window where Onyx hasn't hydrated yet.
   useEffect(() => {
     if (monthsLoadedMeta.status !== 'loaded') {
       return;
     }
-    setLoadedMonths(monthsLoaded ?? 0);
+    setLoadedMonths(
+      Math.max(CONST.SESSIONS_INITIAL_FETCH_MONTHS, monthsLoaded ?? 0),
+    );
   }, [userID, monthsLoaded, monthsLoadedMeta.status]);
 
   // First pass — rebuild the session-by-day index only when sessions or the
