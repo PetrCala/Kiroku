@@ -19,6 +19,7 @@ import ScrollView from '@components/ScrollView';
 import MenuItemWithTopDescription from '@components/MenuItemWithTopDescription';
 import {useOnyx} from 'react-native-onyx';
 import ONYXKEYS from '@src/ONYXKEYS';
+import CONST from '@src/CONST';
 
 type AccountScreenProps = StackScreenProps<
   SettingsNavigatorParamList,
@@ -36,6 +37,10 @@ function AccountScreen({route}: AccountScreenProps) {
   const [loadingText] = useOnyx(ONYXKEYS.APP_LOADING_TEXT);
   const {userData} = useDatabaseData();
   const profileData = userData?.profile;
+
+  const hasEmailProvider = (user?.providerData ?? []).some(
+    p => p.providerId === CONST.AUTH_PROVIDER.PASSWORD,
+  );
 
   // providerData is not a React-tracked value; this snapshot is acceptable for
   // the menu summary because mutations land on the dedicated Connected Accounts
@@ -67,16 +72,20 @@ function AccountScreen({route}: AccountScreenProps) {
       title: profileData?.display_name ?? '',
       pageRoute: ROUTES.SETTINGS_DISPLAY_NAME,
     },
-    {
-      description: translate('common.email'),
-      title: user?.email ?? '',
-      pageRoute: ROUTES.SETTINGS_EMAIL,
-    },
-    {
-      description: translate('common.password'),
-      title: '••••••••',
-      pageRoute: ROUTES.SETTINGS_PASSWORD,
-    },
+    ...(hasEmailProvider
+      ? [
+          {
+            description: translate('common.email'),
+            title: user?.email ?? '',
+            pageRoute: ROUTES.SETTINGS_EMAIL,
+          },
+          {
+            description: translate('common.password'),
+            title: '••••••••',
+            pageRoute: ROUTES.SETTINGS_PASSWORD,
+          },
+        ]
+      : []),
     {
       description: translate('connectedAccounts.title'),
       title: linkedProviderLabels,
