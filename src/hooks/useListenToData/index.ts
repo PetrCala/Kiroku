@@ -67,9 +67,12 @@ const useListenToData = (
   const cachedSessions: DrinkingSessionList | null | undefined =
     userID && cachedSessionsByUser ? cachedSessionsByUser[userID] : undefined;
   const [monthsLoaded, monthsLoadedMeta] = useOnyx(
-    // `userID` may be empty during the auth-resolving window; the suffix is
-    // tolerated by Onyx and the effect below gates on its loaded status.
-    `${ONYXKEYS.COLLECTION.SESSIONS_CALENDAR_MONTHS_BY_USER_ID}${userID ?? ''}`,
+    // `userID` may be missing during the auth-resolving window. A bare
+    // collection prefix would be read by `useOnyx` as the whole-collection
+    // key, and the hook refuses to switch between whole-collection and
+    // specific-member keys on subsequent renders — so we substitute an
+    // obviously-invalid UID placeholder until the real one is available.
+    `${ONYXKEYS.COLLECTION.SESSIONS_CALENDAR_MONTHS_BY_USER_ID}${userID ?? '-1'}`,
   );
 
   // Months of session history to subscribe to. Keeps the fetch window at least

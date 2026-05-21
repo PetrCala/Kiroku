@@ -41,10 +41,17 @@ type DatabaseDataProviderProps = {
   children: ReactNode;
 };
 
+// An obviously-invalid UID placeholder used before auth resolves. A bare
+// collection prefix (`${prefix}`) would be interpreted by `useOnyx` as the
+// whole-collection key, and the hook refuses to dynamically switch between
+// a whole-collection key and a specific-member key on subsequent renders.
+const NO_USER_ID_SENTINEL = '-1';
+
 function DatabaseDataProvider({children}: DatabaseDataProviderProps) {
   const {auth} = useFirebase();
   const user = auth.currentUser;
   const userID = user ? user.uid : '';
+  const keyedUserID = userID || NO_USER_ID_SENTINEL;
 
   const dataTypes: FetchDataKeys = [
     'userStatusData',
@@ -61,10 +68,10 @@ function DatabaseDataProvider({children}: DatabaseDataProviderProps) {
   const {data} = useListenToData(dataTypes, userID);
 
   const [preferencesFromOnyx] = useOnyx(
-    `${ONYXKEYS.COLLECTION.PREFERENCES}${userID}`,
+    `${ONYXKEYS.COLLECTION.PREFERENCES}${keyedUserID}`,
   );
   const [userDataFromOnyx] = useOnyx(
-    `${ONYXKEYS.COLLECTION.USER_DATA}${userID}`,
+    `${ONYXKEYS.COLLECTION.USER_DATA}${keyedUserID}`,
   );
 
   const value = useMemo(

@@ -11,12 +11,18 @@ type CurrentUserData = UserData | Record<string, never>;
  * Returns an empty object before the entry has been hydrated so callers don't
  * have to nullable-guard every field access (matches the previous semantics).
  */
+// An obviously-invalid UID placeholder used before auth resolves. The bare
+// `${prefix}` would be interpreted by useOnyx as the *whole* collection key,
+// and useOnyx refuses to transition between a whole-collection key and a
+// specific-member key — so the suffix must always be non-empty.
+const NO_USER_ID_SENTINEL = '-1';
+
 function useCurrentUserData() {
   const {auth} = useFirebase();
   const user = auth?.currentUser;
   const userID = user?.uid;
   const [accountUserData] = useOnyx(
-    `${ONYXKEYS.COLLECTION.USER_DATA}${userID ?? ''}`,
+    `${ONYXKEYS.COLLECTION.USER_DATA}${userID ?? NO_USER_ID_SENTINEL}`,
   );
   const currentUserData: CurrentUserData = useMemo(
     () =>
