@@ -15,11 +15,31 @@ import Log from '@libs/Log';
  * key. Cost: users who had scrolled the home calendar back several months
  * will see the default 3-month window on first launch after upgrade and
  * re-scroll once. Acceptable tradeoff for an 8-byte preference.
+ *
+ * The legacy key is read first and the storage write is only issued when
+ * there's actually something to clear — so warm launches (post-clear) finish
+ * the migration in microtask time and don't extend the splash-to-app
+ * handoff window.
  */
 export default function DropLegacySessionsCalendarMonthsLoaded(): Promise<void> {
-  Log.info(
-    '[Migrate Onyx] DropLegacySessionsCalendarMonthsLoaded: clearing legacy key',
-  );
-  // eslint-disable-next-line rulesdir/prefer-actions-set-data
-  return Onyx.set(ONYXKEYS.SESSIONS_CALENDAR_MONTHS_LOADED, null);
+  return new Promise<void>(resolve => {
+    // eslint-disable-next-line rulesdir/no-onyx-connect
+    const connectionID = Onyx.connect({
+      key: ONYXKEYS.SESSIONS_CALENDAR_MONTHS_LOADED,
+      callback: value => {
+        Onyx.disconnect(connectionID);
+        if (value === null || value === undefined) {
+          resolve();
+          return;
+        }
+        Log.info(
+          '[Migrate Onyx] DropLegacySessionsCalendarMonthsLoaded: clearing legacy key',
+        );
+        // eslint-disable-next-line rulesdir/prefer-actions-set-data
+        Onyx.set(ONYXKEYS.SESSIONS_CALENDAR_MONTHS_LOADED, null)
+          .then(() => resolve())
+          .catch(() => resolve());
+      },
+    });
+  });
 }
