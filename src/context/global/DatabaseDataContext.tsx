@@ -1,7 +1,7 @@
 // DatabaseDataContext.tsx
 import type {ReactNode} from 'react';
 import React, {createContext, useContext, useEffect, useMemo} from 'react';
-import Onyx, {useOnyx} from 'react-native-onyx';
+import Onyx from 'react-native-onyx';
 import type {
   DrinkingSessionList,
   Preferences,
@@ -41,17 +41,10 @@ type DatabaseDataProviderProps = {
   children: ReactNode;
 };
 
-// An obviously-invalid UID placeholder used before auth resolves. A bare
-// collection prefix (`${prefix}`) would be interpreted by `useOnyx` as the
-// whole-collection key, and the hook refuses to dynamically switch between
-// a whole-collection key and a specific-member key on subsequent renders.
-const NO_USER_ID_SENTINEL = '-1';
-
 function DatabaseDataProvider({children}: DatabaseDataProviderProps) {
   const {auth} = useFirebase();
   const user = auth.currentUser;
   const userID = user ? user.uid : '';
-  const keyedUserID = userID || NO_USER_ID_SENTINEL;
 
   const dataTypes: FetchDataKeys = [
     'userStatusData',
@@ -61,40 +54,36 @@ function DatabaseDataProvider({children}: DatabaseDataProviderProps) {
     'userData',
   ];
 
-  // The listener still subscribes for *all* keys (so write-through fires for
-  // preferences/userData), but we read those two from Onyx via `useOnyx`
-  // below — they're cached per-user. The listener's React state is the
-  // primary source for the remaining keys.
+  // The listener is the single source of truth for the auth user. Its React
+  // state delivers all fields synchronously as Firebase responds. We also
+  // write-through to per-user Onyx collections from inside the listener (see
+  // `useListenToData`) so friend-profile revisits and other-user views can
+  // render from cache via `usePreferencesFetch` / `useUserDataFetch`. The
+  // auth user's own render path stays on React state — adding a second
+  // Onyx-backed source for the same data only creates hydration races.
   const {data} = useListenToData(dataTypes, userID);
-
-  const [preferencesFromOnyx] = useOnyx(
-    `${ONYXKEYS.COLLECTION.PREFERENCES}${keyedUserID}`,
-  );
-  const [userDataFromOnyx] = useOnyx(
-    `${ONYXKEYS.COLLECTION.USER_DATA}${keyedUserID}`,
-  );
 
   const value = useMemo(
     () => ({
       userStatusData: data.userStatusData,
       drinkingSessionData: data.drinkingSessionData,
-      preferences: preferencesFromOnyx ?? undefined,
+      preferences: data.preferences,
       unconfirmedDays: data.unconfirmedDays,
-      userData: userDataFromOnyx ?? undefined,
+      userData: data.userData,
     }),
-    [data, preferencesFromOnyx, userDataFromOnyx],
+    [data],
   );
 
   // Sync theme preference from Firebase to Onyx when preferences are loaded
   // This ensures the app theme is consistent with the user's saved preference
   useEffect(() => {
-    if (!preferencesFromOnyx) {
+    if (data.preferences === undefined) {
       return;
     }
-    const theme = preferencesFromOnyx.theme ?? CONST.THEME.DEFAULT;
+    const theme = data.preferences?.theme ?? CONST.THEME.DEFAULT;
     // eslint-disable-next-line rulesdir/prefer-actions-set-data
     Onyx.set(ONYXKEYS.PREFERRED_THEME, theme);
-  }, [preferencesFromOnyx]);
+  }, [data.preferences]);
 
   return (
     <DatabaseDataContext.Provider value={value}>

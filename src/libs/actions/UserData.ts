@@ -182,8 +182,10 @@ function updateAutomaticTimezone(timezone: Timezone) {
   //   timezone: JSON.stringify(formatedTimezone),
   // };
 
-  Onyx.merge(`${ONYXKEYS.COLLECTION.USER_DATA}${currentUserID}`, {
-    timezone: formatedTimezone,
+  Onyx.merge(ONYXKEYS.USER_DATA_LIST, {
+    [currentUserID]: {
+      timezone: formatedTimezone,
+    },
   });
 
   // TODO enable this

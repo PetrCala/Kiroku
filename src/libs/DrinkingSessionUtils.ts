@@ -38,17 +38,15 @@ const PlaceholderDrinks: DrinksList = {[Date.now()]: {other: 0}};
 
 let timezone: Required<Timezone> = CONST.DEFAULT_TIME_ZONE;
 Onyx.connect({
-  key: ONYXKEYS.COLLECTION.USER_DATA,
-  waitForCollectionCallback: true,
+  key: ONYXKEYS.USER_DATA_LIST,
   callback: value => {
     // Safe to call getFirebaseAuth() here - Onyx callbacks run after app initialization
     const auth = getFirebaseAuth();
     if (!auth?.currentUser) {
       return;
     }
-    const currentUserID = auth.currentUser.uid;
-    const userDataTimezone =
-      value?.[`${ONYXKEYS.COLLECTION.USER_DATA}${currentUserID}`]?.timezone;
+    const currentUserID = auth?.currentUser?.uid;
+    const userDataTimezone = value?.[currentUserID]?.timezone;
     timezone = {
       selected: userDataTimezone?.selected ?? CONST.DEFAULT_TIME_ZONE.selected,
       automatic:
