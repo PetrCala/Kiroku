@@ -1,10 +1,10 @@
 <div align="center">
-    <a href="https://petrcala.github.io/Kiroku/assets/html/qr-link.html">
+    <a href="https://kiroku.cz">
         <img src="https://raw.githubusercontent.com/PetrCala/Kiroku/master/assets/images/app-logo.png" 
         width="64" height="64" alt="Kiroku Icon" style="border-radius: 15%!important;">
     </a>
     <h1>
-        <a href="https://petrcala.github.io/Kiroku/assets/html/qr-link.html">
+        <a href="https://kiroku.cz">
             Kiroku - Alcohol Tracker
         </a>
     </h1>
@@ -20,14 +20,14 @@
 - You can either [**download the app here**][qr link] or scan the QR code below:
 
 <div align="center">
-    <img src="https://petrcala.github.io/Kiroku/assets/images/kiroku-qr-code.png" width="128" height="128" alt="image">
+    <img src="https://raw.githubusercontent.com/PetrCala/Kiroku/master/assets/images/kiroku-qr-code.png" width="128" height="128" alt="image">
 </div>
 
 - [Deploying](#deploying)
   - [Release cycle](#release-cycle)
   - [Local production builds](#local-production-builds)
-      - [Local production build the iOS app](#local-production-build-the-ios-app)
-      - [Local production build the Android app](#local-production-build-the-android-app)
+    - [Local production build the iOS app](#local-production-build-the-ios-app)
+    - [Local production build the Android app](#local-production-build-the-android-app)
 - [On the platform choice](#on-the-platform-choice)
 - [Setting up the local environment](#setting-up-the-local-environment)
 - [Building for Android](#building-for-android)
@@ -303,4 +303,4 @@ You can schedule database maintenance directly from the command line using `bun 
 - Scheduling a maintenance will update the `config/maintenance` node of the database. Namely, the `maintenance_mode` will be set to `true`, while the start and end time will be set to your desired values. As long as the `maintenance_mode` flag is on, all users will be shown a maintenance screen upon opening the application.
 - There is no in-built check to make sure the maintenance time is over. As such, the start/end times are purely of informational character. This is to allow the developers more flexibility. Consequently, after the actual maintenance is over and the app is ready to be made available to users, simply cancel the maintenance using the instructions in the [Cancelling maintenance](#cancelling-maintenance) section. This will set the `maintenance_mode` to false, allowing application access to users.
 
-[qr link]: https://petrcala.github.io/Kiroku/assets/html/qr-link.html
+[qr link]: https://kiroku.cz
