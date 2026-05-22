@@ -1,5 +1,5 @@
 import React, {useState} from 'react';
-import {ActivityIndicator, View} from 'react-native';
+import {View} from 'react-native';
 import type {StackScreenProps} from '@react-navigation/stack';
 import type {DateData} from 'react-native-calendars';
 import SessionsCalendar from '@components/SessionsCalendar';
@@ -11,7 +11,6 @@ import {useDatabaseData} from '@context/global/DatabaseDataContext';
 import useFetchData from '@hooks/useFetchData';
 import useDrinkingSessionsFetch from '@hooks/useDrinkingSessionsFetch';
 import useLocalize from '@hooks/useLocalize';
-import useTheme from '@hooks/useTheme';
 import useThemeStyles from '@hooks/useThemeStyles';
 import {dateToDateData} from '@libs/DataHandling';
 import Navigation from '@libs/Navigation/Navigation';
@@ -46,7 +45,6 @@ function SessionsCalendarScreen({route}: SessionsCalendarScreenProps) {
   const isSelf = user?.uid === userID;
   const {translate} = useLocalize();
   const styles = useThemeStyles();
-  const theme = useTheme();
 
   const ownData = useDatabaseData();
   const {data: friendFetchedData, isLoading: isFriendFetchLoading} =
@@ -82,11 +80,6 @@ function SessionsCalendarScreen({route}: SessionsCalendarScreenProps) {
         shouldShowCloseButton
         onCloseButtonPress={() => Navigation.goBack()}
       />
-      {isFetchingOlderMonths && (
-        <View style={styles.sessionsCalendarHeaderSpinner}>
-          <ActivityIndicator size="small" color={theme.spinner} />
-        </View>
-      )}
       {isLoading || !preferences ? (
         <FullScreenLoadingIndicator />
       ) : (

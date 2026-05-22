@@ -1,5 +1,5 @@
 import React, {memo, useCallback, useEffect, useMemo, useRef} from 'react';
-import {View} from 'react-native';
+import {ActivityIndicator, View} from 'react-native';
 import {FlashList} from '@shopify/flash-list';
 import type {FlashListRef} from '@shopify/flash-list';
 import {format, parseISO, startOfDay} from 'date-fns';
@@ -8,6 +8,8 @@ import {LocaleConfig} from 'react-native-calendars';
 import type {MarkedDates} from 'react-native-calendars/src/types';
 import {useOnyx} from 'react-native-onyx';
 import Text from '@components/Text';
+import useLocalize from '@hooks/useLocalize';
+import useTheme from '@hooks/useTheme';
 import useThemeStyles from '@hooks/useThemeStyles';
 import ONYXKEYS from '@src/ONYXKEYS';
 import CONST from '@src/CONST';
@@ -17,7 +19,10 @@ import type {MonthSection, MonthWeek} from './buildMonthSections';
 import WeekRow from './WeekRow';
 import setCalendarLocale from './setCalendarLocale';
 
-const LOAD_AHEAD_BUFFER_WEEKS = 2;
+// Trigger `onRequestOlder` when the lowest visible item is within this
+// many weeks of index 0. Generous so the parent's prefetch starts well
+// before the user catches up to the loaded floor.
+const LOAD_AHEAD_BUFFER_WEEKS = 12;
 // 50% threshold is generous enough to fire well before the lazy-load buffer
 // runs out, but quiet enough not to thrash on every pixel of scroll. The
 // previous `1` value was a major contributor to deceleration jitter.
@@ -37,6 +42,10 @@ type SessionsCalendarWeekListViewProps = {
   firstSessionDate?: Date | null;
   /** Latest day to render (defaults to today). */
   endDate?: Date;
+  /** True while the data fetcher is widening the loaded window. The view
+   *  renders a "Loading older months…" row at the top of the list while
+   *  this is true. */
+  isFetchingOlderMonths?: boolean;
   /** Day cell tap handler. */
   onDayPress?: (day: DateData) => void;
   /** Called when the user scrolls within `LOAD_AHEAD_BUFFER_WEEKS` of the
@@ -78,10 +87,13 @@ function SessionsCalendarWeekListView({
   loadedFromDate,
   firstSessionDate,
   endDate,
+  isFetchingOlderMonths,
   onDayPress,
   onRequestOlder,
 }: SessionsCalendarWeekListViewProps) {
   const styles = useThemeStyles();
+  const theme = useTheme();
+  const {translate} = useLocalize();
   const [preferredLocale] = useOnyx(ONYXKEYS.NVP_PREFERRED_LOCALE);
   const locale = preferredLocale ?? CONST.LOCALES.DEFAULT;
 
@@ -244,6 +256,30 @@ function SessionsCalendarWeekListView({
 
   const keyExtractor = useCallback((item: ListItem) => item.key, []);
 
+  // FlashList renders this above the first item in the list — i.e. above
+  // the oldest loaded week. It only shows while a data fetch is in flight,
+  // signaling "more months are on the way" when the user has scrolled past
+  // the prefetch buffer and is waiting on the network.
+  const listHeader = useMemo(() => {
+    if (!isFetchingOlderMonths) {
+      return null;
+    }
+    return (
+      <View style={styles.sessionsCalendarLoadingRow}>
+        <ActivityIndicator size="small" color={theme.spinner} />
+        <Text style={styles.sessionsCalendarLoadingRowText}>
+          {translate('calendar.loadingOlderMonths')}
+        </Text>
+      </View>
+    );
+  }, [
+    isFetchingOlderMonths,
+    styles.sessionsCalendarLoadingRow,
+    styles.sessionsCalendarLoadingRowText,
+    theme.spinner,
+    translate,
+  ]);
+
   return (
     <View style={styles.flex1}>
       <View style={styles.sessionsCalendarDayNamesRow}>
@@ -264,6 +300,7 @@ function SessionsCalendarWeekListView({
         stickyHeaderIndices={stickyHeaderIndices}
         initialScrollIndex={Math.max(0, items.length - 1)}
         showsVerticalScrollIndicator
+        ListHeaderComponent={listHeader}
         onViewableItemsChanged={onViewableItemsChanged}
         viewabilityConfig={VIEWABILITY_CONFIG}
       />

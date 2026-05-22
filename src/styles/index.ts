@@ -1619,6 +1619,24 @@ const styles = (theme: ThemeColors) =>
       backgroundColor: theme.border,
     },
 
+    // ListHeaderComponent for the fullscreen calendar — sits at the very
+    // top of the week list (above the oldest loaded month) only while a
+    // data fetch is in flight, so the user knows more months are coming.
+    sessionsCalendarLoadingRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'center',
+      paddingVertical: 16,
+      paddingHorizontal: 20,
+    },
+
+    sessionsCalendarLoadingRowText: {
+      ...FontUtils.fontFamily.platform.EXP_NEUE,
+      color: theme.textSupporting,
+      fontSize: variables.fontSizeSmall,
+      marginLeft: 8,
+    },
+
     sessionColorMarker: (sessionColor: CalendarColors) =>
       ({
         height: variables.sessionColorMarkerSize,
