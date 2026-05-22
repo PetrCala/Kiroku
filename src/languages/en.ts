@@ -895,6 +895,15 @@ export default {
     heading: 'Under Maintenance',
     text: 'We are currently under maintenance for the following time frame:',
   },
+  testTools: {
+    title: 'Test Tools',
+    intro: 'Developer-only panel for runtime tweaks and debugging.',
+    placeholderNotice:
+      'This is a placeholder. Real toggles — feature flags, environment overrides, forced network states — will land here over time.',
+    environmentLabel: 'Environment',
+    howToOpen:
+      'Open via ⌘D → Open Test Preferences, or a four-finger tap anywhere in the app.',
+  },
   userOffline: {
     heading: 'You are offline',
     text: 'Unfortunately, Kiroku does not support offline mode yet. We appreciate your patience while we work on this feature.',

@@ -25,14 +25,14 @@ import type {
   AuthScreensParamList,
   RootStackParamList,
 } from '@libs/Navigation/types';
-// import toggleTestToolsModal from '@userActions/TestTool';
+import toggleTestToolsModal from '@userActions/TestTool';
 import CONST from '@src/CONST';
 // import CustomDevMenu from './CustomDevMenu';
 import HeaderGap from './HeaderGap';
 import KeyboardAvoidingView from './KeyboardAvoidingView';
 // import OfflineIndicator from './OfflineIndicator';
 import SafeAreaConsumer from './SafeAreaConsumer';
-// import TestToolsModal from './TestToolsModal';
+import TestToolsModal from './TestToolsModal';
 import withNavigationFallback from './withNavigationFallback';
 import CustomDevMenu from './CustomDevMenu';
 // import useResponsiveLayout from '@hooks/useResponsiveLayout';
@@ -170,10 +170,6 @@ function ScreenWrapper(
 
   isKeyboardShownRef.current = keyboardState?.isKeyboardShown ?? false;
 
-  const toggleTestToolsModal = () => {
-    // toggleTestToolsModal();
-  };
-
   const panResponder = useRef(
     PanResponder.create({
       onStartShouldSetPanResponderCapture: (_e, gestureState) =>
@@ -300,7 +296,7 @@ function ScreenWrapper(
                   }
                   enabled={shouldEnablePickerAvoiding}> */}
                 <HeaderGap styles={headerGapStyles} />
-                {/* <TestToolsModal /> */}
+                {isDevelopment && <TestToolsModal />}
                 {isDevelopment && <CustomDevMenu />}
                 <ScreenWrapperStatusContext.Provider value={contextValue}>
                   {
