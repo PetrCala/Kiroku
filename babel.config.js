@@ -1,4 +1,5 @@
 require('dotenv').config();
+const path = require('path');
 
 const IS_E2E_TESTING = process.env.E2E_TESTING === 'true';
 
@@ -13,7 +14,20 @@ const ReactCompilerConfig = {
 
 // ─── Shared alias list ────────────────────────────────────────────────────────
 // Single source of truth so metro and test configs don't drift.
+//
+// `@src/SCREENS` is declared *before* `@src` because babel-plugin-module-resolver
+// matches aliases in declaration order via Array.find(). The more specific
+// `@src/SCREENS` entry must win so we can route it around a Windows-only bug:
+// Node's `path.relative()` treats Windows paths as case-insensitive, so the
+// relative-path math inside the plugin folds `src/SCREENS.ts` into the sibling
+// `src/screens/` directory. From a file under `src/screens/` the plugin then
+// emits `./..` (one level up) instead of `../../SCREENS`, and Metro fails to
+// resolve. Pointing the alias at an absolute path makes the plugin skip
+// `mapToRelative` entirely and hand Metro the file path directly. macOS/Linux
+// behave the same way once the path is absolute, so the override is safe to
+// apply unconditionally.
 const moduleResolverAliases = {
+  '@src/SCREENS': path.resolve(__dirname, 'src/SCREENS.ts'),
   '@assets': './assets',
   '@auth': './src/auth',
   '@components': './src/components',
