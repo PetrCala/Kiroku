@@ -20,7 +20,7 @@ type SwipeablePagerProps<R extends Route> = {
   renderScene: (props: {route: R}) => React.ReactNode;
 };
 
-const SPRING_CONFIG = {damping: 22, stiffness: 220};
+const SPRING_CONFIG = {dampingRatio: 1, duration: 280};
 const RUBBERBAND_RESISTANCE = 0.4;
 
 const styles = StyleSheet.create({
