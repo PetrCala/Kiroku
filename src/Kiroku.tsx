@@ -179,32 +179,38 @@ function Kiroku() {
   }, []);
 
   useEffect(() => {
-    setTimeout(() => {
-      const appState = AppState.currentState;
-      Log.info('[BootSplash] splash screen status', false, {
-        appState,
-        splashScreenState,
-      });
-
-      if (splashScreenState === CONST.BOOT_SPLASH_STATE.VISIBLE) {
-        const propsToLog = {
-          updateRequired,
-          updateAvailable,
-          // isSidebarLoaded,
-          // focusModeNotification,
-          isAuthenticated,
-          isThemeReady,
-          preferredTheme,
-          lastVisitedPath,
-        };
-        Log.alert(
-          '[BootSplash] splash screen is still visible',
-          {propsToLog},
-          false,
-        );
-      }
+    if (splashScreenState !== CONST.BOOT_SPLASH_STATE.VISIBLE) {
+      return undefined;
+    }
+    const timer = setTimeout(() => {
+      Log.alert(
+        '[BootSplash] splash screen is still visible',
+        {
+          propsToLog: {
+            appState: AppState.currentState,
+            updateRequired,
+            updateAvailable,
+            isAuthenticated,
+            isThemeReady,
+            preferredTheme,
+            lastVisitedPath,
+          },
+        },
+        false,
+      );
     }, 30 * 1000);
+    return () => clearTimeout(timer);
+  }, [
+    splashScreenState,
+    updateRequired,
+    updateAvailable,
+    isAuthenticated,
+    isThemeReady,
+    preferredTheme,
+    lastVisitedPath,
+  ]);
 
+  useEffect(() => {
     // This timer is set in the native layer when launching the app and we stop it here so we can measure how long
     // it took for the main app itself to load.
     // StartupTimer.stop();
