@@ -32,7 +32,7 @@ function useModalScreenOptions(
       cardStyle: styles.navigationScreenCardStyle,
       headerShown: false,
       cardStyleInterpolator,
-      gestureEnabled: Platform.OS !== 'web',
+      gestureEnabled: Platform.OS === 'ios',
       gestureResponseDistance: 10000,
     }),
     [styles, cardStyleInterpolator],

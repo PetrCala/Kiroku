@@ -13,7 +13,7 @@ const ModalNavigatorScreenOptions = (
 ): StackNavigationOptions => ({
   headerShown: false,
   gestureDirection: 'horizontal',
-  gestureEnabled: Platform.OS !== 'web',
+  gestureEnabled: Platform.OS === 'ios',
   gestureResponseDistance: 10000,
   cardStyle: themeStyles.navigationScreenCardStyle,
   cardStyleInterpolator: CardStyleInterpolators.forHorizontalIOS,
