@@ -1,6 +1,5 @@
 import React from 'react';
 import {View} from 'react-native';
-import Text from '@components/Text';
 // import Search from '@components/Search';
 // import WorkspaceSwitcherButton from '@components/WorkspaceSwitcherButton';
 // import useActiveWorkspace from '@hooks/useActiveWorkspace';
@@ -28,7 +27,6 @@ function TopBar() {
       ]}
       // dataSet={{dragArea: true}}>
     >
-      <Text>Hello, world!</Text>
       {/* <WorkspaceSwitcherButton activeWorkspaceID={activeWorkspaceID} />
       <Search
         placeholder={translate('sidebarScreen.buttonSearch')}

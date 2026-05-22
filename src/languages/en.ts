@@ -40,6 +40,7 @@ export default {
     new: 'New',
     search: 'Search',
     searchWithThreeDots: 'Search...',
+    textInputField: 'Text input field',
     next: 'Next',
     previous: 'Previous',
     goBack: 'Go back',
@@ -734,6 +735,7 @@ export default {
     emailVerified: 'Email verified!',
     iHaveVerified: 'I have verified my email',
     useADifferentEmail: 'Wrong email? Use a different one',
+    skipVerificationDevOnly: 'Skip verification (dev only)',
     changeEmail: {
       title: 'Use a different email',
       prompt:
