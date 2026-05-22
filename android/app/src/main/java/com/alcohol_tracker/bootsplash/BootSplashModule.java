@@ -5,6 +5,8 @@ import android.app.Activity;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.res.Resources;
+import android.graphics.Color;
+import android.graphics.drawable.ColorDrawable;
 import android.os.Build;
 import android.view.View;
 import android.view.ViewConfiguration;
@@ -169,6 +171,19 @@ public class BootSplashModule extends ReactContextBaseJavaModule {
         } else if (mDialog == null) {
           clearPromiseQueue();
         } else {
+          // The activity's windowBackground is the yellow bootsplash drawable
+          // (inherited from BootTheme in AndroidManifest). init() calls
+          // setTheme(R.style.AppTheme), but Activity.setTheme() does NOT swap an
+          // already-attached Window's background drawable — so without this the
+          // bootsplash stays under the React root view for the process lifetime
+          // and leaks through whenever the React surface is briefly transparent
+          // (e.g. the auth→public stack swap on sign-out from VerifyEmailModal,
+          // which manifests as a flash of yellow + logo).
+          final Window activityWindow = activity.getWindow();
+          if (activityWindow != null) {
+            activityWindow.setBackgroundDrawable(new ColorDrawable(Color.BLACK));
+          }
+
           // Capture the dialog and clear the static reference so a re-entrant
           // hide() (e.g. promise queued during the fade) takes the mDialog == null
           // branch above and resolves immediately, without starting a second
