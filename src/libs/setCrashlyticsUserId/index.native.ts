@@ -1,7 +1,7 @@
-import crashlytics from '@react-native-firebase/crashlytics';
+import {getCrashlytics, setUserId} from '@react-native-firebase/crashlytics';
 
 const setCrashlyticsUserId = (accountID: string | number) => {
-  crashlytics().setUserId(String(accountID));
+  setUserId(getCrashlytics(), String(accountID));
 };
 
 export default setCrashlyticsUserId;

@@ -1,4 +1,8 @@
-import crashlytics from '@react-native-firebase/crashlytics';
+import {
+  getCrashlytics,
+  log,
+  recordError,
+} from '@react-native-firebase/crashlytics';
 import React from 'react';
 import Log from '@libs/Log';
 import BaseErrorBoundary from './BaseErrorBoundary';
@@ -13,8 +17,9 @@ const logError: LogError = (errorMessage, error, errorInfo) => {
     errorString.includes('native module') ||
     errorString.includes('rct');
 
-  crashlytics().recordError(error);
-  crashlytics().log(`${errorMessage} | errorInfo: ${errorInfo}`);
+  const crashlytics = getCrashlytics();
+  recordError(crashlytics, error);
+  log(crashlytics, `${errorMessage} | errorInfo: ${errorInfo}`);
 
   if (isFirebaseError) {
     // Firebase/native module initialization error detected

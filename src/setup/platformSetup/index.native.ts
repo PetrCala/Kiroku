@@ -1,8 +1,13 @@
-import crashlytics from '@react-native-firebase/crashlytics';
-import perf from '@react-native-firebase/perf';
+import {
+  getCrashlytics,
+  log,
+  recordError,
+  setCrashlyticsCollectionEnabled,
+} from '@react-native-firebase/crashlytics';
+import {getPerformance} from '@react-native-firebase/perf';
 import CONFIG from '@src/CONFIG';
 
-/* eslint-disable rulesdir/prefer-early-return */
+ 
 
 // Forwards uncaught JS errors to Crashlytics' log buffer before the default
 // handler runs. Worklet/Reanimated errors surface here as fatal JSErrors that
@@ -26,17 +31,19 @@ function installCrashlyticsJSErrorBridge() {
   const previousHandler = errorUtils.getGlobalHandler();
   errorUtils.setGlobalHandler((error, isFatal) => {
     try {
+      const crashlytics = getCrashlytics();
       const name = error?.name ?? 'Error';
       const message = error?.message ?? String(error);
-      crashlytics().log(
+      log(
+        crashlytics,
         `[JS ${isFatal ? 'FATAL' : 'soft'}] ${name}: ${message}`,
       );
       const stack = error?.stack;
       if (stack) {
-        crashlytics().log(stack.split('\n').slice(0, 30).join('\n'));
+        log(crashlytics, stack.split('\n').slice(0, 30).join('\n'));
       }
       if (error instanceof Error) {
-        crashlytics().recordError(error);
+        recordError(crashlytics, error);
       }
     } catch {
       // Never let the bridge itself throw — fall through to the default handler.
@@ -47,8 +54,8 @@ function installCrashlyticsJSErrorBridge() {
 
 export default function () {
   if (!CONFIG.SEND_CRASH_REPORTS) {
-    crashlytics().setCrashlyticsCollectionEnabled(false);
-    perf().setPerformanceCollectionEnabled(false);
+    setCrashlyticsCollectionEnabled(getCrashlytics(), false);
+    getPerformance().dataCollectionEnabled = false;
     return;
   }
   installCrashlyticsJSErrorBridge();
