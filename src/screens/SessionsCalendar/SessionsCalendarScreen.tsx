@@ -1,5 +1,5 @@
-import React, {useState} from 'react';
-import {View} from 'react-native';
+import React, {useCallback, useMemo, useState} from 'react';
+import {StyleSheet, View} from 'react-native';
 import type {StackScreenProps} from '@react-navigation/stack';
 import type {DateData} from 'react-native-calendars';
 import SessionsCalendar from '@components/SessionsCalendar';
@@ -26,6 +26,12 @@ type SessionsCalendarScreenProps = StackScreenProps<
 
 const FRIEND_FETCH_KEYS: FetchDataKeys = ['preferences'];
 
+const internalStyles = StyleSheet.create({
+  // Render the calendar mounted but invisible so FlashList can lay out and
+  // apply the initial scroll. Switched to visible by `onInitialScrollReady`.
+  hidden: {opacity: 0},
+});
+
 /**
  * Full-screen, scrollable sessions calendar.
  *
@@ -40,8 +46,12 @@ const FRIEND_FETCH_KEYS: FetchDataKeys = ['preferences'];
  */
 function SessionsCalendarScreen({route}: SessionsCalendarScreenProps) {
   const {auth} = useFirebase();
-  const {userID} = route.params;
+  const {userID, monthYear, firstWeekY: firstWeekYParam} = route.params;
   const user = auth.currentUser;
+  const firstWeekY = useMemo(
+    () => (firstWeekYParam ? Number(firstWeekYParam) : undefined),
+    [firstWeekYParam],
+  );
   const isSelf = user?.uid === userID;
   const {translate} = useLocalize();
   const styles = useThemeStyles();
@@ -72,6 +82,14 @@ function SessionsCalendarScreen({route}: SessionsCalendarScreenProps) {
     dateToDateData(new Date()),
   );
 
+  // Hold the calendar invisible until the WeekListView has applied its
+  // initial scroll, so the user never sees a "latest at bottom → target"
+  // jump on open. With no `monthYear` (e.g. deep-link), we never wait.
+  const [isScrollReady, setIsScrollReady] = useState<boolean>(!monthYear);
+  const onInitialScrollReady = useCallback(() => setIsScrollReady(true), []);
+
+  const showLoader = isLoading || !preferences || !isScrollReady;
+
   return (
     <ScreenWrapper testID={SessionsCalendarScreen.displayName}>
       <HeaderWithBackButton
@@ -80,10 +98,8 @@ function SessionsCalendarScreen({route}: SessionsCalendarScreenProps) {
         shouldShowCloseButton
         onCloseButtonPress={() => Navigation.goBack()}
       />
-      {isLoading || !preferences ? (
-        <FullScreenLoadingIndicator />
-      ) : (
-        <View style={styles.flex1}>
+      {!isLoading && preferences && (
+        <View style={[styles.flex1, !isScrollReady && internalStyles.hidden]}>
           <SessionsCalendar
             userID={userID}
             visibleDate={visibleDate}
@@ -92,9 +108,13 @@ function SessionsCalendarScreen({route}: SessionsCalendarScreenProps) {
             preferences={preferences}
             isFetchingOlderMonths={isFetchingOlderMonths}
             mode="fullscreen"
+            initialMonthYear={monthYear}
+            initialFirstWeekY={firstWeekY}
+            onInitialScrollReady={onInitialScrollReady}
           />
         </View>
       )}
+      {showLoader && <FullScreenLoadingIndicator />}
     </ScreenWrapper>
   );
 }

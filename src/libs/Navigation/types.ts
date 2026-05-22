@@ -145,6 +145,13 @@ type ProfileNavigatorParamList = {
 type SessionsCalendarNavigatorParamList = {
   [SCREENS.SESSIONS_CALENDAR.FULLSCREEN]: {
     userID: string;
+    /** Month the user was viewing when they opened the fullscreen calendar,
+     *  formatted as 'YYYY-MM'. Used to position the FlashList so the clicked
+     *  month overlays the small calendar's grid. */
+    monthYear?: string;
+    /** Window-Y (px) of the small calendar's first week-row at the moment of
+     *  click. React Navigation passes query params as strings. */
+    firstWeekY?: string;
   };
 };
 

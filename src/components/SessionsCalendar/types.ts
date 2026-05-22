@@ -32,6 +32,20 @@ type SessionsCalendarProps = {
    *   dedicated full-screen calendar route.
    */
   mode?: 'compact' | 'fullscreen';
+
+  /** Fullscreen-only. Month to initially position at `initialFirstWeekY`,
+   *  formatted as 'YYYY-MM'. Carried from the small calendar's header tap. */
+  initialMonthYear?: string;
+
+  /** Fullscreen-only. Window-Y (px) where the clicked month's first week-row
+   *  should land — measured from the small calendar at click time so the
+   *  open looks seamless. */
+  initialFirstWeekY?: number;
+
+  /** Fullscreen-only. Fires once the WeekListView has applied its initial
+   *  scroll (or determined it doesn't need one). The screen uses this to
+   *  drop a loading overlay that hides the brief pre-scroll frame. */
+  onInitialScrollReady?: () => void;
 };
 
 type SessionsCalendarDayMarking = {

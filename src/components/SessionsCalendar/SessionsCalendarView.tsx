@@ -1,4 +1,4 @@
-import React, {memo, useCallback, useEffect} from 'react';
+import React, {memo, useCallback, useEffect, useRef} from 'react';
 import {ActivityIndicator, View} from 'react-native';
 import {PressableWithFeedback} from '@components/Pressable';
 import Icon from '@components/Icon';
@@ -7,7 +7,7 @@ import {Calendar} from 'react-native-calendars';
 import type {DateData} from 'react-native-calendars';
 import type {MarkedDates} from 'react-native-calendars/src/types';
 import {useOnyx} from 'react-native-onyx';
-import {format} from 'date-fns';
+import {format, startOfMonth} from 'date-fns';
 import useTheme from '@hooks/useTheme';
 import useThemePreference from '@hooks/useThemePreference';
 import useThemeStyles from '@hooks/useThemeStyles';
@@ -104,6 +104,16 @@ function SessionsCalendarView({
     setCalendarLocale(locale);
   }, [locale]);
 
+  // Ref to the day-1 cell of the visible month. Used to measure the
+  // first-week-row's window-Y so the fullscreen calendar can position the
+  // clicked month at the same screen position. Stable across renders.
+  const day1Ref = useRef<View | null>(null);
+  const registerMeasureRef = useCallback((day: number, view: View | null) => {
+    if (day === 1) {
+      day1Ref.current = view;
+    }
+  }, []);
+
   const dayComponent = useCallback(
     ({date, state, marking, theme: dayTheme}: DayComponentProps) => (
       <DayComponent
@@ -113,9 +123,10 @@ function SessionsCalendarView({
         marking={marking}
         theme={dayTheme}
         onPress={onDayPress}
+        registerMeasureRef={registerMeasureRef}
       />
     ),
-    [unitsMap, onDayPress],
+    [unitsMap, onDayPress, registerMeasureRef],
   );
 
   // Custom header: matches the default month-text styling but reserves space
@@ -131,8 +142,36 @@ function SessionsCalendarView({
     if (!userID) {
       return;
     }
-    Navigation.navigate(ROUTES.SESSIONS_CALENDAR_FULLSCREEN.getRoute(userID));
-  }, [userID]);
+    // Clamp the target to current month if the user is viewing a future
+    // month. The measured Y stays the same regardless — what we're matching
+    // is the small calendar's first-week-row position, not its month.
+    const visible = new Date(visibleDate.timestamp);
+    const today = new Date();
+    const clamped =
+      startOfMonth(visible).getTime() > startOfMonth(today).getTime()
+        ? today
+        : visible;
+    const monthYear = format(clamped, 'yyyy-MM');
+
+    // `measureInWindow` is async with a callback. If the day-1 cell hasn't
+    // mounted yet (very rare — the press requires a tap on the header which
+    // sits above the grid), fall through to navigating without a Y, which
+    // falls back to "latest at bottom".
+    const navigate = (firstWeekY?: number) => {
+      Navigation.navigate(
+        ROUTES.SESSIONS_CALENDAR_FULLSCREEN.getRoute(
+          userID,
+          monthYear,
+          firstWeekY,
+        ),
+      );
+    };
+    if (!day1Ref.current) {
+      navigate();
+      return;
+    }
+    day1Ref.current.measureInWindow((_x, y) => navigate(y));
+  }, [userID, visibleDate.timestamp]);
 
   const renderHeader = useCallback(
     (date?: {getTime(): number}) => {

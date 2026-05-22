@@ -1,5 +1,12 @@
-import React, {memo, useCallback, useEffect, useMemo, useRef} from 'react';
-import {ActivityIndicator, View} from 'react-native';
+import React, {
+  memo,
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from 'react';
+import {ActivityIndicator, Dimensions, View} from 'react-native';
 import {FlashList} from '@shopify/flash-list';
 import type {FlashListRef} from '@shopify/flash-list';
 import {format, parseISO, startOfDay} from 'date-fns';
@@ -23,6 +30,10 @@ import setCalendarLocale from './setCalendarLocale';
 // many weeks of index 0. Generous so the parent's prefetch starts well
 // before the user catches up to the loaded floor.
 const LOAD_AHEAD_BUFFER_WEEKS = 12;
+
+// One viewport-height of empty space below the latest month so the
+// current/recent month can still be scrolled flush to the top.
+const listFooterStyle = {height: Dimensions.get('window').height};
 // 50% threshold is generous enough to fire well before the lazy-load buffer
 // runs out, but quiet enough not to thrash on every pixel of scroll. The
 // previous `1` value was a major contributor to deceleration jitter.
@@ -48,6 +59,15 @@ type SessionsCalendarWeekListViewProps = {
    *  visible. The parent decides (via `computeLoadTarget`) whether to
    *  actually widen the loaded window. */
   onRequestOlder?: (earliestVisible: Date) => void;
+  /** Target month ('YYYY-MM') to land at on first render, with its first
+   *  week-row positioned at window-Y `initialFirstWeekY`. When omitted, the
+   *  list falls back to "latest at bottom". */
+  initialMonthYear?: string;
+  /** Window-Y (px) where the target month's first week-row should land. */
+  initialFirstWeekY?: number;
+  /** Fires once the initial scroll has been applied (or determined that no
+   *  scroll is needed). The parent screen uses this to unhide the calendar. */
+  onInitialScrollReady?: () => void;
 };
 
 type LabelItem = {
@@ -84,6 +104,9 @@ function SessionsCalendarWeekListView({
   isFetchingOlderMonths,
   onDayPress,
   onRequestOlder,
+  initialMonthYear,
+  initialFirstWeekY,
+  onInitialScrollReady,
 }: SessionsCalendarWeekListViewProps) {
   const styles = useThemeStyles();
   const theme = useTheme();
@@ -110,10 +133,13 @@ function SessionsCalendarWeekListView({
   );
 
   // Flatten the per-month sections into a single list of items. Labels
-  // sit between sections and double as FlashList sticky headers.
-  const {items, stickyHeaderIndices} = useMemo(() => {
+  // sit between sections and double as FlashList sticky headers. We also
+  // build a `monthYear → first-week-row index` map in the same pass for
+  // the initial-scroll lookup.
+  const {items, stickyHeaderIndices, firstWeekIndexByMonth} = useMemo(() => {
     const out: ListItem[] = [];
     const sticky: number[] = [];
+    const monthIndex = new Map<string, number>();
 
     monthSections.forEach(section => {
       const labelDate = new Date(section.year, section.month, 1);
@@ -123,7 +149,13 @@ function SessionsCalendarWeekListView({
         key: `label-${section.year}-${section.month}`,
         label: format(labelDate, CONST.DATE.MONTH_YEAR_ABBR_FORMAT),
       });
-      section.weeks.forEach(week => {
+      section.weeks.forEach((week, weekIdx) => {
+        if (weekIdx === 0) {
+          // The first week-row of each section is what we anchor the
+          // initial-scroll lookup against. Key by 'YYYY-MM'.
+          const key = `${section.year}-${String(section.month + 1).padStart(2, '0')}`;
+          monthIndex.set(key, out.length);
+        }
         // Section-qualified key — two halves of a calendar week that spans
         // a month boundary share the same `week.key` (the Monday's ISO
         // date), so without the section prefix React reconciliation would
@@ -137,7 +169,11 @@ function SessionsCalendarWeekListView({
       });
     });
 
-    return {items: out, stickyHeaderIndices: sticky};
+    return {
+      items: out,
+      stickyHeaderIndices: sticky,
+      firstWeekIndexByMonth: monthIndex,
+    };
   }, [monthSections]);
 
   const dayNames = useMemo(() => {
@@ -165,6 +201,88 @@ function SessionsCalendarWeekListView({
   }, [locale]);
 
   const listRef = useRef<FlashListRef<ListItem>>(null);
+
+  // Window-Y (px) of the FlashList's top edge, captured via the wrapper
+  // View's onLayout. `null` until first layout pass. Stored in state (not
+  // a ref) so the apply-scroll effect re-runs once it's known.
+  const flashListWrapperRef = useRef<View | null>(null);
+  const [flashTopY, setFlashTopY] = useState<number | null>(null);
+  const hasAppliedInitialScrollRef = useRef(false);
+
+  const onFlashListWrapperLayout = useCallback(() => {
+    // `onLayout` reports local coordinates — measure against the window so
+    // we can compare against the small calendar's measured Y.
+    if (!flashListWrapperRef.current) {
+      return;
+    }
+    flashListWrapperRef.current.measureInWindow((_x, y) => {
+      setFlashTopY(y);
+    });
+  }, []);
+
+  // Resolve the target index — undefined while data hasn't loaded enough
+  // months yet (the items memo widens as `loadedFromDate` extends).
+  const targetIndex = useMemo(() => {
+    if (!initialMonthYear) {
+      return undefined;
+    }
+    return firstWeekIndexByMonth.get(initialMonthYear);
+  }, [initialMonthYear, firstWeekIndexByMonth]);
+
+  const wantsInitialScroll =
+    !!initialMonthYear && initialFirstWeekY !== undefined;
+
+  useEffect(() => {
+    if (hasAppliedInitialScrollRef.current) {
+      return;
+    }
+    if (!wantsInitialScroll) {
+      hasAppliedInitialScrollRef.current = true;
+      onInitialScrollReady?.();
+      return;
+    }
+    if (flashTopY === null) {
+      return;
+    }
+    if (targetIndex === undefined) {
+      // Waiting for the data fetcher to widen the loaded range so the
+      // target month enters `items`. The effect will re-fire on `items`.
+      return;
+    }
+    if (initialFirstWeekY === undefined) {
+      return;
+    }
+    // FlashList's `scrollToIndex({viewPosition: 0, viewOffset})` lands the
+    // row at the top of the visible area, then shifts the final offset by
+    // `viewOffset` (positive = item moves up = scroll further). We want
+    // the row at window-Y `initialFirstWeekY`, i.e. `flashTopY + delta`
+    // below the FlashList's top. To move the row *down* by `delta`, pass
+    // `viewOffset: -delta`.
+    const delta = initialFirstWeekY - flashTopY;
+    listRef.current?.scrollToIndex({
+      index: targetIndex,
+      animated: false,
+      viewPosition: 0,
+      viewOffset: -delta,
+    });
+    hasAppliedInitialScrollRef.current = true;
+    onInitialScrollReady?.();
+  }, [
+    items,
+    flashTopY,
+    targetIndex,
+    initialFirstWeekY,
+    wantsInitialScroll,
+    onInitialScrollReady,
+  ]);
+
+  // Bottom spacer — without it the FlashList runs out of content below the
+  // latest month, and we can't push the current/recent month to the top of
+  // the viewport. One viewport-height of empty space is plenty.
+  const ListFooter = useMemo(
+    () => <View style={listFooterStyle} />,
+    [],
+  );
 
   // Lazy-load older months when the user scrolls within the buffer of the
   // loaded floor. Walk forward from the lowest visible index to the first
@@ -258,6 +376,16 @@ function SessionsCalendarWeekListView({
     translate,
   ]);
 
+  // When we have a target, seed `initialScrollIndex` to it so we land close
+  // to the right place even before the corrective `scrollToIndex` lands —
+  // avoids a noticeable pre-scroll flash from the latest month on Android.
+  // The `opacity: 0` parent on the screen hides this entirely, but it's
+  // good belt-and-suspenders.
+  const initialScrollIndex =
+    wantsInitialScroll && targetIndex !== undefined
+      ? targetIndex
+      : Math.max(0, items.length - 1);
+
   return (
     <View style={styles.flex1}>
       <View style={styles.sessionsCalendarDayNamesRow}>
@@ -270,18 +398,25 @@ function SessionsCalendarWeekListView({
           </View>
         ))}
       </View>
-      <FlashList
-        ref={listRef}
-        data={items}
-        renderItem={renderItem}
-        keyExtractor={keyExtractor}
-        stickyHeaderIndices={stickyHeaderIndices}
-        initialScrollIndex={Math.max(0, items.length - 1)}
-        showsVerticalScrollIndicator
-        ListHeaderComponent={listHeader}
-        onViewableItemsChanged={onViewableItemsChanged}
-        viewabilityConfig={VIEWABILITY_CONFIG}
-      />
+      <View
+        ref={flashListWrapperRef}
+        onLayout={onFlashListWrapperLayout}
+        style={styles.flex1}
+        collapsable={false}>
+        <FlashList
+          ref={listRef}
+          data={items}
+          renderItem={renderItem}
+          keyExtractor={keyExtractor}
+          stickyHeaderIndices={stickyHeaderIndices}
+          initialScrollIndex={initialScrollIndex}
+          showsVerticalScrollIndicator
+          ListHeaderComponent={listHeader}
+          ListFooterComponent={ListFooter}
+          onViewableItemsChanged={onViewableItemsChanged}
+          viewabilityConfig={VIEWABILITY_CONFIG}
+        />
+      </View>
     </View>
   );
 }

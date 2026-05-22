@@ -136,7 +136,17 @@ const ROUTES = {
 
   SESSIONS_CALENDAR_FULLSCREEN: {
     route: 'sessions-calendar/:userID',
-    getRoute: (userID: UserID) => `sessions-calendar/${userID}` as const,
+    getRoute: (userID: UserID, monthYear?: string, firstWeekY?: number) => {
+      const parts: string[] = [];
+      if (monthYear) {
+        parts.push(`monthYear=${monthYear}`);
+      }
+      if (firstWeekY !== undefined) {
+        parts.push(`firstWeekY=${firstWeekY.toFixed(2)}`);
+      }
+      const qs = parts.length > 0 ? `?${parts.join('&')}` : '';
+      return `sessions-calendar/${userID}${qs}` as const;
+    },
   },
 
   SOCIAL: 'social',
