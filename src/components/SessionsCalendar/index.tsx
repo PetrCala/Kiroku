@@ -14,12 +14,12 @@ import FlexibleLoadingIndicator from '@components/FlexibleLoadingIndicator';
 import {useOnyx} from 'react-native-onyx';
 import ONYXKEYS from '@src/ONYXKEYS';
 import SessionsCalendarView from './SessionsCalendarView';
-import SessionsCalendarListView from './SessionsCalendarListView';
+import SessionsCalendarWeekListView from './SessionsCalendarWeekListView';
 import type SessionsCalendarProps from './types';
 
 // How many months of pre-loaded buffer to keep ahead of the user's scroll in
-// fullscreen mode. When the earliest visible month gets within this many
-// months of the loaded floor, request more.
+// fullscreen mode. When the earliest in-range visible day is within this
+// many months of the loaded floor, ask `useLazyMarkedDates` to widen.
 const LOAD_AHEAD_BUFFER_MONTHS = 2;
 
 function SessionsCalendar({
@@ -37,6 +37,7 @@ function SessionsCalendar({
     markedDates,
     unitsMap,
     loadedFrom,
+    loadedFromDate,
     loadMoreMonths,
     loadUpTo,
     isLoading,
@@ -82,25 +83,17 @@ function SessionsCalendar({
 
   // Coalesce scroll-driven `loadUpTo` calls — store the deepest target we've
   // already requested, skip subsequent triggers that aren't deeper. Avoids
-  // spamming the friend-data fetcher on a fast horizontal fling.
+  // spamming the friend-data fetcher on a fast scroll.
   const deepestRequestedRef = useRef<Date | null>(null);
 
-  // Regular function (not memoized): `loadedFrom` is a ref whose `.current`
-  // mutates without re-rendering, so a `useCallback` keyed on it would either
-  // be stale or churn on every render. CalendarList only calls this on actual
-  // scroll events, so referential stability isn't required.
-  const handleVisibleMonthsChange = (months: DateData[]) => {
-    if (months.length === 0) {
-      return;
-    }
-    const earliest = months.reduce(
-      (acc, m) => (m.timestamp < acc.timestamp ? m : acc),
-      months[0],
-    );
-    const earliestDate = new Date(earliest.timestamp);
+  // Regular function — `loadedFrom` is a ref whose `.current` mutates
+  // without re-rendering. A `useCallback` keyed on it would either be stale
+  // or churn on every render. The view only calls this on real scroll
+  // events, so referential stability isn't required.
+  const handleRequestOlder = (earliestVisible: Date) => {
     const floor = loadedFrom?.current ?? new Date();
     const target = computeLoadTarget(
-      earliestDate,
+      earliestVisible,
       floor,
       deepestRequestedRef.current,
       LOAD_AHEAD_BUFFER_MONTHS,
@@ -109,16 +102,6 @@ function SessionsCalendar({
       deepestRequestedRef.current = target;
       loadUpTo(target);
     }
-
-    // Keep the orchestrator's visible-month state roughly in sync with the
-    // list so callers that mirror month-changes (e.g. the per-month stats
-    // strip) keep updating. Use the latest (right-most) month in the
-    // visible set so paging right also propagates.
-    const latest = months.reduce(
-      (acc, m) => (m.timestamp > acc.timestamp ? m : acc),
-      months[0],
-    );
-    onDateChange(latest);
   };
 
   const onDayPress = useCallback(
@@ -140,13 +123,12 @@ function SessionsCalendar({
 
   if (mode === 'fullscreen') {
     return (
-      <SessionsCalendarListView
+      <SessionsCalendarWeekListView
         markedDates={markedDates}
         unitsMap={unitsMap}
-        visibleDate={visibleDate}
-        minDate={minDate}
+        loadedFromDate={loadedFromDate}
         onDayPress={onDayPress}
-        onVisibleMonthsChange={handleVisibleMonthsChange}
+        onRequestOlder={handleRequestOlder}
       />
     );
   }

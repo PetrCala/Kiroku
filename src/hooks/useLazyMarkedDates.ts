@@ -203,6 +203,7 @@ function useLazyMarkedDates(
     markedDates,
     unitsMap,
     loadedFrom,
+    loadedFromDate,
     loadMoreMonths,
     loadUpTo,
     isLoading: false,

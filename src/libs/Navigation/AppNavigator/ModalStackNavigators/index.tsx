@@ -17,6 +17,7 @@ import type {
 } from '@navigation/types';
 import type ReactComponentModule from '@src/types/utils/ReactComponentModule';
 import useModalScreenOptions from './useModalScreenOptions';
+import sessionsCalendarCardStyleInterpolator from './sessionsCalendarTransition';
 
 type ScreenEntry =
   | (() => React.ComponentType)
@@ -207,11 +208,20 @@ const ProfileModalStackNavigator =
   });
 
 const SessionsCalendarModalStackNavigator =
-  createModalStackNavigator<SessionsCalendarNavigatorParamList>({
-    [SCREENS.SESSIONS_CALENDAR.FULLSCREEN]: () =>
-      require<ReactComponentModule>('@screens/SessionsCalendar/SessionsCalendarScreen')
-        .default,
-  });
+  createModalStackNavigator<SessionsCalendarNavigatorParamList>(
+    {
+      [SCREENS.SESSIONS_CALENDAR.FULLSCREEN]: () =>
+        require<ReactComponentModule>('@screens/SessionsCalendar/SessionsCalendarScreen')
+          .default,
+    },
+    styles => ({
+      cardStyle: styles.navigationScreenCardStyle,
+      headerShown: false,
+      cardStyleInterpolator: sessionsCalendarCardStyleInterpolator,
+      gestureEnabled: true,
+      gestureDirection: 'vertical',
+    }),
+  );
 
 const SocialModalStackNavigator =
   createModalStackNavigator<SocialNavigatorParamList>({
