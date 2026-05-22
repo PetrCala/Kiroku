@@ -1629,6 +1629,22 @@ const createStyleUtils = (theme: ThemeColors, styles: ThemeStyles) => ({
   }),
 
   /**
+   * Card row with a colored 4px left strip and a matching ~12% tinted
+   * background. Pass `null` for an inactive/unhighlighted state — strip and
+   * background both become transparent so the row keeps its layout but reads
+   * as inert. Used for selection highlights (e.g. palette picker) and
+   * categorical color-coding (e.g. day overview session rows).
+   *
+   * The caller composes layout (flex, padding, margin) around this.
+   */
+  getColorAccentRowStyle: (color: string | null): ViewStyle => ({
+    borderRadius: 12,
+    borderLeftWidth: 4,
+    borderLeftColor: color ?? 'transparent',
+    backgroundColor: color ? `${color}1F` : 'transparent',
+  }),
+
+  /**
    * When adding a new prefix character, adjust this method to add expected character width.
    * This is because character width isn't known before it's rendered to the screen, and once it's rendered,
    * it's too late to calculate it's width because the change in padding would cause a visible jump.
