@@ -13,6 +13,7 @@ import {nonMidnightString} from '@libs/StringUtilsKiroku';
 import Button from '@components/Button';
 import useLocalize from '@hooks/useLocalize';
 import useThemeStyles from '@hooks/useThemeStyles';
+import useStyleUtils from '@hooks/useStyleUtils';
 import Text from '@components/Text';
 import DateUtils from '@libs/DateUtils';
 import ONYXKEYS from '@src/ONYXKEYS';
@@ -27,6 +28,7 @@ function DrinkingSessionOverview({
   const {preferences} = useDatabaseData();
   const {translate} = useLocalize();
   const styles = useThemeStyles();
+  const StyleUtils = useStyleUtils();
   // Convert the timestamp to a Date object
   const timeString = nonMidnightString(
     DateUtils.getLocalizedTime(session.start_time, session.timezone),
@@ -83,13 +85,8 @@ function DrinkingSessionOverview({
         styles.p4,
         styles.mh1,
         styles.mb2,
-        {
-          minHeight: 84,
-          borderRadius: 12,
-          borderLeftWidth: 4,
-          borderLeftColor: sessionColor,
-          backgroundColor: `${sessionColor}1F`,
-        },
+        StyleUtils.getColorAccentRowStyle(sessionColor),
+        {minHeight: 84},
       ]}
       onPress={() => onSessionButtonPress()}>
       <View style={[styles.flexColumn, styles.flex1]}>

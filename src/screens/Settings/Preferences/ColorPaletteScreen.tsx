@@ -228,12 +228,7 @@ function ColorPaletteScreen() {
                     styles.justifyContentBetween,
                     styles.p4,
                     styles.mb2,
-                    {
-                      borderRadius: 12,
-                      borderLeftWidth: 4,
-                      borderLeftColor: isActive ? accent : 'transparent',
-                      backgroundColor: isActive ? accentTint : 'transparent',
-                    },
+                    StyleUtils.getColorAccentRowStyle(isActive ? accent : null),
                   ]}>
                   <View style={[styles.flexColumn, styles.flex1]}>
                     <Text style={[styles.textNormal, styles.textStrong]}>
