@@ -121,7 +121,7 @@ const CONST = {
   // `@libs/FeatureFlags` — never read this object directly at call sites so the
   // backing source can later swap to Onyx/remote-config without churn.
   FEATURES: {
-    FULLSCREEN_CALENDAR: false,
+    FULLSCREEN_CALENDAR: true,
   },
   APP_UPDATE: {
     // How long the dismiss update button should hide the window for
