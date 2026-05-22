@@ -22,6 +22,7 @@ export default {
   contentHeaderDesktopHeight: getValueUsingPixelRatio(80, 100),
   componentSizeSmall: getValueUsingPixelRatio(28, 32),
   componentSizeNormalSmall: 36,
+  sessionsCalendarDaySize: 44,
   componentSizeNormal: 40,
   componentSizeMedium: 48,
   inputComponentSizeNormal: 40,
