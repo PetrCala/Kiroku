@@ -33,7 +33,7 @@ function PublicScreens() {
       />
       <RootStack.Screen
         name={SCREENS.FORCE_UPDATE}
-        options={defaultScreenOptions}
+        options={{...defaultScreenOptions, gestureEnabled: false}}
         component={ForceUpdateScreen}
       />
     </RootStack.Navigator>

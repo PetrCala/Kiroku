@@ -9,8 +9,8 @@ import {isEqual} from 'lodash';
 import ScreenWrapper from '@components/ScreenWrapper';
 import HeaderWithBackButton from '@components/HeaderWithBackButton';
 import useLocalize from '@hooks/useLocalize';
+import useDiscardChangesGuard from '@hooks/useDiscardChangesGuard';
 import FullScreenLoadingIndicator from '@components/FullscreenLoadingIndicator';
-import ConfirmModal from '@components/ConfirmModal';
 import Button from '@components/Button';
 import useThemeStyles from '@hooks/useThemeStyles';
 import ScrollView from '@components/ScrollView';
@@ -43,7 +43,6 @@ function UnitsToColorsScreen() {
   const [currentValues, setCurrentValues] = useState<UnitsToColors>(
     preferences?.units_to_colors ?? getDefaultPreferences().units_to_colors,
   );
-  const [showLeaveConfirmation, setShowLeaveConfirmation] = useState(false);
 
   const [sliderConfig, setSliderConfig] = useState<PreferencesSliderConfig>({
     visible: false,
@@ -57,17 +56,12 @@ function UnitsToColorsScreen() {
     key: '',
   });
 
-  const haveValuesChanged = useCallback(() => {
-    return !isEqual(initialValues.current, currentValues);
-  }, [currentValues]);
+  const haveValuesChanged = useCallback(
+    () => !isEqual(initialValues.current, currentValues),
+    [currentValues],
+  );
 
-  const handleGoBack = useCallback(() => {
-    if (haveValuesChanged()) {
-      setShowLeaveConfirmation(true); // Unsaved changes
-    } else {
-      Navigation.goBack();
-    }
-  }, [haveValuesChanged]);
+  const discardChangesModal = useDiscardChangesGuard(haveValuesChanged);
 
   const handleSaveValues = () => {
     (async () => {
@@ -76,6 +70,7 @@ function UnitsToColorsScreen() {
         await Preferences.updatePreferences(db, user, {
           units_to_colors: currentValues,
         });
+        initialValues.current = currentValues;
         Navigation.goBack();
       } catch (error) {
         const errorMessage = error instanceof Error ? error.message : '';
@@ -160,7 +155,7 @@ function UnitsToColorsScreen() {
       <HeaderWithBackButton
         title={translate('unitsToColorsScreen.title')}
         shouldShowBackButton
-        onBackButtonPress={handleGoBack}
+        onBackButtonPress={() => Navigation.goBack()}
         onCloseButtonPress={() => Navigation.dismissModal()}
       />
       <ScrollView style={[styles.flexGrow1, styles.mnw100]}>
@@ -200,17 +195,7 @@ function UnitsToColorsScreen() {
           setSliderConfig(prev => ({...prev, visible: false}));
         }}
       />
-      <ConfirmModal
-        isVisible={showLeaveConfirmation}
-        title={translate('common.areYouSure')}
-        prompt={translate('preferencesScreen.unsavedChanges')}
-        onConfirm={() => {
-          setSliderConfig(prev => ({...prev, visible: false}));
-          setShowLeaveConfirmation(false);
-          Navigation.goBack();
-        }}
-        onCancel={() => setShowLeaveConfirmation(false)}
-      />
+      {discardChangesModal}
     </ScreenWrapper>
   );
 }

@@ -821,8 +821,6 @@
 "src/screens/Settings/Admin/SeeFeedbackScreen.tsx"	"arrow-body-style"	1
 "src/screens/Settings/AppShareScreen.tsx"	"react-hooks/refs"	1
 "src/screens/Settings/AppShareScreen.tsx"	"rulesdir/prefer-narrow-hook-dependencies"	1
-"src/screens/Settings/Preferences/DrinksToUnitsScreen.tsx"	"arrow-body-style"	1
-"src/screens/Settings/Preferences/UnitsToColorsScreen.tsx"	"arrow-body-style"	1
 "src/screens/Settings/SettingsScreen.tsx"	"arrow-body-style"	3
 "src/screens/SignUp/SignUpScreenLayout/index.tsx"	"rulesdir/prefer-narrow-hook-dependencies"	1
 "src/screens/Social/FriendListScreen.tsx"	"react-hooks/set-state-in-effect"	1

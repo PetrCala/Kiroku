@@ -17,12 +17,26 @@ import type {
 import type ReactComponentModule from '@src/types/utils/ReactComponentModule';
 import useModalScreenOptions from './useModalScreenOptions';
 
-type Screens = Partial<Record<Screen, () => React.ComponentType>>;
+type ScreenEntry =
+  | (() => React.ComponentType)
+  | {
+      getComponent: () => React.ComponentType;
+      options?: StackNavigationOptions;
+    };
+
+type Screens = Partial<Record<Screen, ScreenEntry>>;
+
+function resolveScreenEntry(entry: ScreenEntry): {
+  getComponent: () => React.ComponentType;
+  options?: StackNavigationOptions;
+} {
+  return typeof entry === 'function' ? {getComponent: entry} : entry;
+}
 
 /**
  * Create a modal stack navigator with an array of sub-screens.
  *
- * @param screens key/value pairs where the key is the name of the screen and the value is a functon that returns the lazy-loaded component
+ * @param screens key/value pairs where the key is the name of the screen and the value is either a function that returns the lazy-loaded component, or an object with `getComponent` and per-screen `options`
  * @param getScreenOptions optional function that returns the screen options, override the default options
  */
 function createModalStackNavigator<TStackParams extends ParamListBase>(
@@ -36,13 +50,19 @@ function createModalStackNavigator<TStackParams extends ParamListBase>(
 
     return (
       <ModalStackNavigator.Navigator screenOptions={screenOptions}>
-        {Object.keys(screens as Required<Screens>).map(name => (
-          <ModalStackNavigator.Screen
-            key={name}
-            name={name}
-            getComponent={(screens as Required<Screens>)[name as Screen]}
-          />
-        ))}
+        {Object.keys(screens as Required<Screens>).map(name => {
+          const entry = resolveScreenEntry(
+            (screens as Required<Screens>)[name as Screen],
+          );
+          return (
+            <ModalStackNavigator.Screen
+              key={name}
+              name={name}
+              getComponent={entry.getComponent}
+              options={entry.options}
+            />
+          );
+        })}
       </ModalStackNavigator.Navigator>
     );
   }
@@ -71,9 +91,12 @@ const DrinkingSessionModalStackNavigator =
     [SCREENS.DRINKING_SESSION.ROOT]: () =>
       require<ReactComponentModule>('@screens/DrinkingSession/DrinkingSessionScreen')
         .default,
-    [SCREENS.DRINKING_SESSION.LIVE]: () =>
-      require<ReactComponentModule>('@screens/DrinkingSession/LiveSessionScreen')
-        .default,
+    [SCREENS.DRINKING_SESSION.LIVE]: {
+      getComponent: () =>
+        require<ReactComponentModule>('@screens/DrinkingSession/LiveSessionScreen')
+          .default,
+      options: {gestureEnabled: false},
+    },
     [SCREENS.DRINKING_SESSION.EDIT]: () =>
       require<ReactComponentModule>('@screens/DrinkingSession/EditSessionScreen')
         .default,

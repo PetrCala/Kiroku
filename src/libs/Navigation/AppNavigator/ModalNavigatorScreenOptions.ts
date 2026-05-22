@@ -1,5 +1,6 @@
 import type {StackNavigationOptions} from '@react-navigation/stack';
 import {CardStyleInterpolators} from '@react-navigation/stack';
+import {Platform} from 'react-native';
 import type {ThemeStyles} from '@styles/index';
 
 /**
@@ -12,6 +13,8 @@ const ModalNavigatorScreenOptions = (
 ): StackNavigationOptions => ({
   headerShown: false,
   gestureDirection: 'horizontal',
+  gestureEnabled: Platform.OS !== 'web',
+  gestureResponseDistance: 30,
   cardStyle: themeStyles.navigationScreenCardStyle,
   cardStyleInterpolator: CardStyleInterpolators.forHorizontalIOS,
 });
