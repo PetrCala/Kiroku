@@ -1,8 +1,5 @@
-import React, {useMemo, useState} from 'react';
+import React, {useState} from 'react';
 import {Alert, View} from 'react-native';
-import type {DateData} from 'react-native-calendars';
-import type {MarkedDates} from 'react-native-calendars/src/types';
-import {eachDayOfInterval, endOfMonth, format, startOfMonth} from 'date-fns';
 import {useFirebase} from '@context/global/FirebaseContext';
 import {useDatabaseData} from '@context/global/DatabaseDataContext';
 import Navigation from '@libs/Navigation/Navigation';
@@ -10,6 +7,7 @@ import ScreenWrapper from '@components/ScreenWrapper';
 import HeaderWithBackButton from '@components/HeaderWithBackButton';
 import useLocalize from '@hooks/useLocalize';
 import useThemeStyles from '@hooks/useThemeStyles';
+import useStyleUtils from '@hooks/useStyleUtils';
 import ScrollView from '@components/ScrollView';
 import Section from '@components/Section';
 import Switch from '@components/Switch';
@@ -18,7 +16,6 @@ import {PressableWithFeedback} from '@components/Pressable';
 import Icon from '@components/Icon';
 import * as KirokuIcons from '@components/Icon/KirokuIcons';
 import * as Preferences from '@userActions/Preferences';
-import {dateToDateData} from '@libs/DataHandling';
 import type {SessionColorPalette} from '@src/types/onyx';
 import type {PaletteId} from '@libs/SessionColorPalettes';
 import {
@@ -27,10 +24,7 @@ import {
   DEFAULT_PALETTE_ID,
   getPaletteIdFromColors,
 } from '@libs/SessionColorPalettes';
-import SessionsCalendarView from '@components/SessionsCalendar/SessionsCalendarView';
 import useTheme from '@hooks/useTheme';
-import type {DateString} from '@src/types/onyx/OnyxCommon';
-import CONST from '@src/CONST';
 
 const PREVIEW_KEYS: ReadonlyArray<keyof SessionColorPalette> = [
   'green',
@@ -40,55 +34,28 @@ const PREVIEW_KEYS: ReadonlyArray<keyof SessionColorPalette> = [
   'black',
 ];
 
-/**
- * Build a fixed demo dataset showcasing all five severity colors across the
- * visible month. Mirrors the shape produced by `useLazyMarkedDates` so the
- * presentational `SessionsCalendarView` renders identically.
- */
-function buildPreviewMarkedData(
-  palette: SessionColorPalette,
-  visibleDate: DateData,
-): {markedDates: MarkedDates; unitsMap: Map<DateString, number>} {
-  const monthStart = startOfMonth(new Date(visibleDate.timestamp));
-  const monthEnd = endOfMonth(new Date(visibleDate.timestamp));
-  const allDays = eachDayOfInterval({start: monthStart, end: monthEnd});
+type WeekCell = {
+  day: number;
+  slot: keyof SessionColorPalette;
+  units: number;
+};
 
-  const overlay = new Map<
-    number,
-    {slot: keyof SessionColorPalette; units: number}
-  >([
-    [3, {slot: 'yellow', units: 2}],
-    [5, {slot: 'yellow', units: 3}],
-    [7, {slot: 'orange', units: 7}],
-    [10, {slot: 'red', units: 12}],
-    [12, {slot: 'yellow', units: 1}],
-    [14, {slot: 'orange', units: 8}],
-    [17, {slot: 'red', units: 14}],
-    [20, {slot: 'orange', units: 6}],
-    [23, {slot: 'yellow', units: 3}],
-    [25, {slot: 'black', units: 20}],
-    [27, {slot: 'orange', units: 9}],
-  ]);
-
-  const markedDates: MarkedDates = {};
-  const unitsMap = new Map<DateString, number>();
-
-  allDays.forEach(day => {
-    const dayKey = format(day, CONST.DATE.FNS_FORMAT_STRING) as DateString;
-    const o = overlay.get(day.getDate());
-    if (o) {
-      markedDates[dayKey] = {color: palette[o.slot]};
-      unitsMap.set(dayKey, o.units);
-    } else {
-      markedDates[dayKey] = {color: palette.green};
-    }
-  });
-
-  return {markedDates, unitsMap};
-}
+// A representative week — 3 rest days + 4 active days covering each severity
+// once. Keeps the preview honest about what a normal week looks like rather
+// than showing every cell maxed out.
+const WEEK_OVERLAY: readonly WeekCell[] = [
+  {day: 10, slot: 'green', units: 0},
+  {day: 11, slot: 'yellow', units: 3},
+  {day: 12, slot: 'green', units: 0},
+  {day: 13, slot: 'orange', units: 7},
+  {day: 14, slot: 'red', units: 12},
+  {day: 15, slot: 'black', units: 20},
+  {day: 16, slot: 'green', units: 0},
+];
 
 function ColorPaletteScreen() {
   const styles = useThemeStyles();
+  const StyleUtils = useStyleUtils();
   const theme = useTheme();
   const {translate} = useLocalize();
   const {auth, db} = useFirebase();
@@ -113,12 +80,7 @@ function ColorPaletteScreen() {
     DEFAULT_PALETTE_ID;
   // Optimistic preview: while a save is in flight, render the just-tapped palette.
   const displayPaletteId = pendingPaletteId ?? activePaletteId;
-
-  const visibleDate = useMemo(() => dateToDateData(new Date()), []);
-  const previewData = useMemo(
-    () => buildPreviewMarkedData(PALETTES[displayPaletteId], visibleDate),
-    [displayPaletteId, visibleDate],
-  );
+  const displayPalette = PALETTES[displayPaletteId];
 
   const onSelectPalette = (id: PaletteId) => {
     if (saving || id === displayPaletteId) {
@@ -167,29 +129,61 @@ function ColorPaletteScreen() {
         onBackButtonPress={() => Navigation.goBack()}
         onCloseButtonPress={() => Navigation.dismissModal()}
       />
-      <ScrollView style={[styles.flexGrow1, styles.mnw100]}>
+      <ScrollView
+        style={[styles.flexGrow1, styles.mnw100]}
+        stickyHeaderIndices={[1]}>
         <Section
           title={translate('colorPaletteScreen.title')}
           titleStyles={styles.generalSectionTitle}
           subtitle={translate('colorPaletteScreen.description')}
           subtitleMuted
-          isCentralPane
-          childrenStyles={styles.pt3}>
+          isCentralPane>
+          <View />
+        </Section>
+        <View style={[styles.ph5, styles.pv2, {backgroundColor: theme.appBG}]}>
           <View
             style={[
-              styles.mb4,
               styles.overflowHidden,
+              styles.p3,
+              styles.flexRow,
+              styles.justifyContentBetween,
               {borderRadius: 12, borderWidth: 1, borderColor: accentTint},
             ]}>
-            <SessionsCalendarView
-              markedDates={previewData.markedDates}
-              unitsMap={previewData.unitsMap}
-              visibleDate={visibleDate}
-              hideArrows
-              hideMonthHeader
-              hideDayNames
-            />
+            {WEEK_OVERLAY.map(cell => {
+              const marking = {color: displayPalette[cell.slot]};
+              const unitsText = cell.units > 0 ? String(cell.units) : '';
+              return (
+                <View
+                  key={cell.day}
+                  style={[
+                    styles.alignItemsCenter,
+                    styles.justifyContentCenter,
+                  ]}>
+                  <Text
+                    style={StyleUtils.getSessionsCalendarDayLabelStyle(
+                      false,
+                      false,
+                    )}>
+                    {cell.day}
+                  </Text>
+                  <View
+                    style={StyleUtils.getSessionsCalendarDayMarkingContainerStyle(
+                      marking,
+                      false,
+                    )}>
+                    <Text
+                      style={StyleUtils.getSessionsCalendarDayMarkingTextStyle(
+                        marking,
+                      )}>
+                      {unitsText}
+                    </Text>
+                  </View>
+                </View>
+              );
+            })}
           </View>
+        </View>
+        <View style={[styles.ph5, styles.pt3]}>
           <View
             style={[
               styles.flexRow,
@@ -278,7 +272,7 @@ function ColorPaletteScreen() {
               );
             })}
           </View>
-        </Section>
+        </View>
       </ScrollView>
     </ScreenWrapper>
   );
