@@ -12,6 +12,7 @@ import useLocalize from '@hooks/useLocalize';
 import useThemeStyles from '@hooks/useThemeStyles';
 import ScrollView from '@components/ScrollView';
 import Section from '@components/Section';
+import Switch from '@components/Switch';
 import Text from '@components/Text';
 import {PressableWithFeedback} from '@components/Pressable';
 import Icon from '@components/Icon';
@@ -97,6 +98,10 @@ function ColorPaletteScreen() {
     null,
   );
   const [saving, setSaving] = useState(false);
+  const [pendingUseOwnForOthers, setPendingUseOwnForOthers] = useState<
+    boolean | null
+  >(null);
+  const [savingUseOwnForOthers, setSavingUseOwnForOthers] = useState(false);
 
   // Selection accent uses the app brand color (yellowStrong) so the picker stays
   // visually integrated with the rest of the app.
@@ -132,6 +137,28 @@ function ColorPaletteScreen() {
       .finally(() => setSaving(false));
   };
 
+  const persistedUseOwnForOthers =
+    preferences?.use_own_palette_for_others === true;
+  const displayUseOwnForOthers =
+    pendingUseOwnForOthers ?? persistedUseOwnForOthers;
+
+  const onToggleUseOwnForOthers = (next: boolean) => {
+    if (savingUseOwnForOthers || next === displayUseOwnForOthers) {
+      return;
+    }
+    setPendingUseOwnForOthers(next);
+    setSavingUseOwnForOthers(true);
+    Preferences.updatePreferences(db, user, {
+      use_own_palette_for_others: next,
+    })
+      .catch(error => {
+        setPendingUseOwnForOthers(null);
+        const errorMessage = error instanceof Error ? error.message : '';
+        Alert.alert(translate('preferencesScreen.error.save'), errorMessage);
+      })
+      .finally(() => setSavingUseOwnForOthers(false));
+  };
+
   return (
     <ScreenWrapper testID={ColorPaletteScreen.displayName}>
       <HeaderWithBackButton
@@ -161,6 +188,31 @@ function ColorPaletteScreen() {
               hideArrows
               hideMonthHeader
               hideDayNames
+            />
+          </View>
+          <View
+            style={[
+              styles.flexRow,
+              styles.alignItemsCenter,
+              styles.justifyContentBetween,
+              styles.mb4,
+            ]}>
+            <View style={[styles.flexColumn, styles.flex1, styles.mr3]}>
+              <Text style={[styles.textNormal, styles.textStrong]}>
+                {translate('colorPaletteScreen.useOwnPaletteForOthers.label')}
+              </Text>
+              <Text style={[styles.textMicroSupporting, styles.mt1]}>
+                {translate(
+                  'colorPaletteScreen.useOwnPaletteForOthers.description',
+                )}
+              </Text>
+            </View>
+            <Switch
+              accessibilityLabel={translate(
+                'colorPaletteScreen.useOwnPaletteForOthers.label',
+              )}
+              isOn={displayUseOwnForOthers}
+              onToggle={onToggleUseOwnForOthers}
             />
           </View>
           <View>

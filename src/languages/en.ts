@@ -530,6 +530,11 @@ export default {
       brand: "Kiroku's brand colors",
       pink: 'Soft pinks to red',
     },
+    useOwnPaletteForOthers: {
+      label: 'Use my palette for everyone',
+      description:
+        "Friends' sessions will appear in your selected palette instead of theirs.",
+    },
   },
   drinksToUnitsScreen: {
     title: 'Drinks to Units',

@@ -15,7 +15,7 @@ import {
   subMonths,
 } from 'date-fns';
 import {sessionsToDayMarking} from '@libs/DataHandling';
-import {resolvePalette} from '@libs/SessionColorPalettes';
+import useResolvedPalette from '@hooks/useResolvedPalette';
 import lodashDebounce from 'lodash/debounce';
 import type {MarkingProps} from 'react-native-calendars/src/calendar/day/marking';
 import type {MarkedDates} from 'react-native-calendars/src/types';
@@ -103,19 +103,36 @@ function useLazyMarkedDates(
     return {sessionIndex: index, dayKeys: days, loadedFromDate: start};
   }, [sessions, loadedMonths, defaultTimezone]);
 
+  // Resolve which palette to render with. When the viewer has enabled
+  // `use_own_palette_for_others`, this swaps the viewed user's palette for the
+  // viewer's own; otherwise it returns the viewed user's palette.
+  const palette = useResolvedPalette(preferences);
+
+  // Substitute the resolved palette into the preferences object so downstream
+  // pure functions (sessionsToDayMarking → convertUnitsToColors) use it without
+  // needing to know about the toggle. Unit thresholds and drink mappings stay
+  // the viewed user's — only the palette is swapped.
+  const effectivePreferences = useMemo(
+    () => ({...preferences, session_color_palette: palette}),
+    [preferences, palette],
+  );
+
   // Second pass — build markedDates + unitsMap from the pre-built index.
   // This is the only memo that needs `preferences`; on a palette change it
   // walks the day list (~30 entries) instead of re-filtering N sessions.
+  const paletteGreen = palette.green;
   const {markedDatesMap, unitsMap} = useMemo(() => {
     const newMarkedDatesMap = new Map<DateString, MarkingProps>();
     const newUnitsMap = new Map<DateString, number>();
-    const palette = resolvePalette(preferences.session_color_palette);
 
     dayKeys.forEach(dayKey => {
       const dailySessions = sessionIndex.get(dayKey) ?? [];
-      const newMarking = sessionsToDayMarking(dailySessions, preferences);
+      const newMarking = sessionsToDayMarking(
+        dailySessions,
+        effectivePreferences,
+      );
       if (!newMarking) {
-        newMarkedDatesMap.set(dayKey, {color: palette.green});
+        newMarkedDatesMap.set(dayKey, {color: paletteGreen});
         return;
       }
       newMarkedDatesMap.set(dayKey, newMarking.marking);
@@ -123,7 +140,7 @@ function useLazyMarkedDates(
     });
 
     return {markedDatesMap: newMarkedDatesMap, unitsMap: newUnitsMap};
-  }, [sessionIndex, dayKeys, preferences]);
+  }, [sessionIndex, dayKeys, effectivePreferences, paletteGreen]);
 
   const markedDates: MarkedDates = useMemo(
     () => Object.fromEntries(markedDatesMap),
