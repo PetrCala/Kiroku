@@ -4,6 +4,7 @@ import {sumDrinksOfSingleType} from '@libs/DataHandling';
 import * as DSUtils from '@src/libs/DrinkingSessionUtils';
 import * as DS from '@userActions/DrinkingSession';
 import type {DrinkingSessionId, DrinkKey, DrinksList} from '@src/types/onyx';
+import useLocalize from '@hooks/useLocalize';
 import useThemeStyles from '@hooks/useThemeStyles';
 import {PressableWithoutFeedback} from '@components/Pressable';
 import {useDatabaseData} from '@context/global/DatabaseDataContext';
@@ -27,6 +28,7 @@ function SessionDrinksInputWindow({
   sessionId,
 }: SessionDrinksInputWindowProps) {
   const styles = useThemeStyles();
+  const {translate} = useLocalize();
   const {preferences} = useDatabaseData();
   const [shouldHighlight, setShouldHighlight] = useState<boolean>(false);
   const [inputValue, setInputValue] = useState<string>(
@@ -157,7 +159,7 @@ function SessionDrinksInputWindow({
         onPress={handleContainerPress}
         style={styles.sessionDrinksInputContainer(shouldHighlight)}>
         <TextInput
-          accessibilityLabel="Text input field"
+          accessibilityLabel={translate('common.textInputField')}
           ref={inputRef}
           style={[
             styles.textLarge,

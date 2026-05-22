@@ -363,9 +363,11 @@ function VerifyEmailModal() {
               style={[styles.mt2, styles.alignItemsCenter]}
               onPress={onDevSkipPress}
               role={CONST.ROLE.BUTTON}
-              accessibilityLabel="Skip verification (dev only)">
+              accessibilityLabel={translate(
+                'verifyEmailScreen.skipVerificationDevOnly',
+              )}>
               <Text style={[styles.link, styles.textSupporting]}>
-                Skip verification (dev only)
+                {translate('verifyEmailScreen.skipVerificationDevOnly')}
               </Text>
             </PressableWithFeedback>
           )}

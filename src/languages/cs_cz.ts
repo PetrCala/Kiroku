@@ -39,6 +39,7 @@ export default {
     new: 'Nové',
     search: 'Hledat',
     searchWithThreeDots: 'Hledat...',
+    textInputField: 'Textové pole',
     next: 'Další',
     previous: 'Předchozí',
     goBack: 'Jít zpět',
@@ -731,6 +732,7 @@ export default {
     emailVerified: 'E-mail byl ověřen!',
     iHaveVerified: 'E-mail mám ověřený',
     useADifferentEmail: 'Špatný e-mail? Použijte jiný',
+    skipVerificationDevOnly: 'Přeskočit ověření (pouze pro vývoj)',
     changeEmail: {
       title: 'Použít jiný e-mail',
       prompt: 'Zadejte novou adresu a heslo — ověřovací odkaz vám pošleme tam.',
