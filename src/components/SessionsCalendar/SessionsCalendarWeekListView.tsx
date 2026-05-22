@@ -31,9 +31,19 @@ import setCalendarLocale from './setCalendarLocale';
 // before the user catches up to the loaded floor.
 const LOAD_AHEAD_BUFFER_WEEKS = 12;
 
-// One viewport-height of empty space below the latest month so the
-// current/recent month can still be scrolled flush to the top.
-const listFooterStyle = {height: Dimensions.get('window').height};
+// Mirrors `styles.sessionsCalendarWeekRow.paddingVertical`. The compact
+// calendar's row uses *marginVertical*, so a measured day cell sits at the
+// row frame's top; the fullscreen row's *paddingVertical* offsets cells by
+// this amount inside the frame. We subtract it from the scroll math so the
+// compact and fullscreen tile rows overlay pixel-perfectly.
+const WEEK_ROW_VERTICAL_PADDING = 6;
+
+// Rough per-item heights used only for sizing the bottom spacer. Deliberate
+// over-estimates so the spacer math errs toward 0 (rather than leaving an
+// over-tall tail of empty space below the latest month).
+const APPROX_WEEK_ROW_HEIGHT = 48;
+const APPROX_LABEL_HEIGHT = 56;
+
 // 50% threshold is generous enough to fire well before the lazy-load buffer
 // runs out, but quiet enough not to thrash on every pixel of scroll. The
 // previous `1` value was a major contributor to deceleration jitter.
@@ -254,11 +264,13 @@ function SessionsCalendarWeekListView({
     }
     // FlashList's `scrollToIndex({viewPosition: 0, viewOffset})` lands the
     // row at the top of the visible area, then shifts the final offset by
-    // `viewOffset` (positive = item moves up = scroll further). We want
-    // the row at window-Y `initialFirstWeekY`, i.e. `flashTopY + delta`
-    // below the FlashList's top. To move the row *down* by `delta`, pass
-    // `viewOffset: -delta`.
-    const delta = initialFirstWeekY - flashTopY;
+    // `viewOffset` (positive = item moves up = scroll further). We want the
+    // tile row's *cells* — not the row frame — at window-Y
+    // `initialFirstWeekY`. The frame top sits `WEEK_ROW_VERTICAL_PADDING`
+    // above the cells, so we land the frame top at
+    // `initialFirstWeekY - WEEK_ROW_VERTICAL_PADDING`, i.e. an effective
+    // delta of `(initialFirstWeekY - WEEK_ROW_VERTICAL_PADDING) - flashTopY`.
+    const delta = initialFirstWeekY - WEEK_ROW_VERTICAL_PADDING - flashTopY;
     listRef.current?.scrollToIndex({
       index: targetIndex,
       animated: false,
@@ -276,12 +288,40 @@ function SessionsCalendarWeekListView({
     onInitialScrollReady,
   ]);
 
-  // Bottom spacer — without it the FlashList runs out of content below the
-  // latest month, and we can't push the current/recent month to the top of
-  // the viewport. One viewport-height of empty space is plenty.
+  // Bottom spacer — only needed when there isn't enough content below the
+  // target row to scroll it up to `initialFirstWeekY`. For past targets the
+  // months below the target already fill the screen, so this clamps to 0.
+  // For the latest month we add just enough headroom — the distance from
+  // the target Y to the bottom of the screen, minus the (approximate)
+  // height of the rows that already sit below the target in the list.
+  const footerHeight = useMemo(() => {
+    if (!wantsInitialScroll || initialFirstWeekY === undefined) {
+      return 0;
+    }
+    if (targetIndex === undefined) {
+      return 0;
+    }
+    let weeksBelow = 0;
+    let labelsBelow = 0;
+    for (let i = targetIndex + 1; i < items.length; i++) {
+      if (items[i].kind === 'week') {
+        weeksBelow++;
+      } else {
+        labelsBelow++;
+      }
+    }
+    const approxHeightBelowTarget =
+      weeksBelow * APPROX_WEEK_ROW_HEIGHT + labelsBelow * APPROX_LABEL_HEIGHT;
+    const windowHeight = Dimensions.get('window').height;
+    return Math.max(
+      0,
+      windowHeight - initialFirstWeekY - approxHeightBelowTarget,
+    );
+  }, [wantsInitialScroll, initialFirstWeekY, targetIndex, items]);
+
   const ListFooter = useMemo(
-    () => <View style={listFooterStyle} />,
-    [],
+    () => <View style={{height: footerHeight}} />,
+    [footerHeight],
   );
 
   // Lazy-load older months when the user scrolls within the buffer of the

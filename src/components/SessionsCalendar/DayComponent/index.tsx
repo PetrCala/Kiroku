@@ -29,8 +29,10 @@ function DayComponent({
   // Android — Fabric/Paper view-flattening can otherwise drop the View and
   // invalidate the ref.
   const viewRef = useRef<View | null>(null);
-  const shouldRegister =
-    !!registerMeasureRef && !!date && date.day === 1 && !isDisabled;
+  // Disabled day-1 cells (e.g. minDate boundary months) still sit in the
+  // first week-row at the same Y — register regardless so the fullscreen
+  // never silently falls through to "latest at bottom" for those months.
+  const shouldRegister = !!registerMeasureRef && !!date && date.day === 1;
   useEffect(() => {
     if (!registerMeasureRef || !date) {
       return undefined;
