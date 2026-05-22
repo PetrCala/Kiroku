@@ -130,7 +130,9 @@ const getRootNavigatorScreenOptions: GetRootNavigatorScreenOptions = (
     }),
     // Fullscreen sessions calendar — transparent modal so the prior screen
     // (Home or Profile) stays visible underneath while the calendar fades
-    // and scales in. Swiping right from anywhere on the screen dismisses.
+    // and scales in. Standard left-edge swipe-right dismisses; we leave
+    // `gestureResponseDistance` at the platform default to avoid
+    // competing with the FlashList's vertical scroll handler.
     sessionsCalendarNavigator: {
       ...commonScreenOptions,
       cardStyleInterpolator: sessionsCalendarCardStyleInterpolator,
@@ -139,7 +141,6 @@ const getRootNavigatorScreenOptions: GetRootNavigatorScreenOptions = (
       cardStyle: {backgroundColor: 'transparent'},
       gestureEnabled: true,
       gestureDirection: 'horizontal',
-      gestureResponseDistance: 200,
     },
     leftModalNavigator: {
       ...commonScreenOptions,

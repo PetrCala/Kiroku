@@ -18,7 +18,10 @@ import WeekRow from './WeekRow';
 import setCalendarLocale from './setCalendarLocale';
 
 const LOAD_AHEAD_BUFFER_WEEKS = 2;
-const VIEWABILITY_CONFIG = {itemVisiblePercentThreshold: 1};
+// 50% threshold is generous enough to fire well before the lazy-load buffer
+// runs out, but quiet enough not to thrash on every pixel of scroll. The
+// previous `1` value was a major contributor to deceleration jitter.
+const VIEWABILITY_CONFIG = {itemVisiblePercentThreshold: 50};
 
 type SessionsCalendarWeekListViewProps = {
   /** Marked dates payload keyed by `DateString`. */
@@ -109,7 +112,16 @@ function SessionsCalendarWeekListView({
         label: format(labelDate, CONST.DATE.MONTH_YEAR_ABBR_FORMAT),
       });
       section.weeks.forEach(week => {
-        out.push({kind: 'week', key: week.key, row: week});
+        // Section-qualified key — two halves of a calendar week that spans
+        // a month boundary share the same `week.key` (the Monday's ISO
+        // date), so without the section prefix React reconciliation would
+        // see a duplicate and drop one of them. Concretely: October's
+        // last row and November's first row both start Mon 2025-10-27.
+        out.push({
+          kind: 'week',
+          key: `week-${section.year}-${section.month}-${week.key}`,
+          row: week,
+        });
       });
     });
 
@@ -237,7 +249,6 @@ function SessionsCalendarWeekListView({
         stickyHeaderIndices={stickyHeaderIndices}
         initialScrollIndex={Math.max(0, items.length - 1)}
         showsVerticalScrollIndicator
-        contentContainerStyle={styles.sessionsCalendarWeekListContent}
         onViewableItemsChanged={onViewableItemsChanged}
         viewabilityConfig={VIEWABILITY_CONFIG}
       />
