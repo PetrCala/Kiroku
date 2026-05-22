@@ -1,17 +1,8 @@
-import React, {
-  memo,
-  useCallback,
-  useEffect,
-  useMemo,
-  useRef,
-  useState,
-} from 'react';
+import React, {memo, useCallback, useEffect, useMemo, useRef} from 'react';
 import {View} from 'react-native';
-import type {NativeScrollEvent, NativeSyntheticEvent} from 'react-native';
 import {FlashList} from '@shopify/flash-list';
 import type {FlashListRef} from '@shopify/flash-list';
 import {format, parseISO, startOfDay} from 'date-fns';
-import {useSharedValue} from 'react-native-reanimated';
 import type {DateData} from 'react-native-calendars';
 import {LocaleConfig} from 'react-native-calendars';
 import type {MarkedDates} from 'react-native-calendars/src/types';
@@ -24,12 +15,9 @@ import type {DateString} from '@src/types/onyx/OnyxCommon';
 import buildWeekRows from './buildWeekRows';
 import type {WeekRow as WeekRowData} from './buildWeekRows';
 import WeekRow from './WeekRow';
-import SessionsCalendarMonthRail from './SessionsCalendarMonthRail';
-import type {MonthEntry} from './SessionsCalendarMonthRail';
 import setCalendarLocale from './setCalendarLocale';
 
 const LOAD_AHEAD_BUFFER_WEEKS = 2;
-
 const VIEWABILITY_CONFIG = {itemVisiblePercentThreshold: 1};
 
 type SessionsCalendarWeekListViewProps = {
@@ -50,13 +38,28 @@ type SessionsCalendarWeekListViewProps = {
   onRequestOlder?: (earliestVisible: Date) => void;
 };
 
+type LabelItem = {
+  kind: 'label';
+  key: string;
+  label: string;
+};
+
+type WeekItem = {
+  kind: 'week';
+  key: string;
+  row: WeekRowData;
+};
+
+type ListItem = LabelItem | WeekItem;
+
 /**
  * Vertical, continuous week-row calendar.
  *
- * Renders one row per ISO week from `loadedFromDate` to today via FlashList.
- * Days outside the loaded range are blanked. A sticky day-name strip sits
- * above the list; a vertical month/year rail is anchored to the right edge
- * and slides a Reanimated highlighter in sync with the list's scroll.
+ * Each month opens with an inline `Mar 2026` label that doubles as a section
+ * divider and as the always-visible "where am I" indicator — once the user
+ * scrolls past it the label sticks to the top of the viewport until the
+ * next month's label arrives (Apple-Photos style). No custom scroll rail;
+ * the platform-native scrollbar handles the timeline-position cue.
  *
  * Pure presentational — no Onyx writes, no Firebase reads. The parent owns
  * extending the loaded range via `onRequestOlder`.
@@ -91,36 +94,57 @@ function SessionsCalendarWeekListView({
     [resolvedStart, resolvedEnd],
   );
 
-  // Derive the month/year rail entries from weekRows. Each entry covers from
-  // its `firstWeekIndex` to the next entry's first index (or the end of the
-  // list). The label is the localized "MMM YY" short form.
-  const months: MonthEntry[] = useMemo(() => {
-    const entries: MonthEntry[] = [];
-    weekRows.forEach((row, index) => {
-      if (!row.isFirstWeekOfMonth || row.monthOfFirstDay === undefined) {
-        return;
-      }
-      const monthDate = new Date(
-        row.yearOfFirstDay ?? 0,
-        row.monthOfFirstDay,
-        1,
-      );
-      entries.push({
-        month: row.monthOfFirstDay,
-        year: row.yearOfFirstDay ?? 0,
-        firstWeekIndex: index,
-        weekSpan: 0,
-        label: format(monthDate, CONST.DATE.MONTH_YEAR_ABBR_FORMAT),
+  // Interleave a label item before the first row of each new month so the
+  // months are visually distinct AND the label can stick to the top as a
+  // section header when scrolled past.
+  const {items, stickyHeaderIndices} = useMemo(() => {
+    const out: ListItem[] = [];
+    const sticky: number[] = [];
+    let lastEmittedMonth: number | null = null;
+    let lastEmittedYear: number | null = null;
+
+    const pushLabel = (year: number, monthZeroIndexed: number) => {
+      const labelDate = new Date(year, monthZeroIndexed, 1);
+      const label = format(labelDate, CONST.DATE.MONTH_YEAR_ABBR_FORMAT);
+      sticky.push(out.length);
+      out.push({
+        kind: 'label',
+        key: `label-${year}-${monthZeroIndexed}`,
+        label,
       });
+      lastEmittedMonth = monthZeroIndexed;
+      lastEmittedYear = year;
+    };
+
+    weekRows.forEach(row => {
+      // Determine this row's "primary" month/year — prefer the day-1 cell
+      // when the week contains it, otherwise the first non-null day.
+      let primaryMonth: number | null = null;
+      let primaryYear: number | null = null;
+      if (row.isFirstWeekOfMonth && row.monthOfFirstDay !== undefined) {
+        primaryMonth = row.monthOfFirstDay;
+        primaryYear = row.yearOfFirstDay ?? null;
+      } else {
+        const firstNonNull = row.days.find(d => d !== null);
+        if (firstNonNull) {
+          const parts = firstNonNull.split('-').map(Number);
+          primaryYear = parts[0];
+          primaryMonth = parts[1] - 1;
+        }
+      }
+
+      if (
+        primaryMonth !== null &&
+        primaryYear !== null &&
+        (primaryMonth !== lastEmittedMonth || primaryYear !== lastEmittedYear)
+      ) {
+        pushLabel(primaryYear, primaryMonth);
+      }
+
+      out.push({kind: 'week', key: row.weekStart, row});
     });
-    // Fill in weekSpan.
-    for (let i = 0; i < entries.length; i++) {
-      const next = entries[i + 1];
-      entries[i].weekSpan = next
-        ? next.firstWeekIndex - entries[i].firstWeekIndex
-        : weekRows.length - entries[i].firstWeekIndex;
-    }
-    return entries;
+
+    return {items: out, stickyHeaderIndices: sticky};
   }, [weekRows]);
 
   const dayNames = useMemo(() => {
@@ -152,36 +176,11 @@ function SessionsCalendarWeekListView({
     [resolvedEnd],
   );
 
-  // Scroll position + content size feed the rail highlighter. We use a
-  // plain JS `onScroll` (not `useAnimatedScrollHandler`) because FlashList
-  // 2.x's RecyclerView calls `.call(...)` on whatever you pass — and the
-  // Reanimated handler object isn't a plain function, which crashes the
-  // dispatch. The highlighter's `useAnimatedStyle` still runs on the UI
-  // thread; only the input update hops via the JS thread.
-  const scrollY = useSharedValue(0);
-  const contentHeight = useSharedValue(0);
-  // Plain function (not memoized): SharedValue mutation can't go inside a
-  // `useCallback` per `react-hooks/immutability`, and FlashList stores
-  // `onScroll` without depending on its identity, so churn is fine.
-  const handleScroll = (event: NativeSyntheticEvent<NativeScrollEvent>) => {
-    scrollY.value = event.nativeEvent.contentOffset.y;
-  };
-
-  const listRef = useRef<FlashListRef<WeekRowData>>(null);
-
-  const handleJumpToWeek = useCallback((weekIndex: number) => {
-    listRef.current?.scrollToIndex({
-      index: weekIndex,
-      animated: true,
-      viewPosition: 0,
-    });
-  }, []);
+  const listRef = useRef<FlashListRef<ListItem>>(null);
 
   // Lazy-load older months when the user scrolls within the buffer of the
-  // loaded floor. FlashList's `onViewableItemsChanged` fires with viewable
-  // index info — when the lowest visible index gets close to 0, surface the
-  // earliest in-range visible day to the parent so it can decide whether to
-  // widen the loaded window.
+  // loaded floor. Surface the earliest visible in-range day to the parent
+  // so it can decide whether to widen the loaded window.
   const onViewableItemsChanged = useCallback(
     ({viewableItems}: {viewableItems: Array<{index: number | null}>}) => {
       if (!onRequestOlder || viewableItems.length === 0) {
@@ -196,37 +195,57 @@ function SessionsCalendarWeekListView({
       if (minIndex > LOAD_AHEAD_BUFFER_WEEKS) {
         return;
       }
-      const row = weekRows[Math.max(0, minIndex)];
-      if (!row) {
-        return;
+      // Walk forward from the lowest visible index to find the first week
+      // item; labels alone don't carry a day reference.
+      for (let i = Math.max(0, minIndex); i < items.length; i++) {
+        const item = items[i];
+        if (item.kind !== 'week') {
+          continue;
+        }
+        const earliestInRange = item.row.days.find(d => d !== null);
+        if (earliestInRange) {
+          onRequestOlder(parseISO(earliestInRange));
+          return;
+        }
       }
-      const earliestInRange = row.days.find(d => d !== null);
-      if (!earliestInRange) {
-        return;
-      }
-      onRequestOlder(parseISO(earliestInRange));
     },
-    [onRequestOlder, weekRows],
+    [items, onRequestOlder],
   );
 
   const renderItem = useCallback(
-    (args: {item: WeekRowData}) => (
-      <WeekRow
-        row={args.item}
-        markedDates={markedDates}
-        unitsMap={unitsMap}
-        today={today}
-        onDayPress={onDayPress}
-      />
-    ),
-    [markedDates, unitsMap, today, onDayPress],
+    (args: {item: ListItem}) => {
+      if (args.item.kind === 'label') {
+        return (
+          <View style={styles.sessionsCalendarMonthLabel}>
+            <Text style={styles.sessionsCalendarMonthLabelText}>
+              {args.item.label}
+            </Text>
+            <View style={styles.sessionsCalendarMonthLabelRule} />
+          </View>
+        );
+      }
+      return (
+        <WeekRow
+          row={args.item.row}
+          markedDates={markedDates}
+          unitsMap={unitsMap}
+          today={today}
+          onDayPress={onDayPress}
+        />
+      );
+    },
+    [
+      markedDates,
+      unitsMap,
+      today,
+      onDayPress,
+      styles.sessionsCalendarMonthLabel,
+      styles.sessionsCalendarMonthLabelText,
+      styles.sessionsCalendarMonthLabelRule,
+    ],
   );
 
-  const keyExtractor = useCallback((item: WeekRowData) => item.weekStart, []);
-
-  // Helps the visible-month/load heuristic feel right even before the user
-  // scrolls — the rail starts highlighting the current month.
-  const [hasMeasuredContent, setHasMeasuredContent] = useState(false);
+  const keyExtractor = useCallback((item: ListItem) => item.key, []);
 
   return (
     <View style={styles.flex1}>
@@ -240,33 +259,17 @@ function SessionsCalendarWeekListView({
           </View>
         ))}
       </View>
-      <View style={styles.flex1}>
-        <FlashList
-          ref={listRef}
-          data={weekRows}
-          renderItem={renderItem}
-          keyExtractor={keyExtractor}
-          initialScrollIndex={Math.max(0, weekRows.length - 1)}
-          onScroll={handleScroll}
-          scrollEventThrottle={16}
-          contentContainerStyle={styles.sessionsCalendarWeekListContent}
-          onContentSizeChange={(_, h) => {
-            contentHeight.value = h;
-            if (!hasMeasuredContent) {
-              setHasMeasuredContent(true);
-            }
-          }}
-          onViewableItemsChanged={onViewableItemsChanged}
-          viewabilityConfig={VIEWABILITY_CONFIG}
-        />
-        <SessionsCalendarMonthRail
-          months={months}
-          totalWeeks={weekRows.length}
-          scrollY={scrollY}
-          contentHeight={contentHeight}
-          onJumpToWeek={handleJumpToWeek}
-        />
-      </View>
+      <FlashList
+        ref={listRef}
+        data={items}
+        renderItem={renderItem}
+        keyExtractor={keyExtractor}
+        stickyHeaderIndices={stickyHeaderIndices}
+        initialScrollIndex={Math.max(0, items.length - 1)}
+        showsVerticalScrollIndicator
+        onViewableItemsChanged={onViewableItemsChanged}
+        viewabilityConfig={VIEWABILITY_CONFIG}
+      />
     </View>
   );
 }

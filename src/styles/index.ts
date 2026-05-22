@@ -1548,6 +1548,9 @@ const styles = (theme: ThemeColors) =>
     sessionsCalendarWeekRow: {
       flexDirection: 'row',
       alignItems: 'stretch',
+      // Match the existing horizontal gap (~8–12px per cell column) so
+      // squares feel evenly spaced both ways.
+      paddingVertical: 6,
     },
 
     sessionsCalendarWeekCell: {
@@ -1579,40 +1582,31 @@ const styles = (theme: ThemeColors) =>
       fontSize: variables.fontSizeSmall,
     },
 
-    sessionsCalendarWeekListContent: {
-      paddingRight: 48,
-    },
-
-    sessionsCalendarMonthRail: {
-      position: 'absolute',
-      top: 0,
-      right: 0,
-      bottom: 0,
-      width: 40,
-      paddingVertical: 4,
-      backgroundColor: theme.appBG,
-      borderLeftWidth: 1,
-      borderColor: theme.border,
-      overflow: 'hidden',
-    },
-
-    sessionsCalendarMonthRailLabel: {
+    // Inline month-section label rendered as a FlashList sticky header.
+    // Acts as both the section separator (with a thin rule on the right)
+    // and the always-visible "you are here" indicator.
+    sessionsCalendarMonthLabel: {
+      flexDirection: 'row',
       alignItems: 'center',
-      justifyContent: 'center',
+      paddingTop: 16,
+      paddingBottom: 6,
+      paddingHorizontal: 4,
+      backgroundColor: theme.appBG,
     },
 
-    sessionsCalendarMonthRailLabelText: {
+    sessionsCalendarMonthLabelText: {
       ...FontUtils.fontFamily.platform.EXP_NEUE_BOLD,
       color: theme.textSupporting,
-      fontSize: variables.fontSizeExtraSmall,
+      fontSize: variables.fontSizeSmall,
+      letterSpacing: 0.6,
+      textTransform: 'uppercase',
+      marginRight: 8,
     },
 
-    sessionsCalendarMonthRailHighlighter: {
-      position: 'absolute',
-      left: 4,
-      right: 4,
-      borderRadius: 6,
-      backgroundColor: theme.activeComponentBG,
+    sessionsCalendarMonthLabelRule: {
+      flex: 1,
+      height: 1,
+      backgroundColor: theme.border,
     },
 
     sessionsCalendarFullscreenCloseButton: {
