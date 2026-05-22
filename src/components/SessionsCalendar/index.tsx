@@ -1,16 +1,17 @@
-import React, {memo, useCallback, useEffect, useState} from 'react';
+import React, {memo, useCallback, useMemo} from 'react';
 import type {DateData} from 'react-native-calendars';
 import {differenceInMonths, format} from 'date-fns';
 import {getPreviousMonth, getNextMonth} from '@libs/DataHandling';
-import type {DrinkingSessionList} from '@src/types/onyx';
 import * as DSUtils from '@libs/DrinkingSessionUtils';
 import CONST from '@src/CONST';
 import {useFirebase} from '@context/global/FirebaseContext';
 import Navigation from '@libs/Navigation/Navigation';
 import ROUTES from '@src/ROUTES';
-import type {DateString} from '@src/types/onyx/OnyxCommon';
+import type {DateString, Timestamp} from '@src/types/onyx/OnyxCommon';
 import useLazyMarkedDates from '@hooks/useLazyMarkedDates';
 import FlexibleLoadingIndicator from '@components/FlexibleLoadingIndicator';
+import {useOnyx} from 'react-native-onyx';
+import ONYXKEYS from '@src/ONYXKEYS';
 import SessionsCalendarView from './SessionsCalendarView';
 import type SessionsCalendarProps from './types';
 
@@ -26,18 +27,23 @@ function SessionsCalendar({
   const user = auth.currentUser;
   const {markedDates, unitsMap, loadedFrom, loadMoreMonths, isLoading} =
     useLazyMarkedDates(userID, drinkingSessionData ?? {}, preferences);
-  const [minDate, setMinDate] = useState<string>(CONST.DATE.MIN_DATE);
+  const [userDataList] = useOnyx(ONYXKEYS.USER_DATA_LIST);
+  // Persisted floor for the viewed user — the canonical "started tracking on"
+  // boundary. Falls back to the in-memory derivation when undefined, which
+  // covers the brief window before the one-time backfill writes the field.
+  const persistedEarliest: Timestamp | undefined =
+    userDataList?.[userID]?.earliest_session_at;
 
-  const calculateMinDate = (
-    data: DrinkingSessionList | null | undefined,
-  ): string => {
-    const trackingStartDate = DSUtils.getUserTrackingStartDate(data);
-
-    if (!trackingStartDate) {
+  const minDate = useMemo(() => {
+    const trackingStart =
+      persistedEarliest !== undefined
+        ? new Date(persistedEarliest)
+        : DSUtils.getUserTrackingStartDate(drinkingSessionData);
+    if (!trackingStart) {
       return CONST.DATE.MIN_DATE;
     }
-    return format(trackingStartDate, CONST.DATE.CALENDAR_FORMAT);
-  };
+    return format(trackingStart, CONST.DATE.CALENDAR_FORMAT);
+  }, [drinkingSessionData, persistedEarliest]);
 
   const handleLeftArrowPress = (subtractMonth: () => void) => {
     const monthsAway = differenceInMonths(
@@ -72,10 +78,6 @@ function SessionsCalendar({
     },
     [userID, user?.uid],
   );
-
-  useEffect(() => {
-    setMinDate(calculateMinDate(drinkingSessionData));
-  }, [drinkingSessionData]);
 
   if (isLoading) {
     return <FlexibleLoadingIndicator />;

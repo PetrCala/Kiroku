@@ -73,6 +73,15 @@ type UserData = {
   /** Version of the Terms & Conditions the user agreed to */
   agreed_to_terms_version?: number;
 
+  /**
+   * Earliest `start_time` across all drinking sessions this user has ever
+   * recorded. Persisted so the calendar can render a truthful "started
+   * tracking on" floor without relying on whichever subset of sessions
+   * happens to be loaded. Undefined for users who have no sessions yet, and
+   * for legacy accounts until the one-time backfill runs.
+   */
+  earliest_session_at?: Timestamp;
+
   /** Onboarding progress data */
   onboarding?: OnboardingData;
 

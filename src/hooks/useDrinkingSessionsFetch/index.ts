@@ -4,7 +4,7 @@ import CONST from '@src/CONST';
 import ONYXKEYS from '@src/ONYXKEYS';
 import type {DrinkingSessionList} from '@src/types/onyx';
 import type {UserID} from '@src/types/onyx/OnyxCommon';
-import {subMonths} from 'date-fns';
+import {startOfMonth, subMonths} from 'date-fns';
 import {get, orderByChild, query, ref, startAt} from 'firebase/database';
 import {useEffect, useRef, useState} from 'react';
 import {useOnyx} from 'react-native-onyx';
@@ -86,7 +86,12 @@ function useDrinkingSessionsFetch(
     if (isWiden) {
       setIsFetchingOlderMonths(true);
     }
-    const startAtMillis = subMonths(new Date(), sessionsMonthsBack).getTime();
+    // Snap to the start of the earliest visible month — see useListenToData
+    // for the matching change; both fetchers must agree so the calendar's
+    // partial-month rendering bug is fixed on home and friend profiles alike.
+    const startAtMillis = startOfMonth(
+      subMonths(new Date(), sessionsMonthsBack),
+    ).getTime();
     const sessionsQuery = query(
       ref(db, path),
       orderByChild('start_time'),

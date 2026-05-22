@@ -1,11 +1,19 @@
 import type {Database} from 'firebase/database';
-import {ref, update} from 'firebase/database';
+import {
+  get,
+  limitToFirst,
+  orderByChild,
+  query,
+  ref,
+  update,
+} from 'firebase/database';
 import type {
   DrinkingSession,
   DrinkingSessionId,
   DrinkingSessionList,
   DrinkKey,
   DrinksToUnits,
+  UserDataList,
   UserStatus,
 } from '@src/types/onyx';
 import * as Localize from '@libs/Localize';
@@ -29,8 +37,10 @@ import DBPATHS from '@src/DBPATHS';
 import {Alert} from 'react-native';
 
 const drinkingSessionRef = DBPATHS.USER_DRINKING_SESSIONS_USER_ID_SESSION_ID;
+const userDrinkingSessionsRef = DBPATHS.USER_DRINKING_SESSIONS_USER_ID;
 const userStatusRef = DBPATHS.USER_STATUS_USER_ID;
 const userStatusLatestSessionRef = DBPATHS.USER_STATUS_USER_ID_LATEST_SESSION;
+const earliestSessionAtRef = DBPATHS.USERS_USER_ID_EARLIEST_SESSION_AT;
 
 let ongoingSessionData: DrinkingSession | undefined;
 Onyx.connect({
@@ -42,6 +52,55 @@ Onyx.connect({
     ongoingSessionData = value;
   },
 });
+
+// Cached copy of the user-data list so the session-write paths can read the
+// current `earliest_session_at` without an extra Firebase round trip on every
+// write. Authoritative state still lives in Firebase; this is just for the
+// "is the new session a strict improvement?" shortcut.
+let userDataList: UserDataList | undefined;
+Onyx.connect({
+  key: ONYXKEYS.USER_DATA_LIST,
+  callback: value => {
+    userDataList = value ?? undefined;
+  },
+});
+
+/**
+ * Query Firebase for the user's earliest remaining session and persist the
+ * result on the user record. Called post-write from edit and delete paths,
+ * where the previous earliest may have shifted and we can't infer the new
+ * floor from the mutated session alone.
+ */
+async function recomputeEarliestSessionAt(
+  db: Database,
+  userID: UserID,
+): Promise<void> {
+  const sessionsPath = userDrinkingSessionsRef.getRoute(userID);
+  const earliestQuery = query(
+    ref(db, sessionsPath),
+    orderByChild('start_time'),
+    limitToFirst(1),
+  );
+  const snapshot = await get(earliestQuery);
+  const val = snapshot.val() as Record<
+    DrinkingSessionId,
+    DrinkingSession
+  > | null;
+  const earliest = DSUtils.getEarliestSessionStartTime(val);
+
+  const current = userDataList?.[userID]?.earliest_session_at;
+  if (earliest === current) {
+    return;
+  }
+
+  const updates: FirebaseUpdates = {};
+  updates[earliestSessionAtRef.getRoute(userID)] = earliest ?? null;
+  await update(ref(db), updates);
+
+  await Onyx.merge(ONYXKEYS.USER_DATA_LIST, {
+    [userID]: {earliest_session_at: earliest ?? null},
+  });
+}
 
 // let editSessionData: DrinkingSession | undefined;
 // Onyx.connect({
@@ -95,7 +154,7 @@ async function updateDrinkingSessionData(
   const dsPath = drinkingSessionRef.getRoute(userID, sessionId);
 
   // Be mindful of using Object.forEach here, as that leads to an incorrect parsing of the object for some reason
-  // eslint-disable-next-line you-dont-need-lodash-underscore/for-each, @typescript-eslint/no-unsafe-member-access
+  // eslint-disable-next-line you-dont-need-lodash-underscore/for-each
   _.forEach(updates, (value, key) => {
     // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
     updatesToDB[`${dsPath}/${key}`] = value;
@@ -103,7 +162,7 @@ async function updateDrinkingSessionData(
 
   if (updateStatus) {
     const userStatusPath = userStatusLatestSessionRef.getRoute(userID);
-    // eslint-disable-next-line you-dont-need-lodash-underscore/for-each, @typescript-eslint/no-unsafe-member-access
+    // eslint-disable-next-line you-dont-need-lodash-underscore/for-each
     _.forEach(updates, (value, key) => {
       // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
       updatesToDB[`${userStatusPath}/${key}`] = value;
@@ -181,7 +240,26 @@ async function startLiveDrinkingSession(
   const updates: FirebaseUpdates = {};
   updates[userStatusRef.getRoute(user.uid)] = newStatusData;
   updates[drinkingSessionRef.getRoute(user.uid, newSessionId)] = newSessionData;
+
+  // Live sessions start at "now", so they can only lower the earliest if the
+  // user has none yet. The strict-improvement guard keeps this branch a
+  // single-batch write — no extra Firebase read.
+  const currentEarliest = userDataList?.[user.uid]?.earliest_session_at;
+  const lowersEarliest =
+    currentEarliest === undefined ||
+    newSessionData.start_time < currentEarliest;
+  if (lowersEarliest) {
+    updates[earliestSessionAtRef.getRoute(user.uid)] =
+      newSessionData.start_time;
+  }
+
   await update(ref(db), updates);
+
+  if (lowersEarliest) {
+    await Onyx.merge(ONYXKEYS.USER_DATA_LIST, {
+      [user.uid]: {earliest_session_at: newSessionData.start_time},
+    });
+  }
 
   await Onyx.set(ONYXKEYS.ONGOING_SESSION_DATA, newSessionData);
 }
@@ -214,7 +292,26 @@ async function saveDrinkingSessionData(
   }
   updates[drinkingSessionRef.getRoute(userID, sessionKey)] = newSessionData;
 
+  // If the new start_time strictly lowers the floor, batch the update — no
+  // extra Firebase read needed. Otherwise the edit may have moved the
+  // previously-earliest session later, so recompute via Firebase post-write.
+  const currentEarliest = userDataList?.[userID]?.earliest_session_at;
+  const newStartTime = newSessionData.start_time;
+  const isStrictImprovement =
+    currentEarliest === undefined || newStartTime < currentEarliest;
+  if (isStrictImprovement) {
+    updates[earliestSessionAtRef.getRoute(userID)] = newStartTime;
+  }
+
   await update(ref(db), updates);
+
+  if (isStrictImprovement) {
+    await Onyx.merge(ONYXKEYS.USER_DATA_LIST, {
+      [userID]: {earliest_session_at: newStartTime},
+    });
+  } else {
+    await recomputeEarliestSessionAt(db, userID);
+  }
 
   await Onyx.set(onyxKey, null);
 }
@@ -245,6 +342,10 @@ async function removeDrinkingSessionData(
   }
 
   await update(ref(db), updates);
+
+  // The removed session may have been the earliest; recompute the floor
+  // unconditionally post-delete (single indexed read, only fires on delete).
+  await recomputeEarliestSessionAt(db, userID);
 
   await Onyx.set(onyxKey, null);
 }
@@ -488,6 +589,7 @@ export {
   generateDrinkingSessionId,
   navigateToEditSessionScreen,
   navigateToOngoingSessionScreen,
+  recomputeEarliestSessionAt,
   removeDrinkingSessionData,
   saveDrinkingSessionData,
   setIsCreatingNewSession,
