@@ -210,27 +210,16 @@ function ProfileScreen({route}: ProfileScreenProps) {
             onPress={onSeeAllFriendsButtonPress}
           />
         </View>
-        {drinkingSessionData ? (
-          <View style={[]}>
-            <StatOverview statsData={statsData} />
-            <SessionsCalendar
-              userID={userID}
-              visibleDate={visibleDateData}
-              onDateChange={(date: DateData) => setVisibleDateData(date)}
-              drinkingSessionData={drinkingSessionData}
-              preferences={preferences}
-            />
-          </View>
-        ) : (
-          <View style={[styles.borderTop, styles.borderRadiusXLarge]}>
-            <Text
-              style={[styles.textNormal, styles.textAlignCenter, styles.mt4]}>
-              {translate('profileScreen.noDrinkingSessions', {
-                isSelf: user?.uid === userID,
-              })}
-            </Text>
-          </View>
-        )}
+        <View style={[]}>
+          <StatOverview statsData={statsData} />
+          <SessionsCalendar
+            userID={userID}
+            visibleDate={visibleDateData}
+            onDateChange={(date: DateData) => setVisibleDateData(date)}
+            drinkingSessionData={drinkingSessionData}
+            preferences={preferences}
+          />
+        </View>
         <View style={[styles.flexRow, styles.justifyContentEnd]}>
           {user?.uid !== userID && (
             <Button

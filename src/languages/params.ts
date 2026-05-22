@@ -29,10 +29,6 @@ type FriendRequestsCountParams = {
   requestsCount: number;
 };
 
-type NoDrinkingSessionsParams = {
-  isSelf: boolean;
-};
-
 type OnboardingStepCounterParams = {
   currentStep: number;
   totalSteps: number;
@@ -70,7 +66,6 @@ export type {
   ForceUpdateTextParams,
   ForgotPasswordSuccessParams,
   FriendRequestsCountParams,
-  NoDrinkingSessionsParams,
   OnboardingStepCounterParams,
   SessionConfirmTimezoneChangeParams,
   SessionStartTimeParams,

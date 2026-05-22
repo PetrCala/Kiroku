@@ -12,7 +12,6 @@ import type {
   ForceUpdateTextParams,
   ForgotPasswordSuccessParams,
   FriendRequestsCountParams,
-  NoDrinkingSessionsParams,
   OnboardingStepCounterParams,
   SessionConfirmTimezoneChangeParams,
   SessionStartTimeParams,
@@ -781,8 +780,6 @@ export default {
   profileScreen: {
     title: 'Profil',
     titleNotSelf: 'Přehled uživatele',
-    noDrinkingSessions: ({isSelf}: NoDrinkingSessionsParams) =>
-      `${isSelf ? 'Zatím jste' : 'Tento uživatel zatím'} nepřidal(a) žádné alkoholové relace.`,
     seeAllFriends: 'Zobrazit všechny přátele',
     drinkingSessions: ({sessionsCount}: DrinkingSessionsParams) =>
       `${Str.pluralize('Alkoholová Relace', 'Alkoholových Relací', sessionsCount)}`,

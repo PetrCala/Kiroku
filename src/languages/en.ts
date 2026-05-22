@@ -13,7 +13,6 @@ import type {
   ForceUpdateTextParams,
   ForgotPasswordSuccessParams,
   FriendRequestsCountParams,
-  NoDrinkingSessionsParams,
   OnboardingStepCounterParams,
   SessionConfirmTimezoneChangeParams,
   SessionStartTimeParams,
@@ -791,8 +790,6 @@ export default {
   profileScreen: {
     title: 'Profile',
     titleNotSelf: 'Friend Overview',
-    noDrinkingSessions: ({isSelf}: NoDrinkingSessionsParams) =>
-      `${isSelf ? 'You have not' : 'This user has not'} added any drinking sessions yet.`,
     seeAllFriends: 'See all friends',
     drinkingSessions: ({sessionsCount}: DrinkingSessionsParams) =>
       `Drinking ${Str.pluralize('Session', 'Sessions', sessionsCount)}`,
