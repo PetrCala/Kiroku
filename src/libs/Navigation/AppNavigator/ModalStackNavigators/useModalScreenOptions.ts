@@ -4,6 +4,7 @@ import type {
 } from '@react-navigation/stack';
 import {CardStyleInterpolators} from '@react-navigation/stack';
 import {useMemo} from 'react';
+import {Platform} from 'react-native';
 import useStyleUtils from '@hooks/useStyleUtils';
 import useThemeStyles from '@hooks/useThemeStyles';
 import useResponsiveLayout from '@hooks/useResponsiveLayout';
@@ -31,6 +32,8 @@ function useModalScreenOptions(
       cardStyle: styles.navigationScreenCardStyle,
       headerShown: false,
       cardStyleInterpolator,
+      gestureEnabled: Platform.OS !== 'web',
+      gestureResponseDistance: 10000,
     }),
     [styles, cardStyleInterpolator],
   );

@@ -2,7 +2,6 @@ import type {
   StackCardInterpolationProps,
   StackNavigationOptions,
 } from '@react-navigation/stack';
-import {Platform} from 'react-native';
 import type {ViewStyle} from 'react-native';
 import type {ThemeStyles} from '@styles/index';
 import type {StyleUtilsType} from '@styles/utils';
@@ -28,8 +27,6 @@ type ScreenOptions = {
 const commonScreenOptions: StackNavigationOptions = {
   headerShown: false,
   gestureDirection: 'horizontal',
-  gestureEnabled: Platform.OS !== 'web',
-  gestureResponseDistance: 10000,
   cardOverlayEnabled: true,
   animationTypeForReplace: 'push',
 };
