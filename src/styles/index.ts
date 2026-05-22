@@ -1551,6 +1551,13 @@ const styles = (theme: ThemeColors) =>
       // Match the existing horizontal gap (~8–12px per cell column) so
       // squares feel evenly spaced both ways.
       paddingVertical: 6,
+      // Horizontal inset lives on the row itself (instead of FlashList's
+      // `contentContainerStyle`) so it survives sticky-header rendering:
+      // sticky labels sit outside the content container and would otherwise
+      // run edge-to-edge while in-flow rows respect the padding. Keeping
+      // padding on items also avoids a FlashList 2.x measurement quirk
+      // that was making deceleration jitter.
+      paddingHorizontal: 20,
     },
 
     sessionsCalendarWeekCell: {
@@ -1572,14 +1579,6 @@ const styles = (theme: ThemeColors) =>
       backgroundColor: theme.appBG,
     },
 
-    // FlashList contentContainerStyle for the fullscreen calendar. Must
-    // share the same `paddingHorizontal` as the day-names row above so the
-    // seven flex-1 columns line up across both. Also tightens the visible
-    // gap between day cells without touching the global cell size.
-    sessionsCalendarWeekListContent: {
-      paddingHorizontal: 20,
-    },
-
     sessionsCalendarDayNameCell: {
       flex: 1,
       alignItems: 'center',
@@ -1599,7 +1598,9 @@ const styles = (theme: ThemeColors) =>
       alignItems: 'center',
       paddingTop: 24,
       paddingBottom: 6,
-      paddingHorizontal: 4,
+      // Match the row's 20px inset so labels (both in-flow and sticky)
+      // line up with the day-name strip above and the day-cell grid below.
+      paddingHorizontal: 20,
       backgroundColor: theme.appBG,
     },
 
