@@ -21,6 +21,9 @@ type DatabaseDataContextType = {
   preferences?: Preferences;
   unconfirmedDays?: UnconfirmedDays;
   userData?: UserData;
+  /** True while a wider-window resubscribe for `drinkingSessionData` is in
+   *  flight (calendar scrolled past the loaded edge). */
+  isFetchingOlderMonths: boolean;
 };
 
 const DatabaseDataContext = createContext<DatabaseDataContextType | undefined>(
@@ -54,7 +57,7 @@ function DatabaseDataProvider({children}: DatabaseDataProviderProps) {
     'userData',
   ];
 
-  const {data} = useListenToData(dataTypes, userID);
+  const {data, isFetchingOlderMonths} = useListenToData(dataTypes, userID);
 
   const value = useMemo(
     () => ({
@@ -63,8 +66,9 @@ function DatabaseDataProvider({children}: DatabaseDataProviderProps) {
       preferences: data.preferences,
       unconfirmedDays: data.unconfirmedDays,
       userData: data.userData,
+      isFetchingOlderMonths,
     }),
-    [data],
+    [data, isFetchingOlderMonths],
   );
 
   // Sync theme preference from Firebase to Onyx when preferences are loaded

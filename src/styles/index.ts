@@ -1544,6 +1544,22 @@ const styles = (theme: ThemeColors) =>
       borderBottomWidth: 1,
     },
 
+    sessionsCalendarHeader: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+
+    sessionsCalendarHeaderMonthText: {
+      ...FontUtils.fontFamily.platform.EXP_NEUE_BOLD,
+      color: theme.text,
+      fontSize: variables.fontSizeLarge,
+    },
+
+    sessionsCalendarHeaderSpinner: {
+      marginLeft: 8,
+    },
+
     sessionColorMarker: (sessionColor: CalendarColors) =>
       ({
         height: variables.sessionColorMarkerSize,

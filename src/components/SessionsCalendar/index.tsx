@@ -20,6 +20,7 @@ function SessionsCalendar({
   onDateChange,
   drinkingSessionData,
   preferences,
+  isFetchingOlderMonths,
 }: SessionsCalendarProps) {
   const {auth} = useFirebase();
   const user = auth.currentUser;
@@ -89,6 +90,7 @@ function SessionsCalendar({
       onDayPress={onDayPress}
       onLeftArrowPress={handleLeftArrowPress}
       onRightArrowPress={handleRightArrowPress}
+      isFetchingOlderMonths={isFetchingOlderMonths}
     />
   );
 }

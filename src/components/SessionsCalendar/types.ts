@@ -19,6 +19,10 @@ type SessionsCalendarProps = {
 
   /** User's preferences */
   preferences: Preferences;
+
+  /** Show an inline spinner next to the month header while older months are
+   *  being fetched after a back-nav past the loaded window edge. */
+  isFetchingOlderMonths?: boolean;
 };
 
 type SessionsCalendarDayMarking = {
