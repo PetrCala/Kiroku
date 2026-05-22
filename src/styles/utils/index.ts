@@ -1323,23 +1323,24 @@ const createStyleUtils = (theme: ThemeColors, styles: ThemeStyles) => ({
   /**
    * Returns the outer cell style for a sessions-calendar day (Variant D).
    *
-   * The whole cell carries the heatmap tint; the day-number sits absolute in
-   * the top-left and the units number is centered as the visual hero. Today is
-   * marked with a 2px inset ring; off-month / disabled cells dim to ~35%.
+   * The whole cell carries the heatmap tint when a marking is present; days
+   * without a marking (future / outside the loaded data range) render as a
+   * transparent shell so they read as "no data" rather than "rest day".
+   * Today gets a 2px inset ring; off-month cells dim to ~35%.
    */
   getSessionsCalendarDayCellStyle: (
     marking: MarkingProps | undefined,
     isDisabled: boolean,
     isToday: boolean,
   ): ViewStyle => {
-    const backgroundColor = marking?.color ?? CONST.CALENDAR_COLORS.DARK.GREEN;
+    const markingColor = marking?.color;
     return {
-      width: variables.componentSizeNormalSmall,
-      height: variables.componentSizeNormalSmall,
+      width: variables.sessionsCalendarDaySize,
+      height: variables.sessionsCalendarDaySize,
       borderRadius: variables.componentBorderRadiusNormal,
       alignItems: 'center',
       justifyContent: 'center',
-      backgroundColor,
+      backgroundColor: markingColor ?? 'transparent',
       opacity: isDisabled ? 0.35 : 1,
       borderWidth: isToday ? 2 : 0,
       borderColor: isToday ? theme.text : 'transparent',
@@ -1350,15 +1351,20 @@ const createStyleUtils = (theme: ThemeColors, styles: ThemeStyles) => ({
    * Returns the corner day-number label style (Variant D).
    *
    * Always positioned absolute top-left, including on alcohol-free days — the
-   * empty center is what signals AF, not a re-centered day number.
+   * empty center is what signals AF, not a re-centered day number. When the
+   * cell has no marking (future / out-of-range), the label uses the muted
+   * theme text color rather than light/dark inversion.
    */
   getSessionsCalendarDayLabelStyle: (
     marking: MarkingProps | undefined,
     isDisabled: boolean,
   ): TextStyle => {
-    const isLightColor = !!marking?.color && isLightHex(marking.color);
+    const markingColor = marking?.color;
+    const isLightColor = !!markingColor && isLightHex(markingColor);
     let textColor: Color;
-    if (isDisabled) {
+    if (!markingColor) {
+      textColor = theme.textSupporting;
+    } else if (isDisabled) {
       textColor = theme.textMutedReversed;
     } else if (isLightColor) {
       textColor = theme.textDark;
