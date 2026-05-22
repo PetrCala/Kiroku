@@ -192,6 +192,9 @@ jobs:
       - name: Bundle install
         run: npm run jsbundle
 
+      - name: Install iOS platform SDK
+        run: xcodebuild -downloadPlatform iOS
+
       - name: Run Fastlane
         run: bundle exec fastlane ios build_internal
         env:
