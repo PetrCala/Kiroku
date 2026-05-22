@@ -9,4 +9,5 @@ export default {
   RIGHT_MODAL_NAVIGATOR: 'RightModalNavigator',
   FULL_SCREEN_NAVIGATOR: 'FullScreenNavigator',
   ONBOARDING_MODAL_NAVIGATOR: 'OnboardingModalNavigator',
+  SESSIONS_CALENDAR_NAVIGATOR: 'SessionsCalendarNavigator',
 } as const;

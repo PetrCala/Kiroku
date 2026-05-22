@@ -1623,6 +1623,23 @@ const styles = (theme: ThemeColors) =>
       paddingVertical: 8,
     },
 
+    // Header row for the fullscreen sessions calendar — close X on the
+    // far left, then the title, nothing on the right. Mirrors the back-
+    // button slot the rest of the app uses but with a close glyph.
+    sessionsCalendarFullscreenHeader: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      paddingVertical: 4,
+      paddingRight: 16,
+    },
+
+    sessionsCalendarFullscreenTitle: {
+      ...FontUtils.fontFamily.platform.EXP_NEUE_BOLD,
+      color: theme.text,
+      fontSize: variables.fontSizeLarge,
+      marginLeft: 4,
+    },
+
     sessionColorMarker: (sessionColor: CalendarColors) =>
       ({
         height: variables.sessionColorMarkerSize,

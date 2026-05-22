@@ -85,28 +85,39 @@ function buildMonthSections({
       {weekStartsOn},
     );
 
-    const weeks: MonthWeek[] = weekStarts.map(weekStart => {
-      const days: Array<DateString | null> = [];
-      for (let i = 0; i < 7; i++) {
-        const day = addDays(weekStart, i);
-        const inMonth = day.getMonth() === monthIndex;
-        const inRange = isWithinInterval(day, {
-          start: normalizedStart,
-          end: normalizedEnd,
-        });
-        if (!inMonth || !inRange) {
-          days.push(null);
-        } else {
-          days.push(format(day, CONST.DATE.FNS_FORMAT_STRING) as DateString);
+    const weeks: MonthWeek[] = weekStarts
+      .map(weekStart => {
+        const days: Array<DateString | null> = [];
+        for (let i = 0; i < 7; i++) {
+          const day = addDays(weekStart, i);
+          const inMonth = day.getMonth() === monthIndex;
+          const inRange = isWithinInterval(day, {
+            start: normalizedStart,
+            end: normalizedEnd,
+          });
+          if (!inMonth || !inRange) {
+            days.push(null);
+          } else {
+            days.push(format(day, CONST.DATE.FNS_FORMAT_STRING) as DateString);
+          }
         }
-      }
-      return {
-        key: format(weekStart, CONST.DATE.FNS_FORMAT_STRING) as DateString,
-        days,
-      };
-    });
+        return {
+          key: format(weekStart, CONST.DATE.FNS_FORMAT_STRING) as DateString,
+          days,
+        };
+      })
+      // Drop fully-blank rows. The only ones that can occur:
+      //   - trailing weeks past `end` in the last loaded month (e.g. when
+      //     today is mid-month and the natural last week sits entirely in
+      //     the future), and
+      //   - leading weeks before `start` in the first loaded month.
+      // Partial rows containing at least one in-range day are kept so the
+      // 7-cell grid stays aligned with the day-name strip.
+      .filter(week => week.days.some(d => d !== null));
 
-    sections.push({year: monthYear, month: monthIndex, weeks});
+    if (weeks.length > 0) {
+      sections.push({year: monthYear, month: monthIndex, weeks});
+    }
 
     // Advance one month.
     cursor = startOfMonth(addDays(monthEnd, 1));

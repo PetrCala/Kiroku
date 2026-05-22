@@ -26,7 +26,6 @@ const SCREENS = {
     ACHIEVEMENTS: 'Achievements',
     DAY_OVERVIEW: 'DayOverview',
     DRINKING_SESSION: 'DrinkingSession',
-    SESSIONS_CALENDAR: 'SessionsCalendar',
     SETTINGS: 'Settings',
     PROFILE: 'Profile',
     SOCIAL: 'Social',

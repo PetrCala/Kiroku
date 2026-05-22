@@ -4,8 +4,12 @@ import type {StackScreenProps} from '@react-navigation/stack';
 import type {DateData} from 'react-native-calendars';
 import SessionsCalendar from '@components/SessionsCalendar';
 import ScreenWrapper from '@components/ScreenWrapper';
-import HeaderWithBackButton from '@components/HeaderWithBackButton';
 import FullScreenLoadingIndicator from '@components/FullscreenLoadingIndicator';
+import Icon from '@components/Icon';
+import * as KirokuIcons from '@components/Icon/KirokuIcons';
+import {PressableWithFeedback} from '@components/Pressable';
+import Text from '@components/Text';
+import CONST from '@src/CONST';
 import {useFirebase} from '@context/global/FirebaseContext';
 import {useDatabaseData} from '@context/global/DatabaseDataContext';
 import useFetchData from '@hooks/useFetchData';
@@ -75,12 +79,23 @@ function SessionsCalendarScreen({route}: SessionsCalendarScreenProps) {
 
   return (
     <ScreenWrapper testID={SessionsCalendarScreen.displayName}>
-      <HeaderWithBackButton
-        title={translate('calendar.fullscreenTitle')}
-        shouldShowBackButton={false}
-        shouldShowCloseButton
-        onCloseButtonPress={() => Navigation.goBack()}
-      />
+      <View style={styles.sessionsCalendarFullscreenHeader}>
+        <PressableWithFeedback
+          onPress={() => Navigation.goBack()}
+          role={CONST.ROLE.BUTTON}
+          accessibilityLabel={translate('common.close')}
+          style={styles.sessionsCalendarFullscreenCloseButton}>
+          <Icon
+            src={KirokuIcons.Close}
+            fill={theme.icon}
+            width={20}
+            height={20}
+          />
+        </PressableWithFeedback>
+        <Text style={styles.sessionsCalendarFullscreenTitle}>
+          {translate('calendar.fullscreenTitle')}
+        </Text>
+      </View>
       {isFetchingOlderMonths && (
         <View style={styles.sessionsCalendarHeaderSpinner}>
           <ActivityIndicator size="small" color={theme.spinner} />

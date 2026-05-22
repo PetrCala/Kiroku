@@ -170,8 +170,6 @@ type RightModalNavigatorParamList = {
     .DRINKING_SESSION]: NavigatorScreenParams<DrinkingSessionNavigatorParamList>;
   [SCREENS.RIGHT_MODAL
     .PROFILE]: NavigatorScreenParams<ProfileNavigatorParamList>;
-  [SCREENS.RIGHT_MODAL
-    .SESSIONS_CALENDAR]: NavigatorScreenParams<SessionsCalendarNavigatorParamList>;
   [SCREENS.RIGHT_MODAL.SOCIAL]: NavigatorScreenParams<SocialNavigatorParamList>;
   [SCREENS.RIGHT_MODAL
     .SETTINGS]: NavigatorScreenParams<SettingsNavigatorParamList>;
@@ -235,6 +233,7 @@ type AuthScreensParamList = CentralPaneScreensParamList &
     [SCREENS.NOT_FOUND]: undefined;
     [NAVIGATORS.LEFT_MODAL_NAVIGATOR]: NavigatorScreenParams<LeftModalNavigatorParamList>;
     [NAVIGATORS.RIGHT_MODAL_NAVIGATOR]: NavigatorScreenParams<RightModalNavigatorParamList>;
+    [NAVIGATORS.SESSIONS_CALENDAR_NAVIGATOR]: NavigatorScreenParams<SessionsCalendarNavigatorParamList>;
     [NAVIGATORS.ONBOARDING_MODAL_NAVIGATOR]: NavigatorScreenParams<OnboardingModalNavigatorParamList>;
     // [NAVIGATORS.FULL_SCREEN_NAVIGATOR]: NavigatorScreenParams<FullScreenNavigatorParamList>;
   };

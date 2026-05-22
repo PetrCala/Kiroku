@@ -43,6 +43,7 @@ import BottomTabNavigator from './Navigators/BottomTabNavigator';
 // import LeftModalNavigator from './Navigators/LeftModalNavigator';
 import OnboardingModalNavigator from './Navigators/OnboardingModalNavigator';
 import RightModalNavigator from './Navigators/RightModalNavigator';
+import {SessionsCalendarModalStackNavigator} from './ModalStackNavigators';
 // import WelcomeVideoModalNavigator from './Navigators/WelcomeVideoModalNavigator';
 
 // eslint-disable-next-line rulesdir/no-negated-variables
@@ -318,6 +319,11 @@ function AuthScreensContent() {
           options={screenOptions.rightModalNavigator}
           component={RightModalNavigator}
           listeners={modalScreenListeners}
+        />
+        <RootStack.Screen
+          name={NAVIGATORS.SESSIONS_CALENDAR_NAVIGATOR}
+          options={screenOptions.sessionsCalendarNavigator}
+          component={SessionsCalendarModalStackNavigator}
         />
         {/* <RootStack.Screen
           name={NAVIGATORS.FULL_SCREEN_NAVIGATOR}
