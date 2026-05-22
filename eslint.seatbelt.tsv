@@ -706,7 +706,6 @@
 "src/components/SelectionList/BaseSelectionList.tsx"	"react-hooks/immutability"	1
 "src/components/SelectionList/BaseSelectionList.tsx"	"react-hooks/set-state-in-effect"	2
 "src/components/SelectionList/types.ts"	"@typescript-eslint/no-duplicate-type-constituents"	1
-"src/components/SessionsCalendar/index.tsx"	"react-hooks/set-state-in-effect"	1
 "src/components/Skeletons/ItemListSkeletonView.tsx"	"rulesdir/prefer-narrow-hook-dependencies"	2
 "src/components/StartSessionButtonAndPopover.tsx"	"react-hooks/set-state-in-effect"	1
 "src/components/StartSessionButtonAndPopover.tsx"	"rulesdir/prefer-narrow-hook-dependencies"	1
@@ -747,7 +746,6 @@
 "src/libs/DateUtils.ts"	"@typescript-eslint/switch-exhaustiveness-check"	1
 "src/libs/DateUtils.ts"	"arrow-body-style"	1
 "src/libs/DateUtils.ts"	"rulesdir/no-onyx-connect"	2
-"src/libs/DrinkingSessionUtils.ts"	"@typescript-eslint/prefer-nullish-coalescing"	1
 "src/libs/DrinkingSessionUtils.ts"	"@typescript-eslint/switch-exhaustiveness-check"	1
 "src/libs/DrinkingSessionUtils.ts"	"rulesdir/no-onyx-connect"	3
 "src/libs/Environment/betaChecker/index.android.ts"	"rulesdir/no-onyx-connect"	1
@@ -786,7 +784,7 @@
 "src/libs/UserUtils.ts"	"rulesdir/no-onyx-connect"	1
 "src/libs/actions/App.ts"	"rulesdir/no-onyx-connect"	3
 "src/libs/actions/Device/index.ts"	"rulesdir/no-onyx-connect"	1
-"src/libs/actions/DrinkingSession.ts"	"rulesdir/no-onyx-connect"	1
+"src/libs/actions/DrinkingSession.ts"	"rulesdir/no-onyx-connect"	2
 "src/libs/actions/OnyxUpdateManager/index.ts"	"rulesdir/no-onyx-connect"	3
 "src/libs/actions/OnyxUpdateManager/utils/__mocks__/applyUpdates.ts"	"rulesdir/no-onyx-connect"	1
 "src/libs/actions/OnyxUpdateManager/utils/index.ts"	"@typescript-eslint/prefer-nullish-coalescing"	1

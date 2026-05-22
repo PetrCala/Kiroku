@@ -11,10 +11,11 @@ import type {
 import {fetchDataKeyToDbPath} from '@hooks/useFetchData/utils';
 import useLocalize from '@hooks/useLocalize';
 import * as App from '@userActions/App';
+import * as DrinkingSession from '@userActions/DrinkingSession';
 import CONST from '@src/CONST';
 import ONYXKEYS from '@src/ONYXKEYS';
 import type {DrinkingSessionList} from '@src/types/onyx';
-import {subMonths} from 'date-fns';
+import {startOfMonth, subMonths} from 'date-fns';
 import {orderByChild, query, ref, startAt} from 'firebase/database';
 import {useEffect, useRef, useState} from 'react';
 import Onyx, {useOnyx} from 'react-native-onyx';
@@ -44,11 +45,14 @@ const EMPTY_SESSIONS: DrinkingSessionList = {};
  * Allows to listen to user's data only in the relevant database nodes. Does not attach
  * listeners for the unused keys.
  *
- * The `drinkingSessionData` listener uses a server-side `start_time` window so
- * the initial cold load only streams the most recent ~3 months of sessions
- * instead of the full collection. The window widens automatically when the
- * user scrolls the calendar past the loaded edge (which bumps
- * `SESSIONS_CALENDAR_MONTHS_BY_USER_ID` via [[useLazyMarkedDates]]).
+ * The `drinkingSessionData` listener uses a server-side `start_time` window
+ * snapped to month boundaries: the cold load streams from the start of the
+ * earliest visible month (default ~3 months back) through today, so any
+ * month inside the window is fetched in full and the calendar can't
+ * misrender a partial-month range as "before tracking started". The window
+ * widens automatically when the user scrolls the calendar past the loaded
+ * edge (which bumps `SESSIONS_CALENDAR_MONTHS_BY_USER_ID` via
+ * [[useLazyMarkedDates]]).
  *
  * @param userID User to listen to the data for
  * @param dataTypes Database node keys to listen to data for
@@ -65,6 +69,7 @@ const useListenToData = (
   const [cachedSessionsByUser] = useOnyx(ONYXKEYS.CACHED_DRINKING_SESSIONS);
   const cachedSessions: DrinkingSessionList | null | undefined =
     userID && cachedSessionsByUser ? cachedSessionsByUser[userID] : undefined;
+  const [userDataList, userDataListMeta] = useOnyx(ONYXKEYS.USER_DATA_LIST);
   const [monthsLoaded, monthsLoadedMeta] = useOnyx(
     // `userID` may be empty during the auth-resolving window; the suffix is
     // tolerated by Onyx and the effect below gates on its loaded status.
@@ -190,7 +195,13 @@ const useListenToData = (
     }
     prevSessionsMonthsBackRef.current = sessionsMonthsBack;
 
-    const startAtMillis = subMonths(new Date(), sessionsMonthsBack).getTime();
+    // Snap to the start of the earliest visible month so every month inside
+    // the fetched window is loaded in full — without this, viewing a past
+    // month while the sliding window stops mid-month would leave the early
+    // days unfetched and misrender them as "before tracking started".
+    const startAtMillis = startOfMonth(
+      subMonths(new Date(), sessionsMonthsBack),
+    ).getTime();
     const sessionsQuery = query(
       ref(db, path),
       orderByChild('start_time'),
@@ -223,6 +234,39 @@ const useListenToData = (
     return unsubscribe;
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [db, userID, sessionsMonthsBack, monthsLoadedMeta.status]);
+
+  // One-time backfill for `earliest_session_at` on the user record. Legacy
+  // accounts (and any user record predating this field) won't have it set,
+  // so the first time we observe the user's data with the field missing and
+  // sessions present we run a single indexed query to compute and persist
+  // the floor. Guarded by a ref so it fires at most once per mount per user.
+  const earliestBackfillFiredForRef = useRef<string | null>(null);
+  useEffect(() => {
+    if (
+      !db ||
+      !userID ||
+      userDataListMeta.status !== 'loaded' ||
+      earliestBackfillFiredForRef.current === userID
+    ) {
+      return;
+    }
+    const userData = userDataList?.[userID];
+    if (!userData || userData.earliest_session_at !== undefined) {
+      return;
+    }
+    const sessions = data[DRINKING_SESSIONS_KEY] as
+      | DrinkingSessionList
+      | undefined;
+    if (!sessions || Object.keys(sessions).length === 0) {
+      return;
+    }
+    earliestBackfillFiredForRef.current = userID;
+    // Fire-and-forget; failures are non-fatal and the next write will repair.
+    DrinkingSession.recomputeEarliestSessionAt(db, userID).catch(() => {
+      // Allow a later effect cycle to retry if conditions still hold.
+      earliestBackfillFiredForRef.current = null;
+    });
+  }, [db, userID, userDataList, userDataListMeta.status, data]);
 
   return {
     data: data as FetchData,

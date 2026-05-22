@@ -147,6 +147,11 @@ const DBPATHS = {
     getRoute: (user_id: UserID) =>
       `users/${user_id}/agreed_to_terms_version` as const,
   },
+  USERS_USER_ID_EARLIEST_SESSION_AT: {
+    route: '/users/:user_id/earliest_session_at',
+    getRoute: (user_id: UserID) =>
+      `users/${user_id}/earliest_session_at` as const,
+  },
   USERS_USER_ID_ONBOARDING: {
     route: '/users/:user_id/onboarding',
     getRoute: (user_id: UserID) => `users/${user_id}/onboarding` as const,

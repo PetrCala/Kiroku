@@ -682,6 +682,24 @@ function isDifferentDay(
 }
 
 /**
+ * Earliest `start_time` across a session collection, or undefined if empty.
+ * Shared with the Firebase-backed `recomputeEarliestSessionAt` so both the
+ * in-memory derivation and the persisted floor agree on a single rule.
+ */
+function getEarliestSessionStartTime(
+  data:
+    | DrinkingSessionList
+    | Record<string, DrinkingSession>
+    | undefined
+    | null,
+): number | undefined {
+  if (isEmptyObject(data)) {
+    return undefined;
+  }
+  return _.min(Object.values(data).map(session => session.start_time));
+}
+
+/**
  * Get the date on which a user started tracking their alcohol consumption / drinking sessions
  *
  * @param drinkingSessionsData The user's drinking session data
@@ -690,16 +708,10 @@ function isDifferentDay(
 function getUserTrackingStartDate(
   data: DrinkingSessionList | undefined | null,
 ): Date | null {
-  if (isEmptyObject(data)) {
-    return null;
-  }
-  const startTimes = Object.values(data).map(session => session.start_time);
-
-  const earliestTimestamp = _.min(startTimes);
+  const earliestTimestamp = getEarliestSessionStartTime(data);
   if (!earliestTimestamp) {
     return null;
   }
-
   return new Date(earliestTimestamp);
 }
 
@@ -809,6 +821,7 @@ export {
   getDisplayNameForParticipant,
   getDrinkingSessionData,
   getDrinkingSessionOnyxKey,
+  getEarliestSessionStartTime,
   getEmptySession,
   getIconForSession,
   getOngoingSessionId,
