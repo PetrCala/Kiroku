@@ -59,8 +59,11 @@ function ProfileScreen({route}: ProfileScreenProps) {
     userID,
     relevantDataKeys,
   );
-  const {data: drinkingSessionData, isLoading: isSessionsLoading} =
-    useDrinkingSessionsFetch(userID);
+  const {
+    data: drinkingSessionData,
+    isLoading: isSessionsLoading,
+    isFetchingOlderMonths,
+  } = useDrinkingSessionsFetch(userID);
   const isLoading = isFetchLoading || isSessionsLoading;
   const [selfFriends, setSelfFriends] = useState<UserList | null | undefined>();
   const [friendCount, setFriendCount] = useState(0);
@@ -218,6 +221,7 @@ function ProfileScreen({route}: ProfileScreenProps) {
             onDateChange={(date: DateData) => setVisibleDateData(date)}
             drinkingSessionData={drinkingSessionData}
             preferences={preferences}
+            isFetchingOlderMonths={isFetchingOlderMonths}
           />
         </View>
         <View style={[styles.flexRow, styles.justifyContentEnd]}>

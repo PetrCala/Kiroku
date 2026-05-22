@@ -17,6 +17,9 @@ type UseDrinkingSessionsFetchReturn = {
    *  without flipping this back to true. Consumers should NOT show a full
    *  loading state on widens. */
   isLoading: boolean;
+  /** True while a wider-window re-fetch is in flight (user scrolled the
+   *  calendar past the loaded edge). Cleared when the new `get()` resolves. */
+  isFetchingOlderMonths: boolean;
 };
 
 /**
@@ -42,6 +45,9 @@ function useDrinkingSessionsFetch(
 
   const [data, setData] = useState<DrinkingSessionList | undefined>(undefined);
   const [isLoading, setIsLoading] = useState<boolean>(true);
+  const [isFetchingOlderMonths, setIsFetchingOlderMonths] =
+    useState<boolean>(false);
+  const prevSessionsMonthsBackRef = useRef<number | null>(null);
 
   // Latest-wins request token. Bumped before each fetch; on resolve we ignore
   // the response unless its token still matches `currentTokenRef.current`.
@@ -74,6 +80,12 @@ function useDrinkingSessionsFetch(
     }
 
     const token = ++currentTokenRef.current;
+    const prev = prevSessionsMonthsBackRef.current;
+    const isWiden = prev !== null && sessionsMonthsBack > prev;
+    prevSessionsMonthsBackRef.current = sessionsMonthsBack;
+    if (isWiden) {
+      setIsFetchingOlderMonths(true);
+    }
     const startAtMillis = subMonths(new Date(), sessionsMonthsBack).getTime();
     const sessionsQuery = query(
       ref(db, path),
@@ -95,6 +107,7 @@ function useDrinkingSessionsFetch(
         hasResolvedInitialRef.current = true;
         setIsLoading(false);
       }
+      setIsFetchingOlderMonths(false);
     };
 
     get(sessionsQuery)
@@ -108,7 +121,7 @@ function useDrinkingSessionsFetch(
       .catch(() => finalize(undefined));
   }, [db, userID, sessionsMonthsBack, monthsLoadedMeta.status]);
 
-  return {data, isLoading};
+  return {data, isLoading, isFetchingOlderMonths};
 }
 
 export default useDrinkingSessionsFetch;

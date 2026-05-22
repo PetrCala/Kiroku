@@ -1,14 +1,17 @@
 import React, {memo, useCallback, useEffect} from 'react';
+import {ActivityIndicator, View} from 'react-native';
 import {Calendar} from 'react-native-calendars';
 import type {DateData} from 'react-native-calendars';
 import type {MarkedDates} from 'react-native-calendars/src/types';
 import {useOnyx} from 'react-native-onyx';
 import {format} from 'date-fns';
+import useTheme from '@hooks/useTheme';
 import useThemeStyles from '@hooks/useThemeStyles';
 import useStyleUtils from '@hooks/useStyleUtils';
 import ONYXKEYS from '@src/ONYXKEYS';
 import CONST from '@src/CONST';
 import type {DateString} from '@src/types/onyx/OnyxCommon';
+import Text from '@components/Text';
 import DayComponent from './DayComponent';
 import type {DayComponentProps} from './types';
 import CalendarArrow from './CalendarArrow';
@@ -46,6 +49,10 @@ type SessionsCalendarViewProps = {
 
   /** Hide the day-name row (M T W T F S S) */
   hideDayNames?: boolean;
+
+  /** Show an inline spinner next to the month header while older months are
+   *  being fetched after a back-nav past the loaded window edge. */
+  isFetchingOlderMonths?: boolean;
 };
 
 /**
@@ -71,9 +78,11 @@ function SessionsCalendarView({
   hideArrows,
   hideMonthHeader,
   hideDayNames,
+  isFetchingOlderMonths,
 }: SessionsCalendarViewProps) {
   const styles = useThemeStyles();
   const StyleUtils = useStyleUtils();
+  const theme = useTheme();
   const [preferredLocale] = useOnyx(ONYXKEYS.NVP_PREFERRED_LOCALE);
   const locale = preferredLocale ?? CONST.LOCALES.DEFAULT;
 
@@ -82,17 +91,57 @@ function SessionsCalendarView({
   }, [locale]);
 
   const dayComponent = useCallback(
-    ({date, state, marking, theme}: DayComponentProps) => (
+    ({date, state, marking, theme: dayTheme}: DayComponentProps) => (
       <DayComponent
         date={date}
         state={state}
         units={date ? unitsMap.get(date.dateString as DateString) : 0}
         marking={marking}
-        theme={theme}
+        theme={dayTheme}
         onPress={onDayPress}
       />
     ),
     [unitsMap, onDayPress],
+  );
+
+  // Custom header: matches the default month-text styling but reserves space
+  // for an inline spinner shown only while an older-months fetch is in flight.
+  // Keeping the header always-customized (not just when fetching) avoids a
+  // layout jump between native-header and custom-header rendering.
+  // The lib passes an `XDate` (no published d.ts; treated as `any` here). All we
+  // need is its epoch — extract via `getTime()` and rebuild a native `Date`.
+  const renderHeader = useCallback(
+    (date?: {getTime(): number}) => {
+      if (hideMonthHeader || !date) {
+        return null;
+      }
+      const formatted = format(
+        new Date(date.getTime()),
+        CONST.DATE.MONTH_YEAR_ABBR_FORMAT,
+      );
+      return (
+        <View style={styles.sessionsCalendarHeader}>
+          <Text style={styles.sessionsCalendarHeaderMonthText}>
+            {formatted}
+          </Text>
+          {isFetchingOlderMonths && (
+            <ActivityIndicator
+              size="small"
+              color={theme.spinner}
+              style={styles.sessionsCalendarHeaderSpinner}
+            />
+          )}
+        </View>
+      );
+    },
+    [
+      hideMonthHeader,
+      isFetchingOlderMonths,
+      styles.sessionsCalendarHeader,
+      styles.sessionsCalendarHeaderMonthText,
+      styles.sessionsCalendarHeaderSpinner,
+      theme.spinner,
+    ],
   );
 
   return (
@@ -110,7 +159,7 @@ function SessionsCalendarView({
       enableSwipeMonths={false}
       hideArrows={hideArrows}
       hideDayNames={hideDayNames}
-      renderHeader={hideMonthHeader ? () => null : undefined}
+      renderHeader={renderHeader}
       disableAllTouchEventsForDisabledDays
       renderArrow={(direction: Direction) => CalendarArrow(direction)}
       style={styles.sessionsCalendarContainer}

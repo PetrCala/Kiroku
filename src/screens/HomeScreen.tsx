@@ -62,7 +62,8 @@ function HomeScreen({route}: HomeScreenProps) {
   const {isOnline} = useUserConnection();
   const [loadingText] = useOnyx(ONYXKEYS.APP_LOADING_TEXT);
   const [ongoingSessionData] = useOnyx(ONYXKEYS.ONGOING_SESSION_DATA);
-  const {drinkingSessionData, preferences, userData} = useDatabaseData();
+  const {drinkingSessionData, preferences, userData, isFetchingOlderMonths} =
+    useDatabaseData();
   const [visibleDate, setVisibleDate] = useState<DateData>(
     dateToDateData(new Date()),
   );
@@ -189,6 +190,7 @@ function HomeScreen({route}: HomeScreenProps) {
           onDateChange={setVisibleDate}
           drinkingSessionData={drinkingSessionData}
           preferences={preferences}
+          isFetchingOlderMonths={isFetchingOlderMonths}
         />
       </>
     );

@@ -16,7 +16,7 @@ import ONYXKEYS from '@src/ONYXKEYS';
 import type {DrinkingSessionList} from '@src/types/onyx';
 import {subMonths} from 'date-fns';
 import {orderByChild, query, ref, startAt} from 'firebase/database';
-import {useEffect, useState} from 'react';
+import {useEffect, useRef, useState} from 'react';
 import Onyx, {useOnyx} from 'react-native-onyx';
 
 /* eslint-disable react-compiler/react-compiler */
@@ -24,6 +24,11 @@ import Onyx, {useOnyx} from 'react-native-onyx';
 // Define a type for the hook's return value
 type UseListenToDataReturn = {
   data: FetchData;
+  /** True while a wider-window resubscribe for `drinkingSessionData` is in
+   *  flight (user scrolled the calendar past the loaded edge). Cleared on the
+   *  first listener callback after the widen. Stays false during the initial
+   *  subscription and during incremental live updates within the same window. */
+  isFetchingOlderMonths: boolean;
 };
 
 const DRINKING_SESSIONS_KEY: FetchDataKey = 'drinkingSessionData';
@@ -93,6 +98,16 @@ const useListenToData = (
     },
   );
 
+  // Tracks whether a widen (sessionsMonthsBack increase) is currently waiting
+  // on its first listener callback. Held in a ref so the listener closure can
+  // read+clear it without re-subscribing.
+  const [isFetchingOlderMonths, setIsFetchingOlderMonths] = useState(false);
+  const prevSessionsMonthsBackRef = useRef<number | null>(null);
+  const pendingWidenRef = useRef(false);
+  // Tracks the userID the widen-state refs above belong to, so we can reset
+  // them when the active user changes (their saved depth is independent).
+  const widenTrackedUserIDRef = useRef<string | undefined>(userID);
+
   // Reset session data during render when the active user changes so the
   // previous user's data never bleeds across an account switch. Seeds with the
   // new user's cached snapshot if one exists. See
@@ -100,6 +115,10 @@ const useListenToData = (
   const [prevUserID, setPrevUserID] = useState(userID);
   if (prevUserID !== userID) {
     setPrevUserID(userID);
+    if (isFetchingOlderMonths) {
+      // The new user's first subscription is an initial fetch, not a widen.
+      setIsFetchingOlderMonths(false);
+    }
     if (dataTypes.includes(DRINKING_SESSIONS_KEY)) {
       const seed =
         cachedSessions === null ? EMPTY_SESSIONS : cachedSessions ?? undefined;
@@ -156,6 +175,21 @@ const useListenToData = (
       return;
     }
 
+    if (widenTrackedUserIDRef.current !== userID) {
+      // userID changed — the saved depth for the new user is independent of
+      // the previous user's. Drop prior widen-tracking before comparing.
+      widenTrackedUserIDRef.current = userID;
+      prevSessionsMonthsBackRef.current = null;
+      pendingWidenRef.current = false;
+    }
+    const prev = prevSessionsMonthsBackRef.current;
+    if (prev !== null && sessionsMonthsBack > prev) {
+      // Widen detected — mark in-flight until the new subscription fires.
+      pendingWidenRef.current = true;
+      setIsFetchingOlderMonths(true);
+    }
+    prevSessionsMonthsBackRef.current = sessionsMonthsBack;
+
     const startAtMillis = subMonths(new Date(), sessionsMonthsBack).getTime();
     const sessionsQuery = query(
       ref(db, path),
@@ -169,6 +203,10 @@ const useListenToData = (
         ...prevData,
         [DRINKING_SESSIONS_KEY]: sessions,
       }));
+      if (pendingWidenRef.current) {
+        pendingWidenRef.current = false;
+        setIsFetchingOlderMonths(false);
+      }
 
       if (userID) {
         // Persist authoritative live data so the next cold launch can render
@@ -188,6 +226,7 @@ const useListenToData = (
 
   return {
     data: data as FetchData,
+    isFetchingOlderMonths,
   };
 };
 
