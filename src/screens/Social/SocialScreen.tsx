@@ -93,7 +93,7 @@ function SocialScreen(_: SocialScreenProps) {
   const {userData} = useDatabaseData();
   const {translate} = useLocalize();
   const styles = useThemeStyles();
-  const {windowHeight, windowWidth} = useWindowDimensions();
+  const {windowWidth} = useWindowDimensions();
   const [routes] = useState([
     {key: 'friendList', title: translate('socialScreen.friendList'), userData},
     // {key: 'friendSearch', translate('socialScreen.friendSearch'), userData: userData},
@@ -152,11 +152,10 @@ function SocialScreen(_: SocialScreenProps) {
         renderScene={renderScene}
         onIndexChange={setIndex}
         initialLayout={{width: windowWidth}}
-        swipeEnabled
+        swipeEnabled={false}
         tabBarPosition="bottom"
         renderTabBar={() => null} // Do not render the default tab bar
       />
-      <View style={styles.backSwipeArea(windowHeight)} />
       <View style={styles.bottomTabBarContainer}>
         {footerButtons.map(button => (
           <SocialFooterButton
