@@ -6,6 +6,7 @@ import useThemeStyles from '@hooks/useThemeStyles';
 import useResponsiveLayout from '@hooks/useResponsiveLayout';
 import ModalNavigatorScreenOptions from '@navigation/AppNavigator/ModalNavigatorScreenOptions';
 import * as ModalStackNavigators from '@libs/Navigation/AppNavigator/ModalStackNavigators';
+import sessionsCalendarCardStyleInterpolator from '@libs/Navigation/AppNavigator/ModalStackNavigators/sessionsCalendarTransition';
 import type {
   AuthScreensParamList,
   RightModalNavigatorParamList,
@@ -13,6 +14,18 @@ import type {
 import type NAVIGATORS from '@src/NAVIGATORS';
 import SCREENS from '@src/SCREENS';
 import Overlay from './Overlay';
+
+// Modal-style presentation for the fullscreen sessions calendar: the home
+// screen stays mounted underneath while the calendar fades and grows into
+// view, and a vertical pull-down dismisses it on iOS.
+const SESSIONS_CALENDAR_SCREEN_OPTIONS = {
+  presentation: 'transparentModal' as const,
+  cardStyleInterpolator: sessionsCalendarCardStyleInterpolator,
+  cardOverlayEnabled: false,
+  gestureEnabled: true,
+  gestureDirection: 'vertical' as const,
+  cardStyle: {backgroundColor: 'transparent'},
+};
 
 type RightModalNavigatorProps = StackScreenProps<
   AuthScreensParamList,
@@ -75,6 +88,7 @@ function RightModalNavigator({navigation}: RightModalNavigatorProps) {
         <Stack.Screen
           name={SCREENS.RIGHT_MODAL.SESSIONS_CALENDAR}
           component={ModalStackNavigators.SessionsCalendarModalStackNavigator}
+          options={SESSIONS_CALENDAR_SCREEN_OPTIONS}
         />
         <Stack.Screen
           name={SCREENS.RIGHT_MODAL.SETTINGS}
