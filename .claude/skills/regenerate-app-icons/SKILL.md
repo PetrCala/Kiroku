@@ -15,12 +15,15 @@ need details the skill doesn't cover (e.g. wiring up iOS staging in Xcode).
 
 A single SVG (`assets/images/app-logo.svg`) is the source of truth. The script
 rasterizes it into every platform target — iOS app icon sets (prod / dev /
-staging / adhoc), iOS boot splash imagesets, Android mipmap launcher icons +
-adaptive XML across four source sets, Android boot splash drawables, Android
-notification icons (main only), web favicon / apple-touch-icon / og-preview,
-the PWA manifest, and four env-specific in-app SVG logos used by
-`src/components/KirokuLogo.tsx`. Non-production variants get a colored corner
-triangle badge so dev / staging / adhoc builds are visually distinguishable.
+staging / adhoc), iOS boot splash imagesets, Android adaptive icon foregrounds
+as **Vector Drawable XML** (one per flavor), Android legacy launcher PNGs across
+four source sets, the per-prod themed-icon monochrome PNG, Android boot splash
+drawables, Android notification icons (main only), web favicon /
+apple-touch-icon / og-preview, the PWA manifest, and four env-specific in-app
+SVG logos used by `src/components/KirokuLogo.tsx`. Non-production variants get a
+colored corner triangle badge so dev / staging / adhoc builds are visually
+distinguishable; the badge label is baked to glyph paths via `text-to-svg` so
+the same geometry drives both raster outputs and the Vector Drawable XMLs.
 
 You should be able to handle the vast majority of icon work by running the
 script and committing the results. Hand-editing generated files defeats the
@@ -34,42 +37,68 @@ background**. The script then bakes in the brand background color
 on surfaces that must be opaque, and leaves transparency intact on surfaces
 that get their backdrop from a separately-configured color resource:
 
-| Surface                                                             | Logo color    | Background                                                           |
-| ------------------------------------------------------------------- | ------------- | -------------------------------------------------------------------- |
-| iOS app icons (`AppIcon*.appiconset/`)                              | white         | baked-in orange (opaque, Apple requires no alpha)                    |
-| iOS boot splash (`BootSplashLogo*.imageset/`)                       | white         | transparent — `BootSplash.storyboard` view bg provides orange        |
-| Android legacy launcher (`ic_launcher.png`)                         | white         | baked-in orange (older launchers don't composite)                    |
-| Android adaptive foreground (`ic_launcher_foreground.png`)          | white         | transparent — composited over `ic_launcher_background.png`           |
-| Android adaptive background (`ic_launcher_background.png`)          | —             | solid orange, no logo art                                            |
-| Android adaptive monochrome (`ic_launcher_monochrome.png`)          | white shape   | transparent — Android 13+ tints it                                   |
-| Android boot splash (`drawable-*/bootsplash_logo.png`)              | white         | transparent — `bootsplash_background` color resource provides orange |
-| Android notification (`drawable-*/ic_notification.png`)             | white shape   | transparent — system tints to white/gray                             |
-| Web (`favicon.png`, `apple-touch-icon.png`, `og-preview-image.png`) | white         | baked-in orange (renders standalone on arbitrary page chrome)        |
-| In-app SVGs (`app-logo--{prod,dev,staging,adhoc}.svg`)              | white in file | tinted at render time by `<ImageSVG fill={theme.appLogo} />`         |
+| Surface                                                                           | Logo color    | Background                                                           |
+| --------------------------------------------------------------------------------- | ------------- | -------------------------------------------------------------------- |
+| iOS app icons (`AppIcon*.appiconset/`)                                            | white         | baked-in orange (opaque, Apple requires no alpha)                    |
+| iOS boot splash (`BootSplashLogo*.imageset/`)                                     | white         | transparent — `BootSplash.storyboard` view bg provides orange        |
+| Android legacy launcher (`mipmap-*/ic_launcher.png`, Android &lt; 8)              | white         | baked-in orange (older launchers don't composite)                    |
+| Android adaptive foreground (`drawable/ic_launcher_foreground.xml`)               | white         | transparent — vector XML, sits on `@color/ic_launcher_background`    |
+| Android adaptive background                                                       | —             | `@color/ic_launcher_background` resource (no PNG)                    |
+| Android themed-icon monochrome (`drawable/ic_launcher_monochrome.png`, prod only) | white shape   | transparent — Android 13+ Themed Icons tints it                      |
+| Android boot splash (`drawable-*/bootsplash_logo.png`)                            | white         | transparent — `bootsplash_background` color resource provides orange |
+| Android notification (`drawable-*/ic_notification.png`)                           | white shape   | transparent — system tints to white/gray                             |
+| Web (`favicon.png`, `apple-touch-icon.png`, `og-preview-image.png`)               | white         | baked-in orange (renders standalone on arbitrary page chrome)        |
+| In-app SVGs (`app-logo--{prod,dev,staging,adhoc}.svg`)                            | white in file | tinted at render time by `<ImageSVG fill={theme.appLogo} />`         |
 
 ## Android canvas specs (important — don't conflate them)
 
-Android has two distinct PNG canvas sizes the pipeline rasterizes into, plus
-a "safe zone" rule that determines where art may actually live inside each
-canvas. Getting these confused was the original sin behind every
-"why-does-the-Android-icon-look-clipped/tiny" report:
+Android adaptive icons are now driven by a vector XML foreground (one per
+flavor) plus a color-resource background, mirroring Expensify's pipeline.
+The legacy 48dp `ic_launcher.png` is still rasterized per density as a
+fallback for pre-Android-8 launchers. The boot splash is still a raster.
+The constants below encode the canvas sizes; the same `ADAPTIVE_SAFE_ZONE`
+that used to crop foreground PNGs now sets the outer `<group>` scale +
+translate inside the vector XML.
 
-| Surface                             | Canvas (1× base) | Art occupies | Why                                                                                                                           |
-| ----------------------------------- | ---------------- | ------------ | ----------------------------------------------------------------------------------------------------------------------------- |
-| `ic_launcher.png` (legacy launcher) | 48dp             | 100%         | Pre-Android-8 launchers don't apply masks; the PNG is the icon                                                                |
-| `ic_launcher_foreground.png`        | 108dp            | inner 60%    | Launcher applies its mask shape; corners outside the 66dp safe zone may be clipped                                            |
-| `ic_launcher_background.png`        | 108dp            | n/a          | Solid `BRAND_BG`, full canvas                                                                                                 |
-| `ic_launcher_monochrome.png`        | 108dp            | inner 60%    | Same canvas as foreground so silhouette lines up under the same mask                                                          |
-| `bootsplash_logo.png`               | 288dp            | inner ~37%   | react-native-bootsplash default; matches Android 12+ `windowSplashScreenAnimatedIcon` and stays inside the 192dp visible area |
+| Surface                                                       | Canvas (1× base) | Art occupies | Why                                                                                                                           |
+| ------------------------------------------------------------- | ---------------- | ------------ | ----------------------------------------------------------------------------------------------------------------------------- |
+| `mipmap-*/ic_launcher.png` (legacy launcher, per density)     | 48dp             | 100%         | Pre-Android-8 launchers don't apply masks; the PNG is the icon                                                                |
+| `drawable/ic_launcher_foreground.xml` (vector, per flavor)    | 108dp viewport   | inner 60%    | Launcher applies its mask shape; corners outside the 66dp safe zone may be clipped                                            |
+| `@color/ic_launcher_background` (resource, shared)            | n/a              | n/a          | Solid `BRAND_BG` from `values/ic_launcher_background.xml`                                                                     |
+| `drawable/ic_launcher_monochrome.png` (single PNG, prod only) | 432px (xxxhdpi)  | inner 60%    | Themed-icons silhouette; Android scales the single PNG down per density                                                       |
+| `bootsplash_logo.png` (per density)                           | 288dp            | inner ~37%   | react-native-bootsplash default; matches Android 12+ `windowSplashScreenAnimatedIcon` and stays inside the 192dp visible area |
 
 The script encodes these in `ANDROID_DENSITIES` (`iconSize` / `foreSize` /
-`splashSize`) and in the `ADAPTIVE_SAFE_ZONE` and `ANDROID_SPLASH_INNER_SCALE`
-constants. If you find yourself rendering the foreground/monochrome at
-`d.iconSize` or the splash at `d.foreSize`, stop — that's the original bug.
+`splashSize`), `ANDROID_MONOCHROME_PNG_SIZE`, `ADAPTIVE_SAFE_ZONE`, and
+`ANDROID_SPLASH_INNER_SCALE`. If you find yourself rendering the legacy
+launcher at `d.foreSize` or the splash at `d.iconSize`, stop — that's the
+original bug.
 
-`renderIcon()` takes an `innerScale` option for the inset surfaces. Badges
-composite onto the inner buffer before padding, so a dev/staging/adhoc badge
-stays inside the safe zone alongside the art.
+`renderIcon()` takes an `innerScale` option for the inset PNG surfaces.
+`svgToVectorDrawable()` applies the same scale via an outer `<group>` and
+appends badge paths inside it, so the badge stays inside the safe zone
+alongside the art (matching the raster pipeline's behavior).
+
+### Why the flavor variants drop `<monochrome>`
+
+Android 13+'s **Settings → Wallpaper & style → Themed icons** replaces the
+adaptive foreground with a tinted silhouette derived from the `<monochrome>`
+layer. If we included it on the `development` / `staging` / `adhoc`
+adaptive-icon XMLs, all four builds would render the same tinted K when
+Themed Icons is enabled — erasing the corner badge that distinguishes them.
+Only prod includes the layer; flavor variants fall back to standard
+colored adaptive rendering on themed devices.
+
+### Supported SVG subset
+
+The SVG-to-Vector-Drawable converter inside `scripts/generate-icons.mjs`
+accepts only `<path>` and `<rect>` elements, with a literal hex `fill` and
+at most a single `transform="rotate(angle cx cy)"` on a `<rect>`. Gradients,
+masks, `<defs>`, nested `<g>`, named CSS colors, percentage units, and
+`<text>` all fail with a precise error message naming the offending
+construct. If a master SVG change makes the script throw, that's the safety
+net firing — either keep the SVG inside the subset or extend
+`svgToVectorDrawable()`.
 
 ## Brand color sync
 
@@ -155,10 +184,14 @@ const VARIANTS = {
 };
 ```
 
-Edit `label` and `color`, then re-run the generator. `color` accepts any CSS
-color string; `label` should stay short (2–5 chars) so it remains legible
-inside the corner triangle. Setting `badge: null` removes the badge entirely
-for a variant.
+Edit `label` and `color`, then re-run the generator. `color` must be a
+literal hex string (`#RRGGBB` or `#AARRGGBB`) — named CSS colors and
+`rgb()`/`hsl()` are rejected by the Vector Drawable converter, so only the
+raster surfaces would accept them. `label` should stay short (2–5 chars) so
+it remains legible inside the corner triangle; the label is rendered as path
+data via `text-to-svg` + the bundled `ExpensifyNeue-Bold.otf`, so it does
+not depend on whatever system font happens to exist on the build machine.
+Setting `badge: null` removes the badge entirely for a variant.
 
 ### Adding a new build variant
 
