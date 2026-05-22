@@ -142,6 +142,12 @@ type ProfileNavigatorParamList = {
   };
 };
 
+type SessionsCalendarNavigatorParamList = {
+  [SCREENS.SESSIONS_CALENDAR.FULLSCREEN]: {
+    userID: string;
+  };
+};
+
 type SocialNavigatorParamList = {
   [SCREENS.SOCIAL.ROOT]: {
     screen: DeepValueOf<typeof SCREENS.SOCIAL>;
@@ -164,6 +170,8 @@ type RightModalNavigatorParamList = {
     .DRINKING_SESSION]: NavigatorScreenParams<DrinkingSessionNavigatorParamList>;
   [SCREENS.RIGHT_MODAL
     .PROFILE]: NavigatorScreenParams<ProfileNavigatorParamList>;
+  [SCREENS.RIGHT_MODAL
+    .SESSIONS_CALENDAR]: NavigatorScreenParams<SessionsCalendarNavigatorParamList>;
   [SCREENS.RIGHT_MODAL.SOCIAL]: NavigatorScreenParams<SocialNavigatorParamList>;
   [SCREENS.RIGHT_MODAL
     .SETTINGS]: NavigatorScreenParams<SettingsNavigatorParamList>;
@@ -263,6 +271,7 @@ export type {
   PublicScreensParamList,
   RightModalNavigatorParamList,
   RootStackParamList,
+  SessionsCalendarNavigatorParamList,
   SettingsNavigatorParamList,
   SocialNavigatorParamList,
   StackNavigationAction,

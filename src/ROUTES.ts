@@ -134,6 +134,11 @@ const ROUTES = {
     getRoute: (userID: UserID) => `profile/${userID}/friends` as const,
   },
 
+  SESSIONS_CALENDAR_FULLSCREEN: {
+    route: 'sessions-calendar/:userID',
+    getRoute: (userID: UserID) => `sessions-calendar/${userID}` as const,
+  },
+
   SOCIAL: 'social',
 
   // Causes an error

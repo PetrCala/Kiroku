@@ -291,6 +291,7 @@ export default {
     ],
     dayNamesShort: ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'],
     today: 'Today',
+    fullscreenTitle: 'Sessions',
   },
   textInput: {
     accessibilityLabel: 'Text input',

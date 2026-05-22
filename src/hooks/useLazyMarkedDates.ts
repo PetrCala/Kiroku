@@ -7,6 +7,7 @@ import type {
 } from '@src/types/onyx';
 import CONST from '@src/CONST';
 import {
+  differenceInCalendarMonths,
   eachDayOfInterval,
   format,
   isWithinInterval,
@@ -179,11 +180,31 @@ function useLazyMarkedDates(
     });
   };
 
+  // Widen the loaded window to (at least) include `target`. Used by the
+  // scroll-driven fullscreen calendar where the user can flick across many
+  // months in one gesture — a single `loadUpTo(target)` is cheaper than
+  // calling `loadMoreMonths(1)` in a loop and keeps the Onyx-persist debounce
+  // working as intended.
+  const loadUpTo = (target: Date) => {
+    const monthsNeeded = Math.max(
+      0,
+      differenceInCalendarMonths(new Date(), target),
+    );
+    setLoadedMonths(prev => {
+      if (monthsNeeded <= prev) {
+        return prev;
+      }
+      persistMonthsLoaded(userID, monthsNeeded);
+      return monthsNeeded;
+    });
+  };
+
   return {
     markedDates,
     unitsMap,
     loadedFrom,
     loadMoreMonths,
+    loadUpTo,
     isLoading: false,
   };
 }

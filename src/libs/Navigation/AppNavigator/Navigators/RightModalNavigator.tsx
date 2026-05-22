@@ -73,6 +73,10 @@ function RightModalNavigator({navigation}: RightModalNavigatorProps) {
           component={ModalStackNavigators.ProfileModalStackNavigator}
         />
         <Stack.Screen
+          name={SCREENS.RIGHT_MODAL.SESSIONS_CALENDAR}
+          component={ModalStackNavigators.SessionsCalendarModalStackNavigator}
+        />
+        <Stack.Screen
           name={SCREENS.RIGHT_MODAL.SETTINGS}
           component={ModalStackNavigators.SettingsModalStackNavigator}
         />

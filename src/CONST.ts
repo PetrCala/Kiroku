@@ -117,6 +117,12 @@ const CONST = {
     INACTIVE: 'inactive',
   },
   APP_IN_BETA: true,
+  // Static feature flags. Read via `FeatureFlags.isEnabled(name)` from
+  // `@libs/FeatureFlags` — never read this object directly at call sites so the
+  // backing source can later swap to Onyx/remote-config without churn.
+  FEATURES: {
+    FULLSCREEN_CALENDAR: false,
+  },
   APP_UPDATE: {
     // How long the dismiss update button should hide the window for
     DISMISS_TIME: 1000 * 60 * 60 * 24 * 1, // 1 day

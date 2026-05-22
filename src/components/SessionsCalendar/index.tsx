@@ -1,6 +1,6 @@
-import React, {memo, useCallback, useMemo} from 'react';
+import React, {memo, useCallback, useMemo, useRef} from 'react';
 import type {DateData} from 'react-native-calendars';
-import {differenceInMonths, format} from 'date-fns';
+import {differenceInCalendarMonths, differenceInMonths, format} from 'date-fns';
 import {getPreviousMonth, getNextMonth} from '@libs/DataHandling';
 import * as DSUtils from '@libs/DrinkingSessionUtils';
 import CONST from '@src/CONST';
@@ -13,7 +13,13 @@ import FlexibleLoadingIndicator from '@components/FlexibleLoadingIndicator';
 import {useOnyx} from 'react-native-onyx';
 import ONYXKEYS from '@src/ONYXKEYS';
 import SessionsCalendarView from './SessionsCalendarView';
+import SessionsCalendarListView from './SessionsCalendarListView';
 import type SessionsCalendarProps from './types';
+
+// How many months of pre-loaded buffer to keep ahead of the user's scroll in
+// fullscreen mode. When the earliest visible month gets within this many
+// months of the loaded floor, request more.
+const LOAD_AHEAD_BUFFER_MONTHS = 2;
 
 function SessionsCalendar({
   userID,
@@ -22,11 +28,18 @@ function SessionsCalendar({
   drinkingSessionData,
   preferences,
   isFetchingOlderMonths,
+  mode = 'compact',
 }: SessionsCalendarProps) {
   const {auth} = useFirebase();
   const user = auth.currentUser;
-  const {markedDates, unitsMap, loadedFrom, loadMoreMonths, isLoading} =
-    useLazyMarkedDates(userID, drinkingSessionData ?? {}, preferences);
+  const {
+    markedDates,
+    unitsMap,
+    loadedFrom,
+    loadMoreMonths,
+    loadUpTo,
+    isLoading,
+  } = useLazyMarkedDates(userID, drinkingSessionData ?? {}, preferences);
   const [userDataList] = useOnyx(ONYXKEYS.USER_DATA_LIST);
   // Persisted floor for the viewed user — the canonical "started tracking on"
   // boundary. Falls back to the in-memory derivation when undefined, which
@@ -66,6 +79,52 @@ function SessionsCalendar({
     addMonth();
   };
 
+  // Coalesce scroll-driven `loadUpTo` calls — store the deepest target we've
+  // already requested, skip subsequent triggers that aren't deeper. Avoids
+  // spamming the friend-data fetcher on a fast horizontal fling.
+  const deepestRequestedRef = useRef<Date | null>(null);
+
+  // Regular function (not memoized): `loadedFrom` is a ref whose `.current`
+  // mutates without re-rendering, so a `useCallback` keyed on it would either
+  // be stale or churn on every render. CalendarList only calls this on actual
+  // scroll events, so referential stability isn't required.
+  const handleVisibleMonthsChange = (months: DateData[]) => {
+    if (months.length === 0) {
+      return;
+    }
+    const earliest = months.reduce(
+      (acc, m) => (m.timestamp < acc.timestamp ? m : acc),
+      months[0],
+    );
+    const earliestDate = new Date(earliest.timestamp);
+    const floor = loadedFrom?.current ?? new Date();
+    const monthsAhead = differenceInCalendarMonths(earliestDate, floor);
+    if (monthsAhead <= LOAD_AHEAD_BUFFER_MONTHS) {
+      const target = new Date(
+        earliestDate.getFullYear(),
+        earliestDate.getMonth() - LOAD_AHEAD_BUFFER_MONTHS,
+        1,
+      );
+      if (
+        !deepestRequestedRef.current ||
+        target < deepestRequestedRef.current
+      ) {
+        deepestRequestedRef.current = target;
+        loadUpTo(target);
+      }
+    }
+
+    // Keep the orchestrator's visible-month state roughly in sync with the
+    // list so callers that mirror month-changes (e.g. the per-month stats
+    // strip) keep updating. Use the latest (right-most) month in the
+    // visible set so paging right also propagates.
+    const latest = months.reduce(
+      (acc, m) => (m.timestamp > acc.timestamp ? m : acc),
+      months[0],
+    );
+    onDateChange(latest);
+  };
+
   const onDayPress = useCallback(
     (dateData: DateData) => {
       if (userID !== user?.uid) {
@@ -83,8 +142,22 @@ function SessionsCalendar({
     return <FlexibleLoadingIndicator />;
   }
 
+  if (mode === 'fullscreen') {
+    return (
+      <SessionsCalendarListView
+        markedDates={markedDates}
+        unitsMap={unitsMap}
+        visibleDate={visibleDate}
+        minDate={minDate}
+        onDayPress={onDayPress}
+        onVisibleMonthsChange={handleVisibleMonthsChange}
+      />
+    );
+  }
+
   return (
     <SessionsCalendarView
+      userID={userID}
       markedDates={markedDates}
       unitsMap={unitsMap}
       visibleDate={visibleDate}
