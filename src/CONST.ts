@@ -12,16 +12,7 @@ const CURRENT_YEAR = new Date().getFullYear();
 const PLATFORM_OS_MACOS = 'Mac OS';
 const PLATFORM_IOS = 'iOS';
 const ANDROID_PACKAGE_NAME = 'com.alcohol_tracker';
-const GH_PAGES_URL = 'https://petrcala.github.io/Kiroku';
-// Public-facing Kiroku website (privacy policy, terms of service, etc.).
-const KIROKU_WEB_URLS = {
-  DEV: 'https://kiroku-web-dev.web.app',
-  PROD: 'https://kiroku-web-prod.web.app',
-};
-const KIROKU_WEB_URL =
-  Config?.ENVIRONMENT === 'production'
-    ? KIROKU_WEB_URLS.PROD
-    : KIROKU_WEB_URLS.DEV;
+const KIROKU_URL = 'https://kiroku.cz';
 // Custom sender domains for Firebase Authentication transactional mail
 // (email verification, password reset, email-change confirmation). Configured
 // in the Firebase Console per project with matching DNS records (DKIM/SPF).
@@ -77,22 +68,20 @@ const CONST = {
     IN: 'in',
     OUT: 'out',
   },
-  APP_DOWNLOAD_LINK: `${GH_PAGES_URL}/assets/html/qr-link.html`,
-  APP_QR_CODE_LINK: `${GH_PAGES_URL}/assets/images/kiroku-qr-code.png`,
+  APP_DOWNLOAD_LINK: KIROKU_URL,
   APP_URLS: {
     DEV: 'https://dev.kiroku.cz',
     STAGING: 'https://staging.kiroku.cz',
-    PROD: 'https://kiroku.cz',
+    PROD: KIROKU_URL,
     ADHOC: 'https://adhoc.kiroku.cz',
     TEST: 'https://test.kiroku.cz',
   },
-  KIROKU_URL: 'https://kiroku.cz',
+  KIROKU_URL,
   GITHUB_URL: 'https://github.com/PetrCala/Kiroku',
   DISCORD_INVITE_URL: 'https://discord.gg/YYR5bQhS',
-  KIROKU_WEB_URL,
-  TERMS_URL: `${KIROKU_WEB_URL}/terms`,
-  PRIVACY_URL: `${KIROKU_WEB_URL}/privacy`,
-  SUBSCRIPTION_TERMS_URL: `${KIROKU_WEB_URL}/subscription-terms`,
+  TERMS_URL: `${KIROKU_URL}/terms`,
+  PRIVACY_URL: `${KIROKU_URL}/privacy`,
+  SUBSCRIPTION_TERMS_URL: `${KIROKU_URL}/subscription-terms`,
   CURRENT_TERMS_VERSION: 1,
   GITHUB_RELEASE_URL:
     'https://api.github.com/repos/PetrCala/Kiroku/releases/latest',
