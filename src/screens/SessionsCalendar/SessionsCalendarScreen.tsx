@@ -4,12 +4,8 @@ import type {StackScreenProps} from '@react-navigation/stack';
 import type {DateData} from 'react-native-calendars';
 import SessionsCalendar from '@components/SessionsCalendar';
 import ScreenWrapper from '@components/ScreenWrapper';
+import HeaderWithBackButton from '@components/HeaderWithBackButton';
 import FullScreenLoadingIndicator from '@components/FullscreenLoadingIndicator';
-import Icon from '@components/Icon';
-import * as KirokuIcons from '@components/Icon/KirokuIcons';
-import {PressableWithFeedback} from '@components/Pressable';
-import Text from '@components/Text';
-import CONST from '@src/CONST';
 import {useFirebase} from '@context/global/FirebaseContext';
 import {useDatabaseData} from '@context/global/DatabaseDataContext';
 import useFetchData from '@hooks/useFetchData';
@@ -35,12 +31,13 @@ const FRIEND_FETCH_KEYS: FetchDataKeys = ['preferences'];
  * Full-screen, scrollable sessions calendar.
  *
  * Pushed from a tap on the compact-calendar month header. Uses the same
- * `SessionsCalendar` component as the embedded view but in `fullscreen` mode,
- * which renders `CalendarList` with horizontal paging.
+ * `SessionsCalendar` component as the embedded view but in `fullscreen`
+ * mode, which renders the continuous week-list view.
  *
- * Data source depends on whether the route's `userID` matches the auth user.
- * Both branches always call the same set of hooks — when not needed the hook
- * is invoked with an empty `userID`, which both hooks treat as a no-op.
+ * Data source depends on whether the route's `userID` matches the auth
+ * user. Both branches always call the same set of hooks — when not needed
+ * the hook is invoked with an empty `userID`, which both hooks treat as a
+ * no-op.
  */
 function SessionsCalendarScreen({route}: SessionsCalendarScreenProps) {
   const {auth} = useFirebase();
@@ -79,23 +76,12 @@ function SessionsCalendarScreen({route}: SessionsCalendarScreenProps) {
 
   return (
     <ScreenWrapper testID={SessionsCalendarScreen.displayName}>
-      <View style={styles.sessionsCalendarFullscreenHeader}>
-        <PressableWithFeedback
-          onPress={() => Navigation.goBack()}
-          role={CONST.ROLE.BUTTON}
-          accessibilityLabel={translate('common.close')}
-          style={styles.sessionsCalendarFullscreenCloseButton}>
-          <Icon
-            src={KirokuIcons.Close}
-            fill={theme.icon}
-            width={20}
-            height={20}
-          />
-        </PressableWithFeedback>
-        <Text style={styles.sessionsCalendarFullscreenTitle}>
-          {translate('calendar.fullscreenTitle')}
-        </Text>
-      </View>
+      <HeaderWithBackButton
+        title={translate('calendar.fullscreenTitle')}
+        shouldShowBackButton={false}
+        shouldShowCloseButton
+        onCloseButtonPress={() => Navigation.goBack()}
+      />
       {isFetchingOlderMonths && (
         <View style={styles.sessionsCalendarHeaderSpinner}>
           <ActivityIndicator size="small" color={theme.spinner} />

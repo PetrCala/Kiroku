@@ -30,6 +30,11 @@ type SessionsCalendarWeekListViewProps = {
   unitsMap: Map<DateString, number>;
   /** Earliest day currently loaded (drives the bottom of the list). */
   loadedFromDate: Date | null;
+  /** Earliest day the user has ever recorded a session. The rendered range
+   *  is clamped to `max(loadedFromDate, firstSessionDate)` so tiles for
+   *  days before the very first session never appear. `null` for users
+   *  who have never tracked. */
+  firstSessionDate?: Date | null;
   /** Latest day to render (defaults to today). */
   endDate?: Date;
   /** Day cell tap handler. */
@@ -71,6 +76,7 @@ function SessionsCalendarWeekListView({
   markedDates,
   unitsMap,
   loadedFromDate,
+  firstSessionDate,
   endDate,
   onDayPress,
   onRequestOlder,
@@ -87,10 +93,19 @@ function SessionsCalendarWeekListView({
     () => startOfDay(endDate ?? new Date()),
     [endDate],
   );
-  const resolvedStart = useMemo(
-    () => (loadedFromDate ? startOfDay(loadedFromDate) : resolvedEnd),
-    [loadedFromDate, resolvedEnd],
-  );
+  // Clamp the rendered window's lower bound to the user's first recorded
+  // session. The lazy-load window can extend further back (pre-session
+  // months with no markings); without this clamp the calendar would show
+  // empty tiles before the user had ever tracked.
+  const resolvedStart = useMemo(() => {
+    const fromLoad = loadedFromDate ?? resolvedEnd;
+    if (!firstSessionDate) {
+      return startOfDay(fromLoad);
+    }
+    return startOfDay(
+      fromLoad > firstSessionDate ? fromLoad : firstSessionDate,
+    );
+  }, [loadedFromDate, firstSessionDate, resolvedEnd]);
 
   const monthSections: MonthSection[] = useMemo(
     () => buildMonthSections({start: resolvedStart, end: resolvedEnd}),

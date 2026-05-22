@@ -49,16 +49,23 @@ function SessionsCalendar({
   const persistedEarliest: Timestamp | undefined =
     userDataList?.[userID]?.earliest_session_at;
 
+  // Canonical "first ever session" Date for the viewed user — drives both
+  // the compact view's `minDate` string and the fullscreen view's bottom
+  // render cap. `null` when the user has no sessions and no persisted
+  // floor (e.g. brand-new account before the one-time backfill runs).
+  const trackingStartDate: Date | null = useMemo(() => {
+    if (persistedEarliest !== undefined) {
+      return new Date(persistedEarliest);
+    }
+    return DSUtils.getUserTrackingStartDate(drinkingSessionData) ?? null;
+  }, [drinkingSessionData, persistedEarliest]);
+
   const minDate = useMemo(() => {
-    const trackingStart =
-      persistedEarliest !== undefined
-        ? new Date(persistedEarliest)
-        : DSUtils.getUserTrackingStartDate(drinkingSessionData);
-    if (!trackingStart) {
+    if (!trackingStartDate) {
       return CONST.DATE.MIN_DATE;
     }
-    return format(trackingStart, CONST.DATE.CALENDAR_FORMAT);
-  }, [drinkingSessionData, persistedEarliest]);
+    return format(trackingStartDate, CONST.DATE.CALENDAR_FORMAT);
+  }, [trackingStartDate]);
 
   const handleLeftArrowPress = (subtractMonth: () => void) => {
     const monthsAway = differenceInMonths(
@@ -127,6 +134,7 @@ function SessionsCalendar({
         markedDates={markedDates}
         unitsMap={unitsMap}
         loadedFromDate={loadedFromDate}
+        firstSessionDate={trackingStartDate}
         onDayPress={onDayPress}
         onRequestOlder={handleRequestOlder}
       />
