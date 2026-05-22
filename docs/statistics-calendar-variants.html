@@ -1,0 +1,492 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Kiroku · Sessions calendar — variants</title>
+<style>
+  :root {
+    --heat-0: transparent;
+    --heat-1: #FFF1A8;
+    --heat-2: #FFD86B;
+    --heat-3: #FFB627;
+    --heat-4: #FF8C00;
+    --heat-5: #E36800;
+    --brand-yellow: #FED607;
+    --brand-yellow-strong: #FFC403;
+
+    --page-bg: #F4F5F7;
+    --page-fg: #1A1D21;
+    --panel-bg: #FFFFFF;
+    --panel-border: #E5E7EB;
+    --muted: #6B7280;
+  }
+  body.theme-dark {
+    --page-bg: #0B0D11;
+    --page-fg: #F4F5F7;
+    --panel-bg: #181B22;
+    --panel-border: #232730;
+    --muted: #8B95A1;
+  }
+  body.theme-dark .frame {
+    --app-bg: #0F1115;
+    --card-bg: #181B22;
+    --card-border: #232730;
+    --text: #F4F5F7;
+    --text-supporting: #B9BFC8;
+    --text-muted: #7E8694;
+    --neutral-cell: #1F232C;
+  }
+  body:not(.theme-dark) .frame {
+    --app-bg: #FFFFFF;
+    --card-bg: #FFFFFF;
+    --card-border: #ECEEF1;
+    --text: #1A1D21;
+    --text-supporting: #495060;
+    --text-muted: #8B95A1;
+    --neutral-cell: #F4F5F7;
+  }
+
+  * { box-sizing: border-box; }
+  body { margin: 0; padding: 0; background: var(--page-bg); color: var(--page-fg); font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Inter, Roboto, sans-serif; }
+
+  .toolbar {
+    position: sticky; top: 0; z-index: 10;
+    display: flex; gap: 12px; align-items: center; padding: 12px 20px;
+    background: var(--panel-bg); border-bottom: 1px solid var(--panel-border);
+    flex-wrap: wrap;
+  }
+  .toolbar h1 { margin: 0; font-size: 15px; font-weight: 600; }
+  .toolbar .spacer { flex: 1; }
+  .toolbar .group { display: inline-flex; border: 1px solid var(--panel-border); border-radius: 8px; overflow: hidden; background: var(--panel-bg); }
+  .toolbar .group button { border: 0; padding: 6px 12px; background: transparent; cursor: pointer; font-size: 13px; border-right: 1px solid var(--panel-border); color: var(--page-fg); }
+  .toolbar .group button:last-child { border-right: 0; }
+  .toolbar .group button.active { background: var(--brand-yellow); font-weight: 600; color: #1A1D21; }
+
+  .stage { padding: 24px; max-width: 1400px; margin: 0 auto; }
+  .grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 28px;
+  }
+  @media (max-width: 920px) { .grid { grid-template-columns: 1fr; } }
+
+  .variant {
+    background: var(--panel-bg);
+    border: 1px solid var(--panel-border);
+    border-radius: 16px;
+    padding: 20px;
+    display: flex; flex-direction: column; gap: 14px;
+  }
+  .variant .vhead { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; }
+  .variant .vhead h2 { margin: 0; font-size: 16px; font-weight: 700; }
+  .variant .vhead .badge {
+    font-size: 10px; font-weight: 700; padding: 3px 8px; border-radius: 10px;
+    background: rgba(139, 92, 246, 0.15); color: #6D28D9;
+  }
+  .variant .pros-cons {
+    display: grid; grid-template-columns: 1fr 1fr; gap: 12px;
+    font-size: 12px; line-height: 1.5;
+  }
+  .variant .pros-cons h4 { font-size: 11px; font-weight: 700; margin: 0 0 4px; text-transform: uppercase; letter-spacing: 0.04em; }
+  .variant .pros { color: #1F7A4D; }
+  .variant .cons { color: #B26A00; }
+  .variant .pros ul, .variant .cons ul { margin: 0; padding-left: 14px; color: var(--page-fg); }
+
+  /* ---- mini-frame containing the calendar so it looks in-context ---- */
+  .frame {
+    background: var(--app-bg); color: var(--text);
+    border-radius: 16px;
+    border: 1px solid var(--card-border);
+    padding: 14px;
+  }
+  .frame .heatmap-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
+  .frame .heatmap-header h3 { font-size: 14px; margin: 0; font-weight: 600; }
+  .frame .heatmap-header .nav button {
+    width: 26px; height: 26px; border-radius: 7px;
+    background: transparent; border: 1px solid var(--card-border);
+    color: var(--text-supporting); cursor: pointer; margin-left: 4px;
+  }
+
+  .heatmap { display: grid; grid-template-columns: repeat(7, 1fr); gap: 4px; }
+  .heatmap .dow {
+    font-size: 10px; color: var(--text-muted); text-align: center; padding: 2px 0;
+    text-transform: uppercase; letter-spacing: 0.04em;
+  }
+  .heatmap .cell {
+    aspect-ratio: 1 / 1;
+    border-radius: 8px;
+    background: var(--neutral-cell);
+    position: relative;
+    overflow: hidden;
+  }
+  .heatmap .cell.muted { opacity: 0.35; }
+  .heatmap .cell.today { box-shadow: 0 0 0 2px var(--text) inset; }
+
+  /* level paints — used by variants A, B, D */
+  .heatmap .cell.level-1 { background: var(--heat-1); }
+  .heatmap .cell.level-2 { background: var(--heat-2); }
+  .heatmap .cell.level-3 { background: var(--heat-3); }
+  .heatmap .cell.level-4 { background: var(--heat-4); }
+  .heatmap .cell.level-5 { background: var(--heat-5); }
+
+  /* =====================================================================
+     VARIANT A — Stacked: day number on top, units small below
+     Color = background intensity. Single visual layer. Quietest.
+     ===================================================================== */
+  .va .cell {
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    gap: 0;
+  }
+  .va .cell .daynum {
+    font-size: 11px; font-weight: 600; color: var(--text-supporting); line-height: 1;
+  }
+  .va .cell.level-3 .daynum,
+  .va .cell.level-4 .daynum,
+  .va .cell.level-5 .daynum { color: rgba(0,0,0,0.72); }
+  .va .cell .units {
+    font-size: 13px; font-weight: 700; color: var(--text); line-height: 1.1; margin-top: 1px;
+  }
+  .va .cell.level-3 .units,
+  .va .cell.level-4 .units,
+  .va .cell.level-5 .units { color: rgba(0,0,0,0.85); }
+
+  /* =====================================================================
+     VARIANT B — Corner chip: day number centered, tiny units pill top-right
+     Tint is soft (only 35% intensity). Day is hero, units is a footnote.
+     ===================================================================== */
+  .vb .cell {
+    background: var(--neutral-cell);
+    display: flex; align-items: center; justify-content: center;
+  }
+  .vb .cell.level-1 { background: color-mix(in srgb, var(--heat-1) 50%, var(--neutral-cell)); }
+  .vb .cell.level-2 { background: color-mix(in srgb, var(--heat-2) 50%, var(--neutral-cell)); }
+  .vb .cell.level-3 { background: color-mix(in srgb, var(--heat-3) 50%, var(--neutral-cell)); }
+  .vb .cell.level-4 { background: color-mix(in srgb, var(--heat-4) 55%, var(--neutral-cell)); }
+  .vb .cell.level-5 { background: color-mix(in srgb, var(--heat-5) 55%, var(--neutral-cell)); }
+  .vb .cell .daynum {
+    font-size: 14px; font-weight: 600; color: var(--text);
+  }
+  .vb .cell .chip {
+    position: absolute; top: 3px; right: 3px;
+    background: rgba(0,0,0,0.55); color: #fff;
+    font-size: 9px; font-weight: 700;
+    padding: 1px 4px; border-radius: 6px; line-height: 1.2;
+  }
+  body.theme-dark .vb .cell .chip { background: rgba(255,255,255,0.78); color: #1A1D21; }
+
+  /* =====================================================================
+     VARIANT C — Two-zone: day on neutral top, units on colored bottom
+     Strong separation. Always readable. Mirrors the current chip pattern
+     but spread across the whole cell so color intensity still encodes load.
+     ===================================================================== */
+  .vc .cell {
+    background: var(--neutral-cell);
+    display: flex; flex-direction: column;
+  }
+  .vc .cell .top {
+    flex: 1; display: flex; align-items: center; justify-content: center;
+    font-size: 12px; font-weight: 600; color: var(--text-supporting);
+  }
+  .vc .cell .bot {
+    height: 14px;
+    display: flex; align-items: center; justify-content: center;
+    background: var(--neutral-cell);
+    font-size: 10px; font-weight: 700; color: rgba(0,0,0,0.7);
+  }
+  .vc .cell.level-1 .bot { background: var(--heat-1); }
+  .vc .cell.level-2 .bot { background: var(--heat-2); }
+  .vc .cell.level-3 .bot { background: var(--heat-3); }
+  .vc .cell.level-4 .bot { background: var(--heat-4); color: rgba(0,0,0,0.85); }
+  .vc .cell.level-5 .bot { background: var(--heat-5); color: rgba(255,255,255,0.95); }
+  /* level-0 = AF day → bottom strip invisible, cell looks pure neutral */
+  .vc .cell.level-0 .bot { background: transparent; }
+
+  /* =====================================================================
+     VARIANT D — Units-as-hero: when units > 0, the units number IS the
+     cell (big, centered). Day number tucks to the corner. AF days show
+     only the day number, no number/zero noise. Most distinct rhythm.
+     ===================================================================== */
+  .vd .cell {
+    display: flex; align-items: center; justify-content: center;
+  }
+  .vd .cell .daynum {
+    position: absolute; top: 3px; left: 5px;
+    font-size: 9px; font-weight: 600; color: var(--text-muted); line-height: 1;
+  }
+  .vd .cell.level-3 .daynum,
+  .vd .cell.level-4 .daynum,
+  .vd .cell.level-5 .daynum { color: rgba(0,0,0,0.55); }
+  .vd .cell .units {
+    font-size: 15px; font-weight: 700; color: var(--text);
+  }
+  .vd .cell.level-3 .units,
+  .vd .cell.level-4 .units,
+  .vd .cell.level-5 .units { color: rgba(0,0,0,0.85); }
+  /* AF days: day number stays in the corner; cell center is empty.
+     Color intensity tells the story; units only render when > 0. */
+
+  /* legend */
+  .legend {
+    display: flex; gap: 6px; align-items: center;
+    font-size: 10px; color: var(--text-muted);
+    margin-top: 10px; justify-content: flex-end;
+  }
+  .legend .swatch { width: 12px; height: 12px; border-radius: 3px; }
+
+  /* picker bar */
+  .pick-bar {
+    margin-top: 28px;
+    background: var(--panel-bg);
+    border: 1px solid var(--panel-border);
+    border-radius: 16px;
+    padding: 18px 20px;
+    display: flex; gap: 12px; align-items: center; flex-wrap: wrap;
+  }
+  .pick-bar h3 { margin: 0; font-size: 14px; font-weight: 700; }
+  .pick-bar p { margin: 0; font-size: 13px; color: var(--muted); }
+</style>
+</head>
+<body class="theme-light">
+  <div class="toolbar">
+    <h1>Sessions calendar — variants</h1>
+    <span class="spacer"></span>
+    <div class="group" data-toggle="theme">
+      <button data-theme="light" class="active">Light</button>
+      <button data-theme="dark">Dark</button>
+    </div>
+  </div>
+
+  <div class="stage">
+    <div class="grid">
+
+      <!-- ============================ VARIANT A ============================ -->
+      <div class="variant">
+        <div class="vhead">
+          <h2>A · Stacked</h2>
+          <span class="badge">day on top, units below</span>
+        </div>
+        <div class="frame">
+          <div class="heatmap-header">
+            <h3>May 2026</h3>
+            <div class="nav"><button>‹</button><button>›</button></div>
+          </div>
+          <div class="heatmap va" data-grid></div>
+          <div class="legend">
+            <span>Less</span>
+            <span class="swatch" style="background: var(--neutral-cell)"></span>
+            <span class="swatch" style="background: var(--heat-1)"></span>
+            <span class="swatch" style="background: var(--heat-2)"></span>
+            <span class="swatch" style="background: var(--heat-3)"></span>
+            <span class="swatch" style="background: var(--heat-4)"></span>
+            <span class="swatch" style="background: var(--heat-5)"></span>
+            <span>More</span>
+          </div>
+        </div>
+        <div class="pros-cons">
+          <div class="pros"><h4>Strengths</h4><ul><li>Closest to existing mental model (day + units)</li><li>Both data points always visible</li><li>Simplest a11y story</li></ul></div>
+          <div class="cons"><h4>Costs</h4><ul><li>Two text rows per cell can read busy at month-scale</li><li>Contrast on level-3/4/5 needs careful tuning</li></ul></div>
+        </div>
+      </div>
+
+      <!-- ============================ VARIANT B ============================ -->
+      <div class="variant">
+        <div class="vhead">
+          <h2>B · Corner chip</h2>
+          <span class="badge">day hero, units footnote</span>
+        </div>
+        <div class="frame">
+          <div class="heatmap-header">
+            <h3>May 2026</h3>
+            <div class="nav"><button>‹</button><button>›</button></div>
+          </div>
+          <div class="heatmap vb" data-grid></div>
+          <div class="legend">
+            <span>Less</span>
+            <span class="swatch" style="background: var(--neutral-cell)"></span>
+            <span class="swatch" style="background: color-mix(in srgb, var(--heat-1) 50%, var(--neutral-cell))"></span>
+            <span class="swatch" style="background: color-mix(in srgb, var(--heat-2) 50%, var(--neutral-cell))"></span>
+            <span class="swatch" style="background: color-mix(in srgb, var(--heat-3) 50%, var(--neutral-cell))"></span>
+            <span class="swatch" style="background: color-mix(in srgb, var(--heat-4) 55%, var(--neutral-cell))"></span>
+            <span class="swatch" style="background: color-mix(in srgb, var(--heat-5) 55%, var(--neutral-cell))"></span>
+            <span>More</span>
+          </div>
+        </div>
+        <div class="pros-cons">
+          <div class="pros"><h4>Strengths</h4><ul><li>Calmest at a glance — date dominates, color is mood</li><li>Tint stays subtle so cell never looks "loud"</li><li>Best for users who navigate by date first</li></ul></div>
+          <div class="cons"><h4>Costs</h4><ul><li>Units chip is small (9px) — readability on small screens?</li><li>Less direct mapping from existing colored-circle UI</li></ul></div>
+        </div>
+      </div>
+
+      <!-- ============================ VARIANT C ============================ -->
+      <div class="variant">
+        <div class="vhead">
+          <h2>C · Two-zone</h2>
+          <span class="badge">neutral top, colored bottom strip</span>
+        </div>
+        <div class="frame">
+          <div class="heatmap-header">
+            <h3>May 2026</h3>
+            <div class="nav"><button>‹</button><button>›</button></div>
+          </div>
+          <div class="heatmap vc" data-grid></div>
+          <div class="legend">
+            <span>Less</span>
+            <span class="swatch" style="background: var(--neutral-cell)"></span>
+            <span class="swatch" style="background: var(--heat-1)"></span>
+            <span class="swatch" style="background: var(--heat-2)"></span>
+            <span class="swatch" style="background: var(--heat-3)"></span>
+            <span class="swatch" style="background: var(--heat-4)"></span>
+            <span class="swatch" style="background: var(--heat-5)"></span>
+            <span>More</span>
+          </div>
+        </div>
+        <div class="pros-cons">
+          <div class="pros"><h4>Strengths</h4><ul><li>Day number always on neutral — perfectly readable</li><li>AF days look visibly "clean" (no colored strip)</li><li>Closest to the current colored-pill metaphor, just spread out</li></ul></div>
+          <div class="cons"><h4>Costs</h4><ul><li>Two-zone construction = slightly more Skia path math</li><li>Color band is shorter → intensity feels less dominant</li></ul></div>
+        </div>
+      </div>
+
+      <!-- ============================ VARIANT D ============================ -->
+      <div class="variant">
+        <div class="vhead">
+          <h2>D · Units-as-hero <span style="font-size: 11px; color: #1F7A4D; font-weight: 700;">✓ CHOSEN</span></h2>
+          <span class="badge">units centered; day number always in corner</span>
+        </div>
+        <div class="frame">
+          <div class="heatmap-header">
+            <h3>May 2026</h3>
+            <div class="nav"><button>‹</button><button>›</button></div>
+          </div>
+          <div class="heatmap vd" data-grid></div>
+          <div class="legend">
+            <span>Less</span>
+            <span class="swatch" style="background: var(--neutral-cell)"></span>
+            <span class="swatch" style="background: var(--heat-1)"></span>
+            <span class="swatch" style="background: var(--heat-2)"></span>
+            <span class="swatch" style="background: var(--heat-3)"></span>
+            <span class="swatch" style="background: var(--heat-4)"></span>
+            <span class="swatch" style="background: var(--heat-5)"></span>
+            <span>More</span>
+          </div>
+        </div>
+        <div class="pros-cons">
+          <div class="pros"><h4>Strengths</h4><ul><li>Strong rhythm — eye is drawn to drink days, AF days fade back</li><li>Reinforces the "AF days are the win" framing from doc §3</li><li>Single dominant element per cell — never busy</li></ul></div>
+          <div class="cons"><h4>Costs</h4><ul><li>Day-number lookup is harder (corner, small)</li><li>Two layouts per cell type = more cases in the Skia code</li></ul></div>
+        </div>
+      </div>
+
+    </div>
+
+    <div class="pick-bar">
+      <h3>Pick a direction →</h3>
+      <p>Once you point at A / B / C / D (or a Frankenstein of two), I'll spawn a separate session with the chosen variant locked in and a self-contained brief to migrate <code>src/components/SessionsCalendar/DayComponent</code>.</p>
+    </div>
+  </div>
+
+<script>
+  // Theme toggle
+  document.querySelectorAll('.toolbar .group').forEach(group => {
+    group.addEventListener('click', e => {
+      const btn = e.target.closest('button');
+      if (!btn) return;
+      group.querySelectorAll('button').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      if (group.dataset.toggle === 'theme') {
+        document.body.classList.toggle('theme-dark', btn.dataset.theme === 'dark');
+      }
+    });
+  });
+
+  // Shared mock data — same shape for all 4 variants so they're directly comparable
+  // -1 = off-month padding, 0 = AF day, 1..5 = units bucket
+  const heatLevels = [
+    -1,-1,-1,-1,  0, 2, 1,    // W1: leading padding + Fri/Sat/Sun (May 1-3)
+     0, 0, 1, 0,  2, 3, 4,    // W2 (May 4-10)
+     0, 1, 0, 0,  0, 2, 3,    // W3 (May 11-17)
+     0, 0, 2, 0,  1, 2, 0,    // W4 (May 18-24)
+     0, 1, 0, 0,  0,-1,-1,    // W5 (May 25-31)
+  ];
+  // Approximate units value to render in each cell (level 0 = no units)
+  const unitsValues = [
+    null,null,null,null,  0, 2,   1.5,
+       0,   0, 1,   0,   2.5, 4,   6,
+       0, 1.5, 0,   0,    0, 2,   4.5,
+       0,   0, 3,   0,    1, 2,   0,
+       0,   1, 0,   0,    0,null,null,
+  ];
+  const dayNums = [27,28,29,30, 1,2,3, 4,5,6,7,8,9,10, 11,12,13,14,15,16,17, 18,19,20,21,22,23,24, 25,26,27,28,29,30,31];
+  const dowLabels = ['M','T','W','T','F','S','S'];
+  const todayIdx = 25; // May 22
+
+  function fmtUnits(u) {
+    if (u === null || u === undefined) return '';
+    return Number.isInteger(u) ? String(u) : u.toFixed(1);
+  }
+
+  function build(grid, variant) {
+    dowLabels.forEach(d => {
+      const el = document.createElement('div');
+      el.className = 'dow'; el.textContent = d;
+      grid.appendChild(el);
+    });
+    for (let i = 0; i < heatLevels.length; i++) {
+      const lvl = heatLevels[i];
+      const cell = document.createElement('div');
+      const muted = (lvl === -1);
+      cell.className = 'cell ' + (muted ? 'muted level-0' : 'level-' + lvl);
+      if (i === todayIdx) cell.classList.add('today');
+      const day = dayNums[i];
+      const units = unitsValues[i];
+
+      if (variant === 'A') {
+        if (day !== undefined) {
+          const dn = document.createElement('span'); dn.className = 'daynum'; dn.textContent = day;
+          cell.appendChild(dn);
+        }
+        if (!muted && units !== null && units > 0) {
+          const u = document.createElement('span'); u.className = 'units'; u.textContent = fmtUnits(units);
+          cell.appendChild(u);
+        }
+      } else if (variant === 'B') {
+        if (day !== undefined) {
+          const dn = document.createElement('span'); dn.className = 'daynum'; dn.textContent = day;
+          cell.appendChild(dn);
+        }
+        if (!muted && units !== null && units > 0) {
+          const u = document.createElement('span'); u.className = 'chip'; u.textContent = fmtUnits(units);
+          cell.appendChild(u);
+        }
+      } else if (variant === 'C') {
+        const top = document.createElement('div'); top.className = 'top';
+        top.textContent = (day !== undefined) ? day : '';
+        const bot = document.createElement('div'); bot.className = 'bot';
+        bot.textContent = (!muted && units !== null && units > 0) ? fmtUnits(units) : '';
+        cell.appendChild(top); cell.appendChild(bot);
+      } else if (variant === 'D') {
+        if (!muted && units !== null && units > 0) {
+          if (day !== undefined) {
+            const dn = document.createElement('span'); dn.className = 'daynum'; dn.textContent = day;
+            cell.appendChild(dn);
+          }
+          const u = document.createElement('span'); u.className = 'units'; u.textContent = fmtUnits(units);
+          cell.appendChild(u);
+        } else {
+          // AF day or muted — show only day number, centered
+          if (day !== undefined) {
+            const dn = document.createElement('span'); dn.className = 'daynum'; dn.textContent = day;
+            cell.appendChild(dn);
+          }
+        }
+      }
+      grid.appendChild(cell);
+    }
+  }
+
+  document.querySelectorAll('.heatmap.va').forEach(g => build(g, 'A'));
+  document.querySelectorAll('.heatmap.vb').forEach(g => build(g, 'B'));
+  document.querySelectorAll('.heatmap.vc').forEach(g => build(g, 'C'));
+  document.querySelectorAll('.heatmap.vd').forEach(g => build(g, 'D'));
+</script>
+</body>
+</html>
