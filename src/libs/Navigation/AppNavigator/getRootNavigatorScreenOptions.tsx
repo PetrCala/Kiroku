@@ -2,6 +2,12 @@ import type {
   StackCardInterpolationProps,
   StackNavigationOptions,
 } from '@react-navigation/stack';
+import type {
+  NavigationState,
+  PartialState,
+  RouteProp,
+} from '@react-navigation/native';
+import {Platform} from 'react-native';
 import type {ViewStyle} from 'react-native';
 import type {ThemeStyles} from '@styles/index';
 import type {StyleUtilsType} from '@styles/utils';
@@ -14,8 +20,12 @@ type GetOnboardingModalNavigatorOptions = (
   shouldUseNarrowLayout: boolean,
 ) => StackNavigationOptions;
 
+type DynamicScreenOptions = (props: {
+  route: RouteProp<Record<string, Record<string, unknown> | undefined>, string>;
+}) => StackNavigationOptions;
+
 type ScreenOptions = {
-  rightModalNavigator: StackNavigationOptions;
+  rightModalNavigator: DynamicScreenOptions;
   onboardingModalNavigator: GetOnboardingModalNavigatorOptions;
   leftModalNavigator: StackNavigationOptions;
   homeScreen: StackNavigationOptions;
@@ -31,6 +41,25 @@ const commonScreenOptions: StackNavigationOptions = {
   animationTypeForReplace: 'push',
 };
 
+type NestedState = NavigationState | PartialState<NavigationState> | undefined;
+
+/**
+ * True if any nested stack inside this route has an active index > 0,
+ * meaning an inner gesture has cards to pop. When false, the outer
+ * (root-level) gesture is safe to handle the swipe as a modal dismiss.
+ */
+function hasPoppableInnerStack(state: NestedState): boolean {
+  if (!state?.routes) {
+    return false;
+  }
+  const activeIndex = state.index ?? 0;
+  if (activeIndex > 0) {
+    return true;
+  }
+  const activeRoute = state.routes[activeIndex];
+  return hasPoppableInnerStack(activeRoute?.state);
+}
+
 type GetRootNavigatorScreenOptions = (
   isSmallScreenWidth: boolean,
   styles: ThemeStyles,
@@ -45,24 +74,37 @@ const getRootNavigatorScreenOptions: GetRootNavigatorScreenOptions = (
   const modalCardStyleInterpolator =
     createModalCardStyleInterpolator(StyleUtils);
 
-  return {
-    rightModalNavigator: {
-      ...commonScreenOptions,
-      cardStyleInterpolator: (props: StackCardInterpolationProps) =>
-        modalCardStyleInterpolator(isSmallScreenWidth, false, false, props),
-      presentation: getModalPresentationStyle(),
+  const rightModalStaticOptions: StackNavigationOptions = {
+    ...commonScreenOptions,
+    cardStyleInterpolator: (props: StackCardInterpolationProps) =>
+      modalCardStyleInterpolator(isSmallScreenWidth, false, false, props),
+    presentation: getModalPresentationStyle(),
 
-      // We want pop in RHP since there are some flows that would work weird otherwise
-      animationTypeForReplace: 'pop',
-      cardStyle: {
-        ...StyleUtils.getNavigationModalCardStyle(),
+    // We want pop in RHP since there are some flows that would work weird otherwise
+    animationTypeForReplace: 'pop',
+    gestureResponseDistance: 10000,
+    cardStyle: {
+      ...StyleUtils.getNavigationModalCardStyle(),
 
-        // This is necessary to cover translated sidebar with overlay.
-        width: isSmallScreenWidth ? '100%' : '200%',
-        // Excess space should be on the left so we need to position from right.
-        right: 0,
-      },
+      // This is necessary to cover translated sidebar with overlay.
+      width: isSmallScreenWidth ? '100%' : '200%',
+      // Excess space should be on the left so we need to position from right.
+      right: 0,
     },
+  };
+
+  return {
+    // Function form so React Navigation re-evaluates gestureEnabled when the
+    // nested stack state changes. Root-level swipe-back is enabled only when
+    // no inner stack has cards left to pop, so the inner card pops one step
+    // at a time and the outermost swipe dismisses the modal once the inner
+    // stack bottoms out.
+    rightModalNavigator: ({route}) => ({
+      ...rightModalStaticOptions,
+      gestureEnabled:
+        Platform.OS !== 'web' &&
+        !hasPoppableInnerStack((route as {state?: NestedState}).state),
+    }),
     onboardingModalNavigator: (shouldUseNarrowLayout: boolean) => ({
       cardStyleInterpolator: (props: StackCardInterpolationProps) =>
         modalCardStyleInterpolator(
