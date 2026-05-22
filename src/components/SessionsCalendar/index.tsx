@@ -1,8 +1,9 @@
 import React, {memo, useCallback, useMemo, useRef} from 'react';
 import type {DateData} from 'react-native-calendars';
-import {differenceInCalendarMonths, differenceInMonths, format} from 'date-fns';
+import {differenceInMonths, format} from 'date-fns';
 import {getPreviousMonth, getNextMonth} from '@libs/DataHandling';
 import * as DSUtils from '@libs/DrinkingSessionUtils';
+import {computeLoadTarget} from '@libs/SessionsCalendarUtils';
 import CONST from '@src/CONST';
 import {useFirebase} from '@context/global/FirebaseContext';
 import Navigation from '@libs/Navigation/Navigation';
@@ -98,20 +99,15 @@ function SessionsCalendar({
     );
     const earliestDate = new Date(earliest.timestamp);
     const floor = loadedFrom?.current ?? new Date();
-    const monthsAhead = differenceInCalendarMonths(earliestDate, floor);
-    if (monthsAhead <= LOAD_AHEAD_BUFFER_MONTHS) {
-      const target = new Date(
-        earliestDate.getFullYear(),
-        earliestDate.getMonth() - LOAD_AHEAD_BUFFER_MONTHS,
-        1,
-      );
-      if (
-        !deepestRequestedRef.current ||
-        target < deepestRequestedRef.current
-      ) {
-        deepestRequestedRef.current = target;
-        loadUpTo(target);
-      }
+    const target = computeLoadTarget(
+      earliestDate,
+      floor,
+      deepestRequestedRef.current,
+      LOAD_AHEAD_BUFFER_MONTHS,
+    );
+    if (target) {
+      deepestRequestedRef.current = target;
+      loadUpTo(target);
     }
 
     // Keep the orchestrator's visible-month state roughly in sync with the
