@@ -221,6 +221,12 @@ jobs:
           IOS_CERTIFICATE_PASSWORD: ${{ secrets.IOS_CERTIFICATE_PASSWORD }}
           VERSION: ${{ env.IOS_VERSION }}
           TESTFLIGHT_CHANGELOG: ${{ env.TESTFLIGHT_CHANGELOG }}
+          # `xcodebuild -showBuildSettings` on this workspace can take much
+          # longer than fastlane's 3s default × 4 retries (~45s total),
+          # especially on a fresh-SDK install pass. Bump both knobs so the
+          # build_app step doesn't time out before xcodebuild has answered.
+          FASTLANE_XCODEBUILD_SETTINGS_TIMEOUT: '120'
+          FASTLANE_XCODEBUILD_SETTINGS_RETRIES: '5'
 
       # Preserve the dSYM as a workflow artifact so we can symbolicate native
       # crash reports later without trips to App Store Connect. Fastlane's
