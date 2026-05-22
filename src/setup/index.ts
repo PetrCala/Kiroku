@@ -4,6 +4,7 @@ import * as Device from '@userActions/Device';
 import CONST from '@src/CONST';
 import ONYXKEYS from '@src/ONYXKEYS';
 import intlPolyfill from '@libs/IntlPolyfill';
+import StartupMetrics from '@libs/StartupMetrics';
 import initializeLastVisitedPath from './initializeLastVisitedPath';
 import platformSetup from './platformSetup';
 
@@ -57,4 +58,9 @@ export default function () {
 
   // Perform any other platform-specific setup
   platformSetup();
+
+  // Capture native cold-start marks (process spawn → first content visible)
+  // and log them in the same `Timing:` format as Timing.ts so Grafana picks
+  // them up.
+  StartupMetrics.init();
 }

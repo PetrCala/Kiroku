@@ -1,6 +1,5 @@
 // eslint-disable-next-line no-restricted-imports
 import * as ReactNative from 'react-native';
-import type StartupTimer from '@libs/StartupTimer/types';
 
 const {BootSplash} = ReactNative.NativeModules;
 
@@ -36,7 +35,6 @@ jest.doMock('react-native', () => {
         logoHeight: number;
         navigationBarHeight: number;
       };
-      StartupTimer: StartupTimer;
     };
     Linking: typeof ReactNative.Linking & {
       setInitialURL: (newUrl: string) => void;
@@ -58,7 +56,6 @@ jest.doMock('react-native', () => {
           logoHeight: 100,
           navigationBarHeight: 0,
         },
-        StartupTimer: {stop: jest.fn()},
       },
       Linking: {
         ...ReactNative.Linking,

@@ -14,8 +14,6 @@ import com.facebook.react.ReactActivityDelegate
 import com.facebook.react.defaults.DefaultNewArchitectureEntryPoint.fabricEnabled
 import com.facebook.react.defaults.DefaultReactActivityDelegate
 
-// import com.oblador.performance.RNPerformance
-
 class MainActivity : ReactActivity() {
     /**
      * Returns the name of the main component registered from JavaScript. This is used to schedule
@@ -85,8 +83,4 @@ class MainActivity : ReactActivity() {
     //     return super.onKeyUp(keyCode, event)
     // }
 
-    override fun onStart() {
-        super.onStart()
-        // RNPerformance.getInstance().mark("appCreationEnd", false);
-    }
 }
