@@ -55,28 +55,16 @@ function SessionsCalendar({
   const persistedEarliest: Timestamp | undefined =
     userDataList?.[userID]?.earliest_session_at;
 
-  // Canonical "first ever session" Date for the viewed user — drives both
-  // the compact view's `minDate` string and the fullscreen view's bottom
-  // render cap. `null` when the user has no sessions and no persisted
-  // floor (e.g. brand-new account before the one-time backfill runs).
-  //
-  // Note: the persisted timestamp can come back as `null` from Onyx in
-  // some edge cases (deleted field, migration), so use a truthy check
-  // rather than `!== undefined`. `new Date(null)` would otherwise be
-  // epoch zero and silently disable the fullscreen cap.
-  const trackingStartDate: Date | null = useMemo(() => {
-    if (persistedEarliest) {
-      return new Date(persistedEarliest);
-    }
-    return DSUtils.getUserTrackingStartDate(drinkingSessionData) ?? null;
-  }, [drinkingSessionData, persistedEarliest]);
-
   const minDate = useMemo(() => {
-    if (!trackingStartDate) {
+    const trackingStart =
+      persistedEarliest !== undefined
+        ? new Date(persistedEarliest)
+        : DSUtils.getUserTrackingStartDate(drinkingSessionData);
+    if (!trackingStart) {
       return CONST.DATE.MIN_DATE;
     }
-    return format(trackingStartDate, CONST.DATE.CALENDAR_FORMAT);
-  }, [trackingStartDate]);
+    return format(trackingStart, CONST.DATE.CALENDAR_FORMAT);
+  }, [drinkingSessionData, persistedEarliest]);
 
   const handleLeftArrowPress = (subtractMonth: () => void) => {
     const monthsAway = differenceInMonths(
@@ -162,7 +150,6 @@ function SessionsCalendar({
         markedDates={markedDates}
         unitsMap={unitsMap}
         loadedFromDate={loadedFromDate}
-        firstSessionDate={trackingStartDate}
         isFetchingOlderMonths={isFetchingOlderMonths}
         onDayPress={onDayPress}
         onRequestOlder={handleRequestOlder}

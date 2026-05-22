@@ -13,7 +13,6 @@ type WeekRowProps = {
   row: MonthWeek;
   markedDates: MarkedDates;
   unitsMap: Map<DateString, number>;
-  today: DateString;
   onDayPress?: (day: DateData) => void;
 };
 
@@ -32,14 +31,14 @@ function dayKeyToDateData(key: DateString): DateData {
 /**
  * One row of the continuous week-list. Renders seven `DayComponent` cells
  * laid out with `flex: 1` so the row stretches across the available width.
+ *
+ * Note: we intentionally do not pass `state="today"` to DayComponent here.
+ * In the fullscreen view, today is always the bottom-most rendered tile
+ * (tomorrow's cell is never rendered), so the rim highlight that DayComponent
+ * draws for "today" is redundant chrome. The compact calendar still uses the
+ * rim because today can sit anywhere in its fixed month grid.
  */
-function WeekRow({
-  row,
-  markedDates,
-  unitsMap,
-  today,
-  onDayPress,
-}: WeekRowProps) {
+function WeekRow({row, markedDates, unitsMap, onDayPress}: WeekRowProps) {
   const styles = useThemeStyles();
   return (
     <View style={styles.sessionsCalendarWeekRow}>
@@ -55,12 +54,10 @@ function WeekRow({
           );
         }
         const marking = markedDates[dayKey] as MarkingProps | undefined;
-        const isToday = dayKey === today;
         return (
           <View key={dayKey} style={styles.sessionsCalendarWeekCell}>
             <DayComponent
               date={dayKeyToDateData(dayKey)}
-              state={isToday ? 'today' : undefined}
               units={unitsMap.get(dayKey)}
               marking={marking}
               onPress={onDayPress}
