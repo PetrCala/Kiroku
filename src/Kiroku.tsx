@@ -21,7 +21,6 @@ import Log from './libs/Log';
 import migrateOnyx from './libs/migrateOnyx';
 import * as ActiveClientManager from './libs/ActiveClientManager';
 import * as UserUtils from './libs/UserUtils';
-// import StartupTimer from '@libs/StartupTimer';
 import Visibility from './libs/Visibility';
 import ONYXKEYS from './ONYXKEYS';
 import type {Route} from './ROUTES';
@@ -211,10 +210,6 @@ function Kiroku() {
   ]);
 
   useEffect(() => {
-    // This timer is set in the native layer when launching the app and we stop it here so we can measure how long
-    // it took for the main app itself to load.
-    // StartupTimer.stop();
-
     // Run any Onyx schema migrations and then continue loading the main app
     migrateOnyx().then(() => {
       // In case of a crash that led to disconnection, we want to remove all the push notifications.
