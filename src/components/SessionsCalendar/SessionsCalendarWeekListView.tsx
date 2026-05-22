@@ -35,11 +35,6 @@ type SessionsCalendarWeekListViewProps = {
   unitsMap: Map<DateString, number>;
   /** Earliest day currently loaded (drives the bottom of the list). */
   loadedFromDate: Date | null;
-  /** Earliest day the user has ever recorded a session. The rendered range
-   *  is clamped to `max(loadedFromDate, firstSessionDate)` so tiles for
-   *  days before the very first session never appear. `null` for users
-   *  who have never tracked. */
-  firstSessionDate?: Date | null;
   /** Latest day to render (defaults to today). */
   endDate?: Date;
   /** True while the data fetcher is widening the loaded window. The view
@@ -85,7 +80,6 @@ function SessionsCalendarWeekListView({
   markedDates,
   unitsMap,
   loadedFromDate,
-  firstSessionDate,
   endDate,
   isFetchingOlderMonths,
   onDayPress,
@@ -105,24 +99,10 @@ function SessionsCalendarWeekListView({
     () => startOfDay(endDate ?? new Date()),
     [endDate],
   );
-  // Clamp the rendered window's lower bound to the user's first recorded
-  // session. The lazy-load window can extend further back (pre-session
-  // months with no markings); without this clamp the calendar would show
-  // empty tiles before the user had ever tracked.
-  //
-  // When there's no first-session date (user has never tracked, or data
-  // is still hydrating), cap at today instead of at `loadedFromDate`:
-  // otherwise the user could scroll infinitely into empty months because
-  // each scroll-trigger widens the loaded window with no real floor.
-  const resolvedStart = useMemo(() => {
-    if (!firstSessionDate) {
-      return resolvedEnd;
-    }
-    const fromLoad = loadedFromDate ?? resolvedEnd;
-    return startOfDay(
-      fromLoad > firstSessionDate ? fromLoad : firstSessionDate,
-    );
-  }, [loadedFromDate, firstSessionDate, resolvedEnd]);
+  const resolvedStart = useMemo(
+    () => (loadedFromDate ? startOfDay(loadedFromDate) : resolvedEnd),
+    [loadedFromDate, resolvedEnd],
+  );
 
   const monthSections: MonthSection[] = useMemo(
     () => buildMonthSections({start: resolvedStart, end: resolvedEnd}),
@@ -184,11 +164,6 @@ function SessionsCalendarWeekListView({
     return Array.from({length: 7}, (_, i) => names[(firstDay + i) % 7]);
   }, [locale]);
 
-  const today: DateString = useMemo(
-    () => format(resolvedEnd, CONST.DATE.FNS_FORMAT_STRING) as DateString,
-    [resolvedEnd],
-  );
-
   const listRef = useRef<FlashListRef<ListItem>>(null);
 
   // Lazy-load older months when the user scrolls within the buffer of the
@@ -243,7 +218,6 @@ function SessionsCalendarWeekListView({
           row={args.item.row}
           markedDates={markedDates}
           unitsMap={unitsMap}
-          today={today}
           onDayPress={onDayPress}
         />
       );
@@ -251,7 +225,6 @@ function SessionsCalendarWeekListView({
     [
       markedDates,
       unitsMap,
-      today,
       onDayPress,
       styles.sessionsCalendarMonthLabel,
       styles.sessionsCalendarMonthLabelText,
