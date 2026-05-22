@@ -56,6 +56,11 @@ type Preferences = {
 
   /** User's selected session color palette */
   session_color_palette?: SessionColorPalette;
+
+  /** When true, other users' sessions are rendered using the viewer's own
+   *  palette instead of each owner's palette. Undefined/false preserves the
+   *  original behavior (each user's own palette is shown). */
+  use_own_palette_for_others?: boolean;
 };
 
 /** A collection of preferences of multiple users */

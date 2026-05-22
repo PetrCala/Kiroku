@@ -527,6 +527,11 @@ export default {
       brand: 'Značkové barvy Kiroku',
       pink: 'Růžová až po červenou',
     },
+    useOwnPaletteForOthers: {
+      label: 'Používat moji paletu pro všechny',
+      description:
+        'Relace přátel se zobrazí ve vybrané paletě místo v jejich vlastní.',
+    },
   },
   drinksToUnitsScreen: {
     title: 'Drinky na jednotky',

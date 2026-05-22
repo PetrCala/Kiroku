@@ -77,6 +77,7 @@ const getDefaultPreferences = (): Preferences => ({
   },
   theme: CONST.THEME.SYSTEM,
   session_color_palette: PALETTES.classic,
+  use_own_palette_for_others: false,
 });
 
 const getDefaultUserData = (profileData: Profile): UserData => {
