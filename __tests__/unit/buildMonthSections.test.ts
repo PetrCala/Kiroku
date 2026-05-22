@@ -142,6 +142,25 @@ describe('SessionsCalendar/buildMonthSections', () => {
     expect(may.weeks[0].days[5]).toBe('2026-05-01');
   });
 
+  it('omits fully-blank trailing weeks past `end`', () => {
+    // May 2026 with end = May 22 (a Friday). Natural last week starting
+    // Mon May 25 sits entirely past end — should not render. The week
+    // containing today (Mon May 18 – Sun May 24) keeps May 18-22 in
+    // range and May 23/24 as trailing-blank cells.
+    const sections = buildMonthSections({
+      start: new Date(2026, 4, 1),
+      end: new Date(2026, 4, 22),
+    });
+    const may = sections[0];
+    const lastWeek = may.weeks[may.weeks.length - 1];
+    // The "Mon May 25 – Sun May 31" row must not exist.
+    expect(lastWeek.key).toBe('2026-05-18');
+    expect(lastWeek.days[0]).toBe('2026-05-18');
+    expect(lastWeek.days[4]).toBe('2026-05-22');
+    expect(lastWeek.days[5]).toBeNull();
+    expect(lastWeek.days[6]).toBeNull();
+  });
+
   it('produces sections in chronological order', () => {
     const sections = buildMonthSections({
       start: new Date(2026, 0, 1),

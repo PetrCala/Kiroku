@@ -199,13 +199,6 @@ const config: LinkingOptions<RootStackParamList>['config'] = {
             },
           },
         },
-        [SCREENS.RIGHT_MODAL.SESSIONS_CALENDAR]: {
-          screens: {
-            [SCREENS.SESSIONS_CALENDAR.FULLSCREEN]: {
-              path: ROUTES.SESSIONS_CALENDAR_FULLSCREEN.route,
-            },
-          },
-        },
         [SCREENS.RIGHT_MODAL.SOCIAL]: {
           screens: {
             [SCREENS.SOCIAL.ROOT]: ROUTES.SOCIAL,
@@ -218,6 +211,14 @@ const config: LinkingOptions<RootStackParamList>['config'] = {
           screens: {
             [SCREENS.STATISTICS.ROOT]: ROUTES.STATISTICS,
           },
+        },
+      },
+    },
+
+    [NAVIGATORS.SESSIONS_CALENDAR_NAVIGATOR]: {
+      screens: {
+        [SCREENS.SESSIONS_CALENDAR.FULLSCREEN]: {
+          path: ROUTES.SESSIONS_CALENDAR_FULLSCREEN.route,
         },
       },
     },

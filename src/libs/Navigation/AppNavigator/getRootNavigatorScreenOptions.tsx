@@ -15,6 +15,7 @@ import variables from '@styles/variables';
 import CONFIG from '@src/CONFIG';
 import createModalCardStyleInterpolator from './createModalCardStyleInterpolator';
 import getModalPresentationStyle from './getModalPresentationStyle';
+import sessionsCalendarCardStyleInterpolator from './ModalStackNavigators/sessionsCalendarTransition';
 
 type GetOnboardingModalNavigatorOptions = (
   shouldUseNarrowLayout: boolean,
@@ -27,6 +28,7 @@ type DynamicScreenOptions = (props: {
 type ScreenOptions = {
   rightModalNavigator: DynamicScreenOptions;
   onboardingModalNavigator: GetOnboardingModalNavigatorOptions;
+  sessionsCalendarNavigator: StackNavigationOptions;
   leftModalNavigator: StackNavigationOptions;
   homeScreen: StackNavigationOptions;
   fullScreen: StackNavigationOptions;
@@ -126,6 +128,19 @@ const getRootNavigatorScreenOptions: GetRootNavigatorScreenOptions = (
         position: 'fixed' as ViewStyle['position'],
       },
     }),
+    // Fullscreen sessions calendar — transparent modal so the prior screen
+    // (Home or Profile) stays visible underneath while the calendar fades
+    // and scales in. Swiping right from anywhere on the screen dismisses.
+    sessionsCalendarNavigator: {
+      ...commonScreenOptions,
+      cardStyleInterpolator: sessionsCalendarCardStyleInterpolator,
+      presentation: 'transparentModal',
+      cardOverlayEnabled: false,
+      cardStyle: {backgroundColor: 'transparent'},
+      gestureEnabled: true,
+      gestureDirection: 'horizontal',
+      gestureResponseDistance: 200,
+    },
     leftModalNavigator: {
       ...commonScreenOptions,
       cardStyleInterpolator: props =>
