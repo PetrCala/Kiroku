@@ -7,13 +7,11 @@ import React, {
   useState,
 } from 'react';
 import {View} from 'react-native';
+import type {NativeScrollEvent, NativeSyntheticEvent} from 'react-native';
 import {FlashList} from '@shopify/flash-list';
 import type {FlashListRef} from '@shopify/flash-list';
 import {format, parseISO, startOfDay} from 'date-fns';
-import {
-  useSharedValue,
-  useAnimatedScrollHandler,
-} from 'react-native-reanimated';
+import {useSharedValue} from 'react-native-reanimated';
 import type {DateData} from 'react-native-calendars';
 import {LocaleConfig} from 'react-native-calendars';
 import type {MarkedDates} from 'react-native-calendars/src/types';
@@ -129,9 +127,11 @@ function SessionsCalendarWeekListView({
     // `LocaleConfig` is re-exported from xdate without precise TS types for
     // `.locales`. Cast through `unknown` to a narrow record so the lookup
     // is type-safe at call sites.
-    const locales = (LocaleConfig as unknown as {
-      locales: Record<string, {dayNamesShort?: string[]} | undefined>;
-    }).locales;
+    const locales = (
+      LocaleConfig as unknown as {
+        locales: Record<string, {dayNamesShort?: string[]} | undefined>;
+      }
+    ).locales;
     const config = locales[locale] ?? locales.en;
     const names = config?.dayNamesShort ?? [
       'Sun',
@@ -152,14 +152,20 @@ function SessionsCalendarWeekListView({
     [resolvedEnd],
   );
 
-  // Animated scroll position drives the rail highlighter on the UI thread.
+  // Scroll position + content size feed the rail highlighter. We use a
+  // plain JS `onScroll` (not `useAnimatedScrollHandler`) because FlashList
+  // 2.x's RecyclerView calls `.call(...)` on whatever you pass — and the
+  // Reanimated handler object isn't a plain function, which crashes the
+  // dispatch. The highlighter's `useAnimatedStyle` still runs on the UI
+  // thread; only the input update hops via the JS thread.
   const scrollY = useSharedValue(0);
   const contentHeight = useSharedValue(0);
-  const scrollHandler = useAnimatedScrollHandler({
-    onScroll: event => {
-      scrollY.value = event.contentOffset.y;
-    },
-  });
+  // Plain function (not memoized): SharedValue mutation can't go inside a
+  // `useCallback` per `react-hooks/immutability`, and FlashList stores
+  // `onScroll` without depending on its identity, so churn is fine.
+  const handleScroll = (event: NativeSyntheticEvent<NativeScrollEvent>) => {
+    scrollY.value = event.nativeEvent.contentOffset.y;
+  };
 
   const listRef = useRef<FlashListRef<WeekRowData>>(null);
 
@@ -241,7 +247,7 @@ function SessionsCalendarWeekListView({
           renderItem={renderItem}
           keyExtractor={keyExtractor}
           initialScrollIndex={Math.max(0, weekRows.length - 1)}
-          onScroll={scrollHandler}
+          onScroll={handleScroll}
           scrollEventThrottle={16}
           contentContainerStyle={styles.sessionsCalendarWeekListContent}
           onContentSizeChange={(_, h) => {
