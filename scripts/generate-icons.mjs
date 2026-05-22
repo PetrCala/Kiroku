@@ -81,15 +81,18 @@ const IOS_ICON_SPECS = [
 ];
 
 // ─── Android densities ───────────────────────────────────────────────────────
-// iconSize: legacy launcher PNG (dp × dp)
-// foreSize: adaptive foreground PNG (108dp equivalent at each density)
+// iconSize:   legacy launcher PNG (48dp at density — pre-Android-8 launchers)
+// foreSize:   adaptive icon canvas (108dp at density — Android 8+ adaptive icons)
+// splashSize: bootsplash logo canvas (288dp at density — react-native-bootsplash
+//             default; matches what Android 12+ `windowSplashScreenAnimatedIcon`
+//             expects, with the inner art kept inside the 192dp visible area)
 
 const ANDROID_DENSITIES = [
-  {folder: 'mipmap-mdpi', iconSize: 48, foreSize: 108},
-  {folder: 'mipmap-hdpi', iconSize: 72, foreSize: 162},
-  {folder: 'mipmap-xhdpi', iconSize: 96, foreSize: 216},
-  {folder: 'mipmap-xxhdpi', iconSize: 144, foreSize: 324},
-  {folder: 'mipmap-xxxhdpi', iconSize: 192, foreSize: 432},
+  {folder: 'mipmap-mdpi', iconSize: 48, foreSize: 108, splashSize: 288},
+  {folder: 'mipmap-hdpi', iconSize: 72, foreSize: 162, splashSize: 432},
+  {folder: 'mipmap-xhdpi', iconSize: 96, foreSize: 216, splashSize: 576},
+  {folder: 'mipmap-xxhdpi', iconSize: 144, foreSize: 324, splashSize: 864},
+  {folder: 'mipmap-xxxhdpi', iconSize: 192, foreSize: 432, splashSize: 1152},
 ];
 
 const ANDROID_NOTIF_DENSITIES = [
@@ -100,8 +103,21 @@ const ANDROID_NOTIF_DENSITIES = [
   {folder: 'drawable-xxxhdpi', size: 96},
 ];
 
-// BootSplash: base 1× size matches current config (108 px)
-const BOOTSPLASH_BASE = 108;
+// iOS boot splash base size (1× — storyboard sizes the image view at 108pt).
+// Android boot splash uses splashSize from ANDROID_DENSITIES instead.
+const IOS_BOOTSPLASH_BASE = 108;
+
+// Adaptive icon safe-zone scale. Android's 108dp adaptive canvas reserves the
+// inner 66dp (≈61%) as the always-visible safe zone; art outside it can be
+// clipped by the launcher's mask. We render the SVG at 60% of the canvas with
+// transparent padding so the K logo never touches the mask boundary.
+const ADAPTIVE_SAFE_ZONE = 0.6;
+
+// Android boot splash inner-art scale: the splash canvas is 288dp but the
+// logo art itself should fit inside a ~108dp inner square — matches the
+// pre-refactor visual size and stays well inside Android 12+'s 192dp visible
+// area for `windowSplashScreenAnimatedIcon`.
+const ANDROID_SPLASH_INNER_SCALE = 108 / 288;
 
 // ─── Web icon specs ───────────────────────────────────────────────────────────
 
@@ -172,7 +188,15 @@ function badgeSvg(canvasSize, label, color) {
 }
 
 /**
- * Rasterizes the master SVG at pixelSize and optionally composites the badge.
+ * Rasterizes the master SVG into a pixelSize × pixelSize canvas, optionally
+ * composites the badge, and optionally flattens onto an opaque background.
+ *
+ * `innerScale` < 1 renders the art into an inner inset region and pads the
+ * surrounding area (transparent, unless `background` is set). The badge — when
+ * present — is composited onto the inner buffer so its geometry stays tied to
+ * the visible art, not the outer canvas. This is what keeps badges inside the
+ * Android adaptive safe zone.
+ *
  * Pass `background` to flatten the result onto an opaque color (required for
  * iOS app icons and any surface that must not have alpha).
  */
@@ -180,25 +204,40 @@ async function renderIcon(
   svgBuffer,
   pixelSize,
   variant,
-  {background = null} = {},
+  {background = null, innerScale = 1} = {},
 ) {
-  let pipeline = sharp(svgBuffer).resize(pixelSize, pixelSize);
-  if (background) {
-    pipeline = pipeline.flatten({background});
-  }
-  const base = await pipeline.png().toBuffer();
+  const inner = Math.max(1, Math.round(pixelSize * innerScale));
 
-  if (!variant.badge) {
-    return base;
+  let buf = await sharp(svgBuffer).resize(inner, inner).png().toBuffer();
+
+  if (variant.badge) {
+    const overlay = Buffer.from(
+      badgeSvg(inner, variant.badge.label, variant.badge.color),
+    );
+    buf = await sharp(buf)
+      .composite([{input: overlay, blend: 'over'}])
+      .png()
+      .toBuffer();
   }
 
-  const overlay = Buffer.from(
-    badgeSvg(pixelSize, variant.badge.label, variant.badge.color),
-  );
-  return sharp(base)
-    .composite([{input: overlay, blend: 'over'}])
-    .png()
-    .toBuffer();
+  if (inner < pixelSize) {
+    const offset = Math.round((pixelSize - inner) / 2);
+    buf = await sharp({
+      create: {
+        width: pixelSize,
+        height: pixelSize,
+        channels: 4,
+        background: background ?? {r: 0, g: 0, b: 0, alpha: 0},
+      },
+    })
+      .composite([{input: buf, top: offset, left: offset}])
+      .png()
+      .toBuffer();
+  } else if (background) {
+    buf = await sharp(buf).flatten({background}).png().toBuffer();
+  }
+
+  return buf;
 }
 
 /**
@@ -288,7 +327,7 @@ async function generateIosBootSplash(svgBuffer) {
 
     const images = [];
     for (const {scale, suffix} of scales) {
-      const px = BOOTSPLASH_BASE * scale;
+      const px = IOS_BOOTSPLASH_BASE * scale;
       const filename = `bootsplash_logo${suffix}.png`;
       const buf = await renderIcon(svgBuffer, px, variant);
       writeFileSync(join(dir, filename), buf);
@@ -339,24 +378,28 @@ async function generateAndroidIcons(svgBuffer) {
         }),
       );
 
-      // Adaptive foreground (larger canvas, gets clipped by shape mask).
-      // Transparent — sits on top of ic_launcher_background.
+      // Adaptive foreground: 108dp canvas with the art kept inside the
+      // 66dp safe zone (≈61%) so the launcher mask never clips it.
       writeFileSync(
         join(dir, 'ic_launcher_foreground.png'),
-        await renderIcon(svgBuffer, d.foreSize, variant),
+        await renderIcon(svgBuffer, d.foreSize, variant, {
+          innerScale: ADAPTIVE_SAFE_ZONE,
+        }),
       );
 
-      // Adaptive background — solid brand color, no logo art.
+      // Adaptive background — solid brand color, full 108dp canvas.
       writeFileSync(
         join(dir, 'ic_launcher_background.png'),
-        await solidColorPng(d.iconSize, BRAND_BG),
+        await solidColorPng(d.foreSize, BRAND_BG),
       );
 
-      // Monochrome (Android 13+ themed icons). System tints this, so the
-      // white silhouette becomes whatever color the OS picks.
+      // Monochrome (Android 13+ themed icons). Same canvas + safe-zone as the
+      // foreground so the silhouette lines up under the same mask.
       writeFileSync(
         join(dir, 'ic_launcher_monochrome.png'),
-        await renderIcon(svgBuffer, d.iconSize, variant),
+        await renderIcon(svgBuffer, d.foreSize, variant, {
+          innerScale: ADAPTIVE_SAFE_ZONE,
+        }),
       );
     }
 
@@ -377,13 +420,19 @@ async function generateAndroidBootSplash(svgBuffer) {
     const srcSet = ANDROID_VARIANT_SRC[key];
 
     for (const d of ANDROID_DENSITIES) {
-      // drawable-* mirrors mipmap-* naming, using foreground size
+      // drawable-* mirrors mipmap-* naming. Canvas is 288dp at each density —
+      // matches react-native-bootsplash's default and Android 12+'s
+      // windowSplashScreenAnimatedIcon spec. Art is rendered at the inner
+      // 108dp inset so it visually matches the launcher icon size and stays
+      // well inside the 192dp visible area.
       const drawableFolder = d.folder.replace('mipmap-', 'drawable-');
       const dir = join(ROOT, `android/app/src/${srcSet}/res/${drawableFolder}`);
       ensureDir(dir);
       writeFileSync(
         join(dir, 'bootsplash_logo.png'),
-        await renderIcon(svgBuffer, d.foreSize, variant),
+        await renderIcon(svgBuffer, d.splashSize, variant, {
+          innerScale: ANDROID_SPLASH_INNER_SCALE,
+        }),
       );
     }
 
