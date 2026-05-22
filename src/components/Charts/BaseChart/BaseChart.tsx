@@ -24,6 +24,7 @@ function BaseChart({
   accessibilityLabel,
   emptyLabel,
   height = DEFAULT_HEIGHT,
+  hideAxes = false,
   children,
 }: BaseChartProps) {
   const styles = useThemeStyles();
@@ -47,6 +48,13 @@ function BaseChart({
     );
   }
 
+  const axisOptions = hideAxes
+    ? undefined
+    : {labelColor: theme.axisLabel, lineColor: theme.axisLine};
+  const domainPadding = hideAxes
+    ? 0
+    : {left: 24, right: 24, top: 16, bottom: 0};
+
   return (
     <A11yOverlay accessibilityLabel={accessibilityLabel}>
       <View style={{height}}>
@@ -54,11 +62,8 @@ function BaseChart({
           data={data}
           xKey="x"
           yKeys={['y']}
-          axisOptions={{
-            labelColor: theme.axisLabel,
-            lineColor: theme.axisLine,
-          }}
-          domainPadding={{left: 24, right: 24, top: 16, bottom: 0}}>
+          axisOptions={axisOptions}
+          domainPadding={domainPadding}>
           {ctx => children?.({...ctx, theme})}
         </CartesianChart>
       </View>
