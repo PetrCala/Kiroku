@@ -803,6 +803,40 @@ export default {
       `${hasCommonFriends ? 'Společní přátelé:' : 'Přátelé:'}`,
     profileImage: 'Profilový obrázek',
   },
+  statistics: {
+    title: 'Vaše statistiky',
+    kpi: {
+      alcoholFreeDays: 'Dny bez alkoholu',
+      sessionsThisWeek: 'Relace tento týden',
+      avgUnitsPerSession: 'Průměr jednotek na relaci',
+      totalUnitsThisWeek: 'Celkem jednotek tento týden',
+      deltaUp: 'více',
+      deltaDown: 'méně',
+      deltaFlat: 'beze změny',
+      vsLastWeek: 'oproti minulému týdnu',
+      vsLastMonth: 'oproti minulému měsíci',
+    },
+    charts: {
+      weeklyBars: {
+        title: 'Posledních 8 týdnů',
+      },
+      calendarHeatmap: {
+        title: 'Tento měsíc',
+      },
+    },
+    empty: {
+      title: 'Tady se objeví vaše statistiky',
+      body: 'Zaznamenejte relaci a začnou se vám zobrazovat týdenní trendy, dny bez alkoholu a měsíční přehled.',
+    },
+    loading: {
+      title: 'Načítám vaše statistiky...',
+    },
+    a11y: {
+      weeklyBars: 'Sloupcový graf relací za posledních 8 týdnů',
+      calendarHeatmap: 'Kalendářová mapa relací v tomto měsíci',
+      kpiCard: 'Statistická karta',
+    },
+  },
   statisticsScreen: {
     title: 'Statistiky',
     comingSoon: 'Již brzy!',
