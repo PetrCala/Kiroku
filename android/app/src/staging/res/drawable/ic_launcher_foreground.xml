@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="1024"
+    android:viewportHeight="1024">
+  <group android:scaleX="0.6" android:scaleY="0.6" android:translateX="204.8" android:translateY="204.8">
+    <path android:pathData="M129 808L316 480L374 580L243.117 808H129Z" android:fillColor="#FFFFFF"/>
+    <path android:pathData="M895.5 808L708.5 480L650.5 580L781.383 808H895.5Z" android:fillColor="#FFFFFF"/>
+    <group android:pivotX="523" android:pivotY="618" android:rotation="90">
+      <path android:pathData="M523,618h185v20h-185z" android:fillColor="#FFFFFF"/>
+    </group>
+    <group android:pivotX="602" android:pivotY="808" android:rotation="-180">
+      <path android:pathData="M602,808h180v9.99998h-180z" android:fillColor="#FFFFFF"/>
+    </group>
+    <path android:pathData="M636.5 348L512.66 134L389 348H636.5Z" android:fillColor="#FFFFFF"/>
+    <path android:pathData="M388.5 434L512.34 648L636 434L388.5 434Z" android:fillColor="#FFFFFF"/>
+    <path android:pathData="M635,1024L1024,1024L1024,635Z" android:fillColor="#FF9500"/>
+    <path android:pathData="M806.20 955.29C824.08 955.29 836.94 947.33 836.94 931.31C836.94 919.21 830.29 913.00 813.18 909.07L803.15 906.78C793.34 904.60 791.16 902.31 791.16 897.74C791.16 892.29 796.17 889.56 804.35 889.56C814.27 889.56 819.17 893.70 819.61 901.33L834.87 901.33C834.11 885.96 823.97 876.37 804.35 876.37C785.17 876.37 775.79 886.51 775.79 898.94C775.79 911.03 782.33 917.25 799.23 921.06L809.36 923.24C819.28 925.53 821.57 927.93 821.57 932.62C821.57 939.05 815.47 942.10 806.20 942.10C794.87 942.10 789.42 937.63 789.09 928.80L773.83 928.80C774.16 946.02 786.26 955.29 806.20 955.29ZM862.66 953.98L877.92 953.98L877.92 891.85L899.94 891.85L899.94 877.68L840.54 877.68L840.54 891.85L862.66 891.85ZM904.41 915.61C904.41 939.59 919.67 955.29 941.58 955.29C961.85 955.29 977.88 941.12 977.88 916.81L977.88 913.00L942.56 913.00L942.56 926.29L961.42 926.29C958.91 936.43 952.26 941.66 942.23 941.66C928.72 941.66 919.67 931.53 919.67 915.83C919.67 900.13 928.39 890.00 941.80 890.00C951.28 890.00 958.37 894.47 960.98 903.30L976.68 903.30C973.30 886.84 960.00 876.37 941.91 876.37C919.67 876.37 904.41 892.50 904.41 915.61Z" android:fillColor="#FFFFFF"/>
+  </group>
+</vector>
