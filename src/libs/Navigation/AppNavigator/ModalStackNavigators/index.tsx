@@ -10,6 +10,7 @@ import type {
   DayOverviewNavigatorParamList,
   DrinkingSessionNavigatorParamList,
   ProfileNavigatorParamList,
+  SessionsCalendarNavigatorParamList,
   SettingsNavigatorParamList,
   SocialNavigatorParamList,
   StatisticsNavigatorParamList,
@@ -205,6 +206,13 @@ const ProfileModalStackNavigator =
         .default,
   });
 
+const SessionsCalendarModalStackNavigator =
+  createModalStackNavigator<SessionsCalendarNavigatorParamList>({
+    [SCREENS.SESSIONS_CALENDAR.FULLSCREEN]: () =>
+      require<ReactComponentModule>('@screens/SessionsCalendar/SessionsCalendarScreen')
+        .default,
+  });
+
 const SocialModalStackNavigator =
   createModalStackNavigator<SocialNavigatorParamList>({
     [SCREENS.SOCIAL.ROOT]: {
@@ -238,6 +246,7 @@ export {
   DayOverviewModalStackNavigator,
   DrinkingSessionModalStackNavigator,
   ProfileModalStackNavigator,
+  SessionsCalendarModalStackNavigator,
   SettingsModalStackNavigator,
   SocialModalStackNavigator,
   StatisticsModalStackNavigator,

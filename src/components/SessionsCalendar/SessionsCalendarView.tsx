@@ -1,5 +1,6 @@
 import React, {memo, useCallback, useEffect} from 'react';
 import {ActivityIndicator, View} from 'react-native';
+import {PressableWithFeedback} from '@components/Pressable';
 import {Calendar} from 'react-native-calendars';
 import type {DateData} from 'react-native-calendars';
 import type {MarkedDates} from 'react-native-calendars/src/types';
@@ -11,7 +12,10 @@ import useThemeStyles from '@hooks/useThemeStyles';
 import useStyleUtils from '@hooks/useStyleUtils';
 import ONYXKEYS from '@src/ONYXKEYS';
 import CONST from '@src/CONST';
-import type {DateString} from '@src/types/onyx/OnyxCommon';
+import ROUTES from '@src/ROUTES';
+import Navigation from '@libs/Navigation/Navigation';
+import * as FeatureFlags from '@libs/FeatureFlags';
+import type {DateString, UserID} from '@src/types/onyx/OnyxCommon';
 import Text from '@components/Text';
 import DayComponent from './DayComponent';
 import type {DayComponentProps} from './types';
@@ -20,6 +24,11 @@ import type {Direction} from './CalendarArrow';
 import setCalendarLocale from './setCalendarLocale';
 
 type SessionsCalendarViewProps = {
+  /** Owning user — required to deep-link to the full-screen calendar route
+   *  when the month header is tapped. Optional because hand-crafted previews
+   *  (e.g. the palette picker) don't have a user context. */
+  userID?: UserID;
+
   /** Marked dates payload to forward to react-native-calendars */
   markedDates: MarkedDates;
 
@@ -68,6 +77,7 @@ type SessionsCalendarViewProps = {
  * render a calendar from hand-crafted data (e.g. the palette-picker preview).
  */
 function SessionsCalendarView({
+  userID,
   markedDates,
   unitsMap,
   visibleDate,
@@ -112,6 +122,16 @@ function SessionsCalendarView({
   // layout jump between native-header and custom-header rendering.
   // The lib passes an `XDate` (no published d.ts; treated as `any` here). All we
   // need is its epoch — extract via `getTime()` and rebuild a native `Date`.
+  const isHeaderTappable =
+    !!userID && FeatureFlags.isEnabled('FULLSCREEN_CALENDAR');
+
+  const onHeaderPress = useCallback(() => {
+    if (!userID) {
+      return;
+    }
+    Navigation.navigate(ROUTES.SESSIONS_CALENDAR_FULLSCREEN.getRoute(userID));
+  }, [userID]);
+
   const renderHeader = useCallback(
     (date?: {getTime(): number}) => {
       if (hideMonthHeader || !date) {
@@ -121,11 +141,21 @@ function SessionsCalendarView({
         new Date(date.getTime()),
         CONST.DATE.MONTH_YEAR_ABBR_FORMAT,
       );
+      const monthText = (
+        <Text style={styles.sessionsCalendarHeaderMonthText}>{formatted}</Text>
+      );
       return (
         <View style={styles.sessionsCalendarHeader}>
-          <Text style={styles.sessionsCalendarHeaderMonthText}>
-            {formatted}
-          </Text>
+          {isHeaderTappable ? (
+            <PressableWithFeedback
+              onPress={onHeaderPress}
+              role={CONST.ROLE.BUTTON}
+              accessibilityLabel={formatted}>
+              {monthText}
+            </PressableWithFeedback>
+          ) : (
+            monthText
+          )}
           {isFetchingOlderMonths && (
             <ActivityIndicator
               size="small"
@@ -139,6 +169,8 @@ function SessionsCalendarView({
     [
       hideMonthHeader,
       isFetchingOlderMonths,
+      isHeaderTappable,
+      onHeaderPress,
       styles.sessionsCalendarHeader,
       styles.sessionsCalendarHeaderMonthText,
       styles.sessionsCalendarHeaderSpinner,

@@ -23,6 +23,15 @@ type SessionsCalendarProps = {
   /** Show an inline spinner next to the month header while older months are
    *  being fetched after a back-nav past the loaded window edge. */
   isFetchingOlderMonths?: boolean;
+
+  /**
+   * Rendering mode:
+   * - `compact` (default): fixed-size single-month `Calendar` with arrow
+   *   pagination. The original embedded variant used on Home/Profile.
+   * - `fullscreen`: virtualized horizontal `CalendarList`, used on the
+   *   dedicated full-screen calendar route.
+   */
+  mode?: 'compact' | 'fullscreen';
 };
 
 type SessionsCalendarDayMarking = {
