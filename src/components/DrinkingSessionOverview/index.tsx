@@ -76,45 +76,47 @@ function DrinkingSessionOverview({
       accessibilityLabel={translate('dayOverviewScreen.sessionWindow', {
         sessionId,
       })}
-      style={[styles.flexRow, styles.border, styles.mh1, styles.mt1]}
+      style={[
+        styles.flexRow,
+        styles.alignItemsCenter,
+        styles.justifyContentBetween,
+        styles.p4,
+        styles.mh1,
+        styles.mb2,
+        {
+          borderRadius: 12,
+          borderLeftWidth: 4,
+          borderLeftColor: sessionColor,
+          backgroundColor: `${sessionColor}1F`,
+        },
+      ]}
       onPress={() => onSessionButtonPress()}>
-      <View
-        style={[styles.drinkingSessionOverviewTabIndicator(sessionColor)]}
-      />
-      <View
-        style={[
-          styles.drinkingSessionOverviewMainTab,
-          styles.borderLeft,
-          styles.pr2,
-          styles.pl1,
-        ]}>
-        <View style={[styles.flexGrow1, styles.flexColumn]}>
-          <Text style={[styles.textNormalThemeText, styles.p1]}>
-            {translate('common.units')}: {totalUnits}
+      <View style={[styles.flexColumn, styles.flex1]}>
+        <Text style={[styles.textNormal, styles.textStrong]}>
+          {translate('common.units')}: {totalUnits}
+        </Text>
+        {shouldDisplayTime && (
+          <Text style={[styles.textMicroSupporting, styles.mt1]}>
+            {translate('common.time')}: {timeString}
           </Text>
-          {shouldDisplayTime && (
-            <Text style={[styles.textNormalThemeText, styles.p1]}>
-              {translate('common.time')}: {nonMidnightString(timeString)}
-            </Text>
-          )}
-        </View>
-        {session?.ongoing ? (
-          <Button
-            danger
-            onPress={() => onSessionButtonPress()}
-            text={translate('dayOverviewScreen.ongoing')}
-          />
-        ) : (
-          isEditModeOn && (
-            <Button
-              large
-              style={styles.bgTransparent}
-              icon={KirokuIcons.Edit}
-              onPress={onNavigateToEditSession}
-            />
-          )
         )}
       </View>
+      {session?.ongoing ? (
+        <Button
+          danger
+          onPress={() => onSessionButtonPress()}
+          text={translate('dayOverviewScreen.ongoing')}
+        />
+      ) : (
+        isEditModeOn && (
+          <Button
+            large
+            style={styles.bgTransparent}
+            icon={KirokuIcons.Edit}
+            onPress={onNavigateToEditSession}
+          />
+        )
+      )}
     </PressableWithFeedback>
   );
 }
