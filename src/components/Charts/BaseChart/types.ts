@@ -44,6 +44,8 @@ type BaseChartProps = {
   emptyLabel?: string;
   /** Fixed height in dp. Default 200. */
   height?: number;
+  /** Suppresses axis labels, ticks, and padding. Use for inline sparklines. */
+  hideAxes?: boolean;
   children?: (ctx: ChartRenderCtx) => ReactNode;
 };
 
