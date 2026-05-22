@@ -813,6 +813,40 @@ export default {
       `${hasCommonFriends ? 'Common friends:' : 'Friends:'}`,
     profileImage: 'Profile Image',
   },
+  statistics: {
+    title: 'Your stats',
+    kpi: {
+      alcoholFreeDays: 'Alcohol-free days',
+      sessionsThisWeek: 'Sessions this week',
+      avgUnitsPerSession: 'Average units per session',
+      totalUnitsThisWeek: 'Total units this week',
+      deltaUp: 'more',
+      deltaDown: 'fewer',
+      deltaFlat: 'no change',
+      vsLastWeek: 'vs last week',
+      vsLastMonth: 'vs last month',
+    },
+    charts: {
+      weeklyBars: {
+        title: 'Last 8 weeks',
+      },
+      calendarHeatmap: {
+        title: 'This month',
+      },
+    },
+    empty: {
+      title: 'Your stats will live here',
+      body: 'Log a session and your weekly trends, alcohol-free days, and monthly view will start to fill in.',
+    },
+    loading: {
+      title: 'Loading your stats...',
+    },
+    a11y: {
+      weeklyBars: 'Weekly bar chart of sessions over the last 8 weeks',
+      calendarHeatmap: 'Calendar heatmap of sessions this month',
+      kpiCard: 'Statistic card',
+    },
+  },
   statisticsScreen: {
     title: 'Statistics',
     comingSoon: 'Coming soon!',
