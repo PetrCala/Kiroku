@@ -292,6 +292,7 @@ export default {
     dayNamesShort: ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'],
     today: 'Today',
     fullscreenTitle: 'Sessions',
+    loadingOlderMonths: 'Loading older months…',
   },
   textInput: {
     accessibilityLabel: 'Text input',

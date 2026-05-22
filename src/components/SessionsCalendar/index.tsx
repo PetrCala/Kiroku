@@ -1,6 +1,6 @@
-import React, {memo, useCallback, useMemo, useRef} from 'react';
+import React, {memo, useCallback, useEffect, useMemo, useRef} from 'react';
 import type {DateData} from 'react-native-calendars';
-import {differenceInMonths, format} from 'date-fns';
+import {differenceInMonths, format, subMonths} from 'date-fns';
 import {getPreviousMonth, getNextMonth} from '@libs/DataHandling';
 import * as DSUtils from '@libs/DrinkingSessionUtils';
 import {computeLoadTarget} from '@libs/SessionsCalendarUtils';
@@ -20,7 +20,13 @@ import type SessionsCalendarProps from './types';
 // How many months of pre-loaded buffer to keep ahead of the user's scroll in
 // fullscreen mode. When the earliest in-range visible day is within this
 // many months of the loaded floor, ask `useLazyMarkedDates` to widen.
-const LOAD_AHEAD_BUFFER_MONTHS = 2;
+// Generous so that scrolls rarely catch up to in-flight fetches.
+const LOAD_AHEAD_BUFFER_MONTHS = 6;
+
+// On modal open, immediately request this many months of data so the user
+// can scroll back a full year before triggering a live fetch. `loadUpTo`
+// is idempotent — a no-op if the persisted depth is already deeper.
+const INITIAL_PREFETCH_MONTHS = 12;
 
 function SessionsCalendar({
   userID,
@@ -111,6 +117,23 @@ function SessionsCalendar({
     }
   };
 
+  // Eager prefetch on fullscreen open. The ref-guard makes this fire at
+  // most once per fullscreen activation; `loadUpTo` is monotonic so even
+  // without the guard the inner setState would short-circuit, but the
+  // guard saves the per-render call entirely.
+  const hasPrefetchedRef = useRef(false);
+  useEffect(() => {
+    if (mode !== 'fullscreen') {
+      hasPrefetchedRef.current = false;
+      return;
+    }
+    if (hasPrefetchedRef.current) {
+      return;
+    }
+    hasPrefetchedRef.current = true;
+    loadUpTo(subMonths(new Date(), INITIAL_PREFETCH_MONTHS));
+  }, [mode, loadUpTo]);
+
   const onDayPress = useCallback(
     (dateData: DateData) => {
       if (userID !== user?.uid) {
@@ -135,6 +158,7 @@ function SessionsCalendar({
         unitsMap={unitsMap}
         loadedFromDate={loadedFromDate}
         firstSessionDate={trackingStartDate}
+        isFetchingOlderMonths={isFetchingOlderMonths}
         onDayPress={onDayPress}
         onRequestOlder={handleRequestOlder}
       />

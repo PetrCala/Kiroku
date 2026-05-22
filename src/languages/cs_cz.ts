@@ -290,6 +290,7 @@ export default {
     dayNamesShort: ['Ne', 'Po', 'Út', 'St', 'Čt', 'Pá', 'So'],
     today: 'Dnes',
     fullscreenTitle: 'Sezení',
+    loadingOlderMonths: 'Načítání starších měsíců…',
   },
   textInput: {
     accessibilityLabel: 'Textové pole',
