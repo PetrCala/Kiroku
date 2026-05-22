@@ -884,6 +884,15 @@ export default {
     heading: 'Probíhá údržba',
     text: 'V současné době probíhá údržba v následujícím časovém rozmezí:',
   },
+  testTools: {
+    title: 'Testovací nástroje',
+    intro: 'Vývojářský panel pro úpravy za běhu a ladění.',
+    placeholderNotice:
+      'Toto je zástupný panel. Skutečné přepínače — feature flagy, přepsání prostředí, vynucené stavy sítě — sem postupně přibudou.',
+    environmentLabel: 'Prostředí',
+    howToOpen:
+      'Otevřete přes ⌘D → Open Test Preferences nebo čtyřprstovým ťuknutím kdekoli v aplikaci.',
+  },
   userOffline: {
     heading: 'Jste offline',
     text: 'Aplikace Kiroku zatím nepodporuje offline režim. Děkujeme vám za trpělivost při vývoji této funkce.',
