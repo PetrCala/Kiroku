@@ -47,6 +47,32 @@ that get their backdrop from a separately-configured color resource:
 | Web (`favicon.png`, `apple-touch-icon.png`, `og-preview-image.png`) | white         | baked-in orange (renders standalone on arbitrary page chrome)        |
 | In-app SVGs (`app-logo--{prod,dev,staging,adhoc}.svg`)              | white in file | tinted at render time by `<ImageSVG fill={theme.appLogo} />`         |
 
+## Android canvas specs (important — don't conflate them)
+
+Android has two distinct PNG canvas sizes the pipeline rasterizes into, plus
+a "safe zone" rule that determines where art may actually live inside each
+canvas. Getting these confused was the original sin behind every
+"why-does-the-Android-icon-look-clipped/tiny" report:
+
+| Surface                             | Canvas (1× base) | Art occupies | Why                                                                                                                           |
+| ----------------------------------- | ---------------- | ------------ | ----------------------------------------------------------------------------------------------------------------------------- |
+| `ic_launcher.png` (legacy launcher) | 48dp             | 100%         | Pre-Android-8 launchers don't apply masks; the PNG is the icon                                                                |
+| `ic_launcher_foreground.png`        | 108dp            | inner 60%    | Launcher applies its mask shape; corners outside the 66dp safe zone may be clipped                                            |
+| `ic_launcher_background.png`        | 108dp            | n/a          | Solid `BRAND_BG`, full canvas                                                                                                 |
+| `ic_launcher_monochrome.png`        | 108dp            | inner 60%    | Same canvas as foreground so silhouette lines up under the same mask                                                          |
+| `bootsplash_logo.png`               | 288dp            | inner ~37%   | react-native-bootsplash default; matches Android 12+ `windowSplashScreenAnimatedIcon` and stays inside the 192dp visible area |
+
+The script encodes these in `ANDROID_DENSITIES` (`iconSize` / `foreSize` /
+`splashSize`) and in the `ADAPTIVE_SAFE_ZONE` and `ANDROID_SPLASH_INNER_SCALE`
+constants. If you find yourself rendering the foreground/monochrome at
+`d.iconSize` or the splash at `d.foreSize`, stop — that's the original bug.
+
+`renderIcon()` takes an `innerScale` option for the inset surfaces. Badges
+composite onto the inner buffer before padding, so a dev/staging/adhoc badge
+stays inside the safe zone alongside the art.
+
+## Brand color sync
+
 If `BRAND_BG` changes, it must also be updated in:
 
 - `android/app/src/main/res/values/colors.xml` → `bootsplash_background`
