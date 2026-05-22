@@ -6,6 +6,7 @@ import type {MarkedDates} from 'react-native-calendars/src/types';
 import {useOnyx} from 'react-native-onyx';
 import {format} from 'date-fns';
 import useTheme from '@hooks/useTheme';
+import useThemePreference from '@hooks/useThemePreference';
 import useThemeStyles from '@hooks/useThemeStyles';
 import useStyleUtils from '@hooks/useStyleUtils';
 import ONYXKEYS from '@src/ONYXKEYS';
@@ -83,6 +84,7 @@ function SessionsCalendarView({
   const styles = useThemeStyles();
   const StyleUtils = useStyleUtils();
   const theme = useTheme();
+  const themePreference = useThemePreference();
   const [preferredLocale] = useOnyx(ONYXKEYS.NVP_PREFERRED_LOCALE);
   const locale = preferredLocale ?? CONST.LOCALES.DEFAULT;
 
@@ -146,6 +148,12 @@ function SessionsCalendarView({
 
   return (
     <Calendar
+      // Remount on theme change as a safety net. The library snapshots its
+      // derived stylesheet at first mount (patched in
+      // `patches/react-native-calendars+*.patch`); this `key` is belt-and-
+      // suspenders so the chrome still recovers if the patch ever fails to
+      // apply (e.g. a fresh `node_modules` before postinstall has run).
+      key={themePreference}
       current={visibleDate.dateString}
       dayComponent={dayComponent}
       minDate={minDate ?? CONST.DATE.MIN_DATE}

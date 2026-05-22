@@ -20,6 +20,14 @@ Patches are named `<package>+<version>+<NNN>+<short-description>.patch` so `patc
 - **Upstream PR/issue**: 🛑
 - **Removable when**: each contained workaround is fixed upstream or moved to a more targeted patch.
 
+## `react-native-calendars`
+
+### `react-native-calendars+1.1304.1.patch`
+
+- **Reason**: The library's `Calendar` component snapshots its derived stylesheet into a `useRef(styleConstructor(theme))` at first mount (`src/calendar/index.js:26`). The ref initializer runs exactly once, so subsequent `theme` prop changes are ignored — the cached `style.current` keeps the original colors forever. In Kiroku this surfaces as the sessions calendar frame (background, month text, arrows) staying in light mode after a theme transition (e.g. cold launch with empty Onyx → Firebase preferences hydrate to "dark"); the day cells we render via the custom `dayComponent` slot follow theme correctly because they consume `useThemeStyles` / `useStyleUtils` from React context, so the calendar ends up partially themed. The patch replaces `useRef` with `useMemo(() => styleConstructor(theme), [theme])` and rewrites the six `style.current.X` reads to plain `style.X`.
+- **Upstream PR/issue**: 🛑 (no tracking issue filed; behavior reproduces against `react-native-calendars` 1.1304.1).
+- **Removable when**: upstream switches the cached stylesheet to recompute on theme change, or we migrate off this calendar library.
+
 ## `react-native-modal`
 
 ### `react-native-modal+13.0.1.patch`
