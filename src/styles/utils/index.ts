@@ -1326,12 +1326,11 @@ const createStyleUtils = (theme: ThemeColors, styles: ThemeStyles) => ({
    * The whole cell carries the heatmap tint when a marking is present; days
    * without a marking (future / outside the loaded data range) render as a
    * transparent shell so they read as "no data" rather than "rest day".
-   * Today gets a 2px inset ring; off-month cells dim to ~35%.
+   * Off-month cells dim to ~35%.
    */
   getSessionsCalendarDayCellStyle: (
     marking: MarkingProps | undefined,
     isDisabled: boolean,
-    isToday: boolean,
   ): ViewStyle => {
     const markingColor = marking?.color;
     return {
@@ -1342,8 +1341,6 @@ const createStyleUtils = (theme: ThemeColors, styles: ThemeStyles) => ({
       justifyContent: 'center',
       backgroundColor: markingColor ?? 'transparent',
       opacity: isDisabled ? 0.35 : 1,
-      borderWidth: isToday ? 2 : 0,
-      borderColor: isToday ? theme.text : 'transparent',
     };
   },
 
