@@ -2,7 +2,6 @@ import {View} from 'react-native';
 import Text from '@components/Text';
 import {PressableWithoutFeedback} from '@components/Pressable';
 import useStyleUtils from '@hooks/useStyleUtils';
-import useThemeStyles from '@hooks/useThemeStyles';
 import type {DayComponentProps} from '@components/SessionsCalendar/types';
 
 function DayComponent({
@@ -13,7 +12,6 @@ function DayComponent({
   theme, // eslint-disable-line @typescript-eslint/no-unused-vars
   onPress,
 }: DayComponentProps) {
-  const styles = useThemeStyles();
   const StyleUtils = useStyleUtils();
   const isDisabled = state === 'disabled';
   const isToday = state === 'today';
@@ -25,28 +23,26 @@ function DayComponent({
   return (
     <PressableWithoutFeedback
       accessibilityLabel=""
-      style={[
-        styles.alignItemsCenter,
-        styles.justifyContentCenter,
-        // styles.mnw100, // Uncomment to offset the text labels to the left
-      ]}
       onPress={() => onPress && date && onPress(date)}>
-      <Text
-        style={StyleUtils.getSessionsCalendarDayLabelStyle(
+      <View
+        style={StyleUtils.getSessionsCalendarDayCellStyle(
+          marking,
           isDisabled,
           isToday,
         )}>
-        {date?.day}
-      </Text>
-      <View
-        style={StyleUtils.getSessionsCalendarDayMarkingContainerStyle(
-          marking,
-          isDisabled,
-        )}>
         <Text
-          style={StyleUtils.getSessionsCalendarDayMarkingTextStyle(marking)}>
-          {unitsText}
+          style={StyleUtils.getSessionsCalendarDayLabelStyle(
+            marking,
+            isDisabled,
+          )}>
+          {date?.day}
         </Text>
+        {unitsText !== '' && (
+          <Text
+            style={StyleUtils.getSessionsCalendarDayUnitsTextStyle(marking)}>
+            {unitsText}
+          </Text>
+        )}
       </View>
     </PressableWithoutFeedback>
   );

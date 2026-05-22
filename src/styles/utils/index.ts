@@ -1321,60 +1321,71 @@ const createStyleUtils = (theme: ThemeColors, styles: ThemeStyles) => ({
   },
 
   /**
-   * Returns the style for the sessions calendar month day label, e.g. 1, 2, 3, etc.
+   * Returns the outer cell style for a sessions-calendar day (Variant D).
+   *
+   * The whole cell carries the heatmap tint; the day-number sits absolute in
+   * the top-left and the units number is centered as the visual hero. Today is
+   * marked with a 2px inset ring; off-month / disabled cells dim to ~35%.
    */
-  getSessionsCalendarDayLabelStyle: (
+  getSessionsCalendarDayCellStyle: (
+    marking: MarkingProps | undefined,
     isDisabled: boolean,
     isToday: boolean,
-  ): TextStyle => {
-    let textColor: Color;
-    switch (true) {
-      case isDisabled:
-        textColor = theme.textMutedReversed;
-        break;
-      case isToday:
-        textColor = theme.link;
-        break;
-      default:
-        textColor = theme.textSupporting;
-    }
+  ): ViewStyle => {
+    const backgroundColor = marking?.color ?? CONST.CALENDAR_COLORS.DARK.GREEN;
     return {
-      ...styles.textMicro,
-      ...styles.alignSelfStart,
-      color: textColor,
+      width: variables.componentSizeNormalSmall,
+      height: variables.componentSizeNormalSmall,
+      borderRadius: variables.componentBorderRadiusNormal,
+      alignItems: 'center',
+      justifyContent: 'center',
+      backgroundColor,
+      opacity: isDisabled ? 0.35 : 1,
+      borderWidth: isToday ? 2 : 0,
+      borderColor: isToday ? theme.text : 'transparent',
     };
   },
 
   /**
-   * Returns the style for the sessions calendar day marking container
+   * Returns the corner day-number label style (Variant D).
+   *
+   * Always positioned absolute top-left, including on alcohol-free days — the
+   * empty center is what signals AF, not a re-centered day number.
    */
-  getSessionsCalendarDayMarkingContainerStyle: (
+  getSessionsCalendarDayLabelStyle: (
     marking: MarkingProps | undefined,
     isDisabled: boolean,
-  ): ViewStyle => {
-    const baseStyles = {
-      ...styles.alignSelfCenter,
-      ...styles.justifyContentCenter,
-      ...styles.componentSizeNormalSmall,
-    };
+  ): TextStyle => {
+    const isLightColor = !!marking?.color && isLightHex(marking.color);
+    let textColor: Color;
+    if (isDisabled) {
+      textColor = theme.textMutedReversed;
+    } else if (isLightColor) {
+      textColor = theme.textDark;
+    } else {
+      textColor = theme.textLight;
+    }
     return {
-      ...baseStyles,
-      ...(isDisabled ? styles.noBorder : styles.border),
-      ...(!isDisabled && {
-        backgroundColor: marking?.color ?? CONST.CALENDAR_COLORS.DARK.GREEN,
-      }),
+      position: 'absolute',
+      top: 3,
+      left: 5,
+      fontSize: variables.fontSizeExtraSmall,
+      fontWeight: '600',
+      lineHeight: 10,
+      color: textColor,
     };
   },
 
-  /** Returns styles for the session calendar day marking (units) */
-  getSessionsCalendarDayMarkingTextStyle: (
+  /** Returns the centered hero units-number style (Variant D). */
+  getSessionsCalendarDayUnitsTextStyle: (
     marking: MarkingProps | undefined,
   ): TextStyle => {
     const isLightColor = !!marking?.color && isLightHex(marking.color);
     const textColor = isLightColor ? theme.textDark : theme.textLight;
     return {
-      ...styles.textNormal,
-      ...styles.textAlignCenter,
+      fontSize: variables.fontSizeNormal,
+      fontWeight: '700',
+      textAlign: 'center',
       color: textColor,
     };
   },

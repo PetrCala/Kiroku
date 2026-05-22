@@ -833,7 +833,7 @@
 "src/storage/storageUpload.ts"	"@typescript-eslint/switch-exhaustiveness-check"	1
 "src/styles/utils/generators/ModalStyleUtils.ts"	"@typescript-eslint/switch-exhaustiveness-check"	1
 "src/styles/utils/generators/ReportActionContextMenuStyleUtils.ts"	"@typescript-eslint/no-unnecessary-type-assertion"	1
-"src/styles/utils/index.ts"	"@typescript-eslint/switch-exhaustiveness-check"	5
+"src/styles/utils/index.ts"	"@typescript-eslint/switch-exhaustiveness-check"	4
 "src/types/modules/jest.d.ts"	"@typescript-eslint/ban-types"	1
 "src/types/modules/jest.d.ts"	"@typescript-eslint/no-empty-object-type"	1
 "src/types/modules/react-native.d.ts"	"@typescript-eslint/no-empty-object-type"	9

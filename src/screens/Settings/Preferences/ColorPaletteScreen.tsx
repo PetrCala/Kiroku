@@ -155,29 +155,26 @@ function ColorPaletteScreen() {
               return (
                 <View
                   key={cell.day}
-                  style={[
-                    styles.alignItemsCenter,
-                    styles.justifyContentCenter,
-                  ]}>
+                  style={StyleUtils.getSessionsCalendarDayCellStyle(
+                    marking,
+                    false,
+                    false,
+                  )}>
                   <Text
                     style={StyleUtils.getSessionsCalendarDayLabelStyle(
-                      false,
+                      marking,
                       false,
                     )}>
                     {cell.day}
                   </Text>
-                  <View
-                    style={StyleUtils.getSessionsCalendarDayMarkingContainerStyle(
-                      marking,
-                      false,
-                    )}>
+                  {unitsText !== '' && (
                     <Text
-                      style={StyleUtils.getSessionsCalendarDayMarkingTextStyle(
+                      style={StyleUtils.getSessionsCalendarDayUnitsTextStyle(
                         marking,
                       )}>
                       {unitsText}
                     </Text>
-                  </View>
+                  )}
                 </View>
               );
             })}
