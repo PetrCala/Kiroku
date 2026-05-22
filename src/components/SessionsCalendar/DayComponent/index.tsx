@@ -14,7 +14,6 @@ function DayComponent({
 }: DayComponentProps) {
   const StyleUtils = useStyleUtils();
   const isDisabled = state === 'disabled';
-  const isToday = state === 'today';
   const unitsText =
     !isDisabled && units !== undefined && units > 0
       ? (Number.isInteger(units) ? units : units.toFixed(1)).toString()
@@ -25,11 +24,7 @@ function DayComponent({
       accessibilityLabel=""
       onPress={() => onPress && date && onPress(date)}>
       <View
-        style={StyleUtils.getSessionsCalendarDayCellStyle(
-          marking,
-          isDisabled,
-          isToday,
-        )}>
+        style={StyleUtils.getSessionsCalendarDayCellStyle(marking, isDisabled)}>
         <Text
           style={StyleUtils.getSessionsCalendarDayLabelStyle(
             marking,

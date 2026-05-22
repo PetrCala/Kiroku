@@ -158,7 +158,6 @@ function ColorPaletteScreen() {
                   style={StyleUtils.getSessionsCalendarDayCellStyle(
                     marking,
                     false,
-                    false,
                   )}>
                   <Text
                     style={StyleUtils.getSessionsCalendarDayLabelStyle(
