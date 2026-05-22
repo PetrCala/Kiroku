@@ -45,6 +45,7 @@ function FullScreenModal({
       isVisible={modalVisible}
       fullscreen
       shouldUseModalPaddingStyle={false}
+      innerContainerStyle={{borderWidth: 0}}
       swipeDirection={['up', 'down']}
       animationIn="fadeIn"
       animationOut="fadeOut">
