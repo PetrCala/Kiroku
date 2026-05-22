@@ -1,6 +1,12 @@
 import React, {memo, useCallback, useEffect, useMemo, useRef} from 'react';
 import type {DateData} from 'react-native-calendars';
-import {differenceInMonths, format, subMonths} from 'date-fns';
+import {
+  differenceInMonths,
+  format,
+  parseISO,
+  startOfMonth,
+  subMonths,
+} from 'date-fns';
 import {getPreviousMonth, getNextMonth} from '@libs/DataHandling';
 import * as DSUtils from '@libs/DrinkingSessionUtils';
 import {computeLoadTarget} from '@libs/SessionsCalendarUtils';
@@ -36,6 +42,9 @@ function SessionsCalendar({
   preferences,
   isFetchingOlderMonths,
   mode = 'compact',
+  initialMonthYear,
+  initialFirstWeekY,
+  onInitialScrollReady,
 }: SessionsCalendarProps) {
   const {auth} = useFirebase();
   const user = auth.currentUser;
@@ -124,8 +133,18 @@ function SessionsCalendar({
       return;
     }
     hasPrefetchedRef.current = true;
-    loadUpTo(subMonths(new Date(), INITIAL_PREFETCH_MONTHS));
-  }, [mode, loadUpTo]);
+    // If the user opened the fullscreen on a month older than our default
+    // 12-month buffer, deepen the prefetch to cover it. `loadUpTo` takes the
+    // deeper of any requested floor — calling it twice is fine.
+    const defaultFloor = subMonths(new Date(), INITIAL_PREFETCH_MONTHS);
+    loadUpTo(defaultFloor);
+    if (initialMonthYear) {
+      const targetFloor = startOfMonth(parseISO(`${initialMonthYear}-01`));
+      if (targetFloor < defaultFloor) {
+        loadUpTo(targetFloor);
+      }
+    }
+  }, [mode, loadUpTo, initialMonthYear]);
 
   const onDayPress = useCallback(
     (dateData: DateData) => {
@@ -153,6 +172,9 @@ function SessionsCalendar({
         isFetchingOlderMonths={isFetchingOlderMonths}
         onDayPress={onDayPress}
         onRequestOlder={handleRequestOlder}
+        initialMonthYear={initialMonthYear}
+        initialFirstWeekY={initialFirstWeekY}
+        onInitialScrollReady={onInitialScrollReady}
       />
     );
   }

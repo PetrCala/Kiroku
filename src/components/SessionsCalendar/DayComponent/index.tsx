@@ -1,3 +1,4 @@
+import {useEffect, useRef} from 'react';
 import {View} from 'react-native';
 import Text from '@components/Text';
 import {PressableWithoutFeedback} from '@components/Pressable';
@@ -11,6 +12,7 @@ function DayComponent({
   marking,
   theme, // eslint-disable-line @typescript-eslint/no-unused-vars
   onPress,
+  registerMeasureRef,
 }: DayComponentProps) {
   const StyleUtils = useStyleUtils();
   const isDisabled = state === 'disabled';
@@ -19,27 +21,53 @@ function DayComponent({
       ? (Number.isInteger(units) ? units : units.toFixed(1)).toString()
       : '';
 
+  // Register this cell's measure ref with the parent so the parent can call
+  // `measureInWindow` on it later (used to seed the fullscreen calendar's
+  // initial scroll). We only need a single anchor per visible month; day 1
+  // is always in the first week-row of the rendered grid, so that's the cell
+  // we expose. The wrapping `<View collapsable={false}>` is required on
+  // Android — Fabric/Paper view-flattening can otherwise drop the View and
+  // invalidate the ref.
+  const viewRef = useRef<View | null>(null);
+  const shouldRegister =
+    !!registerMeasureRef && !!date && date.day === 1 && !isDisabled;
+  useEffect(() => {
+    if (!registerMeasureRef || !date) {
+      return undefined;
+    }
+    if (!shouldRegister) {
+      return undefined;
+    }
+    registerMeasureRef(date.day, viewRef.current);
+    return () => registerMeasureRef(date.day, null);
+  }, [registerMeasureRef, date, shouldRegister]);
+
   return (
-    <PressableWithoutFeedback
-      accessibilityLabel=""
-      onPress={() => onPress && date && onPress(date)}>
-      <View
-        style={StyleUtils.getSessionsCalendarDayCellStyle(marking, isDisabled)}>
-        <Text
-          style={StyleUtils.getSessionsCalendarDayLabelStyle(
+    <View ref={viewRef} collapsable={false}>
+      <PressableWithoutFeedback
+        accessibilityLabel=""
+        onPress={() => onPress && date && onPress(date)}>
+        <View
+          style={StyleUtils.getSessionsCalendarDayCellStyle(
             marking,
             isDisabled,
           )}>
-          {date?.day}
-        </Text>
-        {unitsText !== '' && (
           <Text
-            style={StyleUtils.getSessionsCalendarDayUnitsTextStyle(marking)}>
-            {unitsText}
+            style={StyleUtils.getSessionsCalendarDayLabelStyle(
+              marking,
+              isDisabled,
+            )}>
+            {date?.day}
           </Text>
-        )}
-      </View>
-    </PressableWithoutFeedback>
+          {unitsText !== '' && (
+            <Text
+              style={StyleUtils.getSessionsCalendarDayUnitsTextStyle(marking)}>
+              {unitsText}
+            </Text>
+          )}
+        </View>
+      </PressableWithoutFeedback>
+    </View>
   );
 }
 

@@ -1289,6 +1289,58 @@ const createStyleUtils = (theme: ThemeColors, styles: ThemeStyles) => ({
   //  * Returns the style for the sessions calendar main component
   //  */
   getSessionsCalendarStyle(): RNCalendarsTheme {
+    // `react-native-calendars` resolves the overrides via the flat dot-keys
+    // `theme['stylesheet.calendar.main']` and `theme['stylesheet.calendar.header']`
+    // at runtime (see node_modules/react-native-calendars/src/calendar/style.js
+    // and header/style.js). The exported `Theme` type declares them as a nested
+    // `stylesheet.calendar.main` property, which doesn't match the runtime
+    // lookup — using the flat keys works and matches the library's own README
+    // examples. Cast through `unknown` so TS doesn't reject the extra keys.
+    // Property names are literal dot-keys required by the library's runtime
+    // (`theme['stylesheet.calendar.main']`), so the naming-convention rule
+    // doesn't apply here.
+    /* eslint-disable @typescript-eslint/naming-convention */
+    const stylesheetOverrides = {
+      // Match the large calendar's tile spacing exactly so the clicked month
+      // overlays pixel-perfectly when opening the fullscreen variant. The
+      // numbers mirror `sessionsCalendarWeekRow` / `sessionsCalendarDayNamesRow`
+      // in src/styles/index.ts.
+      'stylesheet.calendar.main': {
+        container: {
+          paddingLeft: 0,
+          paddingRight: 0,
+          backgroundColor: theme.componentBG,
+        },
+        week: {
+          marginVertical: 6,
+          paddingHorizontal: 20,
+          flexDirection: 'row',
+          justifyContent: 'space-around',
+        },
+      },
+      'stylesheet.calendar.header': {
+        // Day-name row inside the library header — needs the same horizontal
+        // inset and `flex: 1` column distribution as the week rows below it,
+        // otherwise the day names won't line up with the tile columns.
+        week: {
+          marginTop: 7,
+          paddingHorizontal: 20,
+          flexDirection: 'row',
+          justifyContent: 'space-around',
+        },
+        dayHeader: {
+          flex: 1,
+          marginTop: 2,
+          marginBottom: 7,
+          textAlign: 'center',
+          fontSize: variables.fontSizeLabel,
+          ...FontUtils.fontFamily.platform.EXP_NEUE,
+          color: theme.textSupporting,
+        },
+      },
+    };
+    /* eslint-enable @typescript-eslint/naming-convention */
+
     return {
       backgroundColor: theme.componentBG,
       calendarBackground: theme.componentBG,
@@ -1317,6 +1369,8 @@ const createStyleUtils = (theme: ThemeColors, styles: ThemeStyles) => ({
         FontUtils.fontFamily.platform.EXP_NEUE.fontWeight,
       textDayHeaderFontFamily:
         FontUtils.fontFamily.platform.EXP_NEUE.fontFamily,
+
+      ...(stylesheetOverrides as unknown as RNCalendarsTheme),
     };
   },
 
