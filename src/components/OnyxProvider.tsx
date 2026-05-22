@@ -5,10 +5,8 @@ import createOnyxContext from './createOnyxContext';
 
 // Set up any providers for individual keys. This should only be used in cases where many components will subscribe to
 // the same key (e.g. FlatList renderItem components)
-const [withNetwork, NetworkProvider, NetworkContext] = createOnyxContext(
-  ONYXKEYS.NETWORK,
-);
-const [withUserData, UserDataProvider, , useUserData] = createOnyxContext(
+const [NetworkProvider, NetworkContext] = createOnyxContext(ONYXKEYS.NETWORK);
+const [UserDataProvider, , useUserData] = createOnyxContext(
   ONYXKEYS.USER_DATA_LIST,
 );
 // const [withCurrentDate, CurrentDateProvider] = createOnyxContext(
@@ -31,8 +29,9 @@ const [withUserData, UserDataProvider, , useUserData] = createOnyxContext(
 // );
 // const [withReportCommentDrafts, ReportCommentDraftsProvider] =
 //   createOnyxContext(ONYXKEYS.COLLECTION.REPORT_DRAFT_COMMENT);
-const [withPreferredTheme, PreferredThemeProvider, PreferredThemeContext] =
-  createOnyxContext(ONYXKEYS.PREFERRED_THEME);
+const [PreferredThemeProvider, PreferredThemeContext] = createOnyxContext(
+  ONYXKEYS.PREFERRED_THEME,
+);
 // const [
 //   withFrequentlyUsedEmojis,
 //   FrequentlyUsedEmojisProvider,
@@ -44,7 +43,7 @@ const [withPreferredTheme, PreferredThemeProvider, PreferredThemeContext] =
 //   PreferredEmojiSkinToneProvider,
 //   PreferredEmojiSkinToneContext,
 // ] = createOnyxContext(ONYXKEYS.PREFERRED_EMOJI_SKIN_TONE);
-const [, SessionProvider, , useSession] = createOnyxContext(ONYXKEYS.SESSION);
+const [SessionProvider, , useSession] = createOnyxContext(ONYXKEYS.SESSION);
 
 type OnyxProviderProps = {
   /** Rendered child component */
@@ -76,25 +75,4 @@ OnyxProvider.displayName = 'OnyxProvider';
 
 export default OnyxProvider;
 
-export {
-  withNetwork,
-  withUserData,
-  useUserData,
-  //   withReportActionsDrafts,
-  //   withCurrentDate,
-  //   withBlockedFromConcierge,
-  //   withBetas,
-  NetworkContext,
-  //   BetasContext,
-  //   withReportCommentDrafts,
-  withPreferredTheme,
-  PreferredThemeContext,
-  //   useBetas,
-  //   withFrequentlyUsedEmojis,
-  //   useFrequentlyUsedEmojis,
-  //   withPreferredEmojiSkinTone,
-  //   PreferredEmojiSkinToneContext,
-  //   useBlockedFromConcierge,
-  //   useReportActionsDrafts,
-  useSession,
-};
+export {useUserData, NetworkContext, PreferredThemeContext, useSession};
