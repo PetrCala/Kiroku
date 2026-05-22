@@ -104,7 +104,7 @@ const getRootNavigatorScreenOptions: GetRootNavigatorScreenOptions = (
     rightModalNavigator: ({route}) => ({
       ...rightModalStaticOptions,
       gestureEnabled:
-        Platform.OS !== 'web' &&
+        Platform.OS === 'ios' &&
         !hasPoppableInnerStack((route as {state?: NestedState}).state),
     }),
     onboardingModalNavigator: (shouldUseNarrowLayout: boolean) => ({
