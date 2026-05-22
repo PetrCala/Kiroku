@@ -1,6 +1,8 @@
 import React, {memo, useCallback, useEffect} from 'react';
 import {ActivityIndicator, View} from 'react-native';
 import {PressableWithFeedback} from '@components/Pressable';
+import Icon from '@components/Icon';
+import * as KirokuIcons from '@components/Icon/KirokuIcons';
 import {Calendar} from 'react-native-calendars';
 import type {DateData} from 'react-native-calendars';
 import type {MarkedDates} from 'react-native-calendars/src/types';
@@ -144,14 +146,25 @@ function SessionsCalendarView({
       const monthText = (
         <Text style={styles.sessionsCalendarHeaderMonthText}>{formatted}</Text>
       );
+      const expandIcon = isHeaderTappable ? (
+        <Icon
+          src={KirokuIcons.ArrowUpDown}
+          fill={theme.textSupporting}
+          width={14}
+          height={14}
+          additionalStyles={styles.sessionsCalendarExpandIcon}
+        />
+      ) : null;
       return (
         <View style={styles.sessionsCalendarHeader}>
           {isHeaderTappable ? (
             <PressableWithFeedback
               onPress={onHeaderPress}
               role={CONST.ROLE.BUTTON}
-              accessibilityLabel={formatted}>
+              accessibilityLabel={formatted}
+              style={styles.sessionsCalendarHeader}>
               {monthText}
+              {expandIcon}
             </PressableWithFeedback>
           ) : (
             monthText
@@ -171,10 +184,12 @@ function SessionsCalendarView({
       isFetchingOlderMonths,
       isHeaderTappable,
       onHeaderPress,
+      styles.sessionsCalendarExpandIcon,
       styles.sessionsCalendarHeader,
       styles.sessionsCalendarHeaderMonthText,
       styles.sessionsCalendarHeaderSpinner,
       theme.spinner,
+      theme.textSupporting,
     ],
   );
 

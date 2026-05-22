@@ -1541,6 +1541,85 @@ const styles = (theme: ThemeColors) =>
       marginLeft: 8,
     },
 
+    sessionsCalendarExpandIcon: {
+      marginLeft: 8,
+    },
+
+    sessionsCalendarWeekRow: {
+      flexDirection: 'row',
+      alignItems: 'stretch',
+    },
+
+    sessionsCalendarWeekCell: {
+      flex: 1,
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+
+    sessionsCalendarWeekCellBlank: {
+      flex: 1,
+    },
+
+    sessionsCalendarDayNamesRow: {
+      flexDirection: 'row',
+      paddingVertical: 8,
+      borderBottomWidth: 1,
+      borderColor: theme.border,
+      backgroundColor: theme.appBG,
+    },
+
+    sessionsCalendarDayNameCell: {
+      flex: 1,
+      alignItems: 'center',
+    },
+
+    sessionsCalendarDayNameText: {
+      ...FontUtils.fontFamily.platform.EXP_NEUE_BOLD,
+      color: theme.textSupporting,
+      fontSize: variables.fontSizeSmall,
+    },
+
+    sessionsCalendarWeekListContent: {
+      paddingRight: 48,
+    },
+
+    sessionsCalendarMonthRail: {
+      position: 'absolute',
+      top: 0,
+      right: 0,
+      bottom: 0,
+      width: 40,
+      paddingVertical: 4,
+      backgroundColor: theme.appBG,
+      borderLeftWidth: 1,
+      borderColor: theme.border,
+      overflow: 'hidden',
+    },
+
+    sessionsCalendarMonthRailLabel: {
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+
+    sessionsCalendarMonthRailLabelText: {
+      ...FontUtils.fontFamily.platform.EXP_NEUE_BOLD,
+      color: theme.textSupporting,
+      fontSize: variables.fontSizeExtraSmall,
+    },
+
+    sessionsCalendarMonthRailHighlighter: {
+      position: 'absolute',
+      left: 4,
+      right: 4,
+      borderRadius: 6,
+      backgroundColor: theme.activeComponentBG,
+    },
+
+    sessionsCalendarFullscreenCloseButton: {
+      paddingHorizontal: 12,
+      paddingVertical: 8,
+    },
+
     sessionColorMarker: (sessionColor: CalendarColors) =>
       ({
         height: variables.sessionColorMarkerSize,

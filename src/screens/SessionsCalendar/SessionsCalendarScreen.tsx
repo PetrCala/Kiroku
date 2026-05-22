@@ -77,7 +77,9 @@ function SessionsCalendarScreen({route}: SessionsCalendarScreenProps) {
     <ScreenWrapper testID={SessionsCalendarScreen.displayName}>
       <HeaderWithBackButton
         title={translate('calendar.fullscreenTitle')}
-        onBackButtonPress={Navigation.goBack}
+        shouldShowBackButton={false}
+        shouldShowCloseButton
+        onCloseButtonPress={Navigation.goBack}
       />
       {isFetchingOlderMonths && (
         <View style={styles.sessionsCalendarHeaderSpinner}>
