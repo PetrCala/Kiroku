@@ -209,10 +209,18 @@ function UserListComponent({
     );
   }, [fullUserArray, isFetchingStatuses, userStatusList]);
 
+  // Gate on `profileList` being populated rather than the transient
+  // `loadingDisplayData` flag. Once we have profiles cached, pagination's
+  // background re-fetch (which briefly flips loadingDisplayData back to true)
+  // must not unmount the FlatList — doing so resets scroll position and made
+  // the list jump to the top whenever onEndReached fired.
+  const hasLoadedProfiles = !isEmptyObject(profileList);
   const isListReady =
-    hasComputedOrderedList && allStatusesLoaded && !loadingDisplayData;
+    hasComputedOrderedList &&
+    allStatusesLoaded &&
+    (hasLoadedProfiles || !loadingDisplayData);
 
-  if (!isListReady || isLoading) {
+  if (isLoading || !isListReady) {
     return (
       <View
         style={[
