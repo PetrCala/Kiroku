@@ -57,6 +57,4 @@ export default function () {
 
   // Perform any other platform-specific setup
   platformSetup();
-
-  // addUtilsToWindow(); // A desktop specific setup function
 }
