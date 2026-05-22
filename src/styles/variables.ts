@@ -217,7 +217,6 @@ export default {
 
   textInputAutoGrowMaxHeight: 115,
 
-  sessionOverviewTabHeight: 85,
   statItemTextMaxWidth: 150,
   sessionUnitCountFontSize: 90,
   sessionDrinksTabHeight: 50,

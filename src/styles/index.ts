@@ -867,25 +867,6 @@ const styles = (theme: ThemeColors) =>
       marginTop: 8,
     },
 
-    drinkingSessionOverviewTabIndicator: (sessionColor: CalendarColors) =>
-      ({
-        height: variables.sessionOverviewTabHeight,
-        width: 20,
-        backgroundColor: sessionColor,
-        borderTopLeftRadius: variables.componentBorderRadiusNormal,
-        borderBottomLeftRadius: variables.componentBorderRadiusNormal,
-      }) satisfies ViewStyle,
-
-    drinkingSessionOverviewMainTab: {
-      flexGrow: 1,
-      flexDirection: 'row',
-      alignItems: 'center',
-      borderTopRightRadius: variables.componentBorderRadiusNormal,
-      borderBottomRightRadius: variables.componentBorderRadiusNormal,
-      height: variables.sessionOverviewTabHeight,
-      backgroundColor: theme.cardBG,
-    },
-
     drinkTypesViewTab: {
       flexDirection: 'row',
       alignItems: 'center',
