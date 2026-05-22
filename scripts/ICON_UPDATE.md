@@ -27,17 +27,47 @@ Whenever you want to change the icon, follow the steps below.
 
 ### Regenerated outputs (do not hand-edit)
 
-| Target                | Output                                                                                                                               |
-| --------------------- | ------------------------------------------------------------------------------------------------------------------------------------ |
-| iOS app icons         | `ios/kiroku/Images.xcassets/AppIcon{,Dev,Staging,AdHoc}.appiconset/*.png` + `Contents.json`                                          |
-| iOS boot splash       | `ios/kiroku/Images.xcassets/BootSplashLogo{,Dev,Staging,AdHoc}.imageset/*.png` + `Contents.json`                                     |
-| Android launcher      | `android/app/src/{main,development,staging,adhoc}/res/mipmap-*/ic_launcher{,_background,_foreground,_monochrome}.png`                |
-| Android adaptive XML  | `android/app/src/{main,development,staging,adhoc}/res/mipmap-anydpi-v26/ic_launcher{,_round}.xml`                                    |
-| Android boot splash   | `android/app/src/{main,development,staging,adhoc}/res/drawable-*/bootsplash_logo.png`                                                |
-| Android notifications | `android/app/src/main/res/drawable-*/ic_notification.png`                                                                            |
-| In-app SVG logos      | `assets/images/app-logo--{prod,dev,staging,adhoc}.svg` (used by [`src/components/KirokuLogo.tsx`](../src/components/KirokuLogo.tsx)) |
-| Web                   | `web/{favicon.png,apple-touch-icon.png,og-preview-image.png}`                                                                        |
-| Web manifest          | `web/manifest.json` (created on first run only; preserved on subsequent runs)                                                        |
+| Target                         | Output                                                                                                                                                                      |
+| ------------------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| iOS app icons                  | `ios/kiroku/Images.xcassets/AppIcon{,Dev,Staging,AdHoc}.appiconset/*.png` + `Contents.json`                                                                                 |
+| iOS boot splash                | `ios/kiroku/Images.xcassets/BootSplashLogo{,Dev,Staging,AdHoc}.imageset/*.png` + `Contents.json`                                                                            |
+| Android legacy launcher (PNG)  | `android/app/src/{main,development,staging,adhoc}/res/mipmap-*/ic_launcher.png` (pre-Android-8 fallback only)                                                               |
+| Android adaptive foreground    | `android/app/src/{main,development,staging,adhoc}/res/drawable/ic_launcher_foreground.xml` (vector, badge baked into per-flavor variants)                                   |
+| Android adaptive background    | `@color/ic_launcher_background` from [`values/ic_launcher_background.xml`](../android/app/src/main/res/values/ic_launcher_background.xml) — not regenerated, see brand sync |
+| Android themed-icon monochrome | `android/app/src/main/res/drawable/ic_launcher_monochrome.png` (single PNG, prod only — flavor variants drop the monochrome layer)                                          |
+| Android adaptive XML           | `android/app/src/{main,development,staging,adhoc}/res/mipmap-anydpi-v26/ic_launcher.xml` (prod includes `<monochrome>`; flavors omit it)                                    |
+| Android boot splash            | `android/app/src/{main,development,staging,adhoc}/res/drawable-*/bootsplash_logo.png`                                                                                       |
+| Android notifications          | `android/app/src/main/res/drawable-*/ic_notification.png`                                                                                                                   |
+| In-app SVG logos               | `assets/images/app-logo--{prod,dev,staging,adhoc}.svg` (used by [`src/components/KirokuLogo.tsx`](../src/components/KirokuLogo.tsx))                                        |
+| Web                            | `web/{favicon.png,apple-touch-icon.png,og-preview-image.png}`                                                                                                               |
+| Web manifest                   | `web/manifest.json` (created on first run only; preserved on subsequent runs)                                                                                               |
+
+#### Android themed icons (the prod-only monochrome decision)
+
+Android 13+ exposes a system setting (**Settings → Wallpaper & style → Themed
+icons**) that lets the user replace adaptive-icon foregrounds with a single
+tinted silhouette derived from `<monochrome>`. Production opts in; the
+`development` / `staging` / `adhoc` flavors deliberately omit `<monochrome>`
+from their adaptive XML.
+
+If we included it on the flavor variants, enabling Themed Icons would erase
+the corner badge — every build would render the same tinted K, making it
+impossible to tell dev / staging / adhoc apart on the launcher. Dropping the
+layer keeps the colored adaptive rendering on themed devices instead.
+
+#### Supported SVG subset (the converter's allow-list)
+
+The SVG-to-Vector-Drawable converter inside `scripts/generate-icons.mjs`
+accepts a deliberately small subset of SVG so output stays predictable and
+deterministic: `<path>` and `<rect>` elements with a literal hex `fill`, and
+at most a single `transform="rotate(angle cx cy)"` on a `<rect>`. Gradients,
+masks, `<defs>`, nested `<g>` groups, CSS styles, percentage units, named
+CSS colors, and `<text>` are all rejected with a precise error message
+naming the offending construct.
+
+If you change `assets/images/app-logo.svg` and the script throws on regen,
+that's the safety net firing — either edit the SVG back into the supported
+subset, or extend `svgToVectorDrawable()` in the script.
 
 ### Static config you should know about (not regenerated)
 
@@ -93,9 +123,9 @@ Different surfaces need different treatments:
 | iOS app icons                               | white         | baked orange (Apple requires opaque)                                                       |
 | iOS boot splash                             | white         | transparent — storyboard view bg provides orange                                           |
 | Android legacy launcher (`ic_launcher.png`) | white         | baked orange                                                                               |
-| Android adaptive foreground                 | white         | transparent                                                                                |
-| Android adaptive background                 | —             | solid orange, no logo                                                                      |
-| Android adaptive monochrome                 | white shape   | transparent (OS tints)                                                                     |
+| Android adaptive foreground (vector XML)    | white         | transparent (vector emits `#FFFFFF` paths only)                                            |
+| Android adaptive background                 | —             | solid orange via `@color/ic_launcher_background`                                           |
+| Android themed-icon monochrome (prod only)  | white shape   | transparent (OS tints when Themed Icons is enabled)                                        |
 | Android boot splash                         | white         | transparent — `bootsplash_background` color provides orange                                |
 | Android notification icons                  | white shape   | transparent (system tints)                                                                 |
 | Web favicon / apple-touch / og-preview      | white         | baked orange                                                                               |
@@ -215,8 +245,16 @@ add the padding into the SVG `viewBox` instead.
 
 **The badge text is illegible on small sizes.** That is expected and intentional;
 at the smallest iPhone notification size (40×40) the badge is meant to be a color
-hint, not readable text. If you need clearer labels, edit `badgeSvg()` in the
+hint, not readable text. If you need clearer labels, edit `badgeGeometry()` in the
 script to use a larger triangle or different proportions.
+
+**The script throws "unsupported element" or "unsupported color" when I run
+it.** That's the SVG-to-Vector-Drawable converter rejecting a construct in
+`assets/images/app-logo.svg` it doesn't recognize. See the "Supported SVG
+subset" note above — gradients, masks, `<defs>`, nested `<g>`, named CSS
+colors, and `<text>` are all rejected by design. Either edit the master SVG
+to stay inside the allowed subset, or extend `svgToVectorDrawable()` to
+handle the new construct.
 
 **Xcode shows an "Asset Catalog Compiler" warning about missing iPad sizes.**
 The script generates the full iPad icon set. If you see this warning, run

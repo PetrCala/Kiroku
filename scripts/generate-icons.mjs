@@ -12,6 +12,7 @@
  */
 
 import sharp from 'sharp';
+import TextToSVG from 'text-to-svg';
 import {
   readFileSync,
   mkdirSync,
@@ -25,6 +26,16 @@ import {fileURLToPath} from 'url';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const ROOT = join(__dirname, '..');
+
+// Font used to bake badge label text ("DEV" / "STG" / "ADHOC") into SVG path
+// data. We do this so the same geometry can drive both raster outputs (sharp
+// renders the path) and Android Vector Drawable outputs (which have no <text>
+// element). Reusing a font already shipped in the app bundle avoids adding a
+// new ~300 KB asset just for build-time rendering. The font is OFL-licensed
+// (Expensify open-sources their typeface family).
+const BADGE_FONT = TextToSVG.loadSync(
+  join(ROOT, 'assets/fonts/native/ExpensifyNeue-Bold.otf'),
+);
 
 // ─── Variant config ───────────────────────────────────────────────────────────
 // badge:  null  = no overlay (production)
@@ -167,10 +178,13 @@ function iosIconFilename(spec, variantKey) {
 }
 
 /**
- * Builds an SVG string for the corner-triangle badge overlay.
- * The triangle is in the bottom-right corner; text is rendered inside it.
+ * Builds the geometry for the corner-triangle badge in a given canvas size.
+ * Returns the triangle vertices and a glyph path for the label, both in the
+ * canvas's own coordinate space. Used by both the SVG composition path (where
+ * sharp rasterizes the result) and the Android Vector Drawable emitter (which
+ * has no <text> element and needs glyphs as path data).
  */
-function badgeSvg(canvasSize, label, color) {
+function badgeGeometry(canvasSize, label, color) {
   const tri = Math.max(Math.round(canvasSize * 0.38), 14);
   const tx = canvasSize - tri;
   const ty = canvasSize - tri;
@@ -178,11 +192,32 @@ function badgeSvg(canvasSize, label, color) {
   const textX = canvasSize - tri * 0.38;
   const textY = canvasSize - tri * 0.18;
 
+  const trianglePath = `M${tx},${canvasSize}L${canvasSize},${canvasSize}L${canvasSize},${ty}Z`;
+  const labelPath = BADGE_FONT.getD(label, {
+    x: textX,
+    y: textY,
+    fontSize,
+    anchor: 'center baseline',
+  });
+
+  return {
+    triangle: {pathData: trianglePath, fillColor: color},
+    label: {pathData: labelPath, fillColor: '#FFFFFF'},
+  };
+}
+
+/**
+ * Builds an SVG string for the corner-triangle badge overlay used during
+ * raster compositing. The triangle and the label glyph are both <path>
+ * elements (no <text>) so rendering does not depend on whatever system font
+ * happens to exist on the build machine.
+ */
+function badgeSvg(canvasSize, label, color) {
+  const {triangle, label: labelPath} = badgeGeometry(canvasSize, label, color);
   return (
     `<svg xmlns="http://www.w3.org/2000/svg" width="${canvasSize}" height="${canvasSize}">` +
-    `<polygon points="${tx},${canvasSize} ${canvasSize},${canvasSize} ${canvasSize},${ty}" fill="${color}"/>` +
-    `<text x="${textX}" y="${textY}" font-size="${fontSize}" fill="white" ` +
-    `font-family="Arial,Helvetica,sans-serif" font-weight="bold" text-anchor="middle">${label}</text>` +
+    `<path d="${triangle.pathData}" fill="${triangle.fillColor}"/>` +
+    `<path d="${labelPath.pathData}" fill="${labelPath.fillColor}"/>` +
     `</svg>`
   );
 }
@@ -352,65 +387,352 @@ const ANDROID_VARIANT_SRC = {
   adhoc: 'adhoc',
 };
 
-const ADAPTIVE_XML = `<?xml version="1.0" encoding="utf-8"?>
+// Resolution at which the single drawable/ic_launcher_monochrome.png is
+// rasterized (Android scales it down to whatever density the device needs).
+// Matches the xxxhdpi adaptive foreground canvas (432px) so the silhouette
+// stays crisp under any launcher mask.
+const ANDROID_MONOCHROME_PNG_SIZE = 432;
+
+// Adaptive PNG layer filenames we used to emit per density. The new pipeline
+// emits a vector foreground + color background + single-drawable monochrome
+// instead, so these per-density PNGs are obsolete. The generator sweeps them
+// from each mipmap-*dpi folder on every run so a single re-run after the
+// refactor surfaces 60 deletions in `git status`.
+const OBSOLETE_ADAPTIVE_PNGS = [
+  'ic_launcher_foreground.png',
+  'ic_launcher_background.png',
+  'ic_launcher_monochrome.png',
+];
+
+const ADAPTIVE_XML_WITH_MONOCHROME = `<?xml version="1.0" encoding="utf-8"?>
 <adaptive-icon xmlns:android="http://schemas.android.com/apk/res/android">
-  <background android:drawable="@mipmap/ic_launcher_background"/>
-  <foreground android:drawable="@mipmap/ic_launcher_foreground"/>
-  <monochrome android:drawable="@mipmap/ic_launcher_monochrome"/>
+  <background android:drawable="@color/ic_launcher_background"/>
+  <foreground android:drawable="@drawable/ic_launcher_foreground"/>
+  <monochrome android:drawable="@drawable/ic_launcher_monochrome"/>
 </adaptive-icon>
 `;
 
-async function generateAndroidIcons(svgBuffer) {
+const ADAPTIVE_XML_NO_MONOCHROME = `<?xml version="1.0" encoding="utf-8"?>
+<adaptive-icon xmlns:android="http://schemas.android.com/apk/res/android">
+  <background android:drawable="@color/ic_launcher_background"/>
+  <foreground android:drawable="@drawable/ic_launcher_foreground"/>
+</adaptive-icon>
+`;
+
+/**
+ * Parses an attribute list like `d="M0 0..." fill="#FFF"` into a plain map.
+ * Accepts both single- and double-quoted values. Whitespace tolerant.
+ */
+function parseSvgAttrs(attrText) {
+  const attrs = {};
+  const re = /([a-zA-Z_:][\w:.-]*)\s*=\s*(?:"([^"]*)"|'([^']*)')/g;
+  let m;
+  while ((m = re.exec(attrText)) !== null) {
+    attrs[m[1]] = m[2] !== undefined ? m[2] : m[3];
+  }
+  return attrs;
+}
+
+/**
+ * Normalizes a CSS color string to an upper-case `#RRGGBB` (or `#AARRGGBB`).
+ * Throws if the input is not a literal hex color — Vector Drawable does not
+ * accept named CSS colors or rgb()/hsl() in its fillColor attribute.
+ */
+function normalizeHexColor(c) {
+  if (typeof c !== 'string') {
+    throw new Error(`svgToVectorDrawable: expected hex color, got ${c}`);
+  }
+  const v = c.trim();
+  if (
+    !/^#[0-9a-fA-F]{6}([0-9a-fA-F]{2})?$/.test(v) &&
+    !/^#[0-9a-fA-F]{3,4}$/.test(v)
+  ) {
+    throw new Error(
+      `svgToVectorDrawable: unsupported color "${c}". Use #RRGGBB or #AARRGGBB literal hex.`,
+    );
+  }
+  // Expand #RGB / #RGBA shorthand to full 6/8-digit form.
+  if (v.length === 4 || v.length === 5) {
+    let full = '#';
+    for (let i = 1; i < v.length; i += 1) {
+      full += v[i] + v[i];
+    }
+    return full.toUpperCase();
+  }
+  return v.toUpperCase();
+}
+
+/**
+ * Validates that an SVG path-data string uses only commands Android Vector
+ * Drawable supports. Throws with a precise message on anything else.
+ */
+function validateSvgPathData(d) {
+  if (!d) {
+    throw new Error('svgToVectorDrawable: <path> missing d attribute');
+  }
+  const m = d.match(/[a-zA-Z]/g) || [];
+  for (const ch of m) {
+    if (!/[MLHVCSQTAZmlhvcsqtaz]/.test(ch)) {
+      throw new Error(
+        `svgToVectorDrawable: path data contains unsupported command "${ch}". Allowed: M L H V C S Q T A Z (and lower-case variants).`,
+      );
+    }
+  }
+}
+
+/**
+ * Converts the master SVG to an Android Vector Drawable XML string suitable
+ * for `drawable/ic_launcher_foreground.xml`. Wraps the art in an outer
+ * <group> that applies the adaptive safe-zone scale + translate, then
+ * optionally appends badge paths inside that same group so the badge stays
+ * tied to the visible art (matching the raster pipeline's behavior).
+ *
+ * The converter accepts a deliberately small subset of SVG — <path> and
+ * <rect> elements with a literal `fill` color and at most a single
+ * `rotate(θ cx cy)` transform on rects. It throws with a precise error on
+ * anything else (gradients, masks, nested <g>, percentage units, etc.) so a
+ * future master SVG that drifts outside the supported set fails loudly
+ * instead of silently producing a broken vector.
+ */
+function svgToVectorDrawable(
+  svgText,
+  {innerScale = ADAPTIVE_SAFE_ZONE, badgePaths = []} = {},
+) {
+  const svgMatch = svgText.match(/<svg\b([^>]*)>([\s\S]*?)<\/svg>/i);
+  if (!svgMatch) {
+    throw new Error(
+      'svgToVectorDrawable: input does not contain a <svg>...</svg> element',
+    );
+  }
+  const rootAttrs = parseSvgAttrs(svgMatch[1]);
+  const body = svgMatch[2];
+
+  const vb = rootAttrs.viewBox;
+  if (!vb) {
+    throw new Error(
+      'svgToVectorDrawable: <svg> is missing a viewBox attribute',
+    );
+  }
+  const vbParts = vb
+    .trim()
+    .split(/[\s,]+/)
+    .map(parseFloat);
+  if (vbParts.length !== 4 || vbParts.some(n => Number.isNaN(n))) {
+    throw new Error(`svgToVectorDrawable: invalid viewBox "${vb}"`);
+  }
+  const [vbX, vbY, vbW, vbH] = vbParts;
+  if (vbX !== 0 || vbY !== 0) {
+    throw new Error(
+      `svgToVectorDrawable: viewBox must start at (0,0); got "${vb}"`,
+    );
+  }
+
+  // Reject any tag inside <svg> that we don't explicitly support. Comments are fine.
+  const tagRe = /<\/?([a-zA-Z][a-zA-Z0-9-]*)\b/g;
+  const supported = new Set(['path', 'rect']);
+  let tag;
+  while ((tag = tagRe.exec(body)) !== null) {
+    if (!supported.has(tag[1].toLowerCase())) {
+      throw new Error(
+        `svgToVectorDrawable: unsupported element <${tag[1]}> in master SVG. ` +
+          `The converter accepts only <path> and <rect> inside <svg>. ` +
+          `Adjust the SVG or extend the converter.`,
+      );
+    }
+  }
+
+  const artLines = [];
+  const elementRe = /<(path|rect)\b([^>]*?)\/?>/gi;
+  let match;
+  let elementCount = 0;
+  while ((match = elementRe.exec(body)) !== null) {
+    elementCount += 1;
+    const elTag = match[1].toLowerCase();
+    const elAttrs = parseSvgAttrs(match[2]);
+    const fill = elAttrs.fill;
+    if (!fill || fill === 'none') {
+      continue;
+    }
+    const fillColor = normalizeHexColor(fill);
+    if (elTag === 'path') {
+      const d = elAttrs.d;
+      validateSvgPathData(d);
+      artLines.push(
+        `    <path android:pathData="${d}" android:fillColor="${fillColor}"/>`,
+      );
+    } else {
+      const x = parseFloat(elAttrs.x || '0');
+      const y = parseFloat(elAttrs.y || '0');
+      const w = parseFloat(elAttrs.width);
+      const h = parseFloat(elAttrs.height);
+      if (Number.isNaN(w) || Number.isNaN(h)) {
+        throw new Error(
+          'svgToVectorDrawable: <rect> requires numeric width and height',
+        );
+      }
+      const pathData = `M${x},${y}h${w}v${h}h${-w}z`;
+      const transform = (elAttrs.transform || '').trim();
+      if (transform === '') {
+        artLines.push(
+          `    <path android:pathData="${pathData}" android:fillColor="${fillColor}"/>`,
+        );
+      } else {
+        const rot = transform.match(
+          /^rotate\(\s*(-?\d+(?:\.\d+)?)\s+(-?\d+(?:\.\d+)?)\s+(-?\d+(?:\.\d+)?)\s*\)$/,
+        );
+        if (!rot) {
+          throw new Error(
+            `svgToVectorDrawable: <rect> has unsupported transform="${transform}". ` +
+              `Only "rotate(angle cx cy)" with three numeric args is supported.`,
+          );
+        }
+        artLines.push(
+          `    <group android:pivotX="${rot[2]}" android:pivotY="${rot[3]}" android:rotation="${rot[1]}">`,
+          `      <path android:pathData="${pathData}" android:fillColor="${fillColor}"/>`,
+          `    </group>`,
+        );
+      }
+    }
+  }
+  if (elementCount === 0) {
+    throw new Error(
+      'svgToVectorDrawable: no <path> or <rect> elements found in <svg>',
+    );
+  }
+
+  for (const bp of badgePaths) {
+    artLines.push(
+      `    <path android:pathData="${bp.pathData}" android:fillColor="${normalizeHexColor(bp.fillColor)}"/>`,
+    );
+  }
+
+  const tx = (vbW * (1 - innerScale)) / 2;
+  const ty = (vbH * (1 - innerScale)) / 2;
+
+  return [
+    '<?xml version="1.0" encoding="utf-8"?>',
+    '<vector xmlns:android="http://schemas.android.com/apk/res/android"',
+    '    android:width="108dp"',
+    '    android:height="108dp"',
+    `    android:viewportWidth="${vbW}"`,
+    `    android:viewportHeight="${vbH}">`,
+    `  <group android:scaleX="${innerScale}" android:scaleY="${innerScale}" android:translateX="${tx}" android:translateY="${ty}">`,
+    ...artLines,
+    '  </group>',
+    '</vector>',
+    '',
+  ].join('\n');
+}
+
+/**
+ * Computes badge geometry for the master SVG's viewport. Used by the Vector
+ * Drawable emitter so badges have the same proportions as in raster outputs.
+ * Returns the triangle + label as Vector Drawable-compatible path records.
+ */
+function badgePathsForVectorViewport(viewportSize, variant) {
+  if (!variant.badge) {
+    return [];
+  }
+  const {triangle, label} = badgeGeometry(
+    viewportSize,
+    variant.badge.label,
+    variant.badge.color,
+  );
+  return [triangle, label];
+}
+
+/**
+ * Removes adaptive-layer PNGs that the new pipeline no longer emits. Without
+ * this, the first re-run after the vector refactor would leave the stale
+ * files in place; with it, they show up as deletions in `git status`.
+ */
+function sweepObsoleteAdaptiveLauncherPngs(dir) {
+  if (!existsSync(dir)) {
+    return;
+  }
+  for (const name of OBSOLETE_ADAPTIVE_PNGS) {
+    const p = join(dir, name);
+    if (existsSync(p)) {
+      unlinkSync(p);
+    }
+  }
+}
+
+/**
+ * Removes the legacy round-launcher XML descriptor. Kiroku's manifest does
+ * not set `android:roundIcon`, so this file has always been unreferenced and
+ * adds dead bytes to every flavor's APK.
+ */
+function sweepLegacyRoundLauncherXml(anydpiDir) {
+  const p = join(anydpiDir, 'ic_launcher_round.xml');
+  if (existsSync(p)) {
+    unlinkSync(p);
+  }
+}
+
+async function generateAndroidIcons(svgBuffer, masterSvgText) {
   for (const [key, variant] of Object.entries(VARIANTS)) {
     const srcSet = ANDROID_VARIANT_SRC[key];
     const resBase = join(ROOT, `android/app/src/${srcSet}/res`);
 
+    // Legacy launcher PNG (used on Android < 8 and some OEM launchers). Per
+    // density; opaque (older launchers don't composite over a system bg).
     for (const d of ANDROID_DENSITIES) {
       const dir = join(resBase, d.folder);
       ensureDir(dir);
-
-      // Legacy launcher PNG (used on Android < 8 and some OEM launchers).
-      // Must be opaque — older launchers don't composite over a system bg.
       writeFileSync(
         join(dir, 'ic_launcher.png'),
         await renderIcon(svgBuffer, d.iconSize, variant, {
           background: BRAND_BG,
         }),
       );
-
-      // Adaptive foreground: 108dp canvas with the art kept inside the
-      // 66dp safe zone (≈61%) so the launcher mask never clips it.
-      writeFileSync(
-        join(dir, 'ic_launcher_foreground.png'),
-        await renderIcon(svgBuffer, d.foreSize, variant, {
-          innerScale: ADAPTIVE_SAFE_ZONE,
-        }),
-      );
-
-      // Adaptive background — solid brand color, full 108dp canvas.
-      writeFileSync(
-        join(dir, 'ic_launcher_background.png'),
-        await solidColorPng(d.foreSize, BRAND_BG),
-      );
-
-      // Monochrome (Android 13+ themed icons). Same canvas + safe-zone as the
-      // foreground so the silhouette lines up under the same mask.
-      writeFileSync(
-        join(dir, 'ic_launcher_monochrome.png'),
-        await renderIcon(svgBuffer, d.foreSize, variant, {
-          innerScale: ADAPTIVE_SAFE_ZONE,
-        }),
-      );
+      // Drop the per-density adaptive-layer PNGs we used to write here.
+      sweepObsoleteAdaptiveLauncherPngs(dir);
     }
 
-    // Adaptive icon XML descriptor (points to the density-specific PNGs above)
+    // Adaptive foreground: one vector XML. Crisp at every density, no
+    // rasterization. The art lives inside the 66dp safe zone so launcher
+    // masks never clip it; the badge (when present) sits in the same group.
+    const drawableDir = join(resBase, 'drawable');
+    ensureDir(drawableDir);
+    writeFileSync(
+      join(drawableDir, 'ic_launcher_foreground.xml'),
+      svgToVectorDrawable(masterSvgText, {
+        innerScale: ADAPTIVE_SAFE_ZONE,
+        badgePaths: badgePathsForVectorViewport(1024, variant),
+      }),
+    );
+
+    // Adaptive XML descriptor. Prod includes <monochrome> for Android 13+
+    // themed-icons mode; the flavor variants omit it so Themed Icons doesn't
+    // erase their badge by rendering an identical silhouette across all
+    // four builds.
     const anydpiDir = join(resBase, 'mipmap-anydpi-v26');
     ensureDir(anydpiDir);
-    writeFileSync(join(anydpiDir, 'ic_launcher.xml'), ADAPTIVE_XML);
-    writeFileSync(join(anydpiDir, 'ic_launcher_round.xml'), ADAPTIVE_XML);
+    writeFileSync(
+      join(anydpiDir, 'ic_launcher.xml'),
+      key === 'prod'
+        ? ADAPTIVE_XML_WITH_MONOCHROME
+        : ADAPTIVE_XML_NO_MONOCHROME,
+    );
+    sweepLegacyRoundLauncherXml(anydpiDir);
 
     console.log(`  ✓ Android launcher (${srcSet})`);
   }
+
+  // Monochrome layer for Android 13+ themed icons. Production only — see
+  // above. One PNG in drawable/ (Android scales it per density); rasterized
+  // at xxxhdpi resolution so downscale artifacts stay invisible on a
+  // silhouette.
+  const mainDrawable = join(ROOT, 'android/app/src/main/res/drawable');
+  ensureDir(mainDrawable);
+  writeFileSync(
+    join(mainDrawable, 'ic_launcher_monochrome.png'),
+    await renderIcon(svgBuffer, ANDROID_MONOCHROME_PNG_SIZE, VARIANTS.prod, {
+      innerScale: ADAPTIVE_SAFE_ZONE,
+    }),
+  );
+  console.log('  ✓ Android monochrome (main only)');
 }
 
 // ─── Android boot splash ──────────────────────────────────────────────────────
@@ -473,18 +795,16 @@ function variantSvg(masterSvg, variant) {
   if (!variant.badge) {
     return masterSvg;
   }
-  // Master is 1024x1024 — match the icon badge geometry (~38% of canvas).
-  const size = 1024;
-  const tri = Math.round(size * 0.38);
-  const tx = size - tri;
-  const ty = size - tri;
-  const fontSize = Math.round(tri * 0.28);
-  const textX = size - tri * 0.38;
-  const textY = size - tri * 0.18;
+  // Master is 1024x1024. Reuse the same geometry as the rasterized icons so
+  // the in-app SVG looks identical to the launcher icon for each variant.
+  const {triangle, label} = badgeGeometry(
+    1024,
+    variant.badge.label,
+    variant.badge.color,
+  );
   const badge =
-    `<polygon points="${tx},${size} ${size},${size} ${size},${ty}" fill="${variant.badge.color}"/>` +
-    `<text x="${textX}" y="${textY}" font-size="${fontSize}" fill="white" ` +
-    `font-family="Arial,Helvetica,sans-serif" font-weight="bold" text-anchor="middle">${variant.badge.label}</text>`;
+    `<path d="${triangle.pathData}" fill="${triangle.fillColor}"/>` +
+    `<path d="${label.pathData}" fill="${label.fillColor}"/>`;
   return masterSvg.replace('</svg>', `${badge}</svg>`);
 }
 
@@ -575,7 +895,7 @@ async function main() {
   await generateIosBootSplash(svgBuffer);
 
   console.log('\nAndroid launcher icons:');
-  await generateAndroidIcons(svgBuffer);
+  await generateAndroidIcons(svgBuffer, masterSvgText);
 
   console.log('\nAndroid boot splash:');
   await generateAndroidBootSplash(svgBuffer);
