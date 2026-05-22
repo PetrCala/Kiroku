@@ -207,9 +207,15 @@ const ProfileModalStackNavigator =
 
 const SocialModalStackNavigator =
   createModalStackNavigator<SocialNavigatorParamList>({
-    [SCREENS.SOCIAL.ROOT]: () =>
-      // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
-      require('@screens/Social/SocialScreen').default as React.ComponentType,
+    [SCREENS.SOCIAL.ROOT]: {
+      getComponent: () =>
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
+        require('@screens/Social/SocialScreen').default as React.ComponentType,
+      // The screen embeds a SwipeablePager that owns horizontal gestures and
+      // dispatches Navigation.goBack() when the user swipes right past the
+      // first tab, so the stack's own swipe-back must stay out of the way.
+      options: {gestureEnabled: false},
+    },
     [SCREENS.SOCIAL.FRIEND_LIST]: () =>
       require<ReactComponentModule>('@screens/Social/FriendListScreen').default,
     [SCREENS.SOCIAL.FRIEND_REQUESTS]: () =>

@@ -1,6 +1,5 @@
 import React, {useState} from 'react';
 import {Dimensions, StyleSheet, View} from 'react-native';
-import {TabView} from 'react-native-tab-view';
 import * as KirokuIcons from '@components/Icon/KirokuIcons';
 import {getReceivedRequestsCount} from '@libs/FriendUtils';
 import type {UserData} from '@src/types/onyx';
@@ -11,7 +10,6 @@ import Navigation from '@libs/Navigation/Navigation';
 import {PressableWithFeedback} from '@components/Pressable';
 import {useDatabaseData} from '@context/global/DatabaseDataContext';
 import ScreenWrapper from '@components/ScreenWrapper';
-import useWindowDimensions from '@hooks/useWindowDimensions';
 import HeaderWithBackButton from '@components/HeaderWithBackButton';
 import useLocalize from '@hooks/useLocalize';
 import useTheme from '@hooks/useTheme';
@@ -21,6 +19,7 @@ import useThemeStyles from '@hooks/useThemeStyles';
 import type IconAsset from '@src/types/utils/IconAsset';
 import FriendListScreen from './FriendListScreen';
 import FriendRequestScreen from './FriendRequestScreen';
+import SwipeablePager from './SwipeablePager';
 
 /* eslint-disable @typescript-eslint/no-use-before-define */
 
@@ -93,7 +92,6 @@ function SocialScreen(_: SocialScreenProps) {
   const {userData} = useDatabaseData();
   const {translate} = useLocalize();
   const styles = useThemeStyles();
-  const {windowWidth} = useWindowDimensions();
   const [routes] = useState([
     {key: 'friendList', title: translate('socialScreen.friendList'), userData},
     // {key: 'friendSearch', translate('socialScreen.friendSearch'), userData: userData},
@@ -147,14 +145,12 @@ function SocialScreen(_: SocialScreenProps) {
         title={translate('socialScreen.title')}
         onBackButtonPress={Navigation.goBack}
       />
-      <TabView
-        navigationState={{index, routes}}
-        renderScene={renderScene}
+      <SwipeablePager
+        routes={routes}
+        index={index}
         onIndexChange={setIndex}
-        initialLayout={{width: windowWidth}}
-        swipeEnabled={false}
-        tabBarPosition="bottom"
-        renderTabBar={() => null} // Do not render the default tab bar
+        onSwipeBeyondStart={() => Navigation.goBack()}
+        renderScene={renderScene}
       />
       <View style={styles.bottomTabBarContainer}>
         {footerButtons.map(button => (
