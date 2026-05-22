@@ -84,6 +84,7 @@ function DrinkingSessionOverview({
         styles.mh1,
         styles.mb2,
         {
+          minHeight: 84,
           borderRadius: 12,
           borderLeftWidth: 4,
           borderLeftColor: sessionColor,
