@@ -29,7 +29,7 @@ const commonScreenOptions: StackNavigationOptions = {
   headerShown: false,
   gestureDirection: 'horizontal',
   gestureEnabled: Platform.OS !== 'web',
-  gestureResponseDistance: 30,
+  gestureResponseDistance: 10000,
   cardOverlayEnabled: true,
   animationTypeForReplace: 'push',
 };
