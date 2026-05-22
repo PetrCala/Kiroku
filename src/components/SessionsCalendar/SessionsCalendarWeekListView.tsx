@@ -12,8 +12,8 @@ import useThemeStyles from '@hooks/useThemeStyles';
 import ONYXKEYS from '@src/ONYXKEYS';
 import CONST from '@src/CONST';
 import type {DateString} from '@src/types/onyx/OnyxCommon';
-import buildWeekRows from './buildWeekRows';
-import type {WeekRow as WeekRowData} from './buildWeekRows';
+import buildMonthSections from './buildMonthSections';
+import type {MonthSection, MonthWeek} from './buildMonthSections';
 import WeekRow from './WeekRow';
 import setCalendarLocale from './setCalendarLocale';
 
@@ -47,19 +47,19 @@ type LabelItem = {
 type WeekItem = {
   kind: 'week';
   key: string;
-  row: WeekRowData;
+  row: MonthWeek;
 };
 
 type ListItem = LabelItem | WeekItem;
 
 /**
- * Vertical, continuous week-row calendar.
+ * Vertical, self-contained-months calendar.
  *
- * Each month opens with an inline `Mar 2026` label that doubles as a section
- * divider and as the always-visible "where am I" indicator — once the user
- * scrolls past it the label sticks to the top of the viewport until the
- * next month's label arrives (Apple-Photos style). No custom scroll rail;
- * the platform-native scrollbar handles the timeline-position cue.
+ * Each month is its own mini-grid headed by an inline `Mar 2026` label.
+ * Days outside a month are blanks within that month's section so months
+ * never bleed into each other. The label sticks to the top of the viewport
+ * as the user scrolls past it (Apple-Photos pattern). No custom scroll
+ * rail; the platform-native scrollbar carries the timeline-position cue.
  *
  * Pure presentational — no Onyx writes, no Firebase reads. The parent owns
  * extending the loaded range via `onRequestOlder`.
@@ -89,63 +89,32 @@ function SessionsCalendarWeekListView({
     [loadedFromDate, resolvedEnd],
   );
 
-  const weekRows: WeekRowData[] = useMemo(
-    () => buildWeekRows({start: resolvedStart, end: resolvedEnd}),
+  const monthSections: MonthSection[] = useMemo(
+    () => buildMonthSections({start: resolvedStart, end: resolvedEnd}),
     [resolvedStart, resolvedEnd],
   );
 
-  // Interleave a label item before the first row of each new month so the
-  // months are visually distinct AND the label can stick to the top as a
-  // section header when scrolled past.
+  // Flatten the per-month sections into a single list of items. Labels
+  // sit between sections and double as FlashList sticky headers.
   const {items, stickyHeaderIndices} = useMemo(() => {
     const out: ListItem[] = [];
     const sticky: number[] = [];
-    let lastEmittedMonth: number | null = null;
-    let lastEmittedYear: number | null = null;
 
-    const pushLabel = (year: number, monthZeroIndexed: number) => {
-      const labelDate = new Date(year, monthZeroIndexed, 1);
-      const label = format(labelDate, CONST.DATE.MONTH_YEAR_ABBR_FORMAT);
+    monthSections.forEach(section => {
+      const labelDate = new Date(section.year, section.month, 1);
       sticky.push(out.length);
       out.push({
         kind: 'label',
-        key: `label-${year}-${monthZeroIndexed}`,
-        label,
+        key: `label-${section.year}-${section.month}`,
+        label: format(labelDate, CONST.DATE.MONTH_YEAR_ABBR_FORMAT),
       });
-      lastEmittedMonth = monthZeroIndexed;
-      lastEmittedYear = year;
-    };
-
-    weekRows.forEach(row => {
-      // Determine this row's "primary" month/year — prefer the day-1 cell
-      // when the week contains it, otherwise the first non-null day.
-      let primaryMonth: number | null = null;
-      let primaryYear: number | null = null;
-      if (row.isFirstWeekOfMonth && row.monthOfFirstDay !== undefined) {
-        primaryMonth = row.monthOfFirstDay;
-        primaryYear = row.yearOfFirstDay ?? null;
-      } else {
-        const firstNonNull = row.days.find(d => d !== null);
-        if (firstNonNull) {
-          const parts = firstNonNull.split('-').map(Number);
-          primaryYear = parts[0];
-          primaryMonth = parts[1] - 1;
-        }
-      }
-
-      if (
-        primaryMonth !== null &&
-        primaryYear !== null &&
-        (primaryMonth !== lastEmittedMonth || primaryYear !== lastEmittedYear)
-      ) {
-        pushLabel(primaryYear, primaryMonth);
-      }
-
-      out.push({kind: 'week', key: row.weekStart, row});
+      section.weeks.forEach(week => {
+        out.push({kind: 'week', key: week.key, row: week});
+      });
     });
 
     return {items: out, stickyHeaderIndices: sticky};
-  }, [weekRows]);
+  }, [monthSections]);
 
   const dayNames = useMemo(() => {
     // `LocaleConfig` is re-exported from xdate without precise TS types for
@@ -179,8 +148,11 @@ function SessionsCalendarWeekListView({
   const listRef = useRef<FlashListRef<ListItem>>(null);
 
   // Lazy-load older months when the user scrolls within the buffer of the
-  // loaded floor. Surface the earliest visible in-range day to the parent
-  // so it can decide whether to widen the loaded window.
+  // loaded floor. Walk forward from the lowest visible index to the first
+  // week item with at least one in-range day; surface that day to the
+  // parent so it can decide whether to widen the loaded window. Walking
+  // forward handles label items and leading-blank week rows at the top
+  // of the very first month section.
   const onViewableItemsChanged = useCallback(
     ({viewableItems}: {viewableItems: Array<{index: number | null}>}) => {
       if (!onRequestOlder || viewableItems.length === 0) {
@@ -195,8 +167,6 @@ function SessionsCalendarWeekListView({
       if (minIndex > LOAD_AHEAD_BUFFER_WEEKS) {
         return;
       }
-      // Walk forward from the lowest visible index to find the first week
-      // item; labels alone don't carry a day reference.
       for (let i = Math.max(0, minIndex); i < items.length; i++) {
         const item = items[i];
         if (item.kind !== 'week') {
@@ -267,6 +237,7 @@ function SessionsCalendarWeekListView({
         stickyHeaderIndices={stickyHeaderIndices}
         initialScrollIndex={Math.max(0, items.length - 1)}
         showsVerticalScrollIndicator
+        contentContainerStyle={styles.sessionsCalendarWeekListContent}
         onViewableItemsChanged={onViewableItemsChanged}
         viewabilityConfig={VIEWABILITY_CONFIG}
       />

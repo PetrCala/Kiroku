@@ -7,10 +7,10 @@ import type {MarkingProps} from 'react-native-calendars/src/calendar/day/marking
 import type {DateString} from '@src/types/onyx/OnyxCommon';
 import useThemeStyles from '@hooks/useThemeStyles';
 import DayComponent from './DayComponent';
-import type {WeekRow as WeekRowData} from './buildWeekRows';
+import type {MonthWeek} from './buildMonthSections';
 
 type WeekRowProps = {
-  row: WeekRowData;
+  row: MonthWeek;
   markedDates: MarkedDates;
   unitsMap: Map<DateString, number>;
   today: DateString;
@@ -49,7 +49,7 @@ function WeekRow({
             <View
               // Index is stable within a row of fixed width 7.
               // eslint-disable-next-line react/no-array-index-key
-              key={`blank-${row.weekStart}-${idx}`}
+              key={`blank-${row.key}-${idx}`}
               style={styles.sessionsCalendarWeekCellBlank}
             />
           );

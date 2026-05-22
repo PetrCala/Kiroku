@@ -1566,9 +1566,18 @@ const styles = (theme: ThemeColors) =>
     sessionsCalendarDayNamesRow: {
       flexDirection: 'row',
       paddingVertical: 8,
+      paddingHorizontal: 20,
       borderBottomWidth: 1,
       borderColor: theme.border,
       backgroundColor: theme.appBG,
+    },
+
+    // FlashList contentContainerStyle for the fullscreen calendar. Must
+    // share the same `paddingHorizontal` as the day-names row above so the
+    // seven flex-1 columns line up across both. Also tightens the visible
+    // gap between day cells without touching the global cell size.
+    sessionsCalendarWeekListContent: {
+      paddingHorizontal: 20,
     },
 
     sessionsCalendarDayNameCell: {
@@ -1588,7 +1597,7 @@ const styles = (theme: ThemeColors) =>
     sessionsCalendarMonthLabel: {
       flexDirection: 'row',
       alignItems: 'center',
-      paddingTop: 16,
+      paddingTop: 24,
       paddingBottom: 6,
       paddingHorizontal: 4,
       backgroundColor: theme.appBG,
