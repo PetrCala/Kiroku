@@ -7,8 +7,6 @@ import {UCFirst} from '@libs/StringUtilsKiroku';
 
 // createOnyxContext return type
 type CreateOnyxContext<TOnyxKey extends OnyxKey> = [
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  () => (Component: ComponentType<any>) => ComponentType<any>, // Deprecated withOnyx HOC (for backward compatibility)
   ComponentType<ChildrenProps>, // Provider
   React.Context<OnyxValue<TOnyxKey>>, // Context
   () => NonNullable<OnyxValue<TOnyxKey>>, // useOnyxContext hook
@@ -34,17 +32,6 @@ export default <TOnyxKey extends OnyxKey>(
 
   Provider.displayName = `${UCFirst(onyxKeyName)}Provider`;
 
-  // Deprecated HOC for backward compatibility - maintains old withOnyx two-step calling pattern
-  // Old pattern: withNetwork()(Component)
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const withOnyxKey = () => (Component: ComponentType<any>) => {
-    // eslint-disable-next-line no-console
-    console.warn(
-      `withOnyx HOC is deprecated. Use ${UCFirst(onyxKeyName)}Provider and useOnyxContext instead.`,
-    );
-    return Component;
-  };
-
   const useOnyxContext = () => {
     const value = useContext(Context);
     if (value === CONTEXT_UNSET) {
@@ -56,7 +43,6 @@ export default <TOnyxKey extends OnyxKey>(
   };
 
   return [
-    withOnyxKey,
     Provider,
     Context as unknown as React.Context<OnyxValue<TOnyxKey>>,
     useOnyxContext,
