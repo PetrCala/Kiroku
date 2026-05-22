@@ -1,5 +1,5 @@
 import React, {useEffect} from 'react';
-import {StyleSheet, View} from 'react-native';
+import {Platform, StyleSheet, View} from 'react-native';
 import {Gesture, GestureDetector} from 'react-native-gesture-handler';
 import Animated, {
   runOnJS,
@@ -20,6 +20,12 @@ type SwipeablePagerProps<R extends Route> = {
   renderScene: (props: {route: R}) => React.ReactNode;
 };
 
+// Android renders only the active scene, so it ignores the swipe-related props.
+type SwipeablePagerAndroidProps<R extends Route> = Pick<
+  SwipeablePagerProps<R>,
+  'routes' | 'index' | 'renderScene'
+>;
+
 const SPRING_CONFIG = {dampingRatio: 1, duration: 280};
 const RUBBERBAND_RESISTANCE = 0.4;
 
@@ -28,7 +34,22 @@ const styles = StyleSheet.create({
   row: {flexDirection: 'row', flex: 1},
 });
 
-function SwipeablePager<R extends Route>({
+// On Android the parent GestureDetector does not reliably yield to the inner
+// FlashList's vertical scroll (RNGH + new arch), so the friend list gets stuck.
+// Render only the active scene; users switch tabs via the bottom-tab buttons.
+function SwipeablePagerAndroid<R extends Route>({
+  routes,
+  index,
+  renderScene,
+}: SwipeablePagerAndroidProps<R>) {
+  const active = routes[index];
+  if (!active) {
+    return null;
+  }
+  return <View style={styles.container}>{renderScene({route: active})}</View>;
+}
+
+function SwipeablePagerIOS<R extends Route>({
   routes,
   index,
   onIndexChange,
@@ -113,6 +134,28 @@ function SwipeablePager<R extends Route>({
         </Animated.View>
       </View>
     </GestureDetector>
+  );
+}
+
+function SwipeablePager<R extends Route>(props: SwipeablePagerProps<R>) {
+  const {routes, index, onIndexChange, onSwipeBeyondStart, renderScene} = props;
+  if (Platform.OS === 'android') {
+    return (
+      <SwipeablePagerAndroid
+        routes={routes}
+        index={index}
+        renderScene={renderScene}
+      />
+    );
+  }
+  return (
+    <SwipeablePagerIOS
+      routes={routes}
+      index={index}
+      onIndexChange={onIndexChange}
+      onSwipeBeyondStart={onSwipeBeyondStart}
+      renderScene={renderScene}
+    />
   );
 }
 
