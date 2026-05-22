@@ -201,6 +201,12 @@ jobs:
           S3_BUCKET: ${{ secrets.AWS_DEV_ARTIFACTS_BUCKET }}
           S3_REGION: ${{ secrets.AWS_REGION }}
           IOS_CERTIFICATE_PASSWORD: ${{ secrets.IOS_CERTIFICATE_PASSWORD }}
+          # `xcodebuild -showBuildSettings` on this workspace can take much
+          # longer than fastlane's 3s default × 4 retries (~45s total),
+          # especially on a fresh-SDK install pass. Bump both knobs so the
+          # build_app step doesn't time out before xcodebuild has answered.
+          FASTLANE_XCODEBUILD_SETTINGS_TIMEOUT: '120'
+          FASTLANE_XCODEBUILD_SETTINGS_RETRIES: '5'
 
       - name: Upload Artifact
         uses: actions/upload-artifact@v4
