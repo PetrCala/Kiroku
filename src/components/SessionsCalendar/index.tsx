@@ -59,8 +59,13 @@ function SessionsCalendar({
   // the compact view's `minDate` string and the fullscreen view's bottom
   // render cap. `null` when the user has no sessions and no persisted
   // floor (e.g. brand-new account before the one-time backfill runs).
+  //
+  // Note: the persisted timestamp can come back as `null` from Onyx in
+  // some edge cases (deleted field, migration), so use a truthy check
+  // rather than `!== undefined`. `new Date(null)` would otherwise be
+  // epoch zero and silently disable the fullscreen cap.
   const trackingStartDate: Date | null = useMemo(() => {
-    if (persistedEarliest !== undefined) {
+    if (persistedEarliest) {
       return new Date(persistedEarliest);
     }
     return DSUtils.getUserTrackingStartDate(drinkingSessionData) ?? null;

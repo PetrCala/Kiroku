@@ -109,11 +109,16 @@ function SessionsCalendarWeekListView({
   // session. The lazy-load window can extend further back (pre-session
   // months with no markings); without this clamp the calendar would show
   // empty tiles before the user had ever tracked.
+  //
+  // When there's no first-session date (user has never tracked, or data
+  // is still hydrating), cap at today instead of at `loadedFromDate`:
+  // otherwise the user could scroll infinitely into empty months because
+  // each scroll-trigger widens the loaded window with no real floor.
   const resolvedStart = useMemo(() => {
-    const fromLoad = loadedFromDate ?? resolvedEnd;
     if (!firstSessionDate) {
-      return startOfDay(fromLoad);
+      return resolvedEnd;
     }
+    const fromLoad = loadedFromDate ?? resolvedEnd;
     return startOfDay(
       fromLoad > firstSessionDate ? fromLoad : firstSessionDate,
     );
