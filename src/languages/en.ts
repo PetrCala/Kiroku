@@ -815,6 +815,28 @@ export default {
   },
   statistics: {
     title: 'Your stats',
+    tabs: {
+      overview: {
+        label: 'Overview',
+        placeholder:
+          'Your alcohol-free streak and weekly recap will live here.',
+      },
+      trends: {
+        label: 'Trends',
+        placeholder:
+          'Your weekly trend and band-of-normal will surface here as data builds.',
+      },
+      patterns: {
+        label: 'Patterns',
+        placeholder:
+          'Your when-and-how — hour of day and day of week — will live here.',
+      },
+      breakdown: {
+        label: 'Breakdown',
+        placeholder:
+          'Your drink-type breakdown and per-type trends will land here.',
+      },
+    },
     charts: {
       weeklyBars: {
         title: 'Last 8 weeks',
@@ -851,10 +873,6 @@ export default {
         comparisonToggle: 'Comparison mode',
       },
     },
-  },
-  statisticsScreen: {
-    title: 'Statistics',
-    comingSoon: 'Coming soon!',
   },
   achievementsScreen: {
     title: 'Badges',

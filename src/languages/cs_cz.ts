@@ -805,6 +805,26 @@ export default {
   },
   statistics: {
     title: 'Vaše statistiky',
+    tabs: {
+      overview: {
+        label: 'Přehled',
+        placeholder: 'Tady poroste tvoje série bez alkoholu a týdenní shrnutí.',
+      },
+      trends: {
+        label: 'Trendy',
+        placeholder:
+          'Týdenní trend a pásmo normálu se tu objeví, jak budou přibývat data.',
+      },
+      patterns: {
+        label: 'Vzorce',
+        placeholder: 'Kdy a jak — hodina dne a den v týdnu — bude tady.',
+      },
+      breakdown: {
+        label: 'Rozpis',
+        placeholder:
+          'Rozpis podle druhu pití a trendy podle typu přistanou tady.',
+      },
+    },
     charts: {
       weeklyBars: {
         title: 'Posledních 8 týdnů',
@@ -841,10 +861,6 @@ export default {
         comparisonToggle: 'Režim porovnání',
       },
     },
-  },
-  statisticsScreen: {
-    title: 'Statistiky',
-    comingSoon: 'Již brzy!',
   },
   achievementsScreen: {
     title: 'Odznaky',
