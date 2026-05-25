@@ -213,7 +213,7 @@ function ProfileScreen({route}: ProfileScreenProps) {
             onPress={onSeeAllFriendsButtonPress}
           />
         </View>
-        <View style={[]}>
+        <View style={styles.ph2}>
           <StatOverview statsData={statsData} />
           <SessionsCalendar
             userID={userID}
