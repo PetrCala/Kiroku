@@ -275,23 +275,6 @@ async function renderIcon(
   return buf;
 }
 
-/**
- * Produces a solid-color PNG of the given size. Used for Android adaptive icon
- * backgrounds, which must be a flat color layer beneath the foreground.
- */
-async function solidColorPng(pixelSize, color) {
-  return sharp({
-    create: {
-      width: pixelSize,
-      height: pixelSize,
-      channels: 4,
-      background: color,
-    },
-  })
-    .png()
-    .toBuffer();
-}
-
 // ─── iOS app icons ────────────────────────────────────────────────────────────
 
 const IOS_VARIANT_ASSET = {
@@ -426,8 +409,7 @@ const ADAPTIVE_XML_NO_MONOCHROME = `<?xml version="1.0" encoding="utf-8"?>
 function parseSvgAttrs(attrText) {
   const attrs = {};
   const re = /([a-zA-Z_:][\w:.-]*)\s*=\s*(?:"([^"]*)"|'([^']*)')/g;
-  let m;
-  while ((m = re.exec(attrText)) !== null) {
+  for (const m of attrText.matchAll(re)) {
     attrs[m[1]] = m[2] !== undefined ? m[2] : m[3];
   }
   return attrs;
@@ -530,8 +512,7 @@ function svgToVectorDrawable(
   // Reject any tag inside <svg> that we don't explicitly support. Comments are fine.
   const tagRe = /<\/?([a-zA-Z][a-zA-Z0-9-]*)\b/g;
   const supported = new Set(['path', 'rect']);
-  let tag;
-  while ((tag = tagRe.exec(body)) !== null) {
+  for (const tag of body.matchAll(tagRe)) {
     if (!supported.has(tag[1].toLowerCase())) {
       throw new Error(
         `svgToVectorDrawable: unsupported element <${tag[1]}> in master SVG. ` +
@@ -543,9 +524,8 @@ function svgToVectorDrawable(
 
   const artLines = [];
   const elementRe = /<(path|rect)\b([^>]*?)\/?>/gi;
-  let match;
   let elementCount = 0;
-  while ((match = elementRe.exec(body)) !== null) {
+  for (const match of body.matchAll(elementRe)) {
     elementCount += 1;
     const elTag = match[1].toLowerCase();
     const elAttrs = parseSvgAttrs(match[2]);
