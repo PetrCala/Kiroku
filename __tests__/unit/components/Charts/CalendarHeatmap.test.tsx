@@ -11,6 +11,13 @@ jest.mock('@shopify/react-native-skia', () => ({
   RoundedRect: () => null,
 }));
 
+// react-native-haptic-feedback registers a TurboModule at import time that
+// jest can't resolve; PressableWithoutFeedback pulls it in transitively.
+jest.mock('react-native-haptic-feedback', () => ({
+  __esModule: true,
+  default: {trigger: jest.fn()},
+}));
+
 jest.mock('@components/Charts/BaseChart', () => ({
   __esModule: true,
   useChartTheme: () => ({
