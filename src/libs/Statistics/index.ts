@@ -9,6 +9,7 @@ export {
   byIsoWeek,
   byMonth,
   byQuarter,
+  bySessionId,
   byUserId,
   byYear,
   composeBuckets,
@@ -17,6 +18,7 @@ export {
 export {default as buildDrinkEvents} from './events';
 export type {DrinkDefaults} from './events';
 export {
+  composeFilters,
   dateRange,
   drinkTypeSubset,
   excludeBlackouts,
@@ -35,6 +37,8 @@ export {
   p25,
   p75,
   p90,
+  percentile,
+  sessionDurationMin,
   stddev,
   sumSdu,
   sumUnits,

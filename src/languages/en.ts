@@ -844,6 +844,26 @@ export default {
       calendarHeatmap: {
         title: 'This month',
       },
+      hourOfDay: {
+        title: 'Hour of day',
+        empty: 'No drinks recorded in this range.',
+      },
+      dowHour: {
+        title: 'Day of week × hour',
+        empty: 'No drinks recorded in this range.',
+      },
+      drinksPerSession: {
+        title: 'Drinks per session',
+        empty: 'No sessions in this range.',
+        p75Copy: ({value}: {value: number}) =>
+          `75% of your sessions are ${value} drinks or fewer.`,
+      },
+      sessionDuration: {
+        title: 'Session length',
+        empty: 'No sessions in this range.',
+        p75Copy: ({value}: {value: string}) =>
+          `75% of your sessions are ${value} or shorter.`,
+      },
     },
     filters: {
       range: {

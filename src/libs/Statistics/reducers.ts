@@ -107,6 +107,15 @@ const stddev: Reducer<number> = events => {
   return Math.sqrt(sumSquares / events.length);
 };
 
+/**
+ * Session length in minutes. Every event in a session bucket shares the same
+ * `sessionDurationMin`, so reading the first event is sufficient. Returns
+ * `NaN` for buckets whose session has no resolvable duration (ongoing,
+ * unended); callers must filter NaN before binning.
+ */
+const sessionDurationMin: Reducer<number> = events =>
+  events[0]?.sessionDurationMin ?? Number.NaN;
+
 const firstEvent: Reducer<DrinkEvent | undefined> = events => {
   if (events.length === 0) {
     return undefined;
@@ -144,6 +153,8 @@ export {
   p25,
   p75,
   p90,
+  percentile,
+  sessionDurationMin,
   stddev,
   sumSdu,
   sumUnits,
