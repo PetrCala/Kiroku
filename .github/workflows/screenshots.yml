@@ -1,0 +1,133 @@
+name: Capture App Store / Play Store screenshots
+
+# Manual trigger only — App Store screenshots are infrequent, expensive
+# (~30-45 min cold build + UI test runs across the device matrix), and require
+# demo credentials. Never wire this to `pull_request` or any auto-trigger.
+#
+# Prerequisite: the demo account referenced by APPLE_DEMO_EMAIL /
+# APPLE_DEMO_PASSWORD MUST have at least one logged drinking session in the
+# current calendar month. The Day Overview screenshot taps the first
+# DayMarking cell in the calendar — if no session exists in-month, the test
+# fails. See contributingGuides/SCREENSHOTS.md.
+on:
+  workflow_dispatch:
+    inputs:
+      device_subset:
+        description: 'Which devices to capture (all | phone-only | ipad-only). Trims Snapfile devices for iteration speed.'
+        required: false
+        default: 'all'
+        type: choice
+        options:
+          - all
+          - phone-only
+          - ipad-only
+
+permissions:
+  contents: read
+
+jobs:
+  ios:
+    name: Capture iOS App Store screenshots
+    runs-on: macos-26
+    timeout-minutes: 60
+    env:
+      DEVELOPER_DIR: /Applications/Xcode_26.1.1.app/Contents/Developer
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Stage .env.production from secret
+        run: echo "${{ secrets.PROD_ENV_FILE }}" > .env.production
+
+      - name: Setup Node
+        id: setup-node
+        uses: ./.github/actions/composite/setupNode
+
+      - name: Install Ruby into tool cache (self-hosted runner)
+        run: |
+          RUBY_VERSION="3.3.4"
+          RUBY_PATH="${RUNNER_TOOL_CACHE}/Ruby/${RUBY_VERSION}/arm64"
+          if [[ ! -f "${RUBY_PATH}.complete" ]]; then
+            brew install ruby-build 2>/dev/null || true
+            ruby-build "$RUBY_VERSION" "$RUBY_PATH"
+            touch "${RUBY_PATH}.complete"
+          fi
+
+      - name: Setup Ruby
+        uses: ruby/setup-ruby@v1.190.0
+        with:
+          bundler-cache: true
+
+      - name: Cache Pod dependencies
+        uses: actions/cache@v4
+        id: pods-cache
+        with:
+          path: |
+            ios/Pods
+            ios/build/generated
+          key: ${{ runner.os }}-pods-cache-${{ hashFiles('ios/Podfile.lock', 'firebase.json', 'package-lock.json') }}
+          restore-keys: ${{ runner.os }}-pods-cache-
+
+      - name: Compare Podfile.lock and Manifest.lock
+        id: compare-podfile-and-manifest
+        run: echo "IS_PODFILE_SAME_AS_MANIFEST=${{ hashFiles('ios/Podfile.lock') == hashFiles('ios/Pods/Manifest.lock') }}" >> "$GITHUB_OUTPUT"
+
+      - name: Install cocoapods
+        uses: nick-invision/retry@0711ba3d7808574133d713a0d92d2941be03a350
+        if: steps.pods-cache.outputs.cache-hit != 'true' || steps.compare-podfile-and-manifest.outputs.IS_PODFILE_SAME_AS_MANIFEST != 'true' || steps.setup-node.outputs.cache-hit != 'true'
+        with:
+          timeout_minutes: 10
+          max_attempts: 5
+          command: cd ios && bundle exec pod install
+
+      - name: Set up environment for Xcode
+        run: |
+          echo "export NODE_BINARY=$(which node)" >> "$HOME/.bash_profile"
+          source "$HOME/.bash_profile"
+
+      # Trim the Snapfile device matrix when the dispatcher asked for a subset.
+      # `Snapfile` resolves devices(...) eagerly so we rewrite the file in
+      # place — this is throwaway, not committed back.
+      - name: Trim Snapfile device matrix
+        if: ${{ github.event.inputs.device_subset != 'all' }}
+        env:
+          DEVICE_SUBSET: ${{ github.event.inputs.device_subset }}
+        run: bundle exec ruby scripts/trim-snapfile-devices.rb "$DEVICE_SUBSET"
+
+      - name: Run Fastlane - Capture iOS screenshots
+        run: bundle exec fastlane ios screenshots
+        env:
+          APPLE_DEMO_EMAIL: ${{ secrets.APPLE_DEMO_EMAIL }}
+          APPLE_DEMO_PASSWORD: ${{ secrets.APPLE_DEMO_PASSWORD }}
+          KIROKU_DEMO_EMAIL: ${{ secrets.APPLE_DEMO_EMAIL }}
+          KIROKU_DEMO_PASSWORD: ${{ secrets.APPLE_DEMO_PASSWORD }}
+
+      - name: Upload iOS screenshots
+        if: ${{ always() }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: ios-screenshots-${{ github.sha }}
+          path: fastlane/screenshots/ios/**/*.png
+          if-no-files-found: warn
+          retention-days: 14
+
+      - name: Upload fastlane logs on failure
+        if: ${{ failure() }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: ios-fastlane-logs-${{ github.sha }}
+          path: |
+            ~/Library/Logs/gym/**
+            ~/Library/Logs/scan/**
+            ~/Library/Logs/snapshot/**
+            fastlane/report.xml
+          if-no-files-found: ignore
+          retention-days: 7
+
+  # TODO: Android screenshot capture. The fastlane `android :screenshots` lane
+  # (Fastfile + Screengrabfile) is in place, but Linux CI needs an Android
+  # emulator (reactivecircus/android-emulator-runner@v2 is the usual choice),
+  # the screengrab Gradle deps wired into android/app/build.gradle (still a
+  # manual step per SCREENSHOTS.md), and the CHANGE_CONFIGURATION permission
+  # in the debug manifest. None of those exist yet — wire them in a follow-up
+  # PR once the iOS flow is proven.
