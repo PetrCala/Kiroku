@@ -20,6 +20,7 @@ import {
   selectWeeklyKpis,
 } from '@libs/Statistics/overviewSelectors';
 import type {TranslationPaths} from '@src/languages/types';
+import {useStatsDrillDown} from '@src/screens/Statistics/drilldown/DrillDownContext';
 
 type DeltaShape = NonNullable<KpiCardProps['delta']>;
 
@@ -48,6 +49,7 @@ function OverviewTab() {
   const styles = useThemeStyles();
   const theme = useTheme();
   const {events, isLoading} = useDrinkEvents();
+  const {openDrillDown} = useStatsDrillDown();
 
   // Snapshot `now` once per mount so all selectors agree. Re-deriving on each
   // render would let an animation frame land between two reads and disagree
@@ -172,6 +174,7 @@ function OverviewTab() {
           accessibilityLabel={translate(
             'statistics.charts.calendarHeatmap.title',
           )}
+          onDayPress={cell => openDrillDown({kind: 'day', date: cell.dateKey})}
         />
       </ChartCard>
 

@@ -38,6 +38,8 @@ type DrinkTypeDonutProps = {
   /** Set of keys the user has chip-filtered to. Empty Set = all keys. */
   drinkTypeFilter: ReadonlySet<DrinkKey>;
   size?: number;
+  /** Fired alongside the internal selection when a slice is hit (drill-down hook). */
+  onSlicePress?: (drinkKey: DrinkKey) => void;
 };
 
 function buildSlices(
@@ -141,6 +143,7 @@ function DrinkTypeDonut({
   unitsByDrinkKey,
   drinkTypeFilter,
   size = DEFAULT_SIZE,
+  onSlicePress,
 }: DrinkTypeDonutProps) {
   const styles = useThemeStyles();
   const theme = useTheme();
@@ -160,9 +163,7 @@ function DrinkTypeDonut({
   const isEmpty = slices.length === 0;
   const selected = selectedIdx >= 0 ? slices[selectedIdx] : undefined;
 
-  const handlePress = (
-    event?: GestureResponderEvent | KeyboardEvent,
-  ): void => {
+  const handlePress = (event?: GestureResponderEvent | KeyboardEvent): void => {
     if (isEmpty || !event || !('nativeEvent' in event)) {
       return;
     }
@@ -177,6 +178,9 @@ function DrinkTypeDonut({
       locationY,
     );
     setSelectedIdx(prev => (prev === idx ? -1 : idx));
+    if (idx >= 0) {
+      onSlicePress?.(slices[idx].key);
+    }
   };
 
   const a11yLabel = translate('statistics.tabs.breakdown.donut.a11y');

@@ -11,6 +11,7 @@ import useLocalize from '@hooks/useLocalize';
 import useTrendsTabData from '@hooks/useStatistics/useTrendsTabData';
 import useThemeStyles from '@hooks/useThemeStyles';
 import type {TranslationPaths} from '@src/languages/types';
+import {useStatsDrillDown} from '@src/screens/Statistics/drilldown/DrillDownContext';
 
 const styles = StyleSheet.create({
   container: {
@@ -31,6 +32,7 @@ function TrendsTab() {
   const {translate} = useLocalize();
   const themeStyles = useThemeStyles();
   const {hero, afYtd, stack, isLoading} = useTrendsTabData();
+  const {openDrillDown} = useStatsDrillDown();
 
   if (isLoading) {
     return (
@@ -81,6 +83,7 @@ function TrendsTab() {
               'statistics.tabs.trends.weeklyTrend.emptyLabel',
             )}
             accessibilityLabel={heroCaption}
+            onWeekPress={isoWeek => openDrillDown({kind: 'isoWeek', isoWeek})}
           />
         </ChartCard>
 

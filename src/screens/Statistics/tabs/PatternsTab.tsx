@@ -27,6 +27,7 @@ import {
   sumUnits,
 } from '@libs/Statistics';
 import type {WeekStart} from '@libs/Statistics';
+import {useStatsDrillDown} from '@src/screens/Statistics/drilldown/DrillDownContext';
 
 const styles = StyleSheet.create({
   scroll: {
@@ -123,6 +124,7 @@ function PatternsTab() {
   );
   const {translate} = useLocalize();
   const themeStyles = useThemeStyles();
+  const {openDrillDown} = useStatsDrillDown();
 
   const weekStart = resolveWeekStart(preferences?.first_day_of_week);
 
@@ -190,9 +192,7 @@ function PatternsTab() {
             buckets={hourBuckets}
             accessibilityLabel={translate('statistics.charts.hourOfDay.title')}
             emptyLabel={translate('statistics.charts.hourOfDay.empty')}
-            onSpokePress={() => {
-              // Drill-down handler — v2-K wires this to StatsDrillDownSheet.
-            }}
+            onSpokePress={hour => openDrillDown({kind: 'hour', hour})}
           />
         </ChartCard>
         <ChartCard title={translate('statistics.charts.dowHour.title')}>

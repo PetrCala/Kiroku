@@ -15,6 +15,7 @@ import {
   sumUnits,
 } from '@libs/Statistics';
 import type {DrinkKey} from '@src/types/onyx/Drinks';
+import {useStatsDrillDown} from '@src/screens/Statistics/drilldown/DrillDownContext';
 import DrinkTypeDonut from './breakdown/DrinkTypeDonut';
 import PerTypeWeeklyMultiples from './breakdown/PerTypeWeeklyMultiples';
 import TypeConcentrationSentence from './breakdown/TypeConcentrationSentence';
@@ -25,6 +26,7 @@ function BreakdownTab() {
   const styles = useThemeStyles();
   const {translate} = useLocalize();
   const {range, drinkTypeFilter, userIds} = useStatsContext();
+  const {openDrillDown} = useStatsDrillDown();
   const {events} = useDrinkEvents(
     userIds.length > 0 ? [...userIds] : undefined,
   );
@@ -73,6 +75,9 @@ function BreakdownTab() {
             <DrinkTypeDonut
               unitsByDrinkKey={currentUnitsByDrinkKey}
               drinkTypeFilter={drinkTypeFilter}
+              onSlicePress={drinkKey =>
+                openDrillDown({kind: 'drinkType', drinkKey})
+              }
             />
           </View>
         </ChartCard>
