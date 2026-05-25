@@ -316,6 +316,15 @@ export default {
     strongShot: 'Velký panák',
     cocktail: 'Koktejl',
     other: 'Ostatní',
+    adjust: 'Upravit',
+    volumeLabel: 'Objem',
+    volumeUnit: 'ml',
+    abvLabel: 'Obsah alkoholu',
+    abvUnit: '%',
+    adjustErrors: {
+      volumeMustBePositive: 'Objem musí být větší než 0',
+      abvOutOfRange: 'Obsah alkoholu musí být mezi 0 a 100',
+    },
   },
   units: {
     yellow: 'Žlutá',

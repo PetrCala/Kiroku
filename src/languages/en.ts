@@ -318,6 +318,15 @@ export default {
     strongShot: 'Strong Shot',
     cocktail: 'Cocktail',
     other: 'Other',
+    adjust: 'Adjust',
+    volumeLabel: 'Volume',
+    volumeUnit: 'ml',
+    abvLabel: 'ABV',
+    abvUnit: '%',
+    adjustErrors: {
+      volumeMustBePositive: 'Volume must be greater than 0',
+      abvOutOfRange: 'ABV must be between 0 and 100',
+    },
   },
   units: {
     yellow: 'Yellow',

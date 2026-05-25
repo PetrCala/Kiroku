@@ -35,6 +35,7 @@ import {
   getDrinkOverrides,
   makeDrinkEntry,
 } from './DrinkEntryUtils';
+import type {DrinkOverrides} from './DrinkEntryUtils';
 import {roundToTwoDecimalPlaces} from './NumberUtils';
 import {getFirebaseAuth} from './Firebase/FirebaseApp';
 import {numberToVerboseString} from './TimeUtils';
@@ -230,6 +231,9 @@ function calculateAvailableUnits(
  * @param drinksList - The existing DrinksList object.
  * @param drinksToUnits - A mapping from DrinkKey to unit conversion factors.
  * @param options - Options to specify the timestamp behavior.
+ * @param overrides - Optional per-event volume_ml / abv overrides applied to
+ *   the newly-added entry. When provided on a merged slot, replaces whatever
+ *   overrides the slot previously had (the most recent user intent wins).
  * @param maxUnits - The maximum allowed units. Defaults to CONST.MAX_ALLOWED_UNITS.
  * @returns The updated DrinksList object.
  */
@@ -239,6 +243,7 @@ function addDrinksToList(
   drinksList: DrinksList | undefined,
   drinksToUnits: DrinksToUnits,
   options: AddDrinksOptions,
+  overrides?: DrinkOverrides,
 ): DrinksList {
   // Create a shallow copy of drinksList to avoid mutating the original
   const updatedDrinksList = drinksList ? {...drinksList} : {};
@@ -280,17 +285,17 @@ function addDrinksToList(
 
     const existingEntry = mergedDrinks[drinkKey];
     const newCount = getDrinkCount(existingEntry) + (amount ?? 0);
-    // Preserve any existing volume_ml / abv overrides on this slot when only
-    // the count changes; the v2-B UI is the only producer of overrides.
-    mergedDrinks[drinkKey] = makeDrinkEntry(
-      newCount,
-      getDrinkOverrides(existingEntry),
-    );
+    // If the caller passed new overrides, they win (latest user intent);
+    // otherwise preserve whatever overrides the slot already carried.
+    const mergedOverrides = overrides ?? getDrinkOverrides(existingEntry);
+    mergedDrinks[drinkKey] = makeDrinkEntry(newCount, mergedOverrides);
 
     updatedDrinksList[timestamp] = mergedDrinks;
   } else {
     // Timestamp does not exist, add the drinks
-    updatedDrinksList[timestamp] = {[drinkKey]: makeDrinkEntry(amount)};
+    updatedDrinksList[timestamp] = {
+      [drinkKey]: makeDrinkEntry(amount, overrides),
+    };
   }
 
   return updatedDrinksList;
@@ -409,6 +414,7 @@ function modifySessionDrinks(
   amount: number,
   action: ValueOf<typeof CONST.DRINKS.ACTIONS>,
   drinksToUnits: DrinksToUnits,
+  overrides?: DrinkOverrides,
 ): DrinksList | undefined {
   let drinksList = _.cloneDeep(session?.drinks);
   if (action === 'add') {
@@ -419,6 +425,7 @@ function modifySessionDrinks(
       drinksList,
       drinksToUnits,
       options,
+      overrides,
     );
   } else if (action === 'remove') {
     const options: RemoveDrinksOptions = 'removeFromLatest';

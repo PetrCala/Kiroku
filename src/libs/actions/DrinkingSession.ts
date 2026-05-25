@@ -18,6 +18,7 @@ import type {
 } from '@src/types/onyx';
 import * as Localize from '@libs/Localize';
 import * as DSUtils from '@libs/DrinkingSessionUtils';
+import type {DrinkOverrides} from '@libs/DrinkEntryUtils';
 import type {UserID} from '@src/types/onyx/OnyxCommon';
 import type {User} from 'firebase/auth';
 import CONST from '@src/CONST';
@@ -357,6 +358,8 @@ async function removeDrinkingSessionData(
  * @param drinks The drinks to add or remove.
  * @param drinksToUnits Drink to units mapping.
  * @param action The action to perform (i.e., add, remove,...).
+ * @param overrides Optional per-event volume_ml / abv overrides. Only honoured
+ *   on the ADD path; ignored on REMOVE.
  */
 function updateDrinks(
   sessionId: DrinkingSessionId | undefined,
@@ -364,6 +367,7 @@ function updateDrinks(
   amount: number,
   action: ValueOf<typeof CONST.DRINKS.ACTIONS>,
   drinksToUnits: DrinksToUnits | undefined,
+  overrides?: DrinkOverrides,
 ): void {
   if (!drinksToUnits || !sessionId) {
     return;
@@ -377,6 +381,7 @@ function updateDrinks(
       amount,
       action,
       drinksToUnits,
+      overrides,
     );
 
     // const drinks = drinksList ? Object.values(drinksList)[0] : null;
