@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/naming-convention -- jest mock factory keys (__esModule) are dictated by Node module shape */
-import {render} from '@testing-library/react-native';
+import {fireEvent, render} from '@testing-library/react-native';
 import CalendarHeatmap from '@components/Charts/CalendarHeatmap/CalendarHeatmap';
 import type {HeatmapCell} from '@libs/Statistics';
 
@@ -55,5 +55,21 @@ describe('CalendarHeatmap', () => {
     const root = tree.toJSON();
     expect(root).not.toBeNull();
     expect(JSON.stringify(root)).toContain('This month');
+  });
+
+  it('marks future cells as "upcoming" in the a11y label', () => {
+    const cells: HeatmapCell[] = [
+      cell('2026-05-01', 0, 0),
+      {dateKey: '2026-05-31', totalSdu: 0, intensity: 0, isFuture: true},
+    ];
+    const tree = render(
+      <CalendarHeatmap cells={cells} accessibilityLabel="This month" />,
+    );
+    // RNTL doesn't fire onLayout automatically; supply a width so the inner
+    // per-cell views (which carry the a11y labels) render.
+    fireEvent(tree.root, 'layout', {nativeEvent: {layout: {width: 280}}});
+    const json = JSON.stringify(tree.toJSON());
+    expect(json).toContain('2026-05-31, upcoming');
+    expect(json).toContain('2026-05-01, 0 units');
   });
 });

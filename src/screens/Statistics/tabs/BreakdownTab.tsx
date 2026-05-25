@@ -2,6 +2,7 @@ import React, {useMemo} from 'react';
 import {View} from 'react-native';
 import ScrollView from '@components/ScrollView';
 import ChartCard from '@components/Charts/ChartCard/ChartCard';
+import StatsFilterToolbar from '@components/Statistics/StatsFilterToolbar';
 import useLocalize from '@hooks/useLocalize';
 import useStatsContext from '@hooks/useStatsContext';
 import {useAggregate, useDrinkEvents} from '@hooks/useStatistics';
@@ -62,35 +63,38 @@ function BreakdownTab() {
   );
 
   return (
-    <ScrollView contentContainerStyle={[styles.p3, styles.pb5]}>
-      <ChartCard
-        title={translate('statistics.tabs.breakdown.donut.title')}
-        subtitle={translate('statistics.tabs.breakdown.donut.subtitle')}>
-        <View style={styles.alignItemsCenter}>
-          <DrinkTypeDonut
-            unitsByDrinkKey={currentUnitsByDrinkKey}
+    <View style={styles.flex1}>
+      <StatsFilterToolbar />
+      <ScrollView contentContainerStyle={[styles.p3, styles.pb5]}>
+        <ChartCard
+          title={translate('statistics.tabs.breakdown.donut.title')}
+          subtitle={translate('statistics.tabs.breakdown.donut.subtitle')}>
+          <View style={styles.alignItemsCenter}>
+            <DrinkTypeDonut
+              unitsByDrinkKey={currentUnitsByDrinkKey}
+              drinkTypeFilter={drinkTypeFilter}
+            />
+          </View>
+        </ChartCard>
+
+        <ChartCard
+          title={translate('statistics.tabs.breakdown.multiples.title')}
+          subtitle={translate('statistics.tabs.breakdown.multiples.subtitle')}>
+          <PerTypeWeeklyMultiples
+            unitsByDrinkKeyAndWeek={unitsByDrinkKeyAndWeek}
             drinkTypeFilter={drinkTypeFilter}
+            rangeStart={range.start}
+            rangeEnd={range.end}
           />
-        </View>
-      </ChartCard>
+        </ChartCard>
 
-      <ChartCard
-        title={translate('statistics.tabs.breakdown.multiples.title')}
-        subtitle={translate('statistics.tabs.breakdown.multiples.subtitle')}>
-        <PerTypeWeeklyMultiples
-          unitsByDrinkKeyAndWeek={unitsByDrinkKeyAndWeek}
-          drinkTypeFilter={drinkTypeFilter}
-          rangeStart={range.start}
-          rangeEnd={range.end}
+        <TypeConcentrationSentence
+          currentUnitsByDrinkKey={currentUnitsByDrinkKey}
+          priorUnitsByDrinkKey={priorUnitsByDrinkKey}
+          preset={range.preset}
         />
-      </ChartCard>
-
-      <TypeConcentrationSentence
-        currentUnitsByDrinkKey={currentUnitsByDrinkKey}
-        priorUnitsByDrinkKey={priorUnitsByDrinkKey}
-        preset={range.preset}
-      />
-    </ScrollView>
+      </ScrollView>
+    </View>
   );
 }
 
