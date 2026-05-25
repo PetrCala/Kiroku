@@ -25,11 +25,28 @@ function useChartTheme(): ChartTheme {
       primaryStroke: appColor,
       // ~20% alpha suffix on the theme accent for the band-of-normal stripe.
       bandFill: `${appColor}33`,
+      // Muted ~67% alpha on the supporting text color for dashed
+      // "vs previous period" overlays — visible but never competes with
+      // the primary series.
+      comparisonStroke: `${textSupporting}AA`,
       intensityRamp: [
         borderLighter,
         `${warning}55`,
         `${warning}AA`,
         warning,
+        add,
+      ],
+      // Seven stops along the yellow → orange spectrum, keyed positionally
+      // to `CONST.DRINKS.KEYS` order at the call site. Walks from a low-
+      // alpha warning yellow up to the warmer `add` orange — no red, no
+      // black, per STATISTICS_V2.md §3.
+      drinkTypeRamp: [
+        `${warning}55`,
+        `${warning}88`,
+        `${warning}BB`,
+        warning,
+        `${add}CC`,
+        `${add}EE`,
         add,
       ],
     }),

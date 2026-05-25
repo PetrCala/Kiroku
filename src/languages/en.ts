@@ -823,8 +823,30 @@ export default {
       },
       trends: {
         label: 'Trends',
-        placeholder:
-          'Your weekly trend and band-of-normal will surface here as data builds.',
+        weeklyTrend: {
+          title: 'Weekly units',
+          emptyLabel: 'Log a few weeks to see your trend.',
+          bandCaption:
+            'The shaded band is where most of your recent weeks landed.',
+          captions: {
+            trendingDown: 'Your weekly units are trending down.',
+            trendingUp: 'Your weekly units are trending up.',
+            neutral: 'Your weeks vary as usual.',
+            notEnoughData:
+              'Keep logging — your trend will surface as data builds.',
+          },
+        },
+        cumulativeAf: {
+          title: 'Alcohol-free days this year',
+          emptyLabel: 'No alcohol-free days logged yet this year.',
+        },
+        drinkTypeStack: {
+          title: 'Drink mix over time',
+          emptyLabel: 'Log a few sessions to see your mix.',
+        },
+        comparison: {
+          legend: 'Previous period',
+        },
       },
       patterns: {
         label: 'Patterns',
