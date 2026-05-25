@@ -291,6 +291,8 @@ export default {
     today: 'Dnes',
     fullscreenTitle: 'Sezení',
     loadingOlderMonths: 'Načítání starších měsíců…',
+    monthTotalUnits: ({unitCount}: UnitCountParams) =>
+      `${unitCount} ${Str.pluralize('jednotka', 'jednotek', unitCount)}`,
   },
   textInput: {
     accessibilityLabel: 'Textové pole',

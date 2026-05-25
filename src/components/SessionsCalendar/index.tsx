@@ -51,6 +51,7 @@ function SessionsCalendar({
   const {
     markedDates,
     unitsMap,
+    monthlyTotalsMap,
     loadedFrom,
     loadedFromDate,
     loadMoreMonths,
@@ -168,6 +169,7 @@ function SessionsCalendar({
       <SessionsCalendarWeekListView
         markedDates={markedDates}
         unitsMap={unitsMap}
+        monthlyTotalsMap={monthlyTotalsMap}
         loadedFromDate={loadedFromDate}
         isFetchingOlderMonths={isFetchingOlderMonths}
         onDayPress={onDayPress}
