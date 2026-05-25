@@ -12,8 +12,17 @@ name: Capture App Store / Play Store screenshots
 on:
   workflow_dispatch:
     inputs:
+      platform:
+        description: 'Which platform(s) to capture'
+        required: false
+        default: 'both'
+        type: choice
+        options:
+          - both
+          - ios-only
+          - android-only
       device_subset:
-        description: 'Which devices to capture (all | phone-only | ipad-only). Trims Snapfile devices for iteration speed.'
+        description: 'iOS device subset (ignored for Android). all | phone-only | ipad-only.'
         required: false
         default: 'all'
         type: choice
@@ -21,6 +30,15 @@ on:
           - all
           - phone-only
           - ipad-only
+      android_locales_subset:
+        description: 'Android locales. Use a single locale for fast iteration.'
+        required: false
+        default: 'all'
+        type: choice
+        options:
+          - all
+          - en-US
+          - cs-CZ
 
 permissions:
   contents: read
@@ -28,6 +46,7 @@ permissions:
 jobs:
   ios:
     name: Capture iOS App Store screenshots
+    if: ${{ github.event.inputs.platform != 'android-only' }}
     runs-on: macos-26
     timeout-minutes: 60
     env:
@@ -120,10 +139,106 @@ jobs:
           if-no-files-found: ignore
           retention-days: 7
 
-  # TODO: Android screenshot capture. The fastlane `android :screenshots` lane
-  # (Fastfile + Screengrabfile) is in place, but Linux CI needs an Android
-  # emulator (reactivecircus/android-emulator-runner@v2 is the usual choice),
-  # the screengrab Gradle deps wired into android/app/build.gradle (still a
-  # manual step per SCREENSHOTS.md), and the CHANGE_CONFIGURATION permission
-  # in the debug manifest. None of those exist yet — wire them in a follow-up
-  # PR once the iOS flow is proven.
+  android:
+    name: Capture Play Store screenshots
+    if: ${{ github.event.inputs.platform != 'ios-only' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Stage .env.production from secret
+        run: echo "${{ secrets.PRODUCTION_ENV_FILE }}" > .env.production
+
+      - name: Setup Node
+        uses: ./.github/actions/composite/setupNode
+
+      - name: Setup Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'oracle'
+          java-version: '17'
+
+      - name: Setup Ruby
+        uses: ruby/setup-ruby@v1.310.0
+        with:
+          bundler-cache: true
+
+      - name: Set REACT_NATIVE_DOWNLOADS_DIR
+        run: echo "REACT_NATIVE_DOWNLOADS_DIR=$HOME/.rn-downloads" >> "$GITHUB_ENV"
+
+      - name: Cache Gradle and React Native downloads
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.gradle/caches
+            ~/.gradle/wrapper
+            ~/.rn-downloads
+          key: ${{ runner.os }}-android-gradle-${{ hashFiles('android/**/*.gradle*', 'android/gradle/wrapper/gradle-wrapper.properties', 'package-lock.json', 'patches/**') }}
+          restore-keys: |
+            ${{ runner.os }}-android-gradle-
+
+      # Production-flavor APK is signed with the upload keystore, same as the
+      # testBuild + platformDeploy workflows. Decrypt step copied verbatim
+      # from testBuild.yml.
+      - name: Decrypt keystore
+        run: cd android/app && gpg --quiet --batch --yes --decrypt --passphrase="$LARGE_SECRET_PASSPHRASE" --output kiroku-play-key.keystore kiroku-play-key.keystore.gpg
+        env:
+          LARGE_SECRET_PASSPHRASE: ${{ secrets.LARGE_SECRET_PASSPHRASE }}
+
+      # Trim the Screengrabfile locale list when a subset was selected.
+      # Throwaway in-place edit, never committed back. Mirrors the spirit of
+      # scripts/trim-snapfile-devices.rb but inline since it's a one-liner.
+      - name: Trim Screengrabfile locales
+        if: ${{ github.event.inputs.android_locales_subset != 'all' }}
+        env:
+          LOCALE: ${{ github.event.inputs.android_locales_subset }}
+        run: sed -i "s|locales(\[.*\])|locales([\"$LOCALE\"])|" fastlane/Screengrabfile
+
+      # Required on ubuntu-latest for the Android emulator's hardware
+      # acceleration. Without it, boot is ~5x slower (software rendering).
+      - name: Enable KVM
+        run: |
+          echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
+          sudo udevadm control --reload-rules
+          sudo udevadm trigger --name-match=kvm
+
+      - name: Run Fastlane - Capture Android screenshots
+        uses: reactivecircus/android-emulator-runner@v2
+        with:
+          api-level: 34
+          target: google_apis
+          arch: x86_64
+          profile: pixel_6
+          emulator-boot-timeout: 600
+          disable-animations: true
+          disk-size: 6000M
+          ram-size: 4096M
+          script: bundle exec fastlane android screenshots
+        env:
+          MYAPP_UPLOAD_STORE_PASSWORD: ${{ secrets.MYAPP_UPLOAD_STORE_PASSWORD }}
+          MYAPP_UPLOAD_KEY_PASSWORD: ${{ secrets.MYAPP_UPLOAD_KEY_PASSWORD }}
+          KIROKU_DEMO_EMAIL: ${{ secrets.APPLE_DEMO_EMAIL }}
+          KIROKU_DEMO_PASSWORD: ${{ secrets.APPLE_DEMO_PASSWORD }}
+
+      - name: Upload Android screenshots
+        if: ${{ always() }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: android-screenshots-${{ github.sha }}
+          path: fastlane/screenshots/android/**/*.png
+          if-no-files-found: warn
+          retention-days: 14
+
+      - name: Upload screengrab logs on failure
+        if: ${{ failure() }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: android-screengrab-logs-${{ github.sha }}
+          path: |
+            fastlane/report.xml
+            android/app/build/outputs/androidTest-results/**
+            android/app/build/reports/androidTests/**
+          if-no-files-found: ignore
+          retention-days: 7
