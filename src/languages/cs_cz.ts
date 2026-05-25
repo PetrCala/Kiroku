@@ -21,6 +21,8 @@ import type {
   SessionConfirmTimezoneChangeParams,
   SessionStartTimeParams,
   SessionWindowIdParams,
+  StatsAfDaysParams,
+  StatsQuietDaysParams,
   UnitCountParams,
   UpdateEmailSentEmailParams,
   VerifyEmailScreenEmailParmas,
@@ -813,7 +815,48 @@ export default {
     tabs: {
       overview: {
         label: 'Přehled',
-        placeholder: 'Tady poroste tvoje série bez alkoholu a týdenní shrnutí.',
+        hero: {
+          afDays: {
+            label: 'Dny bez alkoholu tento měsíc',
+            a11yLabel: ({value, total}: StatsAfDaysParams) =>
+              `${value} z ${total} dnů bez alkoholu tento měsíc`,
+          },
+        },
+        kpi: {
+          sessionsThisWeek: {
+            label: 'Relace tento týden',
+            delta: 'vs minulý týden',
+          },
+          quietDaysThisWeek: {
+            label: 'Klidné dny tento týden',
+            delta: 'vs minulý týden',
+          },
+          unitsThisWeek: {
+            label: 'Jednotky tento týden',
+            delta: 'vs minulý týden',
+          },
+        },
+        trend: {
+          title: '8týdenní trend',
+          bandCaption:
+            'Stínovaný pás je tam, kde se odehrála většina tvých posledních 8 týdnů.',
+          chip: {
+            down: 'Trend dolů — méně jednotek týden po týdnu.',
+            up: 'Trend nahoru — více jednotek týden po týdnu.',
+            none: 'Tvé týdny se proměňují jako obvykle.',
+          },
+          a11yLabel: 'Posledních 8 týdnů týdenních jednotek, vyhlazeno',
+        },
+        empty: {
+          neverLogged: {
+            title: 'Zatím není co zaznamenat — i to se počítá.',
+            body: 'Až zaznamenáš relaci, objeví se zde týdenní trendy a měsíční přehled. Do té doby je každý den klidný.',
+          },
+          noDataInWindow: ({quietDays}: StatsQuietDaysParams) =>
+            `${quietDays} klidných dnů a počítáme dál — tvé trendy se vyjasní, jak budeš přidávat data.`,
+        },
+        sparseFooter:
+          'Zatím jen pár týdnů historie — tvé trendy se vyjasní, jak budeš přidávat data.',
       },
       trends: {
         label: 'Trendy',

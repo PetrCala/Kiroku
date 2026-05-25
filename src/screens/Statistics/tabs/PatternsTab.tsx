@@ -6,6 +6,7 @@ import {Histogram} from '@components/Charts/Histogram';
 import type {HistogramBin} from '@components/Charts/Histogram';
 import {HourPolar} from '@components/Charts/HourPolar';
 import {ChartCard} from '@components/Charts/ChartCard';
+import StatsFilterToolbar from '@components/Statistics/StatsFilterToolbar';
 import Text from '@components/Text';
 import {useDatabaseData} from '@context/global/DatabaseDataContext';
 import useLocalize from '@hooks/useLocalize';
@@ -179,72 +180,79 @@ function PatternsTab() {
     durationSeries.length >= 4 ? percentile(durationSeries, 0.75) : null;
 
   return (
-    <ScrollView
-      style={[styles.scroll, {backgroundColor: undefined}]}
-      contentContainerStyle={styles.scrollContent}>
-      <ChartCard title={translate('statistics.charts.hourOfDay.title')}>
-        <HourPolar
-          buckets={hourBuckets}
-          accessibilityLabel={translate('statistics.charts.hourOfDay.title')}
-          onSpokePress={() => {
-            // Drill-down handler — v2-K wires this to StatsDrillDownSheet.
-          }}
-        />
-      </ChartCard>
-      <ChartCard title={translate('statistics.charts.dowHour.title')}>
-        <DowHourHeatmap
-          buckets={dowHourBuckets}
-          weekStart={weekStart}
-          accessibilityLabel={translate('statistics.charts.dowHour.title')}
-        />
-      </ChartCard>
-      <View style={styles.histogramRow}>
-        <View style={styles.histogramCell}>
-          <ChartCard
-            title={translate('statistics.charts.drinksPerSession.title')}
-            footer={
-              drinkP75 !== null ? (
-                <Text style={[themeStyles.textMicroSupporting]}>
-                  {translate('statistics.charts.drinksPerSession.p75Copy', {
-                    value: Math.round(drinkP75),
-                  })}
-                </Text>
-              ) : null
-            }>
-            <Histogram
-              bins={drinkBins}
-              accessibilityLabel={translate(
-                'statistics.charts.drinksPerSession.title',
-              )}
-              emptyLabel={translate('statistics.charts.drinksPerSession.empty')}
-              height={160}
-            />
-          </ChartCard>
+    <View style={themeStyles.flex1}>
+      <StatsFilterToolbar />
+      <ScrollView
+        style={[styles.scroll, {backgroundColor: undefined}]}
+        contentContainerStyle={styles.scrollContent}>
+        <ChartCard title={translate('statistics.charts.hourOfDay.title')}>
+          <HourPolar
+            buckets={hourBuckets}
+            accessibilityLabel={translate('statistics.charts.hourOfDay.title')}
+            onSpokePress={() => {
+              // Drill-down handler — v2-K wires this to StatsDrillDownSheet.
+            }}
+          />
+        </ChartCard>
+        <ChartCard title={translate('statistics.charts.dowHour.title')}>
+          <DowHourHeatmap
+            buckets={dowHourBuckets}
+            weekStart={weekStart}
+            accessibilityLabel={translate('statistics.charts.dowHour.title')}
+          />
+        </ChartCard>
+        <View style={styles.histogramRow}>
+          <View style={styles.histogramCell}>
+            <ChartCard
+              title={translate('statistics.charts.drinksPerSession.title')}
+              footer={
+                drinkP75 !== null ? (
+                  <Text style={[themeStyles.textMicroSupporting]}>
+                    {translate('statistics.charts.drinksPerSession.p75Copy', {
+                      value: Math.round(drinkP75),
+                    })}
+                  </Text>
+                ) : null
+              }>
+              <Histogram
+                bins={drinkBins}
+                accessibilityLabel={translate(
+                  'statistics.charts.drinksPerSession.title',
+                )}
+                emptyLabel={translate(
+                  'statistics.charts.drinksPerSession.empty',
+                )}
+                height={160}
+              />
+            </ChartCard>
+          </View>
+          <View style={styles.histogramCell}>
+            <ChartCard
+              title={translate('statistics.charts.sessionDuration.title')}
+              footer={
+                durationP75 !== null ? (
+                  <Text style={[themeStyles.textMicroSupporting]}>
+                    {translate('statistics.charts.sessionDuration.p75Copy', {
+                      value: formatDurationMin(durationP75),
+                    })}
+                  </Text>
+                ) : null
+              }>
+              <Histogram
+                bins={durationBins}
+                accessibilityLabel={translate(
+                  'statistics.charts.sessionDuration.title',
+                )}
+                emptyLabel={translate(
+                  'statistics.charts.sessionDuration.empty',
+                )}
+                height={160}
+              />
+            </ChartCard>
+          </View>
         </View>
-        <View style={styles.histogramCell}>
-          <ChartCard
-            title={translate('statistics.charts.sessionDuration.title')}
-            footer={
-              durationP75 !== null ? (
-                <Text style={[themeStyles.textMicroSupporting]}>
-                  {translate('statistics.charts.sessionDuration.p75Copy', {
-                    value: formatDurationMin(durationP75),
-                  })}
-                </Text>
-              ) : null
-            }>
-            <Histogram
-              bins={durationBins}
-              accessibilityLabel={translate(
-                'statistics.charts.sessionDuration.title',
-              )}
-              emptyLabel={translate('statistics.charts.sessionDuration.empty')}
-              height={160}
-            />
-          </ChartCard>
-        </View>
-      </View>
-    </ScrollView>
+      </ScrollView>
+    </View>
   );
 }
 

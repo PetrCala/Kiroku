@@ -46,6 +46,15 @@ type SessionWindowIdParams = {
   sessionId: DrinkingSessionId;
 };
 
+type StatsAfDaysParams = {
+  value: number;
+  total: number;
+};
+
+type StatsQuietDaysParams = {
+  quietDays: number;
+};
+
 type UnitCountParams = {
   unitCount: number;
 };
@@ -97,6 +106,8 @@ export type {
   SessionConfirmTimezoneChangeParams,
   SessionStartTimeParams,
   SessionWindowIdParams,
+  StatsAfDaysParams,
+  StatsQuietDaysParams,
   UnitCountParams,
   UpdateEmailSentEmailParams,
   VerifyEmailScreenEmailParmas,

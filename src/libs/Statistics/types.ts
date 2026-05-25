@@ -68,6 +68,11 @@ type HeatmapCell = {
   dateKey: string;
   totalSdu: number;
   intensity: 0 | 1 | 2 | 3 | 4;
+  /**
+   * Reserves the grid slot but skips the rect so future days don't look
+   * identical to logged-but-quiet ones. Per DIRECTION_REVIEW.md §6.2.
+   */
+  isFuture?: boolean;
 };
 
 type KpiDelta = {

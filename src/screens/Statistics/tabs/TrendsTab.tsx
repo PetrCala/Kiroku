@@ -5,6 +5,7 @@ import {CumulativeLine} from '@components/Charts/CumulativeLine';
 import {StackedArea} from '@components/Charts/StackedArea';
 import {TrendLine} from '@components/Charts/TrendLine';
 import ScrollView from '@components/ScrollView';
+import StatsFilterToolbar from '@components/Statistics/StatsFilterToolbar';
 import Text from '@components/Text';
 import useLocalize from '@hooks/useLocalize';
 import useTrendsTabData from '@hooks/useStatistics/useTrendsTabData';
@@ -33,10 +34,14 @@ function TrendsTab() {
 
   if (isLoading) {
     return (
-      <View style={[styles.container, themeStyles.justifyContentCenter]}>
-        <Text style={[themeStyles.textSupporting, themeStyles.textAlignCenter]}>
-          {translate('common.loading')}
-        </Text>
+      <View style={themeStyles.flex1}>
+        <StatsFilterToolbar />
+        <View style={[styles.container, themeStyles.justifyContentCenter]}>
+          <Text
+            style={[themeStyles.textSupporting, themeStyles.textAlignCenter]}>
+            {translate('common.loading')}
+          </Text>
+        </View>
       </View>
     );
   }
@@ -51,79 +56,82 @@ function TrendsTab() {
   );
 
   return (
-    <ScrollView
-      style={themeStyles.flex1}
-      contentContainerStyle={styles.container}>
-      <ChartCard
-        title={translate('statistics.tabs.trends.weeklyTrend.title')}
-        subtitle={heroSubtitle}
-        footer={
-          <Text style={themeStyles.textMicroSupporting}>
-            {heroComparisonShown
-              ? `${heroCaption} · ${comparisonLegend}`
-              : heroCaption}
-          </Text>
-        }>
-        <TrendLine
-          weeks={hero.weeks}
-          units={hero.units}
-          ewma={hero.ewma}
-          comparison={hero.comparison}
-          band={hero.band}
-          emptyLabel={translate(
-            'statistics.tabs.trends.weeklyTrend.emptyLabel',
-          )}
-          accessibilityLabel={heroCaption}
-        />
-      </ChartCard>
-
-      {afYtd.hidden ? null : (
+    <View style={themeStyles.flex1}>
+      <StatsFilterToolbar />
+      <ScrollView
+        style={themeStyles.flex1}
+        contentContainerStyle={styles.container}>
         <ChartCard
-          title={translate('statistics.tabs.trends.cumulativeAf.title')}
+          title={translate('statistics.tabs.trends.weeklyTrend.title')}
+          subtitle={heroSubtitle}
           footer={
-            afYtd.comparisonPoints ? (
+            <Text style={themeStyles.textMicroSupporting}>
+              {heroComparisonShown
+                ? `${heroCaption} · ${comparisonLegend}`
+                : heroCaption}
+            </Text>
+          }>
+          <TrendLine
+            weeks={hero.weeks}
+            units={hero.units}
+            ewma={hero.ewma}
+            comparison={hero.comparison}
+            band={hero.band}
+            emptyLabel={translate(
+              'statistics.tabs.trends.weeklyTrend.emptyLabel',
+            )}
+            accessibilityLabel={heroCaption}
+          />
+        </ChartCard>
+
+        {afYtd.hidden ? null : (
+          <ChartCard
+            title={translate('statistics.tabs.trends.cumulativeAf.title')}
+            footer={
+              afYtd.comparisonPoints ? (
+                <Text style={themeStyles.textMicroSupporting}>
+                  {comparisonLegend}
+                </Text>
+              ) : undefined
+            }>
+            <CumulativeLine
+              points={afYtd.points}
+              comparisonPoints={afYtd.comparisonPoints}
+              emptyLabel={translate(
+                'statistics.tabs.trends.cumulativeAf.emptyLabel',
+              )}
+              accessibilityLabel={translate(
+                'statistics.tabs.trends.cumulativeAf.title',
+              )}
+            />
+          </ChartCard>
+        )}
+
+        <ChartCard
+          title={translate('statistics.tabs.trends.drinkTypeStack.title')}
+          footer={
+            stack.comparisonTotal ? (
               <Text style={themeStyles.textMicroSupporting}>
                 {comparisonLegend}
               </Text>
             ) : undefined
           }>
-          <CumulativeLine
-            points={afYtd.points}
-            comparisonPoints={afYtd.comparisonPoints}
+          <StackedArea
+            weeks={stack.weeks}
+            byKey={stack.byKey}
+            trackedKeys={stack.trackedKeys}
+            palette={stack.palette}
+            comparisonTotal={stack.comparisonTotal}
             emptyLabel={translate(
-              'statistics.tabs.trends.cumulativeAf.emptyLabel',
+              'statistics.tabs.trends.drinkTypeStack.emptyLabel',
             )}
             accessibilityLabel={translate(
-              'statistics.tabs.trends.cumulativeAf.title',
+              'statistics.tabs.trends.drinkTypeStack.title',
             )}
           />
         </ChartCard>
-      )}
-
-      <ChartCard
-        title={translate('statistics.tabs.trends.drinkTypeStack.title')}
-        footer={
-          stack.comparisonTotal ? (
-            <Text style={themeStyles.textMicroSupporting}>
-              {comparisonLegend}
-            </Text>
-          ) : undefined
-        }>
-        <StackedArea
-          weeks={stack.weeks}
-          byKey={stack.byKey}
-          trackedKeys={stack.trackedKeys}
-          palette={stack.palette}
-          comparisonTotal={stack.comparisonTotal}
-          emptyLabel={translate(
-            'statistics.tabs.trends.drinkTypeStack.emptyLabel',
-          )}
-          accessibilityLabel={translate(
-            'statistics.tabs.trends.drinkTypeStack.title',
-          )}
-        />
-      </ChartCard>
-    </ScrollView>
+      </ScrollView>
+    </View>
   );
 }
 

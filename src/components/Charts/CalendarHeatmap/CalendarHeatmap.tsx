@@ -53,6 +53,9 @@ function CalendarHeatmap({
         <>
           <Canvas style={{width, height, position: 'absolute'}}>
             {cells.map((cell, i) => {
+              if (cell.isFuture) {
+                return null;
+              }
               const idx = layout.firstDayCol + i;
               const col = idx % 7;
               const row = Math.floor(idx / 7);
@@ -75,11 +78,14 @@ function CalendarHeatmap({
             const idx = layout.firstDayCol + i;
             const col = idx % 7;
             const row = Math.floor(idx / 7);
+            const a11yLabel = cell.isFuture
+              ? `${cell.dateKey}, upcoming`
+              : `${cell.dateKey}, ${cell.totalSdu} units`;
             return (
               <View
                 key={`a11y-${cell.dateKey}`}
                 accessible
-                accessibilityLabel={`${cell.dateKey}, ${cell.totalSdu} units`}
+                accessibilityLabel={a11yLabel}
                 accessibilityRole="text"
                 style={{
                   position: 'absolute',

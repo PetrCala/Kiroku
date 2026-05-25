@@ -2,7 +2,6 @@ import React from 'react';
 import HeaderWithBackButton from '@components/HeaderWithBackButton';
 import ScreenWrapper from '@components/ScreenWrapper';
 import StatsContextProvider from '@components/StatsContextProvider';
-import StatsFilterToolbar from '@components/Statistics/StatsFilterToolbar';
 import useLocalize from '@hooks/useLocalize';
 import Navigation from '@libs/Navigation/Navigation';
 import StatisticsTabs from './StatisticsTabs';
@@ -17,7 +16,8 @@ function StatisticsScreen() {
         onBackButtonPress={Navigation.goBack}
       />
       <StatsContextProvider>
-        <StatsFilterToolbar />
+        {/* The filter toolbar lives per-tab (Trends/Patterns/Breakdown);
+            Overview uses fixed this-month/this-week semantics. */}
         <StatisticsTabs />
       </StatsContextProvider>
     </ScreenWrapper>

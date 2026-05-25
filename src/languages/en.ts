@@ -22,6 +22,8 @@ import type {
   SessionConfirmTimezoneChangeParams,
   SessionStartTimeParams,
   SessionWindowIdParams,
+  StatsAfDaysParams,
+  StatsQuietDaysParams,
   UnitCountParams,
   UpdateEmailSentEmailParams,
   VerifyEmailScreenEmailParmas,
@@ -823,8 +825,48 @@ export default {
     tabs: {
       overview: {
         label: 'Overview',
-        placeholder:
-          'Your alcohol-free streak and weekly recap will live here.',
+        hero: {
+          afDays: {
+            label: 'Alcohol-free days this month',
+            a11yLabel: ({value, total}: StatsAfDaysParams) =>
+              `${value} of ${total} days alcohol-free this month`,
+          },
+        },
+        kpi: {
+          sessionsThisWeek: {
+            label: 'Sessions this week',
+            delta: 'vs last week',
+          },
+          quietDaysThisWeek: {
+            label: 'Quiet days this week',
+            delta: 'vs last week',
+          },
+          unitsThisWeek: {
+            label: 'Units this week',
+            delta: 'vs last week',
+          },
+        },
+        trend: {
+          title: '8-week trend',
+          bandCaption:
+            'The shaded band is where most of your last 8 weeks landed.',
+          chip: {
+            down: 'Trending down — fewer units week over week.',
+            up: 'Trending up — more units week over week.',
+            none: 'Your weeks vary as usual.',
+          },
+          a11yLabel: 'Last 8 weeks of weekly units, smoothed',
+        },
+        empty: {
+          neverLogged: {
+            title: 'Nothing to log yet — that counts.',
+            body: 'When you log a session, your weekly trends and a monthly view will show up here. Until then, every day is a quiet one.',
+          },
+          noDataInWindow: ({quietDays}: StatsQuietDaysParams) =>
+            `${quietDays} quiet days and counting — your trends will sharpen as you log more.`,
+        },
+        sparseFooter:
+          'Only a few weeks of history yet — your trends will sharpen as you log more.',
       },
       trends: {
         label: 'Trends',
