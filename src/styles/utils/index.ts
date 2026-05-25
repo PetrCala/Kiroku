@@ -1304,10 +1304,12 @@ const createStyleUtils = (theme: ThemeColors, styles: ThemeStyles) => ({
     // doesn't apply here.
     /* eslint-disable @typescript-eslint/naming-convention */
     const stylesheetOverrides = {
-      // Match the large calendar's tile spacing exactly so the clicked month
-      // overlays pixel-perfectly when opening the fullscreen variant. The
-      // numbers mirror `sessionsCalendarWeekRow` / `sessionsCalendarDayNamesRow`
-      // in src/styles/index.ts.
+      // Horizontal inset is applied by the host screen (HomeScreen wraps the
+      // calendar in `styles.ph4`), not by the calendar itself, so every
+      // section of the home screen shares one source-of-truth for screen-edge
+      // padding. The fullscreen variant follows the same convention — see
+      // `SessionsCalendarScreen` — so the small→fullscreen transition still
+      // overlays pixel-perfectly.
       'stylesheet.calendar.main': {
         container: {
           paddingLeft: 0,
@@ -1316,18 +1318,15 @@ const createStyleUtils = (theme: ThemeColors, styles: ThemeStyles) => ({
         },
         week: {
           marginVertical: 6,
-          paddingHorizontal: 20,
           flexDirection: 'row',
           justifyContent: 'space-around',
         },
       },
       'stylesheet.calendar.header': {
-        // Day-name row inside the library header — needs the same horizontal
-        // inset and `flex: 1` column distribution as the week rows below it,
-        // otherwise the day names won't line up with the tile columns.
+        // Day-name row inside the library header — must match the week row's
+        // column distribution so day names line up with the tile columns.
         week: {
           marginTop: 7,
-          paddingHorizontal: 20,
           flexDirection: 'row',
           justifyContent: 'space-around',
         },
