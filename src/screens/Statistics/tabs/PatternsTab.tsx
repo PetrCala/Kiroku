@@ -189,6 +189,7 @@ function PatternsTab() {
           <HourPolar
             buckets={hourBuckets}
             accessibilityLabel={translate('statistics.charts.hourOfDay.title')}
+            emptyLabel={translate('statistics.charts.hourOfDay.empty')}
             onSpokePress={() => {
               // Drill-down handler — v2-K wires this to StatsDrillDownSheet.
             }}
@@ -199,6 +200,7 @@ function PatternsTab() {
             buckets={dowHourBuckets}
             weekStart={weekStart}
             accessibilityLabel={translate('statistics.charts.dowHour.title')}
+            emptyLabel={translate('statistics.charts.dowHour.empty')}
           />
         </ChartCard>
         <View style={styles.histogramRow}>

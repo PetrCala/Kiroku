@@ -851,8 +851,8 @@ export default {
           bandCaption:
             'The shaded band is where most of your last 8 weeks landed.',
           chip: {
-            down: 'Trending down — fewer units week over week.',
-            up: 'Trending up — more units week over week.',
+            down: 'Trending down — your weekly units have been easing.',
+            up: 'Trending up — your weekly units have been rising.',
             none: 'Your weeks vary as usual.',
           },
           a11yLabel: 'Last 8 weeks of weekly units, smoothed',
@@ -872,7 +872,7 @@ export default {
         label: 'Trends',
         weeklyTrend: {
           title: 'Weekly units',
-          emptyLabel: 'Log a few weeks to see your trend.',
+          emptyLabel: 'Your trend will show as data builds.',
           bandCaption:
             'The shaded band is where most of your recent weeks landed.',
           captions: {
@@ -885,11 +885,11 @@ export default {
         },
         cumulativeAf: {
           title: 'Alcohol-free days this year',
-          emptyLabel: 'No alcohol-free days logged yet this year.',
+          emptyLabel: 'Every quiet day this year adds up.',
         },
         drinkTypeStack: {
           title: 'Drink mix over time',
-          emptyLabel: 'Log a few sessions to see your mix.',
+          emptyLabel: 'Your drink mix will appear as you log more.',
         },
         comparison: {
           legend: 'Previous period',
@@ -907,7 +907,7 @@ export default {
           subtitle: 'Composition over the current range.',
           centerUnits: ({count}: BreakdownCenterUnitsParams) => `${count}`,
           centerCaption: 'units',
-          empty: 'No drinks logged in this range.',
+          empty: 'A quiet range — nothing to break down yet.',
           sliceCaption: ({label, units, share}: BreakdownSliceCaptionParams) =>
             `${label}: ${units} units (${share}%)`,
           a11y: 'Drink-type composition donut',
@@ -947,21 +947,21 @@ export default {
       },
       hourOfDay: {
         title: 'Hour of day',
-        empty: 'No drinks recorded in this range.',
+        empty: 'A quiet range — nothing to plot here.',
       },
       dowHour: {
         title: 'Day of week × hour',
-        empty: 'No drinks recorded in this range.',
+        empty: 'A quiet range — nothing to plot here.',
       },
       drinksPerSession: {
         title: 'Drinks per session',
-        empty: 'No sessions in this range.',
+        empty: 'A quiet range — no sessions to count.',
         p75Copy: ({value}: {value: number}) =>
           `75% of your sessions are ${value} drinks or fewer.`,
       },
       sessionDuration: {
         title: 'Session length',
-        empty: 'No sessions in this range.',
+        empty: 'A quiet range — no sessions to measure.',
         p75Copy: ({value}: {value: string}) =>
           `75% of your sessions are ${value} or shorter.`,
       },
