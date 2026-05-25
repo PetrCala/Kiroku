@@ -832,6 +832,17 @@ export default {
     currentlyInSession: 'Právě se nacházíte v relaci!',
     currentlyInSessionButton:
       'Tlačítko, které informuje, že se právě nacházíte v relaci',
+    stats: {
+      alcoholFreeDays: 'dnů bez\nalkoholu',
+      sessionsLogged: 'záznamů\nrelací',
+      unitsConsumed: 'spotřebovaných\njednotek',
+      thisWeek: 'Tento týden',
+      weekSummary: {
+        sessions: 'záznamů',
+        units: 'jednotek',
+        quietDays: 'klidných dnů',
+      },
+    },
   },
   sessionsCalendar: {
     dayOverviewButton: 'Přehled dne',

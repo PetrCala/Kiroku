@@ -1,19 +1,14 @@
-import React, {useEffect, useMemo, useRef, useState} from 'react';
+import React, {useEffect, useRef, useState} from 'react';
 import {View} from 'react-native';
 import SessionsCalendar from '@components/SessionsCalendar';
 import type {DateData} from 'react-native-calendars';
-import {
-  calculateThisMonthUnits,
-  timestampToDate,
-  dateToDateData,
-} from '@libs/DataHandling';
+import {dateToDateData} from '@libs/DataHandling';
 import {useUserConnection} from '@context/global/UserConnectionContext';
 import UserOffline from '@components/UserOfflineModal';
 import {synchronizeUserStatus} from '@userActions/User';
 import {useFirebase} from '@context/global/FirebaseContext';
 import ProfileImage from '@components/ProfileImage';
 import CONST from '@src/CONST';
-import type {DrinkingSessionArray} from '@src/types/onyx';
 import ROUTES from '@src/ROUTES';
 import Navigation from '@navigation/Navigation';
 import type {StackScreenProps} from '@react-navigation/stack';
@@ -23,6 +18,9 @@ import type SCREENS from '@src/SCREENS';
 import {useDatabaseData} from '@context/global/DatabaseDataContext';
 import type {StatData} from '@components/Items/StatOverview';
 import StatOverview from '@components/Items/StatOverview';
+import ThisWeekCard from '@components/Home/ThisWeekCard';
+import useHomeMonthStats from '@components/Home/useHomeMonthStats';
+import useHomeWeekStats from '@components/Home/useHomeWeekStats';
 import ScreenWrapper from '@components/ScreenWrapper';
 import MessageBanner from '@components/Info/MessageBanner';
 import useThemeStyles from '@hooks/useThemeStyles';
@@ -69,43 +67,22 @@ function HomeScreen({route}: HomeScreenProps) {
   );
   const hasMarkedReadyRef = useRef(false);
 
-  // Derive stats synchronously from the visible month + drink unit mapping.
-  // Narrowed to `drinksToUnits` so unrelated preference updates (e.g. picking
-  // a color palette) don't recompute the stats.
-  const drinksToUnits = preferences?.drinks_to_units;
-  const {drinkingSessionsCount, unitsConsumed} = useMemo(() => {
-    if (!drinksToUnits || !drinkingSessionData) {
-      return {drinkingSessionsCount: 0, unitsConsumed: 0};
-    }
-    const drinkingSessionArray: DrinkingSessionArray =
-      Object.values(drinkingSessionData);
-    const monthUnits = calculateThisMonthUnits(
-      visibleDate,
-      drinkingSessionArray,
-      drinksToUnits,
-    );
-    const monthSessionCount = DSUtils.getSingleMonthDrinkingSessions(
-      timestampToDate(visibleDate.timestamp),
-      drinkingSessionArray,
-      false,
-    ).length;
-    return {
-      drinkingSessionsCount: monthSessionCount,
-      unitsConsumed: monthUnits,
-    };
-  }, [drinkingSessionData, visibleDate, drinksToUnits]);
+  const {drinkingSessionsCount, unitsConsumed, alcoholFreeDays} =
+    useHomeMonthStats(visibleDate, drinkingSessionData, preferences);
+  const weekStats = useHomeWeekStats(drinkingSessionData, preferences);
 
   const statsData: StatData = [
     {
-      header: translate('profileScreen.drinkingSessions', {
-        sessionsCount: drinkingSessionsCount,
-      }),
+      header: translate('homeScreen.stats.alcoholFreeDays'),
+      content: String(alcoholFreeDays),
+      tone: 'celebratory',
+    },
+    {
+      header: translate('homeScreen.stats.sessionsLogged'),
       content: String(drinkingSessionsCount),
     },
     {
-      header: translate('profileScreen.unitsConsumed', {
-        unitCount: roundToTwoDecimalPlaces(unitsConsumed),
-      }),
+      header: translate('homeScreen.stats.unitsConsumed'),
       content: String(roundToTwoDecimalPlaces(unitsConsumed)),
     },
   ];
@@ -183,7 +160,6 @@ function HomeScreen({route}: HomeScreenProps) {
     }
     return (
       <>
-        <StatOverview statsData={statsData} />
         <SessionsCalendar
           userID={user.uid}
           visibleDate={visibleDate}
@@ -191,6 +167,12 @@ function HomeScreen({route}: HomeScreenProps) {
           drinkingSessionData={drinkingSessionData}
           preferences={preferences}
           isFetchingOlderMonths={isFetchingOlderMonths}
+        />
+        <StatOverview statsData={statsData} />
+        <ThisWeekCard
+          days={weekStats.days}
+          summary={weekStats.summary}
+          preferences={preferences}
         />
       </>
     );

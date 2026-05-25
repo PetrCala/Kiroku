@@ -21,9 +21,9 @@ import type {DateString, UserID} from '@src/types/onyx/OnyxCommon';
 import Text from '@components/Text';
 import DayComponent from './DayComponent';
 import type {DayComponentProps} from './types';
-import CalendarArrow from './CalendarArrow';
-import type {Direction} from './CalendarArrow';
 import setCalendarLocale from './setCalendarLocale';
+
+const NOOP_STEP = () => {};
 
 type SessionsCalendarViewProps = {
   /** Owning user — required to deep-link to the full-screen calendar route
@@ -129,12 +129,12 @@ function SessionsCalendarView({
     [unitsMap, onDayPress, registerMeasureRef],
   );
 
-  // Custom header: matches the default month-text styling but reserves space
-  // for an inline spinner shown only while an older-months fetch is in flight.
-  // Keeping the header always-customized (not just when fetching) avoids a
-  // layout jump between native-header and custom-header rendering.
-  // The lib passes an `XDate` (no published d.ts; treated as `any` here). All we
-  // need is its epoch — extract via `getTime()` and rebuild a native `Date`.
+  // Custom header: mockup-C-style nav bar with circular ‹ / › arrow buttons
+  // flanking the month label. The forward arrow renders at 40% opacity and
+  // is non-interactive when the visible month is the current calendar month.
+  // The lib's own arrows are hidden via `hideArrows={true}`; the header now
+  // owns both controls so the maxDate-block logic can sit alongside the
+  // disabled-state styling.
   const isHeaderTappable =
     !!userID && FeatureFlags.isEnabled('FULLSCREEN_CALENDAR');
 
@@ -173,6 +173,21 @@ function SessionsCalendarView({
     day1Ref.current.measureInWindow((_x, y) => navigate(y));
   }, [userID, visibleDate.timestamp]);
 
+  const isAtCurrentMonth =
+    startOfMonth(new Date(visibleDate.timestamp)).getTime() >=
+    startOfMonth(new Date()).getTime();
+
+  const onPrevPress = useCallback(() => {
+    onLeftArrowPress?.(NOOP_STEP);
+  }, [onLeftArrowPress]);
+
+  const onNextPress = useCallback(() => {
+    if (isAtCurrentMonth) {
+      return;
+    }
+    onRightArrowPress?.(NOOP_STEP);
+  }, [isAtCurrentMonth, onRightArrowPress]);
+
   const renderHeader = useCallback(
     (date?: {getTime(): number}) => {
       if (hideMonthHeader || !date) {
@@ -183,7 +198,7 @@ function SessionsCalendarView({
         CONST.DATE.MONTH_YEAR_ABBR_FORMAT,
       );
       const monthText = (
-        <Text style={styles.sessionsCalendarHeaderMonthText}>{formatted}</Text>
+        <Text style={styles.homeMonthNavLabel}>{formatted}</Text>
       );
       const expandIcon = isHeaderTappable ? (
         <Icon
@@ -194,38 +209,92 @@ function SessionsCalendarView({
           additionalStyles={styles.sessionsCalendarExpandIcon}
         />
       ) : null;
+      const labelNode = isHeaderTappable ? (
+        <PressableWithFeedback
+          onPress={onHeaderPress}
+          role={CONST.ROLE.BUTTON}
+          accessibilityLabel={formatted}
+          style={styles.sessionsCalendarHeader}>
+          {monthText}
+          {expandIcon}
+        </PressableWithFeedback>
+      ) : (
+        <View style={styles.sessionsCalendarHeader}>{monthText}</View>
+      );
+
+      const arrowSpacer = (
+        <View
+          style={[styles.homeMonthNavArrow, styles.homeMonthNavArrowSpacer]}
+        />
+      );
       return (
-        <View style={styles.sessionsCalendarHeader}>
-          {isHeaderTappable ? (
-            <PressableWithFeedback
-              onPress={onHeaderPress}
-              role={CONST.ROLE.BUTTON}
-              accessibilityLabel={formatted}
-              style={styles.sessionsCalendarHeader}>
-              {monthText}
-              {expandIcon}
-            </PressableWithFeedback>
+        <View style={styles.homeMonthNav}>
+          {hideArrows ? (
+            arrowSpacer
           ) : (
-            monthText
+            <PressableWithFeedback
+              onPress={onPrevPress}
+              role={CONST.ROLE.BUTTON}
+              accessibilityLabel="Previous month"
+              style={styles.homeMonthNavArrow}>
+              <Icon
+                src={KirokuIcons.BackArrow}
+                fill={theme.textSupporting}
+                width={14}
+                height={14}
+              />
+            </PressableWithFeedback>
           )}
-          {isFetchingOlderMonths && (
-            <ActivityIndicator
-              size="small"
-              color={theme.spinner}
-              style={styles.sessionsCalendarHeaderSpinner}
-            />
+          <View style={styles.sessionsCalendarHeader}>
+            {labelNode}
+            {isFetchingOlderMonths && (
+              <ActivityIndicator
+                size="small"
+                color={theme.spinner}
+                style={styles.sessionsCalendarHeaderSpinner}
+              />
+            )}
+          </View>
+          {hideArrows ? (
+            arrowSpacer
+          ) : (
+            <PressableWithFeedback
+              onPress={onNextPress}
+              disabled={isAtCurrentMonth}
+              role={CONST.ROLE.BUTTON}
+              accessibilityLabel="Next month"
+              accessibilityState={{disabled: isAtCurrentMonth}}
+              style={[
+                styles.homeMonthNavArrow,
+                isAtCurrentMonth && styles.homeMonthNavArrowDisabled,
+              ]}>
+              <Icon
+                src={KirokuIcons.ArrowRight}
+                fill={theme.textSupporting}
+                width={14}
+                height={14}
+              />
+            </PressableWithFeedback>
           )}
         </View>
       );
     },
     [
       hideMonthHeader,
+      hideArrows,
+      isAtCurrentMonth,
       isFetchingOlderMonths,
       isHeaderTappable,
       onHeaderPress,
+      onNextPress,
+      onPrevPress,
+      styles.homeMonthNav,
+      styles.homeMonthNavArrow,
+      styles.homeMonthNavArrowDisabled,
+      styles.homeMonthNavArrowSpacer,
+      styles.homeMonthNavLabel,
       styles.sessionsCalendarExpandIcon,
       styles.sessionsCalendarHeader,
-      styles.sessionsCalendarHeaderMonthText,
       styles.sessionsCalendarHeaderSpinner,
       theme.spinner,
       theme.textSupporting,
@@ -251,11 +320,10 @@ function SessionsCalendarView({
       markingType="period"
       firstDay={CONST.WEEK_STARTS_ON}
       enableSwipeMonths={false}
-      hideArrows={hideArrows}
+      hideArrows
       hideDayNames={hideDayNames}
       renderHeader={renderHeader}
       disableAllTouchEventsForDisabledDays
-      renderArrow={(direction: Direction) => CalendarArrow(direction)}
       style={styles.sessionsCalendarContainer}
       theme={StyleUtils.getSessionsCalendarStyle()}
       // @ts-expect-error locale prop exists at runtime but is not declared in types

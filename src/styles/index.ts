@@ -1447,11 +1447,136 @@ const styles = (theme: ThemeColors) =>
     },
 
     statOverviewContainer: {
-      height: variables.statOverviewHeight,
-      ...sizing.mw100,
       flexDirection: 'row',
-      flex: 1,
+      ...sizing.mw100,
       justifyContent: 'space-evenly',
+      alignItems: 'flex-start',
+      paddingTop: 12,
+      marginTop: 12,
+      marginHorizontal: 14,
+      borderTopWidth: 1,
+      borderTopColor: theme.border,
+    },
+
+    statOverviewCard: {
+      backgroundColor: theme.cardBG,
+      borderRadius: 14,
+      marginHorizontal: 0,
+      marginBottom: 14,
+      paddingHorizontal: 14,
+      paddingTop: 14,
+      paddingBottom: 14,
+    },
+
+    homeMonthNav: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+      paddingHorizontal: 4,
+      paddingVertical: 4,
+    },
+
+    homeMonthNavLabel: {
+      ...FontUtils.fontFamily.platform.EXP_NEUE_BOLD,
+      color: theme.text,
+      fontSize: variables.fontSizeLarge,
+      letterSpacing: -0.2,
+    },
+
+    homeMonthNavArrow: {
+      width: 28,
+      height: 28,
+      borderRadius: 14,
+      backgroundColor: theme.highlightBG,
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+
+    homeMonthNavArrowDisabled: {
+      opacity: 0.4,
+    },
+
+    homeMonthNavArrowSpacer: {
+      backgroundColor: 'transparent',
+    },
+
+    homeWeekCard: {
+      backgroundColor: theme.cardBG,
+      borderRadius: 14,
+      paddingHorizontal: 14,
+      paddingTop: 12,
+      paddingBottom: 14,
+      marginBottom: 14,
+    },
+
+    homeWeekCardTitle: {
+      fontSize: variables.fontSizeNormal,
+      fontWeight: '600',
+      color: theme.text,
+      marginBottom: 10,
+    },
+
+    homeWeekRow: {
+      flexDirection: 'row',
+      gap: 6,
+      alignItems: 'flex-end',
+    },
+
+    homeWeekDayPill: {
+      flex: 1,
+      aspectRatio: 1 / 1.4,
+      borderRadius: 8,
+      backgroundColor: theme.highlightBG,
+      alignItems: 'center',
+      justifyContent: 'center',
+      borderWidth: 2,
+      borderColor: 'transparent',
+    },
+
+    homeWeekDayPillFuture: {
+      opacity: 0.4,
+    },
+
+    homeWeekDayPillToday: {
+      // Border color is applied inline (brand yellow from resolved palette).
+    },
+
+    homeWeekDayName: {
+      fontSize: 9,
+      color: theme.textSupporting,
+      marginBottom: 2,
+      letterSpacing: 0.3,
+    },
+
+    homeWeekDayValue: {
+      fontSize: 11,
+      fontWeight: '600',
+    },
+
+    homeWeekSummary: {
+      flexDirection: 'row',
+      gap: 14,
+      marginTop: 12,
+      paddingTop: 10,
+      borderTopWidth: 1,
+      borderTopColor: theme.border,
+    },
+
+    homeWeekSummaryItem: {
+      flex: 1,
+      alignItems: 'center',
+    },
+
+    homeWeekSummaryValue: {
+      fontSize: 13,
+      fontWeight: '700',
+      color: theme.text,
+    },
+
+    homeWeekSummaryLabel: {
+      fontSize: 11,
+      color: theme.textSupporting,
+      marginTop: 2,
     },
 
     rightLabelMenuItem: {
@@ -2071,15 +2196,19 @@ const styles = (theme: ThemeColors) =>
     },
 
     statItemText: {
-      fontSize: variables.fontSizeXXXXLarge,
+      fontSize: 22,
       ...FontUtils.fontFamily.platform.EXP_NEUE_BOLD,
       textAlign: 'center',
-      color: theme.appColor,
+      color: theme.text,
+      lineHeight: 22,
     },
 
     statItemLabelText: {
-      fontSize: variables.fontSizeNormal,
+      fontSize: 10,
+      lineHeight: 13,
+      color: theme.textSupporting,
       textAlign: 'center',
+      marginTop: 4,
       width: variables.statItemTextMaxWidth,
       flexWrap: 'wrap',
     },

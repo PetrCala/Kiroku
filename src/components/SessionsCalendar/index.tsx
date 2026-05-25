@@ -1,4 +1,7 @@
 import React, {memo, useCallback, useEffect, useMemo, useRef} from 'react';
+import {View} from 'react-native';
+import {Gesture, GestureDetector} from 'react-native-gesture-handler';
+import {runOnJS} from 'react-native-reanimated';
 import type {DateData} from 'react-native-calendars';
 import {
   differenceInMonths,
@@ -22,6 +25,8 @@ import ONYXKEYS from '@src/ONYXKEYS';
 import SessionsCalendarView from './SessionsCalendarView';
 import SessionsCalendarWeekListView from './SessionsCalendarWeekListView';
 import type SessionsCalendarProps from './types';
+
+const NOOP_STEP = () => {};
 
 // How many months of pre-loaded buffer to keep ahead of the user's scroll in
 // fullscreen mode. When the earliest in-range visible day is within this
@@ -181,18 +186,52 @@ function SessionsCalendar({
     );
   }
 
+  // Horizontal swipe-to-change-month. Same handler path as the arrow taps so
+  // the Onyx pagination machinery (loadMoreMonths) keeps firing on swipe.
+  // `failOffsetY` hands back to the parent ScrollView for vertical drags.
+  const triggerPreviousMonth = () => handleLeftArrowPress(NOOP_STEP);
+  const triggerNextMonth = () => handleRightArrowPress(NOOP_STEP);
+
+  const isAtCurrentMonth =
+    startOfMonth(new Date(visibleDate.timestamp)).getTime() >=
+    startOfMonth(new Date()).getTime();
+
+  /* eslint-disable react-hooks/immutability */
+  const pan = Gesture.Pan()
+    .activeOffsetX([-15, 15])
+    .failOffsetY([-25, 25])
+    .onEnd(e => {
+      const SWIPE_THRESHOLD = 60;
+      const VELOCITY_THRESHOLD = 500;
+      const dx = e.translationX;
+      const vx = e.velocityX;
+      if (dx > SWIPE_THRESHOLD || vx > VELOCITY_THRESHOLD) {
+        runOnJS(triggerPreviousMonth)();
+      } else if (
+        (dx < -SWIPE_THRESHOLD || vx < -VELOCITY_THRESHOLD) &&
+        !isAtCurrentMonth
+      ) {
+        runOnJS(triggerNextMonth)();
+      }
+    });
+  /* eslint-enable react-hooks/immutability */
+
   return (
-    <SessionsCalendarView
-      userID={userID}
-      markedDates={markedDates}
-      unitsMap={unitsMap}
-      visibleDate={visibleDate}
-      minDate={minDate}
-      onDayPress={onDayPress}
-      onLeftArrowPress={handleLeftArrowPress}
-      onRightArrowPress={handleRightArrowPress}
-      isFetchingOlderMonths={isFetchingOlderMonths}
-    />
+    <GestureDetector gesture={pan}>
+      <View>
+        <SessionsCalendarView
+          userID={userID}
+          markedDates={markedDates}
+          unitsMap={unitsMap}
+          visibleDate={visibleDate}
+          minDate={minDate}
+          onDayPress={onDayPress}
+          onLeftArrowPress={handleLeftArrowPress}
+          onRightArrowPress={handleRightArrowPress}
+          isFetchingOlderMonths={isFetchingOlderMonths}
+        />
+      </View>
+    </GestureDetector>
   );
 }
 
