@@ -2,7 +2,7 @@ import {useMemo, useState} from 'react';
 import {View} from 'react-native';
 import {Canvas, RoundedRect} from '@shopify/react-native-skia';
 import {useChartTheme} from '@components/Charts/BaseChart';
-import {PressableWithoutFeedback} from '@components/Pressable';
+import PressableWithoutFeedback from '@components/Pressable/PressableWithoutFeedback';
 import type {HeatmapCell} from '@libs/Statistics';
 
 type CalendarHeatmapProps = {
