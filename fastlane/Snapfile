@@ -39,8 +39,13 @@ clear_previous_screenshots(true)
 # scheme is taken from the workspace; the test target is referenced by the scheme's Test action.
 
 # Stop the test run on the first failure so you don't waste 15 min finding out
-# screen 2 broke on every device.
+# screen 2 broke on every device. number_of_retries(0) is also needed because
+# stop_after_first_error only halts after a *test* error — for *build* errors,
+# snapshot retries `number_of_retries + 1` times per device/language combo by
+# default. Without the explicit 0, a single misconfigured Xcode SDK can loop
+# for 20+ minutes before the workflow times out.
 stop_after_first_error(true)
+number_of_retries(0)
 
 # Reinstall the app between runs so each capture starts from a clean state.
 reinstall_app(true)
