@@ -75,6 +75,12 @@ jobs:
           echo "export NODE_BINARY=$(which node)" >> "$HOME/.bash_profile"
           source "$HOME/.bash_profile"
 
+      # Xcode 26.1.1 on the macos-26 runner image ships without the iOS
+      # simulator runtime — xcodebuild crashes with "iOS 26.1 is not installed"
+      # otherwise. Same step that testBuild.yml uses.
+      - name: Install iOS platform SDK
+        run: xcodebuild -downloadPlatform iOS
+
       # Trim the Snapfile device matrix when the dispatcher asked for a subset.
       # `Snapfile` resolves devices(...) eagerly so we rewrite the file in
       # place — this is throwaway, not committed back.
