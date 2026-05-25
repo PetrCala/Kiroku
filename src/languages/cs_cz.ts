@@ -813,6 +813,34 @@ export default {
         title: 'Tento měsíc',
       },
     },
+    filters: {
+      range: {
+        W: 'T',
+        M: 'M',
+        sixM: '6M',
+        Y: 'R',
+        all: 'Vše',
+        custom: 'Vlastní',
+      },
+      drinkType: {
+        all: 'Všechny nápoje',
+      },
+      comparison: {
+        none: 'Porovnat',
+        previousPeriod: 'vs minulé období',
+        previousYear: 'vs minulý rok',
+      },
+      customRange: {
+        title: 'Vyberte rozsah dat',
+        apply: 'Použít',
+        cancel: 'Zrušit',
+      },
+      a11y: {
+        rangeSegmentedControl: 'Výběr časového rozsahu',
+        drinkTypeChipRow: 'Filtr typu nápoje',
+        comparisonToggle: 'Režim porovnání',
+      },
+    },
   },
   statisticsScreen: {
     title: 'Statistiky',

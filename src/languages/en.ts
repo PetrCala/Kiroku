@@ -823,6 +823,34 @@ export default {
         title: 'This month',
       },
     },
+    filters: {
+      range: {
+        W: 'W',
+        M: 'M',
+        sixM: '6M',
+        Y: 'Y',
+        all: 'All',
+        custom: 'Custom',
+      },
+      drinkType: {
+        all: 'All drinks',
+      },
+      comparison: {
+        none: 'Compare',
+        previousPeriod: 'vs last period',
+        previousYear: 'vs last year',
+      },
+      customRange: {
+        title: 'Pick a date range',
+        apply: 'Apply',
+        cancel: 'Cancel',
+      },
+      a11y: {
+        rangeSegmentedControl: 'Date range selector',
+        drinkTypeChipRow: 'Drink type filter',
+        comparisonToggle: 'Comparison mode',
+      },
+    },
   },
   statisticsScreen: {
     title: 'Statistics',
