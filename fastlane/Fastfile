@@ -362,6 +362,14 @@ platform :ios do
     UI.user_error!("APPLE_DEMO_EMAIL not set") unless ENV["APPLE_DEMO_EMAIL"]
     UI.user_error!("APPLE_DEMO_PASSWORD not set") unless ENV["APPLE_DEMO_PASSWORD"]
 
+    # Generate the KirokuUITests target inside ios/kiroku.xcodeproj at runtime.
+    # The resulting pbxproj diff is intentionally throwaway and must not be
+    # committed — committing it bumps objectVersion via Xcode 26 and breaks
+    # `bundle exec pod install` for everyone. See the script header and
+    # contributingGuides/SCREENSHOTS.md for the full story.
+    # Fastlane runs lanes with cwd = ./fastlane, so step up one directory.
+    sh "bundle exec ruby ../scripts/setup-screenshots-test-target.rb"
+
     capture_ios_screenshots         # reads Snapfile
     # frame_screenshots(white: true) # uncomment once you've installed `frameit`
   end
