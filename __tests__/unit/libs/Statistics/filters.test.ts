@@ -1,4 +1,5 @@
 import {
+  composeFilters,
   dateRange,
   drinkTypeSubset,
   excludeBlackouts,
@@ -95,5 +96,36 @@ describe('forUsers', () => {
     const filter = forUsers(new Set(['carol']));
     expect(filter(event({userId: 'carol'}))).toBe(true);
     expect(filter(event({userId: 'alice'}))).toBe(false);
+  });
+});
+
+describe('composeFilters', () => {
+  it('returns undefined when all inputs are undefined', () => {
+    expect(composeFilters(undefined, undefined)).toBeUndefined();
+  });
+
+  it('returns the lone filter when only one is provided', () => {
+    const only = weekendsOnly;
+    expect(composeFilters(undefined, only)).toBe(only);
+  });
+
+  it('ANDs multiple filters', () => {
+    const filter = composeFilters(weekendsOnly, drinkTypeSubset(['beer']));
+    expect(filter?.(event({isWeekend: true, drinkKey: 'beer'}))).toBe(true);
+    expect(filter?.(event({isWeekend: false, drinkKey: 'beer'}))).toBe(false);
+    expect(filter?.(event({isWeekend: true, drinkKey: 'wine'}))).toBe(false);
+  });
+
+  it('short-circuits on the first failing predicate', () => {
+    let secondCalled = false;
+    const composed = composeFilters(
+      () => false,
+      () => {
+        secondCalled = true;
+        return true;
+      },
+    );
+    composed?.(event({}));
+    expect(secondCalled).toBe(false);
   });
 });

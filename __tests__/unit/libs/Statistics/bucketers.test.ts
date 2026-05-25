@@ -7,6 +7,7 @@ import {
   byIsoWeek,
   byMonth,
   byQuarter,
+  bySessionId,
   byUserId,
   byYear,
   composeBuckets,
@@ -77,6 +78,10 @@ describe('bucketers', () => {
 
   it('byUserId returns userId', () => {
     expect(byUserId(event({userId: 'alice'}))).toBe('alice');
+  });
+
+  it('bySessionId returns sessionId', () => {
+    expect(bySessionId(event({sessionId: 'sess-42'}))).toBe('sess-42');
   });
 
   it('composeBuckets joins keys with the unit-separator', () => {

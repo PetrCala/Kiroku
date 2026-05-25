@@ -832,6 +832,26 @@ export default {
       calendarHeatmap: {
         title: 'Tento měsíc',
       },
+      hourOfDay: {
+        title: 'Hodina dne',
+        empty: 'V tomto období žádné pití.',
+      },
+      dowHour: {
+        title: 'Den v týdnu × hodina',
+        empty: 'V tomto období žádné pití.',
+      },
+      drinksPerSession: {
+        title: 'Nápojů na relaci',
+        empty: 'V tomto období žádné relace.',
+        p75Copy: ({value}: {value: number}) =>
+          `75 % tvých relací má ${value} nápojů nebo méně.`,
+      },
+      sessionDuration: {
+        title: 'Délka relace',
+        empty: 'V tomto období žádné relace.',
+        p75Copy: ({value}: {value: string}) =>
+          `75 % tvých relací je kratších než ${value}.`,
+      },
     },
     filters: {
       range: {

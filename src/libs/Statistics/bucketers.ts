@@ -35,6 +35,8 @@ const byBlackout: Bucketer<boolean> = event => event.blackoutSession;
 
 const byUserId: Bucketer<UserID> = event => event.userId;
 
+const bySessionId: Bucketer<string> = event => event.sessionId;
+
 /**
  * Combine two bucketers into one whose key is the joined `${a}\x1f${b}`. The
  * literal spec sketch returns a tuple, but tuple identity defeats `Map`
@@ -58,6 +60,7 @@ export {
   byIsoWeek,
   byMonth,
   byQuarter,
+  bySessionId,
   byUserId,
   byYear,
   composeBuckets,

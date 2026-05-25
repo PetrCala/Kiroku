@@ -9,6 +9,7 @@ import {
   p25,
   p75,
   p90,
+  sessionDurationMin,
   stddev,
   sumSdu,
   sumUnits,
@@ -161,5 +162,28 @@ describe('firstEvent / lastEvent', () => {
     const b = event({ts: 100, sessionId: 'b'});
     expect(firstEvent([a, b])?.sessionId).toBe('a');
     expect(lastEvent([a, b])?.sessionId).toBe('a');
+  });
+});
+
+describe('sessionDurationMin', () => {
+  it('returns the first event sessionDurationMin', () => {
+    expect(
+      sessionDurationMin([
+        event({sessionDurationMin: 45}),
+        event({sessionDurationMin: 45}),
+      ]),
+    ).toBe(45);
+  });
+
+  it('returns NaN when no events have a duration', () => {
+    expect(
+      Number.isNaN(
+        sessionDurationMin([event({sessionDurationMin: undefined})]),
+      ),
+    ).toBe(true);
+  });
+
+  it('returns NaN for empty input', () => {
+    expect(Number.isNaN(sessionDurationMin([]))).toBe(true);
   });
 });
