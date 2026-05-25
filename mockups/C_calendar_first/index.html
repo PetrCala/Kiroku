@@ -1,0 +1,311 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Kiroku — Statistics (Mockup C: calendar-first)</title>
+<style>
+  :root {
+    --bg: #FFFFFF;
+    --card: #F6F8FA;
+    --border: #D0D9E0;
+    --text: #1F2329;
+    --text-supporting: #59636E;
+    --brand: #F5C400;
+    --success: #F5C400;
+    --h0: #EAEDF1;
+    --h1: #FFF3E0;
+    --h2: #FFE0B2;
+    --h3: #FFCC80;
+    --h4: #FFB74D;
+    --h5: #FFA726;
+  }
+  html, body { margin: 0; padding: 0; background: #E9ECEF; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", Roboto, sans-serif;
+    color: var(--text);
+    -webkit-font-smoothing: antialiased;
+  }
+  .device {
+    max-width: 390px;
+    margin: 24px auto;
+    background: var(--bg);
+    border-radius: 28px;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.12);
+    overflow: hidden;
+    border: 1px solid #DDD;
+  }
+  .header {
+    display: flex; align-items: center;
+    padding: 14px 16px;
+    border-bottom: 1px solid var(--border);
+  }
+  .back { width: 28px; height: 28px; display:flex; align-items:center; justify-content:center; color: var(--text-supporting); font-size: 20px; }
+  .title { font-weight: 600; font-size: 17px; margin-left: 4px; }
+  .scroll { padding: 16px; padding-bottom: 32px; }
+
+  /* Month nav */
+  .month-nav {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 12px;
+  }
+  .month-nav .label {
+    font-size: 18px;
+    font-weight: 700;
+    letter-spacing: -0.2px;
+  }
+  .month-nav .arrow {
+    width: 28px; height: 28px;
+    border-radius: 14px;
+    background: #F2F3F4;
+    display: flex; align-items: center; justify-content: center;
+    color: var(--text-supporting); font-size: 16px;
+  }
+
+  /* Big calendar */
+  .heatmap-big {
+    background: var(--card);
+    border-radius: 14px;
+    padding: 14px;
+    margin-bottom: 14px;
+  }
+  .heatmap-big .grid {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    gap: 5px;
+  }
+  .dow {
+    text-align: center; font-size: 10px;
+    color: var(--text-supporting);
+    padding-bottom: 6px;
+    font-weight: 600;
+    letter-spacing: 0.4px;
+  }
+  .cell {
+    aspect-ratio: 1 / 1;
+    border-radius: 7px;
+    background: #EAEDF1;
+    font-size: 11px;
+    color: var(--text-supporting);
+    display: flex; align-items: center; justify-content: center;
+    font-weight: 500;
+    position: relative;
+  }
+  .cell.lv1 { background: var(--h1); color: #7A5A00; }
+  .cell.lv2 { background: var(--h2); color: #7A5A00; }
+  .cell.lv3 { background: var(--h3); color: #5A3D00; }
+  .cell.lv4 { background: var(--h4); color: #3F2700; }
+  .cell.lv5 { background: var(--h5); color: #3F2700; }
+  .cell.outside { background: transparent; color: transparent; }
+  .cell.future { background: #F4F6F8; color: #B8BFC6; }
+  .cell.today { box-shadow: inset 0 0 0 2px var(--brand); font-weight: 700; color: var(--text); }
+  .cell.afree {
+    background: #EAEDF1;
+    color: var(--text-supporting);
+  }
+  .cell.afree::after {
+    content: "";
+    position: absolute;
+    bottom: 4px;
+    width: 4px; height: 4px;
+    border-radius: 50%;
+    background: #BFE3CB;
+  }
+
+  /* Month summary inline */
+  .month-summary {
+    display: flex;
+    gap: 14px;
+    margin-top: 12px;
+    padding-top: 12px;
+    border-top: 1px solid #E1E5EA;
+  }
+  .ms {
+    flex: 1;
+    text-align: center;
+  }
+  .ms-val {
+    font-size: 22px;
+    font-weight: 700;
+    line-height: 1;
+  }
+  .ms-val.afree { color: var(--success); }
+  .ms-lab {
+    font-size: 10px;
+    color: var(--text-supporting);
+    margin-top: 4px;
+    line-height: 1.3;
+  }
+
+  /* This week strip */
+  .week-strip {
+    background: var(--card);
+    border-radius: 14px;
+    padding: 12px 14px 14px;
+    margin-bottom: 14px;
+  }
+  .week-strip .title { font-size: 13px; font-weight: 600; margin-bottom: 10px; }
+  .week-row { display: flex; gap: 6px; align-items: flex-end; }
+  .day-pill {
+    flex: 1; aspect-ratio: 1/1.4;
+    border-radius: 8px;
+    background: #EAEDF1;
+    display: flex; flex-direction: column;
+    align-items: center; justify-content: center;
+    font-size: 10px; color: var(--text-supporting);
+  }
+  .day-pill .d-name { font-size: 9px; color: var(--text-supporting); margin-bottom: 2px; letter-spacing: 0.3px; }
+  .day-pill.lv2 { background: var(--h2); color: #5A3D00; }
+  .day-pill.lv3 { background: var(--h3); color: #5A3D00; }
+  .day-pill.lv4 { background: var(--h4); color: #3F2700; }
+  .day-pill.today { box-shadow: inset 0 0 0 2px var(--brand); font-weight: 700; }
+  .day-pill .d-val { font-size: 11px; font-weight: 600; }
+  .week-summary {
+    display: flex; gap: 14px; margin-top: 12px;
+    padding-top: 10px;
+    border-top: 1px solid #E1E5EA;
+    font-size: 11px;
+    color: var(--text-supporting);
+  }
+  .week-summary b { color: var(--text); font-size: 13px; }
+
+  /* Trend at bottom */
+  .card {
+    background: var(--card);
+    border-radius: 14px;
+    padding: 14px;
+    margin-bottom: 14px;
+  }
+  .card-title { font-size: 13px; font-weight: 600; margin-bottom: 10px; }
+  .card-title small { font-weight: 400; color: var(--text-supporting); margin-left: 6px; }
+  .bars-caption {
+    margin-top: 6px; font-size: 11px;
+    color: var(--text-supporting); line-height: 1.4;
+  }
+  .footer-copy {
+    text-align: center; color: var(--text-supporting);
+    font-size: 12px; margin: 4px 8px 0; line-height: 1.5;
+  }
+  .label-tag {
+    display: inline-block; margin: 0 18px;
+    padding: 2px 8px; background: #E9ECEF;
+    border-radius: 24px; font-size: 10px;
+    color: #555; letter-spacing: 0.4px;
+  }
+</style>
+</head>
+<body>
+  <div style="text-align:center; padding: 12px 0 0; color:#555; font-size:12px;">
+    <span class="label-tag">MOCKUP C — Daylio-style calendar-first</span>
+  </div>
+  <div class="device">
+    <div class="header">
+      <div class="back">‹</div>
+      <div class="title">Your stats</div>
+    </div>
+
+    <div class="scroll">
+      <!-- Month nav -->
+      <div class="month-nav">
+        <div class="arrow">‹</div>
+        <div class="label">May 2026</div>
+        <div class="arrow" style="opacity:.4">›</div>
+      </div>
+
+      <!-- BIG month heatmap = hero -->
+      <div class="heatmap-big">
+        <div class="grid">
+          <div class="dow">M</div><div class="dow">T</div><div class="dow">W</div><div class="dow">T</div><div class="dow">F</div><div class="dow">S</div><div class="dow">S</div>
+
+          <!-- May 1 = Fri -->
+          <div class="cell outside"></div><div class="cell outside"></div><div class="cell outside"></div><div class="cell outside"></div>
+          <div class="cell lv3">1</div><div class="cell lv5">2</div><div class="cell lv1">3</div>
+
+          <div class="cell afree">4</div><div class="cell afree">5</div><div class="cell afree">6</div><div class="cell afree">7</div>
+          <div class="cell lv2">8</div><div class="cell lv4">9</div><div class="cell lv1">10</div>
+
+          <div class="cell afree">11</div><div class="cell afree">12</div><div class="cell lv1">13</div><div class="cell afree">14</div>
+          <div class="cell lv1">15</div><div class="cell lv3">16</div><div class="cell afree">17</div>
+
+          <div class="cell afree">18</div><div class="cell afree">19</div><div class="cell afree">20</div><div class="cell afree">21</div>
+          <div class="cell lv2">22</div><div class="cell lv4">23</div><div class="cell afree">24</div>
+
+          <div class="cell today">25</div><div class="cell future">26</div><div class="cell future">27</div><div class="cell future">28</div>
+          <div class="cell future">29</div><div class="cell future">30</div><div class="cell future">31</div>
+        </div>
+
+        <div class="month-summary">
+          <div class="ms">
+            <div class="ms-val afree">14</div>
+            <div class="ms-lab">alcohol-free<br/>days</div>
+          </div>
+          <div class="ms">
+            <div class="ms-val">11</div>
+            <div class="ms-lab">sessions<br/>logged</div>
+          </div>
+          <div class="ms">
+            <div class="ms-val">3.4</div>
+            <div class="ms-lab">avg units<br/>/ session</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- This week strip -->
+      <div class="week-strip">
+        <div class="title">This week</div>
+        <div class="week-row">
+          <div class="day-pill"><div class="d-name">M</div><div class="d-val">18</div></div>
+          <div class="day-pill"><div class="d-name">T</div><div class="d-val">19</div></div>
+          <div class="day-pill"><div class="d-name">W</div><div class="d-val">20</div></div>
+          <div class="day-pill"><div class="d-name">T</div><div class="d-val">21</div></div>
+          <div class="day-pill lv2"><div class="d-name">F</div><div class="d-val">22</div></div>
+          <div class="day-pill lv4"><div class="d-name">S</div><div class="d-val">23</div></div>
+          <div class="day-pill"><div class="d-name">S</div><div class="d-val">24</div></div>
+        </div>
+        <div class="week-summary">
+          <div><b>2</b><br/>sessions</div>
+          <div><b>8</b><br/>units</div>
+          <div style="color:#2F8F4A"><b style="color:#2F8F4A">5</b><br/>quiet days</div>
+        </div>
+      </div>
+
+      <!-- Trend -->
+      <div class="card">
+        <div class="card-title">Trend <small>last 8 weeks · units</small></div>
+        <svg viewBox="0 0 320 130" width="100%" height="130">
+          <rect x="8" y="30" width="304" height="38" fill="rgba(245,196,0,0.10)" />
+          <line x1="8" y1="30" x2="312" y2="30" stroke="rgba(245,196,0,0.45)" stroke-dasharray="3 3" />
+          <line x1="8" y1="68" x2="312" y2="68" stroke="rgba(245,196,0,0.45)" stroke-dasharray="3 3" />
+          <g>
+            <rect x="16" y="62" width="22" height="58" rx="3" fill="#FFCC80"/>
+            <text x="27" y="128" text-anchor="middle" font-size="9" fill="#59636E">−7</text>
+            <rect x="54" y="86" width="22" height="34" rx="3" fill="#FFE0B2"/>
+            <text x="65" y="128" text-anchor="middle" font-size="9" fill="#59636E">−6</text>
+            <rect x="92" y="22" width="22" height="98" rx="3" fill="#FFA726"/>
+            <text x="103" y="128" text-anchor="middle" font-size="9" fill="#59636E">−5</text>
+            <rect x="130" y="78" width="22" height="42" rx="3" fill="#FFE0B2"/>
+            <text x="141" y="128" text-anchor="middle" font-size="9" fill="#59636E">−4</text>
+            <rect x="168" y="22" width="22" height="98" rx="3" fill="#FFA726"/>
+            <text x="179" y="128" text-anchor="middle" font-size="9" fill="#59636E">−3</text>
+            <rect x="206" y="46" width="22" height="74" rx="3" fill="#FFCC80"/>
+            <text x="217" y="128" text-anchor="middle" font-size="9" fill="#59636E">−2</text>
+            <rect x="244" y="54" width="22" height="66" rx="3" fill="#FFCC80"/>
+            <text x="255" y="128" text-anchor="middle" font-size="9" fill="#59636E">−1</text>
+            <rect x="282" y="54" width="22" height="66" rx="3" fill="#FFCC80" stroke="#1F2329" stroke-width="1.5"/>
+            <text x="293" y="128" text-anchor="middle" font-size="9" fill="#1F2329" font-weight="600">now</text>
+          </g>
+        </svg>
+        <div class="bars-caption">
+          The shaded band is where most of your last 8 weeks landed. This week is right inside it.
+        </div>
+      </div>
+
+      <div class="footer-copy">
+        Every week is a fresh start. 🌱
+      </div>
+    </div>
+  </div>
+</body>
+</html>
