@@ -49,6 +49,8 @@
 		<key>NSAllowsLocalNetworking</key>
 		<true/>
 	</dict>
+	<key>NSLocationWhenInUseUsageDescription</key>
+	<string>Kiroku can optionally tag each drink in a live session with your current location, so you can see where you logged it later. Location capture is off by default and only happens while you have a live session open with the in-app preference enabled.</string>
 	<key>NSPhotoLibraryUsageDescription</key>
 	<string>Kiroku accesses your photos so you can choose a profile picture.</string>
 	<key>NSUserActivityTypes</key>

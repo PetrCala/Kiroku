@@ -61,6 +61,11 @@ type Preferences = {
    *  palette instead of each owner's palette. Undefined/false preserves the
    *  original behavior (each user's own palette is shown). */
   use_own_palette_for_others?: boolean;
+
+  /** When true and the OS-level location permission is granted, each drink
+   *  added to a LIVE session is tagged with the user's current GPS location.
+   *  Off by default. Edit-session adds never capture location regardless. */
+  track_location_during_sessions?: boolean;
 };
 
 /** A collection of preferences of multiple users */

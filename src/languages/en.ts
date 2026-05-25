@@ -430,6 +430,11 @@ export default {
       title: 'Notification Access Required',
       message: 'This app needs access to send notifications to your device.',
     },
+    location: {
+      title: 'Location Access Required',
+      message:
+        'Kiroku can tag drinks in live sessions with your current location. Capture only happens while a live session is open and this preference is enabled.',
+    },
   },
   personalDetails: {
     error: {
@@ -510,6 +515,28 @@ export default {
       drinksToUnits: 'Drinks to units',
       unitsToColors: 'Units to colors',
       colorPalette: 'Color palette',
+    },
+    privacySection: {
+      title: 'Privacy',
+      description:
+        'Control how Kiroku handles location data tied to your live sessions.',
+      trackLocationDuringSessions: {
+        label: 'Tag drinks with location',
+        description:
+          'Optional. While a live session is open, each drink you log is tagged with your current location. Edit-session adds never capture location.',
+      },
+      clearLocationHistory: {
+        label: 'Clear location history',
+        description:
+          'Permanently delete every location attached to a drink. Sessions and drinks themselves are preserved.',
+        button: 'Clear',
+        confirmTitle: 'Clear location history?',
+        confirmPrompt:
+          'This will permanently delete every location attached to a drink in any of your sessions. The sessions themselves stay. You can re-enable location tagging at any time afterwards.',
+        confirmAction: 'Clear',
+        success: 'Your location history has been cleared.',
+        error: "We couldn't clear your location history. Please try again.",
+      },
     },
     save: 'Save preferences',
     saving: 'Saving your preferences...',

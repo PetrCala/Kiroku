@@ -49,6 +49,8 @@ import type {
 } from './ReasonForLeaving';
 import type Response from './Response';
 import type Session from './Session';
+import type SessionLocations from './SessionLocations';
+import type {DrinkLocation} from './SessionLocations';
 import type SessionPlaceholder from './SessionPlaceholder';
 import type {SessionPlaceholderList} from './SessionPlaceholder';
 import type StartSession from './StartSession';
@@ -123,8 +125,10 @@ export type {
   ReasonForLeavingList,
   Request,
   Response,
+  DrinkLocation,
   Session,
   SessionColorPalette,
+  SessionLocations,
   SessionPlaceholder,
   SessionPlaceholderList,
   RangePreset,
