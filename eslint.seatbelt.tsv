@@ -651,8 +651,8 @@
 "__tests__/utils/firebase/connections.ts"	"arrow-body-style"	1
 "__tests__/utils/firebase/mockAuth.ts"	"@typescript-eslint/switch-exhaustiveness-check"	1
 "scripts/generate-icons.mjs"	"@typescript-eslint/no-use-before-define"	1
-"scripts/generate-icons.mjs"	"no-await-in-loop"	9
-"scripts/generate-icons.mjs"	"no-console"	17
+"scripts/generate-icons.mjs"	"no-await-in-loop"	6
+"scripts/generate-icons.mjs"	"no-console"	18
 "scripts/generate-icons.mjs"	"no-underscore-dangle"	1
 "scripts/generate-icons.mjs"	"prefer-template"	3
 "scripts/migrations/backfill-onboarding.ts"	"no-await-in-loop"	1
