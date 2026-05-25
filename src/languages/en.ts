@@ -293,6 +293,8 @@ export default {
     today: 'Today',
     fullscreenTitle: 'Sessions',
     loadingOlderMonths: 'Loading older months…',
+    monthTotalUnits: ({unitCount}: UnitCountParams) =>
+      `${unitCount} ${Str.pluralize('unit', 'units', unitCount)}`,
   },
   textInput: {
     accessibilityLabel: 'Text input',

@@ -118,13 +118,15 @@ function useLazyMarkedDates(
     [preferences, palette],
   );
 
-  // Second pass — build markedDates + unitsMap from the pre-built index.
-  // This is the only memo that needs `preferences`; on a palette change it
-  // walks the day list (~30 entries) instead of re-filtering N sessions.
+  // Second pass — build markedDates + unitsMap + monthlyTotalsMap from the
+  // pre-built index. This is the only memo that needs `preferences`; on a
+  // palette change it walks the day list (~30 entries) instead of
+  // re-filtering N sessions. `monthlyTotalsMap` is keyed by 'YYYY-MM'.
   const paletteGreen = palette.green;
-  const {markedDatesMap, unitsMap} = useMemo(() => {
+  const {markedDatesMap, unitsMap, monthlyTotalsMap} = useMemo(() => {
     const newMarkedDatesMap = new Map<DateString, MarkingProps>();
     const newUnitsMap = new Map<DateString, number>();
+    const newMonthlyTotalsMap = new Map<string, number>();
 
     dayKeys.forEach(dayKey => {
       const dailySessions = sessionIndex.get(dayKey) ?? [];
@@ -138,9 +140,20 @@ function useLazyMarkedDates(
       }
       newMarkedDatesMap.set(dayKey, newMarking.marking);
       newUnitsMap.set(dayKey, newMarking.units);
+      // dayKey is 'YYYY-MM-DD' — slice the month bucket directly without
+      // re-parsing the date.
+      const monthKey = dayKey.slice(0, 7);
+      newMonthlyTotalsMap.set(
+        monthKey,
+        (newMonthlyTotalsMap.get(monthKey) ?? 0) + newMarking.units,
+      );
     });
 
-    return {markedDatesMap: newMarkedDatesMap, unitsMap: newUnitsMap};
+    return {
+      markedDatesMap: newMarkedDatesMap,
+      unitsMap: newUnitsMap,
+      monthlyTotalsMap: newMonthlyTotalsMap,
+    };
   }, [sessionIndex, dayKeys, effectivePreferences, paletteGreen]);
 
   const markedDates: MarkedDates = useMemo(
@@ -202,6 +215,7 @@ function useLazyMarkedDates(
   return {
     markedDates,
     unitsMap,
+    monthlyTotalsMap,
     loadedFrom,
     loadedFromDate,
     loadMoreMonths,

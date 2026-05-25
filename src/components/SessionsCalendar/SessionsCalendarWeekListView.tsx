@@ -20,6 +20,7 @@ import useTheme from '@hooks/useTheme';
 import useThemeStyles from '@hooks/useThemeStyles';
 import ONYXKEYS from '@src/ONYXKEYS';
 import CONST from '@src/CONST';
+import {roundToTwoDecimalPlaces} from '@libs/NumberUtils';
 import type {DateString} from '@src/types/onyx/OnyxCommon';
 import buildMonthSections from './buildMonthSections';
 import type {MonthSection, MonthWeek} from './buildMonthSections';
@@ -54,6 +55,8 @@ type SessionsCalendarWeekListViewProps = {
   markedDates: MarkedDates;
   /** Per-day unit count, also keyed by `DateString`. */
   unitsMap: Map<DateString, number>;
+  /** Per-month unit totals keyed by 'YYYY-MM'. Rendered in the month label. */
+  monthlyTotalsMap: Map<string, number>;
   /** Earliest day currently loaded (drives the bottom of the list). */
   loadedFromDate: Date | null;
   /** Latest day to render (defaults to today). */
@@ -84,6 +87,7 @@ type LabelItem = {
   kind: 'label';
   key: string;
   label: string;
+  monthKey: string;
 };
 
 type WeekItem = {
@@ -109,6 +113,7 @@ type ListItem = LabelItem | WeekItem;
 function SessionsCalendarWeekListView({
   markedDates,
   unitsMap,
+  monthlyTotalsMap,
   loadedFromDate,
   endDate,
   isFetchingOlderMonths,
@@ -153,18 +158,19 @@ function SessionsCalendarWeekListView({
 
     monthSections.forEach(section => {
       const labelDate = new Date(section.year, section.month, 1);
+      const monthKey = `${section.year}-${String(section.month + 1).padStart(2, '0')}`;
       sticky.push(out.length);
       out.push({
         kind: 'label',
         key: `label-${section.year}-${section.month}`,
         label: format(labelDate, CONST.DATE.MONTH_YEAR_ABBR_FORMAT),
+        monthKey,
       });
       section.weeks.forEach((week, weekIdx) => {
         if (weekIdx === 0) {
           // The first week-row of each section is what we anchor the
           // initial-scroll lookup against. Key by 'YYYY-MM'.
-          const key = `${section.year}-${String(section.month + 1).padStart(2, '0')}`;
-          monthIndex.set(key, out.length);
+          monthIndex.set(monthKey, out.length);
         }
         // Section-qualified key — two halves of a calendar week that spans
         // a month boundary share the same `week.key` (the Monday's ISO
@@ -362,12 +368,20 @@ function SessionsCalendarWeekListView({
   const renderItem = useCallback(
     (args: {item: ListItem}) => {
       if (args.item.kind === 'label') {
+        const total = monthlyTotalsMap.get(args.item.monthKey);
         return (
           <View style={styles.sessionsCalendarMonthLabel}>
             <Text style={styles.sessionsCalendarMonthLabelText}>
               {args.item.label}
             </Text>
             <View style={styles.sessionsCalendarMonthLabelRule} />
+            {total !== undefined && total > 0 && (
+              <Text style={styles.sessionsCalendarMonthLabelTotal}>
+                {translate('calendar.monthTotalUnits', {
+                  unitCount: roundToTwoDecimalPlaces(total),
+                })}
+              </Text>
+            )}
           </View>
         );
       }
@@ -383,10 +397,13 @@ function SessionsCalendarWeekListView({
     [
       markedDates,
       unitsMap,
+      monthlyTotalsMap,
       onDayPress,
+      translate,
       styles.sessionsCalendarMonthLabel,
       styles.sessionsCalendarMonthLabelText,
       styles.sessionsCalendarMonthLabelRule,
+      styles.sessionsCalendarMonthLabelTotal,
     ],
   );
 

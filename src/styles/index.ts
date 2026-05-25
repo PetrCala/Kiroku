@@ -1619,6 +1619,17 @@ const styles = (theme: ThemeColors) =>
       backgroundColor: theme.border,
     },
 
+    // Per-month unit total rendered on the right of the divider, mirroring
+    // the label's bold-uppercase styling so the two read as one row.
+    sessionsCalendarMonthLabelTotal: {
+      ...FontUtils.fontFamily.platform.EXP_NEUE_BOLD,
+      color: theme.textSupporting,
+      fontSize: variables.fontSizeSmall,
+      letterSpacing: 0.6,
+      textTransform: 'uppercase',
+      marginLeft: 8,
+    },
+
     // ListHeaderComponent for the fullscreen calendar — sits at the very
     // top of the week list (above the oldest loaded month) only while a
     // data fetch is in flight, so the user knows more months are coming.
