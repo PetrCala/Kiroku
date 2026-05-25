@@ -1,5 +1,6 @@
-import React, {useCallback, useEffect, useMemo} from 'react';
-import {BackHandler} from 'react-native';
+import React, {useCallback, useEffect, useMemo, useState} from 'react';
+import {Alert, BackHandler, View} from 'react-native';
+import {useFirebase} from '@context/global/FirebaseContext';
 import {useDatabaseData} from '@context/global/DatabaseDataContext';
 import type {StackScreenProps} from '@react-navigation/stack';
 import type {SettingsNavigatorParamList} from '@libs/Navigation/types';
@@ -19,7 +20,15 @@ import MenuItemGroup from '@components/MenuItemGroup';
 import LocaleUtils from '@libs/LocaleUtils';
 import Section from '@components/Section';
 import MenuItem from '@components/MenuItem';
+import Switch from '@components/Switch';
+import Text from '@components/Text';
+import Button from '@components/Button';
+import ConfirmModal from '@components/ConfirmModal';
 import CONST from '@src/CONST';
+import * as Preferences from '@userActions/Preferences';
+import * as SessionLocations from '@userActions/SessionLocations';
+import checkPermission from '@libs/Permissions/checkPermission';
+import requestPermission from '@libs/Permissions/requestPermission';
 import type {PaletteId} from '@libs/SessionColorPalettes';
 import {
   DEFAULT_PALETTE_ID,
@@ -51,7 +60,77 @@ function PreferencesScreen({route}: PreferencesScreenProps) {
   const styles = useThemeStyles();
   const {singleExecution} = useSingleExecution();
   const {preferences} = useDatabaseData();
+  const {auth, db} = useFirebase();
+  const user = auth.currentUser;
   const waitForNavigate = useWaitForNavigation();
+
+  const persistedTrackLocation =
+    preferences?.track_location_during_sessions === true;
+  const [pendingTrackLocation, setPendingTrackLocation] = useState<
+    boolean | null
+  >(null);
+  const [savingTrackLocation, setSavingTrackLocation] = useState(false);
+  const displayTrackLocation = pendingTrackLocation ?? persistedTrackLocation;
+
+  const [showPurgeConfirmModal, setShowPurgeConfirmModal] = useState(false);
+  const [isPurging, setIsPurging] = useState(false);
+
+  const onConfirmPurge = () => {
+    if (isPurging) {
+      return;
+    }
+    setIsPurging(true);
+    SessionLocations.purgeAll(db, user)
+      .then(() => {
+        setShowPurgeConfirmModal(false);
+        Alert.alert(
+          translate(
+            'preferencesScreen.privacySection.clearLocationHistory.success',
+          ),
+        );
+      })
+      .catch(error => {
+        const errorMessage = error instanceof Error ? error.message : '';
+        Alert.alert(
+          translate(
+            'preferencesScreen.privacySection.clearLocationHistory.error',
+          ),
+          errorMessage,
+        );
+      })
+      .finally(() => setIsPurging(false));
+  };
+
+  const onToggleTrackLocation = (next: boolean) => {
+    if (savingTrackLocation || next === displayTrackLocation) {
+      return;
+    }
+    setPendingTrackLocation(next);
+    setSavingTrackLocation(true);
+    // requestPermission alerts the user itself on denial; rolling back the
+    // toggle is enough — never persist "enabled" without the OS grant.
+    const permissionCheck: Promise<boolean> = next
+      ? checkPermission('location').then(allowed =>
+          allowed ? Promise.resolve(true) : requestPermission('location'),
+        )
+      : Promise.resolve(true);
+    permissionCheck
+      .then(isGranted => {
+        if (!isGranted) {
+          setPendingTrackLocation(null);
+          return undefined;
+        }
+        return Preferences.updatePreferences(db, user, {
+          track_location_during_sessions: next,
+        });
+      })
+      .catch(error => {
+        setPendingTrackLocation(null);
+        const errorMessage = error instanceof Error ? error.message : '';
+        Alert.alert(translate('preferencesScreen.error.save'), errorMessage);
+      })
+      .finally(() => setSavingTrackLocation(false));
+  };
 
   // const handleFirstDayOfWeekToggle = (value: boolean) => {
   //   const newValue = value ? 'Monday' : 'Sunday';
@@ -180,6 +259,75 @@ function PreferencesScreen({route}: PreferencesScreenProps) {
     [drinksAndUnitsMenuItemsData, getMenuItemsSection],
   );
 
+  const privacySection = (
+    <Section
+      title={translate('preferencesScreen.privacySection.title')}
+      titleStyles={styles.generalSectionTitle}
+      subtitle={translate('preferencesScreen.privacySection.description')}
+      subtitleMuted
+      isCentralPane
+      childrenStyles={styles.pt3}>
+      <View style={[styles.ph5, styles.pt3]}>
+        <View
+          style={[
+            styles.flexRow,
+            styles.alignItemsCenter,
+            styles.justifyContentBetween,
+            styles.mb4,
+          ]}>
+          <View style={[styles.flexColumn, styles.flex1, styles.mr3]}>
+            <Text style={[styles.textNormal, styles.textStrong]}>
+              {translate(
+                'preferencesScreen.privacySection.trackLocationDuringSessions.label',
+              )}
+            </Text>
+            <Text style={[styles.textMicroSupporting, styles.mt1]}>
+              {translate(
+                'preferencesScreen.privacySection.trackLocationDuringSessions.description',
+              )}
+            </Text>
+          </View>
+          <Switch
+            accessibilityLabel={translate(
+              'preferencesScreen.privacySection.trackLocationDuringSessions.label',
+            )}
+            isOn={displayTrackLocation}
+            onToggle={onToggleTrackLocation}
+          />
+        </View>
+        <View
+          style={[
+            styles.flexRow,
+            styles.alignItemsCenter,
+            styles.justifyContentBetween,
+            styles.mb4,
+          ]}>
+          <View style={[styles.flexColumn, styles.flex1, styles.mr3]}>
+            <Text style={[styles.textNormal, styles.textStrong]}>
+              {translate(
+                'preferencesScreen.privacySection.clearLocationHistory.label',
+              )}
+            </Text>
+            <Text style={[styles.textMicroSupporting, styles.mt1]}>
+              {translate(
+                'preferencesScreen.privacySection.clearLocationHistory.description',
+              )}
+            </Text>
+          </View>
+          <Button
+            small
+            danger
+            text={translate(
+              'preferencesScreen.privacySection.clearLocationHistory.button',
+            )}
+            isDisabled={isPurging}
+            onPress={() => setShowPurgeConfirmModal(true)}
+          />
+        </View>
+      </View>
+    </Section>
+  );
+
   // Make the system back press toggle the go back handler
   useEffect(() => {
     const backAction = () => {
@@ -207,7 +355,24 @@ function PreferencesScreen({route}: PreferencesScreenProps) {
         <MenuItemGroup>
           {generalMenuItems}
           {drinksAndUnitsMenuItems}
+          {privacySection}
         </MenuItemGroup>
+        <ConfirmModal
+          danger
+          title={translate(
+            'preferencesScreen.privacySection.clearLocationHistory.confirmTitle',
+          )}
+          prompt={translate(
+            'preferencesScreen.privacySection.clearLocationHistory.confirmPrompt',
+          )}
+          confirmText={translate(
+            'preferencesScreen.privacySection.clearLocationHistory.confirmAction',
+          )}
+          cancelText={translate('common.cancel')}
+          isVisible={showPurgeConfirmModal}
+          onConfirm={onConfirmPurge}
+          onCancel={() => setShowPurgeConfirmModal(false)}
+        />
       </ScrollView>
     </ScreenWrapper>
   );

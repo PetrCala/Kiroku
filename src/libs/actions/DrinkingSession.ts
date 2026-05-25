@@ -13,6 +13,7 @@ import type {
   DrinkingSessionList,
   DrinkKey,
   DrinksToUnits,
+  DrinksTimestamp,
   UserDataList,
   UserStatus,
 } from '@src/types/onyx';
@@ -333,6 +334,9 @@ async function removeDrinkingSessionData(
 ): Promise<void> {
   const updates: FirebaseUpdates = {};
   updates[drinkingSessionRef.getRoute(userID, sessionKey)] = null;
+  // Drop any GPS locations captured for this session in the same batch so
+  // they don't outlive the session they describe.
+  updates[`user_session_locations/${userID}/${sessionKey}`] = null;
   if (sessionIsLive) {
     const userStatusData: UserStatus = {
       last_online: new Date().getTime(),
@@ -349,6 +353,7 @@ async function removeDrinkingSessionData(
   await recomputeEarliestSessionAt(db, userID);
 
   await Onyx.set(onyxKey, null);
+  await Onyx.set(`${ONYXKEYS.COLLECTION.SESSION_LOCATIONS}${sessionKey}`, null);
 }
 
 /**
@@ -358,6 +363,10 @@ async function removeDrinkingSessionData(
  * @param drinks The drinks to add or remove.
  * @param drinksToUnits Drink to units mapping.
  * @param action The action to perform (i.e., add, remove,...).
+ * @returns For ADD actions, the timestamp under which the drink was recorded
+ *   when the count for this drink actually grew (so callers like the
+ *   location-capture path don't fire for adds rejected by the max-units
+ *   guard). Undefined for REMOVE or when nothing changed.
  */
 function updateDrinks(
   sessionId: DrinkingSessionId | undefined,
@@ -365,39 +374,51 @@ function updateDrinks(
   amount: number,
   action: ValueOf<typeof CONST.DRINKS.ACTIONS>,
   drinksToUnits: DrinksToUnits | undefined,
-): void {
+): DrinksTimestamp | undefined {
   if (!drinksToUnits || !sessionId) {
-    return;
+    return undefined;
   }
   const session = DSUtils.getDrinkingSessionData(sessionId);
   const onyxKey = DSUtils.getDrinkingSessionOnyxKey(sessionId);
-  if (session && onyxKey) {
-    const drinksList = DSUtils.modifySessionDrinks(
-      session,
-      drinkKey,
-      amount,
-      action,
-      drinksToUnits,
-    );
+  if (!session || !onyxKey) {
+    return undefined;
+  }
+  const previousDrinks = session.drinks ?? {};
+  const drinksList = DSUtils.modifySessionDrinks(
+    session,
+    drinkKey,
+    amount,
+    action,
+    drinksToUnits,
+  );
 
-    // const drinks = drinksList ? Object.values(drinksList)[0] : null;
+  // Merge can only be used when adding drinks, or when removing drinks does not delete the drink key
+  if (action === CONST.DRINKS.ACTIONS.ADD) {
+    Onyx.merge(onyxKey, {
+      drinks: drinksList,
+    });
+  } else {
+    Onyx.set(onyxKey, {
+      ...session,
+      drinks: drinksList,
+    });
+  }
 
-    // Merge can only be used when adding drinks, or when removing drinks does not delete the drink key
-    if (
-      action === CONST.DRINKS.ACTIONS.ADD
-      // ||
-      // (drinks && Object.keys(drinks).includes(drinkKey))
-    ) {
-      Onyx.merge(onyxKey, {
-        drinks: drinksList,
-      });
-    } else {
-      Onyx.set(onyxKey, {
-        ...session,
-        drinks: drinksList,
-      });
+  if (action !== CONST.DRINKS.ACTIONS.ADD || !drinksList) {
+    return undefined;
+  }
+  // Find the latest timestamp whose count for this drink actually increased.
+  // Skips the no-op case where addDrinksToList rejected the add (max units).
+  let added: DrinksTimestamp | undefined;
+  for (const timestampStr of Object.keys(drinksList)) {
+    const timestamp = Number(timestampStr);
+    const newCount = drinksList[timestamp]?.[drinkKey] ?? 0;
+    const oldCount = previousDrinks[timestamp]?.[drinkKey] ?? 0;
+    if (newCount > oldCount && (added === undefined || timestamp > added)) {
+      added = timestamp;
     }
   }
+  return added;
 }
 
 /**

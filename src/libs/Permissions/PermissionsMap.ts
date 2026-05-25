@@ -20,6 +20,10 @@ const PermissionsMap: Record<PermissionKey, PermissionEntry> = {
     // POST_NOTIFICATIONS is not in the type definitions but exists on Android 13+
     Android: 'android.permission.POST_NOTIFICATIONS' as RNPermission,
   },
+  location: {
+    iOS: PERMISSIONS.IOS.LOCATION_WHEN_IN_USE,
+    Android: PERMISSIONS.ANDROID.ACCESS_FINE_LOCATION,
+  },
 };
 
 export default PermissionsMap;

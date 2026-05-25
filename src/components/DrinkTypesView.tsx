@@ -4,8 +4,10 @@ import useThemeStyles from '@hooks/useThemeStyles';
 import useLocalize from '@hooks/useLocalize';
 import DrinkData from '@libs/DrinkData';
 import * as DS from '@userActions/DrinkingSession';
+import * as SessionLocations from '@userActions/SessionLocations';
 import {findDrinkNameTranslationKey} from '@libs/DataHandling';
 import {useDatabaseData} from '@context/global/DatabaseDataContext';
+import {useFirebase} from '@context/global/FirebaseContext';
 import CONST from '@src/CONST';
 import useTheme from '@hooks/useTheme';
 import * as KirokuIcons from './Icon/KirokuIcons';
@@ -22,17 +24,34 @@ type DrinkTypesViewProps = {
 function DrinkTypesView({session}: DrinkTypesViewProps) {
   const {translate} = useLocalize();
   const {preferences} = useDatabaseData();
+  const {auth, db} = useFirebase();
   const styles = useThemeStyles();
   const theme = useTheme();
 
   const handleAddDrinks = (drinkKey: DrinkKey, amount: number) => {
-    DS.updateDrinks(
+    const timestamp = DS.updateDrinks(
       session?.id,
       drinkKey,
       amount,
       CONST.DRINKS.ACTIONS.ADD,
       preferences?.drinks_to_units,
     );
+    if (
+      timestamp !== undefined &&
+      session?.ongoing === true &&
+      session.id &&
+      preferences?.track_location_during_sessions === true
+    ) {
+      // Fire-and-forget: capture must never block the drink-add UX.
+      // captureForTimestamp swallows its own errors internally; the .catch
+      // is a belt-and-suspenders no-op to satisfy no-floating-promises.
+      SessionLocations.captureForTimestamp(
+        db,
+        auth.currentUser,
+        session.id,
+        timestamp,
+      ).catch(() => {});
+    }
   };
 
   const handleRemoveDrinks = (drinkKey: DrinkKey, amount: number) => {

@@ -81,6 +81,39 @@
         },
         "theme": {
           ".validate": "newData.isString() || newData.val() === null"
+        },
+        "track_location_during_sessions": {
+          ".validate": "newData.isBoolean() || newData.val() === null"
+        }
+      }
+    },
+    "user_session_locations": {
+      ".read": "auth.token.admin === true",
+      ".write": "auth.token.admin === true",
+      "$uid": {
+        ".validate": "newData.val() === null || newData.hasChildren()",
+        ".read": "auth != null && auth.uid === $uid",
+        ".write": "auth != null && auth.uid === $uid",
+        "$session_id": {
+          ".validate": "newData.val() === null || newData.hasChildren()",
+          "$timestamp": {
+            ".validate": "newData.val() === null || (newData.hasChildren(['latitude', 'longitude', 'capturedAt']) && $timestamp.matches(/^[0-9]+$/))",
+            "latitude": {
+              ".validate": "newData.isNumber() && newData.val() >= -90 && newData.val() <= 90"
+            },
+            "longitude": {
+              ".validate": "newData.isNumber() && newData.val() >= -180 && newData.val() <= 180"
+            },
+            "accuracy": {
+              ".validate": "newData.isNumber() && newData.val() >= 0"
+            },
+            "capturedAt": {
+              ".validate": "newData.isNumber() && newData.val() > 0"
+            },
+            "$other": {
+              ".validate": false
+            }
+          }
         }
       }
     },

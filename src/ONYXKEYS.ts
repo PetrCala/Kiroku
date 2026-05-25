@@ -187,6 +187,13 @@ const ONYXKEYS = {
      * listener and the friend-profile one-shot fetcher.
      */
     SESSIONS_CALENDAR_MONTHS_BY_USER_ID: 'sessionsCalendarMonthsByUserID_',
+    /**
+     * Per-session map of drink-timestamp → GPS location, keyed by sessionId.
+     * Sparse — only sessions where the user opted in to location tracking
+     * during live capture have an entry. Mirrors the Firebase subtree at
+     * `/user_session_locations/$uid/$sessionId`.
+     */
+    SESSION_LOCATIONS: 'sessionLocations_',
     //     POLICY: 'policy_',
     //     POLICY_TAGS: 'policyTags_',
     //     POLICY_RECENTLY_USED_TAGS: 'nvp_recentlyUsedTags_',
@@ -271,6 +278,7 @@ type OnyxCollectionValuesMapping = {
   [ONYXKEYS.COLLECTION.FEEDBACK]: OnyxTypes.Feedback;
   [ONYXKEYS.COLLECTION.BUG]: OnyxTypes.Bug;
   [ONYXKEYS.COLLECTION.SESSIONS_CALENDAR_MONTHS_BY_USER_ID]: number;
+  [ONYXKEYS.COLLECTION.SESSION_LOCATIONS]: OnyxTypes.SessionLocations;
   //   [ONYXKEYS.COLLECTION.POLICY]: OnyxTypes.Policy;
   //   [ONYXKEYS.COLLECTION.POLICY_DRAFTS]: OnyxTypes.Policy;
   //     .POLICY_RECENTLY_USED_CATEGORIES]: OnyxTypes.RecentlyUsedCategories;

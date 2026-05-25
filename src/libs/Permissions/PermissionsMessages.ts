@@ -18,10 +18,10 @@ const permissionsMessages: Record<PermissionKey, Record<string, string>> = {
     title: Localize.translateLocal('permissions.notifications.title'),
     message: Localize.translateLocal('permissions.notifications.message'),
   },
-  // location: {
-  //   title: 'Location Access',
-  //   message: 'This app needs access to your location for navigation purposes.',
-  // },
+  location: {
+    title: Localize.translateLocal('permissions.location.title'),
+    message: Localize.translateLocal('permissions.location.message'),
+  },
 };
 
 export default permissionsMessages;
