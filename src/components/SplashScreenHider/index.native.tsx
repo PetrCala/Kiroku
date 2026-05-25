@@ -88,7 +88,18 @@ function SplashScreenHider({
     if (!shouldHideSplash) {
       return;
     }
-    hide();
+    // Defer the native BootSplash.hide() by one vsync so the JS overlay
+    // (this component's animated yellow + logo, the Kiroku-level splash
+    // guard View, and the SafeArea backgroundColor override) is guaranteed
+    // to be on screen BEFORE the native loadingView is removed. Without
+    // this, useEffect fires after the React commit but before the next
+    // vsync — hide() runs synchronously, the native view disappears, and
+    // for one frame the user sees whichever React surface lags first paint
+    // (Reanimated.View, ImageSVG via react-native-svg). requestAnimationFrame
+    // aligns to vsync in React Native, so by the time the callback runs the
+    // previous commit's pixels are on screen.
+    const handle = requestAnimationFrame(() => hide());
+    return () => cancelAnimationFrame(handle);
   }, [shouldHideSplash, hide]);
 
   useEffect(() => {

@@ -7,7 +7,7 @@ import React, {
   useState,
 } from 'react';
 import type {NativeEventSubscription} from 'react-native';
-import {AppState, Linking, Platform} from 'react-native';
+import {AppState, Linking, Platform, StyleSheet, View} from 'react-native';
 import Onyx, {useOnyx} from 'react-native-onyx';
 import {useFirebase} from '@context/global/FirebaseContext';
 import {useUserConnection} from '@context/global/UserConnectionContext';
@@ -35,7 +35,21 @@ import CONFIG from './CONFIG';
 import UpdateAppModal from './components/UpdateAppModal';
 import VerifyEmailModal from './components/VerifyEmailModal';
 import FullScreenLoadingIndicator from './components/FullscreenLoadingIndicator';
+import colors from './styles/theme/colors';
 import CONST from './CONST';
+
+// Painted on top of NavigationRoot but below SplashScreenHider (zIndex 20)
+// while the splash is up, so a one-frame mount lag in SplashScreenHider's
+// Reanimated tree can never expose React Navigation's white appBG. Stays
+// a plain View — every JS-rendered child (ImageSVG, Reanimated.View) has
+// its own first-paint lag, so the guard's contribution is the color, not
+// the logo. The native loadingView covers the logo until SplashScreenHider
+// catches up.
+const splashGuardStyle = {
+  ...StyleSheet.absoluteFillObject,
+  backgroundColor: colors.yellowStrong,
+  zIndex: 19,
+};
 
 Onyx.registerLogger(({level, message}) => {
   if (level === 'alert') {
@@ -306,6 +320,16 @@ function Kiroku() {
         lastVisitedPath={lastVisitedPath as Route}
         initialUrl={initialUrl}
       />
+      {/*
+        The guard sits between NavigationRoot and SplashScreenHider while the
+        splash is at full opacity. It is unmounted the moment shouldHideSplash
+        flips so SplashScreenHider's opacity fade can reveal real content
+        instead of cross-fading against a yellow backdrop.
+      */}
+      {splashScreenState !== CONST.BOOT_SPLASH_STATE.HIDDEN &&
+        !shouldHideSplash && (
+          <View pointerEvents="none" style={splashGuardStyle} />
+        )}
       {splashScreenState !== CONST.BOOT_SPLASH_STATE.HIDDEN && (
         <SplashScreenHider
           shouldHideSplash={shouldHideSplash}
