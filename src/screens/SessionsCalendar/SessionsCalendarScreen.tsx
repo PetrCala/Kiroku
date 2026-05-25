@@ -99,7 +99,12 @@ function SessionsCalendarScreen({route}: SessionsCalendarScreenProps) {
         onCloseButtonPress={() => Navigation.goBack()}
       />
       {!isLoading && preferences && (
-        <View style={[styles.flex1, !isScrollReady && internalStyles.hidden]}>
+        <View
+          style={[
+            styles.flex1,
+            styles.ph4,
+            !isScrollReady && internalStyles.hidden,
+          ]}>
           <SessionsCalendar
             userID={userID}
             visibleDate={visibleDate}

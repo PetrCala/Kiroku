@@ -40,7 +40,7 @@ function HomeHeaderSkeleton() {
         styles.borderBottom,
         styles.flexRow,
         styles.alignItemsCenter,
-        styles.pl5,
+        styles.ph4,
       ]}>
       <Block width={avatarSize} height={avatarSize} radius={avatarSize / 2} />
       <Block width={140} height={16} style={styles.ml3} />
@@ -78,7 +78,7 @@ const CALENDAR_DAYS = [0, 1, 2, 3, 4, 5, 6] as const;
 function SessionsCalendarSkeleton() {
   const styles = useThemeStyles();
   return (
-    <View style={[styles.sessionsCalendarContainer, styles.p4]}>
+    <View style={[styles.sessionsCalendarContainer, styles.pv4]}>
       {/* Month header: left arrow + month name + right arrow */}
       <View
         style={[

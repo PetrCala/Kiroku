@@ -203,7 +203,7 @@ function HomeScreen({route}: HomeScreenProps) {
       includeSafeAreaPaddingBottom={getPlatform() !== CONST.PLATFORM.IOS}>
       {/* // TODO rewrite this into the HeaderWithBackButton component */}
       {isUserDataReady ? (
-        <View style={[styles.headerBar, styles.borderBottom]}>
+        <View style={[styles.headerBar, styles.borderBottom, styles.ph4]}>
           <Button
             style={[styles.flexRow, styles.bgTransparent]}
             onPress={() =>
@@ -225,7 +225,7 @@ function HomeScreen({route}: HomeScreenProps) {
       ) : (
         <HomeHeaderSkeleton />
       )}
-      <ScrollView>
+      <ScrollView contentContainerStyle={styles.ph4}>
         {!!ongoingSessionData?.ongoing && (
           <MessageBanner
             danger
