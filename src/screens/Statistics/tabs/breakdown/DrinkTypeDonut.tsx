@@ -201,6 +201,7 @@ function DrinkTypeDonut({
                 Math.PI * 1.5,
               )}
               color={theme.borderLighter}
+              // eslint-disable-next-line react/style-prop-object -- Skia <Path> takes a string style discriminator ('fill' | 'stroke').
               style="fill"
             />
           ) : (
@@ -218,6 +219,7 @@ function DrinkTypeDonut({
                     slice.endAngle,
                   )}
                   color={DRINK_KEY_COLORS[slice.key]}
+                  // eslint-disable-next-line react/style-prop-object -- Skia <Path> takes a string style discriminator ('fill' | 'stroke').
                   style="fill"
                 />
               );
