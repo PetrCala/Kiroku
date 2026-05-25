@@ -291,7 +291,7 @@ export default {
     ],
     dayNamesShort: ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'],
     today: 'Today',
-    fullscreenTitle: 'Sessions',
+    fullscreenTitle: 'Drinking sessions',
     loadingOlderMonths: 'Loading older months…',
     monthTotalUnits: ({unitCount}: UnitCountParams) =>
       `${unitCount} ${Str.pluralize('unit', 'units', unitCount)}`,

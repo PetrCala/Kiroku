@@ -289,7 +289,7 @@ export default {
     ],
     dayNamesShort: ['Ne', 'Po', 'Út', 'St', 'Čt', 'Pá', 'So'],
     today: 'Dnes',
-    fullscreenTitle: 'Sezení',
+    fullscreenTitle: 'Alkoholové relace',
     loadingOlderMonths: 'Načítání starších měsíců…',
     monthTotalUnits: ({unitCount}: UnitCountParams) =>
       `${unitCount} ${Str.pluralize('jednotka', 'jednotek', unitCount)}`,
