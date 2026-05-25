@@ -99,7 +99,6 @@ jobs:
           max_attempts: 3
           command: bundle exec fastlane android ${{ inputs.SHOULD_DEPLOY_PRODUCTION && 'production' || 'beta' }}
         env:
-          RUBYOPT: '-rostruct'
           MYAPP_UPLOAD_STORE_PASSWORD: ${{ secrets.MYAPP_UPLOAD_STORE_PASSWORD }}
           MYAPP_UPLOAD_KEY_PASSWORD: ${{ secrets.MYAPP_UPLOAD_KEY_PASSWORD }}
           VERSION: ${{ env.VERSION_CODE }}
