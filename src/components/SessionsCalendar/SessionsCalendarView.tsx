@@ -294,12 +294,18 @@ function SessionsCalendarView({
     <GestureDetector gesture={swipeGesture}>
       <View collapsable={false}>
         <Calendar
-          // Remount on theme change as a safety net. The library snapshots its
-          // derived stylesheet at first mount (patched in
-          // `patches/react-native-calendars+*.patch`); this `key` is belt-and-
-          // suspenders so the chrome still recovers if the patch ever fails to
-          // apply (e.g. a fresh `node_modules` before postinstall has run).
-          key={themePreference}
+          // Two remount triggers folded into one key:
+          //   • `themePreference` — belt-and-suspenders for the lib's first-
+          //     mount stylesheet snapshot (patched in
+          //     `patches/react-native-calendars+*.patch`).
+          //   • `visibleDate.dateString.slice(0, 7)` — the lib reads `current`
+          //     only on initial `useState`, so prop updates don't move its
+          //     internal cursor. Arrow presses sidestep this by calling
+          //     `subtractMonth`/`addMonth`; swipes have no such callback, so
+          //     we force a remount on month change to keep the grid in sync
+          //     with `visibleDate`. Slicing to 'YYYY-MM' avoids day-level
+          //     remounts when the date string changes within a month.
+          key={`${themePreference}-${visibleDate.dateString.slice(0, 7)}`}
           current={visibleDate.dateString}
           dayComponent={dayComponent}
           minDate={resolvedMinDate}
