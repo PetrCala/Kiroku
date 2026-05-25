@@ -7,6 +7,8 @@ import React, {
   useState,
 } from 'react';
 import {ActivityIndicator, Dimensions, View} from 'react-native';
+import {Gesture, GestureDetector} from 'react-native-gesture-handler';
+import {runOnJS} from 'react-native-reanimated';
 import {FlashList} from '@shopify/flash-list';
 import type {FlashListRef} from '@shopify/flash-list';
 import {format, parseISO, startOfDay} from 'date-fns';
@@ -81,6 +83,10 @@ type SessionsCalendarWeekListViewProps = {
   /** Fires once the initial scroll has been applied (or determined that no
    *  scroll is needed). The parent screen uses this to unhide the calendar. */
   onInitialScrollReady?: () => void;
+  /** Called when the user swipes right past the threshold — the parent maps
+   *  this to a navigation back so the fullscreen view feels dismissable on
+   *  Android (which has no built-in stack swipe-back). */
+  onSwipeBack?: () => void;
 };
 
 type LabelItem = {
@@ -122,6 +128,7 @@ function SessionsCalendarWeekListView({
   initialMonthYear,
   initialFirstWeekY,
   onInitialScrollReady,
+  onSwipeBack,
 }: SessionsCalendarWeekListViewProps) {
   const styles = useThemeStyles();
   const theme = useTheme();
@@ -443,38 +450,72 @@ function SessionsCalendarWeekListView({
       ? targetIndex
       : Math.max(0, items.length - 1);
 
+  // Side-swipe-right → dismiss the fullscreen view. The Pan gesture only
+  // activates on a clear horizontal drift, and fails the moment a vertical
+  // drift takes the lead, so the FlashList's vertical scroll wins every
+  // intra-list pan. `enabled` keeps the gesture inert when no handler is
+  // wired up (e.g. a future reuse of this view outside the modal stack).
+  const swipeBackGesture = useMemo(
+    () =>
+      Gesture.Pan()
+        .enabled(!!onSwipeBack)
+        // Only positive translation (rightward swipe) should be a candidate;
+        // we leave a generous failOffset on the left so dragging the
+        // scrollbar / horizontal day-row never accidentally trips it.
+        .activeOffsetX(20)
+        .failOffsetY([-20, 20])
+        .onEnd(e => {
+          'worklet';
+
+          const SWIPE_THRESHOLD = 80;
+          const VELOCITY_THRESHOLD = 500;
+          if (!onSwipeBack) {
+            return;
+          }
+          if (
+            e.translationX > SWIPE_THRESHOLD ||
+            e.velocityX > VELOCITY_THRESHOLD
+          ) {
+            runOnJS(onSwipeBack)();
+          }
+        }),
+    [onSwipeBack],
+  );
+
   return (
-    <View style={styles.flex1}>
-      <View style={styles.sessionsCalendarDayNamesRow}>
-        {dayNames.map((name, idx) => (
-          <View
-            // eslint-disable-next-line react/no-array-index-key
-            key={`day-name-${idx}`}
-            style={styles.sessionsCalendarDayNameCell}>
-            <Text style={styles.sessionsCalendarDayNameText}>{name}</Text>
-          </View>
-        ))}
+    <GestureDetector gesture={swipeBackGesture}>
+      <View style={styles.flex1}>
+        <View style={styles.sessionsCalendarDayNamesRow}>
+          {dayNames.map((name, idx) => (
+            <View
+              // eslint-disable-next-line react/no-array-index-key
+              key={`day-name-${idx}`}
+              style={styles.sessionsCalendarDayNameCell}>
+              <Text style={styles.sessionsCalendarDayNameText}>{name}</Text>
+            </View>
+          ))}
+        </View>
+        <View
+          ref={flashListWrapperRef}
+          onLayout={onFlashListWrapperLayout}
+          style={styles.flex1}
+          collapsable={false}>
+          <FlashList
+            ref={listRef}
+            data={items}
+            renderItem={renderItem}
+            keyExtractor={keyExtractor}
+            stickyHeaderIndices={stickyHeaderIndices}
+            initialScrollIndex={initialScrollIndex}
+            showsVerticalScrollIndicator
+            ListHeaderComponent={listHeader}
+            ListFooterComponent={ListFooter}
+            onViewableItemsChanged={onViewableItemsChanged}
+            viewabilityConfig={VIEWABILITY_CONFIG}
+          />
+        </View>
       </View>
-      <View
-        ref={flashListWrapperRef}
-        onLayout={onFlashListWrapperLayout}
-        style={styles.flex1}
-        collapsable={false}>
-        <FlashList
-          ref={listRef}
-          data={items}
-          renderItem={renderItem}
-          keyExtractor={keyExtractor}
-          stickyHeaderIndices={stickyHeaderIndices}
-          initialScrollIndex={initialScrollIndex}
-          showsVerticalScrollIndicator
-          ListHeaderComponent={listHeader}
-          ListFooterComponent={ListFooter}
-          onViewableItemsChanged={onViewableItemsChanged}
-          viewabilityConfig={VIEWABILITY_CONFIG}
-        />
-      </View>
-    </View>
+    </GestureDetector>
   );
 }
 

@@ -208,9 +208,15 @@ const ProfileModalStackNavigator =
 
 const SessionsCalendarModalStackNavigator =
   createModalStackNavigator<SessionsCalendarNavigatorParamList>({
-    [SCREENS.SESSIONS_CALENDAR.FULLSCREEN]: () =>
-      require<ReactComponentModule>('@screens/SessionsCalendar/SessionsCalendarScreen')
-        .default,
+    [SCREENS.SESSIONS_CALENDAR.FULLSCREEN]: {
+      getComponent: () =>
+        require<ReactComponentModule>('@screens/SessionsCalendar/SessionsCalendarScreen')
+          .default,
+      // The screen owns a horizontal swipe-back gesture (see
+      // SessionsCalendarWeekListView). Disable the stack's own swipe-back so
+      // the two don't race on iOS — our gesture works on both platforms.
+      options: {gestureEnabled: false},
+    },
   });
 
 const SocialModalStackNavigator =

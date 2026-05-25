@@ -177,6 +177,7 @@ function SessionsCalendar({
         initialMonthYear={initialMonthYear}
         initialFirstWeekY={initialFirstWeekY}
         onInitialScrollReady={onInitialScrollReady}
+        onSwipeBack={Navigation.goBack}
       />
     );
   }
