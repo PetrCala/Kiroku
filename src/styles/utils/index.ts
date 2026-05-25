@@ -20,7 +20,10 @@ import CONST from '@src/CONST';
 import type {StyledSafeAreaInsets} from '@hooks/useStyledSafeAreaInsets';
 import type {Theme as RNCalendarsTheme} from 'react-native-calendars/src/types';
 import type {MarkingProps} from 'react-native-calendars/src/calendar/day/marking';
-import {isLightHex} from '@libs/SessionColorPalettes';
+import {
+  getCalendarTileBorderColor,
+  isLightHex,
+} from '@libs/SessionColorPalettes';
 import {defaultStyles} from '..';
 import type {ThemeStyles} from '..';
 import containerComposeStyles from './containerComposeStyles';
@@ -1387,10 +1390,20 @@ const createStyleUtils = (theme: ThemeColors, styles: ThemeStyles) => ({
     isDisabled: boolean,
   ): ViewStyle => {
     const markingColor = marking?.color;
+    // Every marked tile gets a 1px border derived from its own swatch, shifted
+    // toward black/white relative to the app background. This keeps edges
+    // visible against any theme (pale tiles on light, near-black tiles on
+    // dark) while staying tonally close to the tile color. Unmarked cells
+    // keep the transparent shell so they still read as "no data".
+    const borderColor = markingColor
+      ? getCalendarTileBorderColor(markingColor, theme.appBG) ?? 'transparent'
+      : 'transparent';
     return {
       width: variables.sessionsCalendarDaySize,
       height: variables.sessionsCalendarDaySize,
       borderRadius: variables.componentBorderRadiusNormal,
+      borderWidth: 1,
+      borderColor,
       alignItems: 'center',
       justifyContent: 'center',
       backgroundColor: markingColor ?? 'transparent',
