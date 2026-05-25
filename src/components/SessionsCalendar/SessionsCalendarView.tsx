@@ -1,5 +1,7 @@
-import React, {memo, useCallback, useEffect, useRef} from 'react';
+import React, {memo, useCallback, useEffect, useMemo, useRef} from 'react';
 import {ActivityIndicator, View} from 'react-native';
+import {Gesture, GestureDetector} from 'react-native-gesture-handler';
+import {runOnJS} from 'react-native-reanimated';
 import {PressableWithFeedback} from '@components/Pressable';
 import Icon from '@components/Icon';
 import * as KirokuIcons from '@components/Icon/KirokuIcons';
@@ -7,7 +9,7 @@ import {Calendar} from 'react-native-calendars';
 import type {DateData} from 'react-native-calendars';
 import type {MarkedDates} from 'react-native-calendars/src/types';
 import {useOnyx} from 'react-native-onyx';
-import {format, startOfMonth} from 'date-fns';
+import {format, parseISO, startOfMonth} from 'date-fns';
 import useTheme from '@hooks/useTheme';
 import useThemePreference from '@hooks/useThemePreference';
 import useThemeStyles from '@hooks/useThemeStyles';
@@ -232,35 +234,95 @@ function SessionsCalendarView({
     ],
   );
 
+  // Side-swipe → change month. The library's built-in `enableSwipeMonths` is
+  // off because it bypasses the orchestrator's lazy-load hook; we feed the
+  // existing arrow handlers instead so the same prefetch path fires. The
+  // `subtractMonth/addMonth` callback they take is the lib's internal cursor
+  // updater — irrelevant here since `current` is driven by `visibleDate`.
+  const resolvedMinDate = minDate ?? CONST.DATE.MIN_DATE;
+  const resolvedMaxDate =
+    maxDate ?? format(new Date(), CONST.DATE.CALENDAR_FORMAT);
+  const goToPreviousMonth = useCallback(() => {
+    if (!onLeftArrowPress) {
+      return;
+    }
+    const visibleMonth = startOfMonth(new Date(visibleDate.timestamp));
+    if (visibleMonth <= startOfMonth(parseISO(resolvedMinDate))) {
+      return;
+    }
+    onLeftArrowPress(() => {});
+  }, [onLeftArrowPress, visibleDate.timestamp, resolvedMinDate]);
+  const goToNextMonth = useCallback(() => {
+    if (!onRightArrowPress) {
+      return;
+    }
+    const visibleMonth = startOfMonth(new Date(visibleDate.timestamp));
+    if (visibleMonth >= startOfMonth(parseISO(resolvedMaxDate))) {
+      return;
+    }
+    onRightArrowPress(() => {});
+  }, [onRightArrowPress, visibleDate.timestamp, resolvedMaxDate]);
+
+  const swipeGesture = useMemo(
+    () =>
+      Gesture.Pan()
+        // Activate only after clear horizontal intent so day-cell taps and
+        // scroll-locked vertical pans still win uncontested.
+        .activeOffsetX([-15, 15])
+        .failOffsetY([-20, 20])
+        .onEnd(e => {
+          'worklet';
+
+          const SWIPE_THRESHOLD = 60;
+          const VELOCITY_THRESHOLD = 400;
+          if (
+            e.translationX < -SWIPE_THRESHOLD ||
+            e.velocityX < -VELOCITY_THRESHOLD
+          ) {
+            runOnJS(goToNextMonth)();
+          } else if (
+            e.translationX > SWIPE_THRESHOLD ||
+            e.velocityX > VELOCITY_THRESHOLD
+          ) {
+            runOnJS(goToPreviousMonth)();
+          }
+        }),
+    [goToPreviousMonth, goToNextMonth],
+  );
+
   return (
-    <Calendar
-      // Remount on theme change as a safety net. The library snapshots its
-      // derived stylesheet at first mount (patched in
-      // `patches/react-native-calendars+*.patch`); this `key` is belt-and-
-      // suspenders so the chrome still recovers if the patch ever fails to
-      // apply (e.g. a fresh `node_modules` before postinstall has run).
-      key={themePreference}
-      current={visibleDate.dateString}
-      dayComponent={dayComponent}
-      minDate={minDate ?? CONST.DATE.MIN_DATE}
-      maxDate={maxDate ?? format(new Date(), CONST.DATE.CALENDAR_FORMAT)}
-      monthFormat={CONST.DATE.MONTH_YEAR_ABBR_FORMAT}
-      onPressArrowLeft={onLeftArrowPress}
-      onPressArrowRight={onRightArrowPress}
-      markedDates={markedDates}
-      markingType="period"
-      firstDay={CONST.WEEK_STARTS_ON}
-      enableSwipeMonths={false}
-      hideArrows={hideArrows}
-      hideDayNames={hideDayNames}
-      renderHeader={renderHeader}
-      disableAllTouchEventsForDisabledDays
-      renderArrow={(direction: Direction) => CalendarArrow(direction)}
-      style={styles.sessionsCalendarContainer}
-      theme={StyleUtils.getSessionsCalendarStyle()}
-      // @ts-expect-error locale prop exists at runtime but is not declared in types
-      locale={locale}
-    />
+    <GestureDetector gesture={swipeGesture}>
+      <View collapsable={false}>
+        <Calendar
+          // Remount on theme change as a safety net. The library snapshots its
+          // derived stylesheet at first mount (patched in
+          // `patches/react-native-calendars+*.patch`); this `key` is belt-and-
+          // suspenders so the chrome still recovers if the patch ever fails to
+          // apply (e.g. a fresh `node_modules` before postinstall has run).
+          key={themePreference}
+          current={visibleDate.dateString}
+          dayComponent={dayComponent}
+          minDate={resolvedMinDate}
+          maxDate={resolvedMaxDate}
+          monthFormat={CONST.DATE.MONTH_YEAR_ABBR_FORMAT}
+          onPressArrowLeft={onLeftArrowPress}
+          onPressArrowRight={onRightArrowPress}
+          markedDates={markedDates}
+          markingType="period"
+          firstDay={CONST.WEEK_STARTS_ON}
+          enableSwipeMonths={false}
+          hideArrows={hideArrows}
+          hideDayNames={hideDayNames}
+          renderHeader={renderHeader}
+          disableAllTouchEventsForDisabledDays
+          renderArrow={(direction: Direction) => CalendarArrow(direction)}
+          style={styles.sessionsCalendarContainer}
+          theme={StyleUtils.getSessionsCalendarStyle()}
+          // @ts-expect-error locale prop exists at runtime but is not declared in types
+          locale={locale}
+        />
+      </View>
+    </GestureDetector>
   );
 }
 
