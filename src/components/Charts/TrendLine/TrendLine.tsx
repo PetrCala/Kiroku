@@ -1,6 +1,8 @@
 import {useMemo} from 'react';
+import {View} from 'react-native';
 import {DashPathEffect, Rect} from '@shopify/react-native-skia';
 import {BaseChart, Line} from '@components/Charts/BaseChart';
+import {PressableWithoutFeedback} from '@components/Pressable';
 
 type TrendLineProps = {
   /** ISO-week labels, one per data point. Drives the chart's x-axis order. */
@@ -16,6 +18,8 @@ type TrendLineProps = {
   accessibilityLabel: string;
   emptyLabel?: string;
   height?: number;
+  /** Fired with the ISO-week label of the tapped point (drill-down hook). */
+  onWeekPress?: (isoWeek: string) => void;
 };
 
 type TrendRow = {
@@ -38,6 +42,8 @@ const COMPARISON_DASH: number[] = [4, 4];
  * missing series upstream (in `useTrendsTabData`) so the underlying chart
  * doesn't ingest NaN.
  */
+const MIN_TAP_TARGET = 44;
+
 function TrendLine({
   weeks,
   units,
@@ -47,6 +53,7 @@ function TrendLine({
   accessibilityLabel,
   emptyLabel,
   height,
+  onWeekPress,
 }: TrendLineProps) {
   const showEwma = !!ewma && ewma.length === weeks.length;
   const showComparison =
@@ -81,7 +88,9 @@ function TrendLine({
     return max;
   }, [data, band, showEwma, showComparison]);
 
-  return (
+  const hasTapTargets = !!onWeekPress && weeks.length > 0;
+
+  const chart = (
     <BaseChart
       data={data}
       yKeys={yKeys}
@@ -141,6 +150,36 @@ function TrendLine({
         );
       }}
     </BaseChart>
+  );
+
+  if (!hasTapTargets) {
+    return chart;
+  }
+
+  return (
+    <View>
+      {chart}
+      <View
+        pointerEvents="box-none"
+        style={{
+          position: 'absolute',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          flexDirection: 'row',
+        }}>
+        {weeks.map(week => (
+          <PressableWithoutFeedback
+            key={week}
+            accessibilityRole="button"
+            accessibilityLabel={week}
+            onPress={() => onWeekPress?.(week)}
+            style={{flex: 1, minWidth: MIN_TAP_TARGET}}
+          />
+        ))}
+      </View>
+    </View>
   );
 }
 

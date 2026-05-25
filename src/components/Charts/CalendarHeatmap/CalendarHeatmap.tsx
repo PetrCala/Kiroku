@@ -2,12 +2,13 @@ import {useMemo, useState} from 'react';
 import {View} from 'react-native';
 import {Canvas, RoundedRect} from '@shopify/react-native-skia';
 import {useChartTheme} from '@components/Charts/BaseChart';
+import {PressableWithoutFeedback} from '@components/Pressable';
 import type {HeatmapCell} from '@libs/Statistics';
 
 type CalendarHeatmapProps = {
   cells: HeatmapCell[];
   accessibilityLabel: string;
-  /** v1 wires the prop; no-op until Tier 3 drill-down lands. */
+  /** Fired when a (non-future) cell is tapped. */
   onDayPress?: (cell: HeatmapCell) => void;
   /** Pixel gap between cells. Default 2. */
   gap?: number;
@@ -23,7 +24,6 @@ type CalendarHeatmapProps = {
 function CalendarHeatmap({
   cells,
   accessibilityLabel,
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars -- v2 hook
   onDayPress,
   gap = 2,
 }: CalendarHeatmapProps) {
@@ -81,12 +81,32 @@ function CalendarHeatmap({
             const a11yLabel = cell.isFuture
               ? `${cell.dateKey}, upcoming`
               : `${cell.dateKey}, ${cell.totalSdu} units`;
+            // Future cells stay as static a11y nodes; only past/present days
+            // are tappable so drill-down can't land on an empty future bucket.
+            if (cell.isFuture || !onDayPress) {
+              return (
+                <View
+                  key={`a11y-${cell.dateKey}`}
+                  accessible
+                  accessibilityLabel={a11yLabel}
+                  accessibilityRole="text"
+                  style={{
+                    position: 'absolute',
+                    left: col * cellSize,
+                    top: row * cellSize,
+                    width: cellSize,
+                    height: cellSize,
+                  }}
+                />
+              );
+            }
             return (
-              <View
+              <PressableWithoutFeedback
                 key={`a11y-${cell.dateKey}`}
                 accessible
                 accessibilityLabel={a11yLabel}
-                accessibilityRole="text"
+                accessibilityRole="button"
+                onPress={() => onDayPress(cell)}
                 style={{
                   position: 'absolute',
                   left: col * cellSize,

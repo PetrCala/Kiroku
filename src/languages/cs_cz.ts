@@ -22,6 +22,7 @@ import type {
   SessionStartTimeParams,
   SessionWindowIdParams,
   StatsAfDaysParams,
+  StatsDrillDownTitleParams,
   StatsQuietDaysParams,
   UnitCountParams,
   UpdateEmailSentEmailParams,
@@ -953,6 +954,25 @@ export default {
         empty: 'Klidné období — žádné relace k změření.',
         p75Copy: ({value}: {value: string}) =>
           `75 % tvých relací je kratších než ${value}.`,
+      },
+    },
+    drilldown: {
+      empty: 'V tomto výběru žádné relace.',
+      close: 'Zavřít',
+      title: {
+        day: ({label}: StatsDrillDownTitleParams) => `Relace dne ${label}`,
+        isoWeek: ({label}: StatsDrillDownTitleParams) => `Týden ${label}`,
+        month: ({label}: StatsDrillDownTitleParams) =>
+          `Relace v měsíci ${label}`,
+        hour: ({label}: StatsDrillDownTitleParams) => `Relace kolem ${label}`,
+        dow: ({label}: StatsDrillDownTitleParams) => `Relace — ${label}`,
+        dowHour: ({label}: StatsDrillDownTitleParams) => label,
+        drinkType: ({label}: StatsDrillDownTitleParams) => `Relace — ${label}`,
+        isoWeekDrinkType: ({label}: StatsDrillDownTitleParams) => label,
+        sessionDrinkCountBin: ({label}: StatsDrillDownTitleParams) =>
+          `Relace s ${label}`,
+        sessionDurationBin: ({label}: StatsDrillDownTitleParams) =>
+          `Relace trvající ${label}`,
       },
     },
     filters: {

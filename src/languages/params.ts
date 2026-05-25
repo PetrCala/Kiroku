@@ -55,6 +55,10 @@ type StatsQuietDaysParams = {
   quietDays: number;
 };
 
+type StatsDrillDownTitleParams = {
+  label: string;
+};
+
 type UnitCountParams = {
   unitCount: number;
 };
@@ -107,6 +111,7 @@ export type {
   SessionStartTimeParams,
   SessionWindowIdParams,
   StatsAfDaysParams,
+  StatsDrillDownTitleParams,
   StatsQuietDaysParams,
   UnitCountParams,
   UpdateEmailSentEmailParams,

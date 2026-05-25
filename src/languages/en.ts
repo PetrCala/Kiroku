@@ -23,6 +23,7 @@ import type {
   SessionStartTimeParams,
   SessionWindowIdParams,
   StatsAfDaysParams,
+  StatsDrillDownTitleParams,
   StatsQuietDaysParams,
   UnitCountParams,
   UpdateEmailSentEmailParams,
@@ -964,6 +965,25 @@ export default {
         empty: 'A quiet range — no sessions to measure.',
         p75Copy: ({value}: {value: string}) =>
           `75% of your sessions are ${value} or shorter.`,
+      },
+    },
+    drilldown: {
+      empty: 'No sessions match this view.',
+      close: 'Close',
+      title: {
+        day: ({label}: StatsDrillDownTitleParams) => `Sessions on ${label}`,
+        isoWeek: ({label}: StatsDrillDownTitleParams) => `Week ${label}`,
+        month: ({label}: StatsDrillDownTitleParams) => `Sessions in ${label}`,
+        hour: ({label}: StatsDrillDownTitleParams) =>
+          `Sessions around ${label}`,
+        dow: ({label}: StatsDrillDownTitleParams) => `${label} sessions`,
+        dowHour: ({label}: StatsDrillDownTitleParams) => label,
+        drinkType: ({label}: StatsDrillDownTitleParams) => `${label} sessions`,
+        isoWeekDrinkType: ({label}: StatsDrillDownTitleParams) => label,
+        sessionDrinkCountBin: ({label}: StatsDrillDownTitleParams) =>
+          `Sessions with ${label}`,
+        sessionDurationBin: ({label}: StatsDrillDownTitleParams) =>
+          `Sessions lasting ${label}`,
       },
     },
     filters: {
