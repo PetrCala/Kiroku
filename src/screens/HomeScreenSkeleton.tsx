@@ -40,7 +40,7 @@ function HomeHeaderSkeleton() {
         styles.borderBottom,
         styles.flexRow,
         styles.alignItemsCenter,
-        styles.ph4,
+        styles.ph2,
       ]}>
       <Block width={avatarSize} height={avatarSize} radius={avatarSize / 2} />
       <Block width={140} height={16} style={styles.ml3} />

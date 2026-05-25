@@ -102,7 +102,7 @@ function SessionsCalendarScreen({route}: SessionsCalendarScreenProps) {
         <View
           style={[
             styles.flex1,
-            styles.ph4,
+            styles.ph2,
             !isScrollReady && internalStyles.hidden,
           ]}>
           <SessionsCalendar
