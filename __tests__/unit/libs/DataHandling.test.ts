@@ -32,6 +32,7 @@ import type {
   UnitsToColors,
 } from '@src/types/onyx';
 import CONST from '@src/CONST';
+import {getDrinkCount} from '@libs/DrinkEntryUtils';
 import {PALETTES} from '@libs/SessionColorPalettes';
 import {randDrinkingSession} from '../../utils/collections/drinkingSessions';
 
@@ -336,16 +337,13 @@ describe('sumAllDrinks', () => {
     const sampleDrinks: DrinksList = getRandomDrinksList();
 
     const result = sumAllDrinks(sampleDrinks);
-    const expectedSum = Object.values(sampleDrinks).reduce(
-      (total, drinkTypes) => {
-        return (
-          total +
-          Object.values(drinkTypes).reduce(
-            (subTotal, drinkCount) => subTotal + (drinkCount || 0),
-            0,
-          )
-        );
-      },
+    const expectedSum = Object.values(sampleDrinks).reduce<number>(
+      (total, drinkTypes) =>
+        total +
+        Object.values(drinkTypes).reduce<number>(
+          (subTotal, drinkEntry) => subTotal + getDrinkCount(drinkEntry),
+          0,
+        ),
       0,
     );
     expect(result).toBe(expectedSum);
@@ -403,6 +401,16 @@ describe('sumDrinksOfSingleType function', () => {
     };
     expect(sumDrinksOfSingleType(drinksData, 'beer')).toBe(2);
   });
+
+  it('should sum mixed numeric and object DrinkEntry shapes', () => {
+    drinksData[1632434223] = {
+      beer: {count: 3, volume_ml: 600},
+      wine: {count: 1, abv: 0.13},
+    };
+    expect(sumDrinksOfSingleType(drinksData, 'beer')).toBe(5);
+    expect(sumDrinksOfSingleType(drinksData, 'wine')).toBe(1);
+    expect(sumDrinksOfSingleType(drinksData, 'other')).toBe(3);
+  });
 });
 
 describe('sumDrinkTypes', () => {
@@ -444,6 +452,15 @@ describe('sumDrinkTypes', () => {
 
     const result = sumDrinkTypes(testDrinks);
     expect(result).toBe(5);
+  });
+
+  it('should sum object-shaped DrinkEntry values via the count field', () => {
+    const testDrinks: Drinks = {
+      beer: {count: 2, volume_ml: 500},
+      cocktail: 1,
+      wine: {count: 3},
+    };
+    expect(sumDrinkTypes(testDrinks)).toBe(6);
   });
 });
 

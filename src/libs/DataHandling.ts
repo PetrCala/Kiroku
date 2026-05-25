@@ -21,6 +21,7 @@ import {isEmptyObject} from '@src/types/utils/EmptyObject';
 import _ from 'lodash';
 import type {TranslationPaths} from '@src/languages/types';
 import * as DSUtils from './DrinkingSessionUtils';
+import {getDrinkCount} from './DrinkEntryUtils';
 import {getRandomInt} from './Choice';
 import {isLightHex, resolvePalette} from './SessionColorPalettes';
 
@@ -278,8 +279,8 @@ function sumAllDrinks(drinks: DrinksList | undefined): number {
   return Object.values(drinks).reduce(
     (total, drinkTypes) =>
       total +
-      Object.values(drinkTypes).reduce(
-        (subTotal, drinkCount) => subTotal + (drinkCount ?? 0),
+      Object.values(drinkTypes).reduce<number>(
+        (subTotal, drinkEntry) => subTotal + getDrinkCount(drinkEntry),
         0,
       ),
     0,
@@ -298,8 +299,8 @@ function sumDrinksOfSingleType(
   if (!drinksObject) {
     return 0;
   }
-  return Object.values(drinksObject).reduce(
-    (total, session) => total + (session[drinkType] ?? 0),
+  return Object.values(drinksObject).reduce<number>(
+    (total, session) => total + getDrinkCount(session[drinkType]),
     0,
   );
 }
@@ -313,8 +314,8 @@ function sumDrinkTypes(drinkTypes: Drinks): number {
   if (!drinkTypes) {
     return 0;
   }
-  return Object.values(drinkTypes).reduce(
-    (total, drinksCount) => total + (drinksCount ?? 0),
+  return Object.values(drinkTypes).reduce<number>(
+    (total, drinkEntry) => total + getDrinkCount(drinkEntry),
     0,
   );
 }

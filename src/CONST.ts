@@ -1003,6 +1003,20 @@ const CONST = {
     },
   },
 
+  // Per-key serving-size + ABV defaults used when a DrinkEntry does not carry
+  // explicit `volume_ml` / `abv` overrides. SDU math falls back to these so the
+  // legacy numeric form produces the same result as an entry stamped with
+  // these values. Keyed by `CONST.DRINKS.KEYS` string values.
+  DRINK_DEFAULTS: {
+    small_beer: {ml: 330, abv: 0.05},
+    beer: {ml: 500, abv: 0.05},
+    wine: {ml: 150, abv: 0.12},
+    cocktail: {ml: 250, abv: 0.1},
+    strong_shot: {ml: 40, abv: 0.4},
+    weak_shot: {ml: 40, abv: 0.2},
+    other: {ml: 200, abv: 0.1},
+  },
+
   // 6 numeric digits
   VALIDATE_CODE_REGEX_STRING: /^\d{6}$/,
 
