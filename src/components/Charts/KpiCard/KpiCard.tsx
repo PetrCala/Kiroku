@@ -8,6 +8,11 @@ import type {ChartDatum} from '@libs/Statistics';
 
 type KpiCardTone = 'neutral' | 'supportive' | 'celebratory';
 
+type KpiCardPolarity =
+  | 'lower-is-supportive'
+  | 'higher-is-supportive'
+  | 'neutral';
+
 type KpiCardDelta = {
   value: number;
   direction: 'up' | 'down' | 'flat';
@@ -23,6 +28,14 @@ type KpiCardProps = {
   sparkline?: ChartDatum[];
   /** Affects styling only — switches the affirmative-framing accent. */
   tone?: KpiCardTone;
+  /**
+   * Controls how delta-direction maps to color. `lower-is-supportive`
+   * (default) treats `down` as success and `up` as warning, matching
+   * units/sessions metrics. `higher-is-supportive` inverts this for
+   * additive metrics like quiet days or alcohol-free streaks. `neutral`
+   * leaves the delta in the muted text color regardless of direction.
+   */
+  polarity?: KpiCardPolarity;
   /** Wires Tier 2 drill-down. No-op in v1. */
   onPress?: () => void;
   accessibilityLabel?: string;
@@ -50,6 +63,7 @@ function KpiCard({
   delta,
   sparkline,
   tone = 'neutral',
+  polarity = 'lower-is-supportive',
   onPress,
   accessibilityLabel,
 }: KpiCardProps) {
@@ -63,13 +77,21 @@ function KpiCard({
     accentColor = theme.success;
   }
 
-  // "Down" trend (less drinking) is supportive; "up" is a gentle warning.
-  // Flat or no delta uses the muted text color.
+  // Delta color depends on polarity. For `lower-is-supportive` (default)
+  // down=good, up=bad — matches units/sessions metrics. For
+  // `higher-is-supportive` the mapping flips (quiet days, AF streaks).
+  // `neutral` keeps the muted color regardless of direction.
   let deltaColor = theme.textSupporting;
-  if (delta && delta.direction === 'down') {
-    deltaColor = theme.success;
-  } else if (delta && delta.direction === 'up') {
-    deltaColor = theme.warning;
+  if (delta && polarity !== 'neutral') {
+    const supportiveDirection: KpiCardDelta['direction'] =
+      polarity === 'higher-is-supportive' ? 'up' : 'down';
+    const warningDirection: KpiCardDelta['direction'] =
+      polarity === 'higher-is-supportive' ? 'down' : 'up';
+    if (delta.direction === supportiveDirection) {
+      deltaColor = theme.success;
+    } else if (delta.direction === warningDirection) {
+      deltaColor = theme.warning;
+    }
   }
 
   const body = (
@@ -139,4 +161,4 @@ function KpiCard({
 }
 
 export default KpiCard;
-export type {KpiCardProps, KpiCardTone, KpiCardDelta};
+export type {KpiCardProps, KpiCardTone, KpiCardPolarity, KpiCardDelta};

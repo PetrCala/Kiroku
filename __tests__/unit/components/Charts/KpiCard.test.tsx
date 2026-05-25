@@ -57,4 +57,80 @@ describe('KpiCard', () => {
     expect(json).not.toContain('▼');
     expect(json).not.toContain('▲');
   });
+
+  describe('polarity', () => {
+    // Pull the inline `color` from the delta-chip Text node (the one whose
+    // first child contains the up/down/flat arrow). Returns undefined when no
+    // delta chip is present.
+    function findDeltaColor(node: unknown): string | undefined {
+      if (!node || typeof node !== 'object') {
+        return undefined;
+      }
+      if (Array.isArray(node)) {
+        for (const child of node) {
+          const found = findDeltaColor(child);
+          if (found) {
+            return found;
+          }
+        }
+        return undefined;
+      }
+      const tree = node as {
+        type?: string;
+        props?: {style?: unknown};
+        children?: unknown;
+      };
+      const children = tree.children;
+      if (
+        tree.type === 'Text' &&
+        Array.isArray(children) &&
+        children.some(c => typeof c === 'string' && /[▲▼–]/.test(c))
+      ) {
+        const styleProp = tree.props?.style;
+        const styles = Array.isArray(styleProp)
+          ? (styleProp as unknown[]).flat(Infinity)
+          : [styleProp];
+        for (const entry of styles) {
+          if (entry && typeof entry === 'object' && 'color' in entry) {
+            return (entry as {color: string}).color;
+          }
+        }
+      }
+      return findDeltaColor(children);
+    }
+
+    function deltaColorFor(
+      direction: 'up' | 'down' | 'flat',
+      polarity?: 'lower-is-supportive' | 'higher-is-supportive' | 'neutral',
+    ): string | undefined {
+      const tree = render(
+        <KpiCard
+          label="x"
+          value={1}
+          delta={{value: 1, direction, label: 'vs last week'}}
+          polarity={polarity}
+        />,
+      ).toJSON();
+      return findDeltaColor(tree);
+    }
+
+    it('higher-is-supportive inverts the default color mapping', () => {
+      // Same "supportive" color for default-down and flipped-up.
+      expect(deltaColorFor('up', 'higher-is-supportive')).toBe(
+        deltaColorFor('down'),
+      );
+      // Same "warning" color for default-up and flipped-down.
+      expect(deltaColorFor('down', 'higher-is-supportive')).toBe(
+        deltaColorFor('up'),
+      );
+    });
+
+    it('neutral polarity uses the muted color for every direction', () => {
+      const up = deltaColorFor('up', 'neutral');
+      const down = deltaColorFor('down', 'neutral');
+      expect(up).toBe(down);
+      // ...and is distinct from the supportive color on the default mapping.
+      expect(up).not.toBe(deltaColorFor('down'));
+    });
+  });
 });
