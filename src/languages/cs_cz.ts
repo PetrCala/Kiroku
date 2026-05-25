@@ -6,6 +6,11 @@ import type {
   UntilTimeParams,
 } from './types';
 import type {
+  BreakdownCenterUnitsParams,
+  BreakdownDrinkLabelParams,
+  BreakdownPeriodParams,
+  BreakdownSliceCaptionParams,
+  BreakdownTileSubtitleParams,
   CommonFriendsLabelParams,
   DiscardSessionParams,
   DrinkingSessionsParams,
@@ -821,8 +826,40 @@ export default {
       },
       breakdown: {
         label: 'Rozpis',
-        placeholder:
-          'Rozpis podle druhu pití a trendy podle typu přistanou tady.',
+        donut: {
+          title: 'Jednotky podle druhu pití',
+          subtitle: 'Složení za aktuální období.',
+          centerUnits: ({count}: BreakdownCenterUnitsParams) => `${count}`,
+          centerCaption: 'jednotek',
+          empty: 'V tomto období žádné záznamy.',
+          sliceCaption: ({label, units, share}: BreakdownSliceCaptionParams) =>
+            `${label}: ${units} jednotek (${share} %)`,
+          a11y: 'Koláč složení podle druhu pití',
+        },
+        multiples: {
+          title: 'Týdenní trend podle druhu',
+          subtitle: 'Malý graf pro každý druh s daty v tomto období.',
+          empty: 'Zatím žádné trendy podle druhu — zkus širší období.',
+          tileSubtitle: ({units}: BreakdownTileSubtitleParams) =>
+            `${units} jednotek za období`,
+          a11yTile: ({label}: BreakdownDrinkLabelParams) =>
+            `Týdenní trend pro ${label}`,
+        },
+        concentration: {
+          moreVaried: ({period}: BreakdownPeriodParams) =>
+            `Tento ${period} jsi pil/a pestřeji než minulý.`,
+          moreFocused: ({period}: BreakdownPeriodParams) =>
+            `Tento ${period} jsi se zaměřil/a víc než minulý.`,
+          aboutTheSame: ({period}: BreakdownPeriodParams) =>
+            `Skladba pití je zhruba stejná jako minulý ${period}.`,
+          period: {
+            week: 'týden',
+            month: 'měsíc',
+            sixMonths: '6 měsíců',
+            year: 'rok',
+            window: 'interval',
+          },
+        },
       },
     },
     charts: {
