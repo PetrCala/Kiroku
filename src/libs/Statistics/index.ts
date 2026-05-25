@@ -45,6 +45,8 @@ export {
 } from './reducers';
 export {default as buildSessionCountsByDay} from './sessionCounts';
 export {gramsOfAlcohol, sduFrom} from './sdu';
+export {compareConcentration, computeHhi} from './herfindahl';
+export type {ConcentrationVerdict} from './herfindahl';
 export type {
   ChartDatum,
   ChartRange,

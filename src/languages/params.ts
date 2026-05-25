@@ -50,6 +50,28 @@ type UnitCountParams = {
   unitCount: number;
 };
 
+type BreakdownCenterUnitsParams = {
+  count: number;
+};
+
+type BreakdownTileSubtitleParams = {
+  units: number;
+};
+
+type BreakdownSliceCaptionParams = {
+  label: string;
+  units: number;
+  share: number;
+};
+
+type BreakdownDrinkLabelParams = {
+  label: string;
+};
+
+type BreakdownPeriodParams = {
+  period: string;
+};
+
 type UpdateEmailSentEmailParams = {
   email: string;
 };
@@ -59,6 +81,11 @@ type VerifyEmailScreenEmailParmas = {
 };
 
 export type {
+  BreakdownCenterUnitsParams,
+  BreakdownDrinkLabelParams,
+  BreakdownPeriodParams,
+  BreakdownSliceCaptionParams,
+  BreakdownTileSubtitleParams,
   CommonFriendsLabelParams,
   ConfirmWithProviderPromptParams,
   DiscardSessionParams,
