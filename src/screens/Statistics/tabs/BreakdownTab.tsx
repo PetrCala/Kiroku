@@ -1,5 +1,6 @@
 import React, {useMemo} from 'react';
-import {ScrollView, View} from 'react-native';
+import {View} from 'react-native';
+import ScrollView from '@components/ScrollView';
 import ChartCard from '@components/Charts/ChartCard/ChartCard';
 import useLocalize from '@hooks/useLocalize';
 import useStatsContext from '@hooks/useStatsContext';

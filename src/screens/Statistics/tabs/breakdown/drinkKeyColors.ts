@@ -20,7 +20,7 @@ const DRINK_KEY_COLORS: Readonly<Record<DrinkKey, string>> = {
   [CONST.DRINKS.KEYS.OTHER]: colors.orange900,
 };
 
-const DRINK_KEY_ORDER: ReadonlyArray<DrinkKey> = [
+const DRINK_KEY_ORDER: readonly DrinkKey[] = [
   CONST.DRINKS.KEYS.SMALL_BEER,
   CONST.DRINKS.KEYS.BEER,
   CONST.DRINKS.KEYS.WINE,
