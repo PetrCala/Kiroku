@@ -841,8 +841,8 @@ export default {
           bandCaption:
             'Stínovaný pás je tam, kde se odehrála většina tvých posledních 8 týdnů.',
           chip: {
-            down: 'Trend dolů — méně jednotek týden po týdnu.',
-            up: 'Trend nahoru — více jednotek týden po týdnu.',
+            down: 'Trend dolů — tvé týdenní jednotky postupně klesají.',
+            up: 'Trend nahoru — tvé týdenní jednotky postupně rostou.',
             none: 'Tvé týdny se proměňují jako obvykle.',
           },
           a11yLabel: 'Posledních 8 týdnů týdenních jednotek, vyhlazeno',
@@ -862,7 +862,7 @@ export default {
         label: 'Trendy',
         weeklyTrend: {
           title: 'Týdenní jednotky',
-          emptyLabel: 'Zaznamenej pár týdnů a uvidíš svůj trend.',
+          emptyLabel: 'Tvůj trend se ukáže, jak budou přibývat data.',
           bandCaption:
             'Stínované pásmo ukazuje, kde se pohybovala většina posledních týdnů.',
           captions: {
@@ -875,11 +875,11 @@ export default {
         },
         cumulativeAf: {
           title: 'Dny bez alkoholu letos',
-          emptyLabel: 'Letos zatím žádné dny bez alkoholu.',
+          emptyLabel: 'Každý letošní klidný den se počítá.',
         },
         drinkTypeStack: {
           title: 'Mix nápojů v čase',
-          emptyLabel: 'Zaznamenej pár setkání a uvidíš svůj mix.',
+          emptyLabel: 'Tvůj mix nápojů se ukáže, jak budeš přidávat data.',
         },
         comparison: {
           legend: 'Předchozí období',
@@ -896,7 +896,7 @@ export default {
           subtitle: 'Složení za aktuální období.',
           centerUnits: ({count}: BreakdownCenterUnitsParams) => `${count}`,
           centerCaption: 'jednotek',
-          empty: 'V tomto období žádné záznamy.',
+          empty: 'Klidné období — zatím není co rozdělit.',
           sliceCaption: ({label, units, share}: BreakdownSliceCaptionParams) =>
             `${label}: ${units} jednotek (${share} %)`,
           a11y: 'Koláč složení podle druhu pití',
@@ -936,21 +936,21 @@ export default {
       },
       hourOfDay: {
         title: 'Hodina dne',
-        empty: 'V tomto období žádné pití.',
+        empty: 'Klidné období — zatím není co zobrazit.',
       },
       dowHour: {
         title: 'Den v týdnu × hodina',
-        empty: 'V tomto období žádné pití.',
+        empty: 'Klidné období — zatím není co zobrazit.',
       },
       drinksPerSession: {
         title: 'Nápojů na relaci',
-        empty: 'V tomto období žádné relace.',
+        empty: 'Klidné období — žádné relace k započtení.',
         p75Copy: ({value}: {value: number}) =>
           `75 % tvých relací má ${value} nápojů nebo méně.`,
       },
       sessionDuration: {
         title: 'Délka relace',
-        empty: 'V tomto období žádné relace.',
+        empty: 'Klidné období — žádné relace k změření.',
         p75Copy: ({value}: {value: string}) =>
           `75 % tvých relací je kratších než ${value}.`,
       },

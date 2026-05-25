@@ -23,6 +23,8 @@ type DowHourHeatmapProps = {
   accessibilityLabel: string;
   /** Pixel gap between cells. Default 1 (denser than CalendarHeatmap's 2). */
   gap?: number;
+  /** Overlay copy when every bucket is zero. When omitted, no overlay renders. */
+  emptyLabel?: string;
 };
 
 const HOURS = 24;
@@ -81,6 +83,7 @@ function DowHourHeatmap({
   weekStart,
   accessibilityLabel,
   gap = 1,
+  emptyLabel,
 }: DowHourHeatmapProps) {
   const [width, setWidth] = useState(0);
   const theme = useChartTheme();
@@ -201,7 +204,7 @@ function DowHourHeatmap({
               </Text>
             </View>
           ))}
-          {!hasData ? (
+          {!hasData && emptyLabel ? (
             <View
               pointerEvents="none"
               style={[
@@ -216,7 +219,7 @@ function DowHourHeatmap({
                 },
               ]}>
               <Text style={[styles.textSupporting, styles.textAlignCenter]}>
-                No drinks recorded in this range.
+                {emptyLabel}
               </Text>
             </View>
           ) : null}

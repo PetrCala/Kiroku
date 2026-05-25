@@ -16,6 +16,8 @@ type HourPolarProps = {
   onSpokePress?: (hour: number) => void;
   /** Square canvas size in dp; defaults to the parent width. */
   size?: number;
+  /** Overlay copy when every bucket is zero. When omitted, no overlay renders. */
+  emptyLabel?: string;
 };
 
 const TAU = Math.PI * 2;
@@ -71,6 +73,7 @@ function HourPolar({
   labelForHour = defaultLabelForHour,
   onSpokePress,
   size,
+  emptyLabel,
 }: HourPolarProps) {
   const [measuredWidth, setMeasuredWidth] = useState(0);
   const theme = useChartTheme();
@@ -214,7 +217,7 @@ function HourPolar({
               />
             );
           })}
-          {!hasData ? (
+          {!hasData && emptyLabel ? (
             <View
               pointerEvents="none"
               style={[
@@ -229,7 +232,7 @@ function HourPolar({
                 },
               ]}>
               <Text style={[styles.textSupporting, styles.textAlignCenter]}>
-                No drinks recorded in this range.
+                {emptyLabel}
               </Text>
             </View>
           ) : null}
