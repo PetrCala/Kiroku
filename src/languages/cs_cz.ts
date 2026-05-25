@@ -817,8 +817,30 @@ export default {
       },
       trends: {
         label: 'Trendy',
-        placeholder:
-          'Týdenní trend a pásmo normálu se tu objeví, jak budou přibývat data.',
+        weeklyTrend: {
+          title: 'Týdenní jednotky',
+          emptyLabel: 'Zaznamenej pár týdnů a uvidíš svůj trend.',
+          bandCaption:
+            'Stínované pásmo ukazuje, kde se pohybovala většina posledních týdnů.',
+          captions: {
+            trendingDown: 'Tvé týdenní jednotky mají sestupný trend.',
+            trendingUp: 'Tvé týdenní jednotky mají vzestupný trend.',
+            neutral: 'Tvé týdny se mění obvyklým způsobem.',
+            notEnoughData:
+              'Pokračuj v zaznamenávání — trend se ukáže, až bude víc dat.',
+          },
+        },
+        cumulativeAf: {
+          title: 'Dny bez alkoholu letos',
+          emptyLabel: 'Letos zatím žádné dny bez alkoholu.',
+        },
+        drinkTypeStack: {
+          title: 'Mix nápojů v čase',
+          emptyLabel: 'Zaznamenej pár setkání a uvidíš svůj mix.',
+        },
+        comparison: {
+          legend: 'Předchozí období',
+        },
       },
       patterns: {
         label: 'Vzorce',
