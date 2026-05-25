@@ -1,14 +1,17 @@
 # Device matrix for App Store screenshots.
-# Sizes are picked to satisfy App Store Connect's required resolutions:
-#   6.9" — iPhone 16 Pro Max
-#   6.5" — iPhone 15 Pro Max (covers 6.7" requirement too)
-#   5.5" — iPhone 8 Plus (still required for legacy listings)
-#   13"  — iPad Pro M4 (required if the app supports iPad)
+# Sizes are picked to satisfy App Store Connect's required resolutions and to
+# match what the macos-26 GitHub-hosted runner ships (Xcode 26 / iOS 26 SDK).
+# Run `xcrun simctl list devicetypes` on a macos-26 runner to see options.
+#
+#   6.9" — iPhone 17 Pro Max (also satisfies the 6.7" tier)
+#   13"  — iPad Pro 13-inch (M5)  (required if the app supports iPad)
+#
+# Note: the legacy 5.5" tier (iPhone 8 Plus) was deprecated by Apple in 2024
+# and is no longer in the runner image. Add an `iPhone Air` or `iPhone 17e`
+# entry if/when we want to cover the smaller "standard" phone form factor.
 devices([
-  "iPhone 16 Pro Max",
-  "iPhone 15 Pro Max",
-  "iPhone 8 Plus",
-  "iPad Pro 13-inch (M4)",
+  "iPhone 17 Pro Max",
+  "iPad Pro 13-inch (M5)",
 ])
 
 # Kiroku uses an in-app locale switcher (Settings -> Language), not OS locale.

@@ -9,13 +9,9 @@
 
 SNAPFILE = File.expand_path('../fastlane/Snapfile', __dir__)
 
-PHONE_ONLY = [
-  'iPhone 16 Pro Max',
-  'iPhone 15 Pro Max',
-  'iPhone 8 Plus',
-].freeze
+PHONE_ONLY = ['iPhone 17 Pro Max'].freeze
 
-IPAD_ONLY = ['iPad Pro 13-inch (M4)'].freeze
+IPAD_ONLY = ['iPad Pro 13-inch (M5)'].freeze
 
 subset = ARGV[0].to_s
 case subset
