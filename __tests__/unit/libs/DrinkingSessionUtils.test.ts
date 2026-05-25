@@ -97,6 +97,32 @@ describe('calculateTotalUnits', () => {
     );
     expect(result).toBe(2 * 5 + 1 * 10 + 3 * 1);
   });
+
+  it('should use the count field when entries are object-shaped', () => {
+    const mixedDrinks: DrinksList = {
+      1632423423: {
+        beer: 2,
+        cocktail: {count: 1, volume_ml: 250, abv: 0.1},
+      },
+      1632434223: {
+        other: {count: 3},
+      },
+    };
+    const sampleDrinksToUnits: DrinksToUnits = {
+      small_beer: 3,
+      beer: 5,
+      cocktail: 10,
+      other: 1,
+      strong_shot: 15,
+      weak_shot: 5,
+      wine: 7,
+    };
+    const result = DSUtils.calculateTotalUnits(
+      mixedDrinks,
+      sampleDrinksToUnits,
+    );
+    expect(result).toBe(2 * 5 + 1 * 10 + 3 * 1);
+  });
 });
 
 // TODO

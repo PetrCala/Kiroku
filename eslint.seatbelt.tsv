@@ -646,7 +646,6 @@
 "__mocks__/react-native-safe-area-context.tsx"	"react-hooks/refs"	2
 "__mocks__/react-native.ts"	"@typescript-eslint/no-unused-vars"	1
 "__tests__/unit/context/ConfigContext.test.ts"	"@typescript-eslint/no-unnecessary-type-assertion"	1
-"__tests__/unit/libs/DataHandling.test.ts"	"arrow-body-style"	1
 "__tests__/unit/useOnboardingFlow.test.ts"	"@typescript-eslint/no-unnecessary-type-assertion"	1
 "__tests__/utils/firebase/connections.ts"	"arrow-body-style"	1
 "__tests__/utils/firebase/mockAuth.ts"	"@typescript-eslint/switch-exhaustiveness-check"	1

@@ -30,6 +30,11 @@ import type {TranslationPaths} from '@src/languages/types';
 import type IconAsset from '@src/types/utils/IconAsset';
 import Log from './Log';
 import DateUtils from './DateUtils';
+import {
+  getDrinkCount,
+  getDrinkOverrides,
+  makeDrinkEntry,
+} from './DrinkEntryUtils';
 import {roundToTwoDecimalPlaces} from './NumberUtils';
 import {getFirebaseAuth} from './Firebase/FirebaseApp';
 import {numberToVerboseString} from './TimeUtils';
@@ -188,7 +193,7 @@ function calculateTotalUnits(
       if (!isDrinkTypeKey(DrinkKey)) {
         return;
       }
-      const typeDrinks = drinkTypes[DrinkKey] ?? 0;
+      const typeDrinks = getDrinkCount(drinkTypes[DrinkKey]);
       const typeUnits = drinksToUnits[DrinkKey] ?? 0;
       totalUnits += typeDrinks * typeUnits;
     });
@@ -273,12 +278,19 @@ function addDrinksToList(
     const existingDrinks = updatedDrinksList[timestamp];
     const mergedDrinks: Drinks = {...existingDrinks};
 
-    mergedDrinks[drinkKey] = (mergedDrinks[drinkKey] ?? 0) + (amount ?? 0);
+    const existingEntry = mergedDrinks[drinkKey];
+    const newCount = getDrinkCount(existingEntry) + (amount ?? 0);
+    // Preserve any existing volume_ml / abv overrides on this slot when only
+    // the count changes; the v2-B UI is the only producer of overrides.
+    mergedDrinks[drinkKey] = makeDrinkEntry(
+      newCount,
+      getDrinkOverrides(existingEntry),
+    );
 
     updatedDrinksList[timestamp] = mergedDrinks;
   } else {
     // Timestamp does not exist, add the drinks
-    updatedDrinksList[timestamp] = {[drinkKey]: amount};
+    updatedDrinksList[timestamp] = {[drinkKey]: makeDrinkEntry(amount)};
   }
 
   return updatedDrinksList;
@@ -316,17 +328,24 @@ function removeDrinksFromList(
     options === 'removeFromLatest' ? +b - +a : +a - +b,
   )) {
     const drinksAtTimestamp = updatedDrinksList[+timestamp];
-    const avaiableAmount = drinksAtTimestamp[drinkKey] ?? 0;
+    const existingEntry = drinksAtTimestamp[drinkKey];
+    const avaiableAmount = getDrinkCount(existingEntry);
 
     if (avaiableAmount > 0) {
       const amountRemoved = Math.min(remainingAmountToRemove, avaiableAmount);
+      const newCount = avaiableAmount - amountRemoved;
 
-      drinksAtTimestamp[drinkKey] = avaiableAmount - amountRemoved;
       remainingAmountToRemove -= amountRemoved;
 
       // Clean up if there are zero drinks left for this type at this timestamp
-      if (drinksAtTimestamp[drinkKey] === 0) {
+      if (newCount === 0) {
         delete drinksAtTimestamp[drinkKey];
+      } else {
+        // Preserve any existing volume_ml / abv overrides on the slot.
+        drinksAtTimestamp[drinkKey] = makeDrinkEntry(
+          newCount,
+          getDrinkOverrides(existingEntry),
+        );
       }
 
       // Clean up if there are zero drinks left at this timestamp
@@ -470,7 +489,8 @@ function determineSessionMostCommonDrink(
   const drinkCounts: Partial<Record<DrinkKey, number>> = {};
 
   Object.values(drinks).forEach(drinksAtTimestamp => {
-    Object.entries(drinksAtTimestamp).forEach(([drinkKey, count]) => {
+    Object.entries(drinksAtTimestamp).forEach(([drinkKey, entry]) => {
+      const count = getDrinkCount(entry);
       if (!count) {
         return;
       }
