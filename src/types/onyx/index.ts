@@ -52,6 +52,8 @@ import type Session from './Session';
 import type SessionPlaceholder from './SessionPlaceholder';
 import type {SessionPlaceholderList} from './SessionPlaceholder';
 import type StartSession from './StartSession';
+import type StatisticsFilters from './StatisticsFilters';
+import type {RangePreset} from './StatisticsFilters';
 import type UnconfirmedDays from './UnconfirmedDays';
 import type {UnconfirmedDaysList, UnconfirmedDayKey} from './UnconfirmedDays';
 import type Drinks from './Drinks';
@@ -125,7 +127,9 @@ export type {
   SessionColorPalette,
   SessionPlaceholder,
   SessionPlaceholderList,
+  RangePreset,
   StartSession,
+  StatisticsFilters,
   Theme,
   UnconfirmedDayKey,
   UnconfirmedDays,

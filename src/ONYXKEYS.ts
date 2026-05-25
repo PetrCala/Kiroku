@@ -165,6 +165,9 @@ const ONYXKEYS = {
   /** Indicates whether an forced upgrade is required */
   UPDATE_REQUIRED: 'updateRequired',
 
+  /** Persisted filters for the Statistics tab navigator (range preset, custom range, drink-type subset). */
+  STATISTICS_FILTERS: 'statisticsFilters',
+
   /** Stores the logs of the app for debugging purposes */
   LOGS: 'logs',
 
@@ -328,6 +331,7 @@ type OnyxValuesMapping = {
   [ONYXKEYS.LAST_ROUTE]: string;
   [ONYXKEYS.UPDATE_REQUIRED]: boolean;
   [ONYXKEYS.LOGS]: OnyxTypes.CapturedLogs;
+  [ONYXKEYS.STATISTICS_FILTERS]: OnyxTypes.StatisticsFilters;
   [ONYXKEYS.SHOULD_STORE_LOGS]: boolean;
 };
 
