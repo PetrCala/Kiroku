@@ -23,6 +23,22 @@ For _fastlane_ installation instructions, see [Installing _fastlane_](https://do
 
 Generate a new local APK
 
+### android build_android
+
+```sh
+[bundle exec] fastlane android build_android
+```
+
+Build Android APK for testing (no upload)
+
+### android upload_android_to_s3
+
+```sh
+[bundle exec] fastlane android upload_android_to_s3
+```
+
+Upload built Android APK to S3 (requires fresh AWS credentials)
+
 ### android build_internal
 
 ```sh
@@ -38,6 +54,14 @@ Build app for testing
 ```
 
 Build and upload app to Google Play
+
+### android screenshots
+
+```sh
+[bundle exec] fastlane android screenshots
+```
+
+Capture Play Store screenshots on phone + tablet across locales
 
 ### android production
 
@@ -83,6 +107,14 @@ Build and upload app to TestFlight
 ```
 
 Move app to App Store Review
+
+### ios screenshots
+
+```sh
+[bundle exec] fastlane ios screenshots
+```
+
+Capture App Store screenshots across the device + locale matrix
 
 ----
 

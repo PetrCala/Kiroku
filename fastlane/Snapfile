@@ -19,7 +19,14 @@ languages([
   "cs-CZ",
 ])
 
+workspace("./ios/kiroku.xcworkspace")
 scheme("Kiroku (production)")
+
+# The legacy `kirokuTests` target has no SWIFT_VERSION set in its buildSettings
+# (pre-existing project bug), which crashes `xcodebuild build test` on Xcode 26+
+# with: "SWIFT_VERSION '' is unsupported". Override globally — every Kiroku
+# Swift target uses 5.0 already, so this is a safe no-op for the others.
+xcargs("SWIFT_VERSION=5.0")
 
 output_directory("./fastlane/screenshots/ios")
 clear_previous_screenshots(true)
