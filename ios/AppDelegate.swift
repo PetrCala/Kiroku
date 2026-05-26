@@ -47,17 +47,13 @@ class AppDelegate: ExpoAppDelegate {
       launchOptions: launchOptions
     )
 
-    // DIAGNOSTIC v8 — DO NOT MERGE.
-    // Tag the proxy root view background HOT PINK instead of yellow. If
-    // during the gap we see hot pink, the surface view (_surfaceView) is
-    // genuinely transparent/empty — meaning RN's "Running" stage adds
-    // _surfaceView before its React-mounted children's CALayers are
-    // rendered, exposing the proxy beneath. If we see orange (yellow)
-    // still, the proxy isn't what we're seeing; the gap color comes from
-    // iPhoneXSafeArea's override, the guard layer, or the storyboard
-    // activity indicator at low alpha.
+    // Override the React root view controller's view backgroundColor so it
+    // matches the storyboard yellow. ExpoReactNativeFactory installs an
+    // RCTSurfaceHostingProxyRootView whose default background is the system
+    // background (white on light mode). Painting it yellow means any frame
+    // where the cross-dissolve transition reveals it will not flash white.
     self.window?.rootViewController?.view.backgroundColor =
-      UIColor(red: 1, green: 0.08, blue: 0.58, alpha: 1)
+      UIColor(red: 0.9607843, green: 0.76862745, blue: 0, alpha: 1)
 
     // Force the app to LTR mode.
     RCTI18nUtil.sharedInstance().allowRTL(false)
@@ -65,34 +61,12 @@ class AppDelegate: ExpoAppDelegate {
 
     _ = super.application(application, didFinishLaunchingWithOptions: launchOptions)
 
-    // DIAGNOSTIC v6 — DO NOT MERGE.
-    // Use RN's built-in RCTSurfaceHostingProxyRootView.loadingView API to
-    // cover the gap between iOS LaunchScreen fade-out and the React
-    // surface transitioning to "Running". RN adds the loadingView during
-    // the surface's "Preparing" stage and removes it atomically in the
-    // same setStage: call that adds the _surfaceView when the surface
-    // transitions to "Running" — closing the gap inside one CALayer
-    // commit.
-    //
-    // Crucially, do NOT call disableActivityIndicatorAutoHide(). That
-    // was the source of the deadlock in f618d0a2 — it required JS to
-    // manually trigger the removal. With auto-hide enabled (the
-    // default), RN's surface lifecycle controls removal, no JS
-    // intervention needed.
-    //
-    // Safety timeout (10s) force-removes the loadingView if the surface
-    // never transitions to Running — preventing the f618d0a2 deadlock
-    // even if the lifecycle integration breaks for any reason.
-    if let proxyRootView = self.window?.rootViewController?.view
-      as? RCTSurfaceHostingProxyRootView
-    {
-      let storyboard = UIStoryboard(name: "BootSplash", bundle: nil)
-      if let loadingView = storyboard.instantiateInitialViewController()?.view {
-        proxyRootView.loadingView = loadingView
-        DispatchQueue.main.asyncAfter(deadline: .now() + 10) {
-          loadingView.removeFromSuperview()
-        }
-      }
+    // Add the BootSplash storyboard view as a subview of the proxy root view.
+    // JS calls BootSplash.hide() with fade=1 — the native cross-dissolve
+    // forces iOS to render the React tree underneath BEFORE the storyboard
+    // alpha hits 0, masking Fabric's incremental mounting cascade.
+    if let rootView = self.window?.rootViewController?.view {
+      RCTBootSplash.initWithStoryboard("BootSplash", rootView: rootView)
     }
 
     if !UserDefaults.standard.bool(forKey: "isFirstRunComplete") {

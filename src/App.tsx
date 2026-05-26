@@ -39,10 +39,7 @@ type KirokuProps = {
 //   'Setting a timer for a long period of time',
 // ]);
 
-// DIAGNOSTIC v8 — DO NOT MERGE. Tag GestureHandlerRootView lime green.
-// If we see lime during the gap, the surface view is rendering its
-// outermost native View. If we don't see lime, something is occluding it.
-const fillDiagnostic = {flex: 1, backgroundColor: 'lime'};
+const fill = {flex: 1};
 
 function App({url}: KirokuProps): React.JSX.Element {
   // OnyxUpdateManager(); // Fix the API first before enabling this
@@ -50,7 +47,7 @@ function App({url}: KirokuProps): React.JSX.Element {
   return (
     <SplashScreenStateContextProvider>
       <InitialUrlContext.Provider value={url}>
-        <GestureHandlerRootView style={fillDiagnostic}>
+        <GestureHandlerRootView style={fill}>
           <ComposeProviders
             components={[
               OnyxProvider,

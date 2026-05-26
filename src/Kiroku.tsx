@@ -35,15 +35,18 @@ import CONFIG from './CONFIG';
 import UpdateAppModal from './components/UpdateAppModal';
 import VerifyEmailModal from './components/VerifyEmailModal';
 import FullScreenLoadingIndicator from './components/FullscreenLoadingIndicator';
+import colors from './styles/theme/colors';
 import CONST from './CONST';
 
-// DIAGNOSTIC v8 — DO NOT MERGE.
-// Tag the guard layer BLUE. If we see blue during the orange-only gap,
-// the guard is painted but SplashScreenHider is not. If we don't see
-// blue, the guard isn't reaching the framebuffer either.
+// Painted on top of NavigationRoot but below SplashScreenHider (zIndex 20)
+// while the splash is up, so any one-frame mount lag in SplashScreenHider's
+// tree can never expose React Navigation's white appBG. Plain View only
+// — every JS-rendered child has its own first-paint lag, so the guard
+// contributes the color, not the logo. The native loadingView covers the
+// logo until SplashScreenHider catches up.
 const splashGuardStyle = {
   ...StyleSheet.absoluteFillObject,
-  backgroundColor: 'blue',
+  backgroundColor: colors.yellowStrong,
   zIndex: 19,
 };
 

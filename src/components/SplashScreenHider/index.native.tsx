@@ -33,28 +33,22 @@ function SplashScreenHider({
   const hideHasBeenCalled = useRef(false);
 
   const hide = useCallback(() => {
-    // hide can only be called once
     if (hideHasBeenCalled.current) {
       return;
     }
 
     hideHasBeenCalled.current = true;
 
+    // BootSplash.hide() now performs a 250ms cross-dissolve on the
+    // native side (fade=1 in RCTBootSplash.mm). That transition forces
+    // iOS to render the React tree underneath the storyboard view to
+    // prepare its AFTER state — masking Fabric's incremental mounting
+    // cascade we observed in v8 (proxy → GestureHandlerRootView →
+    // SplashScreenHider painting in sequence). By the time the
+    // dissolve resolves, the React tree is fully on the framebuffer.
+    // No JS-side fade animation is needed.
     BootSplash.hide().then(() => {
-      // DIAGNOSTIC — DO NOT MERGE.
-      // Skip the scale/opacity animations and hold the JS overlay visible
-      // for 3 seconds so we can directly observe what it looks like the
-      // moment the native loadingView is removed. Combined with the red
-      // backgroundColor on the outer view below, this distinguishes four
-      // outcomes:
-      //   • red bg + white logo for 3s → JS overlay fully painted; the
-      //     animation startup was the gap
-      //   • red bg, no logo for 3s → ImageSVG layer isn't painting
-      //   • yellow, no logo for 3s → JS overlay invisible entirely;
-      //     what we see is the guard/SafeArea/proxy beneath
-      //   • red bg + white logo immediately then logo briefly disappears
-      //     mid-way → animation start is glitching transform
-      setTimeout(onHide, 3000);
+      onHide();
     });
   }, [onHide]);
 
@@ -62,31 +56,7 @@ function SplashScreenHider({
     if (!shouldHideSplash) {
       return;
     }
-    // DIAGNOSTIC — DO NOT MERGE.
-    //
-    // Single rAF deferral didn't close the logo gap, so we don't actually
-    // know whether the problem is paint timing (the JS overlay needs more
-    // time than rAF buys) or something structural (the JS overlay's logo
-    // never reaches the framebuffer at all in this configuration).
-    //
-    // 2000ms holds the native BootSplash up long enough that paint timing
-    // can't be the bottleneck. Cold-launch with this build and observe the
-    // moment the native splash finally dismisses:
-    //
-    //   • Logo present with zero gap when native hides
-    //     → paint timing IS the cause; single rAF was insufficient. Solve
-    //       by waiting for the actual paint event (onLayout, double-rAF,
-    //       a longer timeout sized to worst-real-device behavior).
-    //
-    //   • Logo still hides then reappears even after 2 seconds of warm-up
-    //     → paint timing is NOT the cause. Something about how the JS
-    //       overlay's logo enters the framebuffer breaks under this
-    //       configuration (re-render on prop change tearing down the
-    //       react-native-svg layer, react-compiler unmounting on
-    //       shouldHideSplash flip, asset loading lifecycle, etc.) and we
-    //       investigate elsewhere.
-    const handle = setTimeout(() => hide(), 2000);
-    return () => clearTimeout(handle);
+    hide();
   }, [shouldHideSplash, hide]);
 
   useEffect(() => {
@@ -105,21 +75,15 @@ function SplashScreenHider({
     return () => clearTimeout(timeoutId);
   }, [hide]);
 
+  // Plain View (not Reanimated.View) because Reanimated 4 on Fabric
+  // binds animated styles via a worklet that may not execute on the
+  // first commit — leaving the View rendered with opacity 0 (or no
+  // style applied at all) for one frame. Diagnostic v5 confirmed this
+  // was the source of the "flash" sudden-appearance previously
+  // observed at handoff. Background and logo are static now; the
+  // native cross-dissolve provides the only fade.
   return (
-    // DIAGNOSTIC v5 — DO NOT MERGE.
-    // Replaced Reanimated.View with plain View and removed both animated
-    // styles (opacityStyle / scaleStyle). Reanimated 4 on Fabric binds
-    // animated styles via a worklet that may not execute on the first
-    // commit — so the View can render with opacity 0 (or no style at
-    // all) for the first frame, which would explain why the JS overlay
-    // is invisible until "the flash". If the flash disappears with this
-    // change, Reanimated's first-paint binding is the cause.
-    <View
-      style={[
-        StyleSheet.absoluteFill,
-        styles.splashScreenHider,
-        {backgroundColor: 'red'},
-      ]}>
+    <View style={[StyleSheet.absoluteFill, styles.splashScreenHider]}>
       <View>
         <ImageSVG
           contentFit="fill"

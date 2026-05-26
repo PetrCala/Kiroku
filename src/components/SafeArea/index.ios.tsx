@@ -1,5 +1,6 @@
 import React from 'react';
 import {SafeAreaView} from 'react-native-safe-area-context';
+import useTheme from '@hooks/useTheme';
 import useThemeStyles from '@hooks/useThemeStyles';
 import {useSplashScreenStateContext} from '@context/global/SplashScreenStateContext';
 import CONST from '@src/CONST';
@@ -7,22 +8,19 @@ import type SafeAreaProps from './types';
 
 function SafeArea({children}: SafeAreaProps) {
   const styles = useThemeStyles();
+  const theme = useTheme();
   const {splashScreenState} = useSplashScreenStateContext();
   // While the splash is up, paint the SafeAreaView's native backing view
-  // yellow instead of theme.inverse. The Kiroku-level guard View covers the
-  // *content* area but the SafeAreaView is the outermost native view inside
-  // the React surface — if Reanimated's first commit lags by one frame,
-  // theme.inverse (#1F2329 in light, #F0F6FC in dark — both read as gray)
-  // is what shows through the gap. Yellow here keeps the whole boot stack
-  // one continuous color and reverts to theme.inverse the moment the splash
-  // unmounts, preserving the bounce/landscape-notch behavior for normal use.
-  // DIAGNOSTIC v8 — DO NOT MERGE.
-  // Tag the SafeArea override CYAN instead of theme.splashBG (yellow).
-  // If we see cyan during the orange-only gap, this SafeAreaView is
-  // visible and SplashScreenHider (red) isn't painting over it.
+  // splashBG yellow instead of theme.inverse. The Kiroku-level guard View
+  // covers the content area but the SafeAreaView is the outermost native
+  // view inside the React surface — if any layer above it lags first
+  // paint, theme.inverse (#1F2329 in light, #F0F6FC in dark) would show
+  // through. Yellow here keeps the boot stack one continuous color and
+  // reverts to theme.inverse the moment the splash unmounts, preserving
+  // the bounce / landscape-notch behavior for normal use.
   const splashBgOverride =
     splashScreenState !== CONST.BOOT_SPLASH_STATE.HIDDEN
-      ? {backgroundColor: 'cyan'}
+      ? {backgroundColor: theme.splashBG}
       : null;
   return (
     <SafeAreaView
