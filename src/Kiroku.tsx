@@ -281,45 +281,49 @@ function Kiroku() {
     setCrashlyticsUserId(auth?.currentUser?.uid ?? '-1');
   }, [isAuthenticated, auth?.currentUser?.uid]);
 
-  // Display a blank page until the onyx migration completes
-  if (!isOnyxMigrated) {
-    return null;
-  }
-
   if (updateRequired) {
     throw new Error(CONST.ERROR.UPDATE_REQUIRED);
   }
 
+  // DIAGNOSTIC v7 — DO NOT MERGE.
+  // Don't return null before Onyx migrates. Otherwise the React surface
+  // commits empty content, transitions to "Running", and the
+  // RCTSurfaceHostingView activity indicator (our storyboard
+  // loadingView) is removed BEFORE SplashScreenHider has anything in the
+  // tree to paint — leaving the orange-only gap the user sees.
+  //
+  // Always render the splash guard and SplashScreenHider so the first
+  // React commit has visible content; only gate the heavier subtree
+  // (NavigationRoot + modals) on isOnyxMigrated.
   return (
-    // TODO
-    // <DeeplinkWrapper
-    //     isAuthenticated={isAuthenticated}
-    //     autoAuthState={autoAuthState}
-    // >
     <>
-      {loadingText ? (
-        <FullScreenLoadingIndicator loadingText={loadingText} />
-      ) : (
+      {isOnyxMigrated && (
         <>
-          {!isOnline && !CONFIG.IS_USING_EMULATORS && <UserOfflineModal />}
-          {isUnderMaintenance && <UnderMaintenanceModal config={config} />}
+          {loadingText ? (
+            <FullScreenLoadingIndicator loadingText={loadingText} />
+          ) : (
+            <>
+              {!isOnline && !CONFIG.IS_USING_EMULATORS && <UserOfflineModal />}
+              {isUnderMaintenance && <UnderMaintenanceModal config={config} />}
+            </>
+          )}
+
+          {shouldInit && (
+            <>
+              {shouldShowVerifyEmailModal && <VerifyEmailModal />}
+              {shouldShowUpdateModal && <UpdateAppModal />}
+              {/* // TODO show shared session invites here */}
+            </>
+          )}
+
+          <NavigationRoot
+            onReady={setNavigationReady}
+            authenticated={isAuthenticated}
+            lastVisitedPath={lastVisitedPath as Route}
+            initialUrl={initialUrl}
+          />
         </>
       )}
-
-      {shouldInit && (
-        <>
-          {shouldShowVerifyEmailModal && <VerifyEmailModal />}
-          {shouldShowUpdateModal && <UpdateAppModal />}
-          {/* // TODO show shared session invites here */}
-        </>
-      )}
-
-      <NavigationRoot
-        onReady={setNavigationReady}
-        authenticated={isAuthenticated}
-        lastVisitedPath={lastVisitedPath as Route}
-        initialUrl={initialUrl}
-      />
       {/*
         The guard sits between NavigationRoot and SplashScreenHider while the
         splash is at full opacity. It is unmounted the moment shouldHideSplash
