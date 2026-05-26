@@ -122,15 +122,18 @@ function SplashScreenHider({
 
   return (
     <Reanimated.View
+      // DIAGNOSTIC v3 — DO NOT MERGE.
+      // shouldRasterizeIOS=true forces iOS to render the layer's content to
+      // a bitmap on first display. If the gap is caused by CALayer
+      // display-deferral (iOS not calling display() on layers completely
+      // occluded by the native _loadingView), pre-rasterizing will force
+      // the JS overlay's pixels to be ready BEFORE the native removal.
+      shouldRasterizeIOS
       style={[
         StyleSheet.absoluteFill,
         styles.splashScreenHider,
-        // DIAGNOSTIC — DO NOT MERGE.
-        // Override the yellow splashBG with red so we can tell whether the
-        // JS overlay is actually composited on screen at the moment the
-        // native loadingView is removed. Without this, "yellow without
-        // logo" is ambiguous — could be the JS overlay painted-but-no-svg,
-        // OR the JS overlay invisible-and-we-see-yellow-beneath.
+        // Override the yellow splashBG with red so "JS overlay visible"
+        // is unambiguously distinguishable from "we see yellow beneath".
         {backgroundColor: 'red'},
         opacityStyle,
       ]}>
