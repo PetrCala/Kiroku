@@ -1709,7 +1709,7 @@ const createStyleUtils = (theme: ThemeColors, styles: ThemeStyles) => ({
       borderWidth: 1,
       borderColor: derived,
       borderLeftWidth: 4,
-      borderLeftColor: color ?? 'transparent',
+      borderLeftColor: derived,
       backgroundColor: color ? `${color}1F` : 'transparent',
     };
   },
