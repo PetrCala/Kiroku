@@ -67,14 +67,21 @@ class AppDelegate: ExpoAppDelegate {
 
     _ = super.application(application, didFinishLaunchingWithOptions: launchOptions)
 
-    // On New Arch the root view is RCTSurfaceHostingProxyRootView, which does
-    // not inherit from RCTRootView — an `as? RCTRootView` cast returns nil and
-    // skips RCTBootSplash entirely, leaving a white gap between the OS
-    // LaunchScreen and React's first paint. Pass the root view as UIView;
-    // RCTBootSplash.mm re-casts to RCTSurfaceHostingProxyRootView internally.
-    if let rootView = self.window?.rootViewController?.view {
-      RCTBootSplash.initWithStoryboard("BootSplash", rootView: rootView)
-    }
+    // DIAGNOSTIC v4 — DO NOT MERGE.
+    // Skip RCTBootSplash.initWithStoryboard entirely to test Expensify's
+    // pattern: rely on iOS's native LaunchScreen dismissal (with its own
+    // built-in fade) handing off directly to the JS SplashScreenHider,
+    // with no in-process native overlay in between. The yellow defenses
+    // already cover any frame where neither is fully painted (window,
+    // rootView, SafeArea override, Kiroku-level guard all yellow).
+    //
+    // Cold-launch and observe whether the logo gap disappears entirely.
+    //
+    // Re-enable this block in the real fix if the gap returns:
+    //
+    //   if let rootView = self.window?.rootViewController?.view {
+    //     RCTBootSplash.initWithStoryboard("BootSplash", rootView: rootView)
+    //   }
 
     if !UserDefaults.standard.bool(forKey: "isFirstRunComplete") {
       UIApplication.shared.applicationIconBadgeNumber = 0
