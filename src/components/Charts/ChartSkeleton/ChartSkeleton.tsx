@@ -1,6 +1,7 @@
 import {useState} from 'react';
 import {View} from 'react-native';
 import useTheme from '@hooks/useTheme';
+import useThemeStyles from '@hooks/useThemeStyles';
 import KpiRowSkeleton from './KpiRowSkeleton';
 
 type ChartSkeletonVariant =
@@ -64,6 +65,7 @@ function ChartSkeleton({
   accessibilityLabel,
 }: ChartSkeletonProps) {
   const theme = useTheme();
+  const styles = useThemeStyles();
   const resolvedHeight = height ?? DEFAULT_HEIGHT[variant];
   const fill = theme.borderLighter;
   const cardFill = theme.highlightBG;
@@ -91,25 +93,26 @@ function ChartSkeleton({
         accessible
         accessibilityRole="progressbar"
         accessibilityLabel={a11yLabel}
-        style={{
-          height: resolvedHeight,
-          width,
-          flexDirection: 'row',
-          alignItems: 'flex-end',
-          justifyContent: 'space-between',
-          paddingHorizontal: 8,
-        }}>
+        style={[
+          styles.flexRow,
+          styles.alignItemsEnd,
+          styles.justifyContentBetween,
+          styles.ph2,
+          {height: resolvedHeight, width},
+        ]}>
         {[0.5, 0.8, 0.65, 0.95, 0.55, 0.75, 0.6].map((h, idx) => (
           <View
             // eslint-disable-next-line react/no-array-index-key
             key={`bar-${idx}`}
-            style={{
-              flex: 1,
-              marginHorizontal: 4,
-              height: `${h * 100}%`,
-              backgroundColor: fill,
-              borderRadius: 4,
-            }}
+            style={[
+              styles.flex1,
+              styles.mh1,
+              {
+                height: `${h * 100}%`,
+                backgroundColor: fill,
+                borderRadius: 4,
+              },
+            ]}
           />
         ))}
       </View>
@@ -122,11 +125,7 @@ function ChartSkeleton({
         accessible
         accessibilityRole="progressbar"
         accessibilityLabel={a11yLabel}
-        style={{
-          height: resolvedHeight,
-          width,
-          justifyContent: 'center',
-        }}>
+        style={[styles.justifyContentCenter, {height: resolvedHeight, width}]}>
         <View
           style={{
             height: 2,
@@ -145,12 +144,11 @@ function ChartSkeleton({
         accessible
         accessibilityRole="progressbar"
         accessibilityLabel={a11yLabel}
-        style={{
-          height: resolvedHeight,
-          width,
-          justifyContent: 'space-between',
-          paddingVertical: 16,
-        }}>
+        style={[
+          styles.justifyContentBetween,
+          styles.pv4,
+          {height: resolvedHeight, width},
+        ]}>
         {[0, 1, 2, 3].map(i => (
           <View
             key={`gridline-${i}`}
@@ -169,25 +167,23 @@ function ChartSkeleton({
         accessible
         accessibilityRole="progressbar"
         accessibilityLabel={a11yLabel}
-        style={{
-          height: resolvedHeight,
-          width,
-          justifyContent: 'space-between',
-        }}>
+        style={[styles.justifyContentBetween, {height: resolvedHeight, width}]}>
         {Array.from({length: ROWS}, (_row, row) => (
           <View
             key={`cal-row-${row}`}
-            style={{flexDirection: 'row', justifyContent: 'space-between'}}>
+            style={[styles.flexRow, styles.justifyContentBetween]}>
             {Array.from({length: COLS}, (_col, col) => (
               <View
                 key={`cal-${row}-${col}`}
-                style={{
-                  flex: 1,
-                  aspectRatio: 1,
-                  marginHorizontal: 1,
-                  backgroundColor: fill,
-                  borderRadius: 3,
-                }}
+                style={[
+                  styles.flex1,
+                  {
+                    aspectRatio: 1,
+                    marginHorizontal: 1,
+                    backgroundColor: fill,
+                    borderRadius: 3,
+                  },
+                ]}
               />
             ))}
           </View>
@@ -202,14 +198,16 @@ function ChartSkeleton({
         accessible
         accessibilityRole="progressbar"
         accessibilityLabel={a11yLabel}
-        style={{
-          height: resolvedHeight,
-          width,
-          backgroundColor: cardFill,
-          borderRadius: 12,
-          padding: 12,
-          justifyContent: 'space-between',
-        }}>
+        style={[
+          styles.p3,
+          styles.justifyContentBetween,
+          {
+            height: resolvedHeight,
+            width,
+            backgroundColor: cardFill,
+            borderRadius: 12,
+          },
+        ]}>
         <View
           style={{
             height: 10,
@@ -251,12 +249,11 @@ function ChartSkeleton({
         accessible
         accessibilityRole="progressbar"
         accessibilityLabel={a11yLabel}
-        style={{
-          height: resolvedHeight,
-          width,
-          alignItems: 'center',
-          justifyContent: 'center',
-        }}>
+        style={[
+          styles.alignItemsCenter,
+          styles.justifyContentCenter,
+          {height: resolvedHeight, width},
+        ]}>
         <View
           style={{
             width: diameter,
@@ -278,21 +275,22 @@ function ChartSkeleton({
         accessible
         accessibilityRole="progressbar"
         accessibilityLabel={a11yLabel}
-        style={{
-          height: resolvedHeight,
-          width,
-          alignItems: 'center',
-          justifyContent: 'center',
-        }}>
+        style={[
+          styles.alignItemsCenter,
+          styles.justifyContentCenter,
+          {height: resolvedHeight, width},
+        ]}>
         <View
-          style={{
-            width: outer,
-            height: outer,
-            borderRadius: outer / 2,
-            backgroundColor: fill,
-            alignItems: 'center',
-            justifyContent: 'center',
-          }}>
+          style={[
+            styles.alignItemsCenter,
+            styles.justifyContentCenter,
+            {
+              width: outer,
+              height: outer,
+              borderRadius: outer / 2,
+              backgroundColor: fill,
+            },
+          ]}>
           <View
             style={{
               width: inner,
@@ -331,6 +329,7 @@ function HeatmapWeekHourSkeleton({
   accessibilityLabel,
 }: HeatmapWeekHourSkeletonProps) {
   const [width, setWidth] = useState(0);
+  const styles = useThemeStyles();
   const cellSize = width > 0 ? Math.floor(width / HEATMAP_COLS) : 0;
   return (
     <View
@@ -340,9 +339,9 @@ function HeatmapWeekHourSkeleton({
       style={{height, width: '100%'}}
       onLayout={e => setWidth(e.nativeEvent.layout.width)}>
       {cellSize > 0 ? (
-        <View style={{flexDirection: 'column'}}>
+        <View style={styles.flexColumn}>
           {Array.from({length: HEATMAP_ROWS}, (_row, r) => (
-            <View key={`row-${r}`} style={{flexDirection: 'row'}}>
+            <View key={`row-${r}`} style={styles.flexRow}>
               {Array.from({length: HEATMAP_COLS}, (_col, c) => (
                 <View
                   key={`cell-${r}-${c}`}
