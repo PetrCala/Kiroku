@@ -25,7 +25,7 @@ import FlexibleLoadingIndicator from '@components/FlexibleLoadingIndicator';
 import SuccessIndicator from '@components/SuccessIndicator';
 import Log from '@libs/Log';
 import DateUtils from '@libs/DateUtils';
-import {isEqual} from 'lodash';
+import isEqual from 'lodash/isEqual';
 import type {User} from 'firebase/auth';
 import {useFocusEffect} from '@react-navigation/native';
 import ERRORS from '@src/ERRORS';

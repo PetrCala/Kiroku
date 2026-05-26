@@ -31,7 +31,7 @@ import MenuItem from '@components/MenuItem';
 import Section from '@components/Section';
 import type {TranslationPaths} from '@src/languages/types';
 import MenuItemGroup from '@components/MenuItemGroup';
-import _ from 'lodash';
+import cloneDeep from 'lodash/cloneDeep';
 
 type DrinkMenuItem = {
   key: TranslationPaths;
@@ -204,7 +204,7 @@ function SessionSummaryScreen({route}: SessionSummaryScreenProps) {
 
     return {
       sectionTranslationKey: 'sessionSummaryScreen.drinksSection.title',
-      items: _.cloneDeep(drinkData)
+      items: cloneDeep(drinkData)
         .filter(({val}) => val > 0) // Filter out drinks with 0 count
         .map(({key, val}: DrinkMenuItem) => ({
           titleKey: key,

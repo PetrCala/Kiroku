@@ -5,7 +5,7 @@ import {getDefaultPreferences} from '@userActions/User';
 import type {UnitsToColors} from '@src/types/onyx';
 import {useDatabaseData} from '@context/global/DatabaseDataContext';
 import Navigation from '@libs/Navigation/Navigation';
-import {isEqual} from 'lodash';
+import isEqual from 'lodash/isEqual';
 import ScreenWrapper from '@components/ScreenWrapper';
 import HeaderWithBackButton from '@components/HeaderWithBackButton';
 import useLocalize from '@hooks/useLocalize';
