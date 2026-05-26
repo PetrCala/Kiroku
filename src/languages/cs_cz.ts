@@ -655,6 +655,13 @@ export default {
     },
     error: {},
   },
+  supporter: {
+    tierName: 'Kiroku Supporter',
+    badgeAccessibilityLabel: 'Kiroku Supporter',
+    benefit: 'Odznak podporovatele na profilu',
+    description:
+      'Podpořte Kiroku a získejte odznak podporovatele 🍺 na svém profilu.',
+  },
   accountScreen: {
     title: 'Detaily profilu',
     generalOptions: {
