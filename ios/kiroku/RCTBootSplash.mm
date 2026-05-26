@@ -136,21 +136,6 @@ RCT_EXPORT_MODULE();
                                     CGRectGetMidY(initialFrame)};
     _loadingView.hidden = NO;
 
-    // DIAGNOSTIC — DO NOT MERGE.
-    // Tag _loadingView's background BLUE (overriding the yellow from
-    // the storyboard) so the iOS-LaunchScreen → RCTBootSplash handoff
-    // is visually distinguishable. iOS shows its own LaunchScreen
-    // (yellow + logo) from the same storyboard, then ~350ms after
-    // didFinishLaunchingWithOptions returns it dismisses LaunchScreen,
-    // and the _loadingView beneath becomes visible.
-    //
-    //   • Blink coincides with the yellow→blue color change
-    //     → iOS LaunchScreen → RCTBootSplash handoff is the cause.
-    //   • Blink happens before / after the color change
-    //     → handoff isn't the cause; localize from when the blink
-    //       happens relative to the color transition.
-    _loadingView.backgroundColor = [UIColor blueColor];
-
     [_rootView addSubview:_loadingView];
 
     // Intentionally do NOT call -disableActivityIndicatorAutoHide: or
