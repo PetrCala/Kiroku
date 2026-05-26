@@ -9,6 +9,7 @@ import XCTest
 //      `SnapshotHelper.swift` next to this file; add it to the test target.
 //   3. Set `APPLE_DEMO_EMAIL` / `APPLE_DEMO_PASSWORD` in the shell before
 //      invoking the lane.
+@MainActor
 final class ScreenshotTests: XCTestCase {
     private let app = XCUIApplication()
 
