@@ -1,5 +1,9 @@
 # Statistics — Design & Scaffolding
 
+> **This doc describes the v1 design that was retired before shipping. The Statistics feature shipped instead as v2 — see [STATISTICS_V2.md](./STATISTICS_V2.md). Sections **§3 (tone)**, **§4 (library)**, **§5 (data principles)**, and **§10 (prior-attempt autopsy)** of this v1 doc remain in force and are inherited by v2; **§7 (concrete v1 surface)** and **§8 (phased rollout)** were superseded.**
+
+---
+
 Status: **design, pre-implementation**
 Owner: TBD
 Last updated: 2026-05-22
@@ -15,6 +19,7 @@ A prior attempt lives on `origin/feat/graphs` (Sept 2025). It built a sound data
 **v1 goal**: ship a single "Statistics" screen — a summary-card hub showing the user **their own** drinking data, framed supportively, with a calendar heatmap and a weekly trend. Prove the scaffolding.
 
 **v1 non-goals** (explicitly deferred):
+
 - Drill-down screens / per-metric detail with D/W/M/6M/Y toggles (Tier 2)
 - Cross-user comparison, friend leaderboards, cohort stats
 - Server-side rollups in kiroku-api
@@ -71,12 +76,14 @@ A future `private_stats_mode` preference can hide numbers entirely for users in 
 **Custom Skia**: [@shopify/react-native-skia](https://shopify.github.io/react-native-skia/) for the calendar heatmap (no mainstream RN library ships one).
 
 **Why**:
+
 - Render-prop API (`<CartesianChart>{({ points }) => …}`) is the only mainstream library whose ergonomics match Kiroku's compositional philosophy. We wrap it once in `BaseChart` and never expose Victory's props upward.
 - Skia + Reanimated + Gesture Handler are dependencies the app already carries.
 - 60 FPS even with months of session data; strict TypeScript.
 - Actively maintained by Nearform in 2026.
 
 **What we accept**:
+
 - **No web rendering.** Web shows a placeholder for v1. A future Recharts-on-web layer can sit behind the same component interface.
 - **A11y is manual.** Skia draws to canvas — there are no native a11y nodes. We overlay invisible labelled `View`s per data point. Tracked as a per-chart checklist item.
 - **Calendar heatmap is hand-rolled** in ~150 LOC of Skia (path/rect drawing). Worth it; the primitive is reusable for any future custom chart.
@@ -104,6 +111,7 @@ src/libs/Statistics/
 ```
 
 **Invariants**:
+
 - All selectors are **pure functions**. Timezone is passed as an argument, never read from a module-mutable global (this was a `feat/graphs` defect).
 - All time bucketing uses `date-fns` (`getISOWeek`, `startOfWeek` with `Preferences.first_day_of_week`, `formatInTimeZone`). No hand-rolled week-number math.
 - Rollups iterate over **session structure**, not a flattened drink list. The prior branch's `transformDrinkingSessionsToDrinksList` collapses per-drink timestamps to `session.start_time` and is **not** used.
@@ -133,15 +141,15 @@ The session listener subscribes from `startOfMonth(subMonths(now, sessionsMonths
 
 ### 5.4 Data-integrity rules (defensive defaults)
 
-| Condition | v1 rule |
-|---|---|
-| `session.end_time` missing | Excluded from average-duration KPI; included in count/units |
-| `session.ongoing === true` | Excluded from all historical stats |
-| `session.drinks` empty/missing | Counted as a session, contributes 0 units |
-| `session.blackout === undefined` | Treated as `false` for filters; show "—" not "0" if asked |
-| `session.timezone` missing | Fall back to viewer's timezone (current `DateUtils` convention) |
-| `Preferences.drinks_to_units` undefined (during hydrate) | Stats screen shows skeletons until preferences load |
-| Zero sessions in window | Show reassuring empty state per §3 |
+| Condition                                                | v1 rule                                                         |
+| -------------------------------------------------------- | --------------------------------------------------------------- |
+| `session.end_time` missing                               | Excluded from average-duration KPI; included in count/units     |
+| `session.ongoing === true`                               | Excluded from all historical stats                              |
+| `session.drinks` empty/missing                           | Counted as a session, contributes 0 units                       |
+| `session.blackout === undefined`                         | Treated as `false` for filters; show "—" not "0" if asked       |
+| `session.timezone` missing                               | Fall back to viewer's timezone (current `DateUtils` convention) |
+| `Preferences.drinks_to_units` undefined (during hydrate) | Stats screen shows skeletons until preferences load             |
+| Zero sessions in window                                  | Show reassuring empty state per §3                              |
 
 ---
 
@@ -179,9 +187,9 @@ src/components/Charts/
 // BaseChart — every Victory-rendered chart wraps this
 type BaseChartProps = {
   data: ChartDatum[];
-  range: ChartRange;              // 'week' | 'month' | 'rolling30'
-  emptyLabel?: string;            // shown when data is empty
-  accessibilityLabel: string;     // required — a11y is not optional
+  range: ChartRange; // 'week' | 'month' | 'rolling30'
+  emptyLabel?: string; // shown when data is empty
+  accessibilityLabel: string; // required — a11y is not optional
   children?: (ctx: ChartRenderCtx) => ReactNode;
 };
 
@@ -189,19 +197,19 @@ type BaseChartProps = {
 type ChartCardProps = {
   title: string;
   subtitle?: string;
-  footer?: ReactNode;             // e.g. delta chip, period selector (v2)
-  children: ReactNode;            // the chart itself
+  footer?: ReactNode; // e.g. delta chip, period selector (v2)
+  children: ReactNode; // the chart itself
 };
 
 // KpiCard — the summary tile
 type KpiCardProps = {
-  label: string;                  // "Alcohol-free days"
-  value: string | number;         // formatted hero value
-  unit?: string;                  // "days", "drinks", "%"
-  delta?: { value: number; direction: 'up' | 'down' | 'flat'; label: string };
-  sparkline?: ChartDatum[];       // optional mini trend
-  tone?: 'neutral' | 'supportive' | 'celebratory';  // §3
-  onPress?: () => void;           // wired to drill-down in Tier 2
+  label: string; // "Alcohol-free days"
+  value: string | number; // formatted hero value
+  unit?: string; // "days", "drinks", "%"
+  delta?: {value: number; direction: 'up' | 'down' | 'flat'; label: string};
+  sparkline?: ChartDatum[]; // optional mini trend
+  tone?: 'neutral' | 'supportive' | 'celebratory'; // §3
+  onPress?: () => void; // wired to drill-down in Tier 2
 };
 ```
 
@@ -231,6 +239,7 @@ That's it. No more in v1.
 This is the work breakdown. Each phase ends shippable; later phases can be paused without leaving broken code. Items marked `[parallel]` can run as concurrent agent tasks against the same branch / stacked PRs.
 
 ### Phase A — Foundation (no UI)
+
 - A1. Add Victory Native XL + ensure Skia is in `package.json`; bump if needed
 - A2. `src/libs/Statistics/{types,sdu,rollups}.ts` + test suite (port from `feat/graphs`, fix the timestamp-collapsing & timezone defects called out in §5.1)
 - A3. `src/libs/Statistics/selectors/{kpis,calendarHeatmap,weeklyBars}.ts` + tests
@@ -240,6 +249,7 @@ This is the work breakdown. Each phase ends shippable; later phases can be pause
 A2/A3 `[parallel]`. A1 must land first because Victory needs to typecheck. A5 `[parallel]` with anything.
 
 ### Phase B — Primitives (no screen)
+
 - B1. `Charts/BaseChart/*` — Victory wrapper + theme + a11y overlay pattern
 - B2. `Charts/ChartCard/*` and `Charts/KpiCard/*` + `Sparkline`
 - B3. `Charts/WeeklyBars/*` — composes BaseChart
@@ -248,6 +258,7 @@ A2/A3 `[parallel]`. A1 must land first because Victory needs to typecheck. A5 `[
 B1 must land first. B2/B3/B4 `[parallel]` after B1.
 
 ### Phase C — Screen
+
 - C1. `src/screens/Statistics/StatisticsScreen.tsx` — composes hooks + components
 - C2. Route registration in `SCREENS.ts` / `ROUTES.ts`
 - C3. Navigation entry (tab vs. Profile entry — decide in this PR)
@@ -279,12 +290,14 @@ So we don't paint ourselves into corners:
 Branch: `origin/feat/graphs` (Sept 2025). Tip is feature-gated off.
 
 **Keep (port forward, with cleanups)**:
+
 - `src/libs/Analytics/sdu.ts` — `gramsOfAlcohol`, `sduFrom`. Correct math; rename module to `src/libs/Statistics/sdu.ts`.
 - `src/libs/Analytics/types.ts` — `DayRollup` shape is clean (userID + dateKey + totalSdu + drinksCount + byType).
 - `__tests__/unit/libs/Analytics/rollups.test.ts` — 25 edge cases (invalid timestamps, NaN amounts, missing unit mappings). Reuse as the v1 spec.
 - `calculateDrinksUnits` in `DrinkingSessionUtils.ts` — small reducer, keep.
 
 **Discard / actively avoid**:
+
 - `transformDrinkingSessionsToDrinksList` — collapses per-drink timestamps to `session.start_time`; **do not** use. Aggregate over the session structure directly.
 - Module-level mutable `let timezone` in `Analytics/rollups.ts:13` — pass timezone explicitly.
 - Hand-rolled `getWeekNumber` in `composition.ts` — collides at year boundaries. Use `date-fns` `getISOWeek` + `getISOWeekYear`.
