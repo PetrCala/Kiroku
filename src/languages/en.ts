@@ -25,6 +25,8 @@ import type {
   StatsAfDaysParams,
   StatsDrillDownTitleParams,
   StatsQuietDaysParams,
+  SupporterPurchaseCtaParams,
+  SupporterPurchaseErrorParams,
   UnitCountParams,
   UpdateEmailSentEmailParams,
   VerifyEmailScreenEmailParmas,
@@ -664,6 +666,29 @@ export default {
     benefit: 'Supporter badge on your profile',
     description:
       'Support Kiroku and get the 🍺 supporter badge on your profile.',
+    menuEntry: 'Support Kiroku 🍺',
+    paywallScreen: {
+      title: 'Support Kiroku',
+      loading: 'Loading subscription details...',
+      thanksTitle: "You're a Kiroku Supporter 🍺",
+      thanksSubtitle:
+        'Thanks for backing the app — your supporter badge is live on your profile.',
+      managementComingSoon:
+        'Manage or cancel your subscription from the App Store or Google Play. A dedicated management screen is on its way.',
+      unavailableTitle: 'Subscription unavailable',
+      unavailableSubtitle:
+        "We couldn't load the supporter subscription right now. Check your connection and try again.",
+      purchaseCta: ({price}: SupporterPurchaseCtaParams) =>
+        `Become a supporter — ${price} / month`,
+      purchaseError: ({message}: SupporterPurchaseErrorParams) =>
+        `Purchase failed: ${message}. Please try again.`,
+      restorePurchases: 'Restore purchases',
+      restoreEmpty:
+        'No prior supporter subscription found on this account. If you purchased on another device, sign in with the same account and try again.',
+      autoRenewalNotice:
+        'Subscription auto-renews monthly until cancelled. Manage or cancel anytime in the App Store or Google Play at least 24 hours before the renewal date.',
+      retry: 'Try again',
+    },
   },
   accountScreen: {
     title: 'Profile Details',
