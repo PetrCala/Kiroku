@@ -240,13 +240,18 @@ function ColorPaletteScreen() {
                       {PREVIEW_KEYS.map(key => (
                         <View
                           key={key}
-                          style={{
-                            width: 40,
-                            height: 22,
-                            borderRadius: 6,
-                            marginRight: 8,
-                            backgroundColor: palette[key],
-                          }}
+                          style={[
+                            {
+                              width: 40,
+                              height: 22,
+                              borderRadius: 6,
+                              marginRight: 8,
+                              backgroundColor: palette[key],
+                            },
+                            StyleUtils.getDerivedSwatchBorderStyle(
+                              palette[key],
+                            ),
+                          ]}
                         />
                       ))}
                     </View>

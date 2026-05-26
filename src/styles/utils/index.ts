@@ -1700,12 +1700,33 @@ const createStyleUtils = (theme: ThemeColors, styles: ThemeStyles) => ({
    *
    * The caller composes layout (flex, padding, margin) around this.
    */
-  getColorAccentRowStyle: (color: string | null): ViewStyle => ({
-    borderRadius: 12,
-    borderLeftWidth: 4,
-    borderLeftColor: color ?? 'transparent',
-    backgroundColor: color ? `${color}1F` : 'transparent',
-  }),
+  getColorAccentRowStyle: (color: string | null): ViewStyle => {
+    const derived = color
+      ? getCalendarTileBorderColor(color, theme.appBG) ?? 'transparent'
+      : 'transparent';
+    return {
+      borderRadius: 12,
+      borderWidth: 1,
+      borderColor: derived,
+      borderLeftWidth: 4,
+      borderLeftColor: color ?? 'transparent',
+      backgroundColor: color ? `${color}1F` : 'transparent',
+    };
+  },
+
+  /**
+   * 1px border whose color is the swatch shifted 25% toward black/white
+   * relative to the app background — the same edge logic the calendar tiles
+   * use. Pass `null` for a transparent border (preserves layout). Use anywhere
+   * a palette-colored surface needs a tonally consistent, theme-aware edge.
+   */
+  getDerivedSwatchBorderStyle: (color: string | null): ViewStyle => {
+    if (!color) {
+      return {borderWidth: 1, borderColor: 'transparent'};
+    }
+    const derived = getCalendarTileBorderColor(color, theme.appBG);
+    return {borderWidth: 1, borderColor: derived ?? 'transparent'};
+  },
 
   /**
    * When adding a new prefix character, adjust this method to add expected character width.
