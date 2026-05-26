@@ -45,8 +45,28 @@ final class ScreenshotTests: XCTestCase {
     // MARK: - Login
 
     private func logIn() {
-        let auth = app.otherElements["AuthScreen"]
-        XCTAssertTrue(auth.waitForExistence(timeout: 30), "AuthScreen never appeared")
+        // After the splash dismisses, the user lands on the Initial Screen
+        // (testID="Initial Screen", src/screens/SignUp/InitialScreen.tsx).
+        // It exposes two CTAs:
+        //   • "Create account" button → routes to AuthScreen in sign-up mode.
+        //   • "Log in" link (under "Already have an account?") → sign-in mode.
+        // Our demo user already exists, so we tap the "Log in" link.
+        let initial = app.otherElements["Initial Screen"]
+        XCTAssertTrue(initial.waitForExistence(timeout: 30), "Initial Screen never appeared")
+
+        // The "Log in" link is a PressableWithFeedback with role=link; RN
+        // surfaces it under `app.buttons` in XCUITest. Match by localized
+        // accessibility label (translate('common.logInHere')).
+        let logInLink = app.buttons.matching(NSPredicate(format:
+            "label IN { 'Log in', 'Přihlaste se zde' }"
+        )).firstMatch
+        XCTAssertTrue(logInLink.waitForExistence(timeout: 5), "Log in link never appeared on Initial Screen")
+        logInLink.tap()
+
+        // testID is literally "Auth Screen" with a space (AuthScreen.displayName
+        // in src/screens/SignUp/AuthScreen.tsx).
+        let auth = app.otherElements["Auth Screen"]
+        XCTAssertTrue(auth.waitForExistence(timeout: 30), "Auth Screen never appeared")
 
         // Inputs lack testIDs — match by their containing TextField/SecureTextField.
         // The first text field in the form is email, then password (secure).
@@ -59,9 +79,10 @@ final class ScreenshotTests: XCTestCase {
         passwordField.typeText(ProcessInfo.processInfo.environment["APPLE_DEMO_PASSWORD"] ?? "")
 
         // Submit button has no testID — matched by its localized title.
-        // Update these strings if the labels change in src/languages/{en,cs_cz}.ts.
+        // Labels follow common.logIn / common.signIn in src/languages/{en,cs_cz}.ts
+        // (lowercase 'i' — the en label is "Log in", not "Log In").
         let submit = app.buttons.matching(NSPredicate(format:
-            "label IN { 'Log In', 'Přihlásit se', 'Sign In' }"
+            "label IN { 'Log in', 'Přihlásit se', 'Sign in' }"
         )).firstMatch
         submit.tap()
 
