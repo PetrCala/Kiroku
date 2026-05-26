@@ -136,12 +136,12 @@ const requestPermission = async (permissionType: PermissionKey) => {
     const restrictedAccess = permissionIsDenied(status);
     if (restrictedAccess) {
       Alert.alert(
-        Localize.translateLocal('storage.permissionDenied'),
-        Localize.translateLocal('storage.appNeedsAccess'),
+        Localize.translateLocal('permissions.permissionDenied'),
+        Localize.translateLocal('permissions.appNeedsAccess'),
         [
           {text: Localize.translateLocal('common.cancel'), style: 'cancel'},
           {
-            text: Localize.translateLocal('storage.openSettings'),
+            text: Localize.translateLocal('permissions.openSettings'),
             onPress: openSettings,
           },
         ],

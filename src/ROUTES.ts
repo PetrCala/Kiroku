@@ -108,6 +108,7 @@ const ROUTES = {
 
   SETTINGS_APP_SHARE: 'settings/app-share',
   SETTINGS_PREFERENCES: 'settings/preferences',
+  SETTINGS_PRIVACY: 'settings/privacy',
   SETTINGS_LANGUAGE: 'settings/preferences/language',
   SETTINGS_THEME: 'settings/preferences/theme',
   SETTINGS_FIRST_DAY_OF_WEEK: 'settings/preferences/first-day-of-week',
