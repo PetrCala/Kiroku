@@ -7,7 +7,7 @@ import React, {
   useState,
 } from 'react';
 import type {NativeEventSubscription} from 'react-native';
-import {AppState, Linking, Platform} from 'react-native';
+import {AppState, Linking, Platform, StyleSheet, View} from 'react-native';
 import Onyx, {useOnyx} from 'react-native-onyx';
 import {useFirebase} from '@context/global/FirebaseContext';
 import {useUserConnection} from '@context/global/UserConnectionContext';
@@ -35,7 +35,20 @@ import CONFIG from './CONFIG';
 import UpdateAppModal from './components/UpdateAppModal';
 import VerifyEmailModal from './components/VerifyEmailModal';
 import FullScreenLoadingIndicator from './components/FullscreenLoadingIndicator';
+import colors from './styles/theme/colors';
 import CONST from './CONST';
+
+// Painted on top of NavigationRoot but below SplashScreenHider (zIndex 20)
+// while the splash is up, so any one-frame mount lag in SplashScreenHider's
+// tree can never expose React Navigation's white appBG. Plain View only
+// — every JS-rendered child has its own first-paint lag, so the guard
+// contributes the color, not the logo. The native loadingView covers the
+// logo until SplashScreenHider catches up.
+const splashGuardStyle = {
+  ...StyleSheet.absoluteFillObject,
+  backgroundColor: colors.yellowStrong,
+  zIndex: 19,
+};
 
 Onyx.registerLogger(({level, message}) => {
   if (level === 'alert') {
@@ -158,13 +171,11 @@ function Kiroku() {
   }, []);
 
   // Splash hide is driven by <SplashScreenHider /> below. It calls
-  // BootSplash.hide() (the 250ms native crossDissolve under the in-process
-  // storyboard subview) and then runs its own 250ms JS scale+opacity fade
-  // before signaling onHide here. The JS overlay covers the React tree the
-  // whole time, so the home screen's first-paint loading indicator is not
-  // visible to the user before content arrives — the same masking the old
-  // pre-PR #325 design provided. The overlay also owns the 15s force-hide
-  // safety timeout so a stuck gating condition can't pin the splash forever.
+  // BootSplash.hide(), which crossDissolves the in-process storyboard
+  // subview over 250ms — that transition also forces iOS to render the
+  // React tree underneath, masking Fabric's incremental mounting cascade.
+  // The overlay owns the 15s force-hide safety timeout so a stuck gating
+  // condition can't pin the splash forever.
   const onSplashHide = useCallback(() => {
     setSplashScreenState(CONST.BOOT_SPLASH_STATE.HIDDEN);
   }, [setSplashScreenState]);
@@ -267,45 +278,57 @@ function Kiroku() {
     setCrashlyticsUserId(auth?.currentUser?.uid ?? '-1');
   }, [isAuthenticated, auth?.currentUser?.uid]);
 
-  // Display a blank page until the onyx migration completes
-  if (!isOnyxMigrated) {
-    return null;
-  }
-
   if (updateRequired) {
     throw new Error(CONST.ERROR.UPDATE_REQUIRED);
   }
 
+  // Always render the splash guard and SplashScreenHider, even before
+  // Onyx has migrated. Returning `null` before isOnyxMigrated would
+  // commit an empty tree, and the React surface would still transition
+  // to "Running" stage on that empty commit, leaving the guard +
+  // SplashScreenHider unmounted while the native loadingView starts to
+  // dissolve. Gate only the heavier subtree (NavigationRoot + modals)
+  // on isOnyxMigrated.
   return (
-    // TODO
-    // <DeeplinkWrapper
-    //     isAuthenticated={isAuthenticated}
-    //     autoAuthState={autoAuthState}
-    // >
     <>
-      {loadingText ? (
-        <FullScreenLoadingIndicator loadingText={loadingText} />
-      ) : (
+      {isOnyxMigrated && (
         <>
-          {!isOnline && !CONFIG.IS_USING_EMULATORS && <UserOfflineModal />}
-          {isUnderMaintenance && <UnderMaintenanceModal config={config} />}
+          {loadingText ? (
+            <FullScreenLoadingIndicator loadingText={loadingText} />
+          ) : (
+            <>
+              {!isOnline && !CONFIG.IS_USING_EMULATORS && <UserOfflineModal />}
+              {isUnderMaintenance && <UnderMaintenanceModal config={config} />}
+            </>
+          )}
+
+          {shouldInit && (
+            <>
+              {shouldShowVerifyEmailModal && <VerifyEmailModal />}
+              {shouldShowUpdateModal && <UpdateAppModal />}
+              {/* // TODO show shared session invites here */}
+            </>
+          )}
+
+          <NavigationRoot
+            onReady={setNavigationReady}
+            authenticated={isAuthenticated}
+            lastVisitedPath={lastVisitedPath as Route}
+            initialUrl={initialUrl}
+          />
         </>
       )}
-
-      {shouldInit && (
-        <>
-          {shouldShowVerifyEmailModal && <VerifyEmailModal />}
-          {shouldShowUpdateModal && <UpdateAppModal />}
-          {/* // TODO show shared session invites here */}
-        </>
-      )}
-
-      <NavigationRoot
-        onReady={setNavigationReady}
-        authenticated={isAuthenticated}
-        lastVisitedPath={lastVisitedPath as Route}
-        initialUrl={initialUrl}
-      />
+      {/*
+        Guard layer between NavigationRoot and SplashScreenHider. Hides
+        NavigationContainer's white appBG during any frame where
+        SplashScreenHider's tree lags first paint. Unmounted as soon as
+        shouldHideSplash flips so the native cross-dissolve in
+        BootSplash.hide() can reveal the real content underneath.
+      */}
+      {splashScreenState !== CONST.BOOT_SPLASH_STATE.HIDDEN &&
+        !shouldHideSplash && (
+          <View pointerEvents="none" style={splashGuardStyle} />
+        )}
       {splashScreenState !== CONST.BOOT_SPLASH_STATE.HIDDEN && (
         <SplashScreenHider
           shouldHideSplash={shouldHideSplash}
