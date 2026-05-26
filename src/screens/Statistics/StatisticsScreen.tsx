@@ -1,14 +1,13 @@
 import React, {useEffect, useState} from 'react';
 import type {ComponentType} from 'react';
-import {InteractionManager, View} from 'react-native';
-import {ChartSkeleton} from '@components/Charts/ChartSkeleton';
+import {InteractionManager} from 'react-native';
 import HeaderWithBackButton from '@components/HeaderWithBackButton';
 import ScreenWrapper from '@components/ScreenWrapper';
 import StatsContextProvider from '@components/StatsContextProvider';
 import useLocalize from '@hooks/useLocalize';
-import useThemeStyles from '@hooks/useThemeStyles';
 import Navigation from '@libs/Navigation/Navigation';
 import DrillDownProvider from './drilldown/DrillDownContext';
+import StatisticsScreenSkeleton from './StatisticsScreenSkeleton';
 import StatsDrillDownSheet from './StatsDrillDownSheet';
 
 /**
@@ -27,7 +26,6 @@ import StatsDrillDownSheet from './StatsDrillDownSheet';
  */
 function StatisticsScreen() {
   const {translate} = useLocalize();
-  const styles = useThemeStyles();
   const [Tabs, setTabs] = useState<ComponentType | null>(null);
 
   useEffect(() => {
@@ -70,11 +68,7 @@ function StatisticsScreen() {
               <StatsDrillDownSheet />
             </>
           ) : (
-            <View style={[styles.flex1, styles.ph4, styles.pt3]}>
-              <ChartSkeleton variant="kpiRow" />
-              <View style={{height: 16}} />
-              <ChartSkeleton variant="card" />
-            </View>
+            <StatisticsScreenSkeleton />
           )}
         </DrillDownProvider>
       </StatsContextProvider>
