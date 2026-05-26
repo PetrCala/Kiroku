@@ -88,18 +88,31 @@ function SplashScreenHider({
     if (!shouldHideSplash) {
       return;
     }
-    // Defer the native BootSplash.hide() by one vsync so the JS overlay
-    // (this component's animated yellow + logo, the Kiroku-level splash
-    // guard View, and the SafeArea backgroundColor override) is guaranteed
-    // to be on screen BEFORE the native loadingView is removed. Without
-    // this, useEffect fires after the React commit but before the next
-    // vsync — hide() runs synchronously, the native view disappears, and
-    // for one frame the user sees whichever React surface lags first paint
-    // (Reanimated.View, ImageSVG via react-native-svg). requestAnimationFrame
-    // aligns to vsync in React Native, so by the time the callback runs the
-    // previous commit's pixels are on screen.
-    const handle = requestAnimationFrame(() => hide());
-    return () => cancelAnimationFrame(handle);
+    // DIAGNOSTIC — DO NOT MERGE.
+    //
+    // Single rAF deferral didn't close the logo gap, so we don't actually
+    // know whether the problem is paint timing (the JS overlay needs more
+    // time than rAF buys) or something structural (the JS overlay's logo
+    // never reaches the framebuffer at all in this configuration).
+    //
+    // 2000ms holds the native BootSplash up long enough that paint timing
+    // can't be the bottleneck. Cold-launch with this build and observe the
+    // moment the native splash finally dismisses:
+    //
+    //   • Logo present with zero gap when native hides
+    //     → paint timing IS the cause; single rAF was insufficient. Solve
+    //       by waiting for the actual paint event (onLayout, double-rAF,
+    //       a longer timeout sized to worst-real-device behavior).
+    //
+    //   • Logo still hides then reappears even after 2 seconds of warm-up
+    //     → paint timing is NOT the cause. Something about how the JS
+    //       overlay's logo enters the framebuffer breaks under this
+    //       configuration (re-render on prop change tearing down the
+    //       react-native-svg layer, react-compiler unmounting on
+    //       shouldHideSplash flip, asset loading lifecycle, etc.) and we
+    //       investigate elsewhere.
+    const handle = setTimeout(() => hide(), 2000);
+    return () => clearTimeout(handle);
   }, [shouldHideSplash, hide]);
 
   useEffect(() => {
