@@ -30,6 +30,7 @@ import useSingleExecution from '@hooks/useSingleExecution';
 import useThemeStyles from '@hooks/useThemeStyles';
 import useWaitForNavigation from '@hooks/useWaitForNavigation';
 import Navigation from '@libs/Navigation/Navigation';
+import SupporterUtils from '@libs/SupporterUtils';
 import CONST from '@src/CONST';
 import type {TranslationPaths} from '@src/languages/types';
 import type {Route} from '@src/ROUTES';
@@ -79,11 +80,15 @@ function SettingsScreen() {
   const userIsAdmin = userData && userData.role === 'admin';
   const [privateData] = useOnyx(ONYXKEYS.USER_PRIVATE_DATA);
   const supporter = UserUtils.getCurrentUserSupporterStatus(privateData);
+  // Hidden entirely in production builds until v1.1 launch clears Apple's
+  // first-subscription gate (see `SupporterUtils.isSupporterTierVisible`).
+  const shouldShowSupporterMenu = SupporterUtils.isSupporterTierVisible();
   // Surface "Manage Subscription" only once the user has interacted with the
   // supporter tier — never-subscribed users should keep seeing just the
   // "Support Kiroku" entry point.
   const shouldShowManageSubscription =
-    !!supporter.is_supporter || !!supporter.supporter_status;
+    shouldShowSupporterMenu &&
+    (!!supporter.is_supporter || !!supporter.supporter_status);
 
   const [shouldShowSignoutConfirmModal, setShouldShowSignoutConfirmModal] =
     useState(false);
@@ -128,11 +133,15 @@ function SettingsScreen() {
           icon: KirokuIcons.Gear,
           routeName: ROUTES.SETTINGS_PREFERENCES,
         },
-        {
-          translationKey: 'supporter.menuEntry',
-          icon: KirokuIcons.Star,
-          routeName: ROUTES.SETTINGS_SUPPORT,
-        },
+        ...(shouldShowSupporterMenu
+          ? [
+              {
+                translationKey: 'supporter.menuEntry',
+                icon: KirokuIcons.Star,
+                routeName: ROUTES.SETTINGS_SUPPORT,
+              } as MenuData,
+            ]
+          : []),
         ...(shouldShowManageSubscription
           ? [
               {
@@ -146,7 +155,11 @@ function SettingsScreen() {
     };
 
     return defaultMenu;
-  }, [styles.accountSettingsSectionContainer, shouldShowManageSubscription]);
+  }, [
+    styles.accountSettingsSectionContainer,
+    shouldShowSupporterMenu,
+    shouldShowManageSubscription,
+  ]);
 
   /**
    * Retuns a list of menu items data for general section

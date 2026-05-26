@@ -1,4 +1,4 @@
-import React, {useCallback, useState} from 'react';
+import React, {useCallback, useEffect, useState} from 'react';
 import {Linking, Platform, View} from 'react-native';
 import {useOnyx} from 'react-native-onyx';
 import Button from '@components/Button';
@@ -11,6 +11,7 @@ import useLocalize from '@hooks/useLocalize';
 import useThemeStyles from '@hooks/useThemeStyles';
 import {restoreSupporterPurchases} from '@libs/actions/Subscriptions';
 import Navigation from '@libs/Navigation/Navigation';
+import SupporterUtils from '@libs/SupporterUtils';
 import * as UserUtils from '@libs/UserUtils';
 import ONYXKEYS from '@src/ONYXKEYS';
 import ROUTES from '@src/ROUTES';
@@ -42,6 +43,16 @@ function ManageSubscriptionScreen() {
   const supporter = UserUtils.getCurrentUserSupporterStatus(privateData);
   const [isRestoring, setIsRestoring] = useState(false);
   const [restoreMessage, setRestoreMessage] = useState<string | null>(null);
+
+  // Defense-in-depth: even though the Settings menu entry is removed in
+  // production builds (see `SupporterUtils.isSupporterTierVisible`), bounce
+  // back if the screen is reached via deep link or stale navigation state.
+  const isVisible = SupporterUtils.isSupporterTierVisible();
+  useEffect(() => {
+    if (!isVisible) {
+      Navigation.goBack(ROUTES.SETTINGS);
+    }
+  }, [isVisible]);
 
   const status: SupporterStatus | null = supporter.supporter_status ?? null;
   const expiresDate = formatDate(supporter.supporter_expires_at);
@@ -124,6 +135,10 @@ function ManageSubscriptionScreen() {
     Platform.OS === 'ios'
       ? translate('supporter.manageSubscription.manageInAppStore')
       : translate('supporter.manageSubscription.manageInGooglePlay');
+
+  if (!isVisible) {
+    return null;
+  }
 
   return (
     <ScreenWrapper testID={ManageSubscriptionScreen.displayName}>
