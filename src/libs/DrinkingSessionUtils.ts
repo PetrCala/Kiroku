@@ -23,7 +23,10 @@ import type {
   RemoveDrinksOptions,
 } from '@src/types/onyx/DrinkingSession';
 import * as KirokuIcons from '@components/Icon/KirokuIcons';
-import _ from 'lodash';
+import cloneDeep from 'lodash/cloneDeep';
+// eslint-disable-next-line you-dont-need-lodash-underscore/includes
+import includes from 'lodash/includes';
+import min from 'lodash/min';
 import type {ValueOf} from 'type-fest';
 import type {ImageSourcePropType} from 'react-native';
 import type {TranslationPaths} from '@src/languages/types';
@@ -147,8 +150,7 @@ function getDrinkingSessionOnyxKey(
 
 /** Type guard to check if a given key is a valid DrinkType key */
 function isDrinkTypeKey(key: string): key is keyof Drinks {
-  // eslint-disable-next-line you-dont-need-lodash-underscore/includes
-  return _.includes(Object.values(CONST.DRINKS.KEYS), key);
+  return includes(Object.values(CONST.DRINKS.KEYS), key);
 }
 
 /** From a list of drinking sessions, returns an ID of an ongoing session. If there is none, returns null. */
@@ -320,7 +322,7 @@ function removeDrinksFromList(
     return drinksList;
   }
 
-  const updatedDrinksList: DrinksList = _.cloneDeep(drinksList);
+  const updatedDrinksList: DrinksList = cloneDeep(drinksList);
 
   let remainingAmountToRemove = amount ?? 0;
 
@@ -410,7 +412,7 @@ function modifySessionDrinks(
   action: ValueOf<typeof CONST.DRINKS.ACTIONS>,
   drinksToUnits: DrinksToUnits,
 ): DrinksList | undefined {
-  let drinksList = _.cloneDeep(session?.drinks);
+  let drinksList = cloneDeep(session?.drinks);
   if (action === 'add') {
     const options: AddDrinksOptions = getSessionAddDrinksOptions(session);
     drinksList = addDrinksToList(
@@ -716,7 +718,7 @@ function getEarliestSessionStartTime(
   if (isEmptyObject(data)) {
     return undefined;
   }
-  return _.min(Object.values(data).map(session => session.start_time));
+  return min(Object.values(data).map(session => session.start_time));
 }
 
 /**

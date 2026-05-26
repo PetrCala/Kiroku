@@ -5,7 +5,7 @@ import type {
   PartialState,
 } from '@react-navigation/native';
 import {findFocusedRoute} from '@react-navigation/native';
-import {omitBy} from 'lodash';
+import omitBy from 'lodash/omitBy';
 import getIsNarrowLayout from '@libs/getIsNarrowLayout';
 import {isCentralPaneName} from '@libs/NavigationUtils';
 import shallowCompare from '@libs/ObjectUtils';

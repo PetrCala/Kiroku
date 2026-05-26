@@ -32,7 +32,8 @@ import ROUTES from '@src/ROUTES';
 import {differenceInDays, startOfDay} from 'date-fns';
 import type {SelectedTimezone} from '@src/types/onyx/UserData';
 import type {ValueOf} from 'type-fest';
-import _ from 'lodash';
+// eslint-disable-next-line you-dont-need-lodash-underscore/for-each
+import forEach from 'lodash/forEach';
 import DBPATHS from '@src/DBPATHS';
 import {Alert} from 'react-native';
 
@@ -155,7 +156,7 @@ async function updateDrinkingSessionData(
 
   // Be mindful of using Object.forEach here, as that leads to an incorrect parsing of the object for some reason
   // eslint-disable-next-line you-dont-need-lodash-underscore/for-each
-  _.forEach(updates, (value, key) => {
+  forEach(updates, (value, key) => {
     // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
     updatesToDB[`${dsPath}/${key}`] = value;
   });
@@ -163,7 +164,7 @@ async function updateDrinkingSessionData(
   if (updateStatus) {
     const userStatusPath = userStatusLatestSessionRef.getRoute(userID);
     // eslint-disable-next-line you-dont-need-lodash-underscore/for-each
-    _.forEach(updates, (value, key) => {
+    forEach(updates, (value, key) => {
       // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
       updatesToDB[`${userStatusPath}/${key}`] = value;
     });

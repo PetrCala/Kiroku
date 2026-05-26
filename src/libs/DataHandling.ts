@@ -18,7 +18,8 @@ import type {
 } from '@src/types/onyx';
 import CONST from '@src/CONST';
 import {isEmptyObject} from '@src/types/utils/EmptyObject';
-import _ from 'lodash';
+import isEmpty from 'lodash/isEmpty';
+import maxBy from 'lodash/maxBy';
 import type {TranslationPaths} from '@src/languages/types';
 import * as DSUtils from './DrinkingSessionUtils';
 import {getDrinkCount} from './DrinkEntryUtils';
@@ -349,7 +350,7 @@ function getUniqueDrinkTypesInSession(
  * @returnsTimestamp of the last drink consumed
  */
 function getLastDrinkAddedTime(session: DrinkingSession): number | null {
-  if (_.isEmpty(session?.drinks)) {
+  if (isEmpty(session?.drinks)) {
     return null;
   }
   const timestamps = Object.keys(session.drinks).map(Number);
@@ -433,7 +434,7 @@ function getLastStartedSession(
   if (!sessions) {
     return undefined;
   }
-  return _.maxBy(Object.values(sessions), 'start_time');
+  return maxBy(Object.values(sessions), 'start_time');
 }
 
 function getLastStartedSessionId(
@@ -443,7 +444,7 @@ function getLastStartedSessionId(
     return undefined;
   }
 
-  const latestSession = _.maxBy(
+  const latestSession = maxBy(
     Object.entries(sessions),
     ([, sessionValue]) => sessionValue.start_time,
   );
