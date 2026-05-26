@@ -36,7 +36,6 @@
     "__mocks__",
     "__tests__",
     "assets",
-    "docs",
     "src",
     "config",
     ".github/**/*",
@@ -55,7 +54,6 @@
     "**/node_modules/*",
     "**/dist/*",
     ".github/actions/**/index.js",
-    "**/docs/*",
     "**/local/*"
   ]
 }
