@@ -101,6 +101,14 @@ type SupporterPurchaseErrorParams = {
   message: string;
 };
 
+type SupporterCancelledStatusParams = {
+  date: string;
+};
+
+type SupporterRenewalDateParams = {
+  date: string;
+};
+
 export type {
   BreakdownCenterUnitsParams,
   BreakdownDrinkLabelParams,
@@ -121,8 +129,10 @@ export type {
   StatsAfDaysParams,
   StatsDrillDownTitleParams,
   StatsQuietDaysParams,
+  SupporterCancelledStatusParams,
   SupporterPurchaseCtaParams,
   SupporterPurchaseErrorParams,
+  SupporterRenewalDateParams,
   UnitCountParams,
   UpdateEmailSentEmailParams,
   VerifyEmailScreenEmailParmas,

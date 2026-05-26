@@ -24,8 +24,10 @@ import type {
   StatsAfDaysParams,
   StatsDrillDownTitleParams,
   StatsQuietDaysParams,
+  SupporterCancelledStatusParams,
   SupporterPurchaseCtaParams,
   SupporterPurchaseErrorParams,
+  SupporterRenewalDateParams,
   UnitCountParams,
   UpdateEmailSentEmailParams,
   VerifyEmailScreenEmailParmas,
@@ -670,8 +672,6 @@ export default {
       thanksTitle: 'Jste Kiroku Supporter 🍺',
       thanksSubtitle:
         'Děkujeme za podporu — odznak podporovatele je nyní viditelný na vašem profilu.',
-      managementComingSoon:
-        'Předplatné spravujte nebo zrušte v App Store či Google Play. Samostatná obrazovka pro správu už se chystá.',
       unavailableTitle: 'Předplatné není dostupné',
       unavailableSubtitle:
         'Nepodařilo se nám načíst předplatné podporovatele. Zkontrolujte připojení a zkuste to znovu.',
@@ -685,6 +685,29 @@ export default {
       autoRenewalNotice:
         'Předplatné se měsíčně automaticky obnovuje, dokud jej nezrušíte. Spravovat či zrušit jej můžete kdykoliv v App Store nebo Google Play, nejpozději 24 hodin před obnovením.',
       retry: 'Zkusit znovu',
+      manageSubscriptionLink: 'Spravovat předplatné',
+    },
+    manageSubscription: {
+      title: 'Správa předplatného',
+      statusHeader: 'Stav předplatného',
+      status: {
+        active: 'Aktivní',
+        cancelled: ({date}: SupporterCancelledStatusParams) =>
+          `Zrušeno — aktivní do ${date}`,
+        gracePeriod: 'Problém s platbou',
+        expired: 'Vypršelo',
+      },
+      renewsOn: ({date}: SupporterRenewalDateParams) => `Obnoví se ${date}`,
+      expiredOn: ({date}: SupporterRenewalDateParams) => `Vypršelo ${date}`,
+      manageInAppStore: 'Spravovat v App Store',
+      manageInGooglePlay: 'Spravovat v Google Play',
+      restorePurchases: 'Obnovit nákupy',
+      restoreEmpty:
+        'Na tomto účtu nebylo nalezeno žádné aktivní předplatné podporovatele.',
+      billingIssueCopy:
+        'Vaši platbu se nepodařilo zpracovat. Aktualizujte způsob platby, abyste si zachovali status podporovatele.',
+      expiredCopy:
+        'Vaše předplatné podporovatele vypršelo. Předplatné si můžete obnovit na obrazovce Podpořit Kiroku.',
     },
   },
   accountScreen: {

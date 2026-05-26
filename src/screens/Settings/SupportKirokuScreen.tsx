@@ -146,10 +146,14 @@ function SupportKirokuScreen() {
           subtitleMuted
           titleStyles={styles.accountSettingsSectionTitle}>
           {renderBenefit()}
-          {/* TODO: link to dedicated management screen once #372 ships. */}
-          <Text style={[styles.mt5, styles.textLabelSupporting]}>
-            {translate('supporter.paywallScreen.managementComingSoon')}
-          </Text>
+          <View style={[styles.mt5]}>
+            <Button
+              text={translate('supporter.paywallScreen.manageSubscriptionLink')}
+              onPress={() =>
+                Navigation.navigate(ROUTES.SETTINGS_MANAGE_SUBSCRIPTION)
+              }
+            />
+          </View>
         </Section>
       );
     }

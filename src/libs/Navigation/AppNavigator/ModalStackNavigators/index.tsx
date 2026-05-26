@@ -178,6 +178,9 @@ const SettingsModalStackNavigator =
     [SCREENS.SETTINGS.SUPPORT]: () =>
       require<ReactComponentModule>('@screens/Settings/SupportKirokuScreen')
         .default,
+    [SCREENS.SETTINGS.MANAGE_SUBSCRIPTION]: () =>
+      require<ReactComponentModule>('@screens/Settings/ManageSubscriptionScreen')
+        .default,
     [SCREENS.SETTINGS.TERMS_OF_SERVICE]: () =>
       require<ReactComponentModule>('@screens/Settings/TermsOfServiceScreen')
         .default,

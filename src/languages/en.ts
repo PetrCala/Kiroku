@@ -25,8 +25,10 @@ import type {
   StatsAfDaysParams,
   StatsDrillDownTitleParams,
   StatsQuietDaysParams,
+  SupporterCancelledStatusParams,
   SupporterPurchaseCtaParams,
   SupporterPurchaseErrorParams,
+  SupporterRenewalDateParams,
   UnitCountParams,
   UpdateEmailSentEmailParams,
   VerifyEmailScreenEmailParmas,
@@ -673,8 +675,6 @@ export default {
       thanksTitle: "You're a Kiroku Supporter 🍺",
       thanksSubtitle:
         'Thanks for backing the app — your supporter badge is live on your profile.',
-      managementComingSoon:
-        'Manage or cancel your subscription from the App Store or Google Play. A dedicated management screen is on its way.',
       unavailableTitle: 'Subscription unavailable',
       unavailableSubtitle:
         "We couldn't load the supporter subscription right now. Check your connection and try again.",
@@ -688,6 +688,29 @@ export default {
       autoRenewalNotice:
         'Subscription auto-renews monthly until cancelled. Manage or cancel anytime in the App Store or Google Play at least 24 hours before the renewal date.',
       retry: 'Try again',
+      manageSubscriptionLink: 'Manage subscription',
+    },
+    manageSubscription: {
+      title: 'Manage Subscription',
+      statusHeader: 'Subscription status',
+      status: {
+        active: 'Active',
+        cancelled: ({date}: SupporterCancelledStatusParams) =>
+          `Cancelled — active until ${date}`,
+        gracePeriod: 'Payment issue',
+        expired: 'Expired',
+      },
+      renewsOn: ({date}: SupporterRenewalDateParams) => `Renews on ${date}`,
+      expiredOn: ({date}: SupporterRenewalDateParams) => `Expired on ${date}`,
+      manageInAppStore: 'Manage in App Store',
+      manageInGooglePlay: 'Manage in Google Play',
+      restorePurchases: 'Restore purchases',
+      restoreEmpty:
+        'No active supporter subscription was found on this account.',
+      billingIssueCopy:
+        "Your payment couldn't be processed. Update your payment method to keep your supporter status.",
+      expiredCopy:
+        'Your supporter subscription has expired. Subscribe again from the Support Kiroku screen.',
     },
   },
   accountScreen: {
