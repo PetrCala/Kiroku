@@ -47,17 +47,24 @@ class AppDelegate: ExpoAppDelegate {
       launchOptions: launchOptions
     )
 
+    // Override the React root view controller's view backgroundColor so it
+    // matches the storyboard yellow. ExpoReactNativeFactory installs an
+    // RCTSurfaceHostingProxyRootView whose default background is the system
+    // background (white on light mode). Painting it yellow means any frame
+    // where the cross-dissolve transition reveals it will not flash white.
+    self.window?.rootViewController?.view.backgroundColor =
+      UIColor(red: 0.9607843, green: 0.76862745, blue: 0, alpha: 1)
+
     // Force the app to LTR mode.
     RCTI18nUtil.sharedInstance().allowRTL(false)
     RCTI18nUtil.sharedInstance().forceRTL(false)
 
     _ = super.application(application, didFinishLaunchingWithOptions: launchOptions)
 
-    // On New Arch the root view is RCTSurfaceHostingProxyRootView, which does
-    // not inherit from RCTRootView — an `as? RCTRootView` cast returns nil and
-    // skips RCTBootSplash entirely, leaving a white gap between the OS
-    // LaunchScreen and React's first paint. Pass the root view as UIView;
-    // RCTBootSplash.mm re-casts to RCTSurfaceHostingProxyRootView internally.
+    // Add the BootSplash storyboard view as a subview of the proxy root view.
+    // JS calls BootSplash.hide() with fade=1 — the native cross-dissolve
+    // forces iOS to render the React tree underneath BEFORE the storyboard
+    // alpha hits 0, masking Fabric's incremental mounting cascade.
     if let rootView = self.window?.rootViewController?.view {
       RCTBootSplash.initWithStoryboard("BootSplash", rootView: rootView)
     }

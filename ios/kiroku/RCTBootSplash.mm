@@ -206,7 +206,12 @@ RCT_EXPORT_MODULE();
 
 RCT_EXPORT_METHOD(hide : (RCTPromiseResolveBlock)
                       resolve reject : (RCTPromiseRejectBlock)reject) {
-  [self hideImpl:0 resolve:resolve];
+  // fade=1 → 250ms UIView crossDissolve. iOS has to compute the AFTER
+  // state (the React tree without the loadingView) to crossfade to it,
+  // which forces rendering of layers that were previously occluded.
+  // Bridges Fabric's incremental mounting so the React tree is on the
+  // framebuffer by the time the storyboard alpha hits 0.
+  [self hideImpl:1 resolve:resolve];
 }
 
 @end

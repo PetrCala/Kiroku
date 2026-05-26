@@ -1,13 +1,5 @@
 import {useCallback, useEffect, useRef} from 'react';
-import type {ViewStyle} from 'react-native';
-import {StyleSheet} from 'react-native';
-import Reanimated, {
-  Easing,
-  runOnJS,
-  useAnimatedStyle,
-  useSharedValue,
-  withTiming,
-} from 'react-native-reanimated';
+import {StyleSheet, View} from 'react-native';
 import * as KirokuIcons from '@components/Icon/KirokuIcons';
 import ImageSVG from '@components/ImageSVG';
 import useThemeStyles from '@hooks/useThemeStyles';
@@ -38,51 +30,28 @@ function SplashScreenHider({
 }: SplashScreenHiderProps): SplashScreenHiderReturnType {
   const styles = useThemeStyles();
 
-  const opacity = useSharedValue(1);
-  const scale = useSharedValue(1);
-
-  const opacityStyle = useAnimatedStyle<ViewStyle>(() => ({
-    opacity: opacity.get(),
-  }));
-  const scaleStyle = useAnimatedStyle<ViewStyle>(() => ({
-    transform: [{scale: scale.get()}],
-  }));
-
   const hideHasBeenCalled = useRef(false);
 
   const hide = useCallback(() => {
-    // hide can only be called once
     if (hideHasBeenCalled.current) {
       return;
     }
 
     hideHasBeenCalled.current = true;
 
+    // BootSplash.hide() runs a 250ms cross-dissolve on the native side
+    // (fade=1 in RCTBootSplash.mm). The dissolve forces iOS to render
+    // the React tree underneath the storyboard view to prepare its
+    // AFTER state — which masks Fabric's incremental mounting cascade
+    // (proxy → GestureHandlerRootView → SplashScreenHider). By the
+    // time the dissolve resolves, the React tree is fully composited.
+    // No JS-side fade animation is needed; this component just owns
+    // the safety timeout and unmounts when the native dissolve
+    // resolves.
     BootSplash.hide().then(() => {
-      // Straight shrink to 0. Previously used Easing.back(2), but `back`
-      // dips negative in the middle of the eased curve, which (when
-      // interpolating from 1 to 0) pushes the scale above 1 — the logo
-      // visibly "pops" outward by ~13% before shrinking. Reads as a brief
-      // flash now that the rest of the cold-start is smooth.
-      scale.set(
-        withTiming(0, {
-          duration: 200,
-          easing: Easing.out(Easing.ease),
-        }),
-      );
-
-      opacity.set(
-        withTiming(
-          0,
-          {
-            duration: 250,
-            easing: Easing.out(Easing.ease),
-          },
-          () => runOnJS(onHide)(),
-        ),
-      );
+      onHide();
     });
-  }, [opacity, scale, onHide]);
+  }, [onHide]);
 
   useEffect(() => {
     if (!shouldHideSplash) {
@@ -107,10 +76,15 @@ function SplashScreenHider({
     return () => clearTimeout(timeoutId);
   }, [hide]);
 
+  // Plain View (not Reanimated.View). Reanimated 4 on Fabric binds
+  // animated styles via a worklet that may not execute on the first
+  // commit, leaving the View briefly rendered with opacity 0 — the
+  // source of the visible "flash" at the handoff before this refactor.
+  // Background and logo are static; the native cross-dissolve in
+  // BootSplash.hide() provides the only fade.
   return (
-    <Reanimated.View
-      style={[StyleSheet.absoluteFill, styles.splashScreenHider, opacityStyle]}>
-      <Reanimated.View style={scaleStyle}>
+    <View style={[StyleSheet.absoluteFill, styles.splashScreenHider]}>
+      <View>
         <ImageSVG
           contentFit="fill"
           style={{
@@ -120,8 +94,8 @@ function SplashScreenHider({
           fill={colors.white}
           src={KirokuIcons.Logo}
         />
-      </Reanimated.View>
-    </Reanimated.View>
+      </View>
+    </View>
   );
 }
 
