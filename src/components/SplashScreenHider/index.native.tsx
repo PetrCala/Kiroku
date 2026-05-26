@@ -1,11 +1,8 @@
 import {useCallback, useEffect, useRef} from 'react';
-import {StyleSheet, View} from 'react-native';
-import * as KirokuIcons from '@components/Icon/KirokuIcons';
-import ImageSVG from '@components/ImageSVG';
+import {Image, StyleSheet, View} from 'react-native';
 import useThemeStyles from '@hooks/useThemeStyles';
 import BootSplash from '@libs/BootSplash';
 import Log from '@libs/Log';
-import colors from '@src/styles/theme/colors';
 import type {
   SplashScreenHiderProps,
   SplashScreenHiderReturnType,
@@ -23,6 +20,9 @@ const FORCE_HIDE_TIMEOUT_MS = 15 * 1000;
 // never exported it, so it fell back to 100pt and produced a visible ~7.4%
 // size jump. Hardcoding 108pt eliminates that mismatch.
 const LOGO_SIZE = 108;
+
+// eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+const LOGO_PNG = require('@assets/images/app-logo.png');
 
 function SplashScreenHider({
   onHide = () => {},
@@ -76,25 +76,22 @@ function SplashScreenHider({
     return () => clearTimeout(timeoutId);
   }, [hide]);
 
-  // Plain View (not Reanimated.View). Reanimated 4 on Fabric binds
-  // animated styles via a worklet that may not execute on the first
-  // commit, leaving the View briefly rendered with opacity 0 — the
-  // source of the visible "flash" at the handoff before this refactor.
-  // Background and logo are static; the native cross-dissolve in
-  // BootSplash.hide() provides the only fade.
+  // DIAGNOSTIC — DO NOT MERGE.
+  // Swap ImageSVG (react-native-svg) for a plain RN <Image> using the
+  // existing app-logo.png. react-native-svg constructs a CAShapeLayer
+  // with path data which has its own first-draw cost; UIImage is a
+  // precomputed bitmap that paints in the same frame as its parent.
+  // If the residual logo flicker disappears with this change, the SVG
+  // first-paint lag was the cause and the production fix is to use the
+  // PNG here.
   return (
     <View style={[StyleSheet.absoluteFill, styles.splashScreenHider]}>
-      <View>
-        <ImageSVG
-          contentFit="fill"
-          style={{
-            width: LOGO_SIZE,
-            height: LOGO_SIZE,
-          }}
-          fill={colors.white}
-          src={KirokuIcons.Logo}
-        />
-      </View>
+      <Image
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+        source={LOGO_PNG}
+        style={{width: LOGO_SIZE, height: LOGO_SIZE}}
+        resizeMode="contain"
+      />
     </View>
   );
 }
