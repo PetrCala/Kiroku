@@ -1,6 +1,7 @@
 import {View} from 'react-native';
 import type {DateData} from 'react-native-calendars';
 import {useFirebase} from '@context/global/FirebaseContext';
+import * as Profile from '@userActions/Profile';
 import type {StatData} from '@components/Items/StatOverview';
 import StatOverview from '@components/Items/StatOverview';
 import ProfileOverview from '@components/Social/ProfileOverview';
@@ -145,6 +146,16 @@ function ProfileScreen({route}: ProfileScreenProps) {
     setFriendCount(newFriendCount);
     setCommonFriendCount(newCommonFriendCount);
   }, [friends, selfFriends]);
+
+  // Mirror the viewed user's public `is_supporter` flag into USER_DATA_LIST so
+  // SupporterBadgeForUser (which reads from that collection) can render
+  // immediately on profiles reached via deep link rather than through a list.
+  useEffect(() => {
+    if (!userID || userData === undefined) {
+      return;
+    }
+    Profile.setSupporterFlagInList(userID, userData.is_supporter ?? false);
+  }, [userID, userData]);
 
   // Monitor stats
   useEffect(() => {

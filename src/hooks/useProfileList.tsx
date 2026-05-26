@@ -42,6 +42,12 @@ const useProfileList = (userArray: UserArray) => {
           newUsers,
         );
         setProfileList({...profileList, ...newProfileList});
+        // Hydrate the SupporterBadge data path for these users — the badge
+        // reads `is_supporter` off USER_DATA_LIST, which is otherwise only
+        // populated for the current user.
+        Profile.fetchAndStoreSupporterFlags(db, newUsers).catch(() => {
+          // Non-fatal: badge will simply remain hidden for these users.
+        });
       }
     } catch (error) {
       ErrorUtils.raiseAppError(ERRORS.USER.DATA_FETCH_FAILED, error);

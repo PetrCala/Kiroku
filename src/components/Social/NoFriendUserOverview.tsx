@@ -4,6 +4,7 @@ import useThemeStyles from '@hooks/useThemeStyles';
 import Text from '@components/Text';
 import {useFirebase} from '@src/context/global/FirebaseContext';
 import ProfileImage from '@components/ProfileImage';
+import {SupporterBadgeForUser} from '@components/SupporterBadge';
 
 type NoFriendUserOverviewProps = {
   userID: string; // Other user's ID
@@ -40,6 +41,9 @@ function NoFriendUserOverview({
           ellipsizeMode="tail">
           {profileData.display_name}
         </Text>
+        <View style={styles.ml1}>
+          <SupporterBadgeForUser userID={userID} size="small" />
+        </View>
       </View>
       {RightSideComponent}
     </View>

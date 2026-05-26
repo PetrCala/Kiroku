@@ -123,6 +123,9 @@ function FriendsFriendsScreen({route}: FriendsFriendsScreenProps) {
         searchResultData,
       );
       setDisplayData(newDisplayData);
+      Profile.fetchAndStoreSupporterFlags(db, searchResultData).catch(() => {
+        // Non-fatal: badge will simply remain hidden for these users.
+      });
     },
     [db],
   );
