@@ -91,7 +91,7 @@ function SplashScreenHider({
             width: LOGO_SIZE,
             height: LOGO_SIZE,
           }}
-          fill={colors.white}
+          fill="red"
           src={KirokuIcons.Logo}
         />
       </View>
