@@ -40,6 +40,9 @@ import {useFirebase} from '@context/global/FirebaseContext';
 import UserOffline from '@components/UserOfflineModal';
 import FullScreenLoadingIndicator from '@components/FullscreenLoadingIndicator';
 import {useDatabaseData} from '@context/global/DatabaseDataContext';
+import {useOnyx} from 'react-native-onyx';
+import * as UserUtils from '@libs/UserUtils';
+import ONYXKEYS from '@src/ONYXKEYS';
 
 type MenuData = {
   translationKey: TranslationPaths;
@@ -74,6 +77,13 @@ function SettingsScreen() {
   const [isLoading, setIsLoading] = useState(false);
   const [loadingText, setLoadingText] = useState('');
   const userIsAdmin = userData && userData.role === 'admin';
+  const [privateData] = useOnyx(ONYXKEYS.USER_PRIVATE_DATA);
+  const supporter = UserUtils.getCurrentUserSupporterStatus(privateData);
+  // Surface "Manage Subscription" only once the user has interacted with the
+  // supporter tier — never-subscribed users should keep seeing just the
+  // "Support Kiroku" entry point.
+  const shouldShowManageSubscription =
+    !!supporter.is_supporter || !!supporter.supporter_status;
 
   const [shouldShowSignoutConfirmModal, setShouldShowSignoutConfirmModal] =
     useState(false);
@@ -123,11 +133,20 @@ function SettingsScreen() {
           icon: KirokuIcons.Star,
           routeName: ROUTES.SETTINGS_SUPPORT,
         },
+        ...(shouldShowManageSubscription
+          ? [
+              {
+                translationKey: 'supporter.manageSubscription.title',
+                icon: KirokuIcons.Gear,
+                routeName: ROUTES.SETTINGS_MANAGE_SUBSCRIPTION,
+              } as MenuData,
+            ]
+          : []),
       ],
     };
 
     return defaultMenu;
-  }, [styles.accountSettingsSectionContainer]);
+  }, [styles.accountSettingsSectionContainer, shouldShowManageSubscription]);
 
   /**
    * Retuns a list of menu items data for general section
