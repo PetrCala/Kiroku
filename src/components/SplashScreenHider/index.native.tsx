@@ -2,11 +2,8 @@ import {useCallback, useEffect, useRef} from 'react';
 import type {ViewStyle} from 'react-native';
 import {StyleSheet} from 'react-native';
 import Reanimated, {
-  Easing,
-  runOnJS,
   useAnimatedStyle,
   useSharedValue,
-  withTiming,
 } from 'react-native-reanimated';
 import * as KirokuIcons from '@components/Icon/KirokuIcons';
 import ImageSVG from '@components/ImageSVG';
@@ -59,30 +56,22 @@ function SplashScreenHider({
     hideHasBeenCalled.current = true;
 
     BootSplash.hide().then(() => {
-      // Straight shrink to 0. Previously used Easing.back(2), but `back`
-      // dips negative in the middle of the eased curve, which (when
-      // interpolating from 1 to 0) pushes the scale above 1 — the logo
-      // visibly "pops" outward by ~13% before shrinking. Reads as a brief
-      // flash now that the rest of the cold-start is smooth.
-      scale.set(
-        withTiming(0, {
-          duration: 200,
-          easing: Easing.out(Easing.ease),
-        }),
-      );
-
-      opacity.set(
-        withTiming(
-          0,
-          {
-            duration: 250,
-            easing: Easing.out(Easing.ease),
-          },
-          () => runOnJS(onHide)(),
-        ),
-      );
+      // DIAGNOSTIC — DO NOT MERGE.
+      // Skip the scale/opacity animations and hold the JS overlay visible
+      // for 3 seconds so we can directly observe what it looks like the
+      // moment the native loadingView is removed. Combined with the red
+      // backgroundColor on the outer view below, this distinguishes four
+      // outcomes:
+      //   • red bg + white logo for 3s → JS overlay fully painted; the
+      //     animation startup was the gap
+      //   • red bg, no logo for 3s → ImageSVG layer isn't painting
+      //   • yellow, no logo for 3s → JS overlay invisible entirely;
+      //     what we see is the guard/SafeArea/proxy beneath
+      //   • red bg + white logo immediately then logo briefly disappears
+      //     mid-way → animation start is glitching transform
+      setTimeout(onHide, 3000);
     });
-  }, [opacity, scale, onHide]);
+  }, [onHide]);
 
   useEffect(() => {
     if (!shouldHideSplash) {
@@ -133,7 +122,18 @@ function SplashScreenHider({
 
   return (
     <Reanimated.View
-      style={[StyleSheet.absoluteFill, styles.splashScreenHider, opacityStyle]}>
+      style={[
+        StyleSheet.absoluteFill,
+        styles.splashScreenHider,
+        // DIAGNOSTIC — DO NOT MERGE.
+        // Override the yellow splashBG with red so we can tell whether the
+        // JS overlay is actually composited on screen at the moment the
+        // native loadingView is removed. Without this, "yellow without
+        // logo" is ambiguous — could be the JS overlay painted-but-no-svg,
+        // OR the JS overlay invisible-and-we-see-yellow-beneath.
+        {backgroundColor: 'red'},
+        opacityStyle,
+      ]}>
       <Reanimated.View style={scaleStyle}>
         <ImageSVG
           contentFit="fill"
