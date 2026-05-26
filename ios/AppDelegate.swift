@@ -47,19 +47,17 @@ class AppDelegate: ExpoAppDelegate {
       launchOptions: launchOptions
     )
 
-    // Override the React root view controller's view backgroundColor so it
-    // matches the storyboard yellow. ExpoReactNativeFactory installs an
-    // RCTSurfaceHostingProxyRootView whose default background is the system
-    // background (white on light mode), which sits between the yellow window
-    // and the native _loadingView. If anything reveals what's under the
-    // _loadingView before the JS SplashScreenHider has painted (e.g. a
-    // crossfade during hide, or a one-frame lag in Reanimated's first commit
-    // with the autolinked native module growth from RevenueCat + Skia), that
-    // white root view shows through and produces a visible flash. Painting
-    // the root view yellow makes the whole stack — window, root view,
-    // storyboard, JS overlay — a single continuous color.
+    // DIAGNOSTIC v8 — DO NOT MERGE.
+    // Tag the proxy root view background HOT PINK instead of yellow. If
+    // during the gap we see hot pink, the surface view (_surfaceView) is
+    // genuinely transparent/empty — meaning RN's "Running" stage adds
+    // _surfaceView before its React-mounted children's CALayers are
+    // rendered, exposing the proxy beneath. If we see orange (yellow)
+    // still, the proxy isn't what we're seeing; the gap color comes from
+    // iPhoneXSafeArea's override, the guard layer, or the storyboard
+    // activity indicator at low alpha.
     self.window?.rootViewController?.view.backgroundColor =
-      UIColor(red: 0.9607843, green: 0.76862745, blue: 0, alpha: 1)
+      UIColor(red: 1, green: 0.08, blue: 0.58, alpha: 1)
 
     // Force the app to LTR mode.
     RCTI18nUtil.sharedInstance().allowRTL(false)

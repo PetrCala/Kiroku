@@ -35,19 +35,15 @@ import CONFIG from './CONFIG';
 import UpdateAppModal from './components/UpdateAppModal';
 import VerifyEmailModal from './components/VerifyEmailModal';
 import FullScreenLoadingIndicator from './components/FullscreenLoadingIndicator';
-import colors from './styles/theme/colors';
 import CONST from './CONST';
 
-// Painted on top of NavigationRoot but below SplashScreenHider (zIndex 20)
-// while the splash is up, so a one-frame mount lag in SplashScreenHider's
-// Reanimated tree can never expose React Navigation's white appBG. Stays
-// a plain View — every JS-rendered child (ImageSVG, Reanimated.View) has
-// its own first-paint lag, so the guard's contribution is the color, not
-// the logo. The native loadingView covers the logo until SplashScreenHider
-// catches up.
+// DIAGNOSTIC v8 — DO NOT MERGE.
+// Tag the guard layer BLUE. If we see blue during the orange-only gap,
+// the guard is painted but SplashScreenHider is not. If we don't see
+// blue, the guard isn't reaching the framebuffer either.
 const splashGuardStyle = {
   ...StyleSheet.absoluteFillObject,
-  backgroundColor: colors.yellowStrong,
+  backgroundColor: 'blue',
   zIndex: 19,
 };
 
