@@ -57,17 +57,7 @@ function SplashScreenHider({
     if (!shouldHideSplash) {
       return;
     }
-    // DIAGNOSTIC — DO NOT MERGE.
-    // Defer BootSplash.hide() by one vsync via requestAnimationFrame.
-    // iOS's UIView.transitionWithView snapshots the AFTER state at the
-    // start of the transition; if the JS overlay's logo hasn't been
-    // pushed to the framebuffer yet at that moment, the snapshot has
-    // the bg but no logo, and the cross-dissolve crossfades to a
-    // logo-less AFTER state. rAF runs after the next vsync, by which
-    // point the previous React commit's pixels (including the logo)
-    // are on screen — so any snapshot iOS takes will include the logo.
-    const handle = requestAnimationFrame(() => hide());
-    return () => cancelAnimationFrame(handle);
+    hide();
   }, [shouldHideSplash, hide]);
 
   useEffect(() => {
