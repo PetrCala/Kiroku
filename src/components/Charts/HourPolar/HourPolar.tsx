@@ -2,6 +2,7 @@ import {useMemo, useState} from 'react';
 import {View} from 'react-native';
 import {Canvas, Circle, Path, Skia} from '@shopify/react-native-skia';
 import {useChartTheme} from '@components/Charts/BaseChart';
+import {ChartSkeleton} from '@components/Charts/ChartSkeleton';
 import {PressableWithoutFeedback} from '@components/Pressable';
 import Text from '@components/Text';
 import useThemeStyles from '@hooks/useThemeStyles';
@@ -18,6 +19,8 @@ type HourPolarProps = {
   size?: number;
   /** Overlay copy when every bucket is zero. When omitted, no overlay renders. */
   emptyLabel?: string;
+  /** When true, shows a layout-faithful skeleton in place of the polar chart. */
+  isLoading?: boolean;
 };
 
 const TAU = Math.PI * 2;
@@ -74,6 +77,7 @@ function HourPolar({
   onSpokePress,
   size,
   emptyLabel,
+  isLoading,
 }: HourPolarProps) {
   const [measuredWidth, setMeasuredWidth] = useState(0);
   const theme = useChartTheme();
@@ -138,6 +142,16 @@ function HourPolar({
   const axisRadius = Math.max(0, radius - RIM_INSET);
 
   const hasData = maxValue > 0;
+
+  if (isLoading) {
+    return (
+      <ChartSkeleton
+        variant="polar"
+        height={size}
+        accessibilityLabel={accessibilityLabel}
+      />
+    );
+  }
 
   return (
     <View

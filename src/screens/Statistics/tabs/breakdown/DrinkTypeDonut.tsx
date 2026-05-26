@@ -2,6 +2,7 @@ import {useMemo, useState} from 'react';
 import {View} from 'react-native';
 import type {GestureResponderEvent} from 'react-native';
 import {Canvas, Path, Skia} from '@shopify/react-native-skia';
+import {ChartSkeleton} from '@components/Charts/ChartSkeleton';
 import PressableWithoutFeedback from '@components/Pressable/PressableWithoutFeedback';
 import Text from '@components/Text';
 import useLocalize from '@hooks/useLocalize';
@@ -40,6 +41,8 @@ type DrinkTypeDonutProps = {
   size?: number;
   /** Fired alongside the internal selection when a slice is hit (drill-down hook). */
   onSlicePress?: (drinkKey: DrinkKey) => void;
+  /** When true, shows a layout-faithful donut skeleton. */
+  isLoading?: boolean;
 };
 
 function buildSlices(
@@ -144,6 +147,7 @@ function DrinkTypeDonut({
   drinkTypeFilter,
   size = DEFAULT_SIZE,
   onSlicePress,
+  isLoading,
 }: DrinkTypeDonutProps) {
   const styles = useThemeStyles();
   const theme = useTheme();
@@ -154,6 +158,10 @@ function DrinkTypeDonut({
     () => buildSlices(unitsByDrinkKey, drinkTypeFilter),
     [unitsByDrinkKey, drinkTypeFilter],
   );
+
+  if (isLoading) {
+    return <ChartSkeleton variant="donut" height={size} />;
+  }
 
   const cx = size / 2;
   const cy = size / 2;

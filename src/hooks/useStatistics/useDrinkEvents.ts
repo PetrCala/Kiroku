@@ -1,3 +1,5 @@
+import {useEffect, useState} from 'react';
+import {InteractionManager} from 'react-native';
 import {useOnyx} from 'react-native-onyx';
 import {buildDrinkEvents} from '@libs/Statistics';
 import type {DrinkEvent, WeekStart} from '@libs/Statistics';
@@ -25,6 +27,8 @@ const WEEK_START_BY_LABEL: Record<string, WeekStart> = {
 
 const DEFAULT_WEEK_START: WeekStart = 1;
 
+const EMPTY_EVENTS: DrinkEvent[] = [];
+
 function resolveWeekStart(label: string | undefined): WeekStart {
   if (!label) {
     return DEFAULT_WEEK_START;
@@ -38,13 +42,16 @@ function resolveWeekStart(label: string | undefined): WeekStart {
  *
  * Sessions live on Onyx (`CACHED_DRINKING_SESSIONS`); preferences and the
  * user's timezone flow through `DatabaseDataContext` / `useCurrentUserData`.
- * The full event list is built once over the entire Onyx value so
- * `buildDrinkEvents`'s identity cache keeps hitting; the per-call `userIds`
- * filter is applied last.
+ * `buildDrinkEvents` walks every session × drink timestamp and is the
+ * dominant Statistics-tab cost, so we defer the first pass past the
+ * navigation transition with `InteractionManager.runAfterInteractions` —
+ * the freshly-mounted tab paints skeletons in one frame, then the real
+ * events arrive on a later frame.
  *
- * `isLoading` is true until the Onyx subscription has hydrated. During that
- * window `events` is `[]` — callers should render a skeleton, not the
- * empty-state.
+ * `isLoading` is true until the Onyx subscription has hydrated **and** the
+ * deferred compute has produced its first result. During that window
+ * `events` is `[]`. Callers should render a layout-faithful skeleton, not
+ * the empty-state.
  */
 function useDrinkEvents(userIds?: UserID[]): UseDrinkEventsResult {
   const {auth} = useFirebase();
@@ -58,20 +65,42 @@ function useDrinkEvents(userIds?: UserID[]): UseDrinkEventsResult {
   const timezone =
     userData?.timezone?.selected ?? CONST.DEFAULT_TIME_ZONE.selected;
   const weekStart = resolveWeekStart(preferences?.first_day_of_week);
+  const drinksToUnits = preferences?.drinks_to_units;
+  const isHydrated = allSessionsMeta.status === 'loaded';
 
-  const allEvents = buildDrinkEvents(
-    allSessions,
-    preferences?.drinks_to_units,
-    CONST.DRINK_DEFAULTS,
-    timezone,
-    weekStart,
-  );
+  const [allEvents, setAllEvents] = useState<DrinkEvent[]>(EMPTY_EVENTS);
+  const [isCompiled, setIsCompiled] = useState(false);
+
+  useEffect(() => {
+    if (!isHydrated) {
+      return;
+    }
+    let cancelled = false;
+    const handle = InteractionManager.runAfterInteractions(() => {
+      if (cancelled) {
+        return;
+      }
+      const next = buildDrinkEvents(
+        allSessions,
+        drinksToUnits,
+        CONST.DRINK_DEFAULTS,
+        timezone,
+        weekStart,
+      );
+      setAllEvents(next);
+      setIsCompiled(true);
+    });
+    return () => {
+      cancelled = true;
+      handle.cancel?.();
+    };
+  }, [isHydrated, allSessions, drinksToUnits, timezone, weekStart]);
 
   const resolvedUserIds = userIds ?? (currentUserID ? [currentUserID] : []);
 
   let events: DrinkEvent[];
-  if (resolvedUserIds.length === 0) {
-    events = [];
+  if (!isCompiled || resolvedUserIds.length === 0) {
+    events = EMPTY_EVENTS;
   } else if (resolvedUserIds.length === 1) {
     const only = resolvedUserIds[0];
     events = allEvents.filter(e => e.userId === only);
@@ -80,7 +109,7 @@ function useDrinkEvents(userIds?: UserID[]): UseDrinkEventsResult {
     events = allEvents.filter(e => ids.has(e.userId));
   }
 
-  const isLoading = allSessionsMeta.status !== 'loaded';
+  const isLoading = !isHydrated || !isCompiled;
 
   return {events, isLoading};
 }

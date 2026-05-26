@@ -1,6 +1,7 @@
 import {useMemo} from 'react';
 import {View} from 'react-native';
 import {addWeeks, format, startOfISOWeek} from 'date-fns';
+import {ChartSkeleton} from '@components/Charts/ChartSkeleton';
 import Text from '@components/Text';
 import useLocalize from '@hooks/useLocalize';
 import useResponsiveLayout from '@hooks/useResponsiveLayout';
@@ -27,6 +28,8 @@ type PerTypeWeeklyMultiplesProps = {
   drinkTypeFilter: ReadonlySet<DrinkKey>;
   rangeStart: Date;
   rangeEnd: Date;
+  /** When true, renders a grid of placeholder tiles. */
+  isLoading?: boolean;
 };
 
 function isoWeekKey(d: Date): string {
@@ -77,6 +80,7 @@ function PerTypeWeeklyMultiples({
   drinkTypeFilter,
   rangeStart,
   rangeEnd,
+  isLoading,
 }: PerTypeWeeklyMultiplesProps) {
   const styles = useThemeStyles();
   const {translate} = useLocalize();
@@ -93,6 +97,25 @@ function PerTypeWeeklyMultiples({
     () => buildSeriesByDrinkKey(unitsByDrinkKeyAndWeek, weekKeys),
     [unitsByDrinkKeyAndWeek, weekKeys],
   );
+
+  if (isLoading) {
+    return (
+      <View style={[styles.flexRow, styles.flexWrap, {marginHorizontal: -4}]}>
+        {Array.from({length: columns}, (_v, i) => (
+          <View
+            // eslint-disable-next-line react/no-array-index-key
+            key={`tile-${i}`}
+            style={{
+              width: widthPercent,
+              paddingHorizontal: 4,
+              paddingVertical: 4,
+            }}>
+            <ChartSkeleton variant="card" height={120} />
+          </View>
+        ))}
+      </View>
+    );
+  }
 
   const filter = drinkTypeFilter.size === 0 ? null : drinkTypeFilter;
   const tiles = DRINK_KEY_ORDER.flatMap(key => {

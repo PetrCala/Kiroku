@@ -62,6 +62,13 @@ type BaseChartProps<TYKey extends string = 'y'> = {
   height?: number;
   /** Suppresses axis labels, ticks, and padding. Use for inline sparklines. */
   hideAxes?: boolean;
+  /**
+   * When true, short-circuits to a layout-faithful skeleton matching
+   * `height` instead of rendering the Skia canvas. Used during the
+   * Statistics first-paint window so the tab transition stays on a single
+   * frame; see `useDrinkEvents` for the loading source-of-truth.
+   */
+  loading?: boolean;
   children?: (ctx: ChartRenderCtx<TYKey>) => ReactNode;
 };
 

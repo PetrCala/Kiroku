@@ -1,4 +1,5 @@
-import {renderHook} from '@testing-library/react-native';
+import {act, renderHook} from '@testing-library/react-native';
+import {InteractionManager} from 'react-native';
 import useAggregate from '@hooks/useStatistics/useAggregate';
 import {
   aggregate,
@@ -9,6 +10,7 @@ import {
   weekendsOnly,
 } from '@libs/Statistics';
 import type {DrinkEvent} from '@libs/Statistics';
+
 
 function makeEvent(overrides: Partial<DrinkEvent>): DrinkEvent {
   return {
@@ -56,6 +58,24 @@ const EVENTS: DrinkEvent[] = [
 ];
 
 describe('useAggregate', () => {
+  let runAfterSpy: jest.SpyInstance;
+
+  beforeEach(() => {
+    // Run the deferred aggregate synchronously by default so existing
+    // assertions observe the post-compute Map. The transition tests below
+    // override this spy locally to inspect the loading → loaded edge.
+    runAfterSpy = jest
+      .spyOn(InteractionManager, 'runAfterInteractions')
+      .mockImplementation((cb: unknown) => {
+        (cb as () => void)();
+        return {cancel: jest.fn(), then: () => {}} as never;
+      });
+  });
+
+  afterEach(() => {
+    runAfterSpy.mockRestore();
+  });
+
   test('delegates to aggregate() — by-day sum of units', () => {
     const {result} = renderHook(() => useAggregate(EVENTS, byDay, sumUnits));
 
@@ -100,5 +120,36 @@ describe('useAggregate', () => {
     rerender(undefined);
 
     expect(Array.from(result.current.entries())).toEqual(firstEntries);
+  });
+
+  test('defers the aggregate pass past the interaction frame', () => {
+    let pending: (() => void) | null = null;
+    runAfterSpy.mockImplementation((cb: unknown) => {
+      pending = cb as () => void;
+      return {cancel: jest.fn(), then: () => {}} as never;
+    });
+
+    const {result} = renderHook(() => useAggregate(EVENTS, byDay, sumUnits));
+
+    // Before the callback runs, the hook returns an empty map.
+    expect(result.current.size).toBe(0);
+
+    act(() => {
+      pending?.();
+    });
+
+    expect(result.current.size).toBeGreaterThan(0);
+  });
+
+  test('cancels deferred aggregate work on unmount', () => {
+    const cancel = jest.fn();
+    runAfterSpy.mockImplementation(
+      () => ({cancel, then: () => {}}) as never,
+    );
+
+    const {unmount} = renderHook(() => useAggregate(EVENTS, byDay, sumUnits));
+    unmount();
+
+    expect(cancel).toHaveBeenCalled();
   });
 });

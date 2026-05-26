@@ -70,13 +70,10 @@ function OverviewTab() {
   const hasEverLogged = selectHasEverLogged(events);
   const isSparse = selectIsSparse(events, trend.weeksWithData);
 
-  // Don't paint anything in the brief Onyx-hydration window — the
-  // alternative is a flicker from "never logged" copy into the real screen.
-  if (isLoading) {
-    return <View style={styles.flex1} />;
-  }
-
-  if (!hasEverLogged) {
+  // Skip the never-logged empty-state copy while still loading — the
+  // skeleton path renders the real scaffold structure instead, then the
+  // screen swaps to data once compute completes.
+  if (!isLoading && !hasEverLogged) {
     return (
       <ScrollView
         style={styles.flex1}
@@ -161,11 +158,12 @@ function OverviewTab() {
           tone="celebratory"
           polarity="higher-is-supportive"
           accessibilityLabel={heroA11y}
+          isLoading={isLoading}
         />
       </View>
 
       <View style={styles.mb3}>
-        <KpiCardGroup cards={kpiCards} />
+        <KpiCardGroup cards={kpiCards} isLoading={isLoading} />
       </View>
 
       <ChartCard title={translate('statistics.charts.calendarHeatmap.title')}>
@@ -175,6 +173,7 @@ function OverviewTab() {
             'statistics.charts.calendarHeatmap.title',
           )}
           onDayPress={cell => openDrillDown({kind: 'day', date: cell.dateKey})}
+          isLoading={isLoading}
         />
       </ChartCard>
 
@@ -193,16 +192,19 @@ function OverviewTab() {
           accessibilityLabel={translate(
             'statistics.tabs.overview.trend.a11yLabel',
           )}
+          isLoading={isLoading}
         />
       </ChartCard>
 
-      <View style={[styles.mt2, styles.mb2]}>
-        <Text style={[styles.textLabelSupporting, styles.textAlignCenter]}>
-          {translate(trendChipKey)}
-        </Text>
-      </View>
+      {isLoading ? null : (
+        <View style={[styles.mt2, styles.mb2]}>
+          <Text style={[styles.textLabelSupporting, styles.textAlignCenter]}>
+            {translate(trendChipKey)}
+          </Text>
+        </View>
+      )}
 
-      {isSparse ? (
+      {!isLoading && isSparse ? (
         <View style={styles.mt2}>
           {weekly.quietDaysThisWeek > 0 ? (
             <Text

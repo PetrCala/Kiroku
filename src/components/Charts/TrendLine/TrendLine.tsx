@@ -20,6 +20,8 @@ type TrendLineProps = {
   height?: number;
   /** Fired with the ISO-week label of the tapped point (drill-down hook). */
   onWeekPress?: (isoWeek: string) => void;
+  /** When true, shows the BaseChart skeleton instead of the trend chart. */
+  isLoading?: boolean;
 };
 
 type TrendRow = {
@@ -54,6 +56,7 @@ function TrendLine({
   emptyLabel,
   height,
   onWeekPress,
+  isLoading,
 }: TrendLineProps) {
   const showEwma = !!ewma && ewma.length === weeks.length;
   const showComparison =
@@ -97,7 +100,8 @@ function TrendLine({
       range="rolling8w"
       accessibilityLabel={accessibilityLabel}
       emptyLabel={emptyLabel}
-      height={height}>
+      height={height}
+      loading={isLoading}>
       {({points, chartBounds, theme}) => {
         const top = chartBounds.top;
         const bottom = chartBounds.bottom;

@@ -1,5 +1,6 @@
 import {View} from 'react-native';
 import {CartesianChart} from 'victory-native';
+import {ChartSkeleton} from '@components/Charts/ChartSkeleton';
 import Text from '@components/Text';
 import useThemeStyles from '@hooks/useThemeStyles';
 import A11yOverlay from './A11yOverlay';
@@ -31,11 +32,22 @@ function BaseChart<TYKey extends string = 'y'>({
   emptyLabel,
   height = DEFAULT_HEIGHT,
   hideAxes = false,
+  loading = false,
   children,
 }: BaseChartProps<TYKey>) {
   const styles = useThemeStyles();
   const theme = useChartTheme();
   const isEmpty = data.length === 0;
+
+  if (loading) {
+    return (
+      <ChartSkeleton
+        variant="grid"
+        height={height}
+        accessibilityLabel={accessibilityLabel}
+      />
+    );
+  }
 
   if (isEmpty && emptyLabel) {
     return (

@@ -1,6 +1,7 @@
 /* eslint-disable @typescript-eslint/naming-convention -- jest mock factory keys (__esModule) are dictated by Node module shape */
 
-import {renderHook} from '@testing-library/react-native';
+import {act, renderHook} from '@testing-library/react-native';
+import {InteractionManager} from 'react-native';
 import {useOnyx} from 'react-native-onyx';
 import {useDatabaseData} from '@context/global/DatabaseDataContext';
 import {useFirebase} from '@context/global/FirebaseContext';
@@ -113,11 +114,26 @@ function makeSessions(): UserDrinkingSessionsList {
 }
 
 describe('useDrinkEvents', () => {
+  let runAfterSpy: jest.SpyInstance;
+
   beforeEach(() => {
     jest.clearAllMocks();
     setAuth('u1');
     setContexts();
     setOnyx(makeSessions(), 'loaded');
+    // Run the deferred buildDrinkEvents synchronously by default so existing
+    // assertions can read the post-compute state without async waits. Tests
+    // that exercise the loading → loaded transition override this locally.
+    runAfterSpy = jest
+      .spyOn(InteractionManager, 'runAfterInteractions')
+      .mockImplementation((cb: unknown) => {
+        (cb as () => void)();
+        return {cancel: jest.fn(), then: () => {}} as never;
+      });
+  });
+
+  afterEach(() => {
+    runAfterSpy.mockRestore();
   });
 
   test('hydration: loading status surfaces as isLoading=true with empty events', () => {
@@ -226,5 +242,41 @@ describe('useDrinkEvents', () => {
 
     expect(result.current.events.length).toBeGreaterThan(0);
     expect(result.current.events.every(e => e.units === 0)).toBe(true);
+  });
+
+  test('defers buildDrinkEvents past the interaction frame', () => {
+    // Capture the runAfterInteractions callback without invoking it so we can
+    // observe the pre-compute loading state.
+    let pending: (() => void) | null = null;
+    runAfterSpy.mockImplementation((cb: unknown) => {
+      pending = cb as () => void;
+      return {cancel: jest.fn(), then: () => {}} as never;
+    });
+
+    const {result} = renderHook(() => useDrinkEvents(['u1']));
+
+    // Pre-callback: hydration is "loaded" but deferred compute hasn't fired.
+    expect(result.current.isLoading).toBe(true);
+    expect(result.current.events).toEqual([]);
+
+    // Flush the deferred callback — events appear, isLoading drops.
+    act(() => {
+      pending?.();
+    });
+
+    expect(result.current.isLoading).toBe(false);
+    expect(result.current.events.length).toBeGreaterThan(0);
+  });
+
+  test('cancels deferred work on unmount mid-flight', () => {
+    const cancel = jest.fn();
+    runAfterSpy.mockImplementation(
+      () => ({cancel, then: () => {}}) as never,
+    );
+
+    const {unmount} = renderHook(() => useDrinkEvents(['u1']));
+    unmount();
+
+    expect(cancel).toHaveBeenCalled();
   });
 });

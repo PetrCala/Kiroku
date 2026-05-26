@@ -13,6 +13,8 @@ type MiniTrendLineProps = {
   accessibilityLabel: string;
   emptyLabel?: string;
   height?: number;
+  /** When true, shows a layout-faithful skeleton in place of the chart. */
+  isLoading?: boolean;
 };
 
 /**
@@ -28,6 +30,7 @@ function MiniTrendLine({
   accessibilityLabel,
   emptyLabel,
   height,
+  isLoading,
 }: MiniTrendLineProps) {
   const smoothed = useMemo<ChartDatum[]>(() => {
     if (!ewma || ewma.length !== points.length) {
@@ -54,7 +57,8 @@ function MiniTrendLine({
       accessibilityLabel={accessibilityLabel}
       emptyLabel={emptyLabel}
       height={height}
-      hideAxes>
+      hideAxes
+      loading={isLoading}>
       {({points: chartPoints, chartBounds, theme}) => {
         const top = chartBounds.top;
         const bottom = chartBounds.bottom;

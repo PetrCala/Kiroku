@@ -17,6 +17,8 @@ type StackedAreaProps = {
   accessibilityLabel: string;
   emptyLabel?: string;
   height?: number;
+  /** When true, shows the BaseChart skeleton instead of the stack. */
+  isLoading?: boolean;
 };
 
 const COMPARISON_DASH: number[] = [4, 4];
@@ -43,6 +45,7 @@ function StackedArea({
   accessibilityLabel,
   emptyLabel,
   height,
+  isLoading,
 }: StackedAreaProps) {
   const showComparison =
     !!comparisonTotal && comparisonTotal.length === weeks.length;
@@ -77,7 +80,8 @@ function StackedArea({
       range="rolling8w"
       accessibilityLabel={accessibilityLabel}
       emptyLabel={emptyLabel}
-      height={height}>
+      height={height}
+      loading={isLoading}>
       {({points, chartBounds, theme}) => {
         const baseline = chartBounds.bottom;
         // Render back-to-front: highest cumulative first (drawn behind),
