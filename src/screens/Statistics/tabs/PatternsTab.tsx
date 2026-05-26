@@ -119,7 +119,7 @@ function formatDurationMin(minutes: number): string {
 function PatternsTab() {
   const {range, drinkTypeFilter, userIds} = useStatsContext();
   const {preferences} = useDatabaseData();
-  const {events} = useDrinkEvents(
+  const {events, isLoading} = useDrinkEvents(
     userIds.length > 0 ? [...userIds] : undefined,
   );
   const {translate} = useLocalize();
@@ -193,6 +193,7 @@ function PatternsTab() {
             accessibilityLabel={translate('statistics.charts.hourOfDay.title')}
             emptyLabel={translate('statistics.charts.hourOfDay.empty')}
             onSpokePress={hour => openDrillDown({kind: 'hour', hour})}
+            isLoading={isLoading}
           />
         </ChartCard>
         <ChartCard title={translate('statistics.charts.dowHour.title')}>
@@ -201,6 +202,7 @@ function PatternsTab() {
             weekStart={weekStart}
             accessibilityLabel={translate('statistics.charts.dowHour.title')}
             emptyLabel={translate('statistics.charts.dowHour.empty')}
+            isLoading={isLoading}
           />
         </ChartCard>
         <View style={styles.histogramRow}>
@@ -225,6 +227,7 @@ function PatternsTab() {
                   'statistics.charts.drinksPerSession.empty',
                 )}
                 height={160}
+                isLoading={isLoading}
               />
             </ChartCard>
           </View>
@@ -249,6 +252,7 @@ function PatternsTab() {
                   'statistics.charts.sessionDuration.empty',
                 )}
                 height={160}
+                isLoading={isLoading}
               />
             </ChartCard>
           </View>

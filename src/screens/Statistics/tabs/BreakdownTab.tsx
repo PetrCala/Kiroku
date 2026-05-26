@@ -27,7 +27,7 @@ function BreakdownTab() {
   const {translate} = useLocalize();
   const {range, drinkTypeFilter, userIds} = useStatsContext();
   const {openDrillDown} = useStatsDrillDown();
-  const {events} = useDrinkEvents(
+  const {events, isLoading} = useDrinkEvents(
     userIds.length > 0 ? [...userIds] : undefined,
   );
 
@@ -78,6 +78,7 @@ function BreakdownTab() {
               onSlicePress={drinkKey =>
                 openDrillDown({kind: 'drinkType', drinkKey})
               }
+              isLoading={isLoading}
             />
           </View>
         </ChartCard>
@@ -90,6 +91,7 @@ function BreakdownTab() {
             drinkTypeFilter={drinkTypeFilter}
             rangeStart={range.start}
             rangeEnd={range.end}
+            isLoading={isLoading}
           />
         </ChartCard>
 

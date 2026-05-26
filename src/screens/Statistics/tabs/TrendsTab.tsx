@@ -34,20 +34,6 @@ function TrendsTab() {
   const {hero, afYtd, stack, isLoading} = useTrendsTabData();
   const {openDrillDown} = useStatsDrillDown();
 
-  if (isLoading) {
-    return (
-      <View style={themeStyles.flex1}>
-        <StatsFilterToolbar />
-        <View style={[styles.container, themeStyles.justifyContentCenter]}>
-          <Text
-            style={[themeStyles.textSupporting, themeStyles.textAlignCenter]}>
-            {translate('common.loading')}
-          </Text>
-        </View>
-      </View>
-    );
-  }
-
   const heroComparisonShown = !!hero.comparison;
   const heroSubtitle = hero.band
     ? translate('statistics.tabs.trends.weeklyTrend.bandCaption')
@@ -84,6 +70,7 @@ function TrendsTab() {
             )}
             accessibilityLabel={heroCaption}
             onWeekPress={isoWeek => openDrillDown({kind: 'isoWeek', isoWeek})}
+            isLoading={isLoading}
           />
         </ChartCard>
 
@@ -106,6 +93,7 @@ function TrendsTab() {
               accessibilityLabel={translate(
                 'statistics.tabs.trends.cumulativeAf.title',
               )}
+              isLoading={isLoading}
             />
           </ChartCard>
         )}
@@ -131,6 +119,7 @@ function TrendsTab() {
             accessibilityLabel={translate(
               'statistics.tabs.trends.drinkTypeStack.title',
             )}
+            isLoading={isLoading}
           />
         </ChartCard>
       </ScrollView>

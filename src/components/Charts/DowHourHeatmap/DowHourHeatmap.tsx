@@ -2,6 +2,7 @@ import {useMemo, useState} from 'react';
 import {View} from 'react-native';
 import {Canvas, RoundedRect} from '@shopify/react-native-skia';
 import {useChartTheme} from '@components/Charts/BaseChart';
+import {ChartSkeleton} from '@components/Charts/ChartSkeleton';
 import Text from '@components/Text';
 import useThemeStyles from '@hooks/useThemeStyles';
 import type {WeekStart} from '@libs/Statistics';
@@ -25,6 +26,8 @@ type DowHourHeatmapProps = {
   gap?: number;
   /** Overlay copy when every bucket is zero. When omitted, no overlay renders. */
   emptyLabel?: string;
+  /** When true, shows a layout-faithful skeleton in place of the heatmap. */
+  isLoading?: boolean;
 };
 
 const HOURS = 24;
@@ -84,6 +87,7 @@ function DowHourHeatmap({
   accessibilityLabel,
   gap = 1,
   emptyLabel,
+  isLoading,
 }: DowHourHeatmapProps) {
   const [width, setWidth] = useState(0);
   const theme = useChartTheme();
@@ -126,6 +130,15 @@ function DowHourHeatmap({
   }, [buckets]);
 
   const hasData = cells.some(c => c.value > 0);
+
+  if (isLoading) {
+    return (
+      <ChartSkeleton
+        variant="heatmapWeekHour"
+        accessibilityLabel={accessibilityLabel}
+      />
+    );
+  }
 
   return (
     <View

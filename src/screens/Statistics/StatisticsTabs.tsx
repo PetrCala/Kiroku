@@ -7,6 +7,7 @@ import type {
   SceneRendererProps,
   TabDescriptor,
 } from 'react-native-tab-view';
+import {ChartSkeleton} from '@components/Charts/ChartSkeleton';
 import Text from '@components/Text';
 import useLocalize from '@hooks/useLocalize';
 import useTheme from '@hooks/useTheme';
@@ -59,6 +60,11 @@ const styles = StyleSheet.create({
   },
   lazyPlaceholder: {
     flex: 1,
+    paddingHorizontal: 16,
+    paddingTop: 16,
+  },
+  lazyPlaceholderGap: {
+    height: 16,
   },
 });
 
@@ -73,7 +79,17 @@ function renderTabLabel({
 }
 
 function renderLazyPlaceholder(): React.ReactNode {
-  return <View style={styles.lazyPlaceholder} />;
+  // First mount of an inactive tab: paint a generic tab-shell skeleton so the
+  // user sees structure for the 200–400ms it takes the tab's actual render +
+  // deferred compute to land. Per-chart skeletons take over once the tab
+  // mounts; this is just the bridge between "tap" and "mount".
+  return (
+    <View style={styles.lazyPlaceholder}>
+      <ChartSkeleton variant="kpiRow" />
+      <View style={styles.lazyPlaceholderGap} />
+      <ChartSkeleton variant="card" />
+    </View>
+  );
 }
 
 const COMMON_OPTIONS: TabDescriptor<TabRoute> = {

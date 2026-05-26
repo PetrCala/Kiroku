@@ -2,6 +2,7 @@ import {useMemo, useState} from 'react';
 import {View} from 'react-native';
 import {Canvas, RoundedRect} from '@shopify/react-native-skia';
 import {useChartTheme} from '@components/Charts/BaseChart';
+import {ChartSkeleton} from '@components/Charts/ChartSkeleton';
 import PressableWithoutFeedback from '@components/Pressable/PressableWithoutFeedback';
 import type {HeatmapCell} from '@libs/Statistics';
 
@@ -12,6 +13,8 @@ type CalendarHeatmapProps = {
   onDayPress?: (cell: HeatmapCell) => void;
   /** Pixel gap between cells. Default 2. */
   gap?: number;
+  /** When true, shows a layout-faithful skeleton in place of the heatmap. */
+  isLoading?: boolean;
 };
 
 /**
@@ -26,6 +29,7 @@ function CalendarHeatmap({
   accessibilityLabel,
   onDayPress,
   gap = 2,
+  isLoading,
 }: CalendarHeatmapProps) {
   const [width, setWidth] = useState(0);
   const theme = useChartTheme();
@@ -39,6 +43,15 @@ function CalendarHeatmap({
     const rows = Math.ceil((firstDayCol + cells.length) / 7);
     return {firstDayCol, rows};
   }, [cells]);
+
+  if (isLoading) {
+    return (
+      <ChartSkeleton
+        variant="calendar"
+        accessibilityLabel={accessibilityLabel}
+      />
+    );
+  }
 
   const cellSize = width > 0 ? Math.floor(width / 7) : 0;
   const innerSize = Math.max(0, cellSize - gap);

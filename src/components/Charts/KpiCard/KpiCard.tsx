@@ -1,6 +1,7 @@
 import {View} from 'react-native';
 import Text from '@components/Text';
 import {PressableWithFeedback} from '@components/Pressable';
+import {ChartSkeleton} from '@components/Charts/ChartSkeleton';
 import {Sparkline} from '@components/Charts/Sparkline';
 import useTheme from '@hooks/useTheme';
 import useThemeStyles from '@hooks/useThemeStyles';
@@ -39,6 +40,8 @@ type KpiCardProps = {
   /** Wires Tier 2 drill-down. No-op in v1. */
   onPress?: () => void;
   accessibilityLabel?: string;
+  /** When true, shows a layout-faithful skeleton in place of the card. */
+  isLoading?: boolean;
 };
 
 const ARROW: Record<KpiCardDelta['direction'], string> = {
@@ -66,9 +69,19 @@ function KpiCard({
   polarity = 'lower-is-supportive',
   onPress,
   accessibilityLabel,
+  isLoading,
 }: KpiCardProps) {
   const styles = useThemeStyles();
   const theme = useTheme();
+
+  if (isLoading) {
+    return (
+      <ChartSkeleton
+        variant="kpi"
+        accessibilityLabel={accessibilityLabel ?? label}
+      />
+    );
+  }
 
   let accentColor = theme.text;
   if (tone === 'celebratory') {

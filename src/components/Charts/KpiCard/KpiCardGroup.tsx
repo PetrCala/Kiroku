@@ -7,6 +7,8 @@ import KpiCard from './KpiCard';
 
 type KpiCardGroupProps = {
   cards: KpiCardProps[];
+  /** When true, every card in the group renders its skeleton state. */
+  isLoading?: boolean;
 };
 
 /**
@@ -16,7 +18,7 @@ type KpiCardGroupProps = {
  * Layout uses flexbox row + percentage widths so it gracefully degrades
  * when the card count isn't divisible by the column count.
  */
-function KpiCardGroup({cards}: KpiCardGroupProps): ReactElement {
+function KpiCardGroup({cards, isLoading}: KpiCardGroupProps): ReactElement {
   const styles = useThemeStyles();
   const {shouldUseNarrowLayout} = useResponsiveLayout();
   const columns = shouldUseNarrowLayout ? 2 : 3;
@@ -42,6 +44,7 @@ function KpiCardGroup({cards}: KpiCardGroupProps): ReactElement {
             tone={card.tone}
             onPress={card.onPress}
             accessibilityLabel={card.accessibilityLabel}
+            isLoading={isLoading}
           />
         </View>
       ))}

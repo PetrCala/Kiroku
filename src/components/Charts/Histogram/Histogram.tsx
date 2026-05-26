@@ -15,6 +15,8 @@ type HistogramProps = {
   /** Shown via `BaseChart` when every bin is zero. */
   emptyLabel?: string;
   height?: number;
+  /** When true, shows the BaseChart skeleton instead of the bars. */
+  isLoading?: boolean;
 };
 
 /**
@@ -27,6 +29,7 @@ function Histogram({
   accessibilityLabel,
   emptyLabel,
   height,
+  isLoading,
 }: HistogramProps) {
   const data = useMemo<ChartDatum[]>(() => {
     if (bins.every(b => b.count === 0)) {
@@ -41,7 +44,8 @@ function Histogram({
       range="allTime"
       accessibilityLabel={accessibilityLabel}
       emptyLabel={emptyLabel}
-      height={height}>
+      height={height}
+      loading={isLoading}>
       {({points, chartBounds, theme}) => (
         <Bar
           points={points.y}

@@ -11,6 +11,8 @@ type CumulativeLineProps = {
   accessibilityLabel: string;
   emptyLabel?: string;
   height?: number;
+  /** When true, shows the BaseChart skeleton instead of the line. */
+  isLoading?: boolean;
 };
 
 type CumulativeRow = {x: string; y: number; cmp: number};
@@ -30,6 +32,7 @@ function CumulativeLine({
   accessibilityLabel,
   emptyLabel,
   height,
+  isLoading,
 }: CumulativeLineProps) {
   const showComparison =
     !!comparisonPoints && comparisonPoints.length === points.length;
@@ -56,7 +59,8 @@ function CumulativeLine({
       range="allTime"
       accessibilityLabel={accessibilityLabel}
       emptyLabel={emptyLabel}
-      height={height}>
+      height={height}
+      loading={isLoading}>
       {({points: linePoints, theme}) => (
         <>
           <Line
