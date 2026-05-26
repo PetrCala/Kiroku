@@ -1,11 +1,8 @@
 import {useCallback, useEffect, useRef} from 'react';
-import {StyleSheet, View} from 'react-native';
-import * as KirokuIcons from '@components/Icon/KirokuIcons';
-import ImageSVG from '@components/ImageSVG';
+import {Image, StyleSheet, View} from 'react-native';
 import useThemeStyles from '@hooks/useThemeStyles';
 import BootSplash from '@libs/BootSplash';
 import Log from '@libs/Log';
-import colors from '@src/styles/theme/colors';
 import type {
   SplashScreenHiderProps,
   SplashScreenHiderReturnType,
@@ -82,19 +79,21 @@ function SplashScreenHider({
   // source of the visible "flash" at the handoff before this refactor.
   // Background and logo are static; the native cross-dissolve in
   // BootSplash.hide() provides the only fade.
+  // DIAGNOSTIC v9 — DO NOT MERGE.
+  // Use the iOS asset catalog image directly via `source={{uri: ...}}`.
+  // The string URI form falls through to [UIImage imageNamed:] internally,
+  // which loads BootSplashLogo from the same asset catalog the storyboard's
+  // UIImageView uses. Both layers should now render identical pixels —
+  // including identical anti-aliasing on the logo's edges. If the blink
+  // disappears with this change, edge anti-aliasing mismatch between SVG
+  // path rendering and UIImage rendering was the cause.
   return (
     <View style={[StyleSheet.absoluteFill, styles.splashScreenHider]}>
-      <View>
-        <ImageSVG
-          contentFit="fill"
-          style={{
-            width: LOGO_SIZE,
-            height: LOGO_SIZE,
-          }}
-          fill="red"
-          src={KirokuIcons.Logo}
-        />
-      </View>
+      <Image
+        source={{uri: 'BootSplashLogo'}}
+        style={{width: LOGO_SIZE, height: LOGO_SIZE}}
+        resizeMode="contain"
+      />
     </View>
   );
 }
