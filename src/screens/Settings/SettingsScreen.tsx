@@ -151,6 +151,11 @@ function SettingsScreen() {
               } as MenuData,
             ]
           : []),
+        {
+          translationKey: 'common.privacy',
+          icon: KirokuIcons.Lock,
+          routeName: ROUTES.SETTINGS_PRIVACY,
+        },
       ],
     };
 

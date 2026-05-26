@@ -76,6 +76,10 @@ const SCREENS = {
       COLOR_PALETTE: 'Settings_Preferences_ColorPalette',
     },
 
+    PRIVACY: {
+      ROOT: 'Settings_Privacy',
+    },
+
     ADMIN: {
       ROOT: 'Settings_Admin',
       FEEDBACK: 'Settings_Admin_Feedback',

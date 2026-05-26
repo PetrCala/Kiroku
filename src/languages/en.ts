@@ -414,6 +414,9 @@ export default {
     permissionDenied: 'Permission Denied',
     youNeedToGrantPermission:
       'You need to grant permission for this functionality to work.',
+    appNeedsAccess:
+      'Kiroku needs this permission to continue. Open app settings and grant access.',
+    openSettings: 'Open Settings',
     camera: {
       title: 'Camera Access Required',
       message: 'This app needs access to your camera for taking pictures.',
@@ -516,34 +519,37 @@ export default {
       unitsToColors: 'Units to colors',
       colorPalette: 'Color palette',
     },
-    privacySection: {
-      title: 'Privacy',
-      description:
-        'Control how Kiroku handles location data tied to your live sessions.',
-      trackLocationDuringSessions: {
-        label: 'Tag drinks with location',
-        description:
-          'Optional. While a live session is open, each drink you log is tagged with your current location. Edit-session adds never capture location.',
-      },
-      clearLocationHistory: {
-        label: 'Clear location history',
-        description:
-          'Permanently delete every location attached to a drink. Sessions and drinks themselves are preserved.',
-        button: 'Clear',
-        confirmTitle: 'Clear location history?',
-        confirmPrompt:
-          'This will permanently delete every location attached to a drink in any of your sessions. The sessions themselves stay. You can re-enable location tagging at any time afterwards.',
-        confirmAction: 'Clear',
-        success: 'Your location history has been cleared.',
-        error: "We couldn't clear your location history. Please try again.",
-      },
-    },
     save: 'Save preferences',
     saving: 'Saving your preferences...',
     unsavedChanges:
       'You have unsaved changes. Are you sure you want to go back?',
     error: {
       save: "We couldn't save your preferences. Please try again.",
+    },
+  },
+  privacyScreen: {
+    title: 'Privacy',
+    description:
+      'Control how Kiroku handles location data tied to your live sessions.',
+    trackLocationDuringSessions: {
+      label: 'Tag drinks with location',
+      description:
+        'Optional. While a live session is open, each drink you log is tagged with your current location. Edit-session adds never capture location.',
+    },
+    clearLocationHistory: {
+      label: 'Clear location history',
+      description:
+        'Permanently delete every location attached to a drink. Sessions and drinks themselves are preserved.',
+      button: 'Clear',
+      confirmTitle: 'Clear location history?',
+      confirmPrompt:
+        'This will permanently delete every location attached to a drink in any of your sessions. The sessions themselves stay. You can re-enable location tagging at any time afterwards.',
+      confirmAction: 'Clear',
+      success: 'Your location history has been cleared.',
+      error: "We couldn't clear your location history. Please try again.",
+    },
+    error: {
+      save: "We couldn't save your privacy preferences. Please try again.",
     },
   },
   unitsToColorsScreen: {

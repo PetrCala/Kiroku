@@ -412,6 +412,9 @@ export default {
     permissionDenied: 'Přístup zamítnut',
     youNeedToGrantPermission:
       'Pro fungování této funkce musíte udělit oprávnění.',
+    appNeedsAccess:
+      'Kiroku potřebuje toto oprávnění. Otevřete nastavení aplikace a udělte přístup.',
+    openSettings: 'Otevřít nastavení',
     camera: {
       title: 'Je vyžadován přístup k fotoaparátu',
       message: 'Tato aplikace potřebuje přístup k vaší kameře pro focení.',
@@ -515,33 +518,36 @@ export default {
       unitsToColors: 'Jednotky na barvy',
       colorPalette: 'Barevná paleta',
     },
-    privacySection: {
-      title: 'Soukromí',
-      description:
-        'Spravujte, jak Kiroku pracuje s polohou spojenou s vašimi živými sezeními.',
-      trackLocationDuringSessions: {
-        label: 'Označovat drinky polohou',
-        description:
-          'Volitelné. Když máte otevřené živé sezení, ke každému zaznamenanému drinku se připojí vaše aktuální poloha. V režimu úprav se poloha nikdy nezaznamenává.',
-      },
-      clearLocationHistory: {
-        label: 'Vymazat historii polohy',
-        description:
-          'Trvale smaže všechny polohy připojené k drinkům. Samotná sezení a drinky zůstanou zachovány.',
-        button: 'Vymazat',
-        confirmTitle: 'Vymazat historii polohy?',
-        confirmPrompt:
-          'Tímto trvale smažete všechny polohy připojené k drinkům ve všech vašich sezeních. Samotná sezení zůstanou zachována. Označování polohou můžete kdykoli později znovu zapnout.',
-        confirmAction: 'Vymazat',
-        success: 'Vaše historie polohy byla vymazána.',
-        error: 'Nepodařilo se vymazat historii polohy. Zkuste to prosím znovu.',
-      },
-    },
     save: 'Uložit předvolby',
     saving: 'Ukládání vašich předvoleb...',
     unsavedChanges: 'Máte neuložené změny. Opravdu se chcete vrátit zpět?',
     error: {
       save: 'Nepodařilo se uložit vaše předvolby. Zkuste to prosím znovu.',
+    },
+  },
+  privacyScreen: {
+    title: 'Soukromí',
+    description:
+      'Spravujte, jak Kiroku pracuje s polohou spojenou s vašimi živými sezeními.',
+    trackLocationDuringSessions: {
+      label: 'Označovat drinky polohou',
+      description:
+        'Volitelné. Když máte otevřené živé sezení, ke každému zaznamenanému drinku se připojí vaše aktuální poloha. V režimu úprav se poloha nikdy nezaznamenává.',
+    },
+    clearLocationHistory: {
+      label: 'Vymazat historii polohy',
+      description:
+        'Trvale smaže všechny polohy připojené k drinkům. Samotná sezení a drinky zůstanou zachovány.',
+      button: 'Vymazat',
+      confirmTitle: 'Vymazat historii polohy?',
+      confirmPrompt:
+        'Tímto trvale smažete všechny polohy připojené k drinkům ve všech vašich sezeních. Samotná sezení zůstanou zachována. Označování polohou můžete kdykoli později znovu zapnout.',
+      confirmAction: 'Vymazat',
+      success: 'Vaše historie polohy byla vymazána.',
+      error: 'Nepodařilo se vymazat historii polohy. Zkuste to prosím znovu.',
+    },
+    error: {
+      save: 'Nepodařilo se uložit nastavení soukromí. Zkuste to prosím znovu.',
     },
   },
   unitsToColorsScreen: {
