@@ -13,7 +13,6 @@
     "android-build": "fastlane android build",
     "startAndroidEmulator": "scripts/start-android.sh",
     "postinstall": "scripts/postInstall.sh",
-    "docs": "cd docs && bundle exec jekyll serve --livereload",
     "gradle-clean": "cd android && ./gradlew clean && cd ..",
     "typecheck": "NODE_OPTIONS=--max_old_space_size=8192 tsc",
     "typecheck-tsgo": "tsgo --noEmit --incremental --tsBuildInfoFile tsconfig.tsgo.tsbuildinfo",

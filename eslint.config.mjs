@@ -537,6 +537,5 @@ export default defineConfig([
     'ios/Pods/**',
     'ios/build/**',
     'web-build/**',
-    'docs/vendor/**',
   ]),
 ]);
