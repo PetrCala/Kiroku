@@ -12,6 +12,7 @@ import UserOffline from '@components/UserOfflineModal';
 import {synchronizeUserStatus} from '@userActions/User';
 import {useFirebase} from '@context/global/FirebaseContext';
 import ProfileImage from '@components/ProfileImage';
+import {SupporterBadgeForUser} from '@components/SupporterBadge';
 import CONST from '@src/CONST';
 import type {DrinkingSessionArray} from '@src/types/onyx';
 import ROUTES from '@src/ROUTES';
@@ -220,6 +221,9 @@ function HomeScreen({route}: HomeScreenProps) {
             <Text style={[styles.headerText, styles.textLarge, styles.ml3]}>
               {userData?.profile?.display_name ?? ''}
             </Text>
+            <View style={styles.ml1}>
+              <SupporterBadgeForUser userID={user.uid} size="medium" />
+            </View>
           </Button>
         </View>
       ) : (

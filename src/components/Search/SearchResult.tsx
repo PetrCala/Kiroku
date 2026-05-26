@@ -3,6 +3,7 @@ import {View} from 'react-native';
 import type {Database} from 'firebase/database';
 import type {FirebaseStorage} from 'firebase/storage';
 import ProfileImage from '@components/ProfileImage';
+import {SupporterBadgeForUser} from '@components/SupporterBadge';
 import type {FriendRequestStatus, Profile} from '@src/types/onyx';
 import useThemeStyles from '@hooks/useThemeStyles';
 import Text from '@components/Text';
@@ -42,11 +43,14 @@ function SearchResult({
           downloadPath={userDisplayData?.photo_url}
           style={styles.avatarLarge}
         />
-        <Text style={[styles.headerText, styles.ml3]}>
+        <Text style={[styles.headerText, styles.ml3, styles.flexShrink1]}>
           {userDisplayData?.display_name
             ? userDisplayData.display_name
             : translate('common.unknown')}
         </Text>
+        <View style={styles.ml1}>
+          <SupporterBadgeForUser userID={userID} size="small" />
+        </View>
       </View>
       {customButton ?? (
         <SendFriendRequestButton

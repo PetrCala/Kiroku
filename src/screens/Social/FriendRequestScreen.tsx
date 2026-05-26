@@ -220,11 +220,15 @@ function FriendRequestScreen() {
     database: Database,
     requests: FriendRequestList | undefined,
   ): Promise<void> => {
+    const userIDs = objKeys(requests);
     const newDisplayData: ProfileList = await Profile.fetchUserProfiles(
       database,
-      objKeys(requests),
+      userIDs,
     );
     setDisplayData(newDisplayData);
+    Profile.fetchAndStoreSupporterFlags(database, userIDs).catch(() => {
+      // Non-fatal: badge will simply remain hidden for these users.
+    });
   };
 
   useEffect(() => {

@@ -1,5 +1,6 @@
 import {View} from 'react-native';
 import ProfileImage from '@components/ProfileImage';
+import {SupporterBadgeForUser} from '@components/SupporterBadge';
 import {getTimestampAge} from '@libs/TimeUtils';
 import commonStyles from '@src/styles/commonStyles';
 import type {Profile, UserStatus} from '@src/types/onyx';
@@ -81,6 +82,9 @@ function UserOverview({
           ellipsizeMode="tail">
           {profileData.display_name}
         </Text>
+        <View style={styles.ml1}>
+          <SupporterBadgeForUser userID={userID} size="small" />
+        </View>
       </View>
       <View
         key={`${userID}-right-container`}

@@ -4,10 +4,15 @@ import type {FirebaseStorage} from 'firebase/storage';
 import {ref as StorageRef, getDownloadURL} from 'firebase/storage';
 import type {Auth, User} from 'firebase/auth';
 import {updateProfile} from 'firebase/auth';
+import Onyx from 'react-native-onyx';
 import type {ProfileList, UserStatusList} from '@src/types/onyx';
 import type {UserID} from '@src/types/onyx/OnyxCommon';
 import DBPATHS from '@src/DBPATHS';
-import {fetchDisplayDataForUsers} from '@src/database/baseFunctions';
+import ONYXKEYS from '@src/ONYXKEYS';
+import {
+  fetchDisplayDataForUsers,
+  readDataOnce,
+} from '@src/database/baseFunctions';
 
 /**
  * Fetches user profiles from the database.
@@ -26,6 +31,50 @@ async function fetchUserProfiles(
     userIDs,
     profileRef,
   )) as ProfileList;
+}
+
+/**
+ * Fetches each given user's public `is_supporter` flag and merges the result
+ * into `USER_DATA_LIST` so the SupporterBadge can render for friends. The
+ * public flag is the only supporter field readable across users — renewal
+ * dates stay private. A missing node is treated as `false` to keep the badge
+ * a positive-only signal.
+ */
+async function fetchAndStoreSupporterFlags(
+  db: Database | undefined,
+  userIDs: UserID[],
+): Promise<void> {
+  if (!db || !userIDs || userIDs.length === 0) {
+    return;
+  }
+  const flags = await Promise.all(
+    userIDs.map(id =>
+      readDataOnce<boolean>(
+        db,
+        DBPATHS.USERS_USER_ID_IS_SUPPORTER.getRoute(id),
+      ),
+    ),
+  );
+  const merge: Record<UserID, {is_supporter: boolean}> = {};
+  userIDs.forEach((id, index) => {
+    merge[id] = {is_supporter: flags[index] ?? false};
+  });
+  await Onyx.merge(ONYXKEYS.USER_DATA_LIST, merge);
+}
+
+/**
+ * Mirrors a user's already-known `is_supporter` flag into USER_DATA_LIST.
+ * Used by surfaces that have just fetched the value off `users/{userID}`
+ * (e.g. the profile screen) so the SupporterBadge wrapper doesn't have to
+ * re-fetch.
+ */
+async function setSupporterFlagInList(
+  userID: UserID,
+  isSupporter: boolean,
+): Promise<void> {
+  await Onyx.merge(ONYXKEYS.USER_DATA_LIST, {
+    [userID]: {is_supporter: isSupporter},
+  });
 }
 
 /**
@@ -99,8 +148,10 @@ async function updateProfileInfo(
 }
 
 export {
+  fetchAndStoreSupporterFlags,
   fetchUserProfiles,
   fetchUserStatuses,
   setProfilePictureURL,
+  setSupporterFlagInList,
   updateProfileInfo,
 };
