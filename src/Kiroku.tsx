@@ -35,15 +35,15 @@ import CONFIG from './CONFIG';
 import UpdateAppModal from './components/UpdateAppModal';
 import VerifyEmailModal from './components/VerifyEmailModal';
 import FullScreenLoadingIndicator from './components/FullscreenLoadingIndicator';
-import colors from './styles/theme/colors';
 import CONST from './CONST';
 
-// Painted on top of NavigationRoot but below SplashScreenHider (zIndex 20)
-// while the splash is up, so a one-frame mount lag in SplashScreenHider's
-// Reanimated tree can never expose React Navigation's white appBG.
+// DIAGNOSTIC — DO NOT MERGE
+// Color-tag the splash guard layer so a residual cold-start flash can
+// identify its source. Orange = guard. SplashScreenHider stays yellow,
+// SafeAreaView is magenta, RCTSurfaceHostingProxyRootView is cyan.
 const splashGuardStyle = {
   ...StyleSheet.absoluteFillObject,
-  backgroundColor: colors.yellowStrong,
+  backgroundColor: '#FF6600',
   zIndex: 19,
 };
 

@@ -5,8 +5,13 @@ import type SafeAreaProps from './types';
 
 function SafeArea({children}: SafeAreaProps) {
   const styles = useThemeStyles();
+  // DIAGNOSTIC — DO NOT MERGE
+  // Color-tag iPhoneXSafeArea (normally theme.inverse) so a residual
+  // cold-start flash can identify its source. Magenta = SafeAreaView.
   return (
-    <SafeAreaView style={[styles.iPhoneXSafeArea]} edges={['left', 'right']}>
+    <SafeAreaView
+      style={[styles.iPhoneXSafeArea, {backgroundColor: '#FF00FF'}]}
+      edges={['left', 'right']}>
       {children}
     </SafeAreaView>
   );
