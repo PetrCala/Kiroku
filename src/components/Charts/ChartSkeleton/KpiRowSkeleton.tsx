@@ -1,5 +1,6 @@
 import {View} from 'react-native';
 import useTheme from '@hooks/useTheme';
+import useThemeStyles from '@hooks/useThemeStyles';
 import useWindowDimensions from '@hooks/useWindowDimensions';
 import variables from '@styles/variables';
 
@@ -18,6 +19,7 @@ type KpiRowSkeletonProps = {
  */
 function KpiRowSkeleton({height, accessibilityLabel}: KpiRowSkeletonProps) {
   const theme = useTheme();
+  const styles = useThemeStyles();
   const {windowWidth} = useWindowDimensions();
   const isNarrow = windowWidth < variables.mobileResponsiveWidthBreakpoint;
   const columns = isNarrow ? 2 : 3;
@@ -29,28 +31,22 @@ function KpiRowSkeleton({height, accessibilityLabel}: KpiRowSkeletonProps) {
       accessible
       accessibilityRole="progressbar"
       accessibilityLabel={accessibilityLabel}
-      style={{
-        flexDirection: 'row',
-        flexWrap: 'wrap',
-        marginHorizontal: -4,
-      }}>
+      style={[styles.flexRow, styles.flexWrap, {marginHorizontal: -4}]}>
       {Array.from({length: columns}, (_v, i) => (
         <View
           // eslint-disable-next-line react/no-array-index-key
           key={`kpi-${i}`}
-          style={{
-            width: itemWidth,
-            paddingHorizontal: 4,
-            paddingVertical: 4,
-          }}>
+          style={[styles.ph1, styles.pv1, {width: itemWidth}]}>
           <View
-            style={{
-              height,
-              backgroundColor: cardFill,
-              borderRadius: 12,
-              padding: 12,
-              justifyContent: 'space-between',
-            }}>
+            style={[
+              styles.p3,
+              styles.justifyContentBetween,
+              {
+                height,
+                backgroundColor: cardFill,
+                borderRadius: 12,
+              },
+            ]}>
             <View
               style={{
                 height: 10,
