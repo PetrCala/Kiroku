@@ -46,31 +46,30 @@ final class ScreenshotTests: XCTestCase {
 
     private func logIn() {
         // After the splash dismisses, the user lands on the Initial Screen
-        // (testID="Initial Screen", src/screens/SignUp/InitialScreen.tsx).
-        // It exposes two CTAs:
-        //   • "Create account" button → routes to AuthScreen in sign-up mode.
-        //   • "Log in" link (under "Already have an account?") → sign-in mode.
-        // Our demo user already exists, so we tap the "Log in" link.
-        let initial = app.otherElements["Initial Screen"]
-        XCTAssertTrue(initial.waitForExistence(timeout: 30), "Initial Screen never appeared")
-
-        // The "Log in" link is a PressableWithFeedback with role=link; RN
-        // surfaces it under `app.buttons` in XCUITest. Match by localized
-        // accessibility label (translate('common.logInHere')).
+        // (src/screens/SignUp/InitialScreen.tsx). The screen container's
+        // `testID` doesn't reliably surface as an XCUI accessibility element
+        // — RN only exposes a View as an element when it has accessibility
+        // properties (`accessible={true}`/label/role), and InitialScreen's
+        // outer View has only `testID`. So we use the unique "Log in" link
+        // (PressableWithFeedback with role=link, accessibilityLabel =
+        // translate('common.logInHere')) as our presence indicator. Tapping
+        // it routes to AuthScreen in sign-in mode — which is what we want
+        // since the demo user already exists.
         let logInLink = app.buttons.matching(NSPredicate(format:
             "label IN { 'Log in', 'Přihlaste se zde' }"
         )).firstMatch
-        XCTAssertTrue(logInLink.waitForExistence(timeout: 5), "Log in link never appeared on Initial Screen")
+        XCTAssertTrue(logInLink.waitForExistence(timeout: 30), "Log in link on Initial Screen never appeared")
         logInLink.tap()
 
-        // testID is literally "Auth Screen" with a space (AuthScreen.displayName
-        // in src/screens/SignUp/AuthScreen.tsx).
-        let auth = app.otherElements["Auth Screen"]
-        XCTAssertTrue(auth.waitForExistence(timeout: 30), "Auth Screen never appeared")
+        // AuthScreen's outer View also only has `testID` (no accessible=true),
+        // so the screen container isn't a discoverable XCUI element. Use the
+        // email text field as the presence indicator — it's a real TextInput
+        // and always exposed under app.textFields.
+        let emailField = app.textFields.firstMatch
+        XCTAssertTrue(emailField.waitForExistence(timeout: 30), "AuthScreen email field never appeared")
 
         // Inputs lack testIDs — match by their containing TextField/SecureTextField.
         // The first text field in the form is email, then password (secure).
-        let emailField = app.textFields.firstMatch
         emailField.tap()
         emailField.typeText(ProcessInfo.processInfo.environment["APPLE_DEMO_EMAIL"] ?? "")
 
