@@ -56,12 +56,8 @@ RCT_EXPORT_MODULE();
 
   if (_fade) {
     dispatch_async(dispatch_get_main_queue(), ^{
-      // DIAGNOSTIC — DO NOT MERGE.
-      // 1500ms cross-dissolve (6× slower than production 250ms) so the
-      // user can visually pinpoint when the logo blinks during the
-      // transition. Production duration is 0.250.
       [UIView transitionWithView:_rootView
-          duration:1.500
+          duration:0.250
           options:UIViewAnimationOptionTransitionCrossDissolve
           animations:^{
             _loadingView.hidden = YES;
@@ -133,6 +129,21 @@ RCT_EXPORT_MODULE();
     _loadingView.center = (CGPoint){CGRectGetMidX(initialFrame),
                                     CGRectGetMidY(initialFrame)};
     _loadingView.hidden = NO;
+
+    // DIAGNOSTIC — DO NOT MERGE.
+    // Tag _loadingView's background BLUE (overriding the yellow from
+    // the storyboard) so the iOS-LaunchScreen → RCTBootSplash handoff
+    // is visually distinguishable. iOS shows its own LaunchScreen
+    // (yellow + logo) from the same storyboard, then ~350ms after
+    // didFinishLaunchingWithOptions returns it dismisses LaunchScreen,
+    // and the _loadingView beneath becomes visible.
+    //
+    //   • Blink coincides with the yellow→blue color change
+    //     → iOS LaunchScreen → RCTBootSplash handoff is the cause.
+    //   • Blink happens before / after the color change
+    //     → handoff isn't the cause; localize from when the blink
+    //       happens relative to the color transition.
+    _loadingView.backgroundColor = [UIColor blueColor];
 
     [_rootView addSubview:_loadingView];
 
