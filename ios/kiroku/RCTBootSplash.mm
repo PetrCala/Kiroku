@@ -56,8 +56,12 @@ RCT_EXPORT_MODULE();
 
   if (_fade) {
     dispatch_async(dispatch_get_main_queue(), ^{
+      // DIAGNOSTIC — DO NOT MERGE.
+      // 1500ms cross-dissolve (6× slower than production 250ms) so the
+      // user can visually pinpoint when the logo blinks during the
+      // transition. Production duration is 0.250.
       [UIView transitionWithView:_rootView
-          duration:0.250
+          duration:1.500
           options:UIViewAnimationOptionTransitionCrossDissolve
           animations:^{
             _loadingView.hidden = YES;
