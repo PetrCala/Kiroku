@@ -24,6 +24,8 @@ import type {
   StatsAfDaysParams,
   StatsDrillDownTitleParams,
   StatsQuietDaysParams,
+  SupporterPurchaseCtaParams,
+  SupporterPurchaseErrorParams,
   UnitCountParams,
   UpdateEmailSentEmailParams,
   VerifyEmailScreenEmailParmas,
@@ -661,6 +663,29 @@ export default {
     benefit: 'Odznak podporovatele na profilu',
     description:
       'Podpořte Kiroku a získejte odznak podporovatele 🍺 na svém profilu.',
+    menuEntry: 'Podpořit Kiroku 🍺',
+    paywallScreen: {
+      title: 'Podpořit Kiroku',
+      loading: 'Načítám detaily předplatného...',
+      thanksTitle: 'Jste Kiroku Supporter 🍺',
+      thanksSubtitle:
+        'Děkujeme za podporu — odznak podporovatele je nyní viditelný na vašem profilu.',
+      managementComingSoon:
+        'Předplatné spravujte nebo zrušte v App Store či Google Play. Samostatná obrazovka pro správu už se chystá.',
+      unavailableTitle: 'Předplatné není dostupné',
+      unavailableSubtitle:
+        'Nepodařilo se nám načíst předplatné podporovatele. Zkontrolujte připojení a zkuste to znovu.',
+      purchaseCta: ({price}: SupporterPurchaseCtaParams) =>
+        `Stát se podporovatelem — ${price} / měsíc`,
+      purchaseError: ({message}: SupporterPurchaseErrorParams) =>
+        `Nákup se nezdařil: ${message}. Zkuste to prosím znovu.`,
+      restorePurchases: 'Obnovit nákupy',
+      restoreEmpty:
+        'Na tomto účtu jsme nenašli žádné předchozí předplatné podporovatele. Pokud jste si jej pořídili na jiném zařízení, přihlaste se stejným účtem a zkuste to znovu.',
+      autoRenewalNotice:
+        'Předplatné se měsíčně automaticky obnovuje, dokud jej nezrušíte. Spravovat či zrušit jej můžete kdykoliv v App Store nebo Google Play, nejpozději 24 hodin před obnovením.',
+      retry: 'Zkusit znovu',
+    },
   },
   accountScreen: {
     title: 'Detaily profilu',

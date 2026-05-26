@@ -175,6 +175,7 @@ const config: LinkingOptions<RootStackParamList>['config'] = {
               exact: true,
             },
             [SCREENS.SETTINGS.APP_SHARE]: ROUTES.SETTINGS_APP_SHARE,
+            [SCREENS.SETTINGS.SUPPORT]: ROUTES.SETTINGS_SUPPORT,
             [SCREENS.SETTINGS.PRIVACY_POLICY]: ROUTES.SETTINGS_PRIVACY_POLICY,
             [SCREENS.SETTINGS.TERMS_OF_SERVICE]:
               ROUTES.SETTINGS_TERMS_OF_SERVICE,
