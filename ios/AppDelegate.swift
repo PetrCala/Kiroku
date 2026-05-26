@@ -67,21 +67,35 @@ class AppDelegate: ExpoAppDelegate {
 
     _ = super.application(application, didFinishLaunchingWithOptions: launchOptions)
 
-    // DIAGNOSTIC v4 — DO NOT MERGE.
-    // Skip RCTBootSplash.initWithStoryboard entirely to test Expensify's
-    // pattern: rely on iOS's native LaunchScreen dismissal (with its own
-    // built-in fade) handing off directly to the JS SplashScreenHider,
-    // with no in-process native overlay in between. The yellow defenses
-    // already cover any frame where neither is fully painted (window,
-    // rootView, SafeArea override, Kiroku-level guard all yellow).
+    // DIAGNOSTIC v6 — DO NOT MERGE.
+    // Use RN's built-in RCTSurfaceHostingProxyRootView.loadingView API to
+    // cover the gap between iOS LaunchScreen fade-out and the React
+    // surface transitioning to "Running". RN adds the loadingView during
+    // the surface's "Preparing" stage and removes it atomically in the
+    // same setStage: call that adds the _surfaceView when the surface
+    // transitions to "Running" — closing the gap inside one CALayer
+    // commit.
     //
-    // Cold-launch and observe whether the logo gap disappears entirely.
+    // Crucially, do NOT call disableActivityIndicatorAutoHide(). That
+    // was the source of the deadlock in f618d0a2 — it required JS to
+    // manually trigger the removal. With auto-hide enabled (the
+    // default), RN's surface lifecycle controls removal, no JS
+    // intervention needed.
     //
-    // Re-enable this block in the real fix if the gap returns:
-    //
-    //   if let rootView = self.window?.rootViewController?.view {
-    //     RCTBootSplash.initWithStoryboard("BootSplash", rootView: rootView)
-    //   }
+    // Safety timeout (10s) force-removes the loadingView if the surface
+    // never transitions to Running — preventing the f618d0a2 deadlock
+    // even if the lifecycle integration breaks for any reason.
+    if let proxyRootView = self.window?.rootViewController?.view
+      as? RCTSurfaceHostingProxyRootView
+    {
+      let storyboard = UIStoryboard(name: "BootSplash", bundle: nil)
+      if let loadingView = storyboard.instantiateInitialViewController()?.view {
+        proxyRootView.loadingView = loadingView
+        DispatchQueue.main.asyncAfter(deadline: .now() + 10) {
+          loadingView.removeFromSuperview()
+        }
+      }
+    }
 
     if !UserDefaults.standard.bool(forKey: "isFirstRunComplete") {
       UIApplication.shared.applicationIconBadgeNumber = 0

@@ -7,3 +7,4 @@
 
 #import "RCTBootSplash.h"
 #import <HardwareShortcuts.h>
+#import <React/RCTSurfaceHostingProxyRootView.h>
