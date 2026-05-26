@@ -24,6 +24,8 @@ import ScreenWrapper from '@components/ScreenWrapper';
 import HeaderWithBackButton from '@components/HeaderWithBackButton';
 import Button from '@components/Button';
 import useThemeStyles from '@hooks/useThemeStyles';
+import useStyleUtils from '@hooks/useStyleUtils';
+import variables from '@styles/variables';
 import ScrollView from '@components/ScrollView';
 import MenuItem from '@components/MenuItem';
 import Section from '@components/Section';
@@ -58,6 +60,7 @@ function SessionSummaryScreen({route}: SessionSummaryScreenProps) {
   const {preferences, drinkingSessionData} = useDatabaseData();
   const {translate} = useLocalize();
   const styles = useThemeStyles();
+  const StyleUtils = useStyleUtils();
   const [session, setSession] = useState<DrinkingSession>(
     DSUtils.extractSessionOrEmpty(sessionId, drinkingSessionData),
   );
@@ -119,7 +122,11 @@ function SessionSummaryScreen({route}: SessionSummaryScreenProps) {
           titleKey: 'sessionSummaryScreen.generalSection.sessionColor',
           rightComponent: (
             <View
-              style={[styles.sessionColorMarker(sessionColor), styles.border]}
+              style={[
+                styles.sessionColorMarker(sessionColor),
+                {borderRadius: variables.componentBorderRadiusNormal},
+                StyleUtils.getDerivedSwatchBorderStyle(sessionColor),
+              ]}
             />
           ),
         },
@@ -170,6 +177,7 @@ function SessionSummaryScreen({route}: SessionSummaryScreenProps) {
       totalUnits,
       wasLiveSession,
       styles,
+      StyleUtils,
     ],
   );
 
