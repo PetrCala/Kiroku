@@ -658,6 +658,13 @@ export default {
     },
     error: {},
   },
+  supporter: {
+    tierName: 'Kiroku Supporter',
+    badgeAccessibilityLabel: 'Kiroku Supporter',
+    benefit: 'Supporter badge on your profile',
+    description:
+      'Support Kiroku and get the 🍺 supporter badge on your profile.',
+  },
   accountScreen: {
     title: 'Profile Details',
     generalOptions: {
