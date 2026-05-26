@@ -1,10 +1,5 @@
 import {useCallback, useEffect, useRef} from 'react';
-import type {ViewStyle} from 'react-native';
-import {StyleSheet} from 'react-native';
-import Reanimated, {
-  useAnimatedStyle,
-  useSharedValue,
-} from 'react-native-reanimated';
+import {StyleSheet, View} from 'react-native';
 import * as KirokuIcons from '@components/Icon/KirokuIcons';
 import ImageSVG from '@components/ImageSVG';
 import useThemeStyles from '@hooks/useThemeStyles';
@@ -34,16 +29,6 @@ function SplashScreenHider({
   shouldHideSplash,
 }: SplashScreenHiderProps): SplashScreenHiderReturnType {
   const styles = useThemeStyles();
-
-  const opacity = useSharedValue(1);
-  const scale = useSharedValue(1);
-
-  const opacityStyle = useAnimatedStyle<ViewStyle>(() => ({
-    opacity: opacity.get(),
-  }));
-  const scaleStyle = useAnimatedStyle<ViewStyle>(() => ({
-    transform: [{scale: scale.get()}],
-  }));
 
   const hideHasBeenCalled = useRef(false);
 
@@ -121,23 +106,21 @@ function SplashScreenHider({
   }, [hide]);
 
   return (
-    <Reanimated.View
-      // DIAGNOSTIC v3 — DO NOT MERGE.
-      // shouldRasterizeIOS=true forces iOS to render the layer's content to
-      // a bitmap on first display. If the gap is caused by CALayer
-      // display-deferral (iOS not calling display() on layers completely
-      // occluded by the native _loadingView), pre-rasterizing will force
-      // the JS overlay's pixels to be ready BEFORE the native removal.
-      shouldRasterizeIOS
+    // DIAGNOSTIC v5 — DO NOT MERGE.
+    // Replaced Reanimated.View with plain View and removed both animated
+    // styles (opacityStyle / scaleStyle). Reanimated 4 on Fabric binds
+    // animated styles via a worklet that may not execute on the first
+    // commit — so the View can render with opacity 0 (or no style at
+    // all) for the first frame, which would explain why the JS overlay
+    // is invisible until "the flash". If the flash disappears with this
+    // change, Reanimated's first-paint binding is the cause.
+    <View
       style={[
         StyleSheet.absoluteFill,
         styles.splashScreenHider,
-        // Override the yellow splashBG with red so "JS overlay visible"
-        // is unambiguously distinguishable from "we see yellow beneath".
         {backgroundColor: 'red'},
-        opacityStyle,
       ]}>
-      <Reanimated.View style={scaleStyle}>
+      <View>
         <ImageSVG
           contentFit="fill"
           style={{
@@ -147,8 +130,8 @@ function SplashScreenHider({
           fill={colors.white}
           src={KirokuIcons.Logo}
         />
-      </Reanimated.View>
-    </Reanimated.View>
+      </View>
+    </View>
   );
 }
 
