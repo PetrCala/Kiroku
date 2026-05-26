@@ -281,6 +281,22 @@ end
 # TestAction so `xcodebuild test -scheme "Kiroku (production)"` picks it up.
 # We edit the XML directly to avoid xcodeproj's scheme writer reformatting
 # every line in the file.
+# Names of legacy testables we strip out of the scheme before adding
+# KirokuUITests. The legacy `kirokuTests` Obj-C unit-test target is the
+# scheme's original sole testable, but it causes three separate failures when
+# xcodebuild builds it as part of the screenshots run:
+#   1. Pre-existing duplicate `kirokuTests.xctest/Info.plist` output
+#      (INFOPLIST_FILE + a stale Resources entry both produce it).
+#   2. Xcode 26's user-script sandbox blocks its `[CP] Copy Pods Resources`
+#      phase from writing `ios/Pods/resources-to-copy-kirokuTests.txt`.
+#   3. The embedded `kirokuTests.xctest` plug-in re-links nitro-sqlite, so
+#      when the host app launches under the test runner, Nitro's
+#      HybridObjectRegistry sees "NitroSQLite" registered twice and crashes
+#      the app with libc++abi before AuthScreen ever appears.
+# Screenshots only need the new KirokuUITests bundle, so we remove
+# kirokuTests from the scheme entirely for the throwaway CI build.
+LEGACY_TESTABLES_TO_STRIP = %w[kirokuTests].freeze
+
 def add_testable_to_scheme(target)
   abort_with("scheme not found at #{SCHEME_PATH}") unless File.exist?(SCHEME_PATH)
 
@@ -288,26 +304,39 @@ def add_testable_to_scheme(target)
   testables = REXML::XPath.first(doc, '//TestAction/Testables')
   abort_with('no <Testables> node in scheme') unless testables
 
-  already_present = REXML::XPath.match(testables, "TestableReference/BuildableReference[@BlueprintName='#{UI_TESTS_TARGET_NAME}']").any?
-  if already_present
-    log "Scheme already references '#{UI_TESTS_TARGET_NAME}'"
-    return
+  LEGACY_TESTABLES_TO_STRIP.each do |legacy_name|
+    REXML::XPath.match(
+      testables,
+      "TestableReference[BuildableReference[@BlueprintName='#{legacy_name}']]",
+    ).each do |node|
+      log "Removing legacy testable '#{legacy_name}' from scheme's TestAction"
+      testables.delete_element(node)
+    end
   end
 
-  log "Adding '#{UI_TESTS_TARGET_NAME}' to scheme's TestAction"
+  already_present = REXML::XPath.match(
+    testables,
+    "TestableReference/BuildableReference[@BlueprintName='#{UI_TESTS_TARGET_NAME}']",
+  ).any?
 
-  testable = REXML::Element.new('TestableReference')
-  testable.add_attribute('skipped', 'NO')
+  if already_present
+    log "Scheme already references '#{UI_TESTS_TARGET_NAME}'"
+  else
+    log "Adding '#{UI_TESTS_TARGET_NAME}' to scheme's TestAction"
 
-  ref = REXML::Element.new('BuildableReference')
-  ref.add_attribute('BuildableIdentifier', 'primary')
-  ref.add_attribute('BlueprintIdentifier', target.uuid)
-  ref.add_attribute('BuildableName', "#{UI_TESTS_TARGET_NAME}.xctest")
-  ref.add_attribute('BlueprintName', UI_TESTS_TARGET_NAME)
-  ref.add_attribute('ReferencedContainer', 'container:kiroku.xcodeproj')
+    testable = REXML::Element.new('TestableReference')
+    testable.add_attribute('skipped', 'NO')
 
-  testable.add_element(ref)
-  testables.add_element(testable)
+    ref = REXML::Element.new('BuildableReference')
+    ref.add_attribute('BuildableIdentifier', 'primary')
+    ref.add_attribute('BlueprintIdentifier', target.uuid)
+    ref.add_attribute('BuildableName', "#{UI_TESTS_TARGET_NAME}.xctest")
+    ref.add_attribute('BlueprintName', UI_TESTS_TARGET_NAME)
+    ref.add_attribute('ReferencedContainer', 'container:kiroku.xcodeproj')
+
+    testable.add_element(ref)
+    testables.add_element(testable)
+  end
 
   formatter = REXML::Formatters::Pretty.new(3)
   formatter.compact = true
