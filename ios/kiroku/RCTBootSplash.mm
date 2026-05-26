@@ -56,11 +56,17 @@ RCT_EXPORT_MODULE();
 
   if (_fade) {
     dispatch_async(dispatch_get_main_queue(), ^{
-      [UIView transitionWithView:_rootView
-          duration:0.250
-          options:UIViewAnimationOptionTransitionCrossDissolve
+      // DIAGNOSTIC v6 — DO NOT MERGE.
+      // Replace transitionWithView (snapshot-based) with a direct alpha
+      // animation. transitionWithView captures BEFORE and AFTER snapshots
+      // and crossfades them; at the end of the duration, iOS swaps the
+      // snapshot for the live view, and any mismatch between the cached
+      // AFTER snapshot and the actual live view at that moment shows as
+      // a one-frame discontinuity. Direct alpha animation interpolates
+      // the live view's alpha — no snapshots, no swap discontinuity.
+      [UIView animateWithDuration:0.250
           animations:^{
-            _loadingView.hidden = YES;
+            _loadingView.alpha = 0;
           }
           completion:^(__unused BOOL finished) {
             [_loadingView removeFromSuperview];
