@@ -118,6 +118,11 @@ function SettingsScreen() {
           icon: KirokuIcons.Gear,
           routeName: ROUTES.SETTINGS_PREFERENCES,
         },
+        {
+          translationKey: 'supporter.menuEntry',
+          icon: KirokuIcons.Star,
+          routeName: ROUTES.SETTINGS_SUPPORT,
+        },
       ],
     };
 

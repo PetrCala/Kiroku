@@ -1,7 +1,11 @@
 import {Platform} from 'react-native';
 import Onyx from 'react-native-onyx';
 import Purchases from 'react-native-purchases';
-import type {CustomerInfo} from 'react-native-purchases';
+import type {
+  CustomerInfo,
+  PurchasesOffering,
+  PurchasesPackage,
+} from 'react-native-purchases';
 import CONFIG from '@src/CONFIG';
 import ONYXKEYS from '@src/ONYXKEYS';
 import Log from '@libs/Log';
@@ -121,10 +125,98 @@ function forget() {
   });
 }
 
+/**
+ * Result of a paywall purchase attempt. `cancelled` is its own outcome —
+ * the user pressing "no thanks" in the store sheet is not an error and the
+ * UI should treat it as a silent dismissal.
+ */
+type PurchaseOutcome =
+  | {status: 'success'; customerInfo: CustomerInfo}
+  | {status: 'cancelled'}
+  | {status: 'error'; message: string};
+
+/**
+ * Result of a "Restore Purchases" attempt. `granted` reflects whether the
+ * supporter entitlement is now active after restore — the button shouldn't
+ * silently succeed when there is nothing to restore.
+ */
+type RestoreOutcome =
+  | {status: 'success'; granted: boolean; customerInfo: CustomerInfo}
+  | {status: 'error'; message: string};
+
+function hasSupporterEntitlement(info: CustomerInfo): boolean {
+  return !!info.entitlements.active[SUPPORTER_ENTITLEMENT_ID];
+}
+
+/**
+ * Fetches the RevenueCat "current" offering. Returns `null` if the SDK is
+ * not configured (web, missing keys) or no offering is published — the
+ * paywall should render its unavailable state in that case.
+ */
+async function fetchCurrentOffering(): Promise<PurchasesOffering | null> {
+  if (!isConfigured) {
+    return null;
+  }
+  try {
+    const offerings = await Purchases.getOfferings();
+    return offerings.current ?? null;
+  } catch (error) {
+    Log.warn('[Subscriptions] getOfferings failed', {error});
+    return null;
+  }
+}
+
+async function purchaseSupporterPackage(
+  pkg: PurchasesPackage,
+): Promise<PurchaseOutcome> {
+  if (!isConfigured) {
+    return {status: 'error', message: 'SDK not configured'};
+  }
+  try {
+    const result = await Purchases.purchasePackage(pkg);
+    return {status: 'success', customerInfo: result.customerInfo};
+  } catch (error) {
+    const rcError = error as {userCancelled?: boolean; message?: string};
+    if (rcError?.userCancelled) {
+      return {status: 'cancelled'};
+    }
+    Log.warn('[Subscriptions] purchasePackage failed', {error});
+    return {
+      status: 'error',
+      message: rcError?.message ?? 'Unknown error',
+    };
+  }
+}
+
+async function restoreSupporterPurchases(): Promise<RestoreOutcome> {
+  if (!isConfigured) {
+    return {status: 'error', message: 'SDK not configured'};
+  }
+  try {
+    const customerInfo = await Purchases.restorePurchases();
+    return {
+      status: 'success',
+      granted: hasSupporterEntitlement(customerInfo),
+      customerInfo,
+    };
+  } catch (error) {
+    const rcError = error as {message?: string};
+    Log.warn('[Subscriptions] restorePurchases failed', {error});
+    return {
+      status: 'error',
+      message: rcError?.message ?? 'Unknown error',
+    };
+  }
+}
+
 export {
-  initialize,
-  identify,
+  fetchCurrentOffering,
   forget,
+  identify,
+  initialize,
+  purchaseSupporterPackage,
+  restoreSupporterPurchases,
   syncSupporterStatusFromCustomerInfo,
   SUPPORTER_ENTITLEMENT_ID,
 };
+export type {PurchaseOutcome, RestoreOutcome};

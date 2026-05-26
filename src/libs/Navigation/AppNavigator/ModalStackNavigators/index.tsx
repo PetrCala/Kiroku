@@ -175,6 +175,9 @@ const SettingsModalStackNavigator =
         .default,
     [SCREENS.SETTINGS.APP_SHARE]: () =>
       require<ReactComponentModule>('@screens/Settings/AppShareScreen').default,
+    [SCREENS.SETTINGS.SUPPORT]: () =>
+      require<ReactComponentModule>('@screens/Settings/SupportKirokuScreen')
+        .default,
     [SCREENS.SETTINGS.TERMS_OF_SERVICE]: () =>
       require<ReactComponentModule>('@screens/Settings/TermsOfServiceScreen')
         .default,

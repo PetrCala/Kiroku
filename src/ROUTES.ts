@@ -115,6 +115,7 @@ const ROUTES = {
   SETTINGS_DRINKS_TO_UNITS: 'settings/preferences/drinks-to-units',
   SETTINGS_COLOR_PALETTE: 'settings/preferences/color-palette',
 
+  SETTINGS_SUPPORT: 'settings/support',
   SETTINGS_TERMS_OF_SERVICE: 'settings/terms-of-service',
   SETTINGS_PRIVACY_POLICY: 'settings/privacy-policy',
   SETTINGS_SUBSCRIPTION_TERMS: 'settings/subscription-terms',

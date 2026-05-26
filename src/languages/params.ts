@@ -93,6 +93,14 @@ type VerifyEmailScreenEmailParmas = {
   email: string;
 };
 
+type SupporterPurchaseCtaParams = {
+  price: string;
+};
+
+type SupporterPurchaseErrorParams = {
+  message: string;
+};
+
 export type {
   BreakdownCenterUnitsParams,
   BreakdownDrinkLabelParams,
@@ -113,6 +121,8 @@ export type {
   StatsAfDaysParams,
   StatsDrillDownTitleParams,
   StatsQuietDaysParams,
+  SupporterPurchaseCtaParams,
+  SupporterPurchaseErrorParams,
   UnitCountParams,
   UpdateEmailSentEmailParams,
   VerifyEmailScreenEmailParmas,
