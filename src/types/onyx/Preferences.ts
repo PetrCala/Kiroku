@@ -72,6 +72,11 @@ type Preferences = {
    *  explicit opt-out. Only ever takes effect when the build flag
    *  CONFIG.SEND_CRASH_REPORTS is also true. */
   crash_reporting_enabled?: boolean;
+
+  /** True once the user has answered the one-time location-tagging soft-ask
+   *  shown at live-session start. Gates that prompt so it appears at most once
+   *  per account; undefined means it has not been shown yet. */
+  location_prompt_seen?: boolean;
 };
 
 /** A collection of preferences of multiple users */

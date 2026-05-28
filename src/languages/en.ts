@@ -527,6 +527,13 @@ export default {
       save: "We couldn't save your preferences. Please try again.",
     },
   },
+  locationPrompt: {
+    title: 'Tag where you log drinks?',
+    prompt:
+      'Kiroku can tag each drink you log during a live session with your current location, so you can look back and see where each session happened. You can change this anytime in Settings → Privacy.',
+    enable: 'Enable',
+    notNow: 'Not now',
+  },
   privacyScreen: {
     title: 'Privacy',
     diagnosticsSection: {
