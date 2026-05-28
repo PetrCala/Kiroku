@@ -1,0 +1,121 @@
+import {useMemo} from 'react';
+import {FlatList, View} from 'react-native';
+import {format} from 'date-fns';
+import Button from '@components/Button';
+import DrinkingSessionOverview from '@components/DrinkingSessionOverview';
+import * as KirokuIcons from '@components/Icon/KirokuIcons';
+import Icon from '@components/Icon';
+import Modal from '@components/Modal';
+import {PressableWithFeedback} from '@components/Pressable';
+import Text from '@components/Text';
+import useLocalize from '@hooks/useLocalize';
+import useTheme from '@hooks/useTheme';
+import useThemeStyles from '@hooks/useThemeStyles';
+import {dateStringToDate} from '@libs/DataHandling';
+import * as DSUtils from '@libs/DrinkingSessionUtils';
+import CONST from '@src/CONST';
+import type {DrinkingSessionList, Preferences} from '@src/types/onyx';
+import type {DateString} from '@src/types/onyx/OnyxCommon';
+
+type FriendDayDrillDownSheetProps = {
+  /** Whether the modal is visible */
+  isVisible: boolean;
+
+  /** Callback fired when the modal requests to close */
+  onClose: () => void;
+
+  /** The selected day, or null when no day is selected */
+  date: DateString | null;
+
+  /** The viewed friend's drinking session data */
+  drinkingSessionData: DrinkingSessionList | null | undefined;
+
+  /** The viewed friend's preferences, used for color/unit computation */
+  preferences: Preferences;
+};
+
+function FriendDayDrillDownSheet({
+  isVisible,
+  onClose,
+  date,
+  drinkingSessionData,
+  preferences,
+}: FriendDayDrillDownSheetProps) {
+  const styles = useThemeStyles();
+  const theme = useTheme();
+  const {translate} = useLocalize();
+
+  const sessions = useMemo(() => {
+    if (!date) {
+      return [];
+    }
+    const relevantData = DSUtils.getSingleDayDrinkingSessions(
+      dateStringToDate(date),
+      drinkingSessionData ?? undefined,
+      false,
+    ) as DrinkingSessionList;
+    return Object.entries(relevantData).map(([sessionId, session]) => ({
+      sessionId,
+      session,
+    }));
+  }, [date, drinkingSessionData]);
+
+  return (
+    <Modal
+      isVisible={isVisible}
+      onClose={onClose}
+      type={CONST.MODAL.MODAL_TYPE.BOTTOM_DOCKED}>
+      <View style={[styles.pt3, styles.pb5, {minHeight: 240, maxHeight: 560}]}>
+        <View
+          style={[
+            styles.flexRow,
+            styles.alignItemsCenter,
+            styles.justifyContentBetween,
+            styles.ph4,
+            styles.mb2,
+          ]}>
+          <Text style={[styles.textHeadline, styles.flex1, styles.mr2]}>
+            {date
+              ? format(dateStringToDate(date), CONST.DATE.SHORT_DATE_FORMAT)
+              : ''}
+          </Text>
+          <PressableWithFeedback
+            accessibilityLabel={translate('common.close')}
+            accessibilityRole="button"
+            onPress={onClose}
+            style={[styles.p2]}>
+            <Icon src={KirokuIcons.Close} fill={theme.icon} />
+          </PressableWithFeedback>
+        </View>
+        {sessions.length === 0 ? (
+          <View style={[styles.flex1, styles.justifyContentCenter, styles.p5]}>
+            <Text style={[styles.textSupporting, styles.textAlignCenter]}>
+              {translate('dayOverviewScreen.noDrinkingSessions')}
+            </Text>
+          </View>
+        ) : (
+          <FlatList
+            data={sessions}
+            keyExtractor={item => String(item.sessionId)}
+            renderItem={({item}) => (
+              <DrinkingSessionOverview
+                sessionId={item.sessionId}
+                session={item.session}
+                isEditModeOn={false}
+                readOnly
+                preferences={preferences}
+              />
+            )}
+          />
+        )}
+        <View style={[styles.ph4, styles.mt2]}>
+          <Button large text={translate('common.close')} onPress={onClose} />
+        </View>
+      </View>
+    </Modal>
+  );
+}
+
+FriendDayDrillDownSheet.displayName = 'FriendDayDrillDownSheet';
+
+export default FriendDayDrillDownSheet;

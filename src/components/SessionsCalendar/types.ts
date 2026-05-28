@@ -1,5 +1,5 @@
 import type {DrinkingSessionList, Preferences} from '@src/types/onyx';
-import type {UserID} from '@src/types/onyx/OnyxCommon';
+import type {DateString, UserID} from '@src/types/onyx/OnyxCommon';
 import type {DateData} from 'react-native-calendars';
 import type {MarkingProps} from 'react-native-calendars/src/calendar/day/marking';
 import type {DayComponentProps, CalendarColors} from './DayComponent/types';
@@ -23,6 +23,11 @@ type SessionsCalendarProps = {
   /** Show an inline spinner next to the month header while older months are
    *  being fetched after a back-nav past the loaded window edge. */
   isFetchingOlderMonths?: boolean;
+
+  /** Fires when a day is tapped while viewing another user's calendar (the
+   *  self case navigates to the day overview instead). Lets the parent open a
+   *  read-only drill-down. Omit to keep foreign-day taps inert. */
+  onForeignDayPress?: (date: DateString) => void;
 
   /**
    * Rendering mode:

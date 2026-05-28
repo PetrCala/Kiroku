@@ -24,8 +24,11 @@ function DrinkingSessionOverview({
   sessionId,
   session,
   isEditModeOn,
+  readOnly = false,
+  preferences: preferencesProp,
 }: DrinkingSessionOverviewProps) {
-  const {preferences} = useDatabaseData();
+  const {preferences: ownPreferences} = useDatabaseData();
+  const preferences = preferencesProp ?? ownPreferences;
   const {translate} = useLocalize();
   const styles = useThemeStyles();
   const StyleUtils = useStyleUtils();
@@ -73,32 +76,42 @@ function DrinkingSessionOverview({
     sessionColor = resolvePalette(preferences?.session_color_palette).black;
   }
 
+  const rowStyle = [
+    styles.flexRow,
+    styles.alignItemsCenter,
+    styles.justifyContentBetween,
+    styles.p4,
+    styles.mh1,
+    styles.mb2,
+    StyleUtils.getColorAccentRowStyle(sessionColor),
+    {minHeight: 84},
+  ];
+
+  const sessionDetails = (
+    <View style={[styles.flexColumn, styles.flex1]}>
+      <Text style={[styles.textNormal, styles.textStrong]}>
+        {translate('common.units')}: {totalUnits}
+      </Text>
+      {shouldDisplayTime && (
+        <Text style={[styles.textMicroSupporting, styles.mt1]}>
+          {translate('common.time')}: {timeString}
+        </Text>
+      )}
+    </View>
+  );
+
+  if (readOnly) {
+    return <View style={rowStyle}>{sessionDetails}</View>;
+  }
+
   return (
     <PressableWithFeedback
       accessibilityLabel={translate('dayOverviewScreen.sessionWindow', {
         sessionId,
       })}
-      style={[
-        styles.flexRow,
-        styles.alignItemsCenter,
-        styles.justifyContentBetween,
-        styles.p4,
-        styles.mh1,
-        styles.mb2,
-        StyleUtils.getColorAccentRowStyle(sessionColor),
-        {minHeight: 84},
-      ]}
+      style={rowStyle}
       onPress={() => onSessionButtonPress()}>
-      <View style={[styles.flexColumn, styles.flex1]}>
-        <Text style={[styles.textNormal, styles.textStrong]}>
-          {translate('common.units')}: {totalUnits}
-        </Text>
-        {shouldDisplayTime && (
-          <Text style={[styles.textMicroSupporting, styles.mt1]}>
-            {translate('common.time')}: {timeString}
-          </Text>
-        )}
-      </View>
+      {sessionDetails}
       {session?.ongoing ? (
         <Button
           danger
