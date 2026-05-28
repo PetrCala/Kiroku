@@ -39,17 +39,17 @@ function LiveSessionScreen({route}: LiveSessionScreenProps) {
   const onNavigateBack = (
     action: DeepValueOf<typeof CONST.NAVIGATION.SESSION_ACTION>,
   ) => {
+    if (action === CONST.NAVIGATION.SESSION_ACTION.SAVE) {
+      Navigation.navigate(ROUTES.DRINKING_SESSION_SUMMARY.getRoute(sessionId));
+      return;
+    }
     if (backTo) {
       Navigation.navigate(backTo as Route);
       return;
     }
-    if (action === CONST.NAVIGATION.SESSION_ACTION.SAVE) {
-      Navigation.navigate(ROUTES.DRINKING_SESSION_SUMMARY.getRoute(sessionId));
-    } else {
-      // Use dismissModal instead of navigate(HOME) to avoid double animation
-      // The home screen is already underneath the modal
-      Navigation.dismissModal();
-    }
+    // Use dismissModal instead of navigate(HOME) to avoid double animation
+    // The home screen is already underneath the modal
+    Navigation.dismissModal();
   };
 
   const syncWithDb = async (updates: Partial<DrinkingSession>) => {

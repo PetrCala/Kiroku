@@ -24,6 +24,7 @@ function DrinkingSessionOverview({
   sessionId,
   session,
   isEditModeOn,
+  backTo,
 }: DrinkingSessionOverviewProps) {
   const {preferences} = useDatabaseData();
   const {translate} = useLocalize();
@@ -48,7 +49,7 @@ function DrinkingSessionOverview({
         session,
         sessionId,
       );
-      DS.navigateToOngoingSessionScreen();
+      DS.navigateToOngoingSessionScreen(backTo);
     })();
   };
 

@@ -1,7 +1,11 @@
 import React, {useState, useEffect, useMemo} from 'react';
 import {View, FlatList} from 'react-native';
 import * as KirokuIcons from '@components/Icon/KirokuIcons';
-import {changeDateBySomeDays, dateStringToDate} from '@libs/DataHandling';
+import {
+  changeDateBySomeDays,
+  dateStringToDate,
+  formatDate,
+} from '@libs/DataHandling';
 import UserOffline from '@components/UserOfflineModal';
 import {useUserConnection} from '@context/global/UserConnectionContext';
 import type {DrinkingSessionList} from '@src/types/onyx';
@@ -10,6 +14,7 @@ import type {StackScreenProps} from '@react-navigation/stack';
 import type {DayOverviewNavigatorParamList} from '@libs/Navigation/types';
 import type SCREENS from '@src/SCREENS';
 import Navigation from '@libs/Navigation/Navigation';
+import ROUTES from '@src/ROUTES';
 import {useDatabaseData} from '@context/global/DatabaseDataContext';
 import * as DSUtils from '@libs/DrinkingSessionUtils';
 import CONST from '@src/CONST';
@@ -153,6 +158,7 @@ function DayOverviewScreen({route}: DayOverviewScreenProps) {
               sessionId={item.sessionId}
               session={item.session}
               isEditModeOn={editMode}
+              backTo={ROUTES.DAY_OVERVIEW.getRoute(formatDate(currentDate))}
             />
           )}
           keyExtractor={item => String(item.sessionId)} // Use start time as id

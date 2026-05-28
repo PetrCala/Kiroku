@@ -552,20 +552,19 @@ async function setIsCreatingNewSession(val: boolean): Promise<void> {
 }
 
 /**
- * Navigate to the an ongoing session screen
+ * Navigate to the ongoing session screen
  *
  * Assume the session data is correctly synced with the local ongoingSessionData Onyx object
  *
- * @param sessionId ID of the session to navigate to
- * @param session Current session data
+ * @param backTo Optional route to return to when leaving the live session screen
  */
-function navigateToOngoingSessionScreen(): void {
+function navigateToOngoingSessionScreen(backTo?: Route): void {
   if (!ongoingSessionData?.id) {
     Alert.alert(Localize.translateLocal('drinkingSession.error.missingId'));
     return;
   }
   Navigation.navigate(
-    ROUTES.DRINKING_SESSION_LIVE.getRoute(ongoingSessionData.id),
+    ROUTES.DRINKING_SESSION_LIVE.getRoute(ongoingSessionData.id, backTo),
   );
 }
 
