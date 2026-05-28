@@ -1139,6 +1139,9 @@ export default {
       range: ({low, high}: BacRangeParams) => `Pravděpodobně ${low} – ${high}`,
       soberIn: ({time}: BacSoberInParams) =>
         `Vystřízlivění přibližně za ${time}`,
+      soberBy: ({time}: BacSoberInParams) => `Vystřízlivění v ${time}`,
+      timeDuration: 'Doba',
+      timeClock: 'Čas',
       showDetails: 'Jak se to počítá?',
       decayChartLabel: 'Odhadovaná hladina alkoholu klesající k nule v čase',
       intro: {
