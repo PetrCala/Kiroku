@@ -1,5 +1,6 @@
 import type {
   Config,
+  DataVisibility,
   DrinkingSessionList,
   Preferences,
   UnconfirmedDays,
@@ -18,6 +19,7 @@ type FetchData = {
   preferences?: Preferences;
   unconfirmedDays?: UnconfirmedDays;
   userData?: UserData;
+  dataVisibility?: DataVisibility;
 };
 
 type FetchDataKey = StringKeyOf<FetchData>;

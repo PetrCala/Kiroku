@@ -536,6 +536,15 @@ export default {
   },
   privacyScreen: {
     title: 'Privacy',
+    friendsVisibilitySection: {
+      title: 'Friends',
+      description: 'Control which friends can see your drinking data.',
+    },
+    hideFromAllFriends: {
+      label: 'Hide my data from all friends',
+      description:
+        'When on, none of your friends can see your drinking sessions. To hide your data from just one friend instead, open their profile and use Manage Friend.',
+    },
     diagnosticsSection: {
       title: 'Diagnostics',
       description:
@@ -925,6 +934,8 @@ export default {
     manageFriend: 'Manage Friend',
     unfriendPrompt: 'Do you really want to unfriend this user?',
     unfriend: 'Unfriend',
+    hideDataFromFriend: 'Hide my data from this friend',
+    showDataToFriend: 'Show my data to this friend',
     commonFriendsLabel: ({hasCommonFriends}: CommonFriendsLabelParams) =>
       `${hasCommonFriends ? 'Common friends:' : 'Friends:'}`,
     profileImage: 'Profile Image',
@@ -1641,6 +1652,11 @@ export default {
       nicknameUpdateFailed: {
         title: 'Nickname Update Failed',
         message: 'There was an error updating your nickname. Please try again.',
+      },
+      privacyUpdateFailed: {
+        title: 'Privacy Update Failed',
+        message:
+          'There was an error updating your privacy settings. Please try again.',
       },
       statusUpdateFailed: {
         title: 'Status Update Failed',

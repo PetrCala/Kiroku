@@ -15,13 +15,14 @@ import Button from '@components/Button';
 import ConfirmModal from '@components/ConfirmModal';
 import * as Preferences from '@userActions/Preferences';
 import * as SessionLocations from '@userActions/SessionLocations';
+import {setHideFromAllFriends} from '@database/privacy';
 import checkPermission from '@libs/Permissions/checkPermission';
 import requestPermission from '@libs/Permissions/requestPermission';
 
 function PrivacyScreen() {
   const {translate} = useLocalize();
   const styles = useThemeStyles();
-  const {preferences} = useDatabaseData();
+  const {preferences, dataVisibility} = useDatabaseData();
   const {auth, db} = useFirebase();
   const user = auth.currentUser;
 
@@ -43,8 +44,30 @@ function PrivacyScreen() {
   const [savingTrackLocation, setSavingTrackLocation] = useState(false);
   const displayTrackLocation = pendingTrackLocation ?? persistedTrackLocation;
 
+  const persistedHideFromAll = dataVisibility?.hide_from_all === true;
+  const [pendingHideFromAll, setPendingHideFromAll] = useState<boolean | null>(
+    null,
+  );
+  const [savingHideFromAll, setSavingHideFromAll] = useState(false);
+  const displayHideFromAll = pendingHideFromAll ?? persistedHideFromAll;
+
   const [showPurgeConfirmModal, setShowPurgeConfirmModal] = useState(false);
   const [isPurging, setIsPurging] = useState(false);
+
+  const onToggleHideFromAll = (next: boolean) => {
+    if (savingHideFromAll || next === displayHideFromAll || !user) {
+      return;
+    }
+    setPendingHideFromAll(next);
+    setSavingHideFromAll(true);
+    setHideFromAllFriends(db, user.uid, next)
+      .catch(error => {
+        setPendingHideFromAll(null);
+        const errorMessage = error instanceof Error ? error.message : '';
+        Alert.alert(translate('privacyScreen.error.save'), errorMessage);
+      })
+      .finally(() => setSavingHideFromAll(false));
+  };
 
   const onToggleCrashReporting = (next: boolean) => {
     if (savingCrashReporting || next === displayCrashReporting) {
@@ -137,6 +160,41 @@ function PrivacyScreen() {
         onBackButtonPress={() => Navigation.goBack()}
       />
       <ScrollView contentContainerStyle={[styles.w100]}>
+        <Section
+          title={translate('privacyScreen.friendsVisibilitySection.title')}
+          titleStyles={styles.generalSectionTitle}
+          subtitle={translate(
+            'privacyScreen.friendsVisibilitySection.description',
+          )}
+          subtitleMuted
+          isCentralPane
+          childrenStyles={styles.pt3}>
+          <View style={styles.sectionMenuItemTopDescription}>
+            <View
+              style={[
+                styles.flexRow,
+                styles.alignItemsCenter,
+                styles.justifyContentBetween,
+                styles.mb4,
+              ]}>
+              <View style={[styles.flexColumn, styles.flex1, styles.mr3]}>
+                <Text style={[styles.textNormal, styles.textStrong]}>
+                  {translate('privacyScreen.hideFromAllFriends.label')}
+                </Text>
+                <Text style={[styles.textMicroSupporting, styles.mt1]}>
+                  {translate('privacyScreen.hideFromAllFriends.description')}
+                </Text>
+              </View>
+              <Switch
+                accessibilityLabel={translate(
+                  'privacyScreen.hideFromAllFriends.label',
+                )}
+                isOn={displayHideFromAll}
+                onToggle={onToggleHideFromAll}
+              />
+            </View>
+          </View>
+        </Section>
         <Section
           title={translate('privacyScreen.diagnosticsSection.title')}
           titleStyles={styles.generalSectionTitle}

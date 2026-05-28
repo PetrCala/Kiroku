@@ -126,6 +126,21 @@ const DBPATHS = {
     route: '/user_unconfirmed_days/:user_id',
     getRoute: (user_id: UserID) => `user_unconfirmed_days/${user_id}` as const,
   },
+  USER_DATA_VISIBILITY: 'user_data_visibility',
+  USER_DATA_VISIBILITY_USER_ID: {
+    route: '/user_data_visibility/:user_id',
+    getRoute: (user_id: UserID) => `user_data_visibility/${user_id}` as const,
+  },
+  USER_DATA_VISIBILITY_USER_ID_HIDE_FROM_ALL: {
+    route: '/user_data_visibility/:user_id/hide_from_all',
+    getRoute: (user_id: UserID) =>
+      `user_data_visibility/${user_id}/hide_from_all` as const,
+  },
+  USER_DATA_VISIBILITY_USER_ID_HIDDEN_FROM_VIEWER: {
+    route: '/user_data_visibility/:user_id/hidden_from/:viewer_uid',
+    getRoute: (user_id: UserID, viewer_uid: UserID) =>
+      `user_data_visibility/${user_id}/hidden_from/${viewer_uid}` as const,
+  },
   USERS: 'users',
   USERS_USER_ID: {
     route: '/users/:user_id',

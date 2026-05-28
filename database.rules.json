@@ -55,7 +55,7 @@
       ".write": "auth.token.admin === true",
       "$uid": {
         ".validate": "newData.val() === null || newData.hasChildren()",
-        ".read": "auth != null && (auth.uid === $uid || root.child('users').child(auth.uid).child('friends').child($uid).exists())",
+        ".read": "auth != null && (auth.uid === $uid || (root.child('users').child(auth.uid).child('friends').child($uid).exists() && root.child('user_data_visibility').child($uid).child('hide_from_all').val() !== true && !root.child('user_data_visibility').child($uid).child('hidden_from').child(auth.uid).exists()))",
         ".write": "auth != null && auth.uid === $uid",
         ".indexOn": ["start_time"]
       }
@@ -147,6 +147,24 @@
         ".validate": "newData.val() === true || newData.val() === null",
         ".read": "auth != null  && auth.uid === $uid",
         ".write": "auth != null && auth.uid === $uid"
+      }
+    },
+    "user_data_visibility": {
+      ".read": "auth.token.admin === true",
+      ".write": "auth.token.admin === true",
+      "$uid": {
+        ".validate": "newData.val() === null || newData.hasChildren()",
+        ".read": "auth != null && auth.uid === $uid",
+        ".write": "auth != null && auth.uid === $uid",
+        "hide_from_all": {
+          ".validate": "newData.isBoolean() || newData.val() === null"
+        },
+        "hidden_from": {
+          ".validate": "newData.val() === null || newData.hasChildren()",
+          "$viewer_uid": {
+            ".validate": "newData.val() === true || newData.val() === null"
+          }
+        }
       }
     },
     "users": {
