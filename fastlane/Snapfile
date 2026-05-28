@@ -25,6 +25,18 @@ languages([
 workspace("./ios/kiroku.xcworkspace")
 scheme("Kiroku (production)")
 
+# Build/run the UI test against a Release configuration. The scheme's Test
+# action defaults to DebugProduction, but React Native's "Bundle React Native
+# code and images" build phase SKIPS JS bundling for Debug configs — it expects
+# the Metro packager to be running. In CI there's no Metro and no embedded
+# bundle, so the app boots straight into a redbox:
+#   "No script URL provided. Make sure the packager is running or you have
+#    embedded a JS bundle in your application bundle."
+# and every UI selector misses because the real UI never renders. Release
+# configs embed the bundle and load from it (DEBUG=0), which is exactly what
+# screenshot capture needs. Simulator build needs no code signing.
+configuration("ReleaseProduction")
+
 # The legacy `kirokuTests` target has no SWIFT_VERSION set in its buildSettings
 # (pre-existing project bug), which crashes `xcodebuild build test` on Xcode 26+
 # with: "SWIFT_VERSION '' is unsupported". Override globally — every Kiroku
