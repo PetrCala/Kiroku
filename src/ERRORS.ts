@@ -72,6 +72,7 @@ const ERRORS = {
     FRIEND_REQUEST_ACCEPT_FAILED: 'user/friend-request-accept-failed',
     FRIEND_REQUEST_REJECT_FAILED: 'user/friend-request-reject-failed',
     NICKNAME_UPDATE_FAILED: 'user/nickname-update-failed',
+    PRIVACY_UPDATE_FAILED: 'user/privacy-update-failed',
     STATUS_UPDATE_FAILED: 'user/status-update-failed',
     THEME_UPDATE_FAILED: 'user/theme-update-failed',
     TIMEZONE_UPDATE_FAILED: 'user/timezone-update-failed',

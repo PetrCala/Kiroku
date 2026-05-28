@@ -1,7 +1,9 @@
 import React, {useMemo, useRef} from 'react';
 import {View} from 'react-native';
 import {unfriend} from '@database/friends';
+import {setFriendDataHidden} from '@database/privacy';
 import {useFirebase} from '@src/context/global/FirebaseContext';
+import {useDatabaseData} from '@context/global/DatabaseDataContext';
 import useLocalize from '@hooks/useLocalize';
 import useThemeStyles from '@hooks/useThemeStyles';
 import Navigation from '@libs/Navigation/Navigation';
@@ -33,12 +35,31 @@ function ManageFriendPopover({
   const user = auth.currentUser;
   const styles = useThemeStyles();
   const {translate} = useLocalize();
+  const {dataVisibility} = useDatabaseData();
   const fabRef = useRef<HTMLDivElement>(null);
   const {windowHeight} = useWindowDimensions();
   const [unfriendModalVisible, setUnfriendModalVisible] = React.useState(false);
 
+  const isHidden = dataVisibility?.hidden_from?.[friendId] === true;
+
+  const handleToggleHidden = () => {
+    if (!user) {
+      return;
+    }
+    setFriendDataHidden(db, user.uid, friendId, !isHidden).catch(error => {
+      ErrorUtils.raiseAppError(ERRORS.USER.PRIVACY_UPDATE_FAILED, error);
+    });
+  };
+
   const menuItems = useMemo(() => {
     const baseMenuItems: PopoverMenuItem[] = [
+      {
+        text: isHidden
+          ? translate('profileScreen.showDataToFriend')
+          : translate('profileScreen.hideDataFromFriend'),
+        icon: isHidden ? KirokuIcons.Eye : KirokuIcons.EyeDisabled,
+        onSelected: handleToggleHidden,
+      },
       {
         text: translate('profileScreen.unfriend'),
         icon: KirokuIcons.RemoveUser,
@@ -49,7 +70,8 @@ function ManageFriendPopover({
     ];
 
     return baseMenuItems;
-  }, [translate]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [translate, isHidden]);
 
   const handleUnfriend = () => {
     (async () => {

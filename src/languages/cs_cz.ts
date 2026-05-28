@@ -534,6 +534,15 @@ export default {
   },
   privacyScreen: {
     title: 'Soukromí',
+    friendsVisibilitySection: {
+      title: 'Přátelé',
+      description: 'Spravujte, kteří přátelé vidí vaše data o pití.',
+    },
+    hideFromAllFriends: {
+      label: 'Skrýt má data před všemi přáteli',
+      description:
+        'Když je zapnuto, žádný z vašich přátel neuvidí vaše relace pití. Chcete-li skrýt data jen před jedním přítelem, otevřete jeho profil a použijte Spravovat přítele.',
+    },
     diagnosticsSection: {
       title: 'Diagnostika',
     },
@@ -910,6 +919,8 @@ export default {
     manageFriend: 'Spravovat přítele',
     unfriendPrompt: 'Opravdu chcete tohoto uživatele odebrat z přátel?',
     unfriend: 'Odebrat z přátel',
+    hideDataFromFriend: 'Skrýt má data před tímto přítelem',
+    showDataToFriend: 'Zobrazit má data tomuto příteli',
     commonFriendsLabel: ({hasCommonFriends}: CommonFriendsLabelParams) =>
       `${hasCommonFriends ? 'Společní přátelé:' : 'Přátelé:'}`,
     profileImage: 'Profilový obrázek',
@@ -1627,6 +1638,11 @@ export default {
         title: 'Nepodařilo se aktualizovat přezdívku',
         message:
           'Při aktualizaci přezdívky došlo k chybě. Zkuste to prosím znovu.',
+      },
+      privacyUpdateFailed: {
+        title: 'Nepodařilo se aktualizovat soukromí',
+        message:
+          'Při aktualizaci nastavení soukromí došlo k chybě. Zkuste to prosím znovu.',
       },
       statusUpdateFailed: {
         title: 'Nepodařilo se aktualizovat stav',

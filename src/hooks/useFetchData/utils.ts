@@ -28,6 +28,9 @@ function fetchDataKeyToDbPath(key: FetchDataKey, userID?: UserID) {
     case 'userData':
       path = DBPATHS.USERS_USER_ID.getRoute(id);
       break;
+    case 'dataVisibility':
+      path = DBPATHS.USER_DATA_VISIBILITY_USER_ID.getRoute(id);
+      break;
     default:
       break;
   }

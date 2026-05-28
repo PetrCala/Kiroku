@@ -4,6 +4,7 @@ import type Config from './Config';
 import type {AppSettings, Maintenance} from './Config';
 import type {CapturedLogs, Log} from './Console';
 import type Credentials from './Credentials';
+import type DataVisibility from './DataVisibility';
 import type DatabaseProps from './DatabaseProps';
 import type Download from './Download';
 import type DrinkingSession from './DrinkingSession';
@@ -85,6 +86,7 @@ export type {
   Config,
   Credentials,
   DatabaseProps,
+  DataVisibility,
   Download,
   DrinkingSession,
   DrinkingSessionArray,
