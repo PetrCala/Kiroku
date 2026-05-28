@@ -18,7 +18,6 @@ import UserOfflineModal from '@components/UserOfflineModal';
 import {computeFirebaseUpdates} from '@database/updates';
 import type DeepValueOf from '@src/types/utils/DeepValueOf';
 import Navigation from '@libs/Navigation/Navigation';
-import type {Route} from '@src/ROUTES';
 import ROUTES from '@src/ROUTES';
 import ERRORS from '@src/ERRORS';
 
@@ -44,7 +43,7 @@ function LiveSessionScreen({route}: LiveSessionScreenProps) {
       return;
     }
     if (backTo) {
-      Navigation.navigate(backTo as Route);
+      Navigation.goBack(backTo);
       return;
     }
     // Use dismissModal instead of navigate(HOME) to avoid double animation
