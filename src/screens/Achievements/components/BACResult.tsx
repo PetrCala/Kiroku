@@ -1,4 +1,4 @@
-import React from 'react';
+import React, {useMemo} from 'react';
 import {View} from 'react-native';
 import {BaseChart, Line} from '@components/Charts/BaseChart';
 import Button from '@components/Button';
@@ -9,6 +9,7 @@ import useLocalize from '@hooks/useLocalize';
 import useThemeStyles from '@hooks/useThemeStyles';
 import {formatBac} from '@libs/BACUtils';
 import type {BacEstimate} from '@libs/BACUtils';
+import {roundToTwoDecimalPlaces} from '@libs/NumberUtils';
 import type {ChartDatum} from '@libs/Statistics';
 import CONST from '@src/CONST';
 import type {BacDisplayUnit} from '@src/types/onyx';
@@ -64,7 +65,20 @@ function BACResult({
     },
   ];
 
-  const showGraph = decayData.length > 1;
+  // The decay series carries raw BAC percent; scale it to the chosen unit so
+  // the y-axis ticks match the headline number (‰ = percent × 10).
+  const isPercentUnit = displayUnit === CONST.BAC.DISPLAY_UNIT.PERCENT;
+  const yUnitLabel = isPercentUnit ? '%' : '‰';
+  const chartData = useMemo<ChartDatum[]>(
+    () =>
+      decayData.map(point => ({
+        x: point.x,
+        y: roundToTwoDecimalPlaces(point.y * (isPercentUnit ? 1 : 10)),
+      })),
+    [decayData, isPercentUnit],
+  );
+
+  const showGraph = chartData.length > 1;
 
   return (
     <ScrollView
@@ -119,9 +133,9 @@ function BACResult({
             })}
           </Text>
           <BaseChart
-            data={decayData}
+            data={chartData}
             range="allTime"
-            height={160}
+            height={180}
             accessibilityLabel={translate(
               'achievementsScreen.bac.decayChartLabel',
             )}>
@@ -134,7 +148,7 @@ function BACResult({
             )}
           </BaseChart>
           <Text style={[styles.textLabelSupporting, styles.textAlignCenter]}>
-            {translate('achievementsScreen.bac.decayChartAxis')}
+            {translate('achievementsScreen.bac.decayAxes', {unit: yUnitLabel})}
           </Text>
         </View>
       ) : null}

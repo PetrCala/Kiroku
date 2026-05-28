@@ -6,6 +6,7 @@ import type {
   UntilTimeParams,
 } from './types';
 import type {
+  BacAxesParams,
   BacRangeParams,
   BacSessionTotalParams,
   BacSoberInParams,
@@ -1150,7 +1151,8 @@ export default {
       soberIn: ({time}: BacSoberInParams) => `Sober in about ${time}`,
       showDetails: 'How is this calculated?',
       decayChartLabel: 'Estimated BAC declining to zero over time',
-      decayChartAxis: 'Hours from now',
+      decayAxes: ({unit}: BacAxesParams) =>
+        `Hours from now (x) · BAC in ${unit} (y)`,
       intro: {
         title: 'BAC Estimator',
         body1:
