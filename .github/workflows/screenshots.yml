@@ -48,7 +48,10 @@ jobs:
     name: Capture iOS App Store screenshots
     if: ${{ github.event.inputs.platform != 'android-only' }}
     runs-on: macos-26
-    timeout-minutes: 60
+    # Build alone is ~35-40 min; once the UI test actually navigates and
+    # captures screenshots across every locale (with reinstall_app between
+    # captures), the full run can exceed 60 min. 90 gives headroom.
+    timeout-minutes: 90
     env:
       DEVELOPER_DIR: /Applications/Xcode_26.1.1.app/Contents/Developer
     steps:
@@ -126,8 +129,11 @@ jobs:
           if-no-files-found: warn
           retention-days: 14
 
-      - name: Upload fastlane logs on failure
-        if: ${{ failure() }}
+      - name: Upload fastlane logs
+        # always() (not failure()) so a timeout-cancelled run still uploads
+        # the snapshot log — cancellation is not a failure, and without this
+        # a 90-min wall would leave zero diagnostics.
+        if: ${{ always() }}
         uses: actions/upload-artifact@v4
         with:
           name: ios-fastlane-logs-${{ github.sha }}
@@ -231,8 +237,10 @@ jobs:
           if-no-files-found: warn
           retention-days: 14
 
-      - name: Upload screengrab logs on failure
-        if: ${{ failure() }}
+      - name: Upload screengrab logs
+        # always() so timeout-cancelled runs still upload diagnostics
+        # (cancellation is not a failure).
+        if: ${{ always() }}
         uses: actions/upload-artifact@v4
         with:
           name: android-screengrab-logs-${{ github.sha }}
