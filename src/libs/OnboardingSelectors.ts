@@ -43,6 +43,16 @@ function hasAcceptedCurrentTerms(userData: UserData | undefined): boolean {
  * (`username_chosen !== false`). Users mid-signup whose username step is
  * still pending always go through the new flow, even if `agreed_to_terms_at`
  * happens to be set.
+ *
+ * TODO (pinned at 0.3.13-35): remove this selector and rely solely on
+ * `hasCompletedOnboarding`. The #358 backfill already stamped existing users
+ * with `onboarding.completed_at`; this selector now only protects accounts
+ * created through pre-rebuild builds (oldest in the wild: Android beta 0.3.10)
+ * whose signup doesn't write `completed_at`. Safe to remove once the
+ * minimum-supported version is bumped above those builds (at app launch, or
+ * with the next Android beta ship that force-updates off 0.3.10). Tracked in
+ * https://github.com/PetrCala/Kiroku/issues/645 — see it for the full removal
+ * procedure.
  */
 function isLegacyGrandfatheredUser(userData: UserData | undefined): boolean {
   if (!userData) {
