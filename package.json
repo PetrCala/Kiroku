@@ -50,6 +50,7 @@
     "bump": "./scripts/bumpVersion.sh",
     "build": "tsc",
     "generate-icons": "node scripts/generate-icons.mjs",
+    "frame-screenshots": "node scripts/frame-app-store-screenshots.mjs",
     "sync-brand-colors": "node scripts/sync-brand-colors.mjs"
   },
   "dependencies": {

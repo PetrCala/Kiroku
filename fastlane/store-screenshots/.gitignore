@@ -1,0 +1,3 @@
+# Raw captures (you provide) and framed outputs are build artifacts, not versioned.
+raw/
+framed/
