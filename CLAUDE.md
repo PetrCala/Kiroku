@@ -165,6 +165,33 @@ The skill provides guidance on:
 - **Build Compliance**: Android 16KB page alignment (Google Play requirement)
 - **Platform Tooling**: Xcode/Android Studio profiling and debugging setup
 
+### Localization & Translations
+
+Kiroku is multi-language. `src/languages/en.ts` is the **source of truth**; every
+other locale (`src/languages/<locale>.ts`) mirrors its exact key structure.
+
+**Do NOT hand-write non-English translations inside a feature task/PR.** Doing so
+is what produces fragmented, inconsistent translations (different words for the
+same term, inconsistent tone, etc.). Instead:
+
+1. In the feature work, add/modify **only the English keys** in `en.ts` (and the
+   param types in `params.ts` if needed). Leave the other locales to the skill.
+2. Fill the non-English locales with the **`translate` skill** (`.claude/skills/translate/`),
+   which translates against each language's curated glossary/style guide in
+   `src/languages/context/<locale>.md`. Run it in `fill` mode for new keys, or
+   `audit` mode to re-harmonize an existing language.
+
+Every supported locale must have a `src/languages/context/<locale>.md` guide — a
+unit test (`__tests__/unit/TranslationContext.test.ts`) enforces this, and the
+skill refuses to translate a language without one. Adding a new language starts
+by copying `src/languages/context/_TEMPLATE.md`.
+
+PRs that change `src/languages/**` are reviewed by the **translation-review**
+GitHub Actions workflow (`/review-translations` → `translation-reviewer` agent),
+which flags glossary/register/formatting/consistency violations as inline
+comments. It runs `claude-sonnet-4-6` and is path-scoped, so it only fires on
+translation PRs.
+
 ### Code Quality
 
 - **TypeScript**: Strict mode enabled
