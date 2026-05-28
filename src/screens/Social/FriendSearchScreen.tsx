@@ -70,8 +70,23 @@ function FriendSearchScreen() {
     [friendRequests, searchResultData],
   );
 
+  const resetSearch = useCallback((): void => {
+    // Reset all values displayed on screen
+    setSearching(false);
+    setSearchResultData([]);
+    setRequestStatuses({});
+    setDisplayData({});
+    setNoUsersFound(false);
+  }, []);
+
   const dbSearch = useCallback(
     async (searchText: string, database?: Database): Promise<void> => {
+      // An empty/whitespace query (e.g. on mount or after clearing) should
+      // clear the screen rather than render the "no users found" message.
+      if (!searchText.trim()) {
+        resetSearch();
+        return;
+      }
       try {
         setSearching(true);
         const newData: UserSearchResults = await searchDatabaseForUsers(
@@ -95,17 +110,8 @@ function FriendSearchScreen() {
         setSearching(false);
       }
     },
-    [db, updateRequestStatuses],
+    [db, updateRequestStatuses, resetSearch],
   );
-
-  const resetSearch = (): void => {
-    // Reset all values displayed on screen
-    setSearching(false);
-    setSearchResultData([]);
-    setRequestStatuses({});
-    setDisplayData({});
-    setNoUsersFound(false);
-  };
 
   useMemo(() => {
     if (!userData) {
@@ -135,6 +141,7 @@ function FriendSearchScreen() {
         windowText={translate('friendSearchScreen.searchWindow')}
         onSearch={dbSearch}
         onResetSearch={resetSearch}
+        searchOnTextChange
       />
       <ScrollView style={[styles.w100, styles.flex1]}>
         {searching ? (

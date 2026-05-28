@@ -1,5 +1,5 @@
 import {Keyboard, View} from 'react-native';
-import {useState, useEffect, useCallback} from 'react';
+import {useEffect, useCallback} from 'react';
 import type {Database} from 'firebase/database';
 import {useFirebase} from '@src/context/global/FirebaseContext';
 import * as KirokuIcons from '@components/Icon/KirokuIcons';
@@ -7,6 +7,7 @@ import Button from '@components/Button';
 import useThemeStyles from '@hooks/useThemeStyles';
 import TextInput from '@components/TextInput';
 import useLocalize from '@hooks/useLocalize';
+import useDebouncedState from '@hooks/useDebouncedState';
 
 type SearchWindowProps = {
   windowText: string;
@@ -24,7 +25,8 @@ function SearchWindow({
   const styles = useThemeStyles();
   const {db} = useFirebase();
   const {translate} = useLocalize();
-  const [searchText, setSearchText] = useState<string>('');
+  const [searchText, debouncedSearchText, setSearchText] =
+    useDebouncedState<string>('');
 
   const handleDoSearch = useCallback(
     (text: string) => {
@@ -46,10 +48,10 @@ function SearchWindow({
       return;
     }
 
-    handleDoSearch(searchText);
+    handleDoSearch(debouncedSearchText);
     // Including the handleDoSearch function causes an infinite loop
     // eslint-disable-next-line react-compiler/react-compiler, react-hooks/exhaustive-deps
-  }, [searchText, searchOnTextChange]);
+  }, [debouncedSearchText, searchOnTextChange]);
 
   // useImperativeHandle(parentRef, () => ({
   //   focus: () => {

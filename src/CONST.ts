@@ -356,6 +356,9 @@ const CONST = {
 
   SEARCH: {
     RESULTS_PAGE_SIZE: 50,
+    // Minimum normalized-prefix length for a `nickname_to_id` range query.
+    // Shorter prefixes are rejected to avoid scanning most of the index.
+    MIN_NICKNAME_PREFIX_LENGTH: 2,
     DATA_TYPES: {
       SESSION: 'session',
     },
