@@ -35,15 +35,20 @@ function StatsRangeNavigator({
   const label = getStatsRangeLabel({range, translate, preferredLocale});
   const {isPageable, canGoPrev, canGoNext, isLatest} = range;
 
-  const showPill = isPageable && !isLatest;
-  const [pillOpacity] = useState(() => new Animated.Value(showPill ? 1 : 0));
+  const showJump = isPageable && !isLatest;
+  // Fade the inline jump-to-latest button in whenever it (re)appears.
+  const [jumpOpacity] = useState(() => new Animated.Value(0));
   useEffect(() => {
-    Animated.timing(pillOpacity, {
-      toValue: showPill ? 1 : 0,
+    if (!showJump) {
+      return;
+    }
+    jumpOpacity.setValue(0);
+    Animated.timing(jumpOpacity, {
+      toValue: 1,
       duration: 150,
       useNativeDriver: true,
     }).start();
-  }, [showPill, pillOpacity]);
+  }, [showJump, jumpOpacity]);
 
   const renderArrow = (enabled: boolean, direction: 'left' | 'right') => (
     <Icon
@@ -60,25 +65,25 @@ function StatsRangeNavigator({
   );
 
   return (
-    <View style={styles.statsRangeNavigatorContainer}>
-      <View style={styles.statsRangeNavigatorRow}>
-        <View style={styles.statsRangeNavigatorButtonSlot}>
-          {isPageable && (
-            <PressableWithFeedback
-              shouldUseAutoHitSlop={false}
-              disabled={!canGoPrev}
-              onPress={onPrev}
-              hoverDimmingValue={1}
-              accessibilityLabel={translate(
-                'statistics.filters.a11y.previousPeriod',
-              )}
-              accessibilityState={{disabled: !canGoPrev}}
-              style={styles.statsRangeNavigatorButton}>
-              {renderArrow(canGoPrev, 'left')}
-            </PressableWithFeedback>
-          )}
-        </View>
-        <View style={styles.statsRangeNavigatorLabelSlot}>
+    <View style={styles.statsRangeNavigatorRow}>
+      <View style={styles.statsRangeNavigatorButtonSlot}>
+        {isPageable && (
+          <PressableWithFeedback
+            shouldUseAutoHitSlop={false}
+            disabled={!canGoPrev}
+            onPress={onPrev}
+            hoverDimmingValue={1}
+            accessibilityLabel={translate(
+              'statistics.filters.a11y.previousPeriod',
+            )}
+            accessibilityState={{disabled: !canGoPrev}}
+            style={styles.statsRangeNavigatorButton}>
+            {renderArrow(canGoPrev, 'left')}
+          </PressableWithFeedback>
+        )}
+      </View>
+      <View style={styles.statsRangeNavigatorLabelSlot}>
+        <View style={styles.statsRangeNavigatorLabelRow}>
           <PressableWithFeedback
             onPress={onPressLabel}
             accessibilityLabel={translate('statistics.filters.a11y.rangeLabel')}
@@ -92,41 +97,34 @@ function StatsRangeNavigator({
               {label}
             </Text>
           </PressableWithFeedback>
-        </View>
-        <View style={styles.statsRangeNavigatorButtonSlot}>
-          {isPageable && (
-            <PressableWithFeedback
-              shouldUseAutoHitSlop={false}
-              disabled={!canGoNext}
-              onPress={onNext}
-              hoverDimmingValue={1}
-              accessibilityLabel={translate(
-                'statistics.filters.a11y.nextPeriod',
-              )}
-              accessibilityState={{disabled: !canGoNext}}
-              style={styles.statsRangeNavigatorButton}>
-              {renderArrow(canGoNext, 'right')}
-            </PressableWithFeedback>
+          {showJump && (
+            <Animated.View style={{opacity: jumpOpacity}}>
+              <PressableWithFeedback
+                onPress={onJumpToLatest}
+                accessibilityLabel={translate(
+                  'statistics.filters.a11y.jumpToLatest',
+                )}
+                accessibilityRole="button"
+                style={styles.statsRangeNavigatorInlineJump}>
+                <Icon small src={KirokuIcons.Calendar} fill={textReversed} />
+              </PressableWithFeedback>
+            </Animated.View>
           )}
         </View>
       </View>
-      <View style={styles.statsRangeNavigatorPillArea} pointerEvents="box-none">
-        <Animated.View
-          style={{opacity: pillOpacity}}
-          pointerEvents={showPill ? 'auto' : 'none'}>
+      <View style={styles.statsRangeNavigatorButtonSlot}>
+        {isPageable && (
           <PressableWithFeedback
-            onPress={onJumpToLatest}
-            disabled={!showPill}
-            accessibilityLabel={translate(
-              'statistics.filters.a11y.jumpToLatest',
-            )}
-            accessibilityRole="button"
-            style={styles.statsRangeNavigatorPill}>
-            <Text color={textReversed} fontSize={13}>
-              {translate('statistics.filters.label.jumpToLatest')}
-            </Text>
+            shouldUseAutoHitSlop={false}
+            disabled={!canGoNext}
+            onPress={onNext}
+            hoverDimmingValue={1}
+            accessibilityLabel={translate('statistics.filters.a11y.nextPeriod')}
+            accessibilityState={{disabled: !canGoNext}}
+            style={styles.statsRangeNavigatorButton}>
+            {renderArrow(canGoNext, 'right')}
           </PressableWithFeedback>
-        </Animated.View>
+        )}
       </View>
     </View>
   );

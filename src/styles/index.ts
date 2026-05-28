@@ -738,10 +738,6 @@ const styles = (theme: ThemeColors) =>
       overflow: 'hidden',
     },
 
-    statsRangeNavigatorContainer: {
-      rowGap: 6,
-    },
-
     statsRangeNavigatorRow: {
       flexDirection: 'row',
       alignItems: 'center',
@@ -773,6 +769,14 @@ const styles = (theme: ThemeColors) =>
       justifyContent: 'center',
     },
 
+    // Date label + (optional) inline jump-to-latest button, centered together.
+    statsRangeNavigatorLabelRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'center',
+      columnGap: 8,
+    },
+
     statsRangeNavigatorLabelPressable: {
       paddingHorizontal: 8,
       paddingVertical: 4,
@@ -783,18 +787,12 @@ const styles = (theme: ThemeColors) =>
       fontWeight: FontUtils.fontWeight.bold,
     },
 
-    // Constant-height area so the layout never jumps when the
-    // "jump to latest" pill fades in/out.
-    statsRangeNavigatorPillArea: {
-      height: 32,
-      alignItems: 'center',
-      justifyContent: 'center',
-    },
-
-    statsRangeNavigatorPill: {
-      paddingHorizontal: 16,
-      paddingVertical: 6,
-      borderRadius: 16,
+    // Small accent circle that appears beside the label when viewing a past
+    // period; tapping it returns to the current period.
+    statsRangeNavigatorInlineJump: {
+      width: 24,
+      height: 24,
+      borderRadius: 12,
       backgroundColor: theme.appColor,
       alignItems: 'center',
       justifyContent: 'center',
