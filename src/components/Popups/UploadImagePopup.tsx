@@ -1,4 +1,3 @@
-import AsyncStorage from '@react-native-async-storage/async-storage';
 import CONST from '@src/CONST';
 import * as KirokuIcons from '@components/Icon/KirokuIcons';
 import {useEffect, useState} from 'react';
@@ -74,15 +73,12 @@ function UploadImagePopup({
   };
 
   useEffect(() => {
-    const updateInfoUponUpload = async () => {
+    const updateInfoUponUpload = () => {
       if (!uploadProgress || !user) {
         return;
       }
       if (uploadProgress.includes('100')) {
         setUploadFinished(true);
-        await AsyncStorage.removeItem(
-          CONST.CACHE.PROFILE_PICTURE_KEY + user.uid,
-        );
         onUploadFinish();
       }
     };
