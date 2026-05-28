@@ -1135,12 +1135,22 @@ export default {
       disclaimer:
         'This is a rough estimate, not a medical or legal measurement. Never drive after drinking.',
       editDetails: 'Edit my details',
-      intro: 'We need your weight and gender to estimate your blood alcohol.',
+      formIntro:
+        'We need your weight and gender to estimate your blood alcohol.',
       male: 'Male',
       female: 'Female',
       other: 'Other',
       kg: 'kg',
       lb: 'lb',
+      displayBoth: 'Both',
+      intro: {
+        title: 'BAC Estimator',
+        body1:
+          "This tool gives a rough estimate of your blood alcohol content based on the drinks you've logged, your weight, and your gender.",
+        body2:
+          "It uses the Widmark formula and assumes a steady rate of alcohol elimination. Everyone's body is different, so treat the number as a ballpark, not a fact.",
+        getStarted: 'Get started',
+      },
     },
   },
   dayOverviewScreen: {

@@ -82,7 +82,7 @@ function BACQuestionnaire({
   return (
     <View style={[styles.flex1, styles.ph5, styles.pt4]}>
       <Text style={[styles.mb6]}>
-        {translate('achievementsScreen.bac.intro')}
+        {translate('achievementsScreen.bac.formIntro')}
       </Text>
 
       <Text style={[styles.textLabelSupporting, styles.mb2]}>
