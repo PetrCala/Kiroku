@@ -110,38 +110,38 @@ function AppShareScreen({route}: AppShareScreenProps) {
             </View>
           </Section>
         </View>
-        <Modal
-          isVisible={isQrModalVisible}
-          onClose={onClose}
-          type={CONST.MODAL.MODAL_TYPE.BOTTOM_DOCKED}>
-          <View
-            style={[
-              styles.alignItemsCenter,
-              styles.justifyContentCenter,
-              styles.m5,
-              styles.mnh60,
-            ]}>
-            <View style={[styles.flexGrow1, styles.justifyContentCenter]}>
-              <Image
-                source={KirokuIcons.KirokuQrCode}
-                style={[
-                  StyleUtils.getQrCodeSizeStyle(
-                    shouldUseNarrowLayout,
-                    windowWidth,
-                    windowHeight,
-                  ),
-                ]}
-              />
-            </View>
-            <Button
-              large
-              text={translate('common.close')}
-              style={[styles.p2, styles.mnw100]}
-              onPress={onClose}
+      </ScrollView>
+      <Modal
+        isVisible={isQrModalVisible}
+        onClose={onClose}
+        type={CONST.MODAL.MODAL_TYPE.BOTTOM_DOCKED}>
+        <View
+          style={[
+            styles.alignItemsCenter,
+            styles.justifyContentCenter,
+            styles.m5,
+            styles.mnh60,
+          ]}>
+          <View style={[styles.flexGrow1, styles.justifyContentCenter]}>
+            <Image
+              source={KirokuIcons.KirokuQrCode}
+              style={[
+                StyleUtils.getQrCodeSizeStyle(
+                  shouldUseNarrowLayout,
+                  windowWidth,
+                  windowHeight,
+                ),
+              ]}
             />
           </View>
-        </Modal>
-      </ScrollView>
+          <Button
+            large
+            text={translate('common.close')}
+            style={[styles.p2, styles.mnw100]}
+            onPress={onClose}
+          />
+        </View>
+      </Modal>
     </ScreenWrapper>
   );
 }
