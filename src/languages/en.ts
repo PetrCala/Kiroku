@@ -263,6 +263,9 @@ export default {
     blackout: 'Blackout',
     timezone: 'Timezone',
   },
+  modal: {
+    backdropLabel: 'Close',
+  },
   calendar: {
     monthNames: [
       'January',

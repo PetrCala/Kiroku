@@ -261,6 +261,9 @@ export default {
     blackout: 'Výpadek paměti',
     timezone: 'Časové pásmo',
   },
+  modal: {
+    backdropLabel: 'Zavřít',
+  },
   calendar: {
     monthNames: [
       'Leden',

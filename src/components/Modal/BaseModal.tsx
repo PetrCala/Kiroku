@@ -7,9 +7,8 @@ import React, {
   useRef,
 } from 'react';
 import {View} from 'react-native';
-import ReactNativeModal from 'react-native-modal';
+import Animated from 'react-native-reanimated';
 import ColorSchemeWrapper from '@components/ColorSchemeWrapper';
-import FocusTrapForModal from '@components/FocusTrap/FocusTrapForModal';
 import useKeyboardState from '@hooks/useKeyboardState';
 import usePrevious from '@hooks/usePrevious';
 import useSafeAreaInsets from '@hooks/useSafeAreaInsets';
@@ -19,14 +18,54 @@ import useThemeStyles from '@hooks/useThemeStyles';
 import useWindowDimensions from '@hooks/useWindowDimensions';
 import ComposerFocusManager from '@libs/ComposerFocusManager';
 import Overlay from '@libs/Navigation/AppNavigator/Navigators/Overlay';
-import useNativeDriver from '@libs/useNativeDriver';
 import variables from '@styles/variables';
 import * as Modal from '@userActions/Modal';
 import CONST from '@src/CONST';
 import useResponsiveLayout from '@hooks/useResponsiveLayout';
-import ModalContent from './ModalContent';
 import ModalContext from './ModalContext';
+import ReanimatedModal from './ReanimatedModal';
+import type {AnimationIn, AnimationOut} from './ReanimatedModal/types';
 import type BaseModalProps from './types';
+
+const SUPPORTED_ANIMATIONS_IN: AnimationIn[] = [
+  'fadeIn',
+  'slideInUp',
+  'slideInRight',
+];
+const SUPPORTED_ANIMATIONS_OUT: AnimationOut[] = [
+  'fadeOut',
+  'slideOutDown',
+  'slideOutRight',
+];
+
+/**
+ * Coerce the broad `react-native-modal` animation value (which may also be a
+ * custom animation object, e.g. for RIGHT_DOCKED modals) into one of the
+ * keyframe animations supported by ReanimatedModal.
+ */
+function resolveAnimationIn(
+  animation: BaseModalProps['animationIn'],
+): AnimationIn {
+  if (
+    typeof animation === 'string' &&
+    SUPPORTED_ANIMATIONS_IN.includes(animation as AnimationIn)
+  ) {
+    return animation as AnimationIn;
+  }
+  return 'slideInRight';
+}
+
+function resolveAnimationOut(
+  animation: BaseModalProps['animationOut'],
+): AnimationOut {
+  if (
+    typeof animation === 'string' &&
+    SUPPORTED_ANIMATIONS_OUT.includes(animation as AnimationOut)
+  ) {
+    return animation as AnimationOut;
+  }
+  return 'slideOutRight';
+}
 
 function BaseModal(
   {
@@ -39,12 +78,9 @@ function BaseModal(
     innerContainerStyle = {},
     outerStyle,
     onModalShow = () => {},
-    propagateSwipe,
     fullscreen = true,
     animationIn,
     animationOut,
-    useNativeDriver: useNativeDriverProp,
-    useNativeDriverForBackdrop,
     hideModalContentWhileAnimating = false,
     animationInTiming,
     animationOutTiming,
@@ -249,7 +285,7 @@ function BaseModal(
         // position absolute is needed to prevent the view from interfering with flex layout
         collapsable={false}
         style={[styles.pAbsolute, {zIndex: 1}]}>
-        <ReactNativeModal
+        <ReanimatedModal
           // Prevent the parent element to capture a click. This is useful when the modal component is put inside a pressable.
           onClick={e => e.stopPropagation()}
           onBackdropPress={handleBackdropPress}
@@ -257,9 +293,15 @@ function BaseModal(
           // eslint-disable-next-line react/jsx-props-no-multi-spaces
           onBackButtonPress={Modal.closeTop}
           onModalShow={handleShowModal}
-          propagateSwipe={propagateSwipe}
           onModalHide={hideModal}
           onModalWillShow={saveFocusState}
+          onModalWillHide={() => {
+            // Reset willAlertModalBecomeVisible when modal is about to hide
+            // This ensures it's cleared before any other components check its value
+            if (Modal.areAllModalsHidden()) {
+              Modal.willAlertModalBecomeVisible(false);
+            }
+          }}
           onDismiss={handleDismissModal}
           onSwipeComplete={() => onClose?.()}
           swipeDirection={swipeDirection}
@@ -276,14 +318,10 @@ function BaseModal(
           style={modalStyle}
           deviceHeight={windowHeight}
           deviceWidth={windowWidth}
-          animationIn={animationIn ?? modalStyleAnimationIn}
-          animationOut={animationOut ?? modalStyleAnimationOut}
-          // eslint-disable-next-line react-compiler/react-compiler
-          useNativeDriver={useNativeDriverProp && useNativeDriver}
-          useNativeDriverForBackdrop={
-            // eslint-disable-next-line react-compiler/react-compiler
-            useNativeDriverForBackdrop && useNativeDriver
-          }
+          animationIn={resolveAnimationIn(animationIn ?? modalStyleAnimationIn)}
+          animationOut={resolveAnimationOut(
+            animationOut ?? modalStyleAnimationOut,
+          )}
           hideModalContentWhileAnimating={hideModalContentWhileAnimating}
           animationInTiming={animationInTiming}
           animationOutTiming={animationOutTiming}
@@ -294,26 +332,22 @@ function BaseModal(
             shouldUseCustomBackdrop ? (
               <Overlay onPress={handleBackdropPress} />
             ) : undefined
-          }>
-          <ModalContent
-            onModalWillShow={saveFocusState}
-            onDismiss={handleDismissModal}>
+          }
+          type={type}
+          initialFocus={initialFocus}
+          shouldEnableNewFocusManagement={shouldEnableNewFocusManagement}>
+          <Animated.View
+            style={[
+              styles.defaultModalContainer,
+              modalContainerStyle,
+              modalPaddingStyles,
+              !isVisible && styles.pointerEventsNone,
+            ]}
+            ref={ref}>
+            <ColorSchemeWrapper>{children}</ColorSchemeWrapper>
             <PortalHost name="modal" />
-            {/* eslint-disable-next-line @typescript-eslint/no-unsafe-assignment */}
-            <FocusTrapForModal active={isVisible} initialFocus={initialFocus}>
-              <View
-                style={[
-                  styles.defaultModalContainer,
-                  modalPaddingStyles,
-                  modalContainerStyle,
-                  !isVisible && styles.pointerEventsNone,
-                ]}
-                ref={ref}>
-                <ColorSchemeWrapper>{children}</ColorSchemeWrapper>
-              </View>
-            </FocusTrapForModal>
-          </ModalContent>
-        </ReactNativeModal>
+          </Animated.View>
+        </ReanimatedModal>
       </View>
     </ModalContext.Provider>
   );
