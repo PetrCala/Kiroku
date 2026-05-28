@@ -108,8 +108,10 @@ function arcSectorPath(
     cx + innerR * Math.cos(endAngle),
     cy + innerR * Math.sin(endAngle),
   );
-  // Inner arc, end → start (anticlockwise).
-  builder.addArc(innerRect, startDeg + sweepDeg, -sweepDeg);
+  // Inner arc, end → start (anticlockwise) — connect to current point so the
+  // outer arc, lineTo, and inner arc stay in one contour. addArc would begin a
+  // new contour, leaving the sector open and filling as triangular spikes.
+  builder.arcToOval(innerRect, startDeg + sweepDeg, -sweepDeg, false);
   builder.close();
   return builder.build();
 }
