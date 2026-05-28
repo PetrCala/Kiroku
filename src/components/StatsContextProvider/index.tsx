@@ -1,4 +1,4 @@
-import {format, parseISO} from 'date-fns';
+import {format, parseISO, startOfDay} from 'date-fns';
 import React, {createContext, useCallback, useMemo, useState} from 'react';
 import {useOnyx} from 'react-native-onyx';
 import {useFirebase} from '@context/global/FirebaseContext';
@@ -31,10 +31,39 @@ type StatsStateContextValue = {
 
 type StatsActionsContextValue = {
   setRange: (next: SetRangeInput) => void;
+  goToPreviousPeriod: () => void;
+  goToNextPeriod: () => void;
+  goToLatest: () => void;
   setComparison: (next: Comparison) => void;
   setDrinkTypeFilter: (next: ReadonlySet<DrinkKey>) => void;
   setUserIds: (next: readonly UserID[]) => void;
 };
+
+/**
+ * Whether the window at `offset` still overlaps the user's recorded history.
+ * Pure so it can be reused by both the `range` memo and the nav actions.
+ */
+function canStepBack(params: {
+  preset: RangePreset;
+  now: Date;
+  offset: number;
+  customStart?: Date;
+  customEnd?: Date;
+  earliestSessionAt?: Date;
+}): boolean {
+  const {preset, earliestSessionAt} = params;
+  if (
+    preset === 'All' ||
+    preset === 'Custom' ||
+    earliestSessionAt === undefined
+  ) {
+    return false;
+  }
+  return (
+    derivePresetRange(params).end.getTime() >=
+    startOfDay(earliestSessionAt).getTime()
+  );
+}
 
 const StatsStateContext = createContext<StatsStateContextValue | null>(null);
 const StatsActionsContext = createContext<StatsActionsContextValue | null>(
@@ -89,7 +118,9 @@ function StatsContextProvider({children, now}: StatsContextProviderProps) {
       : EMPTY_DRINK_FILTER,
   );
 
-  // Comparison and userIds intentionally do NOT rehydrate from Onyx.
+  // periodOffset, comparison and userIds intentionally do NOT rehydrate from
+  // Onyx — they are transient view state, reset on every mount.
+  const [periodOffset, setPeriodOffset] = useState(0);
   const [comparison, setComparison] = useState<Comparison>('none');
   const {auth} = useFirebase();
   const firebaseUid = auth?.currentUser?.uid;
@@ -99,21 +130,43 @@ function StatsContextProvider({children, now}: StatsContextProviderProps) {
 
   const customStart = customRange?.start;
   const customEnd = customRange?.end;
-  const range = useMemo<Range>(
-    () => ({
+  const range = useMemo<Range>(() => {
+    const pageable = preset !== 'All' && preset !== 'Custom';
+    return {
       ...derivePresetRange({
         preset,
         now: nowSnapshot,
+        offset: periodOffset,
         customStart,
         customEnd,
         earliestSessionAt,
       }),
       preset,
-    }),
-    [preset, nowSnapshot, customStart, customEnd, earliestSessionAt],
-  );
+      offset: periodOffset,
+      isPageable: pageable,
+      canGoPrev: canStepBack({
+        preset,
+        now: nowSnapshot,
+        offset: periodOffset - 1,
+        customStart,
+        customEnd,
+        earliestSessionAt,
+      }),
+      canGoNext: pageable && periodOffset < 0,
+      isLatest: periodOffset === 0,
+    };
+  }, [
+    preset,
+    periodOffset,
+    nowSnapshot,
+    customStart,
+    customEnd,
+    earliestSessionAt,
+  ]);
 
   const setRange = useCallback((next: SetRangeInput) => {
+    // Any range change returns to the current period.
+    setPeriodOffset(0);
     if (next.preset === 'Custom') {
       setCustomRange({start: next.start, end: next.end});
       setPreset('Custom');
@@ -134,6 +187,28 @@ function StatsContextProvider({children, now}: StatsContextProviderProps) {
     });
   }, []);
 
+  const goToPreviousPeriod = useCallback(() => {
+    setPeriodOffset(current => {
+      const next = current - 1;
+      return canStepBack({
+        preset,
+        now: nowSnapshot,
+        offset: next,
+        customStart,
+        customEnd,
+        earliestSessionAt,
+      })
+        ? next
+        : current;
+    });
+  }, [preset, nowSnapshot, customStart, customEnd, earliestSessionAt]);
+
+  const goToNextPeriod = useCallback(() => {
+    setPeriodOffset(current => Math.min(0, current + 1));
+  }, []);
+
+  const goToLatest = useCallback(() => setPeriodOffset(0), []);
+
   const setDrinkTypeFilter = useCallback((next: ReadonlySet<DrinkKey>) => {
     setDrinkTypeFilterState(next);
     Statistics.setFilters({drinkTypeFilter: Array.from(next)});
@@ -145,8 +220,22 @@ function StatsContextProvider({children, now}: StatsContextProviderProps) {
   );
 
   const actionsValue = useMemo<StatsActionsContextValue>(
-    () => ({setRange, setComparison, setDrinkTypeFilter, setUserIds}),
-    [setRange, setDrinkTypeFilter],
+    () => ({
+      setRange,
+      goToPreviousPeriod,
+      goToNextPeriod,
+      goToLatest,
+      setComparison,
+      setDrinkTypeFilter,
+      setUserIds,
+    }),
+    [
+      setRange,
+      goToPreviousPeriod,
+      goToNextPeriod,
+      goToLatest,
+      setDrinkTypeFilter,
+    ],
   );
 
   return (
