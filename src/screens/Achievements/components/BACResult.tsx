@@ -1,43 +1,59 @@
 import React from 'react';
 import {View} from 'react-native';
+import {BaseChart, Line} from '@components/Charts/BaseChart';
 import Button from '@components/Button';
 import StatItem from '@components/Items/StatItem';
+import ScrollView from '@components/ScrollView';
 import Text from '@components/Text';
 import useLocalize from '@hooks/useLocalize';
 import useThemeStyles from '@hooks/useThemeStyles';
+import {formatBac} from '@libs/BACUtils';
+import type {BacEstimate} from '@libs/BACUtils';
+import type {ChartDatum} from '@libs/Statistics';
 import CONST from '@src/CONST';
 import type {BacDisplayUnit} from '@src/types/onyx';
 
 type BACResultProps = {
-  /** Estimated BAC as a percentage (g/100ml). */
-  bacPercent: number;
+  /** The aggregate BAC estimate (point + confidence band). */
+  estimate: BacEstimate;
+
+  /** Hour-by-hour BAC decline to zero; empty when already sober. */
+  decayData: ChartDatum[];
+
+  /** Hours until BAC reaches zero, for the time-to-sober label. */
+  hoursToSober: number;
 
   /** Which unit to display the estimate in. */
   displayUnit: BacDisplayUnit;
 
   /** Called when the user picks a different display unit. */
   onChangeDisplayUnit: (unit: BacDisplayUnit) => void;
+
+  /** Opens the per-session breakdown modal. */
+  onShowDetails: () => void;
 };
 
+function formatSoberDuration(hoursToSober: number): string {
+  const wholeHours = Math.floor(hoursToSober);
+  const minutes = Math.round((hoursToSober - wholeHours) * 60);
+  if (wholeHours <= 0) {
+    return `${minutes}m`;
+  }
+  return `${wholeHours}h ${minutes}m`;
+}
+
 function BACResult({
-  bacPercent,
+  estimate,
+  decayData,
+  hoursToSober,
   displayUnit,
   onChangeDisplayUnit,
+  onShowDetails,
 }: BACResultProps) {
   const styles = useThemeStyles();
   const {translate} = useLocalize();
 
-  const perMille = `${(bacPercent * 10).toFixed(2)}‰`;
-  const percent = `${bacPercent.toFixed(2)}%`;
-
-  let content: string;
-  if (displayUnit === CONST.BAC.DISPLAY_UNIT.PERCENT) {
-    content = percent;
-  } else if (displayUnit === CONST.BAC.DISPLAY_UNIT.BOTH) {
-    content = `${perMille} (${percent})`;
-  } else {
-    content = perMille;
-  }
+  const content = formatBac(estimate.point, displayUnit);
 
   const unitOptions: Array<{value: BacDisplayUnit; label: string}> = [
     {value: CONST.BAC.DISPLAY_UNIT.PER_MILLE, label: '‰'},
@@ -48,18 +64,35 @@ function BACResult({
     },
   ];
 
+  const showGraph = decayData.length > 1;
+
   return (
-    <View
-      style={[
-        styles.flex1,
+    <ScrollView
+      style={styles.flex1}
+      contentContainerStyle={[
         styles.alignItemsCenter,
-        styles.justifyContentCenter,
         styles.ph5,
+        styles.pt4,
+        styles.pb5,
       ]}>
       <StatItem
         header={translate('achievementsScreen.bac.currentBac')}
         content={content}
       />
+
+      {estimate.hasBand ? (
+        <Text
+          style={[
+            styles.textLabelSupporting,
+            styles.textAlignCenter,
+            styles.mt2,
+          ]}>
+          {translate('achievementsScreen.bac.range', {
+            low: formatBac(estimate.low, displayUnit),
+            high: formatBac(estimate.high, displayUnit),
+          })}
+        </Text>
+      ) : null}
 
       <View style={[styles.flexRow, styles.mt4, {gap: 8}]}>
         {unitOptions.map(option => (
@@ -73,6 +106,46 @@ function BACResult({
         ))}
       </View>
 
+      {showGraph ? (
+        <View style={[styles.alignSelfStretch, styles.mt6]}>
+          <Text
+            style={[
+              styles.textLabelSupporting,
+              styles.textAlignCenter,
+              styles.mb2,
+            ]}>
+            {translate('achievementsScreen.bac.soberIn', {
+              time: formatSoberDuration(hoursToSober),
+            })}
+          </Text>
+          <BaseChart
+            data={decayData}
+            range="allTime"
+            height={160}
+            accessibilityLabel={translate(
+              'achievementsScreen.bac.decayChartLabel',
+            )}>
+            {({points, theme}) => (
+              <Line
+                points={points.y}
+                color={theme.primaryStroke}
+                strokeWidth={2}
+              />
+            )}
+          </BaseChart>
+          <Text style={[styles.textLabelSupporting, styles.textAlignCenter]}>
+            {translate('achievementsScreen.bac.decayChartAxis')}
+          </Text>
+        </View>
+      ) : null}
+
+      <Button
+        small
+        style={[styles.mt6]}
+        text={translate('achievementsScreen.bac.showDetails')}
+        onPress={onShowDetails}
+      />
+
       <Text
         style={[
           styles.textLabelSupporting,
@@ -81,7 +154,7 @@ function BACResult({
         ]}>
         {translate('achievementsScreen.bac.disclaimer')}
       </Text>
-    </View>
+    </ScrollView>
   );
 }
 
