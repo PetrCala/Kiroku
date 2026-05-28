@@ -13,6 +13,7 @@ import UserOfflineModal from '@components/UserOfflineModal';
 import useLocalize from '@hooks/useLocalize';
 import type DeepValueOf from '@src/types/utils/DeepValueOf';
 import Navigation from '@libs/Navigation/Navigation';
+import ROUTES from '@src/ROUTES';
 import type {Route} from '@src/ROUTES';
 
 type EditSessionScreenProps = StackScreenProps<
@@ -30,7 +31,14 @@ function EditSessionScreen({route}: EditSessionScreenProps) {
     action: DeepValueOf<typeof CONST.NAVIGATION.SESSION_ACTION>,
   ) => {
     if (backTo) {
-      Navigation.navigate(backTo as Route);
+      if (backTo === ROUTES.HOME) {
+        // The create flow stacks the date-pick and edit screens in the same
+        // modal, so dismiss the whole modal in one slide instead of navigating
+        // to a bottom-tab route (which forward-pushes and bounces).
+        Navigation.dismissModal();
+      } else {
+        Navigation.goBack(backTo as Route);
+      }
       return;
     }
     const previousScreenName = Navigation.getLastScreenName(true);
