@@ -22,7 +22,7 @@ import {View} from 'react-native';
 function TermsReConsentGuard() {
   const {auth, db} = useFirebase();
   const {translate} = useLocalize();
-  const {userData} = useDatabaseData();
+  const {userData, config} = useDatabaseData();
 
   const shouldPrompt = useMemo(() => {
     if (!auth?.currentUser) {
@@ -34,8 +34,8 @@ function TermsReConsentGuard() {
     if (!hasCompletedOnboarding(userData)) {
       return false;
     }
-    return !hasAcceptedCurrentTerms(userData);
-  }, [auth?.currentUser, userData]);
+    return !hasAcceptedCurrentTerms(userData, config);
+  }, [auth?.currentUser, userData, config]);
 
   const handleAccept = useCallback(async () => {
     await Onboarding.acceptTerms(db, auth.currentUser);

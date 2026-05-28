@@ -2,14 +2,13 @@
  * @jest-environment node
  */
 
-import CONST from '@src/CONST';
 import {
   getOnboardingLastVisitedPath,
   hasAcceptedCurrentTerms,
   hasCompletedOnboarding,
   isLegacyGrandfatheredUser,
 } from '@src/libs/OnboardingSelectors';
-import type {UserData} from '@src/types/onyx';
+import type {Config, UserData} from '@src/types/onyx';
 
 function makeUserData(overrides: Partial<UserData> = {}): UserData {
   return {
@@ -18,6 +17,14 @@ function makeUserData(overrides: Partial<UserData> = {}): UserData {
       photo_url: '',
     },
     role: 'open_beta_user',
+    ...overrides,
+  };
+}
+
+function makeConfig(overrides: Partial<Config> = {}): Config {
+  return {
+    app_settings: {},
+    maintenance: {maintenance_mode: false},
     ...overrides,
   };
 }
@@ -61,33 +68,49 @@ describe('OnboardingSelectors', () => {
   });
 
   describe('hasAcceptedCurrentTerms', () => {
+    const PUBLISHED_AT = 1_700_000_000_000;
+
     test('returns false for undefined userData', () => {
-      expect(hasAcceptedCurrentTerms(undefined)).toBe(false);
+      expect(hasAcceptedCurrentTerms(undefined, makeConfig())).toBe(false);
     });
 
-    test('returns true when version matches CURRENT_TERMS_VERSION', () => {
-      const userData = makeUserData({
-        agreed_to_terms_version: CONST.CURRENT_TERMS_VERSION,
-      });
-      expect(hasAcceptedCurrentTerms(userData)).toBe(true);
+    test('returns false when the user has never accepted (new account)', () => {
+      // Independent of config so the onboarding terms step always shows.
+      expect(hasAcceptedCurrentTerms(makeUserData(), undefined)).toBe(false);
+      expect(
+        hasAcceptedCurrentTerms(
+          makeUserData(),
+          makeConfig({terms_last_updated: PUBLISHED_AT}),
+        ),
+      ).toBe(false);
     });
 
-    test('returns false when version field is missing', () => {
-      expect(hasAcceptedCurrentTerms(makeUserData())).toBe(false);
+    test('fails open (true) once accepted when config is not loaded', () => {
+      const userData = makeUserData({agreed_to_terms_at: PUBLISHED_AT});
+      expect(hasAcceptedCurrentTerms(userData, undefined)).toBe(true);
     });
 
-    test('returns false for an older version', () => {
-      const userData = makeUserData({
-        agreed_to_terms_version: CONST.CURRENT_TERMS_VERSION - 1,
-      });
-      expect(hasAcceptedCurrentTerms(userData)).toBe(false);
+    test('fails open (true) once accepted when terms_last_updated is unset', () => {
+      const userData = makeUserData({agreed_to_terms_at: PUBLISHED_AT});
+      expect(hasAcceptedCurrentTerms(userData, makeConfig())).toBe(true);
     });
 
-    test('returns false for a newer version (defensive)', () => {
-      const userData = makeUserData({
-        agreed_to_terms_version: CONST.CURRENT_TERMS_VERSION + 1,
-      });
-      expect(hasAcceptedCurrentTerms(userData)).toBe(false);
+    test('returns true when accepted after terms were published', () => {
+      const userData = makeUserData({agreed_to_terms_at: PUBLISHED_AT + 1});
+      const config = makeConfig({terms_last_updated: PUBLISHED_AT});
+      expect(hasAcceptedCurrentTerms(userData, config)).toBe(true);
+    });
+
+    test('returns true when accepted exactly at publish time', () => {
+      const userData = makeUserData({agreed_to_terms_at: PUBLISHED_AT});
+      const config = makeConfig({terms_last_updated: PUBLISHED_AT});
+      expect(hasAcceptedCurrentTerms(userData, config)).toBe(true);
+    });
+
+    test('returns false when accepted before terms were published (re-consent)', () => {
+      const userData = makeUserData({agreed_to_terms_at: PUBLISHED_AT - 1});
+      const config = makeConfig({terms_last_updated: PUBLISHED_AT});
+      expect(hasAcceptedCurrentTerms(userData, config)).toBe(false);
     });
   });
 

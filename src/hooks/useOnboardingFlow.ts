@@ -31,7 +31,7 @@ type OnboardingFlowState = {
 function useOnboardingFlow(): OnboardingFlowState {
   const {auth} = useFirebase();
   const userID = auth?.currentUser?.uid;
-  const {userData} = useDatabaseData();
+  const {userData, config} = useDatabaseData();
 
   return useMemo<OnboardingFlowState>(() => {
     const skipOnboarding = CONFIG.SKIP_ONBOARDING;
@@ -70,7 +70,7 @@ function useOnboardingFlow(): OnboardingFlowState {
     }
 
     let currentOnboardingRoute: Route;
-    if (!hasAcceptedCurrentTerms(userData)) {
+    if (!hasAcceptedCurrentTerms(userData, config)) {
       currentOnboardingRoute = ROUTES.ONBOARDING_TERMS;
     } else if (userData?.profile?.username_chosen === false) {
       currentOnboardingRoute = ROUTES.ONBOARDING_DISPLAY_NAME;
@@ -85,7 +85,7 @@ function useOnboardingFlow(): OnboardingFlowState {
       lastVisitedPath: getOnboardingLastVisitedPath(userData),
       skipOnboarding,
     };
-  }, [userID, userData]);
+  }, [userID, userData, config]);
 }
 
 export default useOnboardingFlow;
