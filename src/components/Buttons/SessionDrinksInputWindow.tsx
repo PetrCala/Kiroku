@@ -5,7 +5,14 @@ import * as DSUtils from '@src/libs/DrinkingSessionUtils';
 import * as DS from '@userActions/DrinkingSession';
 import type {DrinkingSessionId, DrinkKey, DrinksList} from '@src/types/onyx';
 import useLocalize from '@hooks/useLocalize';
+import useTheme from '@hooks/useTheme';
 import useThemeStyles from '@hooks/useThemeStyles';
+import useResolvedPalette from '@hooks/useResolvedPalette';
+import {
+  DEFAULT_PALETTE_ID,
+  getPaletteIdFromColors,
+  isLightHex,
+} from '@libs/SessionColorPalettes';
 import {PressableWithoutFeedback} from '@components/Pressable';
 import {useDatabaseData} from '@context/global/DatabaseDataContext';
 import Log from '@libs/Log';
@@ -28,8 +35,16 @@ function SessionDrinksInputWindow({
   sessionId,
 }: SessionDrinksInputWindowProps) {
   const styles = useThemeStyles();
+  const theme = useTheme();
   const {translate} = useLocalize();
   const {preferences} = useDatabaseData();
+  const palette = useResolvedPalette(preferences);
+  const isClassicPalette =
+    getPaletteIdFromColors(palette) === DEFAULT_PALETTE_ID;
+  const activeColor = isClassicPalette ? theme.appColor : palette.yellow;
+  const highlightTextStyle = isLightHex(activeColor)
+    ? styles.textBlack
+    : styles.textWhite;
   const [shouldHighlight, setShouldHighlight] = useState<boolean>(false);
   const [inputValue, setInputValue] = useState<string>(
     sumDrinksOfSingleType(drinks, drinkKey).toString(),
@@ -157,7 +172,9 @@ function SessionDrinksInputWindow({
       <PressableWithoutFeedback
         accessibilityLabel="button"
         onPress={handleContainerPress}
-        style={styles.sessionDrinksInputContainer(shouldHighlight)}>
+        style={styles.sessionDrinksInputContainer(
+          shouldHighlight ? activeColor : null,
+        )}>
         <TextInput
           accessibilityLabel={translate('common.textInputField')}
           ref={inputRef}
@@ -165,7 +182,7 @@ function SessionDrinksInputWindow({
             styles.textLarge,
             styles.textAlignCenter,
             styles.textBold,
-            shouldHighlight ? styles.textBlack : styles.textPlainColor,
+            shouldHighlight ? highlightTextStyle : styles.textPlainColor,
           ]}
           value={inputValue}
           onKeyPress={handleKeyPress}
