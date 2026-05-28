@@ -91,36 +91,29 @@ The application uses a nested provider structure for context management:
 
 ### Onyx Keys Organization
 
-- **Auth & Session**: `CREDENTIALS`, `STASHED_CREDENTIALS`, `SESSION`, `HAS_CHECKED_AUTO_LOGIN`
-- **User Data**: `USER`, `USER_DATA_LIST`, `USER_PRIVATE_DATA`, `USER_DATA_METADATA`, `USER_LOCATION`
-- **Network & State**: `NETWORK`, `PERSISTED_REQUESTS`, `PERSISTED_ONGOING_REQUESTS`, `DEVICE_ID`
-- **Session & Activity**: `ONGOING_SESSION_DATA`, `EDIT_SESSION_DATA`, `START_SESSION_GLOBAL_CREATE`, `SESSIONS_CALENDAR_MONTHS_LOADED`
-- **UI & App State**: `MODAL`, `IS_LOADING_APP`, `APP_LOADING_TEXT`, `PREFERRED_THEME`
-- **Updates & Notifications**: `UPDATE_AVAILABLE`, `UPDATE_REQUIRED`, `PUSH_NOTIFICATIONS_ENABLED`, `FOCUS_MODE_NOTIFICATION`
-- **Forms**: Login, Sign Up, Close Account, Display Name, Username, Legal Name, DOB, Email, Password, Feedback, Bug Report, Session Date/Note
-- **Collections**: `DRINKS`, `DRINKING_SESSION`, `FEEDBACK`, `BUG`, `DOWNLOAD`
+Keys are defined in `src/ONYXKEYS.ts`, grouped into:
+
+- **Auth & Session**: Credentials and session state
+- **User Data**: Profiles, private data, and location
+- **Network & State**: Connectivity, persisted requests, device ID
+- **Session & Activity**: Ongoing/edit drinking-session state and calendar pagination
+- **UI & App State**: Modal, loading, and theme state
+- **Updates & Notifications**: App-update and push-notification state
+- **Forms**: Form state management
+- **Collections**: Drinks, drinking sessions, feedback, bugs, downloads
 
 ### Action Modules (`src/libs/actions/`)
 
 Major action categories:
 
 - `App.ts`: Application lifecycle
-- `User.ts`: User account operations
 - `Session/`: Authentication and session token management
 - `DrinkingSession.ts`: Drinking session CRUD and tracking
 - `Calendar.ts`: Calendar data loading and pagination
 - `UserData.ts`: User data synchronization
+- `User.ts`: User account operations
 - `Profile.ts`: Profile updates
 - `Preferences.ts`: User preference persistence
-- `PushNotification.ts`: Push notification opt-in/out
-- `Network.ts`: Network state management
-- `Modal.ts`: Modal visibility state
-- `FormActions.ts`: Form state management
-- `Welcome.ts`: Onboarding flow
-- `CloseAccount.ts`: Account deletion
-- `AppUpdate/`: App update detection and prompting
-- `OnyxUpdates.ts` / `OnyxUpdateManager/`: Onyx update processing
-- `PersistedRequests.ts`: Offline request queue management
 
 ## Build & Deployment
 
@@ -134,20 +127,18 @@ Key GitHub Actions workflows:
 - `test.yml`: Unit tests
 - `typecheck.yml`: TypeScript validation
 - `lint.yml`: Code quality checks
-- `claude-review.yml`: Claude Code automated PR review — **intentionally disabled** (costs ~$1–2/PR in API credits; trigger is `workflow_dispatch` only — do not change to `pull_request`)
+- `claude-review.yml`: Automated PR review — **intentionally disabled** (manual `workflow_dispatch` only; do not switch to `pull_request`)
+- `translation-review.yml`: Reviews translation PRs touching `src/languages/**`
 
 ## Related Repositories
 
 ### kiroku-api
 
-- **Purpose**: Kiroku API repository
-- Contains API logic and code
+- **Purpose**: Backend API — server-side logic and endpoints
 
 ### kiroku-cli
 
-- **Purpose**: Admin libraries and utilities
-- Contains admin tools and utilities for high-level app management
-- Private
+- **Purpose**: Admin tools and utilities (private)
 
 ## Development Practices
 
@@ -167,30 +158,7 @@ The skill provides guidance on:
 
 ### Localization & Translations
 
-Kiroku is multi-language. `src/languages/en.ts` is the **source of truth**; every
-other locale (`src/languages/<locale>.ts`) mirrors its exact key structure.
-
-**Do NOT hand-write non-English translations inside a feature task/PR.** Doing so
-is what produces fragmented, inconsistent translations (different words for the
-same term, inconsistent tone, etc.). Instead:
-
-1. In the feature work, add/modify **only the English keys** in `en.ts` (and the
-   param types in `params.ts` if needed). Leave the other locales to the skill.
-2. Fill the non-English locales with the **`translate` skill** (`.claude/skills/translate/`),
-   which translates against each language's curated glossary/style guide in
-   `src/languages/context/<locale>.md`. Run it in `fill` mode for new keys, or
-   `audit` mode to re-harmonize an existing language.
-
-Every supported locale must have a `src/languages/context/<locale>.md` guide — a
-unit test (`__tests__/unit/TranslationContext.test.ts`) enforces this, and the
-skill refuses to translate a language without one. Adding a new language starts
-by copying `src/languages/context/_TEMPLATE.md`.
-
-PRs that change `src/languages/**` are reviewed by the **translation-review**
-GitHub Actions workflow (`/review-translations` → `translation-reviewer` agent),
-which flags glossary/register/formatting/consistency violations as inline
-comments. It runs `claude-sonnet-4-6` and is path-scoped, so it only fires on
-translation PRs.
+`src/languages/en.ts` is the source of truth; every other locale mirrors its key structure. Do **not** hand-write non-English translations in a feature PR — add English keys only, then fill other locales with the `translate` skill, which translates against each language's glossary in `src/languages/context/`. Every locale needs a context file (enforced by a unit test). PRs touching `src/languages/**` are auto-reviewed by the `translation-review` workflow.
 
 ### Code Quality
 
@@ -198,36 +166,16 @@ translation PRs.
 - **ESLint**: Linter. Pre-existing violations are grandfathered via [`eslint-seatbelt`](https://github.com/justjake/eslint-seatbelt).
 - **Prettier**: Code formatting - run `npm run prettier` after making changes
 - **Patch Management**: patch-package for dependency fixes
-
-### Avoiding `any` type violations
-
-The rules `@typescript-eslint/no-explicit-any`, `@typescript-eslint/no-unsafe-assignment`, and `@typescript-eslint/no-unsafe-argument` are enforced as errors.
-
-- Prefer proper types over `any`. When a cast to `any` or `ReactElement<any>` is genuinely necessary (e.g., for `cloneElement` with spread props), add the disable comment on the **preceding line**:
-  ```ts
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  return cloneElement(child as React.ReactElement<any>, {...});
-  ```
-- Apply the comment consistently — if you add the same pattern in multiple places in a PR, every instance needs the comment.
-
-### Module declarations with single named exports
-
-If a `declare module` block uses a named export (required for module augmentation — default exports do not work in module declarations), suppress the `import/prefer-default-export` rule on the preceding line:
-
-```ts
-// eslint-disable-next-line import/prefer-default-export
-export {getReactNativePersistence};
-```
+- **TypeScript / ESLint conventions**: Kiroku-specific rules (e.g. `any` handling, module declarations) live in [`contributingGuides/STYLE.md`](contributingGuides/STYLE.md).
 
 ### Post-Edit Checklist (IMPORTANT)
 
 **ALWAYS run these steps after making code changes, before committing:**
 
 1. **Prettier**: Run `npx prettier --write <changed files>` on every file you modified. This is mandatory - CI will reject unformatted code.
-2. **ESLint**: Run `npm run lint-changed` after making changes — it scopes to git-diff against `origin/master` and auto-fixes with `--fix`. Do NOT run full-repo `npm run lint` locally; it takes ~10 minutes due to type-aware rules. The actual gate is the `lint.yml` GitHub Actions workflow, which runs automatically on every PR — watch it via `gh pr checks`.
+2. **ESLint**: Run `npm run lint-changed` (scoped to the git diff, auto-fixes). Do NOT run full-repo `npm run lint` locally — it takes ~10 minutes; the `lint.yml` CI workflow is the gate.
 3. **TypeScript**: Run `npm run typecheck-tsgo` after changes that may affect typing (types, interfaces, or function signatures). It is ~10x faster and usually stricter than tsc. CI validates with `npm run typecheck` (tsc), which remains the required merge gate.
 4. **React Compiler**: If you added new React components/hooks or modified existing ones, run `npm run react-compiler-compliance-check check-changed` to verify they compile with React Compiler. This applies the same rules as CI: new components/hooks must compile, and existing compiled files must not regress. See `contributingGuides/REACT_COMPILER.md` for details and common fixes.
-5. **Unused imports**: After removing a type parameter from a function call (e.g., `createNavigator<MyParamList>()` → `createNavigator()`), verify the removed type's import is also deleted if it is no longer used anywhere in the file.
 
 ### Testing
 
@@ -245,11 +193,9 @@ export {getReactNativePersistence};
 
 ### Mobile-Specific Notes
 
-- Push notifications via Pusher (`pusher-js`)
-- Image picker and camera access via `expo-image-picker` and `react-native-permissions`
-- Image processing via `expo-image-manipulator`
-- Local SQLite database via `react-native-nitro-sqlite`
-- Device info via `react-native-device-info`
+- Push notifications via Pusher
+- Image picker, camera access, and image processing
+- Local SQLite database for offline storage
 
 ### Security
 
@@ -298,18 +244,6 @@ npm run android
 npm run web
 ```
 
-### iOS dev tooling — `xUnique`
-
-The Podfile's `post_install` hook runs [`xUnique`](https://github.com/truebit/xUnique) after every `pod install` to keep `ios/kiroku.xcodeproj/project.pbxproj` diffs deterministic (CocoaPods otherwise assigns fresh random UUIDs every run, producing hundreds of lines of meaningless churn).
-
-Install once:
-
-```bash
-pip3 install --user xUnique
-```
-
-Then make sure the install location is on your `PATH` (e.g. `~/.local/bin` or `~/Library/Python/3.x/bin`). The post_install hook auto-discovers common locations; if it can't find `xunique`, it prints a warning and continues — the build still works, but the pbxproj will accumulate random-UUID noise on each `pod install` that you'll need to discard manually with `git checkout ios/kiroku.xcodeproj/project.pbxproj`.
-
 ## Architecture Decisions
 
 ### React Native New Architecture
@@ -335,11 +269,9 @@ Then make sure the install location is on your `PATH` (e.g. `~/.local/bin` or `~
 
 ### With kiroku-api
 
-- REST API communication via native `fetch` with FormData request bodies
-- Middleware chain: `makeXHR() → middleware[] → HttpUtils.xhr()`
-- Dynamic API root selection (staging vs. production) configured in `src/libs/ApiUtils.ts`
-- Network connectivity monitored via `NetworkConnection.ts` (pings `api/Ping` for server availability)
-- Offline request queue managed via `PersistedRequests.ts` — replayed on reconnection
+- REST API communication over `fetch`
+- Dynamic staging/production API root selection
+- Offline request queue replayed on reconnection
 
 ### With Firebase
 
