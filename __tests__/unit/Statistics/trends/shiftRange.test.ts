@@ -10,6 +10,11 @@ function makeRange(start: string, end: string): Range {
     start: new Date(start),
     end: new Date(end),
     preset: 'Custom',
+    offset: 0,
+    isPageable: false,
+    canGoPrev: false,
+    canGoNext: false,
+    isLatest: true,
   };
 }
 

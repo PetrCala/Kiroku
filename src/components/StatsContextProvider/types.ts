@@ -8,6 +8,16 @@ type Range = {
   start: Date;
   end: Date;
   preset: RangePreset;
+  /** `0` = current period, negative = N periods in the past. */
+  offset: number;
+  /** Whether the preset supports prev/next navigation (false for `All`/`Custom`). */
+  isPageable: boolean;
+  /** Whether stepping one period back stays within the user's recorded history. */
+  canGoPrev: boolean;
+  /** Whether a more recent period exists (i.e. `offset < 0`). */
+  canGoNext: boolean;
+  /** Whether the window is the current (latest) period. */
+  isLatest: boolean;
 };
 
 type SetRangeInput =
@@ -17,6 +27,9 @@ type SetRangeInput =
 type StatsContextValue = {
   range: Range;
   setRange: (next: SetRangeInput) => void;
+  goToPreviousPeriod: () => void;
+  goToNextPeriod: () => void;
+  goToLatest: () => void;
 
   comparison: Comparison;
   setComparison: (next: Comparison) => void;

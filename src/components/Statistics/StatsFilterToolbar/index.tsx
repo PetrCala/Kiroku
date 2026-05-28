@@ -7,6 +7,7 @@ import type {RangePreset} from '@components/StatsContextProvider/types';
 import ComparisonToggle from './ComparisonToggle';
 import DrinkTypeChipRow from './DrinkTypeChipRow';
 import RangeSegmentedControl from './RangeSegmentedControl';
+import StatsRangeNavigator from './StatsRangeNavigator';
 
 const styles = StyleSheet.create({
   container: {
@@ -31,6 +32,9 @@ function StatsFilterToolbar() {
   const {
     range,
     setRange,
+    goToPreviousPeriod,
+    goToNextPeriod,
+    goToLatest,
     comparison,
     setComparison,
     drinkTypeFilter,
@@ -65,6 +69,13 @@ function StatsFilterToolbar() {
         </View>
         <ComparisonToggle value={comparison} onChange={setComparison} />
       </View>
+      <StatsRangeNavigator
+        range={range}
+        onPrev={goToPreviousPeriod}
+        onNext={goToNextPeriod}
+        onJumpToLatest={goToLatest}
+        onPressLabel={() => setPickerOpen(true)}
+      />
       <DrinkTypeChipRow value={drinkTypeFilter} onChange={setDrinkTypeFilter} />
       <StatsRangePickerModal
         isVisible={pickerOpen}
