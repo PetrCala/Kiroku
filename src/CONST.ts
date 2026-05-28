@@ -1020,6 +1020,12 @@ const CONST = {
     other: {ml: 200, abv: 0.1},
   },
 
+  GENDER: {
+    MALE: 'male',
+    FEMALE: 'female',
+    OTHER: 'other',
+  },
+
   // 6 numeric digits
   VALIDATE_CODE_REGEX_STRING: /^\d{6}$/,
 

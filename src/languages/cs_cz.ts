@@ -316,6 +316,7 @@ export default {
     profile: 'Profil',
     settings: 'Nastavení',
     achievements: 'Odznaky',
+    bac: 'Alkohol',
     statistics: 'Statistiky',
     menu: 'Menu',
   },
@@ -1117,8 +1118,21 @@ export default {
     },
   },
   achievementsScreen: {
-    title: 'Odznaky',
-    comingSoon: 'Již brzy!',
+    title: 'Odhad alkoholu v krvi',
+    bac: {
+      currentBac: 'Odhadovaná hladina alkoholu',
+      noSession: 'Začni pít, abys viděl odhadovanou hladinu alkoholu v krvi.',
+      disclaimer:
+        'Toto je pouze hrubý odhad, nikoli lékařské nebo právní měření. Nikdy neřiď po požití alkoholu.',
+      editDetails: 'Upravit mé údaje',
+      intro:
+        'Pro odhad hladiny alkoholu v krvi potřebujeme tvou váhu a pohlaví.',
+      male: 'Muž',
+      female: 'Žena',
+      other: 'Jiné',
+      kg: 'kg',
+      lb: 'lb',
+    },
   },
   dayOverviewScreen: {
     enterEditMode: 'Režim úprav',
