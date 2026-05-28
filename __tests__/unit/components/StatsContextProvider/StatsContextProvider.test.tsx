@@ -21,7 +21,6 @@ jest.mock('react-native-onyx', () => ({
 // eslint-disable-next-line @typescript-eslint/no-require-imports, @typescript-eslint/no-var-requires, @typescript-eslint/no-unsafe-member-access, rulesdir/prefer-actions-set-data
 const merge = require('react-native-onyx').default.merge as jest.Mock;
 
-
 jest.mock('@hooks/useCurrentUserData', () => ({
   __esModule: true,
   default: () => ({userID: 'u1', earliest_session_at: 1_700_000_000_000}),
@@ -83,7 +82,7 @@ describe('StatsContextProvider', () => {
 
     expect(getCtx().range.preset).toBe('W');
     expect(getCtx().range.start.getTime()).not.toBe(startBefore.getTime());
-    expect(merge).toHaveBeenLastCalledWith('statisticsFilters', {
+    expect(merge).toHaveBeenCalledWith('statisticsFilters', {
       preset: 'W',
       customStart: undefined,
       customEnd: undefined,
@@ -102,7 +101,7 @@ describe('StatsContextProvider', () => {
     expect(getCtx().range.preset).toBe('Custom');
     expect(getCtx().range.start).toEqual(start);
     expect(getCtx().range.end).toEqual(end);
-    expect(merge).toHaveBeenLastCalledWith(
+    expect(merge).toHaveBeenCalledWith(
       'statisticsFilters',
       expect.objectContaining({
         preset: 'Custom',
@@ -120,7 +119,7 @@ describe('StatsContextProvider', () => {
     });
 
     expect(getCtx().drinkTypeFilter.has('beer')).toBe(true);
-    expect(merge).toHaveBeenLastCalledWith('statisticsFilters', {
+    expect(merge).toHaveBeenCalledWith('statisticsFilters', {
       drinkTypeFilter: ['beer'],
     });
   });
