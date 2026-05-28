@@ -231,7 +231,7 @@ function OverviewTab() {
         </View>
 
         <View style={styles.mb3}>
-          {sectionLabel('statistics.tabs.overview.sections.wins')}
+          {sectionLabel('statistics.tabs.overview.sections.highlights')}
           <KpiCardGroup cards={winsCards} isLoading={isLoading} />
         </View>
 

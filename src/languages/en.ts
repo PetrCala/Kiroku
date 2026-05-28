@@ -947,7 +947,7 @@ export default {
           vsPrevious: 'vs previous',
         },
         sections: {
-          wins: 'Wins',
+          highlights: 'Highlights',
           load: 'Load',
           risk: 'Risk',
         },
