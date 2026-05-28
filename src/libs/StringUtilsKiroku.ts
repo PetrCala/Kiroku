@@ -50,6 +50,41 @@ function cleanStringForFirebaseKey(rawStr: string): string {
     : cleanedStr.replace(/_+$/, '');
 }
 
+/**
+ * Split a display name into its individual word tokens, cleaned for use as
+ * Firebase keys. Words are split on whitespace and dashes. Empty/invalid
+ * tokens (those that clean down to "_") are dropped, and the result is deduped.
+ *
+ * @example getNicknameWordKeys("Anne-Marie Doe") // ["anne", "marie", "doe"]
+ */
+function getNicknameWordKeys(displayName: string): string[] {
+  const words = displayName
+    .split(/[\s-]+/)
+    .map(word => cleanStringForFirebaseKey(word))
+    .filter(key => key !== '_');
+  return Array.from(new Set(words));
+}
+
+/**
+ * The full set of Firebase index keys a user should be stored under so they
+ * are findable by any word in their name. Combines the full normalized name
+ * with each individual word token. Falls back to ["_"] for all-invalid names
+ * so the user always has at least one index entry.
+ *
+ * @example getNicknameKeys("John Doe") // ["john_doe", "john", "doe"]
+ */
+function getNicknameKeys(displayName: string): string[] {
+  const fullKey = cleanStringForFirebaseKey(displayName);
+  const keys = [fullKey, ...getNicknameWordKeys(displayName)].filter(
+    key => key !== '_',
+  );
+  const unique = Array.from(new Set(keys)).slice(
+    0,
+    CONST.NICKNAME_INDEX.MAX_TOKENS,
+  );
+  return unique.length > 0 ? unique : ['_'];
+}
+
 /** Determine whether a number should be pluralized. */
 function shouldUsePlural(input: number): boolean {
   return input !== 1;
@@ -109,6 +144,8 @@ export {
   cleanStringForFirebaseKey,
   copyToClipboard,
   generateRandomString,
+  getNicknameKeys,
+  getNicknameWordKeys,
   getPlural,
   nonMidnightString,
   shouldUsePlural,

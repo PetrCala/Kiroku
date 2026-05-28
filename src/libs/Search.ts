@@ -1,36 +1,75 @@
 import type {Database} from 'firebase/database';
+import {
+  get,
+  query,
+  ref,
+  orderByKey,
+  startAt,
+  endAt,
+  limitToFirst,
+} from 'firebase/database';
 import type {
   UserIDToNicknameMapping,
   UserSearchResults,
 } from '@src/types/various/Search';
 import type {NicknameToId} from '@src/types/onyx';
-import {readDataOnce} from '@database/baseFunctions';
-import {cleanStringForFirebaseKey} from './StringUtilsKiroku';
+import CONST from '@src/CONST';
+import DBPATHS from '@src/DBPATHS';
+import {isEmptyArray} from '@src/types/utils/EmptyObject';
+import {
+  cleanStringForFirebaseKey,
+  getNicknameWordKeys,
+} from './StringUtilsKiroku';
+
+// Unicode high code point used as the inclusive upper bound of a key prefix
+// range query, so `startAt(prefix)`/`endAt(prefix + SUFFIX)` matches every key
+// that begins with `prefix`.
+const PREFIX_RANGE_SUFFIX = '';
 
 /**
- * Using a database object and a nickname to search,
- * fetch the user IDs that belong to that nickname.
- * Return this object if it exists, or an empty object
- * if not.
+ * Fetch every user stored under a token key that begins with the given prefix.
+ * The `nickname_to_id` index is keyed by name word-tokens, each mapping to a
+ * `{userID: displayName}` object, so the matched buckets are flattened into a
+ * single mapping.
  *
  * @param db Firebase Database object.
- * @param searchText The nickname to search for.
- * @returns The user IDs
- *  that belong to this nickname
+ * @param prefix The cleaned token prefix to search for.
+ * @returns A mapping of matching user IDs to their stored display names.
  */
-async function searchDbByNickname(
+async function searchDbByPrefix(
   db: Database,
-  searchText: string,
-): Promise<NicknameToId | null> {
-  const nicknameKey = cleanStringForFirebaseKey(searchText);
-  return readDataOnce<NicknameToId>(db, `nickname_to_id/${nicknameKey}`);
+  prefix: string,
+): Promise<NicknameToId> {
+  const indexRef = query(
+    ref(db, DBPATHS.NICKNAME_TO_ID),
+    orderByKey(),
+    startAt(prefix),
+    endAt(`${prefix}${PREFIX_RANGE_SUFFIX}`),
+    limitToFirst(CONST.NICKNAME_INDEX.MAX_RESULTS),
+  );
+  const snapshot = await get(indexRef);
+  if (!snapshot.exists()) {
+    return {};
+  }
+  const buckets = snapshot.val() as Record<string, NicknameToId>;
+  const merged: NicknameToId = {};
+  Object.values(buckets).forEach(bucket => {
+    Object.assign(merged, bucket);
+  });
+  return merged;
 }
 
 /**
- * Searches the database for a given searchText and returns a string of IDs that match the search text.
+ * Search the database for users whose name matches the given text.
+ *
+ * The query is split into word tokens; the most selective (longest) token
+ * drives a single prefix range query, and for multi-word queries the candidate
+ * set is refined client-side so every query word must appear in the user's
+ * name (order-independent AND matching).
+ *
  * @param db - The database object.
  * @param searchText - The text to search for.
- * @returns A Promise that resolves to a string of IDs that match the search text.
+ * @returns A Promise that resolves to the matching user IDs.
  */
 async function searchDatabaseForUsers(
   db: Database | undefined,
@@ -39,12 +78,23 @@ async function searchDatabaseForUsers(
   if (!searchText || !db) {
     return [];
   }
-  let searchResultData: UserSearchResults = [];
-  const newResults = await searchDbByNickname(db, searchText); // Nickname is cleaned in the function
-  if (newResults) {
-    searchResultData = Object.keys(newResults);
+  const wordTokens = getNicknameWordKeys(searchText).filter(
+    token => token.length >= CONST.NICKNAME_INDEX.MIN_SEARCH_TOKEN_LENGTH,
+  );
+  if (isEmptyArray(wordTokens)) {
+    return [];
   }
-  return searchResultData;
+  const driver = wordTokens.reduce((longest, token) =>
+    token.length > longest.length ? token : longest,
+  );
+  const candidates = await searchDbByPrefix(db, driver);
+  let userIDs = Object.keys(candidates);
+  if (wordTokens.length > 1) {
+    wordTokens.forEach(token => {
+      userIDs = searchArrayByText(userIDs, token, candidates);
+    });
+  }
+  return userIDs;
 }
 
 function searchItemIsRelevant(
@@ -98,7 +148,7 @@ function getNicknameMapping(
 
 export {
   getNicknameMapping,
-  searchDbByNickname,
+  searchDbByPrefix,
   searchDatabaseForUsers,
   searchArrayByText,
 };

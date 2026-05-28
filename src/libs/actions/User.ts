@@ -30,7 +30,7 @@ import {
   updateProfile,
   verifyBeforeUpdateEmail,
 } from 'firebase/auth';
-import {cleanStringForFirebaseKey} from '@libs/StringUtilsKiroku';
+import {getNicknameKeys} from '@libs/StringUtilsKiroku';
 import {getOAuthCredential} from '@libs/OAuthCredential';
 import DBPATHS from '@src/DBPATHS';
 import {readDataOnce} from '@database/baseFunctions';
@@ -127,7 +127,6 @@ async function pushNewUserInfo(
   profileData: Profile,
 ): Promise<void> {
   const userNickname = profileData.display_name;
-  const nicknameKey = cleanStringForFirebaseKey(userNickname);
 
   const nicknameRef = DBPATHS.NICKNAME_TO_ID_NICKNAME_KEY_USER_ID;
   const userStatusRef = DBPATHS.USER_STATUS_USER_ID;
@@ -135,7 +134,9 @@ async function pushNewUserInfo(
   const userRef = DBPATHS.USERS_USER_ID;
 
   const updates: FirebaseUpdates = {};
-  updates[nicknameRef.getRoute(nicknameKey, userID)] = userNickname;
+  getNicknameKeys(userNickname).forEach(key => {
+    updates[nicknameRef.getRoute(key, userID)] = userNickname;
+  });
   updates[userStatusRef.getRoute(userID)] = getDefaultUserStatus();
   updates[userPreferencesRef.getRoute(userID)] = getDefaultPreferences();
   updates[userRef.getRoute(userID)] = getDefaultUserData(profileData);
@@ -163,8 +164,6 @@ async function deleteUserData(
   friendRequests: FriendRequestList | undefined,
   reasonForLeaving?: ReasonForLeaving,
 ): Promise<void> {
-  const nicknameKey = cleanStringForFirebaseKey(userNickname);
-
   const nicknameRef = DBPATHS.NICKNAME_TO_ID_NICKNAME_KEY_USER_ID;
   const userStatusRef = DBPATHS.USER_STATUS_USER_ID;
   const userPreferencesRef = DBPATHS.USER_PREFERENCES_USER_ID;
@@ -176,7 +175,9 @@ async function deleteUserData(
   const reasonForLeavingRef = DBPATHS.REASONS_FOR_LEAVING_REASON_ID;
 
   const updates: Record<string, null | false | ReasonForLeaving> = {};
-  updates[nicknameRef.getRoute(nicknameKey, userID)] = null;
+  getNicknameKeys(userNickname).forEach(key => {
+    updates[nicknameRef.getRoute(key, userID)] = null;
+  });
   updates[userStatusRef.getRoute(userID)] = null;
   updates[userPreferencesRef.getRoute(userID)] = null;
   updates[userRef.getRoute(userID)] = null;
@@ -374,8 +375,6 @@ async function changeDisplayName(
     );
   }
   const userID = user.uid;
-  const oldNicknameKey = cleanStringForFirebaseKey(oldDisplayName);
-  const nicknameKey = cleanStringForFirebaseKey(newDisplayName);
   const nicknameRef = DBPATHS.NICKNAME_TO_ID_NICKNAME_KEY_USER_ID;
   const displayNameRef = DBPATHS.USERS_USER_ID_PROFILE_DISPLAY_NAME;
 
@@ -387,9 +386,21 @@ async function changeDisplayName(
     return;
   }
 
+  // Derive the keys to remove from the name currently stored in the database
+  // (not the caller-supplied old name), so renames never leave stale tokens.
+  const oldKeys = getNicknameKeys(currentDisplayName ?? oldDisplayName);
+  const newKeys = getNicknameKeys(newDisplayName);
+  const newKeySet = new Set(newKeys);
+
   const updates: Record<string, string | null> = {};
-  updates[nicknameRef.getRoute(oldNicknameKey, userID)] = null;
-  updates[nicknameRef.getRoute(nicknameKey, userID)] = newDisplayName;
+  oldKeys
+    .filter(key => !newKeySet.has(key))
+    .forEach(key => {
+      updates[nicknameRef.getRoute(key, userID)] = null;
+    });
+  newKeys.forEach(key => {
+    updates[nicknameRef.getRoute(key, userID)] = newDisplayName;
+  });
   updates[displayNameRef.getRoute(userID)] = newDisplayName;
 
   // TODO possibly rewrite these into a transaction
@@ -555,14 +566,26 @@ async function setUsername(
   const displayNameRef = DBPATHS.USERS_USER_ID_PROFILE_DISPLAY_NAME;
   const usernameChosenRef = DBPATHS.USERS_USER_ID_PROFILE_USERNAME_CHOSEN;
 
+  // Prefer the name currently stored in the database when deciding which index
+  // keys to remove, so a drifted caller-supplied old name can't leave stale
+  // tokens behind.
+  const currentDisplayName = await readDataOnce<string>(
+    db,
+    displayNameRef.getRoute(userID),
+  );
+  const newKeys = getNicknameKeys(trimmed);
+  const newKeySet = new Set(newKeys);
+  const oldKeys = getNicknameKeys(currentDisplayName ?? oldDisplayName ?? '');
+
   const updates: Record<string, string | boolean | null> = {};
-  if (oldDisplayName && oldDisplayName !== trimmed) {
-    updates[
-      nicknameRef.getRoute(cleanStringForFirebaseKey(oldDisplayName), userID)
-    ] = null;
-  }
-  updates[nicknameRef.getRoute(cleanStringForFirebaseKey(trimmed), userID)] =
-    trimmed;
+  oldKeys
+    .filter(key => !newKeySet.has(key))
+    .forEach(key => {
+      updates[nicknameRef.getRoute(key, userID)] = null;
+    });
+  newKeys.forEach(key => {
+    updates[nicknameRef.getRoute(key, userID)] = trimmed;
+  });
   updates[displayNameRef.getRoute(userID)] = trimmed;
   updates[usernameChosenRef.getRoute(userID)] = true;
 

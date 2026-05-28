@@ -415,6 +415,14 @@ const CONST = {
   ICON_TYPE_ICON: 'icon',
   ICON_TYPE_AVATAR: 'avatar',
   INVALID_CHARS: ['.', '#', '$', '[', ']'],
+  NICKNAME_INDEX: {
+    // Minimum length of a query word before it triggers a prefix search.
+    MIN_SEARCH_TOKEN_LENGTH: 2,
+    // Upper bound on token buckets pulled for a single prefix range query.
+    MAX_RESULTS: 50,
+    // Upper bound on token entries written per user, to cap index fan-out.
+    MAX_TOKENS: 8,
+  },
   JSON_CODE: {
     SUCCESS: 200,
     BAD_REQUEST: 400,
