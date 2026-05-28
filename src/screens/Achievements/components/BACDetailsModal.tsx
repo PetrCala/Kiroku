@@ -94,24 +94,27 @@ function BACDetailsModal({
 }: BACDetailsModalProps) {
   const styles = useThemeStyles();
   const {translate} = useLocalize();
-  const {windowHeight} = useWindowDimensions();
+  const {windowHeight, windowWidth} = useWindowDimensions();
 
-  // Cover most of the screen but leave a sliver of the page visible behind the
-  // sheet so it reads as sliding up over the BAC screen, not a new page.
-  const sheetHeight = Math.round(windowHeight * 0.92);
+  // A centered card that sizes to its content but never grows past ~80% of the
+  // screen; the body scrolls inside the cap. Width caps on large screens.
+  const cardWidth = Math.min(windowWidth - 40, 480);
+  const cardMaxHeight = Math.round(windowHeight * 0.8);
 
   return (
     <Modal
       isVisible={isVisible}
-      type={CONST.MODAL.MODAL_TYPE.BOTTOM_DOCKED}
+      type={CONST.MODAL.MODAL_TYPE.CENTERED_SMALL}
+      animationIn="zoomIn"
+      animationOut="zoomOut"
       onClose={onClose}>
-      <View style={{height: sheetHeight}}>
+      <View style={{width: cardWidth, maxHeight: cardMaxHeight}}>
         <HeaderWithBackButton
           title={translate('achievementsScreen.bac.details.title')}
           onBackButtonPress={onClose}
         />
         <ScrollView
-          style={styles.flex1}
+          style={styles.flexShrink1}
           contentContainerStyle={[styles.ph5, styles.pb5]}>
           {estimate.contributions.length === 0 ? (
             <Text style={[styles.textLabelSupporting]}>
