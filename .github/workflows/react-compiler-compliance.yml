@@ -20,8 +20,13 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
         with:
-          # Full history so the script can compute the merge-base with master
-          # and diff changed files against it.
+          # Leave `ref` unset so the default `pull_request` merge ref
+          # (refs/pull/N/merge = master + this PR) is checked out. The script
+          # diffs the working tree against the origin/master tip, so the merge
+          # ref is what makes that diff net out to exactly this PR's changes.
+          # Do NOT pin this to head.ref, or files changed on master after the
+          # branch point would surface as false-positive regressions.
+          # fetch-depth: 0 ensures the base commit's objects are present for the diff.
           fetch-depth: 0
 
       - name: Setup Node
@@ -31,4 +36,3 @@ jobs:
         run: npm run react-compiler-compliance-check check-changed
         env:
           CI: true
-          GITHUB_TOKEN: ${{ github.token }}
