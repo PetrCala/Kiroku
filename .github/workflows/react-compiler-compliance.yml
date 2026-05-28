@@ -1,0 +1,34 @@
+name: React Compiler Compliance Check
+
+on:
+  workflow_call:
+  pull_request:
+    types: [opened, synchronize]
+    branches-ignore: [staging, production]
+    paths: ['**.ts', '**.tsx']
+
+concurrency:
+  group: ${{ github.ref == 'refs/heads/master' && format('{0}-{1}', github.ref, github.sha) || github.ref }}-react-compiler-compliance
+  cancel-in-progress: true
+
+jobs:
+  react-compiler-compliance:
+    name: React Compiler Compliance
+    if: ${{ github.actor != 'KirokuAdmin' || github.event_name == 'workflow_call' }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          # Full history so the script can compute the merge-base with master
+          # and diff changed files against it.
+          fetch-depth: 0
+
+      - name: Setup Node
+        uses: ./.github/actions/composite/setupNode
+
+      - name: Run React Compiler Compliance Check
+        run: npm run react-compiler-compliance-check check-changed
+        env:
+          CI: true
+          GITHUB_TOKEN: ${{ github.token }}
