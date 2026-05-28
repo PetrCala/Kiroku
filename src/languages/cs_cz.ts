@@ -320,7 +320,7 @@ export default {
     profile: 'Profil',
     settings: 'Nastavení',
     achievements: 'Odznaky',
-    bac: 'Alkohol',
+    bac: 'Kalkulačka',
     statistics: 'Statistiky',
     menu: 'Menu',
   },
