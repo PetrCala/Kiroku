@@ -1,5 +1,4 @@
-import CONST from '@src/CONST';
-import type {UserData} from '@src/types/onyx';
+import type {Config, UserData} from '@src/types/onyx';
 
 /**
  * Returns whether the user has completed the onboarding flow.
@@ -27,11 +26,35 @@ function hasCompletedOnboarding(userData: UserData | undefined): boolean {
 }
 
 /**
- * Returns whether the user's accepted Terms & Conditions version matches the
- * current shipping version.
+ * Returns whether the user's Terms & Conditions acceptance is current with the
+ * server-published terms.
+ *
+ * The "current terms" signal is the server value `config.terms_last_updated`
+ * (a timestamp), not a build-time constant — so re-consent fires when the terms
+ * actually change, regardless of the installed app version. The user re-accepts
+ * by writing a fresh `agreed_to_terms_at`, so acceptance is current whenever
+ * they accepted at or after the terms were last published.
+ *
+ * A user who has never accepted (`agreed_to_terms_at === undefined`) always
+ * returns `false` so the onboarding terms step still shows, independent of
+ * whether `config` has loaded. Fail-open (`true`) only applies once they have
+ * accepted at least once and no server signal is available, so a missing or
+ * not-yet-loaded `config` never locks an existing user behind the re-consent
+ * modal.
  */
-function hasAcceptedCurrentTerms(userData: UserData | undefined): boolean {
-  return userData?.agreed_to_terms_version === CONST.CURRENT_TERMS_VERSION;
+function hasAcceptedCurrentTerms(
+  userData: UserData | undefined,
+  config: Config | undefined,
+): boolean {
+  const acceptedAt = userData?.agreed_to_terms_at;
+  if (acceptedAt === undefined) {
+    return false;
+  }
+  const publishedAt = config?.terms_last_updated;
+  if (!publishedAt) {
+    return true;
+  }
+  return acceptedAt >= publishedAt;
 }
 
 /**

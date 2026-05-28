@@ -4,7 +4,7 @@ import {useFirebase} from '@context/global/FirebaseContext';
 import useOnboardingFlow from '@hooks/useOnboardingFlow';
 import CONFIG from '@src/CONFIG';
 import ROUTES from '@src/ROUTES';
-import type {UserData} from '@src/types/onyx';
+import type {Config, UserData} from '@src/types/onyx';
 
 jest.mock('@context/global/FirebaseContext', () => ({
   useFirebase: jest.fn(),
@@ -25,9 +25,10 @@ function setAuth(uid: string | undefined): void {
   } as unknown as ReturnType<typeof useFirebase>);
 }
 
-function setUserData(userData: UserData | undefined): void {
+function setUserData(userData: UserData | undefined, config?: Config): void {
   mockedUseDatabaseData.mockReturnValue({
     userData,
+    config,
   } as unknown as ReturnType<typeof useDatabaseData>);
 }
 
@@ -144,7 +145,7 @@ describe('useOnboardingFlow', () => {
     setAuth(TEST_UID);
     setUserData(
       makeUserData({
-        agreed_to_terms_version: 1,
+        agreed_to_terms_at: 1_700_000_000_000,
         profile: {
           display_name: 'foo@example.com',
           photo_url: '',
@@ -184,7 +185,7 @@ describe('useOnboardingFlow', () => {
     setAuth(TEST_UID);
     setUserData(
       makeUserData({
-        agreed_to_terms_version: 1,
+        agreed_to_terms_at: 1_700_000_000_000,
         onboarding: {last_visited_path: ROUTES.ONBOARDING_DISPLAY_NAME},
         profile: {
           display_name: 'foo@example.com',

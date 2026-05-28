@@ -3,6 +3,7 @@ import type {ReactNode} from 'react';
 import React, {createContext, useContext, useEffect, useMemo} from 'react';
 import Onyx from 'react-native-onyx';
 import type {
+  Config,
   DrinkingSessionList,
   Preferences,
   UnconfirmedDays,
@@ -21,6 +22,8 @@ type DatabaseDataContextType = {
   preferences?: Preferences;
   unconfirmedDays?: UnconfirmedDays;
   userData?: UserData;
+  /** Global app configuration, including the terms re-consent signal. */
+  config?: Config;
   /** True while a wider-window resubscribe for `drinkingSessionData` is in
    *  flight (calendar scrolled past the loaded edge). */
   isFetchingOlderMonths: boolean;
@@ -50,6 +53,7 @@ function DatabaseDataProvider({children}: DatabaseDataProviderProps) {
   const userID = user ? user.uid : '';
 
   const dataTypes: FetchDataKeys = [
+    'config',
     'userStatusData',
     'drinkingSessionData',
     'preferences',
@@ -66,6 +70,7 @@ function DatabaseDataProvider({children}: DatabaseDataProviderProps) {
       preferences: data.preferences,
       unconfirmedDays: data.unconfirmedDays,
       userData: data.userData,
+      config: data.config,
       isFetchingOlderMonths,
     }),
     [data, isFetchingOlderMonths],
