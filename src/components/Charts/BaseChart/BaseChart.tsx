@@ -41,6 +41,7 @@ function BaseChart<TYKey extends string = 'y'>({
   emptyLabel,
   height = DEFAULT_HEIGHT,
   hideAxes = false,
+  axis,
   loading = false,
   children,
 }: BaseChartProps<TYKey>) {
@@ -75,12 +76,38 @@ function BaseChart<TYKey extends string = 'y'>({
     );
   }
 
+  // Adapt the consumer's numeric formatters to victory's `string | number`
+  // label type (BaseChart's data rows are structurally typed that way).
+  const formatX = axis?.formatXLabel;
+  const formatY = axis?.formatYLabel;
   const axisOptions = hideAxes
     ? undefined
-    : {labelColor: theme.axisLabel, lineColor: theme.axisLine};
+    : {
+        labelColor: theme.axisLabel,
+        lineColor: theme.axisLine,
+        ...(axis?.font ? {font: axis.font} : {}),
+        ...(axis?.tickCount !== undefined ? {tickCount: axis.tickCount} : {}),
+        ...(axis?.tickValues !== undefined
+          ? {tickValues: axis.tickValues}
+          : {}),
+        ...(formatX
+          ? {formatXLabel: (label: string | number) => formatX(Number(label))}
+          : {}),
+        ...(formatY
+          ? {formatYLabel: (label: string | number) => formatY(Number(label))}
+          : {}),
+      };
+  // Custom axis labels need extra outset room so the leftmost Y label and edge
+  // X labels aren't clipped; keep the tighter default for unlabeled charts.
+  const hasCustomAxis = !hideAxes && axis !== undefined;
   const domainPadding = hideAxes
     ? 0
-    : {left: 24, right: 24, top: 16, bottom: 0};
+    : {
+        left: hasCustomAxis ? 40 : 24,
+        right: hasCustomAxis ? 28 : 24,
+        top: 16,
+        bottom: 0,
+      };
 
   const resolvedYKeys =
     yKeys ?? (DEFAULT_Y_KEYS as unknown as readonly TYKey[]);

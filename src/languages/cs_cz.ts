@@ -6,7 +6,6 @@ import type {
   UntilTimeParams,
 } from './types';
 import type {
-  BacAxesParams,
   BacRangeParams,
   BacSessionTotalParams,
   BacSoberInParams,
@@ -1142,8 +1141,6 @@ export default {
         `Vystřízlivění přibližně za ${time}`,
       showDetails: 'Jak se to počítá?',
       decayChartLabel: 'Odhadovaná hladina alkoholu klesající k nule v čase',
-      decayAxes: ({unit}: BacAxesParams) =>
-        `Hodiny od teď (x) · alkohol v ${unit} (y)`,
       intro: {
         title: 'Alkokalkulačka',
         body1:
