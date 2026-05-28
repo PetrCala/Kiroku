@@ -11,22 +11,22 @@
  */
 
 // ─── Paths (relative to the repo root) ──────────────────────────────────────
-export const RAW_DIR = 'fastlane/store-screenshots/raw';
-export const OUT_DIR = 'fastlane/store-screenshots/framed';
+const RAW_DIR = 'fastlane/store-screenshots/raw';
+const OUT_DIR = 'fastlane/store-screenshots/framed';
 
 // ─── Output device sizes (portrait, EXACT App Store pixel dimensions) ────────
 // 6.9" satisfies the mandatory largest-iPhone slot and ASC will down-scale it
 // for 6.7"/6.5". Add/remove sizes as needed.
-export const devices = [
+const devices = [
   {id: '6.9', width: 1320, height: 2868}, // iPhone 16/17 Pro Max
   {id: '6.7', width: 1290, height: 2796}, // iPhone 15 Pro Max
 ];
 
 // ─── Locales (must match RAW_DIR subfolders and caption keys below) ──────────
-export const locales = ['en-US', 'cs'];
+const locales = ['en-US', 'cs'];
 
 // ─── Visual theme ───────────────────────────────────────────────────────────
-export const theme = {
+const theme = {
   // Background gradient stops (top → bottom). Use one entry for a solid color.
   background: ['#6C4BF6', '#3D7BF0'],
   captionColor: '#FFFFFF',
@@ -45,7 +45,7 @@ export const theme = {
 // `raw` is the filename inside RAW_DIR/<locale>/. `caption` is keyed by locale.
 // Captions stay consistent with Kiroku's harm-reduction framing — never
 // anything that celebrates drinking *volume*.
-export const shots = [
+const shots = [
   {
     raw: '01-home.png',
     caption: {

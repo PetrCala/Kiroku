@@ -1,4 +1,5 @@
 #!/usr/bin/env node
+/* eslint-disable no-console -- this is a CLI build script; stdout is its UI */
 /**
  * Frame raw app captures into App Store-ready marketing screenshots.
  *
@@ -28,12 +29,13 @@ import TextToSVG from 'text-to-svg';
 import {readFileSync, mkdirSync, existsSync, rmSync} from 'fs';
 import {join, dirname, parse} from 'path';
 import {fileURLToPath} from 'url';
+// eslint-disable-next-line import/extensions -- Node ESM requires the explicit extension
 import config from './store-screenshots.config.mjs';
 
-const __dirname = dirname(fileURLToPath(import.meta.url));
-const ROOT = join(__dirname, '..');
-
 const {RAW_DIR, OUT_DIR, devices, locales, theme, shots} = config;
+
+const scriptDir = dirname(fileURLToPath(import.meta.url));
+const ROOT = join(scriptDir, '..');
 
 // ─── CLI args ───────────────────────────────────────────────────────────────
 const args = process.argv.slice(2);
@@ -62,10 +64,10 @@ function wrap(text, fontSize, maxWidth, maxLines = 3) {
   const words = text.split(/\s+/).filter(Boolean);
   const lines = [];
   let line = '';
-  const width = t => font.getMetrics(t, {fontSize}).width;
+  const widthOf = t => font.getMetrics(t, {fontSize}).width;
   for (const w of words) {
     const candidate = line ? `${line} ${w}` : w;
-    if (width(candidate) > maxWidth && line) {
+    if (widthOf(candidate) > maxWidth && line) {
       lines.push(line);
       line = w;
       if (lines.length === maxLines - 1) {
@@ -129,7 +131,7 @@ async function render(shot, index, locale, device) {
   const {width: W, height: H} = device;
   const rawPath = join(ROOT, RAW_DIR, locale, shot.raw);
   if (!existsSync(rawPath)) {
-    return {status: 'missing', rawPath};
+    return {status: 'missing', locale, device, raw: shot.raw};
   }
 
   const fontSize = Math.round(W * theme.captionSizeRatio);
@@ -176,43 +178,32 @@ async function render(shot, index, locale, device) {
   const outDir = join(ROOT, OUT_DIR, locale, device.id);
   mkdirSync(outDir, {recursive: true});
   const name = parse(shot.raw).name;
-  const outPath = join(
-    outDir,
-    `${String(index + 1).padStart(2, '0')}_${name}.png`,
-  );
-  await sharp(out).toFile(outPath);
-  return {status: 'ok', outPath};
+  const file = `${String(index + 1).padStart(2, '0')}_${name}.png`;
+  await sharp(out).toFile(join(outDir, file));
+  return {status: 'ok', locale, device, file};
 }
 
-// ─── Main ───────────────────────────────────────────────────────────────────
-async function main() {
-  const targetLocales = locales.filter(l => !onlyLocale || l === onlyLocale);
-  const targetDevices = devices.filter(d => !onlyDevice || d.id === onlyDevice);
-
-  if (checkOnly) {
-    console.log('Raw-capture status:');
-    let missing = 0;
-    for (const locale of targetLocales) {
-      for (const [i, shot] of shots.entries()) {
-        const p = join(ROOT, RAW_DIR, locale, shot.raw);
-        const ok = existsSync(p);
-        if (!ok) {
-          missing++;
-        }
-        console.log(
-          `  ${ok ? '✓' : '✗'} ${locale}/${shot.raw}` +
-            (ok ? '' : '  (missing)'),
-        );
+// ─── Modes ──────────────────────────────────────────────────────────────────
+function runCheck(targetLocales) {
+  console.log('Raw-capture status:');
+  let missing = 0;
+  for (const locale of targetLocales) {
+    for (const shot of shots) {
+      const ok = existsSync(join(ROOT, RAW_DIR, locale, shot.raw));
+      if (!ok) {
+        missing += 1;
       }
+      console.log(`  ${ok ? '✓' : '✗'} ${locale}/${shot.raw}`);
     }
-    console.log(
-      missing
-        ? `\n${missing} capture(s) missing — drop them in ${RAW_DIR}/<locale>/`
-        : '\nAll captures present.',
-    );
-    return;
   }
+  console.log(
+    missing
+      ? `\n${missing} capture(s) missing — drop them in ${RAW_DIR}/<locale>/`
+      : '\nAll captures present.',
+  );
+}
 
+async function runRender(targetLocales, targetDevices) {
   // Start each run from a clean output tree so deleted shots don't linger.
   for (const locale of targetLocales) {
     for (const device of targetDevices) {
@@ -223,22 +214,26 @@ async function main() {
     }
   }
 
-  let ok = 0;
-  let missing = 0;
+  // Build the full task list up front, then render in parallel.
+  const tasks = [];
   for (const locale of targetLocales) {
     for (const device of targetDevices) {
-      for (const [i, shot] of shots.entries()) {
-        const res = await render(shot, i, locale, device);
-        if (res.status === 'ok') {
-          ok++;
-          console.log(
-            `✓ ${locale}/${device.id}  ${res.outPath.split('/').slice(-1)[0]}`,
-          );
-        } else {
-          missing++;
-          console.warn(`✗ missing capture: ${RAW_DIR}/${locale}/${shot.raw}`);
-        }
-      }
+      shots.forEach((shot, index) => tasks.push({shot, index, locale, device}));
+    }
+  }
+  const results = await Promise.all(
+    tasks.map(t => render(t.shot, t.index, t.locale, t.device)),
+  );
+
+  let ok = 0;
+  let missing = 0;
+  for (const res of results) {
+    if (res.status === 'ok') {
+      ok += 1;
+      console.log(`✓ ${res.locale}/${res.device.id}  ${res.file}`);
+    } else {
+      missing += 1;
+      console.warn(`✗ missing capture: ${RAW_DIR}/${res.locale}/${res.raw}`);
     }
   }
   console.log(`\nDone. ${ok} framed, ${missing} skipped (missing captures).`);
@@ -247,6 +242,18 @@ async function main() {
       `Drop the missing raw captures in ${RAW_DIR}/<locale>/ and re-run.`,
     );
   }
+}
+
+// ─── Main ───────────────────────────────────────────────────────────────────
+async function main() {
+  const targetLocales = locales.filter(l => !onlyLocale || l === onlyLocale);
+  const targetDevices = devices.filter(d => !onlyDevice || d.id === onlyDevice);
+
+  if (checkOnly) {
+    runCheck(targetLocales);
+    return;
+  }
+  await runRender(targetLocales, targetDevices);
 }
 
 main().catch(e => {
