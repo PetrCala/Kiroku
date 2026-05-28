@@ -50,7 +50,14 @@ function SesssionDateScreen({route}: SessionDateScreenProps) {
         await DS.setIsCreatingNewSession(false);
       }
       if (backTo) {
-        Navigation.navigate(backTo as Route);
+        if (backTo === ROUTES.HOME) {
+          // Cancelling the create flow: dismiss the whole modal in one slide
+          // rather than navigating to a bottom-tab route, which forward-pushes
+          // and bounces.
+          Navigation.dismissModal();
+        } else {
+          Navigation.goBack(backTo as Route);
+        }
         return;
       }
       Navigation.goBack();
