@@ -37,7 +37,9 @@ export default function suppressSkiaPathDeprecationWarnings(): void {
     return;
   }
 
+  // eslint-disable-next-line no-console
   const originalWarn = console.warn.bind(console);
+  // eslint-disable-next-line no-console
   console.warn = (...args: unknown[]) => {
     if (isSkiaPathDeprecationWarning(args)) {
       return;
