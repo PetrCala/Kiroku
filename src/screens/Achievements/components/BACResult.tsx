@@ -1,4 +1,4 @@
-import React, {useMemo} from 'react';
+import React, {useMemo, useState} from 'react';
 import {View} from 'react-native';
 import {BaseChart, Line, useChartFont} from '@components/Charts/BaseChart';
 import Button from '@components/Button';
@@ -34,6 +34,10 @@ type BACResultProps = {
   onShowDetails: () => void;
 };
 
+type TimeFormat = 'duration' | 'clock';
+
+const MS_PER_HOUR = 60 * 60 * 1000;
+
 function formatSoberDuration(hoursToSober: number): string {
   const wholeHours = Math.floor(hoursToSober);
   const minutes = Math.round((hoursToSober - wholeHours) * 60);
@@ -41,6 +45,14 @@ function formatSoberDuration(hoursToSober: number): string {
     return `${minutes}m`;
   }
   return `${wholeHours}h ${minutes}m`;
+}
+
+/** Local wall-clock time as 24h HH:MM. */
+function formatClockTime(ms: number): string {
+  const date = new Date(ms);
+  const hours = String(date.getHours()).padStart(2, '0');
+  const minutes = String(date.getMinutes()).padStart(2, '0');
+  return `${hours}:${minutes}`;
 }
 
 function BACResult({
@@ -54,8 +66,29 @@ function BACResult({
   const styles = useThemeStyles();
   const {translate} = useLocalize();
   const axisFont = useChartFont(11);
+  const [timeFormat, setTimeFormat] = useState<TimeFormat>('duration');
+  // Captured once at mount so clock labels stay stable across re-renders.
+  const [nowMs] = useState(() => Date.now());
 
   const content = formatBac(estimate.point, displayUnit);
+
+  // Time-to-sober shown either as a remaining duration or an absolute clock
+  // time; the same choice drives the graph's X-axis labels below.
+  const isClock = timeFormat === 'clock';
+  const soberText = isClock
+    ? translate('achievementsScreen.bac.soberBy', {
+        time: formatClockTime(nowMs + hoursToSober * MS_PER_HOUR),
+      })
+    : translate('achievementsScreen.bac.soberIn', {
+        time: formatSoberDuration(hoursToSober),
+      });
+  const timeFormatOptions: Array<{value: TimeFormat; label: string}> = [
+    {
+      value: 'duration',
+      label: translate('achievementsScreen.bac.timeDuration'),
+    },
+    {value: 'clock', label: translate('achievementsScreen.bac.timeClock')},
+  ];
 
   const unitOptions: Array<{value: BacDisplayUnit; label: string}> = [
     {value: CONST.BAC.DISPLAY_UNIT.PER_MILLE, label: '‰'},
@@ -142,15 +175,30 @@ function BACResult({
 
       {showGraph ? (
         <View style={[styles.alignSelfStretch, styles.mt6]}>
+          <View
+            style={[
+              styles.flexRow,
+              styles.justifyContentCenter,
+              styles.mb2,
+              {gap: 8},
+            ]}>
+            {timeFormatOptions.map(option => (
+              <Button
+                key={option.value}
+                small
+                text={option.label}
+                success={timeFormat === option.value}
+                onPress={() => setTimeFormat(option.value)}
+              />
+            ))}
+          </View>
           <Text
             style={[
               styles.textLabelSupporting,
               styles.textAlignCenter,
               styles.mb2,
             ]}>
-            {translate('achievementsScreen.bac.soberIn', {
-              time: formatSoberDuration(hoursToSober),
-            })}
+            {soberText}
           </Text>
           <BaseChart
             data={chartData}
@@ -162,7 +210,10 @@ function BACResult({
             axis={{
               font: axisFont,
               tickValues: {x: xTicks, y: yTicks},
-              formatXLabel: hour => `${hour}h`,
+              formatXLabel: hour =>
+                isClock
+                  ? formatClockTime(nowMs + hour * MS_PER_HOUR)
+                  : `${hour}h`,
               formatYLabel: value =>
                 `${roundToTwoDecimalPlaces(value)}${yUnitLabel}`,
             }}>

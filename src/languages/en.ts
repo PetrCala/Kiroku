@@ -1162,6 +1162,9 @@ export default {
       displayBoth: 'Both',
       range: ({low, high}: BacRangeParams) => `Likely ${low} – ${high}`,
       soberIn: ({time}: BacSoberInParams) => `Sober in about ${time}`,
+      soberBy: ({time}: BacSoberInParams) => `Sober by ${time}`,
+      timeDuration: 'Duration',
+      timeClock: 'Clock',
       showDetails: 'How is this calculated?',
       decayChartLabel: 'Estimated BAC declining to zero over time',
       intro: {
