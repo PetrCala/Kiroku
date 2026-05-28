@@ -18,11 +18,6 @@ import * as KirokuIcons from './Icon/KirokuIcons';
 import FlexibleLoadingIndicator from './FlexibleLoadingIndicator';
 import EnlargableImage from './Buttons/EnlargableImage';
 
-// Delay before the loading spinner appears. Fast (cached) loads resolve well
-// within this window, so they swap straight to the image with no spinner flash;
-// only genuinely slow/cold loads surface the spinner.
-const SPINNER_DELAY_MS = 150;
-
 type ProfileImageProps = {
   storage: FirebaseStorage;
   userID: string;
@@ -54,30 +49,21 @@ function AvatarImage({
   const theme = useTheme();
   const styles = useThemeStyles();
   const [isLoaded, setIsLoaded] = useState(false);
-  const [delayElapsed, setDelayElapsed] = useState(false);
   const [prevUri, setPrevUri] = useState(uri);
 
-  // Reset the loaded flag when the source changes without remounting, so an
-  // already-visible spinner stays put across the resolution -> download
-  // transition instead of blinking off when the timer would otherwise restart.
+  // Reset the loaded flag when the source changes without remounting, so the
+  // spinner reappears for the new image (e.g. after a profile-picture update).
   if (uri !== prevUri) {
     setPrevUri(uri);
     setIsLoaded(false);
   }
 
   // We are loading when the user has a photo that has neither resolved to "no
-  // image" nor finished rendering yet. Cache hits flip `isLoaded` before the
-  // delay below elapses, so the spinner never shows for them.
+  // image" nor finished rendering yet. The opaque spinner overlay below covers
+  // the fallback icon while loading, so the user sees the spinner (not the "no
+  // photo" silhouette) until the real image is ready.
   const resolvedEmpty = !isResolving && !uri;
   const isLoading = expectsPhoto && !resolvedEmpty && !isLoaded;
-
-  useEffect(() => {
-    if (!isLoading) {
-      return undefined;
-    }
-    const timer = setTimeout(() => setDelayElapsed(true), SPINNER_DELAY_MS);
-    return () => clearTimeout(timer);
-  }, [isLoading]);
 
   return (
     <View style={[style as StyleProp<ViewStyle>, {overflow: 'hidden'}]}>
@@ -92,7 +78,7 @@ function AvatarImage({
         style={StyleSheet.absoluteFill}
         onLoad={uri ? () => setIsLoaded(true) : undefined}
       />
-      {isLoading && delayElapsed && (
+      {isLoading && (
         <View
           style={[
             StyleSheet.absoluteFill,
