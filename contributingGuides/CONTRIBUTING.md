@@ -52,6 +52,7 @@ program = gpg
 Specialized workflows are documented in dedicated guides:
 
 - **App icons** — updating the logo, changing badge colors, or adding a build variant: see [`scripts/ICON_UPDATE.md`][icon update guide].
+- **iOS development** — `xUnique` setup for deterministic Xcode project diffs: see [`contributingGuides/IOS_DEVELOPMENT.md`][ios dev guide].
 
 <!-- README links -->
 
@@ -60,3 +61,4 @@ Specialized workflows are documented in dedicated guides:
 [deploying guide]: https://github.com/PetrCala/Kiroku/blob/master/contributingGuides/philosophies/DEPLOYING.md
 [Discord invitation]: https://discord.gg/mv8zcQz5
 [icon update guide]: https://github.com/PetrCala/Kiroku/blob/master/scripts/ICON_UPDATE.md
+[ios dev guide]: https://github.com/PetrCala/Kiroku/blob/master/contributingGuides/IOS_DEVELOPMENT.md
