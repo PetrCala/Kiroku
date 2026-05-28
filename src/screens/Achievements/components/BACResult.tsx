@@ -177,13 +177,6 @@ function BACResult({
         </View>
       ) : null}
 
-      <Button
-        small
-        style={[styles.mt6]}
-        text={translate('achievementsScreen.bac.showDetails')}
-        onPress={onShowDetails}
-      />
-
       <Text
         style={[
           styles.textLabelSupporting,
@@ -192,6 +185,13 @@ function BACResult({
         ]}>
         {translate('achievementsScreen.bac.disclaimer')}
       </Text>
+
+      <Button
+        small
+        style={[styles.mt6]}
+        text={translate('achievementsScreen.bac.showDetails')}
+        onPress={onShowDetails}
+      />
     </ScrollView>
   );
 }
