@@ -133,15 +133,6 @@ function SettingsScreen() {
           icon: KirokuIcons.Gear,
           routeName: ROUTES.SETTINGS_PREFERENCES,
         },
-        ...(shouldShowSupporterMenu
-          ? [
-              {
-                translationKey: 'supporter.menuEntry',
-                icon: KirokuIcons.Star,
-                routeName: ROUTES.SETTINGS_SUPPORT,
-              } as MenuData,
-            ]
-          : []),
         ...(shouldShowManageSubscription
           ? [
               {
@@ -160,11 +151,7 @@ function SettingsScreen() {
     };
 
     return defaultMenu;
-  }, [
-    styles.accountSettingsSectionContainer,
-    shouldShowSupporterMenu,
-    shouldShowManageSubscription,
-  ]);
+  }, [styles.accountSettingsSectionContainer, shouldShowManageSubscription]);
 
   /**
    * Retuns a list of menu items data for general section
@@ -195,9 +182,18 @@ function SettingsScreen() {
           icon: KirokuIcons.Info,
           routeName: ROUTES.SETTINGS_ABOUT,
         },
+        ...(shouldShowSupporterMenu
+          ? [
+              {
+                translationKey: 'supporter.menuEntry',
+                icon: KirokuIcons.Star,
+                routeName: ROUTES.SETTINGS_SUPPORT,
+              } as MenuData,
+            ]
+          : []),
       ],
     };
-  }, [styles.generalSettingsSectionContainer]);
+  }, [styles.generalSettingsSectionContainer, shouldShowSupporterMenu]);
 
   /**
    * Retuns a list of menu items data for authentication section
