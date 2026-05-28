@@ -6,6 +6,7 @@ import ScrollView from '@components/ScrollView';
 import Text from '@components/Text';
 import useLocalize from '@hooks/useLocalize';
 import useThemeStyles from '@hooks/useThemeStyles';
+import useWindowDimensions from '@hooks/useWindowDimensions';
 import {formatBac} from '@libs/BACUtils';
 import type {BacEstimate, SessionContribution} from '@libs/BACUtils';
 import {findDrinkNameTranslationKey} from '@libs/DataHandling';
@@ -93,14 +94,18 @@ function BACDetailsModal({
 }: BACDetailsModalProps) {
   const styles = useThemeStyles();
   const {translate} = useLocalize();
+  const {windowHeight} = useWindowDimensions();
+
+  // Cover most of the screen but leave a sliver of the page visible behind the
+  // sheet so it reads as sliding up over the BAC screen, not a new page.
+  const sheetHeight = Math.round(windowHeight * 0.92);
 
   return (
     <Modal
       isVisible={isVisible}
-      type={CONST.MODAL.MODAL_TYPE.CENTERED_UNSWIPEABLE}
-      onClose={onClose}
-      innerContainerStyle={{flex: 1}}>
-      <View style={styles.flex1}>
+      type={CONST.MODAL.MODAL_TYPE.BOTTOM_DOCKED}
+      onClose={onClose}>
+      <View style={{height: sheetHeight}}>
         <HeaderWithBackButton
           title={translate('achievementsScreen.bac.details.title')}
           onBackButtonPress={onClose}

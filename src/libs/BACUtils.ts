@@ -323,25 +323,23 @@ function getTimeToSoberHours(bacPercent: number): number {
 /**
  * Hour-by-hour BAC decline from `bacPercent` to zero, for the decay graph.
  * Returns an empty array when already sober so callers can hide the chart.
- * X is hours from now; the series is linear (zero-order) and ends exactly at 0.
+ * X is whole hours from now (clean integer ticks); Y is BAC scaled by
+ * `unitFactor` (10 for per-mille, 1 for percent). The series is linear
+ * (zero-order) and reaches 0 at the last hour.
  */
-function buildBacDecaySeries(bacPercent: number): ChartDatum[] {
+function buildBacDecaySeries(bacPercent: number, unitFactor = 1): ChartDatum[] {
   if (bacPercent <= 0) {
     return [];
   }
-  const hoursToSober = getTimeToSoberHours(bacPercent);
-  const wholeHours = Math.floor(hoursToSober);
+  const totalHours = Math.ceil(getTimeToSoberHours(bacPercent));
   const data: ChartDatum[] = [];
-  for (let hour = 0; hour <= wholeHours; hour++) {
+  for (let hour = 0; hour <= totalHours; hour++) {
     data.push({
       x: hour,
       y: roundToTwoDecimalPlaces(
-        Math.max(0, bacPercent - ELIMINATION_RATE * hour),
+        Math.max(0, bacPercent - ELIMINATION_RATE * hour) * unitFactor,
       ),
     });
-  }
-  if (wholeHours < hoursToSober) {
-    data.push({x: roundToTwoDecimalPlaces(hoursToSober), y: 0});
   }
   return data;
 }

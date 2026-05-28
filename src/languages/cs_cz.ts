@@ -6,6 +6,7 @@ import type {
   UntilTimeParams,
 } from './types';
 import type {
+  BacAxesParams,
   BacRangeParams,
   BacSessionTotalParams,
   BacSoberInParams,
@@ -1135,7 +1136,7 @@ export default {
     },
   },
   achievementsScreen: {
-    title: 'Odhad alkoholu v krvi',
+    title: 'Alkokalkulačka',
     bac: {
       currentBac: 'Odhadovaná hladina alkoholu',
       noSession: 'Začni pít, abys viděl odhadovanou hladinu alkoholu v krvi.',
@@ -1155,9 +1156,10 @@ export default {
         `Vystřízlivění přibližně za ${time}`,
       showDetails: 'Jak se to počítá?',
       decayChartLabel: 'Odhadovaná hladina alkoholu klesající k nule v čase',
-      decayChartAxis: 'Hodiny od teď',
+      decayAxes: ({unit}: BacAxesParams) =>
+        `Hodiny od teď (x) · alkohol v ${unit} (y)`,
       intro: {
-        title: 'Odhad alkoholu v krvi',
+        title: 'Alkokalkulačka',
         body1:
           'Tento nástroj poskytuje hrubý odhad hladiny alkoholu v krvi na základě zaznamenaných nápojů, tvé váhy a pohlaví.',
         body2:
