@@ -525,6 +525,13 @@ export default {
       save: 'Nepodařilo se uložit vaše předvolby. Zkuste to prosím znovu.',
     },
   },
+  locationPrompt: {
+    title: 'Označovat, kde si zapisujete drinky?',
+    prompt:
+      'Kiroku může ke každému drinku zaznamenanému během živého sezení připojit vaši aktuální polohu, takže se později můžete podívat, kde které sezení proběhlo. Toto nastavení můžete kdykoli změnit v Nastavení → Soukromí.',
+    enable: 'Zapnout',
+    notNow: 'Teď ne',
+  },
   privacyScreen: {
     title: 'Soukromí',
     diagnosticsSection: {

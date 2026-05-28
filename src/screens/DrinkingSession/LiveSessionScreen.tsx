@@ -11,6 +11,7 @@ import type SCREENS from '@src/SCREENS';
 import {useOnyx} from 'react-native-onyx';
 import ONYXKEYS from '@src/ONYXKEYS';
 import DrinkingSessionWindow from '@components/DrinkingSessionWindow';
+import LocationTaggingPrompt from '@components/LocationTaggingPrompt';
 import useBatchedUpdates from '@hooks/useBatchedUpdates';
 import ScreenWrapper from '@components/ScreenWrapper';
 import FullScreenLoadingIndicator from '@components/FullscreenLoadingIndicator';
@@ -121,6 +122,7 @@ function LiveSessionScreen({route}: LiveSessionScreenProps) {
         onyxKey={ONYXKEYS.ONGOING_SESSION_DATA}
         type={CONST.SESSION.TYPES.LIVE}
       />
+      <LocationTaggingPrompt />
     </ScreenWrapper>
   );
 }
