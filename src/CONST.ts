@@ -645,6 +645,14 @@ const CONST = {
       DELETE: 'delete',
       PRESERVE: 'preserve',
     },
+    ANIMATION_TIMING: {
+      DEFAULT_IN: 300,
+      DEFAULT_OUT: 200,
+      DEFAULT_RIGHT_DOCKED_IOS_IN: 500,
+      DEFAULT_RIGHT_DOCKED_IOS_OUT: 400,
+      FAB_IN: 350,
+      FAB_OUT: 200,
+    },
   },
   MONTHS: [
     'January',
@@ -933,6 +941,12 @@ const CONST = {
     DISABLED: 'disabled',
   },
   SELECTION_SCRAPER_HIDDEN_ELEMENT: 'selection-scrapper-hidden-element',
+  SWIPE_DIRECTION: {
+    DOWN: 'down',
+    LEFT: 'left',
+    RIGHT: 'right',
+    UP: 'up',
+  },
   SESSION_EXPIRY: 60 * 60 * 1000 * 12, // 12 hours
   SESSION: {
     TYPES: SESSION_TYPES,
