@@ -81,7 +81,7 @@ const CALENDAR_DAYS = [0, 1, 2, 3, 4, 5, 6] as const;
 function SessionsCalendarSkeleton() {
   const styles = useThemeStyles();
   const daySize = variables.sessionsCalendarDaySize;
-  const dayRadius = variables.componentBorderRadiusNormal;
+  const dayRadius = variables.sessionsCalendarTileRadius;
   return (
     <View style={styles.sessionsCalendarContainer}>
       {/* Month header — matches the custom renderHeader in SessionsCalendarView

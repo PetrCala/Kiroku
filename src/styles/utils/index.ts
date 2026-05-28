@@ -1317,7 +1317,7 @@ const createStyleUtils = (theme: ThemeColors, styles: ThemeStyles) => ({
           backgroundColor: theme.componentBG,
         },
         week: {
-          marginVertical: 2,
+          marginVertical: 6,
           flexDirection: 'row',
           justifyContent: 'space-around',
         },
