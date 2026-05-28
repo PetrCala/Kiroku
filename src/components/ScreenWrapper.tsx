@@ -172,7 +172,12 @@ function ScreenWrapper(
 
   const panResponder = useRef(
     PanResponder.create({
+      // Gate the gesture to dev only, matching where `<TestToolsModal />` is
+      // actually rendered (see `isDevelopment &&` below). Outside dev the modal
+      // never mounts, so capturing the multi-touch gesture would only fire a
+      // no-op toggle.
       onStartShouldSetPanResponderCapture: (_e, gestureState) =>
+        isDevelopment &&
         gestureState.numberActiveTouches === CONST.TEST_TOOL.NUMBER_OF_TAPS,
       onPanResponderRelease: toggleTestToolsModal,
     }),
