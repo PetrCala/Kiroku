@@ -2,13 +2,16 @@ name: Translation Review with Claude Code
 
 # ============================================================
 # Reviews non-English translation quality against each language's
-# glossary/style guide (src/languages/context/<locale>.md).
+# glossary/style guide (src/languages/context/<locale>.md), and posts
+# violations as inline PR comments.
 #
-# COST NOTE: this runs an LLM (claude-sonnet-4-6, ~5x cheaper than the
-# opus model used by claude-review.yml). It is path-scoped to
-# `src/languages/**`, so it only fires on PRs that actually change
-# translations — which are infrequent. If you want it manual-only,
-# replace the `pull_request` trigger below with `workflow_dispatch`.
+# MANUAL ONLY (workflow_dispatch) — mirrors claude-review.yml. Running an
+# LLM on every PR costs API credits, so this is not wired to `pull_request`.
+# The always-on, free translation gate is the deterministic unit test
+# `__tests__/unit/TranslationContext.test.ts` (runs in test.yml).
+#
+# To run: Actions tab → "Translation Review with Claude Code" → Run workflow,
+# or: gh workflow run translation-review.yml -f pr_number=<PR>
 # Requires ANTHROPIC_API_KEY in repo secrets.
 # ============================================================
 
@@ -17,11 +20,11 @@ permissions:
   pull-requests: write
 
 on:
-  pull_request:
-    types: [opened, synchronize, ready_for_review]
-    branches-ignore: [staging, production]
-    paths:
-      - 'src/languages/**'
+  workflow_dispatch:
+    inputs:
+      pr_number:
+        description: 'PR number to review'
+        required: true
 
 concurrency:
   group: ${{ github.ref }}-translation-review
@@ -30,10 +33,9 @@ concurrency:
 jobs:
   review:
     name: Claude Code Translation Review
-    if: ${{ !github.event.pull_request.draft && !startsWith(github.event.pull_request.title, 'Revert ') && github.actor != 'KirokuAdmin' }}
     runs-on: ubuntu-latest
     env:
-      PR_NUMBER: ${{ github.event.pull_request.number }}
+      PR_NUMBER: ${{ github.event.inputs.pr_number }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -58,7 +60,7 @@ jobs:
           display_report: 'true'
           anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
           github_token: ${{ secrets.GITHUB_TOKEN }}
-          prompt: '/review-translations REPO: ${{ github.repository }} PR_NUMBER: ${{ github.event.pull_request.number }}'
+          prompt: '/review-translations REPO: ${{ github.repository }} PR_NUMBER: ${{ github.event.inputs.pr_number }}'
           claude_args: |
             --model claude-sonnet-4-6
             --allowedTools "Task,Glob,Grep,Read,Bash(gh pr diff:*),Bash(gh pr view:*)" --json-schema '${{ steps.schema.outputs.json }}'
