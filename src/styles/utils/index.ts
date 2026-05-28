@@ -1389,14 +1389,20 @@ const createStyleUtils = (theme: ThemeColors, styles: ThemeStyles) => ({
     isDisabled: boolean,
   ): ViewStyle => {
     const markingColor = marking?.color;
-    // Borderless, small-radius tiles to echo the statistics heatmap's Skia
-    // rects: marked days read as solid color blocks separated by the week
-    // grid's gaps rather than per-tile outlines. Unmarked cells keep the
-    // transparent shell so they still read as "no data".
+    // Every marked tile gets a 1px border derived from its own swatch, shifted
+    // toward black/white relative to the app background. This keeps edges
+    // visible against any theme (pale tiles on light, near-black tiles on
+    // dark) while staying tonally close to the tile color. Unmarked cells
+    // keep the transparent shell so they still read as "no data".
+    const borderColor = markingColor
+      ? getCalendarTileBorderColor(markingColor, theme.appBG) ?? 'transparent'
+      : 'transparent';
     return {
       width: variables.sessionsCalendarDaySize,
       height: variables.sessionsCalendarDaySize,
-      borderRadius: variables.sessionsCalendarTileRadius,
+      borderRadius: variables.componentBorderRadiusNormal,
+      borderWidth: 1,
+      borderColor,
       alignItems: 'center',
       justifyContent: 'center',
       backgroundColor: markingColor ?? 'transparent',
