@@ -15,7 +15,7 @@ import {useStatsDrillDown} from '@src/screens/Statistics/drilldown/DrillDownCont
 
 const styles = StyleSheet.create({
   container: {
-    flex: 1,
+    flexGrow: 1,
     paddingHorizontal: 12,
     paddingBottom: 24,
   },
