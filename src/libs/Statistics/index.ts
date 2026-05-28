@@ -52,7 +52,6 @@ export type {
   ChartRange,
   DayRollup,
   DrinkEvent,
-  HeatmapCell,
   KpiDelta,
   KpiKey,
   KpiValue,

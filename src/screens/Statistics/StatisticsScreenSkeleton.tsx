@@ -88,19 +88,26 @@ function StatisticsScreenSkeleton() {
           <ChartSkeleton variant="kpi" />
         </View>
 
-        {/* Three-card KPI row. */}
+        {/* KPI groups: wins / load / risk. */}
+        <View style={styles.mb3}>
+          <ChartSkeleton variant="kpiRow" />
+        </View>
         <View style={styles.mb3}>
           <ChartSkeleton variant="kpiRow" />
         </View>
 
-        {/* Calendar heatmap card. */}
-        <ChartCard title={translate('statistics.charts.calendarHeatmap.title')}>
-          <ChartSkeleton variant="calendar" />
+        {/* Period breakdown (bar list). */}
+        <ChartCard
+          title={translate('statistics.tabs.overview.texture.series.title')}>
+          <ChartSkeleton variant="line" height={120} />
         </ChartCard>
 
-        {/* Mini trend line card. */}
-        <ChartCard title={translate('statistics.tabs.overview.trend.title')}>
-          <ChartSkeleton variant="line" height={120} />
+        {/* Intensity distribution. */}
+        <ChartCard
+          title={translate(
+            'statistics.tabs.overview.texture.distribution.title',
+          )}>
+          <ChartSkeleton variant="line" height={40} />
         </ChartCard>
       </ScrollView>
     </View>

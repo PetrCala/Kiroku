@@ -27,7 +27,18 @@ const styles = StyleSheet.create({
   },
 });
 
-function StatsFilterToolbar() {
+type StatsFilterToolbarProps = {
+  /**
+   * Whether to show the drink-type chip row. The Overview tab opts out
+   * because it reports total-alcohol only (drink-type slicing lives in the
+   * Breakdown tab).
+   */
+  showDrinkTypeFilter?: boolean;
+};
+
+function StatsFilterToolbar({
+  showDrinkTypeFilter = true,
+}: StatsFilterToolbarProps) {
   const {appBG, border} = useTheme();
   const {
     range,
@@ -76,7 +87,12 @@ function StatsFilterToolbar() {
         onJumpToLatest={goToLatest}
         onPressLabel={() => setPickerOpen(true)}
       />
-      <DrinkTypeChipRow value={drinkTypeFilter} onChange={setDrinkTypeFilter} />
+      {showDrinkTypeFilter ? (
+        <DrinkTypeChipRow
+          value={drinkTypeFilter}
+          onChange={setDrinkTypeFilter}
+        />
+      ) : null}
       <StatsRangePickerModal
         isVisible={pickerOpen}
         initialStart={range.start}
