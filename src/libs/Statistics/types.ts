@@ -66,8 +66,16 @@ type ChartRange = 'week' | 'month' | 'rolling30' | 'rolling8w' | 'allTime';
 
 type HeatmapCell = {
   dateKey: string;
-  totalSdu: number;
-  intensity: 0 | 1 | 2 | 3 | 4;
+  /** Total units for the day (same basis the home calendar colors by). */
+  totalUnits: number;
+  /**
+   * Absolute per-day severity color: the user's session palette swatch for
+   * the day's unit total (green→yellow→orange→red), or the palette's black
+   * for a blackout day. Deliberately mirrors the home calendar's encoding so
+   * a given day reads the same in both places — unlike the relative
+   * intensity ramp used by the other stats heatmaps.
+   */
+  color: string;
   /**
    * Reserves the grid slot but skips the rect so future days don't look
    * identical to logged-but-quiet ones. Per DIRECTION_REVIEW.md §6.2.

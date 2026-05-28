@@ -51,40 +51,59 @@ describe('selectAfDaysThisMonth', () => {
 });
 
 describe('selectThisMonthHeatmapCells', () => {
-  it('marks cells past today as isFuture and renders them with intensity 0', () => {
+  const palette = {
+    green: '#0a0',
+    yellow: '#ff0',
+    orange: '#f80',
+    red: '#f00',
+    black: '#000',
+  };
+  const unitsToColors = {yellow: 2, orange: 5};
+
+  it('marks cells past today as isFuture and colors empty days green', () => {
     const now = new Date(2026, 4, 5, 12, 0, 0); // 2026-05-05
-    const cells = selectThisMonthHeatmapCells([], now);
+    const cells = selectThisMonthHeatmapCells([], now, unitsToColors, palette);
     expect(cells).toHaveLength(31);
     const may1 = cells.find(c => c.dateKey === '2026-05-01');
     const may10 = cells.find(c => c.dateKey === '2026-05-10');
     expect(may1?.isFuture).toBe(false);
-    expect(may1?.intensity).toBe(0);
+    expect(may1?.color).toBe(palette.green);
     expect(may10?.isFuture).toBe(true);
-    expect(may10?.intensity).toBe(0);
   });
 
-  it('only ramps intensity against this-month days, not historical ones', () => {
+  it('colors each day by its own absolute unit total, not relative to the month', () => {
     const now = new Date(2026, 4, 25, 12, 0, 0);
     const events = [
-      event({
-        localDay: '2026-05-10',
-        localMonth: '2026-05',
-        sdu: 4,
-        units: 4,
-      }),
-      // Way-higher SDU from an earlier month must not depress this-month
-      // intensity below the top of the ramp.
-      event({
-        localDay: '2026-03-10',
-        localMonth: '2026-03',
-        sdu: 200,
-        units: 200,
-      }),
+      event({localDay: '2026-05-10', localMonth: '2026-05', units: 4}),
+      // A huge earlier-month day must not change how 2026-05-10 is colored:
+      // the scale is absolute, not relative to the month's own range.
+      event({localDay: '2026-03-10', localMonth: '2026-03', units: 200}),
     ];
-    const cells = selectThisMonthHeatmapCells(events, now);
+    const cells = selectThisMonthHeatmapCells(
+      events,
+      now,
+      unitsToColors,
+      palette,
+    );
     const may10 = cells.find(c => c.dateKey === '2026-05-10');
-    expect(may10?.totalSdu).toBe(4);
-    expect(may10?.intensity).toBeGreaterThan(0);
+    expect(may10?.totalUnits).toBe(4);
+    // 2 < 4 <= 5 → orange band.
+    expect(may10?.color).toBe(palette.orange);
+  });
+
+  it('colors a day with any blackout session black', () => {
+    const now = new Date(2026, 4, 25, 12, 0, 0);
+    const events = [
+      event({localDay: '2026-05-12', units: 1, blackoutSession: true}),
+    ];
+    const cells = selectThisMonthHeatmapCells(
+      events,
+      now,
+      unitsToColors,
+      palette,
+    );
+    const may12 = cells.find(c => c.dateKey === '2026-05-12');
+    expect(may12?.color).toBe(palette.black);
   });
 });
 

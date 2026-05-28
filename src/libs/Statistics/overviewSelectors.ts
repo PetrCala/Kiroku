@@ -11,9 +11,15 @@ import {
   startOfMonth,
   subWeeks,
 } from 'date-fns';
+import {convertUnitsToColors} from '@libs/DataHandling';
+import {resolvePalette} from '@libs/SessionColorPalettes';
+import type {
+  SessionColorPalette,
+  UnitsToColors,
+} from '@src/types/onyx/Preferences';
 import aggregate from './aggregate';
 import {byDay, byIsoWeek} from './bucketers';
-import {countSessions, sumSdu, sumUnits} from './reducers';
+import {countSessions, sumUnits} from './reducers';
 import {ewma, mannKendall, percentile} from './stats';
 import type {MannKendallResult} from './stats/mannKendall';
 import type {ChartDatum, DrinkEvent, HeatmapCell} from './types';
@@ -54,84 +60,54 @@ function isoWeekLabel(date: Date): string {
 }
 
 /**
- * Pick a 1..4 intensity for a day's SDU value. Uses quartiles of the
- * non-zero days when there's enough samples (≥4); otherwise falls back to
- * fixed SDU thresholds so a 1-day-into-the-month user still sees variation.
- * Days with zero SDU map to 0 unconditionally.
- */
-function computeIntensity(
-  sdu: number,
-  sortedNonZero: readonly number[],
-): 0 | 1 | 2 | 3 | 4 {
-  if (sdu <= 0) {
-    return 0;
-  }
-  if (sortedNonZero.length < 4) {
-    if (sdu <= 1) {
-      return 1;
-    }
-    if (sdu <= 3) {
-      return 2;
-    }
-    if (sdu <= 6) {
-      return 3;
-    }
-    return 4;
-  }
-  const sorted = [...sortedNonZero];
-  const q1 = percentile(sorted, 0.25);
-  const q2 = percentile(sorted, 0.5);
-  const q3 = percentile(sorted, 0.75);
-  if (sdu <= q1) {
-    return 1;
-  }
-  if (sdu <= q2) {
-    return 2;
-  }
-  if (sdu <= q3) {
-    return 3;
-  }
-  return 4;
-}
-
-/**
  * One `HeatmapCell` per calendar day of `now`'s month. Days beyond today
  * carry `isFuture: true` so the renderer can skip drawing per
- * DIRECTION_REVIEW.md §6.2. SDU per day comes from `aggregate(events,
- * byDay, sumSdu)`.
+ * DIRECTION_REVIEW.md §6.2.
+ *
+ * Each day is colored on the same *absolute* severity scale as the home
+ * calendar (see `sessionsToDayMarking`): a blackout day takes the palette's
+ * black swatch, otherwise the day's total units map through
+ * `convertUnitsToColors` (green→yellow→orange→red). This intentionally
+ * replaces the old relative-intensity ramp so a given day reads the same in
+ * the home calendar and here — a relative scale was confusing against the
+ * absolute one users already know. Units (not SDU) are used because that is
+ * the basis the home calendar colors by.
  */
 function selectThisMonthHeatmapCells(
   events: readonly DrinkEvent[],
   now: Date,
+  unitsToColors: UnitsToColors | undefined,
+  palette: SessionColorPalette | undefined,
 ): HeatmapCell[] {
   const monthStart = startOfMonth(now);
   const monthEnd = endOfMonth(now);
   const today = startOfDay(now);
+  const resolvedPalette = resolvePalette(palette);
 
   // Bucket every event by its `localDay`; out-of-month events simply never
   // match the `dateKey` lookup below, so filtering by ts is unnecessary and
   // would re-introduce the device-vs-user timezone seam.
-  const sduByDay = aggregate(events, byDay, sumSdu);
+  const unitsByDay = aggregate(events, byDay, sumUnits);
 
-  const days = eachDayOfInterval({start: monthStart, end: monthEnd});
-  const monthPrefix = format(monthStart, 'yyyy-MM');
-
-  // Intensity ramp is relative to this month's own non-zero days so a fresh
-  // month never inherits last month's scale.
-  const nonZeroSdu: number[] = [];
-  for (const [key, value] of sduByDay) {
-    if (value > 0 && key.startsWith(monthPrefix)) {
-      nonZeroSdu.push(value);
+  // A day with any blackout session is colored black, matching the home
+  // calendar's per-day override.
+  const blackoutDays = new Set<string>();
+  for (const event of events) {
+    if (event.blackoutSession) {
+      blackoutDays.add(event.localDay);
     }
   }
-  nonZeroSdu.sort((a, b) => a - b);
+
+  const days = eachDayOfInterval({start: monthStart, end: monthEnd});
 
   return days.map(day => {
     const dateKey = format(day, 'yyyy-MM-dd');
     const isFuture = day.getTime() > today.getTime();
-    const totalSdu = sduByDay.get(dateKey) ?? 0;
-    const intensity = isFuture ? 0 : computeIntensity(totalSdu, nonZeroSdu);
-    return {dateKey, totalSdu, intensity, isFuture};
+    const totalUnits = unitsByDay.get(dateKey) ?? 0;
+    const color = blackoutDays.has(dateKey)
+      ? resolvedPalette.black
+      : convertUnitsToColors(totalUnits, unitsToColors, resolvedPalette);
+    return {dateKey, totalUnits, color, isFuture};
   });
 }
 
