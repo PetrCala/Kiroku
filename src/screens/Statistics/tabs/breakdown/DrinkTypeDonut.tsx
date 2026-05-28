@@ -84,7 +84,7 @@ function arcSectorPath(
   startAngle: number,
   endAngle: number,
 ) {
-  const path = Skia.Path.Make();
+  const builder = Skia.PathBuilder.Make();
   const startDeg = (startAngle * 180) / Math.PI;
   const sweepDeg = ((endAngle - startAngle) * 180) / Math.PI;
 
@@ -102,16 +102,16 @@ function arcSectorPath(
   );
 
   // Outer arc, start → end (clockwise).
-  path.addArc(outerRect, startDeg, sweepDeg);
+  builder.addArc(outerRect, startDeg, sweepDeg);
   // Line from outer-end to inner-end.
-  path.lineTo(
+  builder.lineTo(
     cx + innerR * Math.cos(endAngle),
     cy + innerR * Math.sin(endAngle),
   );
   // Inner arc, end → start (anticlockwise).
-  path.addArc(innerRect, startDeg + sweepDeg, -sweepDeg);
-  path.close();
-  return path;
+  builder.addArc(innerRect, startDeg + sweepDeg, -sweepDeg);
+  builder.close();
+  return builder.build();
 }
 
 function hitTestSlice(

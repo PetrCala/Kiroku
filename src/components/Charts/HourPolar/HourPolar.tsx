@@ -1,6 +1,7 @@
 import {useMemo, useState} from 'react';
 import {View} from 'react-native';
 import {Canvas, Circle, Path, Skia} from '@shopify/react-native-skia';
+import type {SkPath} from '@shopify/react-native-skia';
 import {useChartTheme} from '@components/Charts/BaseChart';
 import {ChartSkeleton} from '@components/Charts/ChartSkeleton';
 import {PressableWithoutFeedback} from '@components/Pressable';
@@ -104,7 +105,7 @@ function HourPolar({
     }
     const out: Array<{
       hour: number;
-      path: ReturnType<typeof Skia.Path.Make>;
+      path: SkPath;
       color: string;
     }> = [];
     for (let hour = 0; hour < WEDGE_COUNT; hour++) {
@@ -122,17 +123,17 @@ function HourPolar({
       const center = -Math.PI / 2 + hour * WEDGE_RAD;
       const a0 = center - WEDGE_RAD / 2;
       const a1 = center + WEDGE_RAD / 2;
-      const path = Skia.Path.Make();
-      path.moveTo(cx, cy);
+      const builder = Skia.PathBuilder.Make();
+      builder.moveTo(cx, cy);
       for (let s = 0; s <= ARC_SEGMENTS; s++) {
         const t = s / ARC_SEGMENTS;
         const a = a0 + (a1 - a0) * t;
-        path.lineTo(cx + r * Math.cos(a), cy + r * Math.sin(a));
+        builder.lineTo(cx + r * Math.cos(a), cy + r * Math.sin(a));
       }
-      path.close();
+      builder.close();
       out.push({
         hour,
-        path,
+        path: builder.build(),
         color: theme.intensityRamp[intensity],
       });
     }
