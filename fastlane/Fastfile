@@ -13,6 +13,27 @@
 # Uncomment the line if you want fastlane to automatically update itself
 # update_fastlane
 
+# App Store "App Review Information": sign-in (demo) account + contact for the
+# reviewer. Secrets come from the environment (GitHub Actions secrets / a local
+# untracked env) — never hardcode them, the repo is public. Notes are empty.
+# Returns nil when the demo creds are absent so deliver skips review info
+# cleanly (it early-returns on a nil app_review_information).
+def kiroku_review_information
+  demo_user = ENV["APPLE_DEMO_EMAIL"]
+  demo_password = ENV["APPLE_DEMO_PASSWORD"]
+  return nil if demo_user.to_s.empty? || demo_password.to_s.empty?
+
+  {
+    first_name: ENV.fetch("APPLE_CONTACT_FIRST_NAME", "Petr"),
+    last_name: ENV.fetch("APPLE_CONTACT_LAST_NAME", "Čala"),
+    phone_number: ENV["APPLE_CONTACT_PHONE"],
+    email_address: ENV["APPLE_CONTACT_EMAIL"],
+    demo_user: demo_user,
+    demo_password: demo_password,
+    notes: ""
+  }
+end
+
 platform :android do
 
 
@@ -300,14 +321,21 @@ platform :ios do
       # We want to submit the version for Apple to review
       submit_for_review: true,
 
-      # We want to release the app as soon as it's approved
-      automatic_release: true,
+      # Do NOT auto-release on approval — keep the approved build as Pending
+      # Developer Release so we control the public launch date.
+      automatic_release: false,
 
       # We need to upload metadata to upload the release notes which is required for each new version
       skip_metadata: false,
 
       # Define the metadata path
       metadata_path: "./fastlane/metadata",
+
+      # Age-rating questionnaire (App Store Submission Kit §3 — alcohol = Frequent/Intense → 17+)
+      app_rating_config_path: "./fastlane/metadata/rating_config.json",
+
+      # App Store review: demo sign-in account + contact (notes empty).
+      app_review_information: kiroku_review_information,
 
       # We do not want to upload any screenshots
       skip_screenshots: true,
@@ -372,6 +400,33 @@ platform :ios do
 
     capture_ios_screenshots         # reads Snapfile
     # frame_screenshots(white: true) # uncomment once you've installed `frameit`
+  end
+
+  desc "Push App Store listing metadata to the editable ASC draft WITHOUT submitting for review"
+  lane :upload_metadata do
+    # NOTE: deliver's `verify_only` flag validates only the *binary* package, not
+    # metadata, so it cannot dry-run a listing. The faithful validation is to
+    # upload the metadata to the editable App Store version with
+    # submit_for_review:false. This writes to the ASC draft (fully editable, NOT
+    # a submission) and surfaces any field-length / allowed-value errors.
+
+    deliver(
+      api_key_path: "./ios/ios-fastlane-json-key.json",
+      force: true,
+      run_precheck_before_submit: false,
+
+      # Target the existing editable version. Override with VERSION if needed.
+      app_version: (ENV["VERSION"] ? ENV["VERSION"].rpartition(".")[0] : nil),
+
+      submit_for_review: false,
+      skip_binary_upload: true,
+      skip_screenshots: true,
+      skip_metadata: false,
+      metadata_path: "./fastlane/metadata",
+      app_rating_config_path: "./fastlane/metadata/rating_config.json",
+      app_review_information: kiroku_review_information,
+      precheck_include_in_app_purchases: false
+    )
   end
 
 end

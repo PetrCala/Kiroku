@@ -116,6 +116,14 @@ Move app to App Store Review
 
 Capture App Store screenshots across the device + locale matrix
 
+### ios upload_metadata
+
+```sh
+[bundle exec] fastlane ios upload_metadata
+```
+
+Push App Store listing metadata to the editable ASC draft WITHOUT submitting for review
+
 ----
 
 This README.md is auto-generated and will be re-generated every time [_fastlane_](https://fastlane.tools) is run.

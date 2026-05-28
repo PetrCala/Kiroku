@@ -1,0 +1,23 @@
+{
+  "violenceCartoonOrFantasy": "NONE",
+  "violenceRealistic": "NONE",
+  "violenceRealisticProlongedGraphicOrSadistic": "NONE",
+  "profanityOrCrudeHumor": "NONE",
+  "matureOrSuggestiveThemes": "NONE",
+  "horrorOrFearThemes": "NONE",
+  "medicalOrTreatmentInformation": "NONE",
+  "alcoholTobaccoOrDrugUseOrReferences": "FREQUENT_OR_INTENSE",
+  "gamblingSimulated": "NONE",
+  "contests": "NONE",
+  "sexualContentOrNudity": "NONE",
+  "sexualContentGraphicAndNudity": "NONE",
+  "gunsOrOtherWeapons": "NONE",
+  "healthOrWellnessTopics": false,
+  "unrestrictedWebAccess": false,
+  "lootBox": false,
+  "ageAssurance": false,
+  "messagingAndChat": false,
+  "parentalControls": false,
+  "advertising": false,
+  "userGeneratedContent": false
+}
