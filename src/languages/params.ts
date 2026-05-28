@@ -114,10 +114,6 @@ type BacRangeParams = {
   high: string;
 };
 
-type BacAxesParams = {
-  unit: string;
-};
-
 type BacSoberInParams = {
   time: string;
 };
@@ -128,7 +124,6 @@ type BacSessionTotalParams = {
 };
 
 export type {
-  BacAxesParams,
   BacRangeParams,
   BacSessionTotalParams,
   BacSoberInParams,

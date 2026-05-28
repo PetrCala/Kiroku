@@ -1,6 +1,6 @@
 import React, {useMemo} from 'react';
 import {View} from 'react-native';
-import {BaseChart, Line} from '@components/Charts/BaseChart';
+import {BaseChart, Line, useChartFont} from '@components/Charts/BaseChart';
 import Button from '@components/Button';
 import StatItem from '@components/Items/StatItem';
 import ScrollView from '@components/ScrollView';
@@ -53,6 +53,7 @@ function BACResult({
 }: BACResultProps) {
   const styles = useThemeStyles();
   const {translate} = useLocalize();
+  const axisFont = useChartFont(11);
 
   const content = formatBac(estimate.point, displayUnit);
 
@@ -79,6 +80,25 @@ function BACResult({
   );
 
   const showGraph = chartData.length > 1;
+
+  // Explicit ticks for a scientific-graph look: whole-hour steps on X
+  // (~6 labels max) and five evenly spaced BAC values on Y.
+  const {xTicks, yTicks} = useMemo(() => {
+    if (chartData.length === 0) {
+      return {xTicks: [] as number[], yTicks: [] as number[]};
+    }
+    const lastHour = chartData[chartData.length - 1].x as number;
+    const step = Math.max(1, Math.ceil(lastHour / 6));
+    const xs: number[] = [];
+    for (let hour = 0; hour <= lastHour; hour += step) {
+      xs.push(hour);
+    }
+    const maxY = chartData[0].y;
+    const ys = Array.from({length: 5}, (_, index) =>
+      roundToTwoDecimalPlaces((maxY * index) / 4),
+    ).filter((value, index, arr) => arr.indexOf(value) === index);
+    return {xTicks: xs, yTicks: ys};
+  }, [chartData]);
 
   return (
     <ScrollView
@@ -135,10 +155,17 @@ function BACResult({
           <BaseChart
             data={chartData}
             range="allTime"
-            height={180}
+            height={200}
             accessibilityLabel={translate(
               'achievementsScreen.bac.decayChartLabel',
-            )}>
+            )}
+            axis={{
+              font: axisFont,
+              tickValues: {x: xTicks, y: yTicks},
+              formatXLabel: hour => `${hour}h`,
+              formatYLabel: value =>
+                `${roundToTwoDecimalPlaces(value)}${yUnitLabel}`,
+            }}>
             {({points, theme}) => (
               <Line
                 points={points.y}
@@ -147,9 +174,6 @@ function BACResult({
               />
             )}
           </BaseChart>
-          <Text style={[styles.textLabelSupporting, styles.textAlignCenter]}>
-            {translate('achievementsScreen.bac.decayAxes', {unit: yUnitLabel})}
-          </Text>
         </View>
       ) : null}
 
