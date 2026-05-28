@@ -140,8 +140,6 @@ function PrivacyScreen() {
         <Section
           title={translate('privacyScreen.diagnosticsSection.title')}
           titleStyles={styles.generalSectionTitle}
-          subtitle={translate('privacyScreen.diagnosticsSection.description')}
-          subtitleMuted
           isCentralPane
           childrenStyles={styles.pt3}>
           <View style={styles.sectionMenuItemTopDescription}>
@@ -173,8 +171,6 @@ function PrivacyScreen() {
         <Section
           title={translate('privacyScreen.locationSection.title')}
           titleStyles={styles.generalSectionTitle}
-          subtitle={translate('privacyScreen.locationSection.description')}
-          subtitleMuted
           isCentralPane
           childrenStyles={styles.pt3}>
           <View style={styles.sectionMenuItemTopDescription}>
