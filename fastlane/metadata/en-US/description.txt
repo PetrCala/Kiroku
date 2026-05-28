@@ -1,0 +1,25 @@
+Kiroku helps you track and understand your alcohol consumption — so you can make informed decisions about your own habits.
+
+This is a personal tracking and self-awareness tool, not a drinking companion. Kiroku is built around harm reduction: the more clearly you see your own patterns, the easier it is to set goals, notice trends, and cut back when you want to.
+
+WHAT YOU CAN DO
+• Log drinking sessions in real time or add them later
+• Record drink types and standardized units per session
+• Add notes to remember the context of a session
+• Browse your full history in a monthly calendar
+• See statistics and trends: totals, units over time, alcohol-free days, patterns, and breakdowns
+• Track alcohol-free days to celebrate the days you didn't drink
+
+PRIVATE BY DESIGN
+• Offline-first: the app works without a connection and syncs when you're back online
+• Your data is yours — view, edit, and delete sessions any time
+• Delete your account and data from within the app at any time
+
+STAY CONNECTED (OPTIONAL)
+• Add friends to share progress and support each other
+• See a friend's supporter badge
+
+KIROKU SUPPORTER (OPTIONAL SUBSCRIPTION)
+Kiroku is free to use. If you'd like to support development, "Kiroku Supporter" is an optional monthly subscription that adds a cosmetic beer badge to your profile. It unlocks no tracking functionality — every core feature is free. Subscriptions auto-renew unless cancelled; manage or cancel any time in your App Store account settings.
+
+Kiroku is intended for adults (18+) who want to monitor and reflect on their own drinking. It does not provide medical advice. If you are concerned about your drinking, please consult a healthcare professional.

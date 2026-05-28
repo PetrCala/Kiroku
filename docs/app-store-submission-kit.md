@@ -9,39 +9,74 @@
 
 ---
 
+## 0. Automation status (updated 2026-05-28)
+
+The **listing copy (§1), age rating (§3), and review notes (§4) are now automated** via `fastlane` — they are no longer manual paste tasks. The repo already had a `deliver` pipeline + an ASC API key (`ios/ios-fastlane-json-key.json`), so the metadata lives as files under `fastlane/metadata/` and is pushed with one command:
+
+```bash
+# Push listing copy + age rating + App Review info to the editable ASC draft
+# WITHOUT submitting. Re-runnable; overwrites the draft each time.
+bundle exec fastlane ios upload_metadata
+```
+
+The files in `fastlane/metadata/` are the **source of truth**; edit them, not ASC directly. App Review info (demo sign-in account, contact, empty notes) is assembled by `kiroku_review_information` in the `Fastfile` from environment variables — `APPLE_DEMO_EMAIL`, `APPLE_DEMO_PASSWORD`, `APPLE_CONTACT_EMAIL`, `APPLE_CONTACT_PHONE` (set as GitHub Actions secrets / a local untracked env; never hardcode — the repo is public).
+
+**Decisions baked into the files (2026-05-28):**
+
+- **App name = `Kiroku`** in both locales (no descriptor); **no subtitle** in either locale.
+- **Support URL = `https://www.kiroku.cz/support`**.
+- **Never auto-release**: `automatic_release: false` in the `production` lane — approved builds stay Pending Developer Release.
+- **App Review info**: demo sign-in account + contact supplied via env vars/secrets (see above); **notes empty**.
+
+**Corrections discovered by actually running the upload against ASC (the rest of this doc predates these):**
+
+1. **Czech locale dir is `cs`, not `cs-CZ` / `cs_cz`** — App Store metadata uses `cs`. (Screenshots via Snapfile still use `cs-CZ`; that's a different validator.)
+2. **The Description field cannot contain emoji.** Apple rejected the 🍺 in the supporter paragraph — it now reads "beer badge" / "pivní odznak". Keep emoji out of `description.txt`.
+3. **Apple shipped a new age-rating questionnaire** that older `fastlane` doesn't model. `fastlane/metadata/rating_config.json` uses the **new camelCase/enum schema** and includes 8 newly-required attributes (`lootBox`, `ageAssurance`, `messagingAndChat`, `healthOrWellnessTopics`, `parentalControls`, `advertising`, `userGeneratedContent`, `gunsOrOtherWeapons`). The 17+ outcome is unchanged (alcohol = `FREQUENT_OR_INTENSE`). `healthOrWellnessTopics` and `userGeneratedContent` are currently `false` — revisit if you want them to reflect Kiroku's health-adjacent / notes-and-friends nature (they don't affect the 17+ result).
+4. **The editable ASC version is `0.2.8`** (state `PREPARE_FOR_SUBMISSION`), not the hypothetical "1.0" referenced below. The app record (`6466886157`, "Kiroku: Alcohol Tracker") already exists; **no subscription groups exist on ASC yet** (supporter IAP still unconfigured — §9).
+5. **App Review contact phone** must be `+CC …` format (ASC rejected a bare number) — set `APPLE_CONTACT_PHONE` with the leading `+` and country code.
+
+**Still genuinely manual (no usable API):** §2 App Privacy nutrition label, §5 demo-account seeding, §9 RevenueCat/IAP setup, and the final submit-for-review.
+
+---
+
 ## 1. App Store listing copy
 
 Product reference identifiers (confirmed in code):
+
 - Monthly subscription product ID: **`supporter_monthly`** (`src/screens/Settings/ManageSubscriptionScreen.tsx:24`, `src/libs/SupporterUtils.ts:7`)
 - RevenueCat entitlement: **`supporter`** (`src/libs/actions/Subscriptions.ts:18`)
 
 ### 1a. English (primary)
 
 **App Name** (max 30 chars)
-```
-Kiroku: Alcohol Tracker
-```
-*(23 chars)*
 
-**Subtitle** (max 30 chars)
 ```
-Track & understand drinking
+Kiroku
 ```
-*(27 chars)*
+
+_(6 chars)_
+
+**Subtitle** (max 30 chars) — **none** (deliberately left empty; `subtitle.txt` is blank).
 
 **Promotional text** (max 170 chars — editable any time without re-review)
+
 ```
 Log every drink, see your patterns, and build awareness of your alcohol habits. Private, offline-first, and judgment-free. Take charge of your own data.
 ```
-*(151 chars)*
+
+_(151 chars)_
 
 **Keywords** (max 100 chars, comma-separated, NO spaces after commas to save characters)
+
 ```
 alcohol,drink,tracker,sobriety,habit,health,units,diary,log,awareness,mindful,calendar,stats,intake
 ```
-*(99 chars)*
+
+_(99 chars)_
 
 **Description** (full)
+
 ```
 Kiroku helps you track and understand your alcohol consumption — so you can make informed decisions about your own habits.
 
@@ -65,58 +100,65 @@ STAY CONNECTED (OPTIONAL)
 • See a friend's supporter badge
 
 KIROKU SUPPORTER (OPTIONAL SUBSCRIPTION)
-Kiroku is free to use. If you'd like to support development, "Kiroku Supporter" is an optional monthly subscription that adds a cosmetic 🍺 badge to your profile. It unlocks no tracking functionality — every core feature is free. Subscriptions auto-renew unless cancelled; manage or cancel any time in your App Store account settings.
+Kiroku is free to use. If you'd like to support development, "Kiroku Supporter" is an optional monthly subscription that adds a cosmetic beer badge to your profile. It unlocks no tracking functionality — every core feature is free. Subscriptions auto-renew unless cancelled; manage or cancel any time in your App Store account settings.
 
 Kiroku is intended for adults (18+) who want to monitor and reflect on their own drinking. It does not provide medical advice. If you are concerned about your drinking, please consult a healthcare professional.
 ```
 
 **Support URL**
+
 ```
-https://www.kiroku.cz
+https://www.kiroku.cz/support
 ```
-*(If a dedicated support/contact page exists — e.g. `https://www.kiroku.cz/support` — prefer that. Verify the page resolves before submitting; ASC validates the URL.)*
+
+_(Verify the page resolves before submitting; ASC validates the URL.)_
 
 **Marketing URL** (optional)
+
 ```
 https://www.kiroku.cz
 ```
 
 **Copyright**
+
 ```
 2026 Kiroku
 ```
 
 ---
 
-### 1b. Czech (cs) — app ships `cs_cz` (`src/languages/cs_cz.ts`)
+### 1b. Czech (cs) — metadata locale dir is `cs` (in-app strings live in `src/languages/cs_cz.ts`)
 
 Tone matched to the app's own in-app Czech copy (`cs_cz.ts:641`, `:1185-1186`).
 
 **App Name** (max 30)
-```
-Kiroku: Sledování alkoholu
-```
-*(26 chars)*
 
-**Subtitle** (max 30)
 ```
-Mějte přehled o pití
+Kiroku
 ```
-*(20 chars)*
+
+_(6 chars)_
+
+**Subtitle** (max 30) — **none** (deliberately left empty).
 
 **Promotional text** (max 170)
+
 ```
 Zaznamenávejte každý nápoj, sledujte své vzorce a získejte přehled o svých návycích. Soukromé, funguje offline a bez předsudků. Převezměte kontrolu nad svými daty.
 ```
-*(~161 chars — verify in ASC's counter, accented chars count as 1 each)*
+
+_(~161 chars — verify in ASC's counter, accented chars count as 1 each)_
 
 **Keywords** (max 100)
+
 ```
 alkohol,pití,sledování,střízlivost,návyk,zdraví,jednotky,deník,záznam,kalendář,statistiky,přehled
 ```
-*(verify char count in ASC)*
+
+_(verify char count in ASC)_
 
 **Description**
+
 ```
 Kiroku vám pomáhá sledovat a pochopit vaši konzumaci alkoholu — abyste se mohli informovaně rozhodovat o svých vlastních návycích.
 
@@ -140,7 +182,7 @@ ZŮSTAŇTE VE SPOJENÍ (VOLITELNÉ)
 • Zobrazte si odznak podporovatele u přátel
 
 KIROKU SUPPORTER (VOLITELNÉ PŘEDPLATNÉ)
-Kiroku je zdarma. Pokud chcete podpořit vývoj, „Kiroku Supporter" je volitelné měsíční předplatné, které přidá kosmetický odznak 🍺 k vašemu profilu. Neodemyká žádné funkce sledování — vše podstatné je zdarma. Předplatné se automaticky obnovuje, dokud jej nezrušíte; spravovat či zrušit jej můžete kdykoli v nastavení účtu App Store.
+Kiroku je zdarma. Pokud chcete podpořit vývoj, „Kiroku Supporter" je volitelné měsíční předplatné, které přidá kosmetický pivní odznak k vašemu profilu. Neodemyká žádné funkce sledování — vše podstatné je zdarma. Předplatné se automaticky obnovuje, dokud jej nezrušíte; spravovat či zrušit jej můžete kdykoli v nastavení účtu App Store.
 
 Kiroku je určeno pro dospělé (18+), kteří chtějí sledovat a reflektovat své vlastní pití. Neposkytuje lékařské rady. Máte-li obavy o své pití, obraťte se prosím na odborníka.
 ```
@@ -157,34 +199,37 @@ This is the most consequential deliverable. Below is an accurate mapping derived
 
 ### Data types to declare as COLLECTED
 
-| ASC data type | Linked to identity? | Tracking? | Purpose | Evidence |
-|---|---|---|---|---|
-| **Email Address** (Contact Info) | Yes | No | App Functionality (account auth) | `src/libs/actions/User.ts` email/password + OAuth sign-in (`signInWithEmailAndPassword`, `createUserWithEmailAndPassword`) |
-| **Name** (Contact Info) | Yes | No | App Functionality | Profile `first_name`, `last_name`, `display_name` — `src/types/onyx/UserData.ts:18-39`, `src/DBPATHS.ts` (`USERS_USER_ID_PROFILE_*`) |
-| **Photos** (User Content) | Yes | No | App Functionality (profile picture) | `src/components/UploadImage.tsx`, `src/storage/storageUpload.ts` (`uploadBytesResumable` to Firebase Storage), `src/libs/actions/Profile.ts` |
-| **User ID** (Identifiers) | Yes | No | App Functionality | Firebase UID, keys all DB records |
-| **Device ID** (Identifiers) | Yes | No | App Functionality (push notif targeting) | `src/libs/actions/Device/index.ts`, `generateDeviceID/index.ios.ts` (`DeviceInfo.getUniqueId()`); sent with push opt-in `src/libs/actions/PushNotification.ts` |
-| **Purchase History** (Purchases) | Yes | No | App Functionality (subscription) | RevenueCat: `src/libs/actions/Subscriptions.ts` (`Purchases.logIn(userId)`, entitlement/tier/expiry); `CONFIG.REVENUECAT` |
-| **Health & Fitness** ⚠️ — *Sensitive Info / Other Data* | Yes | No | App Functionality | Drinking session data: timestamps, drink counts, units, notes, blackout flag — `src/types/onyx/DrinkingSession.ts`, `src/DBPATHS.ts` (`USER_DRINKING_SESSIONS_*`), `src/libs/actions/DrinkingSession.ts` |
-| **Other User Content** (notes, friends) | Yes | No | App Functionality | Session notes; social graph: friends, friend requests, nicknames — `src/DBPATHS.ts` (`USERS_USER_ID_FRIENDS`, `NICKNAME_TO_ID`), `src/types/onyx/FriendRequestList.ts` |
-| **Product Interaction / Other Usage Data** | Yes | No | App Functionality | Preferences (theme, locale, units, first day of week), onboarding progress, last-online status — `src/DBPATHS.ts` (`USER_PREFERENCES_*`, `USER_STATUS_*`) |
+| ASC data type                              | Linked to identity? | Tracking? | Purpose                                  | Evidence                                                                                                                                                                                                                                                                                                                                                                    |
+| ------------------------------------------ | ------------------- | --------- | ---------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Email Address** (Contact Info)           | Yes                 | No        | App Functionality (account auth)         | `src/libs/actions/User.ts` email/password + OAuth sign-in (`signInWithEmailAndPassword`, `createUserWithEmailAndPassword`)                                                                                                                                                                                                                                                  |
+| **Name** (Contact Info)                    | Yes                 | No        | App Functionality                        | Profile `first_name`, `last_name`, `display_name` — `src/types/onyx/UserData.ts:18-39`, `src/DBPATHS.ts` (`USERS_USER_ID_PROFILE_*`)                                                                                                                                                                                                                                        |
+| **Precise Location** (Location)            | Yes                 | No        | App Functionality                        | Opt-in per-drink GPS tagging during live sessions (off by default). `src/libs/getCurrentLocation.ts`, `src/libs/actions/SessionLocations.ts` (`captureForTimestamp` → Firebase `user_session_locations/{uid}/...`), wired in `src/components/DrinkTypesView.tsx`, gated by pref `track_location_during_sessions` (`src/DBPATHS.ts`) + `NSLocationWhenInUseUsageDescription` |
+| **Photos** (User Content)                  | Yes                 | No        | App Functionality (profile picture)      | `src/components/UploadImage.tsx`, `src/storage/storageUpload.ts` (`uploadBytesResumable` to Firebase Storage), `src/libs/actions/Profile.ts`                                                                                                                                                                                                                                |
+| **User ID** (Identifiers)                  | Yes                 | No        | App Functionality                        | Firebase UID, keys all DB records                                                                                                                                                                                                                                                                                                                                           |
+| **Device ID** (Identifiers)                | Yes                 | No        | App Functionality (push notif targeting) | `src/libs/actions/Device/index.ts`, `generateDeviceID/index.ios.ts` (`DeviceInfo.getUniqueId()`); sent with push opt-in `src/libs/actions/PushNotification.ts`                                                                                                                                                                                                              |
+| **Purchase History** (Purchases)           | Yes                 | No        | App Functionality (subscription)         | RevenueCat: `src/libs/actions/Subscriptions.ts` (`Purchases.logIn(userId)`, entitlement/tier/expiry); `CONFIG.REVENUECAT`                                                                                                                                                                                                                                                   |
+| **Health** (Health & Fitness) ⚠️           | Yes                 | No        | App Functionality                        | Drinking session data: timestamps, drink counts, units, notes, blackout flag — `src/types/onyx/DrinkingSession.ts`, `src/DBPATHS.ts` (`USER_DRINKING_SESSIONS_*`), `src/libs/actions/DrinkingSession.ts`. No exact "alcohol" bucket; "Health" is the closest fit ("Other Data" is the alternative).                                                                         |
+| **Other User Content** (notes, friends)    | Yes                 | No        | App Functionality                        | Session notes; social graph: friends, friend requests, nicknames — `src/DBPATHS.ts` (`USERS_USER_ID_FRIENDS`, `NICKNAME_TO_ID`), `src/types/onyx/FriendRequestList.ts`                                                                                                                                                                                                      |
+| **Product Interaction / Other Usage Data** | Yes                 | No        | App Functionality                        | Preferences (theme, locale, units, first day of week), onboarding progress, last-online status — `src/DBPATHS.ts` (`USER_PREFERENCES_*`, `USER_STATUS_*`)                                                                                                                                                                                                                   |
 
-### Crash Data — DECLARE (decision 2026-05-28: Petr will ship crash reporting on)
+### Diagnostics — DECLARE (decision 2026-05-28: Petr will ship crash reporting on)
 
-| ASC data type | Linked? | Tracking? | Purpose | Evidence |
-|---|---|---|---|---|
-| **Crash Data** (Diagnostics) | Yes | No | App Functionality (stability) | Firebase Crashlytics — `src/setup/platformSetup/index.native.ts`, `src/libs/setCrashlyticsUserId/index.native.ts` (`setUserId`) |
+| ASC data type                      | Linked? | Tracking? | Purpose                       | Evidence                                                                                                                                                                |
+| ---------------------------------- | ------- | --------- | ----------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Crash Data** (Diagnostics)       | Yes     | No        | App Functionality (stability) | Firebase Crashlytics — `src/setup/platformSetup/index.native.ts`, `src/libs/setCrashlyticsUserId/index.native.ts` (`setUserId`)                                         |
+| **Performance Data** (Diagnostics) | Yes     | No        | App Functionality (stability) | Firebase Performance Monitoring — `src/libs/setCrashReportingCollectionEnabled/index.native.ts` (`getPerformance().dataCollectionEnabled`), gated alongside Crashlytics |
 
-> **Declared.** Crashlytics is gated behind `CONFIG.SEND_CRASH_REPORTS` (`src/CONFIG.ts:123`). Ship the **production build with `SEND_CRASH_REPORTS=true`** so the declaration matches reality. Crashes are linked to the account via `setUserId`.
+> **Declared.** Crashlytics + Performance Monitoring are gated behind `CONFIG.SEND_CRASH_REPORTS` (`src/CONFIG.ts:123`) **and** a user preference. Ship the **production build with `SEND_CRASH_REPORTS=true`** so the declaration matches reality. Both are linked to the account via `setUserId`.
 >
-> **Consent (GDPR — binding for a Czech company / EU users):** no Apple ATT prompt is needed (this is not cross-app *tracking*). But crash data tied to an account ID is personal data and needs a lawful basis:
+> **Consent (GDPR — binding for a Czech company / EU users):** no Apple ATT prompt is needed (this is not cross-app _tracking_). But crash data tied to an account ID is personal data and needs a lawful basis:
+>
 > - **Required:** kiroku.cz/privacy must disclose crash collection, name the processor (Google / Firebase Crashlytics), and state the lawful basis (legitimate interest is the standard route for diagnostics).
 > - **Recommended (code task — tracked in #651):** add a user-facing **opt-out toggle** in a new Settings → Privacy section so EU users can decline. The existing `SEND_CRASH_REPORTS` is a build flag, not user-facing. Not a hard launch blocker — until #651 lands, rely on legitimate-interest + policy disclosure + opt-out-on-request.
 
 ### NOT collected — do not declare (verified dormant/absent in code)
 
-- **Location** — `USER_LOCATION` Onyx key exists (`src/ONYXKEYS.ts`) but nothing reads/writes/sends it; no geolocation API, no location permission. **Do not declare.**
-- **Firebase Analytics** — `measurementId` present in `CONFIG.FIREBASE_CONFIG` but no `logEvent` calls anywhere. Not active → do not declare as Analytics usage. *(If you intend to enable it later, revisit the label.)*
+- ~~**Location** — not collected~~ **CORRECTED 2026-05-28: location IS collected** (opt-in GPS tagging — see the Precise Location row above). The old `USER_LOCATION` Onyx key is unrelated/dormant, but `SessionLocations.captureForTimestamp` actively sends GPS to Firebase. **Declare Precise Location.**
+- **Firebase Analytics** — `measurementId` present in `CONFIG.FIREBASE_CONFIG` but no `logEvent` calls anywhere. Not active → do not declare as Analytics usage. _(If you intend to enable it later, revisit the label.)_
 - **Pusher** — `pusher-js` present but all Pusher code is commented out (`src/libs/Pusher/pusher.ts`, `PusherUtils.ts`). No data currently flows. **Do not declare.**
 
 ### ⚠️ Findings that may surprise Petr / cross-check vs. live privacy policy (kiroku.cz/privacy)
@@ -192,10 +237,11 @@ This is the most consequential deliverable. Below is an accurate mapping derived
 1. **Drinking session data is health-adjacent.** Apple's privacy taxonomy has no exact "alcohol intake" bucket; map it to **Health & Fitness → Other Data** (or "Sensitive Info" if the flow offers it). Make sure kiroku.cz/privacy describes this consumption data explicitly as personal/health-related data you store. This is also the field most relevant to the 1.4.3 concept review.
 2. **Device ID persists across sign-out** (`generateDeviceID` stores a GUID locally, reused across accounts). It's a device-global identifier sent with push opt-in/out. Confirm the privacy policy mentions device identifiers.
 3. **Profile photos go to Firebase Storage.** Verify the storage bucket's read ACLs — if photo URLs are world-readable, the policy should reflect that photos may be visible to others (friends view them).
-4. **RevenueCat is a third-party processor** that receives the Firebase UID (`Purchases.logIn(userId)`). The subscription-terms page already names RevenueCat (confirmed in #648) — good. Make sure the *privacy* policy also lists RevenueCat as a sub-processor.
-5. **Crashlytics linkage** — if enabled in prod, crashes are linked to the account ID. Policy should mention crash diagnostics + the third party (Google/Firebase Crashlytics).
+4. **RevenueCat is a third-party processor** that receives the Firebase UID (`Purchases.logIn(userId)`). The subscription-terms page already names RevenueCat (confirmed in #648) — good. Make sure the _privacy_ policy also lists RevenueCat as a sub-processor.
+5. **Crashlytics + Performance Monitoring linkage** — if enabled in prod, both are linked to the account ID. Policy should mention crash + performance diagnostics and the third party (Google/Firebase).
+6. **Precise location is collected** (opt-in, off by default) and stored in Firebase (`user_session_locations/{uid}/...`). The privacy policy currently does **not** mention location — this is the biggest policy gap. It must disclose: what's collected (GPS per drink during live sessions), that it's opt-in, where it's stored, and the "clear location history" control (`Settings → Privacy`, `SessionLocations.purgeAll`).
 
-**Action:** before submitting, read kiroku.cz/privacy and confirm it covers: health/consumption data, device identifiers, profile photos, RevenueCat, and (if enabled) Crashlytics. Any of these present in code but absent from the policy is an inconsistency Apple can flag.
+**Action:** before submitting, read kiroku.cz/privacy and confirm it covers: health/consumption data, **location**, device identifiers, profile photos, RevenueCat, and Crashlytics/Performance Monitoring. Any of these present in code but absent from the policy is an inconsistency Apple can flag.
 
 ---
 
@@ -203,21 +249,21 @@ This is the most consequential deliverable. Below is an accurate mapping derived
 
 **Recommended result: 17+ (Apple's "Frequent/Intense" alcohol references tier).**
 
-Rationale: the entire app revolves around logging alcohol consumption. Even though the framing is harm-reduction, the *content* references alcohol pervasively (drink logging, calendar of drinking sessions, stats). Under-rating risks a metadata rejection. The Terms already state 18+ eligibility, so 17+ is consistent (and the strictest Apple offers short of the dedicated alcohol/tobacco/drug gate).
+Rationale: the entire app revolves around logging alcohol consumption. Even though the framing is harm-reduction, the _content_ references alcohol pervasively (drink logging, calendar of drinking sessions, stats). Under-rating risks a metadata rejection. The Terms already state 18+ eligibility, so 17+ is consistent (and the strictest Apple offers short of the dedicated alcohol/tobacco/drug gate).
 
 ASC age-rating questionnaire answers (new ASC questionnaire, 2024+ format — wording may vary slightly):
 
-| Question | Answer | Why |
-|---|---|---|
+| Question                                    | Answer               | Why                                                                                                                                                      |
+| ------------------------------------------- | -------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | Alcohol, Tobacco, or Drug Use or References | **Frequent/Intense** | The app's core purpose is logging alcohol intake — references are pervasive, not incidental. Choosing "Infrequent/Mild" risks an under-rating rejection. |
-| Medical/Treatment Information | **None** | Kiroku does not provide medical advice or treatment info (the description explicitly disclaims this). |
-| Sexual Content / Nudity | **None** | — |
-| Violence (cartoon/realistic) | **None** | — |
-| Profanity or Crude Humor | **None** | — |
-| Horror/Fear, Mature/Suggestive Themes | **None** | — |
-| Gambling, Contests | **None** | No gambling/simulated gambling. |
-| Unrestricted Web Access | **No** | WebViews only load fixed kiroku.cz legal pages. |
-| Made for Kids | **No** | — |
+| Medical/Treatment Information               | **None**             | Kiroku does not provide medical advice or treatment info (the description explicitly disclaims this).                                                    |
+| Sexual Content / Nudity                     | **None**             | —                                                                                                                                                        |
+| Violence (cartoon/realistic)                | **None**             | —                                                                                                                                                        |
+| Profanity or Crude Humor                    | **None**             | —                                                                                                                                                        |
+| Horror/Fear, Mature/Suggestive Themes       | **None**             | —                                                                                                                                                        |
+| Gambling, Contests                          | **None**             | No gambling/simulated gambling.                                                                                                                          |
+| Unrestricted Web Access                     | **No**               | WebViews only load fixed kiroku.cz legal pages.                                                                                                          |
+| Made for Kids                               | **No**               | —                                                                                                                                                        |
 
 > If the questionnaire surfaces a **"Does your app encourage consumption of alcohol/tobacco/drugs?"** style yes/no — answer **No**, and lean on the App Review notes (§4) to explain the harm-reduction purpose.
 
@@ -262,10 +308,12 @@ Claude cannot create this (no Firebase credentials). Create it manually so the r
 **Steps:**
 
 1. **Create the reviewer account.**
+
    - Easiest: install the production/TestFlight build, sign up with email/password using a dedicated address, e.g. `appreview@kiroku.cz` (or a `+review` alias you control). Use a strong but simple password you can paste into ASC.
    - Complete onboarding so the account isn't stuck on a first-run screen. Set a display name like "App Reviewer".
 
 2. **Seed sample drinking sessions** (so Calendar + Statistics aren't empty). Add ~8–12 sessions spread across the last 2 months, varied so the stats tabs render meaningfully:
+
    - A few recent sessions (this week) and several older ones across the prior month.
    - Vary drink counts/units per session (e.g. 1–6 units).
    - Add a **note** to at least one session (demonstrates the notes feature).
@@ -274,8 +322,9 @@ Claude cannot create this (no Firebase credentials). Create it manually so the r
    - You can do this entirely through the app UI (start session → log drinks → end), which is the most faithful path and avoids hand-writing RTDB JSON.
 
 3. **Add one friend** (to show the social + supporter-badge surface):
+
    - Create a second throwaway account (e.g. `appreview-friend@kiroku.cz`), give it a display name and a couple of sessions, then send/accept a friend request between the two accounts.
-   - Optional but nice: make the *friend* account a supporter (or set its public `is_supporter` flag) so the reviewer sees the 🍺 badge on a friend's profile.
+   - Optional but nice: make the _friend_ account a supporter (or set its public `is_supporter` flag) so the reviewer sees the 🍺 badge on a friend's profile.
 
 4. **Verify before submitting:** sign out, sign back in as the reviewer account on a clean device/simulator, and confirm: Calendar shows sessions, Statistics tabs render data, the friend appears, and the "Support Kiroku 🍺" paywall loads (requires the visibility flag flipped — see §7).
 
@@ -289,28 +338,29 @@ Claude cannot create this (no Firebase credentials). Create it manually so the r
 
 Apple's current requirement (2024+): you **must** provide **6.9"/6.7" iPhone** screenshots; a **5.5"** set is no longer required but iPad screenshots are required **only if** the app supports iPad. Provide the 6.7"/6.9" set at minimum; add iPad if Kiroku ships an iPad-capable build.
 
-| Display class | Required? | Resolution (portrait) | Simulator device that satisfies it |
-|---|---|---|---|
-| 6.7"/6.9" iPhone | **Mandatory** | 1290 × 2796 (6.7") or 1320 × 2868 (6.9") | iPhone 16 Pro Max / iPhone 15 Pro Max |
-| 6.5" iPhone | Optional (often reused from 6.7") | 1284 × 2778 | iPhone 14 Plus / 11 Pro Max |
-| 13" iPad | Only if iPad-supported | 2064 × 2752 | iPad Pro 13" (M4) |
+| Display class    | Required?                         | Resolution (portrait)                    | Simulator device that satisfies it    |
+| ---------------- | --------------------------------- | ---------------------------------------- | ------------------------------------- |
+| 6.7"/6.9" iPhone | **Mandatory**                     | 1290 × 2796 (6.7") or 1320 × 2868 (6.9") | iPhone 16 Pro Max / iPhone 15 Pro Max |
+| 6.5" iPhone      | Optional (often reused from 6.7") | 1284 × 2778                              | iPhone 14 Plus / 11 Pro Max           |
+| 13" iPad         | Only if iPad-supported            | 2064 × 2752                              | iPad Pro 13" (M4)                     |
 
 > You can usually upload one high-res 6.7"/6.9" set and let ASC scale; but capturing natively avoids letterboxing.
 
 **Screens to capture (6–8 shots, in this order):**
 
-1. **Home / session start** — the main tracking entry point. Caption: *"Track every drinking session"*
-2. **Active session / drink logging** — logging drinks + units. Caption: *"Log drinks and units in seconds"*
-3. **Calendar** — month view with sessions marked. Caption: *"See your full history at a glance"*
-4. **Statistics — Overview or Trends tab** — charts. Caption: *"Understand your patterns over time"*
-5. **Statistics — alcohol-free days / Breakdown** — Caption: *"Celebrate your alcohol-free days"*
-6. **Profile** (with friend / badge visible) — Caption: *"Share progress with friends"*
-7. **Support Kiroku paywall** — Caption: *"Support Kiroku — optional 🍺 badge"* (requires visibility flag on, §7)
-8. *(optional)* **Session note / detail** — Caption: *"Add notes to remember the context"*
+1. **Home / session start** — the main tracking entry point. Caption: _"Track every drinking session"_
+2. **Active session / drink logging** — logging drinks + units. Caption: _"Log drinks and units in seconds"_
+3. **Calendar** — month view with sessions marked. Caption: _"See your full history at a glance"_
+4. **Statistics — Overview or Trends tab** — charts. Caption: _"Understand your patterns over time"_
+5. **Statistics — alcohol-free days / Breakdown** — Caption: _"Celebrate your alcohol-free days"_
+6. **Profile** (with friend / badge visible) — Caption: _"Share progress with friends"_
+7. **Support Kiroku paywall** — Caption: _"Support Kiroku — optional 🍺 badge"_ (requires visibility flag on, §7)
+8. _(optional)_ **Session note / detail** — Caption: _"Add notes to remember the context"_
 
 **Capture tips:**
+
 - Use the seeded reviewer account (or a screenshot account with nicer demo data) so charts/calendar aren't empty.
-- Keep captions consistent with the harm-reduction framing — avoid anything celebratory about drinking *volume*.
+- Keep captions consistent with the harm-reduction framing — avoid anything celebratory about drinking _volume_.
 - Localize captions for the Czech storefront if you publish cs screenshots (otherwise English screenshots are shown for cs too — acceptable).
 - Capture in light mode for clarity, or provide a mix; be consistent.
 
@@ -321,17 +371,20 @@ Apple's current requirement (2024+): you **must** provide **6.9"/6.7" iPhone** s
 > Prereqs done first: app record exists in ASC, the build is uploaded via Xcode/Transporter and finished processing, and **`supporter_monthly` is created as an Auto-Renewable Subscription** in ASC (Features → Subscriptions → a Subscription Group) in "Ready to Submit" state with localized display name "Kiroku Supporter", price, and a review screenshot of the paywall.
 
 **A. Prep both subscriptions — monthly + annual (decision 2026-05-28: annual ships at launch)**
+
 1. In **Features → Subscriptions**, create/confirm BOTH products in the same Subscription Group:
    - **`supporter_monthly`** — priced, localized ("Kiroku Supporter"), review screenshot attached.
    - **`supporter_annual`** — same display name, annual price, review screenshot. Put it in the **same group** as monthly so they're mutually-exclusive upgrade/crossgrade tiers.
 2. **⚠️ Annual requires app code — not just ASC.** The paywall today only reads the monthly package: `SupportKirokuScreen.tsx:60` (`const pkg = offering?.monthly ?? null`), the CTA is hardcoded "/ month" (`:260`, `supporter.paywallScreen.purchaseCta`), and `ManageSubscriptionScreen.tsx:24` hardcodes the monthly SKU. To actually sell annual you must: surface both packages from the RevenueCat offering, let the user choose monthly vs annual, make the CTA/price dynamic, and update `ManageSubscriptionScreen` to handle either SKU. **This is owned by the supporter/code session, not this kit.** Do not attach `supporter_annual` to the version until the build can sell it — an attached-but-unsellable product triggers metadata-mismatch rejection.
 
 **B. Supporter visibility flag — must be ON in the submitted build**
+
 1. `SupporterUtils.isSupporterTierVisible()` returns `!CONFIG.IS_IN_PRODUCTION` (`src/libs/SupporterUtils.ts:17-19`), so a production build **hides** the paywall. The reviewer tests the exact build you submit — if the paywall is hidden, they can't test the IAP and the first-subscription submission gets rejected (Guideline 2.1). **The flag must be ON in the submitted production build.**
-2. **Decision 2026-05-28: supporter ships at launch**, so the original "hide until v1.1" rationale in `SupporterUtils` is **obsolete** — make the paywall permanently visible in production (the code session should simplify/remove the gate). The manual-release hold (step H) is now *optional* — only use it if you want to stagger the public launch date from the approval date.
+2. **Decision 2026-05-28: supporter ships at launch**, so the original "hide until v1.1" rationale in `SupporterUtils` is **obsolete** — make the paywall permanently visible in production (the code session should simplify/remove the gate). The manual-release hold (step H) is now _optional_ — only use it if you want to stagger the public launch date from the approval date.
 3. **This is a code change in the supporter/code session** (Claude is not editing app code in this kit). **Verify on the actual TestFlight/production build that "Support Kiroku 🍺" appears in Settings and the paywall loads — showing both monthly and annual — before submitting.**
 
 **C. Create the version & fill metadata**
+
 1. ASC → **Apps → Kiroku → (left sidebar) iOS App → "+ Version or Platform"** (or the existing "1.0 Prepare for Submission"). Set version string (e.g. `1.0`).
 2. **Promotional Text / Description / Keywords / Support URL / Marketing URL** — paste from §1 (English). Add Czech localization (top-left language dropdown → Add Czech) and paste §1b if publishing cs.
 3. **Screenshots** — upload the 6.7"/6.9" set (and iPad if applicable) from §6 into each required size slot.
@@ -339,13 +392,16 @@ Apple's current requirement (2024+): you **must** provide **6.9"/6.7" iPhone** s
 5. **General App Information** — set primary category (suggest **Health & Fitness**, secondary optional e.g. Lifestyle), age rating (next step), and copyright.
 
 **D. Attach the subscription to this version**
-1. In the version page, find the **"In-App Purchases and Subscriptions"** section → **"+"** → select **`supporter_monthly`**. (Attaching it to a *version* submission is what clears Apple's first-subscription gate — issue #648 / #645.)
+
+1. In the version page, find the **"In-App Purchases and Subscriptions"** section → **"+"** → select **`supporter_monthly`**. (Attaching it to a _version_ submission is what clears Apple's first-subscription gate — issue #648 / #645.)
 2. Confirm only the products you actually sell are attached (monthly only, unless you deliberately ship annual).
 
 **E. Age rating**
+
 1. Version page → **Age Rating → "Edit"** → answer the questionnaire per §3 (Alcohol references = **Frequent/Intense**, everything else **None**, no encouragement of consumption). Save. Confirm computed **17+**.
 
 **F. App Privacy (nutrition label)**
+
 1. Left sidebar → **App Privacy → "Get Started"/"Edit"**.
 2. Add each data type from §2 (Email, Name, Photos, User ID, Device ID, Purchase History, Health/consumption data, Other User Content, Usage Data; **Crash Data only if `SEND_CRASH_REPORTS=true` in the prod build**).
 3. For every type: **Linked to user = Yes**, **Used for tracking = No**, **Purpose = App Functionality** (Health/stability where applicable). Do **not** add Location, Analytics, or Pusher.
@@ -353,14 +409,17 @@ Apple's current requirement (2024+): you **must** provide **6.9"/6.7" iPhone** s
 5. Publish the privacy responses.
 
 **G. App Review Information**
+
 1. Version page → **App Review Information**: check **"Sign-in required"**, paste the demo account email/password (§5).
 2. **Notes** — paste the §4 review notes (with credentials filled in).
 3. Contact info: your name, phone, email.
 
 **H. Release control — hold as Pending Developer Release**
+
 1. Version page → **"Version Release"** section → select **"Manually release this version"** (NOT automatic). This makes the approved build sit as **Pending Developer Release** so approval ≠ public launch (you launch when ready, decoupled from the supporter v1.1 timing).
 
 **I. Submit**
+
 1. Click **"Add for Review"** / **"Submit for Review"** (top right).
 2. Answer the export-compliance prompt (Kiroku uses standard HTTPS/TLS only → typically **"Yes" uses encryption** → **exempt** under standard encryption; confirm against your build's `ITSAppUsesNonExemptEncryption` setting).
 3. Submit. Monitor status in ASC and via email.
@@ -370,6 +429,7 @@ Apple's current requirement (2024+): you **must** provide **6.9"/6.7" iPhone** s
 ## 8. Decisions & status (updated 2026-05-28)
 
 **Resolved:**
+
 - ✅ **Crash Data** — DECLARE it; ship prod with `SEND_CRASH_REPORTS=true`. (§2)
 - ✅ **`supporter_annual`** — ships at launch (both monthly + annual). (§7A)
 - ✅ **Reviewer demo account** — Petr reports it's ready. Re-verify it's seeded with sessions + a friend before submitting (§5).
@@ -377,12 +437,14 @@ Apple's current requirement (2024+): you **must** provide **6.9"/6.7" iPhone** s
 - ✅ **Privacy/Terms review** — spun up as a separate session against the `kiroku-web` repo.
 
 **Still open / depends on the code session:**
+
 1. **Annual paywall code** — the app can only sell monthly today; selling annual needs UI + SKU work in the supporter/code session. Don't attach `supporter_annual` in ASC until the build sells it. (§7A)
 2. **Supporter visibility flag** — must be ON in the submitted build; the v1.1-hide rationale is now obsolete (supporter ships at launch). Code session removes/flips the gate; verify on the real build. (§7B)
 3. **Crash-reporting opt-out toggle** — tracked in **#651** (new Settings → Privacy section). Not a launch blocker; until it lands, kiroku.cz/privacy must disclose Crashlytics + lawful basis. (§2)
 4. **Storefront languages at launch** — English only, or English + Czech? (Czech can be added later without re-review.) (§1)
 5. **Support URL** — bare `kiroku.cz` or a dedicated `/support` page? Ensure it resolves.
 6. **App category** — recommend **Health & Fitness** primary; confirm the positioning. (§7C)
+
 ```
 
 ---
@@ -413,3 +475,4 @@ Front-load this. The paywall code depends on the dashboard being correct (`Suppo
 - [ ] **Sandbox purchase** the monthly package with a StoreKit sandbox tester → the 🍺 badge appears and `is_supporter` flips. *(Annual can't be smoke-tested until the annual UI lands, but if monthly works, the wiring is sound and annual is just another package in the same offering.)*
 
 > Once A+B+C are ticked, the dashboard side is **done** — the remaining work is purely the in-app annual UI + visibility flag (the supporter/code session), and that can be tested against this verified config.
+```
