@@ -359,6 +359,10 @@ const CONST = {
     // Minimum normalized-prefix length for a `nickname_to_id` range query.
     // Shorter prefixes are rejected to avoid scanning most of the index.
     MIN_NICKNAME_PREFIX_LENGTH: 2,
+    // Upper bound on token buckets pulled for a single prefix range query.
+    NICKNAME_MAX_RESULTS: 50,
+    // Upper bound on token entries written per user, to cap index fan-out.
+    NICKNAME_MAX_TOKENS: 8,
     DATA_TYPES: {
       SESSION: 'session',
     },
