@@ -159,10 +159,6 @@ const CONST = {
     COMPLETE: 'complete',
     DISABLED: 'disabled',
   },
-  CACHE: {
-    PROFILE_PICTURE_KEY: 'profilePicture',
-  },
-
   CALENDAR_COLORS: {
     LIGHT: {
       YELLOW: 'yellow',
