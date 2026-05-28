@@ -7,7 +7,6 @@ import {KpiCard, KpiCardGroup} from '@components/Charts/KpiCard';
 import type {KpiCardProps} from '@components/Charts/KpiCard';
 import {MiniTrendLine} from '@components/Charts/MiniTrendLine';
 import Text from '@components/Text';
-import {useDatabaseData} from '@context/global/DatabaseDataContext';
 import useDrinkEvents from '@hooks/useStatistics/useDrinkEvents';
 import useLocalize from '@hooks/useLocalize';
 import useTheme from '@hooks/useTheme';
@@ -50,10 +49,7 @@ function OverviewTab() {
   const styles = useThemeStyles();
   const theme = useTheme();
   const {events, isLoading} = useDrinkEvents();
-  const {preferences} = useDatabaseData();
   const {openDrillDown} = useStatsDrillDown();
-  const unitsToColors = preferences?.units_to_colors;
-  const palette = preferences?.session_color_palette;
 
   // Snapshot `now` once per mount so all selectors agree. Re-deriving on each
   // render would let an animation frame land between two reads and disagree
@@ -67,8 +63,8 @@ function OverviewTab() {
   const weekly = useMemo(() => selectWeeklyKpis(events, now), [events, now]);
   const trend = useMemo(() => selectTrendSeries(events, now), [events, now]);
   const cells = useMemo(
-    () => selectThisMonthHeatmapCells(events, now, unitsToColors, palette),
-    [events, now, unitsToColors, palette],
+    () => selectThisMonthHeatmapCells(events, now),
+    [events, now],
   );
 
   const hasEverLogged = selectHasEverLogged(events);
