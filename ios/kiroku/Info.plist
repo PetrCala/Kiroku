@@ -49,12 +49,8 @@
 		<key>NSAllowsLocalNetworking</key>
 		<true/>
 	</dict>
-	<key>NSCameraUsageDescription</key>
-	<string>We need access to your camera to capture videos.</string>
-	<key>NSPhotoLibraryAddUsageDescription</key>
-	<string>We need access to your photos to select images or videos.</string>
 	<key>NSPhotoLibraryUsageDescription</key>
-	<string>We need access to your photos to select images or videos.</string>
+	<string>Kiroku accesses your photos so you can choose a profile picture.</string>
 	<key>NSUserActivityTypes</key>
 	<array>
 		<string>INSendMessageIntent</string>
