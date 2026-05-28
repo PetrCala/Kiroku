@@ -82,6 +82,9 @@ function HourPolar({
   const cx = side / 2;
   const cy = side / 2;
   const radius = Math.max(0, side / 2 - CENTER_PADDING);
+  // Petals scale to the rim circle, not the full radius, so a max-value bucket
+  // lands exactly on the ring instead of overshooting it by RIM_INSET.
+  const axisRadius = Math.max(0, radius - RIM_INSET);
 
   const maxValue = useMemo(() => {
     let max = 0;
@@ -109,7 +112,7 @@ function HourPolar({
       // Always draw a hair-thin rim wedge when intensity > 0 but ratio < some
       // floor, so a non-zero bucket is visible even with one tiny event.
       const drawRatio = intensity === 0 ? 0 : Math.max(ratio, 0.08);
-      const r = drawRatio * radius;
+      const r = drawRatio * axisRadius;
       if (r <= 0) {
         continue;
       }
@@ -132,9 +135,7 @@ function HourPolar({
       });
     }
     return out;
-  }, [buckets, cx, cy, maxValue, radius, theme.intensityRamp]);
-
-  const axisRadius = Math.max(0, radius - RIM_INSET);
+  }, [buckets, cx, cy, maxValue, axisRadius, radius, theme.intensityRamp]);
 
   const hasData = maxValue > 0;
 
