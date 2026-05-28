@@ -318,6 +318,7 @@ export default {
     profile: 'Profile',
     settings: 'Settings',
     achievements: 'Badges',
+    bac: 'BAC',
     statistics: 'Statistics',
     menu: 'Menu',
   },
@@ -1126,8 +1127,21 @@ export default {
     },
   },
   achievementsScreen: {
-    title: 'Badges',
-    comingSoon: 'Coming soon!',
+    title: 'BAC Estimator',
+    bac: {
+      currentBac: 'Estimated BAC',
+      noSession:
+        'Start a drinking session to see your estimated blood alcohol level.',
+      disclaimer:
+        'This is a rough estimate, not a medical or legal measurement. Never drive after drinking.',
+      editDetails: 'Edit my details',
+      intro: 'We need your weight and gender to estimate your blood alcohol.',
+      male: 'Male',
+      female: 'Female',
+      other: 'Other',
+      kg: 'kg',
+      lb: 'lb',
+    },
   },
   dayOverviewScreen: {
     enterEditMode: 'Edit Mode',
