@@ -128,7 +128,7 @@ Key GitHub Actions workflows:
 - `typecheck.yml`: TypeScript validation
 - `lint.yml`: Code quality checks
 - `claude-review.yml`: Automated PR review — **intentionally disabled** (manual `workflow_dispatch` only; do not switch to `pull_request`)
-- `translation-review.yml`: Reviews translation PRs touching `src/languages/**`
+- `translation-review.yml`: AI review of translation quality — manual `workflow_dispatch` only (the always-on translation gate is the `TranslationContext` unit test)
 
 ## Related Repositories
 
@@ -158,7 +158,7 @@ The skill provides guidance on:
 
 ### Localization & Translations
 
-`src/languages/en.ts` is the source of truth; every other locale mirrors its key structure. Do **not** hand-write non-English translations in a feature PR — add English keys only, then fill other locales with the `translate` skill, which translates against each language's glossary in `src/languages/context/`. Every locale needs a context file (enforced by a unit test). PRs touching `src/languages/**` are auto-reviewed by the `translation-review` workflow.
+`src/languages/en.ts` is the source of truth; every other locale mirrors its key structure. Do **not** hand-write non-English translations in a feature PR — add English keys only, then fill other locales with the `translate` skill, which translates against each language's glossary in `src/languages/context/`. Every locale needs a context file (enforced by a unit test). An optional AI quality review can be run manually via the `translation-review` workflow.
 
 ### Code Quality
 
