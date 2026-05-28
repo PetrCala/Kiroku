@@ -6,7 +6,6 @@ import type {
   ImageStyle,
 } from 'react-native';
 import {Animated} from 'react-native';
-import Image from '@src/components/Image';
 import FullScreenModal from '@components/Modals/FullScreenModal';
 import type ImageLayout from '@src/types/various/ImageLayout';
 import useThemeStyles from '@hooks/useThemeStyles';
@@ -17,9 +16,15 @@ import useWindowDimensions from '@hooks/useWindowDimensions';
 type EnlargableImageProps = {
   imageSource: ImageSourcePropType;
   imageStyle: StyleProp<ImageStyle>;
+  /** The thumbnail trigger that opens the fullscreen view when pressed. */
+  children: React.ReactNode;
 };
 
-function EnlargableImage({imageSource, imageStyle}: EnlargableImageProps) {
+function EnlargableImage({
+  imageSource,
+  imageStyle,
+  children,
+}: EnlargableImageProps) {
   const styles = useThemeStyles();
   const {translate} = useLocalize();
   const [modalVisible, setModalVisible] = useState(false);
@@ -110,7 +115,7 @@ function EnlargableImage({imageSource, imageStyle}: EnlargableImageProps) {
         accessibilityLabel={translate('profileScreen.profileImage')}
         onPress={handlePress}
         onLayout={handleOnLayout}>
-        <Image source={imageSource} style={imageStyle} />
+        {children}
       </PressableWithFeedback>
       <FullScreenModal
         visible={modalVisible}

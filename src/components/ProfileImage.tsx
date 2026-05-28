@@ -158,19 +158,7 @@ function ProfileImage({
       downloadPath.includes(CONST.FIREBASE_STORAGE_URL));
   const iconTint = imageUrl ? undefined : theme.icon;
 
-  if (enlargable) {
-    const imageSource: ImageSourcePropType = imageUrl
-      ? {uri: imageUrl}
-      : KirokuIcons.UserIcon;
-    return (
-      <EnlargableImage
-        imageSource={imageSource}
-        imageStyle={[style, {tintColor: iconTint}]}
-      />
-    );
-  }
-
-  return (
+  const avatar = (
     <AvatarImage
       uri={imageUrl ?? null}
       isResolving={imageUrl === undefined}
@@ -179,6 +167,21 @@ function ProfileImage({
       style={style}
     />
   );
+
+  if (enlargable) {
+    const imageSource: ImageSourcePropType = imageUrl
+      ? {uri: imageUrl}
+      : KirokuIcons.UserIcon;
+    return (
+      <EnlargableImage
+        imageSource={imageSource}
+        imageStyle={[style, {tintColor: iconTint}]}>
+        {avatar}
+      </EnlargableImage>
+    );
+  }
+
+  return avatar;
 }
 
 export default ProfileImage;
