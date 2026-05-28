@@ -527,8 +527,21 @@ export default {
   },
   privacyScreen: {
     title: 'Soukromí',
-    description:
-      'Spravujte, jak Kiroku pracuje s polohou spojenou s vašimi živými sezeními.',
+    diagnosticsSection: {
+      title: 'Diagnostika',
+      description:
+        'Spravujte, zda Kiroku shromažďuje diagnostiku pádů a výkonu.',
+    },
+    crashReporting: {
+      label: 'Odesílat hlášení o pádech',
+      description:
+        'Když je zapnuto, Kiroku používá Firebase Crashlytics a Performance Monitoring k odesílání diagnostiky pádů a výkonu spojené s vaším účtem, což nám pomáhá rychleji opravovat chyby. Vypnutím se odhlásíte.',
+    },
+    locationSection: {
+      title: 'Poloha',
+      description:
+        'Spravujte, jak Kiroku pracuje s polohou spojenou s vašimi živými sezeními.',
+    },
     trackLocationDuringSessions: {
       label: 'Označovat drinky polohou',
       description:

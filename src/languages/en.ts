@@ -529,8 +529,21 @@ export default {
   },
   privacyScreen: {
     title: 'Privacy',
-    description:
-      'Control how Kiroku handles location data tied to your live sessions.',
+    diagnosticsSection: {
+      title: 'Diagnostics',
+      description:
+        'Control whether Kiroku collects crash and performance diagnostics.',
+    },
+    crashReporting: {
+      label: 'Send crash reports',
+      description:
+        'When on, Kiroku uses Firebase Crashlytics and Performance Monitoring to send crash and performance diagnostics linked to your account, helping us fix issues faster. Turn off to opt out.',
+    },
+    locationSection: {
+      title: 'Location',
+      description:
+        'Control how Kiroku handles location data tied to your live sessions.',
+    },
     trackLocationDuringSessions: {
       label: 'Tag drinks with location',
       description:

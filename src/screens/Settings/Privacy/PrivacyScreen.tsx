@@ -25,6 +25,16 @@ function PrivacyScreen() {
   const {auth, db} = useFirebase();
   const user = auth.currentUser;
 
+  // Absent ⇒ enabled (legitimate-interest opt-out default).
+  const persistedCrashReporting =
+    preferences?.crash_reporting_enabled !== false;
+  const [pendingCrashReporting, setPendingCrashReporting] = useState<
+    boolean | null
+  >(null);
+  const [savingCrashReporting, setSavingCrashReporting] = useState(false);
+  const displayCrashReporting =
+    pendingCrashReporting ?? persistedCrashReporting;
+
   const persistedTrackLocation =
     preferences?.track_location_during_sessions === true;
   const [pendingTrackLocation, setPendingTrackLocation] = useState<
@@ -35,6 +45,23 @@ function PrivacyScreen() {
 
   const [showPurgeConfirmModal, setShowPurgeConfirmModal] = useState(false);
   const [isPurging, setIsPurging] = useState(false);
+
+  const onToggleCrashReporting = (next: boolean) => {
+    if (savingCrashReporting || next === displayCrashReporting) {
+      return;
+    }
+    setPendingCrashReporting(next);
+    setSavingCrashReporting(true);
+    Preferences.updatePreferences(db, user, {
+      crash_reporting_enabled: next,
+    })
+      .catch(error => {
+        setPendingCrashReporting(null);
+        const errorMessage = error instanceof Error ? error.message : '';
+        Alert.alert(translate('privacyScreen.error.save'), errorMessage);
+      })
+      .finally(() => setSavingCrashReporting(false));
+  };
 
   const onToggleTrackLocation = (next: boolean) => {
     if (savingTrackLocation || next === displayTrackLocation) {
@@ -111,9 +138,42 @@ function PrivacyScreen() {
       />
       <ScrollView contentContainerStyle={[styles.w100]}>
         <Section
-          title={translate('privacyScreen.title')}
+          title={translate('privacyScreen.diagnosticsSection.title')}
           titleStyles={styles.generalSectionTitle}
-          subtitle={translate('privacyScreen.description')}
+          subtitle={translate('privacyScreen.diagnosticsSection.description')}
+          subtitleMuted
+          isCentralPane
+          childrenStyles={styles.pt3}>
+          <View style={styles.sectionMenuItemTopDescription}>
+            <View
+              style={[
+                styles.flexRow,
+                styles.alignItemsCenter,
+                styles.justifyContentBetween,
+                styles.mb4,
+              ]}>
+              <View style={[styles.flexColumn, styles.flex1, styles.mr3]}>
+                <Text style={[styles.textNormal, styles.textStrong]}>
+                  {translate('privacyScreen.crashReporting.label')}
+                </Text>
+                <Text style={[styles.textMicroSupporting, styles.mt1]}>
+                  {translate('privacyScreen.crashReporting.description')}
+                </Text>
+              </View>
+              <Switch
+                accessibilityLabel={translate(
+                  'privacyScreen.crashReporting.label',
+                )}
+                isOn={displayCrashReporting}
+                onToggle={onToggleCrashReporting}
+              />
+            </View>
+          </View>
+        </Section>
+        <Section
+          title={translate('privacyScreen.locationSection.title')}
+          titleStyles={styles.generalSectionTitle}
+          subtitle={translate('privacyScreen.locationSection.description')}
           subtitleMuted
           isCentralPane
           childrenStyles={styles.pt3}>

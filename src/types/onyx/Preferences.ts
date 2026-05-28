@@ -66,6 +66,12 @@ type Preferences = {
    *  added to a LIVE session is tagged with the user's current GPS location.
    *  Off by default. Edit-session adds never capture location regardless. */
   track_location_during_sessions?: boolean;
+
+  /** Whether the user permits Crashlytics/Performance diagnostic collection.
+   *  Undefined/true means enabled (legitimate-interest default); false is an
+   *  explicit opt-out. Only ever takes effect when the build flag
+   *  CONFIG.SEND_CRASH_REPORTS is also true. */
+  crash_reporting_enabled?: boolean;
 };
 
 /** A collection of preferences of multiple users */
