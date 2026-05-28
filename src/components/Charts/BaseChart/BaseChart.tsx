@@ -97,13 +97,14 @@ function BaseChart<TYKey extends string = 'y'>({
           ? {formatYLabel: (label: string | number) => formatY(Number(label))}
           : {}),
       };
-  // Custom axis labels need extra outset room so the leftmost Y label and edge
-  // X labels aren't clipped; keep the tighter default for unlabeled charts.
+  // Custom-axis charts inset the data symmetrically (28/28) so the plot sits
+  // centered rather than pushed right by the Y-label gutter; keep the tighter
+  // default for unlabeled charts.
   const hasCustomAxis = !hideAxes && axis !== undefined;
   const domainPadding = hideAxes
     ? 0
     : {
-        left: hasCustomAxis ? 40 : 24,
+        left: hasCustomAxis ? 28 : 24,
         right: hasCustomAxis ? 28 : 24,
         top: 16,
         bottom: 0,
