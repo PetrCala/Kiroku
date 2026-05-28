@@ -101,6 +101,16 @@ function arcSectorPath(
     innerR * 2,
   );
 
+  // A full sweep (a single 100% slice, or the empty-state ring) can't be drawn
+  // as an arc sector: arcToOval treats its sweep modulo 360, so a -360 inner
+  // sweep collapses to nothing and the slice fills solid. Draw two concentric
+  // ovals with opposite winding instead — the nonzero fill rule carves the hole.
+  if (Math.abs(sweepDeg) >= 360 - 1e-3) {
+    builder.addOval(outerRect);
+    builder.addOval(innerRect, true);
+    return builder.build();
+  }
+
   // Outer arc, start → end (clockwise).
   builder.addArc(outerRect, startDeg, sweepDeg);
   // Line from outer-end to inner-end.
