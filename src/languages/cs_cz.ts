@@ -536,12 +536,10 @@ export default {
     title: 'Soukromí',
     friendsVisibilitySection: {
       title: 'Přátelé',
-      description: 'Spravujte, kteří přátelé vidí vaše data o pití.',
     },
     hideFromAllFriends: {
       label: 'Skrýt má data před všemi přáteli',
-      description:
-        'Když je zapnuto, žádný z vašich přátel neuvidí vaše relace pití. Chcete-li skrýt data jen před jedním přítelem, otevřete jeho profil a použijte Spravovat přítele.',
+      description: 'Když je zapnuto, žádný přítel neuvidí vaše relace pití.',
     },
     diagnosticsSection: {
       title: 'Diagnostika',

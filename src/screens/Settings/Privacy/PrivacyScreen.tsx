@@ -163,10 +163,6 @@ function PrivacyScreen() {
         <Section
           title={translate('privacyScreen.friendsVisibilitySection.title')}
           titleStyles={styles.generalSectionTitle}
-          subtitle={translate(
-            'privacyScreen.friendsVisibilitySection.description',
-          )}
-          subtitleMuted
           isCentralPane
           childrenStyles={styles.pt3}>
           <View style={styles.sectionMenuItemTopDescription}>

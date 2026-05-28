@@ -538,12 +538,10 @@ export default {
     title: 'Privacy',
     friendsVisibilitySection: {
       title: 'Friends',
-      description: 'Control which friends can see your drinking data.',
     },
     hideFromAllFriends: {
       label: 'Hide my data from all friends',
-      description:
-        'When on, none of your friends can see your drinking sessions. To hide your data from just one friend instead, open their profile and use Manage Friend.',
+      description: 'When on, no friend can see your drinking sessions.',
     },
     diagnosticsSection: {
       title: 'Diagnostics',
