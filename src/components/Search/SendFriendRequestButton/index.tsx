@@ -90,14 +90,7 @@ function SendFriendRequestButton({
   };
 
   return (
-    <View
-      style={[
-        styles.flexShrink1,
-        styles.justifyContentCenter,
-        styles.alignItemsCenter,
-        styles.h100,
-        // max height 100
-      ]}>
+    <View style={[styles.flexRow, styles.alignItemsCenter]}>
       {renderContents()}
     </View>
   );
