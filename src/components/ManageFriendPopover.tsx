@@ -1,4 +1,4 @@
-import React, {useMemo, useRef} from 'react';
+import React, {useRef} from 'react';
 import {View} from 'react-native';
 import {unfriend} from '@database/friends';
 import {setFriendDataHidden} from '@database/privacy';
@@ -51,27 +51,22 @@ function ManageFriendPopover({
     });
   };
 
-  const menuItems = useMemo(() => {
-    const baseMenuItems: PopoverMenuItem[] = [
-      {
-        text: isHidden
-          ? translate('profileScreen.showDataToFriend')
-          : translate('profileScreen.hideDataFromFriend'),
-        icon: isHidden ? KirokuIcons.Eye : KirokuIcons.EyeDisabled,
-        onSelected: handleToggleHidden,
+  const menuItems: PopoverMenuItem[] = [
+    {
+      text: isHidden
+        ? translate('profileScreen.showDataToFriend')
+        : translate('profileScreen.hideDataFromFriend'),
+      icon: isHidden ? KirokuIcons.Eye : KirokuIcons.EyeDisabled,
+      onSelected: handleToggleHidden,
+    },
+    {
+      text: translate('profileScreen.unfriend'),
+      icon: KirokuIcons.RemoveUser,
+      onSelected: () => {
+        setUnfriendModalVisible(true);
       },
-      {
-        text: translate('profileScreen.unfriend'),
-        icon: KirokuIcons.RemoveUser,
-        onSelected: () => {
-          setUnfriendModalVisible(true);
-        },
-      },
-    ];
-
-    return baseMenuItems;
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [translate, isHidden]);
+    },
+  ];
 
   const handleUnfriend = () => {
     (async () => {
