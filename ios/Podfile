@@ -21,6 +21,7 @@ setup_permissions([
   'Notifications',
   'PhotoLibrary',
   'PhotoLibraryAddOnly',
+  'LocationWhenInUse',
 ])
 
 # As per the official React Native Firebase documentation: https://rnfirebase.io/#altering-cocoapods-to-use-frameworks
