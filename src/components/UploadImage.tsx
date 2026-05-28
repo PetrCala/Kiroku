@@ -1,6 +1,7 @@
 import React, {useEffect, useState} from 'react';
-import type {ImageSourcePropType, StyleProp, ViewStyle} from 'react-native';
+import type {StyleProp, ViewStyle} from 'react-native';
 import {View} from 'react-native';
+import type IconAsset from '@src/types/utils/IconAsset';
 import * as ImagePicker from 'expo-image-picker';
 import type {ImagePickerAsset} from 'expo-image-picker';
 import * as ImageManipulator from 'expo-image-manipulator';
@@ -17,7 +18,7 @@ import Button from './Button';
 
 type UploadImageComponentProps = {
   pathToUpload: string;
-  src: ImageSourcePropType;
+  src: IconAsset;
   isProfilePicture: boolean;
   containerStyles?: StyleProp<ViewStyle>;
 };
