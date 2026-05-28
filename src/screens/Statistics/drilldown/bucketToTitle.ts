@@ -17,16 +17,7 @@ const DRINK_LABEL_KEY: Readonly<Record<DrinkKey, TranslationPaths>> = {
 };
 
 function formatHour(hour: number): string {
-  if (hour === 0) {
-    return '12 AM';
-  }
-  if (hour === 12) {
-    return '12 PM';
-  }
-  if (hour < 12) {
-    return `${hour} AM`;
-  }
-  return `${hour - 12} PM`;
+  return `${hour}:00`;
 }
 
 function formatDay(dateKey: string): string {

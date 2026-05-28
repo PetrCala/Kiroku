@@ -45,17 +45,8 @@ const SHORT_DAY_NAMES = [
   'Sat',
 ] as const;
 
-function formatHourTick(hour: number): string {
-  if (hour === 0) {
-    return '12a';
-  }
-  if (hour === 12) {
-    return '12p';
-  }
-  const label = hour > 12 ? hour - 12 : hour;
-  const suffix = hour < 12 ? 'a' : 'p';
-  return `${label}${suffix}`;
-}
+// Hour ticks rendered below the grid — every 3 hours, 24h clock.
+const HOUR_TICKS = [0, 3, 6, 9, 12, 15, 18, 21] as const;
 
 function intensityFor(value: number, max: number): 0 | 1 | 2 | 3 | 4 {
   if (max <= 0 || value <= 0) {
@@ -200,8 +191,8 @@ function DowHourHeatmap({
               }}
             />
           ))}
-          {/* Hour ticks below the grid at 0 / 6 / 12 / 18. */}
-          {[0, 6, 12, 18].map(hour => (
+          {/* Hour ticks below the grid — 24h clock, every 3 hours. */}
+          {HOUR_TICKS.map(hour => (
             <View
               key={`tick-${hour}`}
               pointerEvents="none"
@@ -212,9 +203,7 @@ function DowHourHeatmap({
                 width: 24,
                 alignItems: 'center',
               }}>
-              <Text style={[styles.textMicroSupporting]}>
-                {formatHourTick(hour)}
-              </Text>
+              <Text style={[styles.textMicroSupporting]}>{hour}</Text>
             </View>
           ))}
           {!hasData && emptyLabel ? (
