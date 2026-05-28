@@ -80,7 +80,7 @@ function getNicknameKeys(displayName: string): string[] {
   );
   const unique = Array.from(new Set(keys)).slice(
     0,
-    CONST.NICKNAME_INDEX.MAX_TOKENS,
+    CONST.SEARCH.NICKNAME_MAX_TOKENS,
   );
   return unique.length > 0 ? unique : ['_'];
 }

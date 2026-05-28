@@ -1,18 +1,18 @@
 import type {Database} from 'firebase/database';
 import {
+  endAt,
   get,
+  limitToFirst,
+  orderByKey,
   query,
   ref,
-  orderByKey,
   startAt,
-  endAt,
-  limitToFirst,
 } from 'firebase/database';
 import type {
   UserIDToNicknameMapping,
   UserSearchResults,
 } from '@src/types/various/Search';
-import type {NicknameToId} from '@src/types/onyx';
+import type {NicknameToId, NicknameToIdList} from '@src/types/onyx';
 import CONST from '@src/CONST';
 import DBPATHS from '@src/DBPATHS';
 import {isEmptyArray} from '@src/types/utils/EmptyObject';
@@ -23,14 +23,14 @@ import {
 
 // Unicode high code point used as the inclusive upper bound of a key prefix
 // range query, so `startAt(prefix)`/`endAt(prefix + SUFFIX)` matches every key
-// that begins with `prefix`.
+// that begins with `prefix` ( sorts after any realistic key suffix).
 const PREFIX_RANGE_SUFFIX = '';
 
 /**
- * Fetch every user stored under a token key that begins with the given prefix.
- * The `nickname_to_id` index is keyed by name word-tokens, each mapping to a
- * `{userID: displayName}` object, so the matched buckets are flattened into a
- * single mapping.
+ * Fetch every user stored under a name word-token key that begins with the
+ * given prefix (e.g. "doe" matches "doe", "doering", ...). The `nickname_to_id`
+ * index is keyed by name word-tokens, each mapping to a `{userID: displayName}`
+ * object, so the matched buckets are flattened into a single mapping.
  *
  * @param db Firebase Database object.
  * @param prefix The cleaned token prefix to search for.
@@ -45,13 +45,13 @@ async function searchDbByPrefix(
     orderByKey(),
     startAt(prefix),
     endAt(`${prefix}${PREFIX_RANGE_SUFFIX}`),
-    limitToFirst(CONST.NICKNAME_INDEX.MAX_RESULTS),
+    limitToFirst(CONST.SEARCH.NICKNAME_MAX_RESULTS),
   );
   const snapshot = await get(indexRef);
   if (!snapshot.exists()) {
     return {};
   }
-  const buckets = snapshot.val() as Record<string, NicknameToId>;
+  const buckets = snapshot.val() as NicknameToIdList;
   const merged: NicknameToId = {};
   Object.values(buckets).forEach(bucket => {
     Object.assign(merged, bucket);
@@ -79,7 +79,7 @@ async function searchDatabaseForUsers(
     return [];
   }
   const wordTokens = getNicknameWordKeys(searchText).filter(
-    token => token.length >= CONST.NICKNAME_INDEX.MIN_SEARCH_TOKEN_LENGTH,
+    token => token.length >= CONST.SEARCH.MIN_NICKNAME_PREFIX_LENGTH,
   );
   if (isEmptyArray(wordTokens)) {
     return [];

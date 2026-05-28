@@ -356,6 +356,13 @@ const CONST = {
 
   SEARCH: {
     RESULTS_PAGE_SIZE: 50,
+    // Minimum normalized-prefix length for a `nickname_to_id` range query.
+    // Shorter prefixes are rejected to avoid scanning most of the index.
+    MIN_NICKNAME_PREFIX_LENGTH: 2,
+    // Upper bound on token buckets pulled for a single prefix range query.
+    NICKNAME_MAX_RESULTS: 50,
+    // Upper bound on token entries written per user, to cap index fan-out.
+    NICKNAME_MAX_TOKENS: 8,
     DATA_TYPES: {
       SESSION: 'session',
     },
@@ -415,14 +422,6 @@ const CONST = {
   ICON_TYPE_ICON: 'icon',
   ICON_TYPE_AVATAR: 'avatar',
   INVALID_CHARS: ['.', '#', '$', '[', ']'],
-  NICKNAME_INDEX: {
-    // Minimum length of a query word before it triggers a prefix search.
-    MIN_SEARCH_TOKEN_LENGTH: 2,
-    // Upper bound on token buckets pulled for a single prefix range query.
-    MAX_RESULTS: 50,
-    // Upper bound on token entries written per user, to cap index fan-out.
-    MAX_TOKENS: 8,
-  },
   JSON_CODE: {
     SUCCESS: 200,
     BAD_REQUEST: 400,
