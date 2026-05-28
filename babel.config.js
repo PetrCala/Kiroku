@@ -3,14 +3,8 @@ const path = require('path');
 
 const IS_E2E_TESTING = process.env.E2E_TESTING === 'true';
 
-const ReactCompilerConfig = {
-  target: '19',
-  environment: {
-    enableTreatRefLikeIdentifiersAsRefs: true,
-  },
-  sources: filename =>
-    !filename.includes('tests/') && !filename.includes('node_modules/'),
-};
+// Single source of truth shared with scripts/react-compiler-compliance-check.ts
+const ReactCompilerConfig = require('./config/babel/reactCompilerConfig');
 
 // ─── Shared alias list ────────────────────────────────────────────────────────
 // Single source of truth so metro and test configs don't drift.

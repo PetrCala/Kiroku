@@ -511,6 +511,19 @@ export default defineConfig([
     },
   },
 
+  // Build/CLI tooling under `scripts/` legitimately writes reports and prompts
+  // to stdout/stderr, so the app-wide `no-console` allow-list (debug/error only)
+  // doesn't apply. Several files here (e.g. the CLI arg parser, Git helpers) are
+  // vendored from Expensify and kept byte-faithful for easy re-syncs, so we also
+  // relax `no-unnecessary-type-assertion` rather than diverging the source.
+  {
+    files: ['scripts/**/*.ts'],
+    rules: {
+      'no-console': 'off',
+      '@typescript-eslint/no-unnecessary-type-assertion': 'off',
+    },
+  },
+
   // `eslint-config-expensify` v3 sets
   // `linterOptions.reportUnusedDisableDirectives: 'error'`, which surfaces
   // hundreds of stale `// eslint-disable-next-line <rule>` comments that
