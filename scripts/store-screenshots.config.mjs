@@ -63,8 +63,8 @@ const shots = [
   {
     raw: '03-calendar.png',
     caption: {
-      'en-US': 'See your full history at a glance',
-      cs: 'Mějte celou historii na očích',
+      'en-US': 'See your drink breakdown',
+      cs: 'Rozklad podle typu nápoje',
     },
   },
   {
