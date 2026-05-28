@@ -58,7 +58,18 @@ final class ScreenshotTests: XCTestCase {
         let logInLink = app.buttons.matching(NSPredicate(format:
             "label IN { 'Log in', 'Přihlaste se zde' }"
         )).firstMatch
-        XCTAssertTrue(logInLink.waitForExistence(timeout: 30), "Log in link on Initial Screen never appeared")
+        if !logInLink.waitForExistence(timeout: 30) {
+            // DIAGNOSTIC: dump the full accessibility tree so we can see the
+            // real element identifiers / labels / types that the simulator
+            // exposes. XCUITest only writes the hierarchy into the .xcresult
+            // bundle (which CI doesn't upload), so print it into stdout where
+            // the snapshot log captures it. Remove once selectors are stable.
+            print("=== KIROKU A11Y TREE (Log in link not found) ===")
+            print(app.debugDescription)
+            print("=== END KIROKU A11Y TREE ===")
+            XCTFail("Log in link on Initial Screen never appeared")
+            return
+        }
         logInLink.tap()
 
         // AuthScreen's outer View also only has `testID` (no accessible=true),
