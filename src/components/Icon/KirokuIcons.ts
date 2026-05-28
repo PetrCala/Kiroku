@@ -11,6 +11,7 @@ import BackArrow from '@assets/images/back-left.svg';
 import Beer from '@assets/images/beer.svg';
 import Bell from '@assets/images/bell.svg';
 import Bug from '@assets/images/bug.svg';
+import Calculator from '@assets/images/calculator.svg';
 import Calendar from '@assets/images/calendar.svg';
 import Camera from '@assets/images/camera.svg';
 import Checkmark from '@assets/images/checkmark.svg';
@@ -76,6 +77,7 @@ export {
   Beer,
   Bell,
   Bug,
+  Calculator,
   Calendar,
   Camera,
   Checkmark as Check,

@@ -1125,13 +1125,22 @@ export default {
       disclaimer:
         'Toto je pouze hrubý odhad, nikoli lékařské nebo právní měření. Nikdy neřiď po požití alkoholu.',
       editDetails: 'Upravit mé údaje',
-      intro:
+      formIntro:
         'Pro odhad hladiny alkoholu v krvi potřebujeme tvou váhu a pohlaví.',
       male: 'Muž',
       female: 'Žena',
       other: 'Jiné',
       kg: 'kg',
       lb: 'lb',
+      displayBoth: 'Obojí',
+      intro: {
+        title: 'Odhad alkoholu v krvi',
+        body1:
+          'Tento nástroj poskytuje hrubý odhad hladiny alkoholu v krvi na základě zaznamenaných nápojů, tvé váhy a pohlaví.',
+        body2:
+          'Používá Widmarkův vzorec a předpokládá rovnoměrné odbourávání alkoholu. Každé tělo je jiné, ber proto číslo jen jako orientační, nikoli jako fakt.',
+        getStarted: 'Začít',
+      },
     },
   },
   dayOverviewScreen: {

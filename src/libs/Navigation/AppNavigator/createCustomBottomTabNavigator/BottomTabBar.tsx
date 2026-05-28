@@ -24,7 +24,7 @@ function BottomTabBar() {
         accessibilityLabel={translate('bottomTabBar.friends')}
       />
       <BottomTabBarIcon
-        src={KirokuIcons.AlcoholAssortment}
+        src={KirokuIcons.Calculator}
         label={translate('bottomTabBar.bac')}
         isSelected={selectedTab === SCREENS.ACHIEVEMENTS}
         onPress={() => Navigation.navigate(ROUTES.ACHIEVEMENTS)}
