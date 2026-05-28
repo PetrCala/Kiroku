@@ -18,6 +18,7 @@ import {
   restoreSupporterPurchases,
 } from '@libs/actions/Subscriptions';
 import Navigation from '@libs/Navigation/Navigation';
+import SupporterUtils from '@libs/SupporterUtils';
 import * as UserUtils from '@libs/UserUtils';
 import ONYXKEYS from '@src/ONYXKEYS';
 import ROUTES from '@src/ROUTES';
@@ -40,8 +41,19 @@ function SupportKirokuScreen() {
   const [isPurchasing, setIsPurchasing] = useState(false);
   const [isRestoring, setIsRestoring] = useState(false);
 
+  // Defense-in-depth: even though the Settings menu entry is removed in
+  // production builds (see `SupporterUtils.isSupporterTierVisible`), bounce
+  // back if the screen is reached via deep link, stale navigation state, or a
+  // future entry point that forgets the gate.
+  const isVisible = SupporterUtils.isSupporterTierVisible();
+  useEffect(() => {
+    if (!isVisible) {
+      Navigation.goBack(ROUTES.SETTINGS);
+    }
+  }, [isVisible]);
+
   // Already-supporter UIs don't load offerings — there's nothing to sell.
-  const shouldLoadOfferings = !supporter.is_supporter;
+  const shouldLoadOfferings = isVisible && !supporter.is_supporter;
 
   const loadOffering = useCallback(async () => {
     const offering = await fetchCurrentOffering();
@@ -264,6 +276,10 @@ function SupportKirokuScreen() {
       </Section>
     );
   };
+
+  if (!isVisible) {
+    return null;
+  }
 
   return (
     <ScreenWrapper testID={SupportKirokuScreen.displayName}>

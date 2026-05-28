@@ -1,6 +1,7 @@
 import React from 'react';
 import {useOnyx} from 'react-native-onyx';
 import useLocalize from '@hooks/useLocalize';
+import SupporterUtils from '@libs/SupporterUtils';
 import * as UserUtils from '@libs/UserUtils';
 import {useFirebase} from '@context/global/FirebaseContext';
 import variables from '@styles/variables';
@@ -29,9 +30,18 @@ type SupporterBadgeProps = {
  * Purely presentational badge that renders the 🍺 marker when the target user
  * is an active supporter. Renders `null` (not an empty wrapper) when not a
  * supporter so layout siblings collapse around it.
+ *
+ * Also renders `null` when the supporter tier is hidden for this build
+ * (production until v1.1 launch — see `SupporterUtils.isSupporterTierVisible`).
+ * Gating here protects every render site automatically, including any
+ * future ones.
  */
 function SupporterBadge({isSupporter, size = 'medium'}: SupporterBadgeProps) {
   const {translate} = useLocalize();
+
+  if (!SupporterUtils.isSupporterTierVisible()) {
+    return null;
+  }
 
   if (!isSupporter) {
     return null;
@@ -63,8 +73,23 @@ type SupporterBadgeForUserProps = {
  * Onyx-aware convenience wrapper that resolves `isSupporter` for any user ID
  * (current user or a friend) and renders the base badge. Keeps the base
  * component free of state coupling so it remains snapshot-friendly.
+ *
+ * Short-circuits to `null` when the supporter tier is hidden for this build,
+ * before touching Onyx — saves the listener subscription on production
+ * builds where the badge can never render.
  */
 function SupporterBadgeForUser({userID, size}: SupporterBadgeForUserProps) {
+  if (!SupporterUtils.isSupporterTierVisible()) {
+    return null;
+  }
+
+  return <SupporterBadgeForUserInner userID={userID} size={size} />;
+}
+
+function SupporterBadgeForUserInner({
+  userID,
+  size,
+}: SupporterBadgeForUserProps) {
   const {auth} = useFirebase();
   const currentUserID = auth?.currentUser?.uid;
   const [userDataList] = useOnyx(ONYXKEYS.USER_DATA_LIST);
