@@ -1,0 +1,87 @@
+name: Translation Review with Claude Code
+
+# ============================================================
+# Reviews non-English translation quality against each language's
+# glossary/style guide (src/languages/context/<locale>.md).
+#
+# COST NOTE: this runs an LLM (claude-sonnet-4-6, ~5x cheaper than the
+# opus model used by claude-review.yml). It is path-scoped to
+# `src/languages/**`, so it only fires on PRs that actually change
+# translations — which are infrequent. If you want it manual-only,
+# replace the `pull_request` trigger below with `workflow_dispatch`.
+# Requires ANTHROPIC_API_KEY in repo secrets.
+# ============================================================
+
+permissions:
+  contents: read
+  pull-requests: write
+
+on:
+  pull_request:
+    types: [opened, synchronize, ready_for_review]
+    branches-ignore: [staging, production]
+    paths:
+      - 'src/languages/**'
+
+concurrency:
+  group: ${{ github.ref }}-translation-review
+  cancel-in-progress: true
+
+jobs:
+  review:
+    name: Claude Code Translation Review
+    if: ${{ !github.event.pull_request.draft && !startsWith(github.event.pull_request.title, 'Revert ') && github.actor != 'KirokuAdmin' }}
+    runs-on: ubuntu-latest
+    env:
+      PR_NUMBER: ${{ github.event.pull_request.number }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Make scripts executable
+        run: chmod +x .claude/scripts/*.sh
+
+      - name: Add claude scripts to PATH
+        run: echo "$GITHUB_WORKSPACE/.claude/scripts" >> "$GITHUB_PATH"
+
+      - name: Stage allowed review category tags
+        run: cp .claude/skills/translate/review-categories.txt "$RUNNER_TEMP/allowed-rules.txt"
+
+      - name: Load translation review JSON schema
+        id: schema
+        run: echo "json=$(jq -c . .claude/schemas/translation-review-output.json)" >> "$GITHUB_OUTPUT"
+
+      - name: Run Claude Code translation review
+        id: translation-review
+        uses: anthropics/claude-code-action@ba026a3e56b9f646ae3b1be02dd9c0812aa2f8ae # v1.0.86
+        with:
+          display_report: 'true'
+          anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          prompt: '/review-translations REPO: ${{ github.repository }} PR_NUMBER: ${{ github.event.pull_request.number }}'
+          claude_args: |
+            --model claude-sonnet-4-6
+            --allowedTools "Task,Glob,Grep,Read,Bash(gh pr diff:*),Bash(gh pr view:*)" --json-schema '${{ steps.schema.outputs.json }}'
+
+      - name: Post translation review results
+        if: steps.translation-review.outcome == 'success'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          STRUCTURED_OUTPUT: ${{ steps.translation-review.outputs.structured_output }}
+          ALLOWED_RULES_FILE: ${{ runner.temp }}/allowed-rules.txt
+        run: |
+          if [ -z "$STRUCTURED_OUTPUT" ]; then
+            echo "::error::Claude Code returned empty structured output"
+            exit 1
+          fi
+          COUNT=$(echo "$STRUCTURED_OUTPUT" | jq '.violations | length')
+          if [ "$COUNT" -eq 0 ]; then
+            addPrReaction.sh "$PR_NUMBER"
+          else
+            echo "$STRUCTURED_OUTPUT" | jq -c '.violations[]' | while IFS= read -r v; do
+              PATH_ARG=$(echo "$v" | jq -r '.path')
+              BODY_ARG=$(echo "$v" | jq -r '.body')
+              LINE_ARG=$(echo "$v" | jq -r '.line')
+              createInlineComment.sh "$PATH_ARG" "$BODY_ARG" "$LINE_ARG" || true
+            done
+          fi
