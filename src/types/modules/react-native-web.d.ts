@@ -1,4 +1,3 @@
-/* eslint-disable import/prefer-default-export */
 /* eslint-disable @typescript-eslint/consistent-type-definitions */
 declare module 'react-native-web' {
   class Clipboard {
@@ -7,5 +6,10 @@ declare module 'react-native-web' {
     static setString(text: string): boolean;
   }
 
+  interface Linking {
+    openURL(url: string, target?: string): Promise<void>;
+  }
+
+  export type {Linking};
   export {Clipboard};
 }

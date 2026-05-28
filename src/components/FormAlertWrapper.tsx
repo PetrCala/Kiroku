@@ -8,6 +8,7 @@ import useThemeStyles from '@hooks/useThemeStyles';
 import FormHelpMessage from './FormHelpMessage';
 import RenderHTML from './RenderHTML';
 import Text from './Text';
+import TextLink from './TextLink';
 
 type FormAlertWrapperProps = {
   /** Wrapped child components */
@@ -43,7 +44,7 @@ function FormAlertWrapper({
   isAlertVisible = false,
   isMessageHtml = false,
   message = '',
-  onFixTheErrorsLinkPressed = () => {}, // eslint-disable-line @typescript-eslint/no-unused-vars
+  onFixTheErrorsLinkPressed = () => {},
 }: FormAlertWrapperProps) {
   const styles = useThemeStyles();
   const {translate} = useLocalize();
@@ -54,9 +55,9 @@ function FormAlertWrapper({
     content = (
       <Text style={[styles.formError, styles.mb0]}>
         {`${translate('common.please')} `}
-        {translate('common.fixTheErrors')}
-        {/* <TextLink style={styles.label} onPress={onFixTheErrorsLinkPressed}>
-        </TextLink> TODO enable this */}
+        <TextLink style={styles.label} onPress={onFixTheErrorsLinkPressed}>
+          {translate('common.fixTheErrors')}
+        </TextLink>
         {` ${translate('common.inTheFormBeforeContinuing')}.`}
       </Text>
     );
