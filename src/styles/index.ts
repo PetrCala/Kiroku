@@ -738,6 +738,72 @@ const styles = (theme: ThemeColors) =>
       overflow: 'hidden',
     },
 
+    statsRangeNavigatorContainer: {
+      rowGap: 6,
+    },
+
+    statsRangeNavigatorRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+    },
+
+    // Fixed-width slots keep the round buttons pinned to the row edges,
+    // independent of the variable-width label between them.
+    statsRangeNavigatorButtonSlot: {
+      width: 40,
+      height: 40,
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+
+    statsRangeNavigatorButton: {
+      width: 40,
+      height: 40,
+      borderRadius: 20,
+      borderWidth: 1,
+      borderColor: theme.border,
+      backgroundColor: theme.appBG,
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+
+    statsRangeNavigatorLabelSlot: {
+      flex: 1,
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+
+    statsRangeNavigatorLabelPressable: {
+      paddingHorizontal: 8,
+      paddingVertical: 4,
+      alignItems: 'center',
+    },
+
+    statsRangeNavigatorLabelText: {
+      fontWeight: FontUtils.fontWeight.bold,
+    },
+
+    // Constant-height area so the layout never jumps when the
+    // "jump to latest" pill fades in/out.
+    statsRangeNavigatorPillArea: {
+      height: 32,
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+
+    statsRangeNavigatorPill: {
+      paddingHorizontal: 16,
+      paddingVertical: 6,
+      borderRadius: 16,
+      backgroundColor: theme.appColor,
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+
+    statsRangeNavigatorIconDisabled: {
+      opacity: 0.4,
+    },
+
     cardBG: {
       backgroundColor: theme.border,
     },
