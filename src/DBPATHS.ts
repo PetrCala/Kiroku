@@ -95,6 +95,11 @@ const DBPATHS = {
     getRoute: (user_id: UserID) =>
       `user_preferences/${user_id}/crash_reporting_enabled` as const,
   },
+  USER_SESSION_LOCATIONS: 'user_session_locations',
+  USER_SESSION_LOCATIONS_USER_ID: {
+    route: '/user_session_locations/:user_id',
+    getRoute: (user_id: UserID) => `user_session_locations/${user_id}` as const,
+  },
   USER_SESSION_PLACEHOLDER: 'user_session_placeholder',
   USER_SESSION_PLACEHOLDER_USER_ID: {
     route: '/user_session_placeholder/:user_id',
