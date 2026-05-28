@@ -6,6 +6,9 @@ import type {
   UntilTimeParams,
 } from './types';
 import type {
+  BacRangeParams,
+  BacSessionTotalParams,
+  BacSoberInParams,
   BreakdownCenterUnitsParams,
   BreakdownDrinkLabelParams,
   BreakdownPeriodParams,
@@ -1133,6 +1136,12 @@ export default {
       kg: 'kg',
       lb: 'lb',
       displayBoth: 'Obojí',
+      range: ({low, high}: BacRangeParams) => `Pravděpodobně ${low} – ${high}`,
+      soberIn: ({time}: BacSoberInParams) =>
+        `Vystřízlivění přibližně za ${time}`,
+      showDetails: 'Jak se to počítá?',
+      decayChartLabel: 'Odhadovaná hladina alkoholu klesající k nule v čase',
+      decayChartAxis: 'Hodiny od teď',
       intro: {
         title: 'Odhad alkoholu v krvi',
         body1:
@@ -1140,6 +1149,22 @@ export default {
         body2:
           'Používá Widmarkův vzorec a předpokládá rovnoměrné odbourávání alkoholu. Každé tělo je jiné, ber proto číslo jen jako orientační, nikoli jako fakt.',
         getStarted: 'Začít',
+      },
+      details: {
+        title: 'Jak se to počítá',
+        liveSession: 'Živá relace',
+        editSession: 'Upravená relace',
+        editNote:
+          'Nápoje v upravené relaci jsou zaznamenány k začátku relace, takže jejich přesné načasování není jisté.',
+        sessionTotal: ({grams, bac}: BacSessionTotalParams) =>
+          `Celkem: ${grams} g čistého alkoholu · přidává až ${bac}`,
+        bandNote:
+          'Protože některé nápoje pocházejí z upravených relací, zobrazujeme rozmezí: spodní hranice předpokládá, že byly vypity co nejdříve, horní co nejpozději.',
+        howTitle: 'Výpočet',
+        formula:
+          'Gramy alkoholu = objem (ml) × obsah alkoholu × 0,789. Hladina = gramy ÷ (váha × r × 10), kde r je 0,68 (muž), 0,55 (žena) nebo 0,615 (jiné).',
+        elimination:
+          'Tělo odbourává alkohol rovnoměrně přibližně 0,015 % za hodinu, takže odhad postupně klesá až k nule.',
       },
     },
   },

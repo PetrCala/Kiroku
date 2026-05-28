@@ -1,4 +1,4 @@
-import React, {useState} from 'react';
+import React, {useMemo, useState} from 'react';
 import {View} from 'react-native';
 import {useOnyx} from 'react-native-onyx';
 import Button from '@components/Button';
@@ -19,7 +19,8 @@ import * as Preferences from '@userActions/Preferences';
 import * as UserData from '@userActions/UserData';
 import CONST from '@src/CONST';
 import ONYXKEYS from '@src/ONYXKEYS';
-import type {BacDisplayUnit} from '@src/types/onyx';
+import type {BacDisplayUnit, DrinkingSession} from '@src/types/onyx';
+import BACDetailsModal from './components/BACDetailsModal';
 import BACIntroModal from './components/BACIntroModal';
 import BACQuestionnaire from './components/BACQuestionnaire';
 import BACResult from './components/BACResult';
@@ -30,15 +31,15 @@ function AchievementsScreen() {
   const theme = useTheme();
   const {auth, db} = useFirebase();
   const user = auth.currentUser;
-  const {preferences} = useDatabaseData();
+  const {preferences, drinkingSessionData} = useDatabaseData();
   const [privateData] = useOnyx(ONYXKEYS.USER_PRIVATE_DATA);
   const [ongoingSession] = useOnyx(ONYXKEYS.ONGOING_SESSION_DATA);
   const [isEditing, setIsEditing] = useState(false);
   const [manualIntro, setManualIntro] = useState(false);
   const [autoDismissed, setAutoDismissed] = useState(false);
+  const [showDetails, setShowDetails] = useState(false);
 
   const hasDetails = !!privateData?.weight && !!privateData?.gender;
-  const isOngoing = ongoingSession?.ongoing === true;
   const showQuestionnaire = !hasDetails || isEditing;
 
   const introSeen = preferences?.bac_intro_seen;
@@ -47,6 +48,32 @@ function AchievementsScreen() {
 
   const displayUnit =
     preferences?.bac_display_unit ?? CONST.BAC.DISPLAY_UNIT.PER_MILLE;
+
+  // The ongoing session is held separately and may not yet be in the cached
+  // list; merge by id so an already-persisted live session isn't double-counted.
+  const sessions = useMemo<DrinkingSession[]>(() => {
+    const byId: Record<string, DrinkingSession> = {
+      ...(drinkingSessionData ?? {}),
+    };
+    if (ongoingSession?.ongoing) {
+      byId[ongoingSession.id ?? 'ongoing'] = ongoingSession;
+    }
+    return Object.values(byId);
+  }, [drinkingSessionData, ongoingSession]);
+
+  const estimate = useMemo(
+    () =>
+      BACUtils.estimateBac(sessions, privateData?.weight, privateData?.gender),
+    [sessions, privateData?.weight, privateData?.gender],
+  );
+
+  const decayData = useMemo(
+    () => BACUtils.buildBacDecaySeries(estimate.point),
+    [estimate.point],
+  );
+
+  const hoursToSober = BACUtils.getTimeToSoberHours(estimate.point);
+  const hasRecentSessions = estimate.contributions.length > 0;
 
   const dismissIntro = () => {
     if (!introSeen && user) {
@@ -98,15 +125,14 @@ function AchievementsScreen() {
       ) : (
         <>
           <View style={styles.flex1}>
-            {isOngoing ? (
+            {hasRecentSessions ? (
               <BACResult
-                bacPercent={BACUtils.estimateBacPercent(
-                  ongoingSession,
-                  privateData?.weight,
-                  privateData?.gender,
-                )}
+                estimate={estimate}
+                decayData={decayData}
+                hoursToSober={hoursToSober}
                 displayUnit={displayUnit}
                 onChangeDisplayUnit={onChangeDisplayUnit}
+                onShowDetails={() => setShowDetails(true)}
               />
             ) : (
               <View
@@ -130,6 +156,13 @@ function AchievementsScreen() {
           </View>
         </>
       )}
+
+      <BACDetailsModal
+        isVisible={showDetails}
+        estimate={estimate}
+        displayUnit={displayUnit}
+        onClose={() => setShowDetails(false)}
+      />
 
       <BACIntroModal
         isVisible={showIntro}
