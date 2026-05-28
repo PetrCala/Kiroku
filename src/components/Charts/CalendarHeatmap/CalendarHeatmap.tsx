@@ -1,7 +1,6 @@
 import {useMemo, useState} from 'react';
 import {View} from 'react-native';
 import {Canvas, RoundedRect} from '@shopify/react-native-skia';
-import {useChartTheme} from '@components/Charts/BaseChart';
 import {ChartSkeleton} from '@components/Charts/ChartSkeleton';
 import PressableWithoutFeedback from '@components/Pressable/PressableWithoutFeedback';
 import type {HeatmapCell} from '@libs/Statistics';
@@ -18,11 +17,12 @@ type CalendarHeatmapProps = {
 };
 
 /**
- * Monthly heatmap drawn directly with Skia. One rounded cell per day,
- * color intensity from the theme's intensityRamp (yellow → orange,
- * never red — design doc §3). Visually invisible per-day View overlays
- * carry accessibilityLabels for screen readers since Skia draws to
- * canvas with no native a11y handles.
+ * Monthly calendar drawn directly with Skia. One rounded cell per day,
+ * filled with each day's absolute severity color (the user's session palette,
+ * green→red, or black for blackout) supplied on the cell — the same encoding
+ * as the home calendar, so a given day reads identically in both. Visually
+ * invisible per-day View overlays carry accessibilityLabels for screen
+ * readers since Skia draws to canvas with no native a11y handles.
  */
 function CalendarHeatmap({
   cells,
@@ -32,7 +32,6 @@ function CalendarHeatmap({
   isLoading,
 }: CalendarHeatmapProps) {
   const [width, setWidth] = useState(0);
-  const theme = useChartTheme();
 
   const layout = useMemo(() => {
     if (cells.length === 0) {
@@ -82,7 +81,7 @@ function CalendarHeatmap({
                   width={innerSize}
                   height={innerSize}
                   r={3}
-                  color={theme.intensityRamp[cell.intensity]}
+                  color={cell.color}
                 />
               );
             })}
@@ -93,7 +92,7 @@ function CalendarHeatmap({
             const row = Math.floor(idx / 7);
             const a11yLabel = cell.isFuture
               ? `${cell.dateKey}, upcoming`
-              : `${cell.dateKey}, ${cell.totalSdu} units`;
+              : `${cell.dateKey}, ${cell.totalUnits} units`;
             // Future cells stay as static a11y nodes; only past/present days
             // are tappable so drill-down can't land on an empty future bucket.
             if (cell.isFuture || !onDayPress) {

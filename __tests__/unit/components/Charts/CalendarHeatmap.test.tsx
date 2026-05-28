@@ -33,10 +33,10 @@ jest.mock('@components/Charts/BaseChart', () => ({
 
 function cell(
   dateKey: string,
-  totalSdu: number,
-  intensity: 0 | 1 | 2 | 3 | 4 = 0,
+  totalUnits: number,
+  color = '#abc',
 ): HeatmapCell {
-  return {dateKey, totalSdu, intensity};
+  return {dateKey, totalUnits, color};
 }
 
 describe('CalendarHeatmap', () => {
@@ -49,9 +49,9 @@ describe('CalendarHeatmap', () => {
 
   it('renders accessibility labels for each day cell', () => {
     const cells = [
-      cell('2024-01-01', 0, 0),
-      cell('2024-01-02', 2, 2),
-      cell('2024-01-03', 5, 3),
+      cell('2024-01-01', 0),
+      cell('2024-01-02', 2),
+      cell('2024-01-03', 5),
     ];
     const tree = render(
       <CalendarHeatmap cells={cells} accessibilityLabel="This month" />,
@@ -66,8 +66,8 @@ describe('CalendarHeatmap', () => {
 
   it('marks future cells as "upcoming" in the a11y label', () => {
     const cells: HeatmapCell[] = [
-      cell('2026-05-01', 0, 0),
-      {dateKey: '2026-05-31', totalSdu: 0, intensity: 0, isFuture: true},
+      cell('2026-05-01', 0),
+      {dateKey: '2026-05-31', totalUnits: 0, color: '#abc', isFuture: true},
     ];
     const tree = render(
       <CalendarHeatmap cells={cells} accessibilityLabel="This month" />,
