@@ -50,7 +50,12 @@ function Container({
 
   return (
     <View
-      style={style}
+      // `flex1` fills the RN Modal's content area so each modal type's own
+      // `justifyContent`/`alignItems` (from `style`) can position the sheet —
+      // e.g. BOTTOM_DOCKED's `flex-end` docks it to the bottom. react-native-modal
+      // provided this implicit fill before the migration. `style` is spread after
+      // so a type that sets its own size still wins.
+      style={[styles.flex1, style]}
       // eslint-disable-next-line react/jsx-props-no-spreading
       {...props}>
       <GestureHandler
