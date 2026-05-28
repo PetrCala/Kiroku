@@ -8,8 +8,13 @@ import intlPolyfill from '@libs/IntlPolyfill';
 import StartupMetrics from '@libs/StartupMetrics';
 import initializeLastVisitedPath from './initializeLastVisitedPath';
 import platformSetup from './platformSetup';
+import suppressSkiaPathDeprecationWarnings from './suppressSkiaPathDeprecationWarnings';
 
 export default function () {
+  // Temporary: mute upstream victory-native Skia path deprecation warnings in
+  // dev. Remove once victory-native adopts Skia.PathBuilder.
+  suppressSkiaPathDeprecationWarnings();
+
   /*
    * Initialize the Onyx store when the app loads for the first time.
    *
