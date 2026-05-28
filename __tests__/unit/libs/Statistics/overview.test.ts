@@ -1,9 +1,10 @@
 import {
   buildPeriodSummary,
   buildSubPeriodSeries,
+  dayKeysInRange,
+  monthKeysInRange,
   pickGranularity,
 } from '@libs/Statistics/overview';
-import {dayKeysInRange, monthKeysInRange} from '@libs/Statistics/overview';
 import type {Range} from '@components/StatsContextProvider/types';
 import type {RangePreset} from '@src/types/onyx/StatisticsFilters';
 import type {DrinkEvent} from '@libs/Statistics/types';
