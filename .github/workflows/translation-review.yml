@@ -63,7 +63,7 @@ jobs:
           prompt: '/review-translations REPO: ${{ github.repository }} PR_NUMBER: ${{ github.event.inputs.pr_number }}'
           claude_args: |
             --model claude-sonnet-4-6
-            --allowedTools "Task,Glob,Grep,Read,Bash(gh pr diff:*),Bash(gh pr view:*)" --json-schema '${{ steps.schema.outputs.json }}'
+            --allowedTools "Glob,Grep,Read,Bash(gh pr diff:*),Bash(gh pr view:*)" --json-schema '${{ steps.schema.outputs.json }}'
 
       - name: Post translation review results
         if: steps.translation-review.outcome == 'success'
