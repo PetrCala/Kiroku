@@ -170,6 +170,7 @@ async function deleteUserData(
   const userRef = DBPATHS.USERS_USER_ID;
   const drinkingSessionsRef = DBPATHS.USER_DRINKING_SESSIONS_USER_ID;
   const unconfirmedDaysRef = DBPATHS.USER_UNCONFIRMED_DAYS_USER_ID;
+  const dataVisibilityRef = DBPATHS.USER_DATA_VISIBILITY_USER_ID;
   const friendsRef = DBPATHS.USERS_USER_ID_FRIENDS_FRIEND_ID;
   const friendRequestsRef = DBPATHS.USERS_USER_ID_FRIEND_REQUESTS_REQUEST_ID;
   const reasonForLeavingRef = DBPATHS.REASONS_FOR_LEAVING_REASON_ID;
@@ -183,6 +184,7 @@ async function deleteUserData(
   updates[userRef.getRoute(userID)] = null;
   updates[drinkingSessionsRef.getRoute(userID)] = null;
   updates[unconfirmedDaysRef.getRoute(userID)] = null;
+  updates[dataVisibilityRef.getRoute(userID)] = null;
 
   if (reasonForLeaving) {
     const reasonID: ReasonForLeavingId = getReasonForLeavingID(userID);
