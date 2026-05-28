@@ -77,7 +77,7 @@ const CONST = {
   },
   KIROKU_URL,
   GITHUB_URL: 'https://github.com/PetrCala/Kiroku',
-  DISCORD_INVITE_URL: 'https://discord.gg/YYR5bQhS',
+  DISCORD_INVITE_URL: 'https://discord.gg/PjvUFkuwMv',
   TERMS_URL: `${KIROKU_URL}/terms`,
   PRIVACY_URL: `${KIROKU_URL}/privacy`,
   SUBSCRIPTION_TERMS_URL: `${KIROKU_URL}/subscription-terms`,
