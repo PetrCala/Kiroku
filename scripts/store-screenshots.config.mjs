@@ -28,8 +28,9 @@ const locales = ['en-US', 'cs'];
 // ─── Visual theme ───────────────────────────────────────────────────────────
 const theme = {
   // Background gradient stops (top → bottom). Use one entry for a solid color.
-  background: ['#6C4BF6', '#3D7BF0'],
-  captionColor: '#FFFFFF',
+  // Kiroku brand gold (`yellowStrong` #F5C400) → deeper amber.
+  background: ['#FFD23F', '#F5A623'],
+  captionColor: '#1A1A1A', // dark text reads cleanly on the gold background
   // Bold font already shipped in the app bundle (reused by generate-icons.mjs).
   captionFont: 'assets/fonts/native/ExpensifyNeue-Bold.otf',
   captionSizeRatio: 0.046, // caption font size as a fraction of canvas width
@@ -49,43 +50,43 @@ const shots = [
   {
     raw: '01-home.png',
     caption: {
-      'en-US': 'Track every drinking session',
-      cs: 'Sledujte každou relaci pití',
+      'en-US': 'See your drinking clearly',
+      cs: 'Mějte přehled o svém pití',
     },
   },
   {
     raw: '02-session.png',
     caption: {
-      'en-US': 'Log drinks and units in seconds',
-      cs: 'Zaznamenejte nápoje a jednotky během chvilky',
+      'en-US': 'Log a drink in seconds',
+      cs: 'Zaznamenejte nápoj během chvilky',
     },
   },
   {
     raw: '03-calendar.png',
     caption: {
-      'en-US': 'See your drink breakdown',
-      cs: 'Rozklad podle typu nápoje',
+      'en-US': 'Know exactly what you drink',
+      cs: 'Vězte přesně, co pijete',
     },
   },
   {
     raw: '04-stats.png',
     caption: {
-      'en-US': 'Understand your patterns over time',
-      cs: 'Pochopte své vzorce v čase',
+      'en-US': 'Track your progress every week',
+      cs: 'Sledujte svůj pokrok každý týden',
     },
   },
   {
     raw: '05-alcohol-free.png',
     caption: {
-      'en-US': 'Celebrate your alcohol-free days',
-      cs: 'Oslavte dny bez alkoholu',
+      'en-US': 'Watch your alcohol-free days add up',
+      cs: 'Sledujte, jak přibývají dny bez alkoholu',
     },
   },
   {
     raw: '06-profile.png',
     caption: {
-      'en-US': 'Share progress with friends',
-      cs: 'Sdílejte pokrok s přáteli',
+      'en-US': 'Stay on track with friends',
+      cs: 'Zůstaňte na správné cestě s přáteli',
     },
   },
 ];
