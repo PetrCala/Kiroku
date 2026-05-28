@@ -71,6 +71,10 @@ function Container({
   return (
     <Animated.View
       style={[
+        // Fill the modal area so each type's own justifyContent/alignItems
+        // (from `style`) can position the sheet, matching the implicit flex
+        // react-native-modal applied before the migration.
+        styles.flex1,
         style,
         type !== CONST.MODAL.MODAL_TYPE.RIGHT_DOCKED &&
           type !== CONST.MODAL.MODAL_TYPE.POPOVER &&
