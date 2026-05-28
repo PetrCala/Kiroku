@@ -12,6 +12,7 @@ import type {
 } from '@src/types/onyx';
 import type {FetchDataKeys} from '@hooks/useFetchData/types';
 import useListenToData from '@hooks/useListenToData';
+import setCrashReportingCollectionEnabled from '@libs/setCrashReportingCollectionEnabled';
 import ONYXKEYS from '@src/ONYXKEYS';
 import CONST from '@src/CONST';
 import {useFirebase} from './FirebaseContext';
@@ -85,6 +86,13 @@ function DatabaseDataProvider({children}: DatabaseDataProviderProps) {
     const theme = data.preferences?.theme ?? CONST.THEME.DEFAULT;
     // eslint-disable-next-line rulesdir/prefer-actions-set-data
     Onyx.set(ONYXKEYS.PREFERRED_THEME, theme);
+    // Apply the crash-reporting opt-out from Firebase (source of truth, so it
+    // survives reinstall) to the native collectors. Absent ⇒ enabled (the
+    // legitimate-interest opt-out default); gating against the build flag and
+    // the web no-op live in the util. Crashlytics persists this across restarts.
+    setCrashReportingCollectionEnabled(
+      data.preferences?.crash_reporting_enabled !== false,
+    );
   }, [data.preferences]);
 
   // Monitor local data for changes - TODO rewrite this later
