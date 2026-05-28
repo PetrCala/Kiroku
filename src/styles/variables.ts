@@ -23,6 +23,7 @@ export default {
   componentSizeSmall: getValueUsingPixelRatio(28, 32),
   componentSizeNormalSmall: 36,
   sessionsCalendarDaySize: 44,
+  sessionsCalendarTileRadius: 3,
   componentSizeNormal: 40,
   componentSizeMedium: 48,
   inputComponentSizeNormal: 40,
