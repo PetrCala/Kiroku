@@ -115,14 +115,8 @@ function AppShareScreen({route}: AppShareScreenProps) {
         isVisible={isQrModalVisible}
         onClose={onClose}
         type={CONST.MODAL.MODAL_TYPE.BOTTOM_DOCKED}>
-        <View
-          style={[
-            styles.alignItemsCenter,
-            styles.justifyContentCenter,
-            styles.m5,
-            styles.mnh60,
-          ]}>
-          <View style={[styles.flexGrow1, styles.justifyContentCenter]}>
+        <View style={[styles.alignItemsCenter, styles.m5]}>
+          <View style={styles.justifyContentCenter}>
             <Image
               source={KirokuIcons.KirokuQrCode}
               style={[
