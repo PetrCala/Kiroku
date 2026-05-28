@@ -41,6 +41,7 @@ function SessionsCalendar({
   drinkingSessionData,
   preferences,
   isFetchingOlderMonths,
+  onForeignDayPress,
   mode = 'compact',
   initialMonthYear,
   initialFirstWeekY,
@@ -150,14 +151,14 @@ function SessionsCalendar({
   const onDayPress = useCallback(
     (dateData: DateData) => {
       if (userID !== user?.uid) {
+        onForeignDayPress?.(dateData.dateString as DateString);
         return;
       }
       Navigation.navigate(
         ROUTES.DAY_OVERVIEW.getRoute(dateData.dateString as DateString),
       );
-      // TODO display other user's sessions too in a clever manner
     },
-    [userID, user?.uid],
+    [userID, user?.uid, onForeignDayPress],
   );
 
   if (isLoading) {
