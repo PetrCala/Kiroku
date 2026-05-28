@@ -1,4 +1,4 @@
-import {View} from 'react-native';
+import type {ListRenderItemInfo} from 'react-native';
 import React, {useCallback, useMemo, useState} from 'react';
 import type {
   FriendRequestList,
@@ -23,7 +23,7 @@ import HeaderWithBackButton from '@components/HeaderWithBackButton';
 import useLocalize from '@hooks/useLocalize';
 import FlexibleLoadingIndicator from '@components/FlexibleLoadingIndicator';
 import useThemeStyles from '@hooks/useThemeStyles';
-import ScrollView from '@components/ScrollView';
+import FlatList from '@components/FlatList';
 import ERRORS from '@src/ERRORS';
 
 function FriendSearchScreen() {
@@ -126,6 +126,21 @@ function FriendSearchScreen() {
     // eslint-disable-next-line react-compiler/react-compiler, react-hooks/exhaustive-deps
   }, [friendRequests]); // When updated in the database, not locally
 
+  const renderItem = useCallback(
+    ({item: userID}: ListRenderItemInfo<string>) => (
+      <SearchResult
+        userID={userID}
+        userDisplayData={displayData[userID]}
+        db={db}
+        storage={storage}
+        userFrom={user?.uid ?? ''}
+        requestStatus={requestStatuses[userID]}
+        alreadyAFriend={friends ? friends[userID] : false}
+      />
+    ),
+    [displayData, db, storage, user?.uid, requestStatuses, friends],
+  );
+
   if (!user) {
     return;
   }
@@ -143,32 +158,25 @@ function FriendSearchScreen() {
         onResetSearch={resetSearch}
         searchOnTextChange
       />
-      <ScrollView style={[styles.w100, styles.flex1]}>
-        {searching ? (
-          <FlexibleLoadingIndicator style={styles.pt4} />
-        ) : (
-          <View>
-            {noUsersFound ? (
+      {searching ? (
+        <FlexibleLoadingIndicator style={styles.pt4} />
+      ) : (
+        <FlatList
+          style={[styles.w100, styles.flex1]}
+          contentContainerStyle={[styles.pt1]}
+          keyboardShouldPersistTaps="always"
+          data={searchResultData}
+          renderItem={renderItem}
+          keyExtractor={userID => `${userID}-container`}
+          ListEmptyComponent={
+            noUsersFound ? (
               <Text style={styles.noResultsText}>
                 {translate('friendSearchScreen.noUsersFound')}
               </Text>
-            ) : (
-              searchResultData.map(userID => (
-                <SearchResult
-                  key={`${userID}-container`}
-                  userID={userID}
-                  userDisplayData={displayData[userID]}
-                  db={db}
-                  storage={storage}
-                  userFrom={user.uid}
-                  requestStatus={requestStatuses[userID]}
-                  alreadyAFriend={friends ? friends[userID] : false}
-                />
-              ))
-            )}
-          </View>
-        )}
-      </ScrollView>
+            ) : undefined
+          }
+        />
+      )}
     </ScreenWrapper>
   );
 }
