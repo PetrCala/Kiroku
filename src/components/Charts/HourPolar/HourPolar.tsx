@@ -12,7 +12,7 @@ type HourPolarProps = {
   /** Bucket value (units) keyed by `localHour` 0..23. Missing hours = 0. */
   buckets: ReadonlyMap<number, number>;
   accessibilityLabel: string;
-  /** Optional label for hour 12 / 0 / 6 / 18; defaults to '12 AM' etc. */
+  /** Optional 24h label for a given hour; defaults to '0:00', '15:00' etc. Used for screen-reader spoke labels. */
   labelForHour?: (hour: number) => string;
   /** Optional spoke tap. v1 wires the prop; no-op until v2-K drill-down lands. */
   onSpokePress?: (hour: number) => void;
@@ -49,17 +49,11 @@ function intensityFor(value: number, max: number): 0 | 1 | 2 | 3 | 4 {
   return 4;
 }
 
+// Cardinal hour ticks rendered around the dial — every 3 hours, 24h clock.
+const HOUR_TICKS = [0, 3, 6, 9, 12, 15, 18, 21] as const;
+
 function defaultLabelForHour(hour: number): string {
-  if (hour === 0) {
-    return '12 AM';
-  }
-  if (hour === 12) {
-    return '12 PM';
-  }
-  if (hour < 12) {
-    return `${hour} AM`;
-  }
-  return `${hour - 12} PM`;
+  return `${hour}:00`;
 }
 
 /**
@@ -182,8 +176,8 @@ function HourPolar({
               <Path key={w.hour} path={w.path} color={w.color} />
             ))}
           </Canvas>
-          {/* Cardinal hour labels — 12 AM at top, 6 AM right, 12 PM bottom, 6 PM left. */}
-          {[0, 6, 12, 18].map(hour => {
+          {/* Cardinal hour labels — 24h clock, every 3 hours, 0 at top. */}
+          {HOUR_TICKS.map(hour => {
             const angle = -Math.PI / 2 + hour * WEDGE_RAD;
             const labelR = radius + 4;
             const lx = cx + labelR * Math.cos(angle);
@@ -199,9 +193,7 @@ function HourPolar({
                   width: 48,
                   alignItems: 'center',
                 }}>
-                <Text style={[styles.textMicroSupporting]}>
-                  {labelForHour(hour)}
-                </Text>
+                <Text style={[styles.textMicroSupporting]}>{hour}</Text>
               </View>
             );
           })}
