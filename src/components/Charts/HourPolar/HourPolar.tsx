@@ -193,7 +193,7 @@ function HourPolar({
                   width: 48,
                   alignItems: 'center',
                 }}>
-                <Text style={[styles.textMicroSupporting]}>{hour}</Text>
+                <Text style={[styles.textLabelSupporting]}>{hour}</Text>
               </View>
             );
           })}
