@@ -142,6 +142,8 @@ jobs:
             ~/Library/Logs/scan/**
             ~/Library/Logs/snapshot/**
             fastlane/report.xml
+            fastlane/screenshots/ios/**/*.log
+            fastlane/screenshots/ios/**/system.log
           if-no-files-found: ignore
           retention-days: 7
 
