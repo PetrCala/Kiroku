@@ -188,7 +188,7 @@ function BACResult({
 
       <Button
         small
-        style={[styles.mt6]}
+        style={[styles.mt2]}
         text={translate('achievementsScreen.bac.showDetails')}
         onPress={onShowDetails}
       />
