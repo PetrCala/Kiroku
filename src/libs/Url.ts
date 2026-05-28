@@ -24,4 +24,15 @@ function getPathFromURL(url: string): string {
   }
 }
 
-export {addTrailingForwardSlash, getPathFromURL};
+/**
+ * Whether two URLs share the same origin (protocol + host + port)
+ */
+function hasSameOrigin(url1: string, url2: string): boolean {
+  try {
+    return new URL(url1).origin === new URL(url2).origin;
+  } catch {
+    return false;
+  }
+}
+
+export {addTrailingForwardSlash, getPathFromURL, hasSameOrigin};

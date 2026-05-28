@@ -5,7 +5,6 @@ import type {
   MouseEventHandler,
 } from 'react';
 import React, {forwardRef} from 'react';
-import {Linking} from 'react-native';
 import type {
   GestureResponderEvent,
   // eslint-disable-next-line no-restricted-imports
@@ -15,7 +14,7 @@ import type {
 } from 'react-native';
 import useEnvironment from '@hooks/useEnvironment';
 import useThemeStyles from '@hooks/useThemeStyles';
-// import * as Link from '@userActions/Link';
+import {openLink as openLinkUtil} from '@userActions/Link';
 import CONST from '@src/CONST';
 import type {TextProps} from './Text';
 import Text from './Text';
@@ -54,15 +53,14 @@ function TextLink(
   }: TextLinkProps,
   ref: ForwardedRef<RNText>,
 ) {
-  const {environmentURL} = useEnvironment(); // eslint-disable-line @typescript-eslint/no-unused-vars
+  const {environmentURL} = useEnvironment();
   const styles = useThemeStyles();
 
   const openLink = (event: GestureResponderEvent | KeyboardEvent) => {
     if (onPress) {
       onPress(event);
     } else {
-      Linking.openURL(href);
-      //   Link.openLink(href, environmentURL); // TODO enable this
+      openLinkUtil(href, environmentURL);
     }
   };
 
