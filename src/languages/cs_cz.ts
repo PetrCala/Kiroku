@@ -536,28 +536,23 @@ export default {
     title: 'Soukromí',
     diagnosticsSection: {
       title: 'Diagnostika',
-      description:
-        'Spravujte, zda Kiroku shromažďuje diagnostiku pádů a výkonu.',
     },
     crashReporting: {
       label: 'Odesílat hlášení o pádech',
       description:
-        'Když je zapnuto, Kiroku používá Firebase Crashlytics a Performance Monitoring k odesílání diagnostiky pádů a výkonu spojené s vaším účtem, což nám pomáhá rychleji opravovat chyby. Vypnutím se odhlásíte.',
+        'Odesílejte hlášení o pádech, abychom mohli rychleji opravovat chyby.',
     },
     locationSection: {
       title: 'Poloha',
-      description:
-        'Spravujte, jak Kiroku pracuje s polohou spojenou s vašimi živými sezeními.',
     },
     trackLocationDuringSessions: {
       label: 'Označovat drinky polohou',
-      description:
-        'Volitelné. Když máte otevřené živé sezení, ke každému zaznamenanému drinku se připojí vaše aktuální poloha. V režimu úprav se poloha nikdy nezaznamenává.',
+      description: 'Označte každý drink místem, kde jste ho zaznamenali.',
     },
     clearLocationHistory: {
       label: 'Vymazat historii polohy',
       description:
-        'Trvale smaže všechny polohy připojené k drinkům. Samotná sezení a drinky zůstanou zachovány.',
+        'Smažte všechny uložené polohy. Vaše sezení a drinky zůstanou.',
       button: 'Vymazat',
       confirmTitle: 'Vymazat historii polohy?',
       confirmPrompt:

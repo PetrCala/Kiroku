@@ -538,28 +538,21 @@ export default {
     title: 'Privacy',
     diagnosticsSection: {
       title: 'Diagnostics',
-      description:
-        'Control whether Kiroku collects crash and performance diagnostics.',
     },
     crashReporting: {
       label: 'Send crash reports',
-      description:
-        'When on, Kiroku uses Firebase Crashlytics and Performance Monitoring to send crash and performance diagnostics linked to your account, helping us fix issues faster. Turn off to opt out.',
+      description: 'Send crash reports so we can fix bugs faster.',
     },
     locationSection: {
       title: 'Location',
-      description:
-        'Control how Kiroku handles location data tied to your live sessions.',
     },
     trackLocationDuringSessions: {
       label: 'Tag drinks with location',
-      description:
-        'Optional. While a live session is open, each drink you log is tagged with your current location. Edit-session adds never capture location.',
+      description: 'Tag each drink with where you logged it.',
     },
     clearLocationHistory: {
       label: 'Clear location history',
-      description:
-        'Permanently delete every location attached to a drink. Sessions and drinks themselves are preserved.',
+      description: 'Delete all saved locations. Your sessions and drinks stay.',
       button: 'Clear',
       confirmTitle: 'Clear location history?',
       confirmPrompt:
