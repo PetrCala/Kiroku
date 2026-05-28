@@ -55,7 +55,7 @@ type SessionSummaryScreenProps = StackScreenProps<
   typeof SCREENS.DRINKING_SESSION.SUMMARY
 >;
 
-function SessionSummaryScreen({route}: SessionSummaryScreenProps) {
+function SessionSummaryScreen({route, navigation}: SessionSummaryScreenProps) {
   const {sessionId} = route.params;
   const {preferences, drinkingSessionData} = useDatabaseData();
   const {translate} = useLocalize();
@@ -91,6 +91,13 @@ function SessionSummaryScreen({route}: SessionSummaryScreenProps) {
     : 'Unknown';
 
   const onBackPress = () => {
+    // When the summary is stacked on top of another screen in this modal it was
+    // reached by saving a live session, whose data is now cleared — going back
+    // would land on a stale loading screen, so exit the whole flow to Home.
+    if (navigation.getState().index > 0) {
+      Navigation.dismissModal();
+      return;
+    }
     const lastScreenName = Navigation.getLastScreenName(true);
     if (lastScreenName === SCREENS.DAY_OVERVIEW.ROOT) {
       Navigation.goBack();
