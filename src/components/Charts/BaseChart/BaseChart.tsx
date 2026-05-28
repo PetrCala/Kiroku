@@ -24,6 +24,15 @@ const DEFAULT_Y_KEYS = ['y'] as const;
  * to a reassuring text state. Otherwise it renders the chart canvas wrapped
  * in an `A11yOverlay` so VoiceOver / TalkBack can announce it (Skia draws to
  * canvas with no native a11y nodes — the overlay is the only handhold).
+ *
+ * NOTE: `CartesianChart` and its primitives (Line/Bar/Frame, useLinePath,
+ * useBarPath, ...) build paths with the deprecated Skia APIs
+ * (`SkPath.addPath()/addRect()/addRRect()`), which log dev-only warnings.
+ * These come from inside `victory-native` — the latest release (41.21.0, as
+ * of 2026-05) still hasn't migrated to `Skia.PathBuilder`, so there's no
+ * upstream fix to pull in and nothing actionable here. Low priority: the
+ * warnings are dev-only and don't affect production. Revisit when
+ * victory-native adopts PathBuilder.
  */
 function BaseChart<TYKey extends string = 'y'>({
   data,
