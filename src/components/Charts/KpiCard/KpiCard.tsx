@@ -1,3 +1,4 @@
+import type {ReactNode} from 'react';
 import {View} from 'react-native';
 import Text from '@components/Text';
 import {PressableWithFeedback} from '@components/Pressable';
@@ -42,6 +43,10 @@ type KpiCardProps = {
   accessibilityLabel?: string;
   /** When true, shows a layout-faithful skeleton in place of the card. */
   isLoading?: boolean;
+  /** Optional accessory pinned to the card's top-right, level with the label. */
+  headerRight?: ReactNode;
+  /** Optional chart rendered below the value/delta (and any sparkline). */
+  chart?: ReactNode;
 };
 
 const ARROW: Record<KpiCardDelta['direction'], string> = {
@@ -70,6 +75,8 @@ function KpiCard({
   onPress,
   accessibilityLabel,
   isLoading,
+  headerRight,
+  chart,
 }: KpiCardProps) {
   const styles = useThemeStyles();
   const theme = useTheme();
@@ -117,9 +124,25 @@ function KpiCard({
           minHeight: 96,
         },
       ]}>
-      <Text style={[styles.textLabelSupporting]} numberOfLines={1}>
-        {label}
-      </Text>
+      {headerRight ? (
+        <View
+          style={[
+            styles.flexRow,
+            styles.justifyContentBetween,
+            styles.alignItemsCenter,
+          ]}>
+          <Text
+            style={[styles.textLabelSupporting, styles.flexShrink1]}
+            numberOfLines={1}>
+            {label}
+          </Text>
+          {headerRight}
+        </View>
+      ) : (
+        <Text style={[styles.textLabelSupporting]} numberOfLines={1}>
+          {label}
+        </Text>
+      )}
       <View style={[styles.flexRow, styles.alignItemsBaseline, styles.mt1]}>
         <Text
           style={[
@@ -153,6 +176,7 @@ function KpiCard({
           />
         </View>
       ) : null}
+      {chart ? <View style={styles.mt2}>{chart}</View> : null}
     </View>
   );
 

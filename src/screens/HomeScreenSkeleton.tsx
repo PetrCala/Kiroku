@@ -1,13 +1,13 @@
 import React from 'react';
-import type {StyleProp, ViewStyle} from 'react-native';
+import type {DimensionValue, StyleProp, ViewStyle} from 'react-native';
 import {View} from 'react-native';
 import useTheme from '@hooks/useTheme';
 import useThemeStyles from '@hooks/useThemeStyles';
 import variables from '@styles/variables';
 
 type BlockProps = {
-  width: number;
-  height: number;
+  width: DimensionValue;
+  height: DimensionValue;
   radius?: number;
   style?: StyleProp<ViewStyle>;
 };
@@ -48,25 +48,32 @@ function HomeHeaderSkeleton() {
   );
 }
 
-/** Placeholder for the two stat cards (sessions + units this month). */
+/**
+ * Placeholder for the home stats block: a "Units" hero card (label + value +
+ * delta + drink-type breakdown) over a pair of supporting cards. Heights
+ * mirror HomeStatsOverview so the swap-in doesn't jolt the layout.
+ */
 function StatOverviewSkeleton() {
   const styles = useThemeStyles();
   return (
-    <View style={styles.statOverviewContainer}>
-      {['sessions', 'units'].map(slot => (
-        <View
-          key={slot}
-          style={[
-            styles.flexColumn,
-            styles.alignItemsCenter,
-            styles.justifyContentCenter,
-          ]}>
-          {/* Matches fontSizeXXXXLarge (36px) bold value text */}
-          <Block width={72} height={44} style={styles.mb2} />
-          {/* Matches fontSizeNormal (15px) label, 2 lines, max-width 150 */}
-          <Block width={130} height={36} />
-        </View>
-      ))}
+    <View style={styles.mt2}>
+      {/* Hero card (KpiCard + DrinkBreakdown). */}
+      <Block width="100%" height={130} radius={12} style={styles.mb2} />
+      {/* Supporting pair (sessions + alcohol-free). */}
+      <View style={styles.flexRow}>
+        <Block
+          width="100%"
+          height={96}
+          radius={12}
+          style={[styles.flex1, styles.mr1]}
+        />
+        <Block
+          width="100%"
+          height={96}
+          radius={12}
+          style={[styles.flex1, styles.ml1]}
+        />
+      </View>
     </View>
   );
 }

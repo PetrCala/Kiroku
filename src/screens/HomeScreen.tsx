@@ -1,12 +1,8 @@
-import React, {useEffect, useMemo, useRef, useState} from 'react';
+import React, {useEffect, useRef, useState} from 'react';
 import {View} from 'react-native';
 import SessionsCalendar from '@components/SessionsCalendar';
 import type {DateData} from 'react-native-calendars';
-import {
-  calculateThisMonthUnits,
-  timestampToDate,
-  dateToDateData,
-} from '@libs/DataHandling';
+import {dateToDateData} from '@libs/DataHandling';
 import {useUserConnection} from '@context/global/UserConnectionContext';
 import UserOffline from '@components/UserOfflineModal';
 import {synchronizeUserStatus} from '@userActions/User';
@@ -14,7 +10,6 @@ import {useFirebase} from '@context/global/FirebaseContext';
 import ProfileImage from '@components/ProfileImage';
 import {SupporterBadgeForUser} from '@components/SupporterBadge';
 import CONST from '@src/CONST';
-import type {DrinkingSessionArray} from '@src/types/onyx';
 import ROUTES from '@src/ROUTES';
 import Navigation from '@navigation/Navigation';
 import type {StackScreenProps} from '@react-navigation/stack';
@@ -22,8 +17,7 @@ import {useFocusEffect} from '@react-navigation/native';
 import type {BottomTabNavigatorParamList} from '@libs/Navigation/types';
 import type SCREENS from '@src/SCREENS';
 import {useDatabaseData} from '@context/global/DatabaseDataContext';
-import type {StatData} from '@components/Items/StatOverview';
-import StatOverview from '@components/Items/StatOverview';
+import HomeStatsOverview from '@components/Items/HomeStatsOverview';
 import ScreenWrapper from '@components/ScreenWrapper';
 import MessageBanner from '@components/Info/MessageBanner';
 import useThemeStyles from '@hooks/useThemeStyles';
@@ -36,7 +30,6 @@ import * as Session from '@userActions/Session';
 import Timing from '@userActions/Timing';
 import ScrollView from '@components/ScrollView';
 import useLocalize from '@hooks/useLocalize';
-import {roundToTwoDecimalPlaces} from '@libs/NumberUtils';
 import Text from '@components/Text';
 import BottomTabBar from '@libs/Navigation/AppNavigator/createCustomBottomTabNavigator/BottomTabBar';
 import {useOnyx} from 'react-native-onyx';
@@ -69,47 +62,6 @@ function HomeScreen({route}: HomeScreenProps) {
     dateToDateData(new Date()),
   );
   const hasMarkedReadyRef = useRef(false);
-
-  // Derive stats synchronously from the visible month + drink unit mapping.
-  // Narrowed to `drinksToUnits` so unrelated preference updates (e.g. picking
-  // a color palette) don't recompute the stats.
-  const drinksToUnits = preferences?.drinks_to_units;
-  const {drinkingSessionsCount, unitsConsumed} = useMemo(() => {
-    if (!drinksToUnits || !drinkingSessionData) {
-      return {drinkingSessionsCount: 0, unitsConsumed: 0};
-    }
-    const drinkingSessionArray: DrinkingSessionArray =
-      Object.values(drinkingSessionData);
-    const monthUnits = calculateThisMonthUnits(
-      visibleDate,
-      drinkingSessionArray,
-      drinksToUnits,
-    );
-    const monthSessionCount = DSUtils.getSingleMonthDrinkingSessions(
-      timestampToDate(visibleDate.timestamp),
-      drinkingSessionArray,
-      false,
-    ).length;
-    return {
-      drinkingSessionsCount: monthSessionCount,
-      unitsConsumed: monthUnits,
-    };
-  }, [drinkingSessionData, visibleDate, drinksToUnits]);
-
-  const statsData: StatData = [
-    {
-      header: translate('profileScreen.drinkingSessions', {
-        sessionsCount: drinkingSessionsCount,
-      }),
-      content: String(drinkingSessionsCount),
-    },
-    {
-      header: translate('profileScreen.unitsConsumed', {
-        unitCount: roundToTwoDecimalPlaces(unitsConsumed),
-      }),
-      content: String(roundToTwoDecimalPlaces(unitsConsumed)),
-    },
-  ];
 
   useEffect(() => {
     // Update the ongoing session local data
@@ -184,7 +136,7 @@ function HomeScreen({route}: HomeScreenProps) {
     }
     return (
       <>
-        <StatOverview statsData={statsData} />
+        <HomeStatsOverview visibleDate={visibleDate} />
         <SessionsCalendar
           userID={user.uid}
           visibleDate={visibleDate}
