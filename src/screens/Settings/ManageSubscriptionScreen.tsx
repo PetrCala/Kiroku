@@ -63,11 +63,21 @@ function ManageSubscriptionScreen() {
       setRestoreMessage(null);
       const result = await restoreSupporterPurchases();
       setIsRestoring(false);
-      if (result.status === 'success' && !result.granted) {
+      if (result.status === 'error') {
         setRestoreMessage(
-          translate('supporter.manageSubscription.restoreEmpty'),
+          translate('supporter.manageSubscription.restoreError', {
+            message: result.message,
+          }),
         );
+        return;
       }
+      if (result.granted) {
+        setRestoreMessage(
+          translate('supporter.manageSubscription.restoreSuccess'),
+        );
+        return;
+      }
+      setRestoreMessage(translate('supporter.manageSubscription.restoreEmpty'));
     })();
   }, [translate]);
 
