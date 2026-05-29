@@ -14,7 +14,6 @@ import {
   selectHasEverLogged,
   selectIsSparse,
 } from '@libs/Statistics/overviewSelectors';
-import {shiftRange} from '@libs/Statistics/trends';
 import useDrinkEvents from './useDrinkEvents';
 
 /** Mirrors the seeded `units_to_colors` default (see User onboarding). */
@@ -48,7 +47,7 @@ type OverviewTabData = {
  */
 function useOverviewTabData(): OverviewTabData {
   const {events, isLoading} = useDrinkEvents();
-  const {range, comparison} = useStatsContext();
+  const {range, comparisonRange} = useStatsContext();
   const {preferences} = useDatabaseData();
   const thresholds = useMemo(
     () => preferences?.units_to_colors ?? DEFAULT_THRESHOLDS,
@@ -61,11 +60,6 @@ function useOverviewTabData(): OverviewTabData {
   const current = useMemo(
     () => buildPeriodSummary(events, range.start, range.end, now, thresholds),
     [events, range.start, range.end, now, thresholds],
-  );
-
-  const comparisonRange = useMemo(
-    () => shiftRange(range, comparison),
-    [range, comparison],
   );
 
   const previous = useMemo(

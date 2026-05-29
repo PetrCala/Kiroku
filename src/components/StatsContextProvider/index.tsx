@@ -38,6 +38,8 @@ const EMPTY_DRINK_FILTER: ReadonlySet<DrinkKey> = new Set();
 
 type StatsStateContextValue = {
   range: Range;
+  /** Calendar-aligned previous-period window, or null when comparison is off. */
+  comparisonRange: {start: Date; end: Date} | null;
   comparison: Comparison;
   drinkTypeFilter: ReadonlySet<DrinkKey>;
   userIds: readonly UserID[];
@@ -85,6 +87,53 @@ function canStepBack(params: {
  */
 function monthsBackFor(now: Date, start: Date): number {
   return Math.max(0, differenceInCalendarMonths(now, start));
+}
+
+/** How many preset-periods make up a year — used for `previous-year` shifts. */
+const PERIODS_PER_YEAR: Record<RangePreset, number> = {
+  W: 52,
+  M: 12,
+  // eslint-disable-next-line @typescript-eslint/naming-convention
+  '6M': 2,
+  Y: 1,
+  All: 1,
+  Custom: 1,
+};
+
+/**
+ * Comparison window for the active range. For calendar presets this is the
+ * *full previous calendar period* (e.g. "this year so far" → all of last year,
+ * "this month" → all of last month), so the comparison total matches what you
+ * see navigating to that period. `previous-year` steps back a whole year's
+ * worth of periods. Custom/All have no calendar-period notion, so they fall
+ * back to `shiftRange`'s same-length trailing window.
+ */
+function deriveComparisonRange(params: {
+  range: Range;
+  comparison: Comparison;
+  now: Date;
+  customStart?: Date;
+  customEnd?: Date;
+  earliestSessionAt?: Date;
+}): {start: Date; end: Date} | null {
+  const {range, comparison, now, customStart, customEnd, earliestSessionAt} =
+    params;
+  if (comparison === 'none') {
+    return null;
+  }
+  if (range.preset === 'Custom' || range.preset === 'All') {
+    return shiftRange(range, comparison);
+  }
+  const step =
+    comparison === 'previous-year' ? PERIODS_PER_YEAR[range.preset] : 1;
+  return derivePresetRange({
+    preset: range.preset,
+    now,
+    offset: range.offset - step,
+    customStart,
+    customEnd,
+    earliestSessionAt,
+  });
 }
 
 const StatsStateContext = createContext<StatsStateContextValue | null>(null);
@@ -205,16 +254,31 @@ function StatsContextProvider({children, now}: StatsContextProviderProps) {
     earliestSessionAt,
   ]);
 
+  const comparisonRange = useMemo(
+    () =>
+      deriveComparisonRange({
+        range,
+        comparison,
+        now: nowSnapshot,
+        customStart,
+        customEnd,
+        earliestSessionAt,
+      }),
+    [range, comparison, nowSnapshot, customStart, customEnd, earliestSessionAt],
+  );
+
   // Widen the session listener's fetch window so Statistics reflect the whole
   // selected range (and its comparison window), not just the months the
   // calendar happened to lazy-load. Reuses the calendar's months-back lever
   // (the global listener in DatabaseDataContext re-subscribes when it grows)
   // and only ever widens.
-  const loadStart = useMemo(() => {
-    const shifted =
-      comparison === 'none' ? null : shiftRange(range, comparison);
-    return shifted && shifted.start < range.start ? shifted.start : range.start;
-  }, [range, comparison]);
+  const loadStart = useMemo(
+    () =>
+      comparisonRange && comparisonRange.start < range.start
+        ? comparisonRange.start
+        : range.start,
+    [range.start, comparisonRange],
+  );
 
   useEffect(() => {
     if (!firebaseUid) {
@@ -277,8 +341,8 @@ function StatsContextProvider({children, now}: StatsContextProviderProps) {
   }, []);
 
   const stateValue = useMemo<StatsStateContextValue>(
-    () => ({range, comparison, drinkTypeFilter, userIds}),
-    [range, comparison, drinkTypeFilter, userIds],
+    () => ({range, comparisonRange, comparison, drinkTypeFilter, userIds}),
+    [range, comparisonRange, comparison, drinkTypeFilter, userIds],
   );
 
   const actionsValue = useMemo<StatsActionsContextValue>(

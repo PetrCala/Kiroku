@@ -15,7 +15,6 @@ import {
   dateRange,
   sumUnits,
 } from '@libs/Statistics';
-import {shiftRange} from '@libs/Statistics/trends';
 import type {DrinkKey} from '@src/types/onyx/Drinks';
 import {useStatsDrillDown} from '@src/screens/Statistics/drilldown/DrillDownContext';
 import DrinkTypeDonut from './breakdown/DrinkTypeDonut';
@@ -31,16 +30,12 @@ const EMPTY_FILTER = dateRange(0, -1);
 function BreakdownTab() {
   const styles = useThemeStyles();
   const {translate} = useLocalize();
-  const {range, drinkTypeFilter, userIds, comparison} = useStatsContext();
+  const {range, comparisonRange, drinkTypeFilter, userIds} = useStatsContext();
   const {openDrillDown} = useStatsDrillDown();
   const {events, isLoading} = useDrinkEvents(
     userIds.length > 0 ? [...userIds] : undefined,
   );
 
-  const comparisonRange = useMemo(
-    () => (comparison === 'none' ? null : shiftRange(range, comparison)),
-    [range, comparison],
-  );
   const showComparison = comparisonRange !== null;
 
   const currentFilter = useMemo(
@@ -93,9 +88,6 @@ function BreakdownTab() {
           {showComparison ? (
             <View style={[styles.flexRow, styles.justifyContentCenter]}>
               <View style={styles.alignItemsCenter}>
-                <Text style={[styles.textMicroSupporting, styles.mb1]}>
-                  {translate('statistics.tabs.breakdown.donut.current')}
-                </Text>
                 <DrinkTypeDonut
                   unitsByDrinkKey={currentUnitsByDrinkKey}
                   drinkTypeFilter={drinkTypeFilter}
@@ -105,17 +97,20 @@ function BreakdownTab() {
                   }
                   isLoading={isLoading}
                 />
+                <Text style={[styles.textMicroSupporting, styles.mt1]}>
+                  {translate('statistics.tabs.breakdown.donut.current')}
+                </Text>
               </View>
               <View style={[styles.alignItemsCenter, styles.ml3]}>
-                <Text style={[styles.textMicroSupporting, styles.mb1]}>
-                  {translate('statistics.tabs.breakdown.donut.previous')}
-                </Text>
                 <DrinkTypeDonut
                   unitsByDrinkKey={comparisonUnitsByDrinkKey}
                   drinkTypeFilter={drinkTypeFilter}
                   size={COMPARISON_DONUT_SIZE}
                   isLoading={isLoading}
                 />
+                <Text style={[styles.textMicroSupporting, styles.mt1]}>
+                  {translate('statistics.tabs.breakdown.donut.previous')}
+                </Text>
               </View>
             </View>
           ) : (

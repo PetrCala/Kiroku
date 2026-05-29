@@ -26,6 +26,8 @@ type SetRangeInput =
 
 type StatsContextValue = {
   range: Range;
+  /** Calendar-aligned previous-period window, or null when comparison is off. */
+  comparisonRange: {start: Date; end: Date} | null;
   setRange: (next: SetRangeInput) => void;
   goToPreviousPeriod: () => void;
   goToNextPeriod: () => void;
