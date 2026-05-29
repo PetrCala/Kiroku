@@ -2,12 +2,7 @@ import React, {useCallback, useEffect, useMemo, useRef, useState} from 'react';
 import {View} from 'react-native';
 import SessionsCalendar from '@components/SessionsCalendar';
 import type {DateData} from 'react-native-calendars';
-import {
-  calculateThisMonthUnits,
-  timestampToDate,
-  dateToDateData,
-  dateStringToDate,
-} from '@libs/DataHandling';
+import {dateToDateData, dateStringToDate} from '@libs/DataHandling';
 import {useUserConnection} from '@context/global/UserConnectionContext';
 import UserOffline from '@components/UserOfflineModal';
 import {syncUserStatus} from '@userActions/User';
@@ -15,15 +10,13 @@ import {useFirebase} from '@context/global/FirebaseContext';
 import ProfileImage from '@components/ProfileImage';
 import {SupporterBadgeForUser} from '@components/SupporterBadge';
 import CONST from '@src/CONST';
-import type {DrinkingSessionArray} from '@src/types/onyx';
 import ROUTES from '@src/ROUTES';
 import Navigation from '@navigation/Navigation';
 import type {StackScreenProps} from '@react-navigation/stack';
-import {useFocusEffect, useIsFocused} from '@react-navigation/native';
+import {useFocusEffect} from '@react-navigation/native';
 import type {BottomTabNavigatorParamList} from '@libs/Navigation/types';
 import type SCREENS from '@src/SCREENS';
-import type {StatData} from '@components/Items/StatOverview';
-import StatOverview from '@components/Items/StatOverview';
+import HomeStatsOverview from '@components/Items/HomeStatsOverview';
 import ScreenWrapper from '@components/ScreenWrapper';
 import MessageBanner from '@components/Info/MessageBanner';
 import useThemeStyles from '@hooks/useThemeStyles';
@@ -39,7 +32,6 @@ import useLocalize from '@hooks/useLocalize';
 import useCurrentUserData from '@hooks/useCurrentUserData';
 import useCurrentUserDrinkingSessions from '@hooks/useCurrentUserDrinkingSessions';
 import useCurrentUserPreferences from '@hooks/useCurrentUserPreferences';
-import {roundToTwoDecimalPlaces} from '@libs/NumberUtils';
 import Text from '@components/Text';
 import BottomTabBar from '@libs/Navigation/AppNavigator/createCustomBottomTabNavigator/BottomTabBar';
 import {useOnyx} from 'react-native-onyx';
@@ -96,71 +88,6 @@ function HomeScreen({route}: HomeScreenProps) {
     setLocalVisibleDate(nextDate);
     App.clearLastViewedCalendarDate();
   }, []);
-
-  // Derive stats synchronously from the visible month + drink unit mapping.
-  // Narrowed to `drinksToUnits` so unrelated preference updates (e.g. picking
-  // a color palette) don't recompute the stats.
-  const drinksToUnits = preferences?.drinks_to_units;
-  const {drinkingSessionsCount, unitsConsumed: baseUnitsConsumed} =
-    useMemo(() => {
-      if (!drinksToUnits || !drinkingSessionData) {
-        return {drinkingSessionsCount: 0, unitsConsumed: 0};
-      }
-      const drinkingSessionArray: DrinkingSessionArray =
-        Object.values(drinkingSessionData);
-      const monthUnits = calculateThisMonthUnits(
-        visibleDate,
-        drinkingSessionArray,
-        drinksToUnits,
-      );
-      const monthSessionCount = DSUtils.getSingleMonthDrinkingSessions(
-        timestampToDate(visibleDate.timestamp),
-        drinkingSessionArray,
-        false,
-      ).length;
-      return {
-        drinkingSessionsCount: monthSessionCount,
-        unitsConsumed: monthUnits,
-      };
-    }, [drinkingSessionData, visibleDate, drinksToUnits]);
-
-  // The live session's drinks live only in ONGOING_SESSION_DATA, not the cached
-  // snapshot the base stats read from, so add them on top. Reusing the month
-  // filter keeps it scoped to the visible month (0 for past months / no live
-  // session). The session COUNT is left untouched — the cache already seeds the
-  // ongoing session (with 0 units) at start, so it is already counted once.
-  //
-  // Gated on `isFocused` for the same reason as the calendar overlay: the live
-  // buffer mutates on every drink tap, and Home stays mounted behind the live
-  // session screen. Skipping this while blurred keeps taps snappy; it recomputes
-  // when the user returns to Home.
-  const isFocused = useIsFocused();
-  const liveExtraUnits = useMemo(() => {
-    if (!isFocused || !drinksToUnits || !ongoingSessionData?.ongoing) {
-      return 0;
-    }
-    return calculateThisMonthUnits(
-      visibleDate,
-      [ongoingSessionData],
-      drinksToUnits,
-    );
-  }, [isFocused, ongoingSessionData, visibleDate, drinksToUnits]);
-  const unitsConsumed = baseUnitsConsumed + liveExtraUnits;
-
-  const statsData: StatData = [
-    {
-      header: translate('profileScreen.drinkingSessions', {
-        sessionsCount: drinkingSessionsCount,
-      }),
-      content: String(drinkingSessionsCount),
-    },
-    {
-      header: translate('profileScreen.unitsConsumed', {
-        unitCount: roundToTwoDecimalPlaces(unitsConsumed),
-      }),
-      content: String(roundToTwoDecimalPlaces(unitsConsumed)),
-    },
-  ];
 
   useEffect(() => {
     // Update the ongoing session local data
@@ -229,7 +156,7 @@ function HomeScreen({route}: HomeScreenProps) {
     }
     return (
       <>
-        <StatOverview statsData={statsData} />
+        <HomeStatsOverview visibleDate={visibleDate} />
         <SessionsCalendar
           userID={user.uid}
           visibleDate={visibleDate}

@@ -1262,6 +1262,15 @@ export default {
     currentlyInSession: 'You are currently in a session!',
     currentlyInSessionButton:
       'A button indicating you are currently in session',
+    stats: {
+      units: 'Units',
+      sessions: 'Sessions',
+      alcoholFree: 'Alcohol-free',
+      statistics: 'Statistics',
+      viewStatistics: 'View statistics',
+      vsLastMonth: 'vs last month',
+      unitsPerWeekA11y: 'Units consumed per week this month',
+    },
   },
   sessionsCalendar: {
     dayOverviewButton: "Day's overview",

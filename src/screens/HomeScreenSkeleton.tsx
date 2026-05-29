@@ -18,25 +18,22 @@ function HomeHeaderSkeleton() {
   );
 }
 
-/** Placeholder for the two stat cards (sessions + units this month). */
+/**
+ * Placeholder for the home stats block: a tall "Units" hero card (label +
+ * value + delta + per-week bar chart) over a pair of supporting cards.
+ * Heights mirror HomeStatsOverview so the swap-in doesn't jolt the layout.
+ */
 function StatOverviewSkeleton() {
   const styles = useThemeStyles();
   return (
-    <View style={styles.statOverviewContainer}>
-      {['sessions', 'units'].map(slot => (
-        <View
-          key={slot}
-          style={[
-            styles.flexColumn,
-            styles.alignItemsCenter,
-            styles.justifyContentCenter,
-          ]}>
-          {/* Matches fontSizeXXXXLarge (36px) bold value text */}
-          <Skeleton width={72} height={44} style={styles.mb2} />
-          {/* Matches fontSizeNormal (15px) label, 2 lines, max-width 150 */}
-          <Skeleton width={130} height={36} />
-        </View>
-      ))}
+    <View style={styles.mt2}>
+      {/* Hero card (KpiCard + BarColumns). */}
+      <Skeleton height={190} radius={12} style={styles.mb2} />
+      {/* Supporting pair (sessions + alcohol-free). */}
+      <View style={styles.flexRow}>
+        <Skeleton height={96} radius={12} style={[styles.flex1, styles.mr1]} />
+        <Skeleton height={96} radius={12} style={[styles.flex1, styles.ml1]} />
+      </View>
     </View>
   );
 }
