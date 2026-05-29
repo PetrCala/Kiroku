@@ -10,40 +10,74 @@ import {
   startOfMonth,
   subMonths,
 } from 'date-fns';
+import {FlashList} from '@shopify/flash-list';
 import React, {useState} from 'react';
 import {StyleSheet, View} from 'react-native';
-import ScrollView from '@components/ScrollView';
 import ArrowIcon from '@components/DatePicker/CalendarPicker/ArrowIcon';
 import generateMonthMatrix from '@components/DatePicker/CalendarPicker/generateMonthMatrix';
+import Icon from '@components/Icon';
+import * as KirokuIcons from '@components/Icon/KirokuIcons';
 import PressableWithFeedback from '@components/Pressable/PressableWithFeedback';
 import PressableWithoutFeedback from '@components/Pressable/PressableWithoutFeedback';
 import Text from '@components/Text';
 import useLocalize from '@hooks/useLocalize';
 import useTheme from '@hooks/useTheme';
 import useThemeStyles from '@hooks/useThemeStyles';
+import useWindowDimensions from '@hooks/useWindowDimensions';
 import DateUtils from '@libs/DateUtils';
 import Str from '@libs/common/str';
 import CONST from '@src/CONST';
 import type {CalendarProps, CalendarView} from './types';
 
+const MONTH_CELL_HEIGHT = 48;
+const YEAR_LABEL_HEIGHT = 34;
+const YEAR_BLOCK_HEIGHT = YEAR_LABEL_HEIGHT + 4 * MONTH_CELL_HEIGHT;
+const OVERVIEW_HEIGHT = 6 * 45 + 45;
+
 const localStyles = StyleSheet.create({
-  gridScroll: {
-    maxHeight: 6 * 45,
-  },
-  grid: {
+  header: {
+    height: 50,
     flexDirection: 'row',
-    flexWrap: 'wrap',
+    alignItems: 'center',
   },
-  gridCell: {
-    width: '33.33%',
-    height: 45,
+  headerArrow: {
+    paddingHorizontal: 12,
+    paddingVertical: 8,
     justifyContent: 'center',
     alignItems: 'center',
   },
-  gridPill: {
-    minWidth: 64,
+  headerTitle: {
+    flex: 1,
+    flexDirection: 'row',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  overview: {
+    height: OVERVIEW_HEIGHT,
+  },
+  yearBlock: {
+    height: YEAR_BLOCK_HEIGHT,
+  },
+  yearLabel: {
+    height: YEAR_LABEL_HEIGHT,
+    justifyContent: 'flex-end',
+    paddingHorizontal: 8,
+    paddingBottom: 4,
+  },
+  monthGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+  },
+  monthCell: {
+    width: '33.33%',
+    height: MONTH_CELL_HEIGHT,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  monthPill: {
+    minWidth: 72,
     paddingHorizontal: 12,
-    paddingVertical: 6,
+    paddingVertical: 8,
     borderRadius: 16,
     alignItems: 'center',
     justifyContent: 'center',
@@ -52,14 +86,16 @@ const localStyles = StyleSheet.create({
 
 /**
  * Unified calendar grid powering both the single-date and date-range pickers.
- * Tapping the "{Month} {Year}" title flips the grid into a year grid, then a
- * month grid (Material-style), so any month is reachable in a couple of taps
- * instead of stepping one month at a time.
+ * The month view steps months via edge arrows; tapping the centered title opens
+ * an Apple-style year overview (months in 3 columns, scrolled vertically) so any
+ * month is one tap away.
  */
 function Calendar(props: CalendarProps) {
   const themeStyles = useThemeStyles();
   const theme = useTheme();
   const {preferredLocale, translate} = useLocalize();
+  const {windowWidth} = useWindowDimensions();
+  const calendarWidth = Math.min(320, windowWidth - 80);
 
   const minDate =
     props.minDate ?? setYear(new Date(), CONST.CALENDAR_PICKER.MIN_YEAR);
@@ -67,7 +103,7 @@ function Calendar(props: CalendarProps) {
     props.maxDate ?? setYear(new Date(), CONST.CALENDAR_PICKER.MAX_YEAR);
 
   const seed = props.mode === 'range' ? props.initialStart : props.initialDate;
-  const [view, setView] = useState<CalendarView>('days');
+  const [view, setView] = useState<CalendarView>('month');
   const [monthView, setMonthView] = useState<Date>(() => startOfMonth(seed));
   const [selected, setSelected] = useState<Date | null>(
     props.mode === 'single' ? props.initialDate : null,
@@ -81,6 +117,9 @@ function Calendar(props: CalendarProps) {
 
   const monthNames = DateUtils.getMonthNames(preferredLocale).map(month =>
     Str.recapitalize(month),
+  );
+  const monthShortNames = DateUtils.getMonthShortNames(preferredLocale).map(
+    month => Str.recapitalize(month),
   );
   const daysOfWeek = DateUtils.getDaysOfWeek(preferredLocale).map(day =>
     day.toUpperCase(),
@@ -111,14 +150,9 @@ function Calendar(props: CalendarProps) {
     setEndDate(null);
   };
 
-  const handleYearPress = (year: number) => {
-    setMonthView(prev => setYear(prev, year));
-    setView('months');
-  };
-
-  const handleMonthPress = (month: number) => {
-    setMonthView(prev => setMonth(prev, month));
-    setView('days');
+  const handleMonthSelect = (year: number, month: number) => {
+    setMonthView(prev => setMonth(setYear(prev, year), month));
+    setView('month');
   };
 
   const isDayDisabled = (date: Date): boolean =>
@@ -148,122 +182,113 @@ function Calendar(props: CalendarProps) {
   );
   const hasPrev = startOfMonth(monthView) > startOfDay(minDate);
   const hasNext = endOfMonth(monthView) < endOfDay(maxDate);
-
   const titleLabel = `${monthNames[monthView.getMonth()]} ${monthView.getFullYear()}`;
 
+  const minYear = getYear(minDate);
+  const maxYear = getYear(maxDate);
+  const years = Array.from(
+    {length: maxYear - minYear + 1},
+    (_, i) => minYear + i,
+  );
+  const initialScrollIndex = Math.max(0, monthView.getFullYear() - minYear);
+
+  const renderYearBlock = ({item: year}: {item: number}) => (
+    <View style={localStyles.yearBlock}>
+      <View style={localStyles.yearLabel}>
+        <Text style={themeStyles.sidebarLinkTextBold}>{year}</Text>
+      </View>
+      <View style={localStyles.monthGrid}>
+        {monthShortNames.map((monthName, month) => {
+          const monthStart = startOfMonth(new Date(year, month, 1));
+          const monthEnd = endOfMonth(monthStart);
+          const isDisabled =
+            monthEnd < startOfDay(minDate) || monthStart > endOfDay(maxDate);
+          const isSelectedMonth =
+            year === monthView.getFullYear() && month === monthView.getMonth();
+          return (
+            <View key={monthName} style={localStyles.monthCell}>
+              <PressableWithFeedback
+                disabled={isDisabled}
+                onPress={() => handleMonthSelect(year, month)}
+                hoverDimmingValue={1}
+                accessibilityLabel={`${monthName} ${year}`}
+                style={[
+                  localStyles.monthPill,
+                  isSelectedMonth
+                    ? {backgroundColor: theme.appColor}
+                    : undefined,
+                ]}>
+                <Text
+                  style={isDisabled ? themeStyles.buttonOpacityDisabled : {}}
+                  color={
+                    // eslint-disable-next-line no-nested-ternary
+                    isDisabled
+                      ? theme.textSupporting
+                      : isSelectedMonth
+                        ? theme.textReversed
+                        : theme.text
+                  }>
+                  {monthName}
+                </Text>
+              </PressableWithFeedback>
+            </View>
+          );
+        })}
+      </View>
+    </View>
+  );
+
   return (
-    <View>
-      <View
-        style={[
-          themeStyles.calendarHeader,
-          themeStyles.flexRow,
-          themeStyles.justifyContentBetween,
-          themeStyles.alignItemsCenter,
-          themeStyles.ph4,
-        ]}>
+    <View style={{width: calendarWidth}}>
+      <View style={localStyles.header}>
+        {view === 'month' ? (
+          <PressableWithFeedback
+            disabled={!hasPrev}
+            onPress={() => setMonthView(subMonths(monthView, 1))}
+            hoverDimmingValue={1}
+            style={localStyles.headerArrow}
+            accessibilityLabel={translate('common.previous')}>
+            <ArrowIcon disabled={!hasPrev} direction={CONST.DIRECTION.LEFT} />
+          </PressableWithFeedback>
+        ) : null}
         <PressableWithFeedback
-          onPress={() => setView(view === 'days' ? 'years' : 'days')}
-          style={[themeStyles.flexRow, themeStyles.alignItemsCenter]}
+          onPress={() => setView(view === 'month' ? 'overview' : 'month')}
           hoverDimmingValue={1}
+          style={localStyles.headerTitle}
           accessibilityLabel={titleLabel}>
           <Text style={themeStyles.sidebarLinkTextBold}>{titleLabel}</Text>
-          <ArrowIcon />
+          <Icon
+            src={KirokuIcons.DownArrow}
+            fill={theme.icon}
+            width={12}
+            height={12}
+            additionalStyles={[themeStyles.ml1]}
+          />
         </PressableWithFeedback>
-        {view === 'days' ? (
-          <View style={[themeStyles.flexRow, themeStyles.alignItemsCenter]}>
-            <PressableWithFeedback
-              shouldUseAutoHitSlop={false}
-              disabled={!hasPrev}
-              onPress={() => setMonthView(subMonths(monthView, 1))}
-              hoverDimmingValue={1}
-              accessibilityLabel={translate('common.previous')}>
-              <ArrowIcon disabled={!hasPrev} direction={CONST.DIRECTION.LEFT} />
-            </PressableWithFeedback>
-            <PressableWithFeedback
-              shouldUseAutoHitSlop={false}
-              disabled={!hasNext}
-              onPress={() => setMonthView(addMonths(monthView, 1))}
-              hoverDimmingValue={1}
-              accessibilityLabel={translate('common.next')}>
-              <ArrowIcon disabled={!hasNext} />
-            </PressableWithFeedback>
-          </View>
+        {view === 'month' ? (
+          <PressableWithFeedback
+            disabled={!hasNext}
+            onPress={() => setMonthView(addMonths(monthView, 1))}
+            hoverDimmingValue={1}
+            style={localStyles.headerArrow}
+            accessibilityLabel={translate('common.next')}>
+            <ArrowIcon disabled={!hasNext} />
+          </PressableWithFeedback>
         ) : null}
       </View>
 
-      {view === 'years' ? (
-        <ScrollView style={localStyles.gridScroll}>
-          <View style={localStyles.grid}>
-            {Array.from(
-              {length: getYear(maxDate) - getYear(minDate) + 1},
-              (_, i) => getYear(maxDate) - i,
-            ).map(year => {
-              const isSelectedYear = year === monthView.getFullYear();
-              return (
-                <View key={year} style={localStyles.gridCell}>
-                  <PressableWithFeedback
-                    onPress={() => handleYearPress(year)}
-                    hoverDimmingValue={1}
-                    accessibilityLabel={String(year)}
-                    style={[
-                      localStyles.gridPill,
-                      isSelectedYear
-                        ? {backgroundColor: theme.appColor}
-                        : undefined,
-                    ]}>
-                    <Text
-                      color={isSelectedYear ? theme.textReversed : theme.text}>
-                      {year}
-                    </Text>
-                  </PressableWithFeedback>
-                </View>
-              );
-            })}
-          </View>
-        </ScrollView>
-      ) : null}
-
-      {view === 'months' ? (
-        <View style={[localStyles.grid, localStyles.gridScroll]}>
-          {monthNames.map((monthName, month) => {
-            const monthStart = startOfMonth(setMonth(monthView, month));
-            const monthEnd = endOfMonth(monthStart);
-            const isDisabled =
-              monthEnd < startOfDay(minDate) || monthStart > endOfDay(maxDate);
-            const isSelectedMonth = month === monthView.getMonth();
-            return (
-              <View key={monthName} style={localStyles.gridCell}>
-                <PressableWithFeedback
-                  disabled={isDisabled}
-                  onPress={() => handleMonthPress(month)}
-                  hoverDimmingValue={1}
-                  accessibilityLabel={monthName}
-                  style={[
-                    localStyles.gridPill,
-                    isSelectedMonth
-                      ? {backgroundColor: theme.appColor}
-                      : undefined,
-                  ]}>
-                  <Text
-                    style={isDisabled ? themeStyles.buttonOpacityDisabled : {}}
-                    color={
-                      // eslint-disable-next-line no-nested-ternary
-                      isDisabled
-                        ? theme.textSupporting
-                        : isSelectedMonth
-                          ? theme.textReversed
-                          : theme.text
-                    }>
-                    {monthName}
-                  </Text>
-                </PressableWithFeedback>
-              </View>
-            );
-          })}
+      {view === 'overview' ? (
+        <View style={localStyles.overview}>
+          <FlashList
+            data={years}
+            extraData={`${monthView.getFullYear()}-${monthView.getMonth()}`}
+            keyExtractor={year => String(year)}
+            renderItem={renderYearBlock}
+            initialScrollIndex={initialScrollIndex}
+            showsVerticalScrollIndicator={false}
+          />
         </View>
-      ) : null}
-
-      {view === 'days' ? (
+      ) : (
         <View>
           <View style={themeStyles.flexRow}>
             {daysOfWeek.map(dayOfWeek => (
@@ -343,7 +368,7 @@ function Calendar(props: CalendarProps) {
             );
           })}
         </View>
-      ) : null}
+      )}
     </View>
   );
 }

@@ -4,6 +4,7 @@ import Button from '@components/Button';
 import Modal from '@components/Modal';
 import Text from '@components/Text';
 import useTheme from '@hooks/useTheme';
+import variables from '@styles/variables';
 import CONST from '@src/CONST';
 import Calendar from './Calendar';
 import type {DateSelectorModalProps} from './types';
@@ -12,6 +13,8 @@ const localStyles = StyleSheet.create({
   container: {
     padding: 16,
     rowGap: 12,
+    borderRadius: variables.componentBorderRadiusLarge,
+    borderWidth: 1,
   },
   title: {
     fontWeight: '600',
@@ -45,9 +48,13 @@ function PickerFrame({
   onCancel,
   children,
 }: FrameProps) {
-  const {componentBG, textSupporting} = useTheme();
+  const {componentBG, textSupporting, border} = useTheme();
   return (
-    <View style={[localStyles.container, {backgroundColor: componentBG}]}>
+    <View
+      style={[
+        localStyles.container,
+        {backgroundColor: componentBG, borderColor: border},
+      ]}>
       {title ? (
         <Text fontSize={17} style={localStyles.title}>
           {title}
