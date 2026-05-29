@@ -94,22 +94,22 @@ function BACDetailsModal({
 }: BACDetailsModalProps) {
   const styles = useThemeStyles();
   const {translate} = useLocalize();
-  const {windowHeight, windowWidth} = useWindowDimensions();
+  const {windowHeight} = useWindowDimensions();
 
-  // A centered card that hugs its content. The body scrolls within an explicit
-  // maxHeight (a bounded ScrollView reliably scrolls, where flex bounds don't
-  // engage inside this content-sized modal). Width caps on large screens.
-  const cardWidth = Math.min(windowWidth - 40, 480);
+  // The body scrolls within an explicit maxHeight. CONFIRM is used (not
+  // CENTERED_SMALL) because it has no swipe PanResponder — that gesture would
+  // otherwise swallow the drag before the ScrollView could scroll. The card
+  // still zooms in, shows an X, and dismisses on tap-outside.
   const scrollMaxHeight = Math.round(windowHeight * 0.7);
 
   return (
     <Modal
       isVisible={isVisible}
-      type={CONST.MODAL.MODAL_TYPE.CENTERED_SMALL}
+      type={CONST.MODAL.MODAL_TYPE.CONFIRM}
       animationIn="zoomIn"
       animationOut="zoomOut"
       onClose={onClose}>
-      <View style={{width: cardWidth}}>
+      <View style={styles.w100}>
         <HeaderWithBackButton
           title={translate('achievementsScreen.bac.details.title')}
           shouldShowBackButton={false}
