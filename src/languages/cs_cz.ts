@@ -15,6 +15,7 @@ import type {
   BreakdownSliceCaptionParams,
   BreakdownTileSubtitleParams,
   CommonFriendsLabelParams,
+  ConfirmWithProviderPromptParams,
   DiscardSessionParams,
   DrinkingSessionsParams,
   ForceUpdateTextParams,
@@ -90,6 +91,8 @@ export default {
     unknown: 'Neznámé',
     authentication: 'Ověření',
     signIn: 'Přihlásit se',
+    google: 'Google',
+    apple: 'Apple',
     signInWithGoogle: 'Přihlásit se přes Google',
     signInWithApple: 'Přihlásit se přes Apple',
     signInWith: 'Přihlásit se přes',
@@ -161,7 +164,7 @@ export default {
     timePrefix: 'Teď je',
     time: 'Čas',
     units: 'Jednotky',
-    drinks: 'Drink(y)',
+    drinks: 'Nápoje',
     conjunctionFor: 'pro',
     todayAt: 'Dnes v',
     tomorrowAt: 'Zítra v',
@@ -170,7 +173,7 @@ export default {
     copiedToClipboard: 'Zkopírováno do schránky',
     conjunctionAt: 'v',
     genericErrorMessage:
-      'Ejhle... něco se pokazilo a váš požadavek se nepodařilo dokončit. Zkuste to prosím později.',
+      'Ups… něco se pokazilo a váš požadavek se nepodařilo dokončit. Zkuste to prosím později.',
     error: {
       error: 'Chyba',
       unknown: 'Neznámá chyba',
@@ -405,7 +408,7 @@ export default {
   },
   imageUpload: {
     uploadSuccess: 'Obrázek byl úspěšně nahrán!',
-    uploadingImage: 'Nahrávání obrázku...',
+    uploadingImage: 'Nahrávání obrázku…',
     uploadFinished: 'Nahrávání dokončeno!',
     pleaseReload: 'Znovu načtěte aplikaci, abyste viděli změny.',
   },
@@ -442,7 +445,7 @@ export default {
     location: {
       title: 'Je vyžadován přístup k poloze',
       message:
-        'Kiroku může u nápojů v živém sezení zaznamenat vaši aktuální polohu. Záznam probíhá pouze během otevřeného živého sezení a pokud máte tuto předvolbu zapnutou.',
+        'Kiroku může u nápojů v živé relaci zaznamenat vaši aktuální polohu. Záznam probíhá pouze během otevřené živé relace a pokud máte tuto předvolbu zapnutou.',
     },
   },
   personalDetails: {
@@ -518,24 +521,24 @@ export default {
       theme: 'Motiv aplikace',
     },
     drinksAndUnitsSection: {
-      title: 'Drinky a jednotky',
+      title: 'Nápoje a jednotky',
       description:
-        'Nastavte přepočet drinků na jednotky a kdy se mění barva relace',
-      drinksToUnits: 'Drinky na jednotky',
+        'Nastavte přepočet nápojů na jednotky a kdy se mění barva relace',
+      drinksToUnits: 'Nápoje na jednotky',
       unitsToColors: 'Jednotky na barvy',
       colorPalette: 'Barevná paleta',
     },
     save: 'Uložit předvolby',
-    saving: 'Ukládání vašich předvoleb...',
+    saving: 'Ukládání vašich předvoleb…',
     unsavedChanges: 'Máte neuložené změny. Opravdu se chcete vrátit zpět?',
     error: {
       save: 'Nepodařilo se uložit vaše předvolby. Zkuste to prosím znovu.',
     },
   },
   locationPrompt: {
-    title: 'Označovat, kde si zapisujete drinky?',
+    title: 'Označovat, kde si zapisujete nápoje?',
     prompt:
-      'Kiroku může ke každému drinku zaznamenanému během živého sezení připojit vaši aktuální polohu, takže se později můžete podívat, kde které sezení proběhlo. Toto nastavení můžete kdykoli změnit v Nastavení → Soukromí.',
+      'Kiroku může ke každému nápoji zaznamenanému během živé relace připojit vaši aktuální polohu, takže se později můžete podívat, kde která relace proběhla. Toto nastavení můžete kdykoli změnit v Nastavení → Soukromí.',
     enable: 'Zapnout',
     notNow: 'Teď ne',
   },
@@ -546,7 +549,8 @@ export default {
     },
     hideFromAllFriends: {
       label: 'Skrýt má data před všemi přáteli',
-      description: 'Když je zapnuto, žádný přítel neuvidí vaše relace pití.',
+      description:
+        'Když je zapnuto, žádný přítel neuvidí vaše alkoholové relace.',
     },
     diagnosticsSection: {
       title: 'Diagnostika',
@@ -560,17 +564,17 @@ export default {
       title: 'Poloha',
     },
     trackLocationDuringSessions: {
-      label: 'Označovat drinky polohou',
-      description: 'Označte každý drink místem, kde jste ho zaznamenali.',
+      label: 'Označovat nápoje polohou',
+      description: 'Označte každý nápoj místem, kde jste ho zaznamenali.',
     },
     clearLocationHistory: {
       label: 'Vymazat historii polohy',
       description:
-        'Smažte všechny uložené polohy. Vaše sezení a drinky zůstanou.',
+        'Smažte všechny uložené polohy. Vaše relace a nápoje zůstanou.',
       button: 'Vymazat',
       confirmTitle: 'Vymazat historii polohy?',
       confirmPrompt:
-        'Tímto trvale smažete všechny polohy připojené k drinkům ve všech vašich sezeních. Samotná sezení zůstanou zachována. Označování polohou můžete kdykoli později znovu zapnout.',
+        'Tímto trvale smažete všechny polohy připojené k nápojům ve všech vašich relacích. Samotné relace zůstanou zachovány. Označování polohou můžete kdykoli později znovu zapnout.',
       confirmAction: 'Vymazat',
       success: 'Vaše historie polohy byla vymazána.',
       error: 'Nepodařilo se vymazat historii polohy. Zkuste to prosím znovu.',
@@ -613,8 +617,8 @@ export default {
     },
   },
   drinksToUnitsScreen: {
-    title: 'Drinky na jednotky',
-    description: 'Zvolte, kolika jednotkám je roven každý z drinků',
+    title: 'Nápoje na jednotky',
+    description: 'Zvolte, kolika jednotkám je roven každý z nápojů',
   },
   languageScreen: {
     language: 'Jazyk',
@@ -640,7 +644,7 @@ export default {
         label: 'Systémový',
       },
     },
-    loading: 'Nastavuji motiv. Prosím čekejte...',
+    loading: 'Nastavuji motiv. Prosím čekejte…',
     chooseThemeBelowOrSync:
       'Vyberte motiv níže, nebo jej synchronizujte s nastavením vašeho zařízení.',
   },
@@ -661,11 +665,11 @@ export default {
       date: 'Datum',
       type: 'Typ relace',
       startTime: 'Čas zahájení',
-      lastDrinkAdded: 'Poslední přidaný drink',
+      lastDrinkAdded: 'Poslední přidaný nápoj',
       endTime: 'Čas ukončení',
     },
     drinksSection: {
-      title: 'Zkonzumované drinky',
+      title: 'Zkonzumované nápoje',
     },
     otherSection: {
       title: 'Ostatní',
@@ -695,7 +699,7 @@ export default {
     adminTools: 'Nástroje pro administrátory',
     about: 'O aplikaci',
     signOutConfirmationText: 'Opravdu se chcete odhlásit?',
-    signingOut: 'Odhlašuji...',
+    signingOut: 'Odhlašuji…',
     aboutScreen: {
       viewTheCode: 'Zobrazit zdrojový kód',
       aboutKiroku: 'O Kiroku',
@@ -711,13 +715,13 @@ export default {
       },
     },
     termsOfServiceScreen: {
-      loading: 'Načítám Podmínky služby...',
+      loading: 'Načítám Podmínky služby…',
     },
     privacyPolicyScreen: {
-      loading: 'Načítám Zásady ochrany osobních údajů...',
+      loading: 'Načítám Zásady ochrany osobních údajů…',
     },
     subscriptionTermsScreen: {
-      loading: 'Načítám Podmínky předplatného...',
+      loading: 'Načítám Podmínky předplatného…',
     },
     error: {},
   },
@@ -730,7 +734,7 @@ export default {
     menuEntry: 'Podpořit Kiroku 🍺',
     paywallScreen: {
       title: 'Podpořit Kiroku',
-      loading: 'Načítám detaily předplatného...',
+      loading: 'Načítám detaily předplatného…',
       thanksTitle: 'Jste Kiroku Supporter 🍺',
       thanksSubtitle:
         'Děkujeme za podporu — odznak podporovatele je nyní viditelný na vašem profilu.',
@@ -790,7 +794,7 @@ export default {
     },
     live: {
       title: 'Živá',
-      description: 'Přidávejte drinky v reálném čase',
+      description: 'Přidávejte nápoje v reálném čase',
     },
     edit: {
       title: 'Zpětná',
@@ -815,12 +819,12 @@ export default {
     explanation:
       'Zobrazení vašeho jména pomáhá vašim přátelům snadno vás najít a poznat na vašem profilu.',
     note: 'Poznámka: Vaše jméno se zatím jinde v aplikaci nezobrazuje. Pracujeme na tom!',
-    updatingUserName: 'Aktualizujeme vaše jméno...',
+    updatingUserName: 'Aktualizujeme vaše jméno…',
   },
   displayNameScreen: {
     headerTitle: 'Přezdívka',
     isShownOnProfile: 'Vaše přezdívka se zobrazuje na vašem profilu.',
-    updatingDisplayName: 'Aktualizujeme vaši přezdívku...',
+    updatingDisplayName: 'Aktualizujeme vaši přezdívku…',
   },
   onboarding: {
     title: 'Onboarding',
@@ -836,7 +840,7 @@ export default {
     timezone: 'Časové pásmo',
     isShownOnProfile: 'Vaše časové pásmo je zobrazeno na vašem profilu.',
     getLocationAutomatically: 'Automaticky zjistit polohu',
-    saving: 'Vaše časové pásmo se ukládá...',
+    saving: 'Vaše časové pásmo se ukládá…',
   },
   emailScreen: {
     title: 'Aktualizovat e-mail',
@@ -846,7 +850,7 @@ export default {
     enterEmail: 'Zadejte svou e-mailovou adresu',
     submit: 'Aktualizovat e-mail',
     sent: 'E-mail byl úspěšně aktualizován!',
-    sending: 'Aktualizujeme e-mail...',
+    sending: 'Aktualizujeme e-mail…',
     success: ({email}: UpdateEmailSentEmailParams) =>
       `E-mail s instrukcemi ke změně e-mailové adresy byl odeslán na ${email}. Po změně e-mailu prosím znovu načtěte aplikaci.`,
     enterPasswordToConfirm: 'Pro ověření vaší identity zadejte prosím heslo.',
@@ -889,7 +893,7 @@ export default {
     describeBug: 'Popište chybu zde',
     submit: 'Odeslat hlášení',
     sent: 'Hlášení chyby bylo odesláno!',
-    sending: 'Odesílám hlášení chyby...',
+    sending: 'Odesílám hlášení chyby…',
     error: 'Nastala chyba při odesílání hlášení. Zkuste to prosím znovu.',
   },
   feedbackScreen: {
@@ -898,7 +902,7 @@ export default {
     enterFeedback: 'Zadejte svou zpětnou vazbu zde',
     submit: 'Odeslat zpětnou vazbu',
     sent: 'Zpětná vazba odeslána!',
-    sending: 'Odesílám zpětnou vazbu...',
+    sending: 'Odesílám zpětnou vazbu…',
     error: 'Došlo k chybě při odesílání zpětné vazby. Zkuste to prosím znovu.',
   },
   deleteAccountScreen: {
@@ -911,16 +915,22 @@ export default {
       'Opravdu chcete smazat svůj účet? Tím trvale odstraníte všechna svá data.',
     enterPasswordToConfirm: 'Zadejte prosím své heslo pro potvrzení.',
     enterPassword: 'Zadejte heslo',
-    deletingAccount: 'Probíhá mazání vašeho účtu...',
+    deletingAccount: 'Probíhá mazání vašeho účtu…',
+    confirmWithProviderPrompt: ({provider}: ConfirmWithProviderPromptParams) =>
+      `Pro potvrzení smazání budete vyzváni k přihlášení pomocí ${provider}.`,
+    error: {
+      unsupportedProvider:
+        'Váš způsob přihlášení není pro smazání účtu podporován. Kontaktujte prosím podporu.',
+    },
   },
   profileScreen: {
     title: 'Profil',
     titleNotSelf: 'Přehled uživatele',
     seeAllFriends: 'Zobrazit všechny přátele',
     drinkingSessions: ({sessionsCount}: DrinkingSessionsParams) =>
-      `${Str.pluralize('Alkoholová Relace', 'Alkoholových Relací', sessionsCount)}`,
+      `${Str.pluralize('Alkoholová relace', 'Alkoholových relací', sessionsCount)}`,
     unitsConsumed: ({unitCount}: UnitCountParams) =>
-      `${Str.pluralize('Zkonzumovaná Jednotka', 'Zkomzumovaných Jednotek', unitCount)}`,
+      `${Str.pluralize('Zkonzumovaná jednotka', 'Zkonzumovaných jednotek', unitCount)}`,
     manageFriend: 'Spravovat přítele',
     unfriendPrompt: 'Opravdu chcete tohoto uživatele odebrat z přátel?',
     unfriend: 'Odebrat z přátel',
@@ -959,38 +969,38 @@ export default {
         trend: {
           title: '8týdenní trend',
           bandCaption:
-            'Stínovaný pás je tam, kde se odehrála většina tvých posledních 8 týdnů.',
+            'Stínovaný pás je tam, kde se odehrála většina vašich posledních 8 týdnů.',
           chip: {
-            down: 'Trend dolů — tvé týdenní jednotky postupně klesají.',
-            up: 'Trend nahoru — tvé týdenní jednotky postupně rostou.',
-            none: 'Tvé týdny se proměňují jako obvykle.',
+            down: 'Trend dolů — vaše týdenní jednotky postupně klesají.',
+            up: 'Trend nahoru — vaše týdenní jednotky postupně rostou.',
+            none: 'Vaše týdny se proměňují jako obvykle.',
           },
           a11yLabel: 'Posledních 8 týdnů týdenních jednotek, vyhlazeno',
         },
         empty: {
           neverLogged: {
             title: 'Zatím není co zaznamenat — i to se počítá.',
-            body: 'Až zaznamenáš relaci, objeví se zde týdenní trendy a měsíční přehled. Do té doby je každý den klidný.',
+            body: 'Až zaznamenáte relaci, objeví se zde týdenní trendy a měsíční přehled. Do té doby je každý den klidný.',
           },
           noDataInWindow: ({quietDays}: StatsQuietDaysParams) =>
-            `${quietDays} klidných dnů a počítáme dál — tvé trendy se vyjasní, jak budeš přidávat data.`,
+            `${quietDays} klidných dnů a počítáme dál — vaše trendy se vyjasní, jak budete přidávat data.`,
         },
         sparseFooter:
-          'Zatím jen pár týdnů historie — tvé trendy se vyjasní, jak budeš přidávat data.',
+          'Zatím jen pár týdnů historie — vaše trendy se vyjasní, jak budete přidávat data.',
       },
       trends: {
         label: 'Trendy',
         weeklyTrend: {
           title: 'Týdenní jednotky',
-          emptyLabel: 'Tvůj trend se ukáže, jak budou přibývat data.',
+          emptyLabel: 'Váš trend se ukáže, jak budou přibývat data.',
           bandCaption:
             'Stínované pásmo ukazuje, kde se pohybovala většina posledních týdnů.',
           captions: {
-            trendingDown: 'Tvé týdenní jednotky mají sestupný trend.',
-            trendingUp: 'Tvé týdenní jednotky mají vzestupný trend.',
-            neutral: 'Tvé týdny se mění obvyklým způsobem.',
+            trendingDown: 'Vaše týdenní jednotky mají sestupný trend.',
+            trendingUp: 'Vaše týdenní jednotky mají vzestupný trend.',
+            neutral: 'Vaše týdny se mění obvyklým způsobem.',
             notEnoughData:
-              'Pokračuj v zaznamenávání — trend se ukáže, až bude víc dat.',
+              'Pokračujte v zaznamenávání — trend se ukáže, až bude víc dat.',
           },
         },
         cumulativeAf: {
@@ -999,7 +1009,7 @@ export default {
         },
         drinkTypeStack: {
           title: 'Mix nápojů v čase',
-          emptyLabel: 'Tvůj mix nápojů se ukáže, jak budeš přidávat data.',
+          emptyLabel: 'Váš mix nápojů se ukáže, jak budete přidávat data.',
         },
         comparison: {
           legend: 'Předchozí období',
@@ -1012,14 +1022,14 @@ export default {
       breakdown: {
         label: 'Rozpis',
         donut: {
-          title: 'Jednotky podle druhu pití',
+          title: 'Jednotky podle druhu nápoje',
           subtitle: 'Složení za aktuální období.',
           centerUnits: ({count}: BreakdownCenterUnitsParams) => `${count}`,
           centerCaption: 'jednotek',
           empty: 'Klidné období — zatím není co rozdělit.',
           sliceCaption: ({label, units, share}: BreakdownSliceCaptionParams) =>
             `${label}: ${units} jednotek (${share} %)`,
-          a11y: 'Koláč složení podle druhu pití',
+          a11y: 'Koláč složení podle druhu nápoje',
         },
         multiples: {
           title: 'Týdenní trend podle druhu',
@@ -1032,11 +1042,11 @@ export default {
         },
         concentration: {
           moreVaried: ({period}: BreakdownPeriodParams) =>
-            `Tento ${period} jsi pil/a pestřeji než minulý.`,
+            `Tento ${period} jste pil/a pestřeji než minulý.`,
           moreFocused: ({period}: BreakdownPeriodParams) =>
-            `Tento ${period} jsi se zaměřil/a víc než minulý.`,
+            `Tento ${period} jste se zaměřil/a víc než minulý.`,
           aboutTheSame: ({period}: BreakdownPeriodParams) =>
-            `Skladba pití je zhruba stejná jako minulý ${period}.`,
+            `Skladba nápojů je zhruba stejná jako minulý ${period}.`,
           period: {
             week: 'týden',
             month: 'měsíc',
@@ -1066,13 +1076,13 @@ export default {
         title: 'Nápojů na relaci',
         empty: 'Klidné období — žádné relace k započtení.',
         p75Copy: ({value}: {value: number}) =>
-          `75 % tvých relací má ${value} nápojů nebo méně.`,
+          `75 % vašich relací má ${value} nápojů nebo méně.`,
       },
       sessionDuration: {
         title: 'Délka relace',
         empty: 'Klidné období — žádné relace k změření.',
         p75Copy: ({value}: {value: string}) =>
-          `75 % tvých relací je kratších než ${value}.`,
+          `75 % vašich relací je kratších než ${value}.`,
       },
     },
     drilldown: {
@@ -1138,13 +1148,14 @@ export default {
     title: 'Alkokalkulačka',
     bac: {
       currentBac: 'Odhadovaná hladina alkoholu',
-      noSession: 'Začni pít, abys viděl odhadovanou hladinu alkoholu v krvi.',
+      noSession:
+        'Začněte pít, abyste viděli odhadovanou hladinu alkoholu v krvi.',
       sober: 'Odhadovaná hladina alkoholu v krvi je nyní nulová.',
       disclaimer:
-        'Toto je pouze hrubý odhad, nikoli lékařské nebo právní měření. Nikdy neřiď po požití alkoholu.',
+        'Toto je pouze hrubý odhad, nikoli lékařské nebo právní měření. Nikdy neřiďte po požití alkoholu.',
       editDetails: 'Upravit mé údaje',
       formIntro:
-        'Pro odhad hladiny alkoholu v krvi potřebujeme tvou váhu a pohlaví.',
+        'Pro odhad hladiny alkoholu v krvi potřebujeme vaši váhu a pohlaví.',
       male: 'Muž',
       female: 'Žena',
       other: 'Jiné',
@@ -1162,9 +1173,9 @@ export default {
       intro: {
         title: 'Alkokalkulačka',
         body1:
-          'Tento nástroj poskytuje hrubý odhad hladiny alkoholu v krvi na základě zaznamenaných nápojů, tvé váhy a pohlaví.',
+          'Tento nástroj poskytuje hrubý odhad hladiny alkoholu v krvi na základě zaznamenaných nápojů, vaší váhy a pohlaví.',
         body2:
-          'Používá Widmarkův vzorec a předpokládá rovnoměrné odbourávání alkoholu. Každé tělo je jiné, ber proto číslo jen jako orientační, nikoli jako fakt.',
+          'Používá Widmarkův vzorec a předpokládá rovnoměrné odbourávání alkoholu. Každé tělo je jiné, berte proto číslo jen jako orientační, nikoli jako fakt.',
         getStarted: 'Začít',
       },
       details: {
@@ -1191,15 +1202,15 @@ export default {
     noDrinkingSessions: 'Žádné alkoholové relace',
     addSessionExplained: 'Přidat relaci (plovoucí tlačítko)',
     sessionWindow: ({sessionId}: SessionWindowIdParams) =>
-      `Relace pití: ${sessionId}`,
+      `Alkoholová relace: ${sessionId}`,
     ongoing: 'Probíhá',
-    loadingDate: 'Načítám datum...',
+    loadingDate: 'Načítám datum…',
     error: {
       open: 'Nepodařilo se otevřít novou relaci. Zkuste to prosím znovu.',
     },
   },
   homeScreen: {
-    startingSession: 'Spouštím novou relaci...',
+    startingSession: 'Spouštím novou relaci…',
     welcomeToKiroku: 'Vítejte v Kiroku!',
     startNewSessionByClickingPlus:
       'Spusťte novou relaci kliknutím na tlačítko plus v dolní části obrazovky',
@@ -1211,10 +1222,10 @@ export default {
     dayOverviewButton: 'Přehled dne',
   },
   liveSessionScreen: {
-    saving: 'Ukládám vaši relaci...',
-    synchronizing: 'Synchronizuji data...',
-    loading: 'Načítám vaši relaci...',
-    drinksConsumed: 'Zkonzumované drinky',
+    saving: 'Ukládám vaši relaci…',
+    synchronizing: 'Synchronizuji data…',
+    loading: 'Načítám vaši relaci…',
+    drinksConsumed: 'Zkonzumované nápoje',
     sessionFrom: 'Relace od',
     sessionOn: 'Relace dne',
     blackout: 'Výpadek paměti',
@@ -1228,7 +1239,7 @@ export default {
       `${discardWord} relaci`,
     saveSession: 'Uložit relaci',
     discardingSession: ({discardWord}: DiscardSessionParams) =>
-      `${discardWord} tuto relaci...`,
+      `${discardWord} tuto relaci…`,
   },
   sessionDateScreen: {
     title: 'Datum relace',
@@ -1321,7 +1332,7 @@ export default {
     pleaseFillOutAllFields: 'Vyplňte prosím všechna pole',
     pleaseFillPassword: 'Zadejte prosím své heslo',
     forgot: 'Zapomněli jste heslo?',
-    changingPassword: 'Měním vaše heslo...',
+    changingPassword: 'Měním vaše heslo…',
     error: {
       samePassword: 'Toto heslo je stejné jako vaše aktuální',
       incorrectPassword: 'Nesprávné heslo. Zkuste to prosím znovu.',
@@ -1352,7 +1363,7 @@ export default {
   pickUsernameScreen: {
     heading: 'Zvolte si uživatelské jméno',
     explainer: 'Vyberte si uživatelské jméno — pod tímto vás uvidí ostatní.',
-    saving: 'Ukládám...',
+    saving: 'Ukládám…',
     error: {
       generic:
         'Uživatelské jméno se nepodařilo uložit. Zkuste to prosím znovu.',
@@ -1370,17 +1381,17 @@ export default {
     },
   },
   logInScreen: {
-    loggingIn: 'Přihlašuji...',
+    loggingIn: 'Přihlašuji…',
   },
   signUpScreen: {
-    signingIn: 'Přihlašuji...',
-    signingYouIn: 'Přihlašuji vás...',
+    signingIn: 'Přihlašuji…',
+    signingYouIn: 'Přihlašuji vás…',
   },
   forgotPasswordScreen: {
     title: 'Zapomenuté heslo',
     prompt:
       'Pošleme vám instrukce, jak resetovat heslo, na tuto e-mailovou adresu:',
-    sending: 'Odesílám e-mail...',
+    sending: 'Odesílám e-mail…',
     submit: 'Resetovat heslo',
     enterEmail: 'Zadejte sem svůj e-mail',
     success: ({email}: ForgotPasswordSuccessParams) =>
@@ -1461,7 +1472,7 @@ export default {
     successMessage: 'Váš účet byl úspěšně smazán.',
   },
   database: {
-    loading: 'Načítám data...',
+    loading: 'Načítám data…',
     error: {
       generic: 'Nepodařilo se připojit k databázi',
       userDoesNotExist: 'Uživatel v databázi neexistuje',

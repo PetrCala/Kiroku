@@ -117,20 +117,7 @@ helper only takes two arguments (singular + one plural).
 
 ## Known inconsistencies to fix (audit backlog)
 
-These exist in `cs_cz.ts` today and should be corrected by the `translate`
-skill's `audit` mode:
-
-- `dayOverviewScreen.sessionWindow` uses "relace pití" → should be
-  "alkoholová relace".
-- `permissions.location.message`, `locationPrompt.prompt`,
-  `privacyScreen.clearLocationHistory.*` use "sezení" → should be "relace".
-- `common.drinks`, `liveSessionScreen.drinksConsumed`,
-  `preferencesScreen.drinksAndUnitsSection` use "drink/drinky" → "nápoj/nápoje".
-- `statistics.*` and `achievementsScreen.bac.*` use tykání → convert to vykání.
-- `profileScreen.unitsConsumed` typo: "Zkomzumovaných" → "Zkonzumovaných".
-- `profileScreen.drinkingSessions` / `unitsConsumed` mid-phrase Title Case →
-  sentence case.
-- Keys missing from `cs_cz.ts` (fall back to English at runtime):
-  `common.google`, `common.apple`,
-  `deleteAccountScreen.confirmWithProviderPrompt`,
-  `deleteAccountScreen.error.unsupportedProvider`.
+The previous backlog (term drift to "sezení"/"relace pití"/"drinky", tykání in
+`statistics.*` and `achievementsScreen.bac.*`, the `profileScreen` Title-case +
+"Zkomzumovaných" typo, and the four missing keys) was cleared in the
+`cs_cz.ts` audit. Nothing outstanding — add new items here if drift reappears.
