@@ -50,7 +50,12 @@ function PickerFrame({
 }: FrameProps) {
   const {componentBG, textSupporting, border} = useTheme();
   return (
+    // `collapsable={false}` forces this view to materialize as a real native
+    // view so its background paints. Without it RN can flatten a
+    // background-only view inside the animated modal container, which leaves
+    // the surface see-through (only the card's shadow/border edge shows).
     <View
+      collapsable={false}
       style={[
         localStyles.container,
         {backgroundColor: componentBG, borderColor: border},

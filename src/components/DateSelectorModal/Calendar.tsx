@@ -23,16 +23,19 @@ import Text from '@components/Text';
 import useLocalize from '@hooks/useLocalize';
 import useTheme from '@hooks/useTheme';
 import useThemeStyles from '@hooks/useThemeStyles';
-import useWindowDimensions from '@hooks/useWindowDimensions';
 import DateUtils from '@libs/DateUtils';
 import Str from '@libs/common/str';
 import CONST from '@src/CONST';
 import type {CalendarProps, CalendarView} from './types';
 
+const DAY_CELL_HEIGHT = 45;
 const MONTH_CELL_HEIGHT = 48;
 const YEAR_LABEL_HEIGHT = 34;
 const YEAR_BLOCK_HEIGHT = YEAR_LABEL_HEIGHT + 4 * MONTH_CELL_HEIGHT;
-const OVERVIEW_HEIGHT = 6 * 45 + 45;
+// A month spans 4-6 weeks; pin the grid to the 6-week height so the modal
+// never resizes between months (or when switching to the year overview).
+const WEEKS_HEIGHT = 6 * DAY_CELL_HEIGHT;
+const OVERVIEW_HEIGHT = WEEKS_HEIGHT + DAY_CELL_HEIGHT;
 
 const localStyles = StyleSheet.create({
   header: {
@@ -54,6 +57,9 @@ const localStyles = StyleSheet.create({
   },
   overview: {
     height: OVERVIEW_HEIGHT,
+  },
+  weeks: {
+    height: WEEKS_HEIGHT,
   },
   yearBlock: {
     height: YEAR_BLOCK_HEIGHT,
@@ -94,8 +100,6 @@ function Calendar(props: CalendarProps) {
   const themeStyles = useThemeStyles();
   const theme = useTheme();
   const {preferredLocale, translate} = useLocalize();
-  const {windowWidth} = useWindowDimensions();
-  const calendarWidth = Math.min(320, windowWidth - 80);
 
   const minDate =
     props.minDate ?? setYear(new Date(), CONST.CALENDAR_PICKER.MIN_YEAR);
@@ -239,7 +243,7 @@ function Calendar(props: CalendarProps) {
   );
 
   return (
-    <View style={{width: calendarWidth}}>
+    <View>
       <View style={localStyles.header}>
         {view === 'month' ? (
           <PressableWithFeedback
@@ -307,66 +311,72 @@ function Calendar(props: CalendarProps) {
             ))}
           </View>
 
-          {monthMatrix.map(week => {
-            const firstRealDay = week.find(d => !!d) ?? 0;
-            const weekKey = `${monthView.getFullYear()}-${monthView.getMonth()}-w${firstRealDay}`;
-            return (
-              <View key={weekKey} style={themeStyles.flexRow}>
-                {week.map((day, index) => {
-                  if (!day) {
-                    return (
-                      <View
-                        // eslint-disable-next-line react/no-array-index-key
-                        key={`${weekKey}-empty-${index}`}
-                        style={themeStyles.calendarDayRoot}
-                      />
-                    );
-                  }
-                  const cellDate = new Date(
-                    monthView.getFullYear(),
-                    monthView.getMonth(),
-                    day,
-                  );
-                  const disabled = isDayDisabled(cellDate);
-                  const edge = isEdge(cellDate);
-                  const inRange = isInRange(cellDate);
-
-                  let bgColor = 'transparent';
-                  if (edge) {
-                    bgColor = theme.appColor;
-                  } else if (inRange) {
-                    bgColor = theme.highlightBG;
-                  }
-                  const textColor = edge ? theme.textReversed : theme.text;
-
-                  return (
-                    <PressableWithoutFeedback
-                      key={`${monthView.getFullYear()}-${monthView.getMonth()}-${day}`}
-                      disabled={disabled}
-                      onPress={() => handleDayPress(day)}
-                      style={themeStyles.calendarDayRoot}
-                      accessibilityLabel={String(day)}>
-                      {() => (
+          <View style={localStyles.weeks}>
+            {monthMatrix.map(week => {
+              const firstRealDay = week.find(d => !!d) ?? 0;
+              const weekKey = `${monthView.getFullYear()}-${monthView.getMonth()}-w${firstRealDay}`;
+              return (
+                <View key={weekKey} style={themeStyles.flexRow}>
+                  {week.map((day, index) => {
+                    if (!day) {
+                      return (
                         <View
-                          style={[
-                            themeStyles.calendarDayContainer,
-                            {backgroundColor: bgColor},
-                          ]}>
-                          <Text
-                            style={
-                              disabled ? themeStyles.buttonOpacityDisabled : {}
-                            }
-                            color={disabled ? theme.textSupporting : textColor}>
-                            {day}
-                          </Text>
-                        </View>
-                      )}
-                    </PressableWithoutFeedback>
-                  );
-                })}
-              </View>
-            );
-          })}
+                          // eslint-disable-next-line react/no-array-index-key
+                          key={`${weekKey}-empty-${index}`}
+                          style={themeStyles.calendarDayRoot}
+                        />
+                      );
+                    }
+                    const cellDate = new Date(
+                      monthView.getFullYear(),
+                      monthView.getMonth(),
+                      day,
+                    );
+                    const disabled = isDayDisabled(cellDate);
+                    const edge = isEdge(cellDate);
+                    const inRange = isInRange(cellDate);
+
+                    let bgColor = 'transparent';
+                    if (edge) {
+                      bgColor = theme.appColor;
+                    } else if (inRange) {
+                      bgColor = theme.highlightBG;
+                    }
+                    const textColor = edge ? theme.textReversed : theme.text;
+
+                    return (
+                      <PressableWithoutFeedback
+                        key={`${monthView.getFullYear()}-${monthView.getMonth()}-${day}`}
+                        disabled={disabled}
+                        onPress={() => handleDayPress(day)}
+                        style={themeStyles.calendarDayRoot}
+                        accessibilityLabel={String(day)}>
+                        {() => (
+                          <View
+                            style={[
+                              themeStyles.calendarDayContainer,
+                              {backgroundColor: bgColor},
+                            ]}>
+                            <Text
+                              style={
+                                disabled
+                                  ? themeStyles.buttonOpacityDisabled
+                                  : {}
+                              }
+                              color={
+                                disabled ? theme.textSupporting : textColor
+                              }>
+                              {day}
+                            </Text>
+                          </View>
+                        )}
+                      </PressableWithoutFeedback>
+                    );
+                  })}
+                </View>
+              );
+            })}
+          </View>
         </View>
       )}
     </View>
