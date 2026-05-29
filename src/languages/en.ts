@@ -1232,6 +1232,12 @@ export default {
   },
   sessionsCalendar: {
     dayOverviewButton: "Day's overview",
+    a11y: {
+      previousMonth: 'Previous month',
+      nextMonth: 'Next month',
+      jumpToCurrentMonth: 'Jump to the current month',
+      monthLabel: 'Selected month, double-tap to expand the calendar',
+    },
   },
   liveSessionScreen: {
     saving: 'Saving your session...',

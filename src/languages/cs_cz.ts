@@ -1220,6 +1220,12 @@ export default {
   },
   sessionsCalendar: {
     dayOverviewButton: 'Přehled dne',
+    a11y: {
+      previousMonth: 'Předchozí měsíc',
+      nextMonth: 'Další měsíc',
+      jumpToCurrentMonth: 'Přejít na aktuální měsíc',
+      monthLabel: 'Vybraný měsíc, dvojitým klepnutím rozbalíte kalendář',
+    },
   },
   liveSessionScreen: {
     saving: 'Ukládám vaši relaci…',

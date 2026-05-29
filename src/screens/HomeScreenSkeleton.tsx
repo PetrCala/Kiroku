@@ -84,10 +84,18 @@ function SessionsCalendarSkeleton() {
   const dayRadius = variables.componentBorderRadiusNormal;
   return (
     <View style={styles.sessionsCalendarContainer}>
-      {/* Month header — matches the custom renderHeader in SessionsCalendarView
-       *  (single centered text, no nav arrows). */}
-      <View style={[styles.sessionsCalendarHeader, styles.pv3]}>
-        <Block width={100} height={18} />
+      {/* Month header — matches the custom navigator in SessionsCalendarView:
+       *  circular edge arrows flanking a centered month label. */}
+      <View style={[styles.statsRangeNavigatorRow, styles.mt2]}>
+        <View style={styles.statsRangeNavigatorButtonSlot}>
+          <Block width={40} height={40} radius={20} />
+        </View>
+        <View style={styles.statsRangeNavigatorLabelSlot}>
+          <Block width={100} height={18} />
+        </View>
+        <View style={styles.statsRangeNavigatorButtonSlot}>
+          <Block width={40} height={40} radius={20} />
+        </View>
       </View>
       {/* Day-name row — matches the library's `stylesheet.calendar.header`
        *  spacing (marginTop:7 on the week, marginBottom:7 on each dayHeader). */}

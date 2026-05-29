@@ -7,7 +7,11 @@ import {
   startOfMonth,
   subMonths,
 } from 'date-fns';
-import {getPreviousMonth, getNextMonth} from '@libs/DataHandling';
+import {
+  getPreviousMonth,
+  getNextMonth,
+  dateToDateData,
+} from '@libs/DataHandling';
 import * as DSUtils from '@libs/DrinkingSessionUtils';
 import {computeLoadTarget} from '@libs/SessionsCalendarUtils';
 import CONST from '@src/CONST';
@@ -96,6 +100,13 @@ function SessionsCalendar({
     const nextMonth = getNextMonth(visibleDate);
     onDateChange(nextMonth);
     addMonth();
+  };
+
+  // Jump straight back to the current month. The month always sits within the
+  // loaded window, so no lazy-load is needed; the view remounts on the
+  // visible-month change via its `key` and re-reads `current`.
+  const handleJumpToCurrent = () => {
+    onDateChange(dateToDateData(new Date()));
   };
 
   // Coalesce scroll-driven `loadUpTo` calls — store the deepest target we've
@@ -193,6 +204,7 @@ function SessionsCalendar({
       onDayPress={onDayPress}
       onLeftArrowPress={handleLeftArrowPress}
       onRightArrowPress={handleRightArrowPress}
+      onJumpToCurrent={handleJumpToCurrent}
       isFetchingOlderMonths={isFetchingOlderMonths}
     />
   );

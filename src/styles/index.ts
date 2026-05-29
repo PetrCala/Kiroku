@@ -18,7 +18,6 @@ import type {
 import * as Browser from '@libs/Browser';
 import CONST from '@src/CONST';
 import type {CalendarColors} from '@components/SessionsCalendar/types';
-import type {Direction} from '@components/SessionsCalendar/CalendarArrow';
 import {defaultTheme} from './theme';
 import type {ThemeColors} from './theme/types';
 // import addOutlineWidth from './utils/addOutlineWidth';
@@ -1606,24 +1605,14 @@ const styles = (theme: ThemeColors) =>
       borderBottomWidth: 1,
     },
 
-    sessionsCalendarHeader: {
-      flexDirection: 'row',
-      alignItems: 'center',
-      justifyContent: 'center',
-    },
-
     sessionsCalendarHeaderMonthText: {
       ...FontUtils.fontFamily.platform.EXP_NEUE_BOLD,
       color: theme.text,
       fontSize: variables.fontSizeLarge,
     },
 
-    sessionsCalendarHeaderSpinner: {
-      marginLeft: 8,
-    },
-
     sessionsCalendarExpandIcon: {
-      marginLeft: 8,
+      marginRight: 8,
     },
 
     sessionsCalendarWeekRow: {
@@ -2026,13 +2015,6 @@ const styles = (theme: ThemeColors) =>
       flexGrow: 0,
       flexShrink: 1,
     },
-
-    sessionsCalendarArrow: (direction: Direction) =>
-      ({
-        width: variables.sessionsCalendarArrowWidth,
-        alignItems:
-          direction === CONST.DIRECTION.LEFT ? 'flex-start' : 'flex-end',
-      }) satisfies ViewStyle,
 
     sessionDrinksInputContainer: (activeBackground: string | null) =>
       ({

@@ -1,5 +1,12 @@
-import React, {memo, useCallback, useEffect, useMemo, useRef} from 'react';
-import {ActivityIndicator, View} from 'react-native';
+import React, {
+  memo,
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from 'react';
+import {ActivityIndicator, Animated, View} from 'react-native';
 import {Gesture, GestureDetector} from 'react-native-gesture-handler';
 import {runOnJS} from 'react-native-reanimated';
 import {PressableWithFeedback} from '@components/Pressable';
@@ -10,6 +17,7 @@ import type {DateData} from 'react-native-calendars';
 import type {MarkedDates} from 'react-native-calendars/src/types';
 import {useOnyx} from 'react-native-onyx';
 import {format, parseISO, startOfMonth} from 'date-fns';
+import useLocalize from '@hooks/useLocalize';
 import useTheme from '@hooks/useTheme';
 import useThemePreference from '@hooks/useThemePreference';
 import useThemeStyles from '@hooks/useThemeStyles';
@@ -23,8 +31,6 @@ import type {DateString, UserID} from '@src/types/onyx/OnyxCommon';
 import Text from '@components/Text';
 import DayComponent from './DayComponent';
 import type {DayComponentProps} from './types';
-import CalendarArrow from './CalendarArrow';
-import type {Direction} from './CalendarArrow';
 import setCalendarLocale from './setCalendarLocale';
 
 type SessionsCalendarViewProps = {
@@ -54,6 +60,9 @@ type SessionsCalendarViewProps = {
   /** Month-arrow handlers; omit (with hideArrows) to make the calendar static */
   onLeftArrowPress?: (subtractMonth: () => void) => void;
   onRightArrowPress?: (addMonth: () => void) => void;
+
+  /** Jump straight back to the current month. Omit to hide the go-back button. */
+  onJumpToCurrent?: () => void;
 
   /** Hide month-nav arrows entirely (e.g. for an inline preview) */
   hideArrows?: boolean;
@@ -90,6 +99,7 @@ function SessionsCalendarView({
   onDayPress,
   onLeftArrowPress,
   onRightArrowPress,
+  onJumpToCurrent,
   hideArrows,
   hideMonthHeader,
   hideDayNames,
@@ -98,6 +108,7 @@ function SessionsCalendarView({
   const styles = useThemeStyles();
   const StyleUtils = useStyleUtils();
   const theme = useTheme();
+  const {translate} = useLocalize();
   const themePreference = useThemePreference();
   const [preferredLocale] = useOnyx(ONYXKEYS.NVP_PREFERRED_LOCALE);
   const locale = preferredLocale ?? CONST.LOCALES.DEFAULT;
@@ -131,12 +142,6 @@ function SessionsCalendarView({
     [unitsMap, onDayPress, registerMeasureRef],
   );
 
-  // Custom header: matches the default month-text styling but reserves space
-  // for an inline spinner shown only while an older-months fetch is in flight.
-  // Keeping the header always-customized (not just when fetching) avoids a
-  // layout jump between native-header and custom-header rendering.
-  // The lib passes an `XDate` (no published d.ts; treated as `any` here). All we
-  // need is its epoch — extract via `getTime()` and rebuild a native `Date`.
   const isHeaderTappable =
     !!userID && FeatureFlags.isEnabled('FULLSCREEN_CALENDAR');
 
@@ -175,73 +180,44 @@ function SessionsCalendarView({
     day1Ref.current.measureInWindow((_x, y) => navigate(y));
   }, [userID, visibleDate.timestamp]);
 
-  const renderHeader = useCallback(
-    (date?: {getTime(): number}) => {
-      if (hideMonthHeader || !date) {
-        return null;
-      }
-      const formatted = format(
-        new Date(date.getTime()),
-        CONST.DATE.MONTH_YEAR_ABBR_FORMAT,
-      );
-      const monthText = (
-        <Text style={styles.sessionsCalendarHeaderMonthText}>{formatted}</Text>
-      );
-      const expandIcon = isHeaderTappable ? (
-        <Icon
-          src={KirokuIcons.ArrowUpDown}
-          fill={theme.textSupporting}
-          width={14}
-          height={14}
-          additionalStyles={styles.sessionsCalendarExpandIcon}
-        />
-      ) : null;
-      return (
-        <View style={styles.sessionsCalendarHeader}>
-          {isHeaderTappable ? (
-            <PressableWithFeedback
-              onPress={onHeaderPress}
-              role={CONST.ROLE.BUTTON}
-              accessibilityLabel={formatted}
-              style={styles.sessionsCalendarHeader}>
-              {monthText}
-              {expandIcon}
-            </PressableWithFeedback>
-          ) : (
-            monthText
-          )}
-          {isFetchingOlderMonths && (
-            <ActivityIndicator
-              size="small"
-              color={theme.spinner}
-              style={styles.sessionsCalendarHeaderSpinner}
-            />
-          )}
-        </View>
-      );
-    },
-    [
-      hideMonthHeader,
-      isFetchingOlderMonths,
-      isHeaderTappable,
-      onHeaderPress,
-      styles.sessionsCalendarExpandIcon,
-      styles.sessionsCalendarHeader,
-      styles.sessionsCalendarHeaderMonthText,
-      styles.sessionsCalendarHeaderSpinner,
-      theme.spinner,
-      theme.textSupporting,
-    ],
-  );
+  // Month-navigation bounds. `react-native-calendars` only disables out-of-range
+  // *days*, not the month arrows, so we gate navigation ourselves: the left
+  // arrow stops at the earliest tracked month and the right arrow stops at the
+  // current month — there's no forward browsing into the future; that's what
+  // the go-back button reverses.
+  const resolvedMinDate = minDate ?? CONST.DATE.MIN_DATE;
+  const resolvedMaxDate =
+    maxDate ?? format(new Date(), CONST.DATE.CALENDAR_FORMAT);
+  const visibleMonthStart = startOfMonth(new Date(visibleDate.timestamp));
+  const canGoPrev =
+    visibleMonthStart.getTime() >
+    startOfMonth(parseISO(resolvedMinDate)).getTime();
+  const canGoNext =
+    visibleMonthStart.getTime() <
+    startOfMonth(parseISO(resolvedMaxDate)).getTime();
+
+  // Accent go-back-to-current button: shown only while browsing a past month
+  // (a more recent month exists). Fades in on (re)appearance, mirroring the
+  // stats range navigator's jump-to-latest affordance.
+  const showJump = !!onJumpToCurrent && canGoNext && !hideArrows;
+  const [jumpOpacity] = useState(() => new Animated.Value(0));
+  useEffect(() => {
+    if (!showJump) {
+      return;
+    }
+    jumpOpacity.setValue(0);
+    Animated.timing(jumpOpacity, {
+      toValue: 1,
+      duration: 150,
+      useNativeDriver: true,
+    }).start();
+  }, [showJump, jumpOpacity]);
 
   // Side-swipe → change month. The library's built-in `enableSwipeMonths` is
   // off because it bypasses the orchestrator's lazy-load hook; we feed the
   // existing arrow handlers instead so the same prefetch path fires. The
   // `subtractMonth/addMonth` callback they take is the lib's internal cursor
   // updater — irrelevant here since `current` is driven by `visibleDate`.
-  const resolvedMinDate = minDate ?? CONST.DATE.MIN_DATE;
-  const resolvedMaxDate =
-    maxDate ?? format(new Date(), CONST.DATE.CALENDAR_FORMAT);
   const goToPreviousMonth = useCallback(() => {
     if (!onLeftArrowPress) {
       return;
@@ -262,6 +238,121 @@ function SessionsCalendarView({
     }
     onRightArrowPress(() => {});
   }, [onRightArrowPress, visibleDate.timestamp, resolvedMaxDate]);
+
+  const renderArrow = (enabled: boolean, direction: 'left' | 'right') => (
+    <Icon
+      small
+      src={KirokuIcons.ArrowRight}
+      fill={theme.text}
+      additionalStyles={[
+        StyleUtils.getDirectionStyle(
+          direction === 'left' ? CONST.DIRECTION.LEFT : CONST.DIRECTION.RIGHT,
+        ),
+        enabled ? undefined : styles.statsRangeNavigatorIconDisabled,
+      ]}
+    />
+  );
+
+  // Full-width custom navigator rendered inside the library header: circular
+  // edge arrows, a centered month label (expand chevron on its left) that opens
+  // the fullscreen calendar, and the go-back-to-current accent button on its
+  // right. The library flanks `renderHeader` with its own (hidden) arrows and a
+  // flex `headerContainer` (see `getSessionsCalendarStyle`), so this row spans
+  // the full header width.
+  const renderHeader = () => {
+    if (hideMonthHeader) {
+      return null;
+    }
+    const formatted = format(
+      new Date(visibleDate.timestamp),
+      CONST.DATE.MONTH_YEAR_ABBR_FORMAT,
+    );
+    const monthText = (
+      <Text style={styles.sessionsCalendarHeaderMonthText}>{formatted}</Text>
+    );
+    return (
+      <View style={styles.statsRangeNavigatorRow}>
+        <View style={styles.statsRangeNavigatorButtonSlot}>
+          {!hideArrows && (
+            <PressableWithFeedback
+              shouldUseAutoHitSlop={false}
+              disabled={!canGoPrev}
+              onPress={goToPreviousMonth}
+              hoverDimmingValue={1}
+              accessibilityLabel={translate(
+                'sessionsCalendar.a11y.previousMonth',
+              )}
+              accessibilityState={{disabled: !canGoPrev}}
+              style={styles.statsRangeNavigatorButton}>
+              {renderArrow(canGoPrev, 'left')}
+            </PressableWithFeedback>
+          )}
+        </View>
+        <View style={styles.statsRangeNavigatorLabelSlot}>
+          <View style={styles.statsRangeNavigatorLabelRow}>
+            {isHeaderTappable ? (
+              <PressableWithFeedback
+                onPress={onHeaderPress}
+                role={CONST.ROLE.BUTTON}
+                accessibilityLabel={translate(
+                  'sessionsCalendar.a11y.monthLabel',
+                )}
+                style={[
+                  styles.statsRangeNavigatorLabelPressable,
+                  styles.flexRow,
+                  styles.alignItemsCenter,
+                ]}>
+                <Icon
+                  src={KirokuIcons.ArrowUpDown}
+                  fill={theme.textSupporting}
+                  width={14}
+                  height={14}
+                  additionalStyles={styles.sessionsCalendarExpandIcon}
+                />
+                {monthText}
+              </PressableWithFeedback>
+            ) : (
+              monthText
+            )}
+            {showJump && (
+              <Animated.View style={{opacity: jumpOpacity}}>
+                <PressableWithFeedback
+                  onPress={onJumpToCurrent}
+                  role={CONST.ROLE.BUTTON}
+                  accessibilityLabel={translate(
+                    'sessionsCalendar.a11y.jumpToCurrentMonth',
+                  )}
+                  style={styles.statsRangeNavigatorInlineJump}>
+                  <Icon
+                    small
+                    src={KirokuIcons.RotateLeft}
+                    fill={theme.textReversed}
+                  />
+                </PressableWithFeedback>
+              </Animated.View>
+            )}
+            {isFetchingOlderMonths && (
+              <ActivityIndicator size="small" color={theme.spinner} />
+            )}
+          </View>
+        </View>
+        <View style={styles.statsRangeNavigatorButtonSlot}>
+          {!hideArrows && (
+            <PressableWithFeedback
+              shouldUseAutoHitSlop={false}
+              disabled={!canGoNext}
+              onPress={goToNextMonth}
+              hoverDimmingValue={1}
+              accessibilityLabel={translate('sessionsCalendar.a11y.nextMonth')}
+              accessibilityState={{disabled: !canGoNext}}
+              style={styles.statsRangeNavigatorButton}>
+              {renderArrow(canGoNext, 'right')}
+            </PressableWithFeedback>
+          )}
+        </View>
+      </View>
+    );
+  };
 
   const swipeGesture = useMemo(
     () =>
@@ -311,17 +402,16 @@ function SessionsCalendarView({
           minDate={resolvedMinDate}
           maxDate={resolvedMaxDate}
           monthFormat={CONST.DATE.MONTH_YEAR_ABBR_FORMAT}
-          onPressArrowLeft={onLeftArrowPress}
-          onPressArrowRight={onRightArrowPress}
           markedDates={markedDates}
           markingType="period"
           firstDay={CONST.WEEK_STARTS_ON}
           enableSwipeMonths={false}
-          hideArrows={hideArrows}
+          // We render our own arrows inside `renderHeader`; the library's are
+          // always suppressed.
+          hideArrows
           hideDayNames={hideDayNames}
           renderHeader={renderHeader}
           disableAllTouchEventsForDisabledDays
-          renderArrow={(direction: Direction) => CalendarArrow(direction)}
           style={styles.sessionsCalendarContainer}
           theme={StyleUtils.getSessionsCalendarStyle()}
           // @ts-expect-error locale prop exists at runtime but is not declared in types

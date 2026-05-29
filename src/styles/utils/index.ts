@@ -1323,6 +1323,20 @@ const createStyleUtils = (theme: ThemeColors, styles: ThemeStyles) => ({
         },
       },
       'stylesheet.calendar.header': {
+        // Month-title row. `SessionsCalendarView` renders a full-width custom
+        // navigator (edge arrows + centered label) via `renderHeader`, so we
+        // strip the library's default horizontal padding and let the title
+        // container flex to the row's full width.
+        header: {
+          flexDirection: 'row',
+          alignItems: 'center',
+          paddingLeft: 0,
+          paddingRight: 0,
+          marginTop: 6,
+        },
+        headerContainer: {
+          flex: 1,
+        },
         // Day-name row inside the library header — must match the week row's
         // column distribution so day names line up with the tile columns.
         week: {
