@@ -53,6 +53,7 @@ import Share from '@assets/images/share.svg';
 import Star from '@assets/images/star.svg';
 import Statistics from '@assets/images/statistics.svg';
 import Stopwatch from '@assets/images/stopwatch.svg';
+import SupporterCoin from '@assets/images/supporter-coin.svg';
 import StrongShot from '@assets/images/strong-shot.svg';
 import ThreeDots from '@assets/images/three-dots.svg';
 import UnderMaintenance from '@assets/images/under-maintenance.png';
@@ -124,6 +125,7 @@ export {
   Statistics,
   Stopwatch,
   StrongShot,
+  SupporterCoin,
   Close as ThinX,
   ThreeDots,
   UnderMaintenance,

@@ -1,0 +1,24 @@
+<svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+<defs>
+<linearGradient id="kSGold" x1="0" y1="0" x2="0" y2="1">
+<stop stop-color="#FFE995"/>
+<stop offset="0.5" stop-color="#F5C400"/>
+<stop offset="1" stop-color="#C98A12"/>
+</linearGradient>
+<radialGradient id="kSSheen" cx="0.34" cy="0.26" r="0.55">
+<stop stop-color="#FFFFFF" stop-opacity="0.22"/>
+<stop offset="1" stop-color="#FFFFFF" stop-opacity="0"/>
+</radialGradient>
+</defs>
+<circle cx="12" cy="12" r="11" fill="#23262A"/>
+<circle cx="12" cy="12" r="11" fill="url(#kSSheen)"/>
+<circle cx="12" cy="12" r="11" stroke="url(#kSGold)" stroke-width="1.4"/>
+<g fill="url(#kSGold)" transform="translate(12 12) scale(0.018) translate(-512 -471)">
+<path d="M129 808L316 480L374 580L243.117 808H129Z"/>
+<path d="M895.5 808L708.5 480L650.5 580L781.383 808H895.5Z"/>
+<rect x="523" y="618" width="185" height="20" transform="rotate(90 523 618)"/>
+<rect x="602" y="808" width="180" height="9.99998" transform="rotate(-180 602 808)"/>
+<path d="M636.5 348L512.66 134L389 348H636.5Z"/>
+<path d="M388.5 434L512.34 648L636 434L388.5 434Z"/>
+</g>
+</svg>
