@@ -1135,6 +1135,7 @@ export default {
       currentBac: 'Estimated BAC',
       noSession:
         'Start a drinking session to see your estimated blood alcohol level.',
+      sober: 'Your estimated blood alcohol is back down to zero.',
       disclaimer:
         'This is a rough estimate, not a medical or legal measurement. Never drive after drinking.',
       editDetails: 'Edit my details',

@@ -79,9 +79,11 @@ function AchievementsScreen() {
   );
 
   const hoursToSober = BACUtils.getTimeToSoberHours(estimate.point);
-  // Show the result only when there's a non-zero estimate; a fully decayed
-  // (sober) or absent estimate falls back to the prompt message below.
+  // Show the result only when there's a non-zero estimate. Otherwise fall back
+  // to a message: a "sober" note when recent sessions exist but have decayed to
+  // zero, or the "start a session" prompt when there's nothing recent at all.
   const hasEstimate = estimate.point > 0;
+  const hasRecentSessions = estimate.contributions.length > 0;
 
   const dismissIntro = () => {
     if (!introSeen && user) {
@@ -162,7 +164,11 @@ function AchievementsScreen() {
                   styles.ph5,
                 ]}>
                 <Text style={[styles.textAlignCenter]}>
-                  {translate('achievementsScreen.bac.noSession')}
+                  {translate(
+                    hasRecentSessions
+                      ? 'achievementsScreen.bac.sober'
+                      : 'achievementsScreen.bac.noSession',
+                  )}
                 </Text>
               </View>
             )}
