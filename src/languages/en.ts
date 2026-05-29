@@ -728,7 +728,7 @@ export default {
     benefit: 'Supporter badge on your profile',
     description:
       'Support Kiroku and get the 🍺 supporter badge on your profile.',
-    menuEntry: 'Support Kiroku 🍺',
+    menuEntry: 'Support Kiroku',
     paywallScreen: {
       title: 'Support Kiroku',
       heroPill: 'Supporter badge',
@@ -754,7 +754,7 @@ export default {
       startSupportingCta: ({price}: SupporterPriceParams) =>
         `Start Supporting — ${price}`,
       loading: 'Loading subscription details...',
-      thanksTitle: "You're a Kiroku Supporter 🍺",
+      thanksTitle: "You're a Kiroku Supporter",
       thanksSubtitle:
         'Thanks for backing the app — your supporter badge is live on your profile.',
       unavailableTitle: 'Subscription unavailable',
@@ -764,6 +764,8 @@ export default {
         `Become a supporter — ${price} / month`,
       purchaseError: ({message}: SupporterPurchaseErrorParams) =>
         `Purchase failed: ${message}. Please try again.`,
+      restoreError: ({message}: SupporterPurchaseErrorParams) =>
+        `Restore failed: ${message}. Please try again.`,
       restorePurchases: 'Restore purchases',
       restoreEmpty:
         'No prior supporter subscription found on this account. If you purchased on another device, sign in with the same account and try again.',

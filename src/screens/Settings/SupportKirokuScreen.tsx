@@ -2,16 +2,19 @@ import React, {useCallback, useEffect, useState} from 'react';
 import {View} from 'react-native';
 import {useOnyx} from 'react-native-onyx';
 import type {PurchasesPackage} from 'react-native-purchases';
+import Badge from '@components/Badge';
 import Button from '@components/Button';
 import FlexibleLoadingIndicator from '@components/FlexibleLoadingIndicator';
 import HeaderWithBackButton from '@components/HeaderWithBackButton';
+import Icon from '@components/Icon';
+import * as KirokuIcons from '@components/Icon/KirokuIcons';
 import PressableWithFeedback from '@components/Pressable/PressableWithFeedback';
 import ScreenWrapper from '@components/ScreenWrapper';
 import ScrollView from '@components/ScrollView';
 import Section from '@components/Section';
-import SupporterBadge from '@components/SupporterBadge';
 import Text from '@components/Text';
 import useLocalize from '@hooks/useLocalize';
+import useTheme from '@hooks/useTheme';
 import useThemeStyles from '@hooks/useThemeStyles';
 import {
   fetchCurrentOffering,
@@ -21,9 +24,11 @@ import {
 import Navigation from '@libs/Navigation/Navigation';
 import SupporterUtils from '@libs/SupporterUtils';
 import * as UserUtils from '@libs/UserUtils';
+import variables from '@styles/variables';
 import CONST from '@src/CONST';
 import ONYXKEYS from '@src/ONYXKEYS';
 import ROUTES from '@src/ROUTES';
+import type IconAsset from '@src/types/utils/IconAsset';
 
 /** Predefined RevenueCat package durations the paywall sells. */
 type PlanKey = 'annual' | 'monthly';
@@ -42,17 +47,18 @@ type ViewState =
   | {kind: 'restore-empty'};
 
 /**
- * Emoji shown in the hero and feature rows. Decorative, brand-consistent with
- * the 🍺 supporter badge, and avoids sourcing new icon assets (see the icon
- * sourcing policy).
+ * SVG icons for the hero and feature rows. Sourced from the shared
+ * `KirokuIcons` set (theme-tinted line icons) rather than emoji, so the screen
+ * uses the same icon vocabulary as the rest of the app.
  */
-const HERO_EMOJI = '🍺';
-const FEATURE_BADGE_EMOJI = '🍺';
-const FEATURE_SUPPORT_EMOJI = '❤️';
-const FEATURE_EARLY_ACCESS_EMOJI = '✨';
+const HERO_ICON = KirokuIcons.Beer;
+const FEATURE_BADGE_ICON = KirokuIcons.Beer;
+const FEATURE_SUPPORT_ICON = KirokuIcons.Idea;
+const FEATURE_EARLY_ACCESS_ICON = KirokuIcons.Star;
 
 function SupportKirokuScreen() {
   const styles = useThemeStyles();
+  const theme = useTheme();
   const {translate} = useLocalize();
   const [privateData] = useOnyx(ONYXKEYS.USER_PRIVATE_DATA);
   const supporter = UserUtils.getCurrentUserSupporterStatus(privateData);
@@ -61,6 +67,9 @@ function SupportKirokuScreen() {
   const [selectedPlanKey, setSelectedPlanKey] = useState<PlanKey>('annual');
   const [isPurchasing, setIsPurchasing] = useState(false);
   const [isRestoring, setIsRestoring] = useState(false);
+  const [restoreErrorMessage, setRestoreErrorMessage] = useState<string | null>(
+    null,
+  );
 
   // Defense-in-depth: even though the Settings menu entry is removed in
   // production builds (see `SupporterUtils.isSupporterTierVisible`), bounce
@@ -134,28 +143,37 @@ function SupportKirokuScreen() {
     }
     (async () => {
       setIsRestoring(true);
+      setRestoreErrorMessage(null);
       const result = await restoreSupporterPurchases();
       setIsRestoring(false);
-      if (result.status === 'success' && result.granted) {
+      if (result.status === 'error') {
+        setRestoreErrorMessage(result.message);
+        return;
+      }
+      if (result.granted) {
         setState({kind: 'purchase-success'});
         return;
       }
-      if (result.status === 'success' && !result.granted) {
-        setState({kind: 'restore-empty'});
-      }
+      setState({kind: 'restore-empty'});
     })();
   }, [isRestoring]);
 
-  const renderBenefit = () => (
-    <View style={[styles.flexRow, styles.alignItemsCenter, styles.mt3]}>
-      <SupporterBadge isSupporter size="medium" />
-      <Text style={[styles.ml3, styles.textNormal]}>
-        {translate('supporter.benefit')}
-      </Text>
+  const renderHeroBadge = () => (
+    <View style={styles.supporterHeroBadge}>
+      <Icon
+        src={HERO_ICON}
+        fill={theme.textOnBrand}
+        width={variables.iconSizeSuperLarge}
+        height={variables.iconSizeSuperLarge}
+      />
     </View>
   );
 
-  const renderFeature = (emoji: string, title: string, description: string) => (
+  const renderFeature = (
+    icon: IconAsset,
+    title: string,
+    description: string,
+  ) => (
     <View
       style={[
         styles.flexRow,
@@ -164,7 +182,7 @@ function SupportKirokuScreen() {
         styles.mt4,
       ]}>
       <View style={styles.supporterFeatureIconContainer}>
-        <Text style={styles.supporterFeatureEmoji}>{emoji}</Text>
+        <Icon src={icon} fill={theme.appColor} medium />
       </View>
       <View style={styles.flex1}>
         <Text style={styles.textStrong}>{title}</Text>
@@ -220,14 +238,13 @@ function SupportKirokuScreen() {
           {priceLabel}
         </Text>
         {isAnnual ? (
-          <View
-            style={[
-              styles.supporterPill,
-              styles.supporterBestValuePillPosition,
-            ]}>
-            <Text style={styles.supporterPillText}>
-              {translate('supporter.paywallScreen.bestValue')}
-            </Text>
+          <View style={styles.supporterBestValuePillPosition}>
+            <Badge
+              success
+              text={translate('supporter.paywallScreen.bestValue')}
+              textStyles={styles.supporterBadgePillText}
+              badgeStyles={styles.supporterBadgePill}
+            />
           </View>
         ) : null}
       </PressableWithFeedback>
@@ -257,6 +274,13 @@ function SupportKirokuScreen() {
           {translate('common.termsOfService')}
         </Text>
       </View>
+      {restoreErrorMessage ? (
+        <Text style={[styles.formError, styles.textAlignCenter, styles.mt3]}>
+          {translate('supporter.paywallScreen.restoreError', {
+            message: restoreErrorMessage,
+          })}
+        </Text>
+      ) : null}
       <Text
         style={[
           styles.textLabelSupporting,
@@ -283,11 +307,14 @@ function SupportKirokuScreen() {
     return (
       <View>
         <View style={styles.alignItemsCenter}>
-          <Text style={styles.supporterHeroEmoji}>{HERO_EMOJI}</Text>
-          <View style={[styles.supporterPill, styles.mt2]}>
-            <Text style={styles.supporterPillText}>
-              {translate('supporter.paywallScreen.heroPill')}
-            </Text>
+          {renderHeroBadge()}
+          <View style={styles.mt2}>
+            <Badge
+              success
+              text={translate('supporter.paywallScreen.heroPill')}
+              textStyles={styles.supporterBadgePillText}
+              badgeStyles={styles.supporterBadgePill}
+            />
           </View>
         </View>
         <Text style={[styles.supporterTitle, styles.mt4]}>
@@ -299,17 +326,17 @@ function SupportKirokuScreen() {
 
         <View style={styles.mt5}>
           {renderFeature(
-            FEATURE_BADGE_EMOJI,
+            FEATURE_BADGE_ICON,
             translate('supporter.paywallScreen.featureBadgeTitle'),
             translate('supporter.paywallScreen.featureBadgeDescription'),
           )}
           {renderFeature(
-            FEATURE_SUPPORT_EMOJI,
+            FEATURE_SUPPORT_ICON,
             translate('supporter.paywallScreen.featureSupportTitle'),
             translate('supporter.paywallScreen.featureSupportDescription'),
           )}
           {renderFeature(
-            FEATURE_EARLY_ACCESS_EMOJI,
+            FEATURE_EARLY_ACCESS_ICON,
             translate('supporter.paywallScreen.featureEarlyAccessTitle'),
             translate('supporter.paywallScreen.featureEarlyAccessDescription'),
           )}
@@ -348,26 +375,71 @@ function SupportKirokuScreen() {
     );
   };
 
+  const renderStatusChip = () => {
+    const status = supporter.supporter_status;
+    if (!status) {
+      return null;
+    }
+    const expiresDate = SupporterUtils.formatSupporterDate(
+      supporter.supporter_expires_at,
+    );
+    let label: string | null = null;
+    if (status === 'active') {
+      label = translate('supporter.manageSubscription.status.active');
+    } else if (status === 'grace_period') {
+      label = translate('supporter.manageSubscription.status.gracePeriod');
+    } else if (status === 'expired') {
+      label = translate('supporter.manageSubscription.status.expired');
+    } else if (status === 'cancelled') {
+      label = translate('supporter.manageSubscription.status.cancelled', {
+        date: expiresDate,
+      });
+    }
+    if (!label) {
+      return null;
+    }
+    return (
+      <>
+        <View style={[styles.supporterStatusChip, styles.mt4]}>
+          <Text style={styles.textStrong}>{label}</Text>
+        </View>
+        {status === 'active' && expiresDate ? (
+          <Text style={[styles.textLabelSupporting, styles.mt2]}>
+            {translate('supporter.manageSubscription.renewsOn', {
+              date: expiresDate,
+            })}
+          </Text>
+        ) : null}
+      </>
+    );
+  };
+
+  // Celebratory "thank you" surface shared by the already-supporter view and
+  // the immediately-after-purchase view (Option A).
+  const renderThanks = () => (
+    <View style={styles.alignItemsCenter}>
+      {renderHeroBadge()}
+      <Text style={[styles.supporterTitle, styles.mt4]}>
+        {translate('supporter.paywallScreen.thanksTitle')}
+      </Text>
+      <Text style={[styles.supporterSubtitle, styles.mt2, styles.ph3]}>
+        {translate('supporter.paywallScreen.thanksSubtitle')}
+      </Text>
+      {renderStatusChip()}
+      <View style={[styles.mt5, styles.alignSelfStretch]}>
+        <Button
+          text={translate('supporter.paywallScreen.manageSubscriptionLink')}
+          onPress={() =>
+            Navigation.navigate(ROUTES.SETTINGS_MANAGE_SUBSCRIPTION)
+          }
+        />
+      </View>
+    </View>
+  );
+
   const renderBody = () => {
-    if (supporter.is_supporter) {
-      return (
-        <Section
-          title={translate('supporter.paywallScreen.thanksTitle')}
-          subtitle={translate('supporter.paywallScreen.thanksSubtitle')}
-          isCentralPane
-          subtitleMuted
-          titleStyles={styles.accountSettingsSectionTitle}>
-          {renderBenefit()}
-          <View style={[styles.mt5]}>
-            <Button
-              text={translate('supporter.paywallScreen.manageSubscriptionLink')}
-              onPress={() =>
-                Navigation.navigate(ROUTES.SETTINGS_MANAGE_SUBSCRIPTION)
-              }
-            />
-          </View>
-        </Section>
-      );
+    if (supporter.is_supporter || state.kind === 'purchase-success') {
+      return renderThanks();
     }
 
     if (state.kind === 'loading') {
@@ -392,19 +464,6 @@ function SupportKirokuScreen() {
               onPress={retryLoadOffering}
             />
           </View>
-        </Section>
-      );
-    }
-
-    if (state.kind === 'purchase-success') {
-      return (
-        <Section
-          title={translate('supporter.paywallScreen.thanksTitle')}
-          subtitle={translate('supporter.paywallScreen.thanksSubtitle')}
-          isCentralPane
-          subtitleMuted
-          titleStyles={styles.accountSettingsSectionTitle}>
-          {renderBenefit()}
         </Section>
       );
     }

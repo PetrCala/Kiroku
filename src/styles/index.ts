@@ -2751,9 +2751,14 @@ const styles = (theme: ThemeColors) =>
     },
 
     // Supporter paywall (SupportKirokuScreen)
-    supporterHeroEmoji: {
-      fontSize: variables.fontSizeHeroXL,
-      textAlign: 'center',
+    supporterHeroBadge: {
+      width: variables.avatarSizeXLarge,
+      height: variables.avatarSizeXLarge,
+      borderRadius: variables.avatarSizeXLarge / 2,
+      backgroundColor: theme.success,
+      alignItems: 'center',
+      justifyContent: 'center',
+      alignSelf: 'center',
     },
 
     supporterTitle: {
@@ -2779,10 +2784,6 @@ const styles = (theme: ThemeColors) =>
       backgroundColor: theme.cardBG,
       alignItems: 'center',
       justifyContent: 'center',
-    },
-
-    supporterFeatureEmoji: {
-      fontSize: variables.fontSizeXLarge,
     },
 
     supporterPlanCard: {
@@ -2821,15 +2822,14 @@ const styles = (theme: ThemeColors) =>
       backgroundColor: theme.success,
     },
 
-    supporterPill: {
-      alignSelf: 'center',
-      backgroundColor: theme.success,
-      borderRadius: variables.componentBorderRadiusLarge,
-      paddingHorizontal: 8,
-      paddingVertical: 2,
+    // "Best value" and hero tags reuse the shared <Badge> component; these only
+    // adjust its defaults — reset the built-in left margin, fix on-brand text
+    // contrast, and anchor the floating best-value tag to the plan card.
+    supporterBadgePill: {
+      marginLeft: 0,
     },
 
-    supporterPillText: {
+    supporterBadgePillText: {
       ...FontUtils.fontFamily.platform.EXP_NEUE_BOLD,
       color: theme.textOnBrand,
       fontSize: variables.fontSizeSmall,
@@ -2840,6 +2840,14 @@ const styles = (theme: ThemeColors) =>
       position: 'absolute',
       top: -10,
       right: 12,
+    },
+
+    supporterStatusChip: {
+      alignSelf: 'center',
+      backgroundColor: theme.cardBG,
+      borderRadius: variables.componentBorderRadiusLarge,
+      paddingHorizontal: 12,
+      paddingVertical: 6,
     },
 
     supporterCtaText: {

@@ -18,4 +18,20 @@ function isSupporterTierVisible(): boolean {
   return !CONFIG.IS_IN_PRODUCTION;
 }
 
-export default {isSupporterTierVisible};
+/**
+ * Formats an ISO date string (e.g. a RevenueCat `expirationDate`) into a
+ * locale-aware short date. Returns an empty string for missing or unparseable
+ * input so callers can treat "no date" and "bad date" identically.
+ */
+function formatSupporterDate(iso: string | null | undefined): string {
+  if (!iso) {
+    return '';
+  }
+  const parsed = new Date(iso);
+  if (Number.isNaN(parsed.getTime())) {
+    return '';
+  }
+  return parsed.toLocaleDateString();
+}
+
+export default {isSupporterTierVisible, formatSupporterDate};

@@ -25,17 +25,6 @@ const PLAY_PRODUCT_SKU = 'supporter_monthly';
 const PLAY_PACKAGE_NAME = 'com.alcohol_tracker';
 const PLAY_SUBSCRIPTIONS_URL = `https://play.google.com/store/account/subscriptions?sku=${PLAY_PRODUCT_SKU}&package=${PLAY_PACKAGE_NAME}`;
 
-function formatDate(iso: string | null | undefined): string {
-  if (!iso) {
-    return '';
-  }
-  const parsed = new Date(iso);
-  if (Number.isNaN(parsed.getTime())) {
-    return '';
-  }
-  return parsed.toLocaleDateString();
-}
-
 function ManageSubscriptionScreen() {
   const styles = useThemeStyles();
   const {translate} = useLocalize();
@@ -55,7 +44,9 @@ function ManageSubscriptionScreen() {
   }, [isVisible]);
 
   const status: SupporterStatus | null = supporter.supporter_status ?? null;
-  const expiresDate = formatDate(supporter.supporter_expires_at);
+  const expiresDate = SupporterUtils.formatSupporterDate(
+    supporter.supporter_expires_at,
+  );
 
   const handleManagePress = useCallback(() => {
     const url =
