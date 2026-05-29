@@ -1,6 +1,12 @@
 import {useMemo} from 'react';
 import {DashPathEffect} from '@shopify/react-native-skia';
-import {BaseChart, Line} from '@components/Charts/BaseChart';
+import {BaseChart, Line, useChartFont} from '@components/Charts/BaseChart';
+import {
+  formatDayTick,
+  roundTick,
+  tickIndices,
+  valueTicks,
+} from '@components/Charts/BaseChart/axisFormatters';
 
 type CumulativeLinePoint = {date: string; count: number};
 
@@ -15,7 +21,7 @@ type CumulativeLineProps = {
   isLoading?: boolean;
 };
 
-type CumulativeRow = {x: string; y: number; cmp: number};
+type CumulativeRow = {x: number; y: number; cmp: number};
 
 const COMPARISON_DASH: number[] = [4, 4];
 
@@ -34,13 +40,14 @@ function CumulativeLine({
   height,
   isLoading,
 }: CumulativeLineProps) {
+  const axisFont = useChartFont();
   const showComparison =
     !!comparisonPoints && comparisonPoints.length === points.length;
 
   const data = useMemo<CumulativeRow[]>(
     () =>
       points.map((p, i) => ({
-        x: p.date,
+        x: i,
         y: p.count,
         cmp: showComparison ? comparisonPoints?.[i]?.count ?? 0 : 0,
       })),
@@ -52,6 +59,22 @@ function CumulativeLine({
     [showComparison],
   );
 
+  const maxCount = useMemo(() => {
+    let max = 1;
+    for (const row of data) {
+      if (row.y > max) {
+        max = row.y;
+      }
+      if (showComparison && row.cmp > max) {
+        max = row.cmp;
+      }
+    }
+    return max;
+  }, [data, showComparison]);
+
+  const xTicks = useMemo(() => tickIndices(points.length), [points.length]);
+  const yTicks = useMemo(() => valueTicks(maxCount), [maxCount]);
+
   return (
     <BaseChart
       data={data}
@@ -60,6 +83,13 @@ function CumulativeLine({
       accessibilityLabel={accessibilityLabel}
       emptyLabel={emptyLabel}
       height={height}
+      axis={{
+        font: axisFont,
+        tickValues: {x: xTicks, y: yTicks},
+        formatXLabel: index =>
+          formatDayTick(points[Math.round(index)]?.date ?? ''),
+        formatYLabel: roundTick,
+      }}
       loading={isLoading}>
       {({points: linePoints, theme}) => (
         <>

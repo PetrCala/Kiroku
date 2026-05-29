@@ -1,229 +1,294 @@
-import React, {useMemo} from 'react';
+import React from 'react';
 import {View} from 'react-native';
-import ScrollView from '@components/ScrollView';
-import {CalendarHeatmap} from '@components/Charts/CalendarHeatmap';
+import {BarList} from '@components/Charts/BarList';
 import {ChartCard} from '@components/Charts/ChartCard';
+import {DistributionBar} from '@components/Charts/DistributionBar';
+import type {DistributionSegment} from '@components/Charts/DistributionBar';
 import {KpiCard, KpiCardGroup} from '@components/Charts/KpiCard';
 import type {KpiCardProps} from '@components/Charts/KpiCard';
-import {MiniTrendLine} from '@components/Charts/MiniTrendLine';
+import ScrollView from '@components/ScrollView';
+import StatsFilterToolbar from '@components/Statistics/StatsFilterToolbar';
 import Text from '@components/Text';
-import useDrinkEvents from '@hooks/useStatistics/useDrinkEvents';
 import useLocalize from '@hooks/useLocalize';
+import useOverviewTabData from '@hooks/useStatistics/useOverviewTabData';
 import useTheme from '@hooks/useTheme';
 import useThemeStyles from '@hooks/useThemeStyles';
-import {
-  selectAfDaysThisMonth,
-  selectHasEverLogged,
-  selectIsSparse,
-  selectThisMonthHeatmapCells,
-  selectTrendSeries,
-  selectWeeklyKpis,
-} from '@libs/Statistics/overviewSelectors';
-import type {TranslationPaths} from '@src/languages/types';
-import {useStatsDrillDown} from '@src/screens/Statistics/drilldown/DrillDownContext';
+import type {ChartDatum} from '@libs/Statistics';
 
 type DeltaShape = NonNullable<KpiCardProps['delta']>;
 
-function makeDelta(
-  current: number,
-  previous: number,
-  label: string,
-): DeltaShape {
-  const diff = current - previous;
-  let direction: DeltaShape['direction'] = 'flat';
-  if (diff > 0) {
-    direction = 'up';
-  } else if (diff < 0) {
-    direction = 'down';
-  }
-  return {value: diff, direction, label};
-}
-
 function formatUnits(value: number): string {
-  // 1 decimal for partial units, else integer — matches existing chart formatting.
+  // 1 decimal for partial units, else integer — matches the other tabs.
   return Number.isInteger(value) ? String(value) : value.toFixed(1);
 }
 
+/**
+ * Total-alcohol scorecard for the selected range. Reads the shared range +
+ * comparison from the toolbar and tells a period story top-to-bottom:
+ * verdict (units) → wins (restraint) → load (consumption) → risk (threshold
+ * days) → texture (shape + intensity mix). Every tile carries a
+ * previous-period delta when a comparison is active.
+ */
 function OverviewTab() {
   const {translate} = useLocalize();
   const styles = useThemeStyles();
   const theme = useTheme();
-  const {events, isLoading} = useDrinkEvents();
-  const {openDrillDown} = useStatsDrillDown();
+  const {
+    isLoading,
+    hasEverLogged,
+    isSparse,
+    thresholds,
+    current,
+    previous,
+    subPeriods,
+  } = useOverviewTabData();
 
-  // Snapshot `now` once per mount so all selectors agree. Re-deriving on each
-  // render would let an animation frame land between two reads and disagree
-  // about today's date.
-  const now = useMemo(() => new Date(), []);
-
-  const afDays = useMemo(
-    () => selectAfDaysThisMonth(events, now),
-    [events, now],
-  );
-  const weekly = useMemo(() => selectWeeklyKpis(events, now), [events, now]);
-  const trend = useMemo(() => selectTrendSeries(events, now), [events, now]);
-  const cells = useMemo(
-    () => selectThisMonthHeatmapCells(events, now),
-    [events, now],
-  );
-
-  const hasEverLogged = selectHasEverLogged(events);
-  const isSparse = selectIsSparse(events, trend.weeksWithData);
-
-  // Skip the never-logged empty-state copy while still loading — the
-  // skeleton path renders the real scaffold structure instead, then the
-  // screen swaps to data once compute completes.
+  // Skip the never-logged copy while loading — the tiles render skeletons.
   if (!isLoading && !hasEverLogged) {
     return (
-      <ScrollView
-        style={styles.flex1}
-        contentContainerStyle={[styles.p4, styles.alignItemsCenter]}>
-        <View style={[styles.p4, styles.alignItemsCenter]}>
-          <Text
-            style={[
-              styles.textHeadline,
-              styles.textAlignCenter,
-              {color: theme.successHover},
-            ]}>
-            {translate('statistics.tabs.overview.empty.neverLogged.title')}
-          </Text>
-          <Text style={[styles.textNormal, styles.textAlignCenter, styles.mt3]}>
-            {translate('statistics.tabs.overview.empty.neverLogged.body')}
-          </Text>
-        </View>
-      </ScrollView>
+      <View style={styles.flex1}>
+        <StatsFilterToolbar showDrinkTypeFilter={false} />
+        <ScrollView
+          style={styles.flex1}
+          contentContainerStyle={[styles.p4, styles.alignItemsCenter]}>
+          <View style={[styles.p4, styles.alignItemsCenter]}>
+            <Text
+              style={[
+                styles.textHeadline,
+                styles.textAlignCenter,
+                {color: theme.successHover},
+              ]}>
+              {translate('statistics.tabs.overview.empty.neverLogged.title')}
+            </Text>
+            <Text
+              style={[styles.textNormal, styles.textAlignCenter, styles.mt3]}>
+              {translate('statistics.tabs.overview.empty.neverLogged.body')}
+            </Text>
+          </View>
+        </ScrollView>
+      </View>
     );
   }
 
-  const sessionsDelta = makeDelta(
-    weekly.sessionsThisWeek,
-    weekly.sessionsLastWeek,
-    translate('statistics.tabs.overview.kpi.sessionsThisWeek.delta'),
-  );
-  const quietDelta = makeDelta(
-    weekly.quietDaysThisWeek,
-    weekly.quietDaysLastWeek,
-    translate('statistics.tabs.overview.kpi.quietDaysThisWeek.delta'),
-  );
-  const unitsDelta = makeDelta(
-    weekly.unitsThisWeek,
-    weekly.unitsLastWeek,
-    translate('statistics.tabs.overview.kpi.unitsThisWeek.delta'),
-  );
+  const vsPrevious = translate('statistics.tabs.overview.delta.vsPrevious');
+  const makeDelta = (cur: number, prev: number): DeltaShape | undefined => {
+    if (!previous) {
+      return undefined;
+    }
+    const diff = Number((cur - prev).toFixed(1));
+    let direction: DeltaShape['direction'] = 'flat';
+    if (diff > 0) {
+      direction = 'up';
+    } else if (diff < 0) {
+      direction = 'down';
+    }
+    return {value: diff, direction, label: vsPrevious};
+  };
 
-  let trendChipKey: TranslationPaths =
-    'statistics.tabs.overview.trend.chip.none';
-  if (trend.mannKendall.trend === 'down') {
-    trendChipKey = 'statistics.tabs.overview.trend.chip.down';
-  } else if (trend.mannKendall.trend === 'up') {
-    trendChipKey = 'statistics.tabs.overview.trend.chip.up';
-  }
+  const sparkline: ChartDatum[] = subPeriods.map(point => ({
+    x: point.label,
+    y: point.units,
+  }));
 
-  const kpiCards: KpiCardProps[] = [
+  const winsCards: KpiCardProps[] = [
     {
-      label: translate('statistics.tabs.overview.kpi.sessionsThisWeek.label'),
-      value: weekly.sessionsThisWeek,
-      delta: sessionsDelta,
-      polarity: 'lower-is-supportive',
-    },
-    {
-      label: translate('statistics.tabs.overview.kpi.quietDaysThisWeek.label'),
-      value: weekly.quietDaysThisWeek,
-      delta: quietDelta,
+      label: translate('statistics.tabs.overview.kpi.afDays.label'),
+      value: current.afDays,
+      unit: `/${current.elapsedDays}`,
+      delta: previous ? makeDelta(current.afDays, previous.afDays) : undefined,
+      tone: 'celebratory',
       polarity: 'higher-is-supportive',
     },
     {
-      label: translate('statistics.tabs.overview.kpi.unitsThisWeek.label'),
-      value: formatUnits(weekly.unitsThisWeek),
-      delta: {...unitsDelta, value: Number(unitsDelta.value.toFixed(1))},
+      label: translate('statistics.tabs.overview.kpi.dryStreak.label'),
+      value: current.longestDryStreak,
+      unit: translate('statistics.tabs.overview.kpi.dryStreak.unit'),
+      delta: previous
+        ? makeDelta(current.longestDryStreak, previous.longestDryStreak)
+        : undefined,
+      polarity: 'higher-is-supportive',
+    },
+  ];
+
+  const loadCards: KpiCardProps[] = [
+    {
+      label: translate('statistics.tabs.overview.kpi.sessions.label'),
+      value: current.sessions,
+      delta: previous
+        ? makeDelta(current.sessions, previous.sessions)
+        : undefined,
+      polarity: 'lower-is-supportive',
+    },
+    {
+      label: translate('statistics.tabs.overview.kpi.heaviestDay.label'),
+      value: formatUnits(current.heaviestDay),
+      unit: translate('statistics.tabs.overview.kpi.heaviestDay.unit'),
+      delta: previous
+        ? makeDelta(current.heaviestDay, previous.heaviestDay)
+        : undefined,
+      polarity: 'lower-is-supportive',
+    },
+    {
+      label: translate('statistics.tabs.overview.kpi.avgPerDrinkingDay.label'),
+      value: formatUnits(current.avgUnitsPerDrinkingDay),
+      unit: translate('statistics.tabs.overview.kpi.avgPerDrinkingDay.unit'),
+      delta: previous
+        ? makeDelta(
+            current.avgUnitsPerDrinkingDay,
+            previous.avgUnitsPerDrinkingDay,
+          )
+        : undefined,
       polarity: 'lower-is-supportive',
     },
   ];
 
-  const heroA11y = translate('statistics.tabs.overview.hero.afDays.a11yLabel', {
-    value: afDays.value,
-    total: afDays.total,
-  });
+  const pctOver =
+    current.elapsedDays > 0
+      ? Math.round((current.daysOverYellow / current.elapsedDays) * 100)
+      : 0;
+
+  const riskCards: KpiCardProps[] = [
+    {
+      label: translate('statistics.tabs.overview.kpi.daysOverYellow.label', {
+        threshold: thresholds.yellow,
+      }),
+      value: current.daysOverYellow,
+      delta: previous
+        ? makeDelta(current.daysOverYellow, previous.daysOverYellow)
+        : undefined,
+      polarity: 'lower-is-supportive',
+    },
+    {
+      label: translate('statistics.tabs.overview.kpi.daysOverOrange.label', {
+        threshold: thresholds.orange,
+      }),
+      value: current.daysOverOrange,
+      delta: previous
+        ? makeDelta(current.daysOverOrange, previous.daysOverOrange)
+        : undefined,
+      polarity: 'lower-is-supportive',
+    },
+    {
+      // Percentage is shown without a delta: the current period may be partial
+      // while the comparison is fully elapsed, so the day-count deltas above
+      // carry the change signal instead.
+      label: translate('statistics.tabs.overview.kpi.pctOver.label', {
+        threshold: thresholds.yellow,
+      }),
+      value: `${pctOver}%`,
+      polarity: 'neutral',
+    },
+  ];
+
+  const distribution: DistributionSegment[] = [
+    {
+      label: translate('statistics.tabs.overview.texture.distribution.af'),
+      value: current.distribution.green,
+      color: theme.success,
+    },
+    {
+      label: translate('statistics.tabs.overview.texture.distribution.light'),
+      value: current.distribution.yellow,
+      color: theme.warning,
+    },
+    {
+      label: translate(
+        'statistics.tabs.overview.texture.distribution.moderate',
+      ),
+      value: current.distribution.orange,
+      color: theme.add,
+    },
+    {
+      label: translate('statistics.tabs.overview.texture.distribution.heavy'),
+      value: current.distribution.red,
+      color: theme.danger,
+    },
+  ];
+
+  const sectionLabel = (key: Parameters<typeof translate>[0]) => (
+    <Text style={[styles.textLabelSupporting, styles.textStrong, styles.mb1]}>
+      {translate(key)}
+    </Text>
+  );
 
   return (
-    <ScrollView
-      style={styles.flex1}
-      contentContainerStyle={[styles.p4]}
-      showsVerticalScrollIndicator={false}>
-      <View style={styles.mb3}>
-        <KpiCard
-          label={translate('statistics.tabs.overview.hero.afDays.label')}
-          value={afDays.value}
-          unit={`/${afDays.total}`}
-          tone="celebratory"
-          polarity="higher-is-supportive"
-          accessibilityLabel={heroA11y}
-          isLoading={isLoading}
-        />
-      </View>
-
-      <View style={styles.mb3}>
-        <KpiCardGroup cards={kpiCards} isLoading={isLoading} />
-      </View>
-
-      <ChartCard title={translate('statistics.charts.calendarHeatmap.title')}>
-        <CalendarHeatmap
-          cells={cells}
-          accessibilityLabel={translate(
-            'statistics.charts.calendarHeatmap.title',
-          )}
-          onDayPress={cell => openDrillDown({kind: 'day', date: cell.dateKey})}
-          isLoading={isLoading}
-        />
-      </ChartCard>
-
-      <ChartCard
-        title={translate('statistics.tabs.overview.trend.title')}
-        footer={
-          <Text style={[styles.textMicroSupporting]}>
-            {translate('statistics.tabs.overview.trend.bandCaption')}
-          </Text>
-        }>
-        <MiniTrendLine
-          points={trend.points}
-          band={trend.band}
-          ewma={trend.ewma}
-          height={120}
-          accessibilityLabel={translate(
-            'statistics.tabs.overview.trend.a11yLabel',
-          )}
-          isLoading={isLoading}
-        />
-      </ChartCard>
-
-      {isLoading ? null : (
-        <View style={[styles.mt2, styles.mb2]}>
-          <Text style={[styles.textLabelSupporting, styles.textAlignCenter]}>
-            {translate(trendChipKey)}
-          </Text>
+    <View style={styles.flex1}>
+      <StatsFilterToolbar showDrinkTypeFilter={false} />
+      <ScrollView
+        style={styles.flex1}
+        contentContainerStyle={[styles.p4]}
+        showsVerticalScrollIndicator={false}>
+        <View style={styles.mb3}>
+          <KpiCard
+            label={translate('statistics.tabs.overview.hero.label')}
+            value={formatUnits(current.totalUnits)}
+            unit={translate('statistics.tabs.overview.hero.unit')}
+            delta={makeDelta(current.totalUnits, previous?.totalUnits ?? 0)}
+            sparkline={sparkline}
+            polarity="lower-is-supportive"
+            isLoading={isLoading}
+          />
         </View>
-      )}
 
-      {!isLoading && isSparse ? (
-        <View style={styles.mt2}>
-          {weekly.quietDaysThisWeek > 0 ? (
-            <Text
-              style={[
-                styles.textMicroSupporting,
-                styles.textAlignCenter,
-                styles.mb2,
-              ]}>
-              {translate('statistics.tabs.overview.empty.noDataInWindow', {
-                quietDays: weekly.quietDaysThisWeek,
-              })}
+        <View style={styles.mb3}>
+          {sectionLabel('statistics.tabs.overview.sections.highlights')}
+          <KpiCardGroup cards={winsCards} isLoading={isLoading} />
+        </View>
+
+        <View style={styles.mb3}>
+          {sectionLabel('statistics.tabs.overview.sections.load')}
+          <KpiCardGroup cards={loadCards} isLoading={isLoading} />
+        </View>
+
+        <View style={styles.mb3}>
+          {sectionLabel('statistics.tabs.overview.sections.risk')}
+          <KpiCardGroup cards={riskCards} isLoading={isLoading} />
+        </View>
+
+        <ChartCard
+          title={translate('statistics.tabs.overview.texture.series.title')}>
+          <BarList
+            items={subPeriods.map(point => ({
+              label: point.label,
+              value: point.units,
+            }))}
+            accessibilityLabel={translate(
+              'statistics.tabs.overview.texture.series.a11y',
+            )}
+            isLoading={isLoading}
+          />
+        </ChartCard>
+
+        <ChartCard
+          title={translate(
+            'statistics.tabs.overview.texture.distribution.title',
+          )}>
+          <DistributionBar
+            segments={distribution}
+            accessibilityLabel={translate(
+              'statistics.tabs.overview.texture.distribution.a11y',
+            )}
+            isLoading={isLoading}
+          />
+        </ChartCard>
+
+        {!isLoading && current.sessions === 0 && current.elapsedDays > 0 ? (
+          <View style={styles.mt2}>
+            <Text style={[styles.textMicroSupporting, styles.textAlignCenter]}>
+              {translate('statistics.tabs.overview.empty.noDataInRange')}
             </Text>
-          ) : null}
-          <Text style={[styles.textMicroSupporting, styles.textAlignCenter]}>
-            {translate('statistics.tabs.overview.sparseFooter')}
-          </Text>
-        </View>
-      ) : null}
-    </ScrollView>
+          </View>
+        ) : null}
+
+        {!isLoading && current.sessions > 0 && isSparse ? (
+          <View style={styles.mt2}>
+            <Text style={[styles.textMicroSupporting, styles.textAlignCenter]}>
+              {translate('statistics.tabs.overview.sparseFooter')}
+            </Text>
+          </View>
+        ) : null}
+      </ScrollView>
+    </View>
   );
 }
 

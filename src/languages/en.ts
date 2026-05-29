@@ -25,9 +25,8 @@ import type {
   SessionConfirmTimezoneChangeParams,
   SessionStartTimeParams,
   SessionWindowIdParams,
-  StatsAfDaysParams,
   StatsDrillDownTitleParams,
-  StatsQuietDaysParams,
+  StatsThresholdParams,
   SupporterCancelledStatusParams,
   SupporterPurchaseCtaParams,
   SupporterPurchaseErrorParams,
@@ -944,47 +943,60 @@ export default {
       overview: {
         label: 'Overview',
         hero: {
-          afDays: {
-            label: 'Alcohol-free days this month',
-            a11yLabel: ({value, total}: StatsAfDaysParams) =>
-              `${value} of ${total} days alcohol-free this month`,
-          },
+          label: 'Units this period',
+          unit: 'units',
+        },
+        delta: {
+          vsPrevious: 'vs previous',
+        },
+        sections: {
+          highlights: 'Highlights',
+          load: 'Load',
+          risk: 'Risk',
         },
         kpi: {
-          sessionsThisWeek: {
-            label: 'Sessions this week',
-            delta: 'vs last week',
+          afDays: {label: 'Alcohol-free days'},
+          dryStreak: {label: 'Longest dry streak', unit: 'days'},
+          sessions: {label: 'Sessions'},
+          heaviestDay: {label: 'Heaviest day', unit: 'units'},
+          avgPerDrinkingDay: {label: 'Avg / drinking day', unit: 'units'},
+          daysOverYellow: {
+            label: ({threshold}: StatsThresholdParams) =>
+              `Days over ${threshold}`,
           },
-          quietDaysThisWeek: {
-            label: 'Quiet days this week',
-            delta: 'vs last week',
+          daysOverOrange: {
+            label: ({threshold}: StatsThresholdParams) =>
+              `Days over ${threshold}`,
           },
-          unitsThisWeek: {
-            label: 'Units this week',
-            delta: 'vs last week',
+          pctOver: {
+            label: ({threshold}: StatsThresholdParams) =>
+              `% days over ${threshold}`,
           },
         },
-        trend: {
-          title: '8-week trend',
-          bandCaption:
-            'The shaded band is where most of your last 8 weeks landed.',
-          chip: {
-            down: 'Trending down — your weekly units have been easing.',
-            up: 'Trending up — your weekly units have been rising.',
-            none: 'Your weeks vary as usual.',
+        texture: {
+          series: {
+            title: 'Units by period',
+            a11y: 'Units per sub-period',
           },
-          a11yLabel: 'Last 8 weeks of weekly units, smoothed',
+          distribution: {
+            title: 'Days by intensity',
+            a11y: 'Distribution of days by drinking intensity',
+            af: 'AF',
+            light: 'Light',
+            moderate: 'Moderate',
+            heavy: 'Heavy',
+          },
         },
         empty: {
           neverLogged: {
             title: 'Nothing to log yet — that counts.',
-            body: 'When you log a session, your weekly trends and a monthly view will show up here. Until then, every day is a quiet one.',
+            body: 'When you log a session, your period scorecard will show up here. Until then, every day is a quiet one.',
           },
-          noDataInWindow: ({quietDays}: StatsQuietDaysParams) =>
-            `${quietDays} quiet days and counting — your trends will sharpen as you log more.`,
+          noDataInRange:
+            'No sessions in this period — every elapsed day was alcohol-free.',
         },
         sparseFooter:
-          'Only a few weeks of history yet — your trends will sharpen as you log more.',
+          'Only a little history so far — these numbers will sharpen as you log more.',
       },
       trends: {
         label: 'Trends',
@@ -1029,6 +1041,8 @@ export default {
           sliceCaption: ({label, units, share}: BreakdownSliceCaptionParams) =>
             `${label}: ${units} units (${share}%)`,
           a11y: 'Drink-type composition donut',
+          current: 'Current',
+          previous: 'Previous',
         },
         multiples: {
           title: 'Weekly trend by type',

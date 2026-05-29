@@ -64,17 +64,6 @@ type ChartDatum = {x: string | number; y: number};
 
 type ChartRange = 'week' | 'month' | 'rolling30' | 'rolling8w' | 'allTime';
 
-type HeatmapCell = {
-  dateKey: string;
-  totalSdu: number;
-  intensity: 0 | 1 | 2 | 3 | 4;
-  /**
-   * Reserves the grid slot but skips the rect so future days don't look
-   * identical to logged-but-quiet ones. Per DIRECTION_REVIEW.md §6.2.
-   */
-  isFuture?: boolean;
-};
-
 type KpiDelta = {
   value: number;
   direction: 'up' | 'down' | 'flat';
@@ -100,7 +89,6 @@ export type {
   ChartDatum,
   ChartRange,
   DrinkEvent,
-  HeatmapCell,
   KpiDelta,
   KpiKey,
   KpiValue,

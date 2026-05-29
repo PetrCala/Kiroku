@@ -1,7 +1,13 @@
 import {useMemo} from 'react';
 import {View} from 'react-native';
 import {DashPathEffect, Rect} from '@shopify/react-native-skia';
-import {BaseChart, Line} from '@components/Charts/BaseChart';
+import {BaseChart, Line, useChartFont} from '@components/Charts/BaseChart';
+import {
+  formatWeekTick,
+  roundTick,
+  tickIndices,
+  valueTicks,
+} from '@components/Charts/BaseChart/axisFormatters';
 import {PressableWithoutFeedback} from '@components/Pressable';
 
 type TrendLineProps = {
@@ -25,7 +31,8 @@ type TrendLineProps = {
 };
 
 type TrendRow = {
-  x: string;
+  /** Week index (0-based); the real ISO-week label is resolved at format time. */
+  x: number;
   y: number;
   ewma: number;
   cmp: number;
@@ -58,6 +65,7 @@ function TrendLine({
   onWeekPress,
   isLoading,
 }: TrendLineProps) {
+  const axisFont = useChartFont();
   const showEwma = !!ewma && ewma.length === weeks.length;
   const showComparison =
     !!comparison && comparison.length === weeks.length && weeks.length > 0;
@@ -65,7 +73,7 @@ function TrendLine({
   const data = useMemo<TrendRow[]>(
     () =>
       weeks.map((w, i) => ({
-        x: w,
+        x: i,
         y: units[i] ?? 0,
         ewma: showEwma ? ewma?.[i] ?? 0 : 0,
         cmp: showComparison ? comparison?.[i] ?? 0 : 0,
@@ -91,6 +99,9 @@ function TrendLine({
     return max;
   }, [data, band, showEwma, showComparison]);
 
+  const xTicks = useMemo(() => tickIndices(weeks.length), [weeks.length]);
+  const yTicks = useMemo(() => valueTicks(maxY), [maxY]);
+
   const hasTapTargets = !!onWeekPress && weeks.length > 0;
 
   const chart = (
@@ -101,6 +112,12 @@ function TrendLine({
       accessibilityLabel={accessibilityLabel}
       emptyLabel={emptyLabel}
       height={height}
+      axis={{
+        font: axisFont,
+        tickValues: {x: xTicks, y: yTicks},
+        formatXLabel: index => formatWeekTick(weeks[Math.round(index)] ?? ''),
+        formatYLabel: roundTick,
+      }}
       loading={isLoading}>
       {({points, chartBounds, theme}) => {
         const top = chartBounds.top;

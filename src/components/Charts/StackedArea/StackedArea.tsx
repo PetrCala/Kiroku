@@ -1,6 +1,17 @@
 import {useMemo} from 'react';
 import {DashPathEffect} from '@shopify/react-native-skia';
-import {Area, BaseChart, Line} from '@components/Charts/BaseChart';
+import {
+  Area,
+  BaseChart,
+  Line,
+  useChartFont,
+} from '@components/Charts/BaseChart';
+import {
+  formatWeekTick,
+  roundTick,
+  tickIndices,
+  valueTicks,
+} from '@components/Charts/BaseChart/axisFormatters';
 import type {DrinkKey} from '@src/types/onyx/Drinks';
 
 type StackedAreaProps = {
@@ -47,13 +58,14 @@ function StackedArea({
   height,
   isLoading,
 }: StackedAreaProps) {
+  const axisFont = useChartFont();
   const showComparison =
     !!comparisonTotal && comparisonTotal.length === weeks.length;
 
   const data = useMemo(
     () =>
       weeks.map((week, i) => {
-        const row: Record<string, string | number> = {x: week};
+        const row: Record<string, string | number> = {x: i};
         let running = 0;
         for (const key of trackedKeys) {
           running += byKey[key]?.[i] ?? 0;
@@ -73,6 +85,29 @@ function StackedArea({
     [trackedKeys, showComparison],
   );
 
+  // Stack height per week is the cumulative of the outermost key; track the
+  // peak (and comparison total) to place y ticks.
+  const maxStack = useMemo(() => {
+    const topKey = trackedKeys[trackedKeys.length - 1];
+    let max = 1;
+    for (const row of data) {
+      const total = topKey ? Number(row[topKey] ?? 0) : 0;
+      if (total > max) {
+        max = total;
+      }
+      if (showComparison) {
+        const cmp = Number(row[COMPARISON_KEY] ?? 0);
+        if (cmp > max) {
+          max = cmp;
+        }
+      }
+    }
+    return max;
+  }, [data, trackedKeys, showComparison]);
+
+  const xTicks = useMemo(() => tickIndices(weeks.length), [weeks.length]);
+  const yTicks = useMemo(() => valueTicks(maxStack), [maxStack]);
+
   return (
     <BaseChart
       data={data}
@@ -81,6 +116,12 @@ function StackedArea({
       accessibilityLabel={accessibilityLabel}
       emptyLabel={emptyLabel}
       height={height}
+      axis={{
+        font: axisFont,
+        tickValues: {x: xTicks, y: yTicks},
+        formatXLabel: index => formatWeekTick(weeks[Math.round(index)] ?? ''),
+        formatYLabel: roundTick,
+      }}
       loading={isLoading}>
       {({points, chartBounds, theme}) => {
         const baseline = chartBounds.bottom;

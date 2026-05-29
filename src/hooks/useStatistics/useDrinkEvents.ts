@@ -55,7 +55,7 @@ function resolveWeekStart(label: string | undefined): WeekStart {
  */
 function useDrinkEvents(userIds?: UserID[]): UseDrinkEventsResult {
   const {auth} = useFirebase();
-  const {preferences} = useDatabaseData();
+  const {preferences, isFetchingOlderMonths} = useDatabaseData();
   const userData = useCurrentUserData();
   const [allSessions, allSessionsMeta] = useOnyx(
     ONYXKEYS.CACHED_DRINKING_SESSIONS,
@@ -109,7 +109,11 @@ function useDrinkEvents(userIds?: UserID[]): UseDrinkEventsResult {
     events = allEvents.filter(e => ids.has(e.userId));
   }
 
-  const isLoading = !isHydrated || !isCompiled;
+  // Also "loading" while the session listener is widening its window to cover
+  // a newly-selected (older) range — every chart already renders a skeleton
+  // for `isLoading`, which avoids the messy stale-data-plus-empty-label state
+  // during a range-driven refetch.
+  const isLoading = !isHydrated || !isCompiled || isFetchingOlderMonths;
 
   return {events, isLoading};
 }

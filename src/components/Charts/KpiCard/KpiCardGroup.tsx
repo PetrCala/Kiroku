@@ -42,6 +42,7 @@ function KpiCardGroup({cards, isLoading}: KpiCardGroupProps): ReactElement {
             delta={card.delta}
             sparkline={card.sparkline}
             tone={card.tone}
+            polarity={card.polarity}
             onPress={card.onPress}
             accessibilityLabel={card.accessibilityLabel}
             isLoading={isLoading}

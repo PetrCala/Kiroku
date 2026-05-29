@@ -55,6 +55,10 @@ type StatsQuietDaysParams = {
   quietDays: number;
 };
 
+type StatsThresholdParams = {
+  threshold: number;
+};
+
 type StatsDrillDownTitleParams = {
   label: string;
 };
@@ -146,6 +150,7 @@ export type {
   StatsAfDaysParams,
   StatsDrillDownTitleParams,
   StatsQuietDaysParams,
+  StatsThresholdParams,
   SupporterCancelledStatusParams,
   SupporterPurchaseCtaParams,
   SupporterPurchaseErrorParams,
