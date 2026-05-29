@@ -2,7 +2,7 @@
 type DateSelectorMode = 'single' | 'range';
 
 /** View currently rendered by the calendar grid. */
-type CalendarView = 'days' | 'years' | 'months';
+type CalendarView = 'month' | 'overview';
 
 type CalendarBoundsProps = {
   /** Earliest selectable day (inclusive). */

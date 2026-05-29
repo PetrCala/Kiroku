@@ -418,6 +418,25 @@ function getMonthNames(preferredLocale: Locale): string[] {
 }
 
 /**
+ * @returns Localized standalone abbreviated month names, e.g. [Jan, Feb, ...]
+ */
+function getMonthShortNames(preferredLocale: Locale): string[] {
+  if (preferredLocale) {
+    setLocale(preferredLocale);
+  }
+  const fullYear = new Date().getFullYear();
+  const monthsArray = eachMonthOfInterval({
+    start: new Date(fullYear, 0, 1),
+    end: new Date(fullYear, 11, 31),
+  });
+
+  // eslint-disable-next-line rulesdir/prefer-underscore-method
+  return monthsArray.map(monthDate =>
+    format(monthDate, CONST.DATE.SHORT_MONTH_FORMAT),
+  );
+}
+
+/**
  * @returns [Monday, Thuesday, Wednesday, ...]
  */
 function getDaysOfWeek(preferredLocale: Locale): string[] {
@@ -926,6 +945,7 @@ const DateUtils = {
   getLocalizedTimePeriodDescription,
   getMicroseconds,
   getMonthNames,
+  getMonthShortNames,
   getOneHourFromNow,
   getOneWeekFromNow,
   getStatusUntilDate,
