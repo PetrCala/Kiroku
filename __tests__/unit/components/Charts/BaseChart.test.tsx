@@ -23,13 +23,6 @@ jest.mock('victory-native', () => ({
   ),
 }));
 
-// BaseChart calls `matchFont` for axis tick text; Skia's native font manager
-// isn't available under Jest, so stub it to a dummy font.
-jest.mock('@shopify/react-native-skia', () => ({
-  __esModule: true,
-  matchFont: () => ({}),
-}));
-
 // useThemeStyles returns a Proxy in production; under Jest it can leak
 // `undefined` style refs that break testing-library's accessibility scan.
 // Replace with a flat object — the styles aren't load-bearing here.

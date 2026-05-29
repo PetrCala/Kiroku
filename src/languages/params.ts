@@ -113,7 +113,24 @@ type SupporterRenewalDateParams = {
   date: string;
 };
 
+type BacRangeParams = {
+  low: string;
+  high: string;
+};
+
+type BacSoberInParams = {
+  time: string;
+};
+
+type BacSessionTotalParams = {
+  grams: number;
+  bac: string;
+};
+
 export type {
+  BacRangeParams,
+  BacSessionTotalParams,
+  BacSoberInParams,
   BreakdownCenterUnitsParams,
   BreakdownDrinkLabelParams,
   BreakdownPeriodParams,

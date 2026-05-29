@@ -1,0 +1,40 @@
+{
+  "type": "object",
+  "properties": {
+    "violations": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "category": {
+            "type": "string",
+            "enum": [
+              "GLOSSARY",
+              "REGISTER",
+              "DO-NOT-TRANSLATE",
+              "CAPITALIZATION",
+              "FORMATTING",
+              "CONSISTENCY",
+              "INTERPOLATION",
+              "MISSING-KEY"
+            ]
+          },
+          "locale": {
+            "type": "string"
+          },
+          "path": {
+            "type": "string"
+          },
+          "line": {
+            "type": "integer"
+          },
+          "body": {
+            "type": "string"
+          }
+        },
+        "required": ["category", "locale", "path", "line", "body"]
+      }
+    }
+  },
+  "required": ["violations"]
+}

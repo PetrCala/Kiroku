@@ -1046,6 +1046,10 @@ const CONST = {
       PERCENT: 'percent',
       BOTH: 'both',
     },
+    TIME_FORMAT: {
+      DURATION: 'duration',
+      CLOCK: 'clock',
+    },
   },
 
   // 6 numeric digits

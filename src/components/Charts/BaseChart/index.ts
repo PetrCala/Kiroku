@@ -1,12 +1,14 @@
 export {default as BaseChart} from './BaseChart';
 export {default as A11yOverlay} from './A11yOverlay';
 export {default as useChartTheme} from './useChartTheme';
+export {default as useChartFont} from './useChartFont';
 // Re-export Victory mark primitives so concrete chart components can draw
 // without importing `victory-native` directly (per design doc §6).
 export {Area, Bar, Line} from 'victory-native';
 export type {
   BaseChartDatum,
   BaseChartProps,
+  ChartAxisOptions,
   ChartRenderCtx,
   ChartTheme,
 } from './types';

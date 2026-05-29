@@ -10,6 +10,9 @@ type Theme = DeepValueOf<typeof CONST.THEME>;
 /** Which unit the BAC estimator shows: per-mille, percent, or both. */
 type BacDisplayUnit = DeepValueOf<typeof CONST.BAC.DISPLAY_UNIT>;
 
+/** How the BAC estimator shows time-to-sober: a remaining duration or a clock time. */
+type BacTimeFormat = DeepValueOf<typeof CONST.BAC.TIME_FORMAT>;
+
 /** A model mapping units to session colors */
 type UnitsToColors = {
   /** At maximum how many units a session is still yellow */
@@ -87,6 +90,9 @@ type Preferences = {
   /** True once the user has dismissed the BAC estimator intro. Undefined means
    *  it has not been shown yet (so the intro auto-shows on first open). */
   bac_intro_seen?: boolean;
+
+  /** How the BAC estimator shows time-to-sober. Undefined defaults to duration. */
+  bac_time_format?: BacTimeFormat;
 };
 
 /** A collection of preferences of multiple users */
@@ -95,6 +101,7 @@ type PreferencesList = Record<UserID, Preferences>;
 export default Preferences;
 export type {
   BacDisplayUnit,
+  BacTimeFormat,
   UnitsToColors,
   DrinksToUnits,
   PreferencesList,

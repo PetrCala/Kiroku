@@ -1,6 +1,4 @@
-import {useMemo} from 'react';
-import {Platform, View} from 'react-native';
-import {matchFont} from '@shopify/react-native-skia';
+import {View} from 'react-native';
 import {CartesianChart} from 'victory-native';
 import {ChartSkeleton} from '@components/Charts/ChartSkeleton';
 import Text from '@components/Text';
@@ -11,14 +9,6 @@ import useChartTheme from './useChartTheme';
 
 const DEFAULT_HEIGHT = 200;
 const DEFAULT_Y_KEYS = ['y'] as const;
-const AXIS_FONT_SIZE = 10;
-// System font family per platform; victory-native needs an SkFont to draw any
-// axis tick text (without it, no labels render at all).
-const AXIS_FONT_FAMILY = Platform.select({
-  ios: 'Helvetica',
-  android: 'sans-serif',
-  default: 'sans-serif',
-});
 
 /**
  * Theme-aware wrapper around `victory-native`'s `CartesianChart`. The only
@@ -51,19 +41,12 @@ function BaseChart<TYKey extends string = 'y'>({
   emptyLabel,
   height = DEFAULT_HEIGHT,
   hideAxes = false,
-  formatXLabel,
-  formatYLabel,
-  xTickCount = 5,
-  yTickCount = 4,
+  axis,
   loading = false,
   children,
 }: BaseChartProps<TYKey>) {
   const styles = useThemeStyles();
   const theme = useChartTheme();
-  const axisFont = useMemo(
-    () => matchFont({fontFamily: AXIS_FONT_FAMILY, fontSize: AXIS_FONT_SIZE}),
-    [],
-  );
   const isEmpty = data.length === 0;
 
   if (loading) {
@@ -93,19 +76,39 @@ function BaseChart<TYKey extends string = 'y'>({
     );
   }
 
+  // Adapt the consumer's numeric formatters to victory's `string | number`
+  // label type (BaseChart's data rows are structurally typed that way).
+  const formatX = axis?.formatXLabel;
+  const formatY = axis?.formatYLabel;
   const axisOptions = hideAxes
     ? undefined
     : {
-        font: axisFont,
         labelColor: theme.axisLabel,
         lineColor: theme.axisLine,
-        tickCount: {x: xTickCount, y: yTickCount},
-        ...(formatXLabel ? {formatXLabel} : {}),
-        ...(formatYLabel ? {formatYLabel} : {}),
+        ...(axis?.font ? {font: axis.font} : {}),
+        ...(axis?.tickCount !== undefined ? {tickCount: axis.tickCount} : {}),
+        ...(axis?.tickValues !== undefined
+          ? {tickValues: axis.tickValues}
+          : {}),
+        ...(formatX
+          ? {formatXLabel: (label: string | number) => formatX(Number(label))}
+          : {}),
+        ...(formatY
+          ? {formatYLabel: (label: string | number) => formatY(Number(label))}
+          : {}),
       };
+  // Custom-axis charts inset the data symmetrically (28/28) so the plot sits
+  // centered rather than pushed right by the Y-label gutter; keep the tighter
+  // default for unlabeled charts.
+  const hasCustomAxis = !hideAxes && axis !== undefined;
   const domainPadding = hideAxes
     ? 0
-    : {left: 24, right: 24, top: 16, bottom: 0};
+    : {
+        left: hasCustomAxis ? 28 : 24,
+        right: hasCustomAxis ? 28 : 24,
+        top: 16,
+        bottom: 0,
+      };
 
   const resolvedYKeys =
     yKeys ?? (DEFAULT_Y_KEYS as unknown as readonly TYKey[]);
@@ -120,9 +123,6 @@ function BaseChart<TYKey extends string = 'y'>({
   const castedYKeys = resolvedYKeys as ReadonlyArray<
     Extract<keyof CastedRow, string>
   >;
-  // Same structural bridge as `castedYKeys`: the formatters/font are typed
-  // against the generic row, which Victory erases to `never` here.
-  const castedAxisOptions = axisOptions as never;
 
   return (
     <A11yOverlay accessibilityLabel={accessibilityLabel}>
@@ -131,7 +131,7 @@ function BaseChart<TYKey extends string = 'y'>({
           data={castedData}
           xKey="x"
           yKeys={castedYKeys as never}
-          axisOptions={castedAxisOptions}
+          axisOptions={axisOptions}
           domainPadding={domainPadding}>
           {ctx =>
             children?.({...ctx, theme} as unknown as ChartRenderCtx<TYKey>)

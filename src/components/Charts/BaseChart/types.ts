@@ -1,6 +1,25 @@
 import type {ReactNode} from 'react';
+import type {SkFont} from '@shopify/react-native-skia';
 import type {ChartBounds, PointsArray} from 'victory-native';
 import type {ChartDatum, ChartRange} from '@libs/Statistics';
+
+/**
+ * Optional axis customization forwarded to victory-native's `axisOptions`.
+ * When omitted, BaseChart's axis behavior is unchanged (no numeric labels —
+ * victory needs a `font` to render them).
+ */
+type ChartAxisOptions = {
+  /** Skia font for tick labels. Without it victory draws ticks but no numbers. */
+  font?: SkFont | null;
+  /** Approximate tick counts; victory picks nice values. */
+  tickCount?: number | {x: number; y: number};
+  /** Explicit tick positions (per-axis or a single x-array). */
+  tickValues?: number[] | {x: number[]; y: number[]};
+  /** Formats an x tick value into its label. */
+  formatXLabel?: (value: number) => string;
+  /** Formats a y tick value into its label. */
+  formatYLabel?: (value: number) => string;
+};
 
 /**
  * Theme colors a chart implementation can pull. Sourced from
@@ -62,17 +81,8 @@ type BaseChartProps<TYKey extends string = 'y'> = {
   height?: number;
   /** Suppresses axis labels, ticks, and padding. Use for inline sparklines. */
   hideAxes?: boolean;
-  /**
-   * Formats x-axis tick labels. Omit to show the raw value. Charts whose x is
-   * an ISO-week or date string should pass a formatter (e.g. month abbrev).
-   */
-  formatXLabel?: (label: string | number) => string;
-  /** Formats y-axis tick labels (e.g. round units/counts). */
-  formatYLabel?: (label: number) => string;
-  /** Approximate number of x-axis ticks. Default 5. */
-  xTickCount?: number;
-  /** Approximate number of y-axis ticks. Default 4. */
-  yTickCount?: number;
+  /** Optional axis customization. When omitted, axis behavior is unchanged. */
+  axis?: ChartAxisOptions;
   /**
    * When true, short-circuits to a layout-faithful skeleton matching
    * `height` instead of rendering the Skia canvas. Used during the
@@ -83,4 +93,10 @@ type BaseChartProps<TYKey extends string = 'y'> = {
   children?: (ctx: ChartRenderCtx<TYKey>) => ReactNode;
 };
 
-export type {BaseChartDatum, BaseChartProps, ChartRenderCtx, ChartTheme};
+export type {
+  BaseChartDatum,
+  BaseChartProps,
+  ChartAxisOptions,
+  ChartRenderCtx,
+  ChartTheme,
+};

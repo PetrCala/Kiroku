@@ -1,0 +1,89 @@
+name: Translation Review with Claude Code
+
+# ============================================================
+# Reviews non-English translation quality against each language's
+# glossary/style guide (src/languages/context/<locale>.md), and posts
+# violations as inline PR comments.
+#
+# MANUAL ONLY (workflow_dispatch) — mirrors claude-review.yml. Running an
+# LLM on every PR costs API credits, so this is not wired to `pull_request`.
+# The always-on, free translation gate is the deterministic unit test
+# `__tests__/unit/TranslationContext.test.ts` (runs in test.yml).
+#
+# To run: Actions tab → "Translation Review with Claude Code" → Run workflow,
+# or: gh workflow run translation-review.yml -f pr_number=<PR>
+# Requires ANTHROPIC_API_KEY in repo secrets.
+# ============================================================
+
+permissions:
+  contents: read
+  pull-requests: write
+
+on:
+  workflow_dispatch:
+    inputs:
+      pr_number:
+        description: 'PR number to review'
+        required: true
+
+concurrency:
+  group: ${{ github.ref }}-translation-review
+  cancel-in-progress: true
+
+jobs:
+  review:
+    name: Claude Code Translation Review
+    runs-on: ubuntu-latest
+    env:
+      PR_NUMBER: ${{ github.event.inputs.pr_number }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Make scripts executable
+        run: chmod +x .claude/scripts/*.sh
+
+      - name: Add claude scripts to PATH
+        run: echo "$GITHUB_WORKSPACE/.claude/scripts" >> "$GITHUB_PATH"
+
+      - name: Stage allowed review category tags
+        run: cp .claude/skills/translate/review-categories.txt "$RUNNER_TEMP/allowed-rules.txt"
+
+      - name: Load translation review JSON schema
+        id: schema
+        run: echo "json=$(jq -c . .claude/schemas/translation-review-output.json)" >> "$GITHUB_OUTPUT"
+
+      - name: Run Claude Code translation review
+        id: translation-review
+        uses: anthropics/claude-code-action@ba026a3e56b9f646ae3b1be02dd9c0812aa2f8ae # v1.0.86
+        with:
+          display_report: 'true'
+          anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          prompt: '/review-translations REPO: ${{ github.repository }} PR_NUMBER: ${{ github.event.inputs.pr_number }}'
+          claude_args: |
+            --model claude-sonnet-4-6
+            --allowedTools "Glob,Grep,Read,Bash(gh pr diff:*),Bash(gh pr view:*)" --json-schema '${{ steps.schema.outputs.json }}'
+
+      - name: Post translation review results
+        if: steps.translation-review.outcome == 'success'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          STRUCTURED_OUTPUT: ${{ steps.translation-review.outputs.structured_output }}
+          ALLOWED_RULES_FILE: ${{ runner.temp }}/allowed-rules.txt
+        run: |
+          if [ -z "$STRUCTURED_OUTPUT" ]; then
+            echo "::error::Claude Code returned empty structured output"
+            exit 1
+          fi
+          COUNT=$(echo "$STRUCTURED_OUTPUT" | jq '.violations | length')
+          if [ "$COUNT" -eq 0 ]; then
+            addPrReaction.sh "$PR_NUMBER"
+          else
+            echo "$STRUCTURED_OUTPUT" | jq -c '.violations[]' | while IFS= read -r v; do
+              PATH_ARG=$(echo "$v" | jq -r '.path')
+              BODY_ARG=$(echo "$v" | jq -r '.body')
+              LINE_ARG=$(echo "$v" | jq -r '.line')
+              createInlineComment.sh "$PATH_ARG" "$BODY_ARG" "$LINE_ARG" || true
+            done
+          fi

@@ -43,7 +43,6 @@ jest.mock('@components/Charts/BaseChart', () => ({
 jest.mock('@shopify/react-native-skia', () => ({
   __esModule: true,
   Rect: () => null,
-  matchFont: () => ({}),
 }));
 
 describe('WeeklyBars', () => {
