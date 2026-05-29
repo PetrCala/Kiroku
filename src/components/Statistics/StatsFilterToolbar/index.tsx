@@ -1,8 +1,9 @@
 import React, {useCallback, useState} from 'react';
 import {StyleSheet, View} from 'react-native';
+import useLocalize from '@hooks/useLocalize';
 import useStatsContext from '@hooks/useStatsContext';
 import useTheme from '@hooks/useTheme';
-import StatsRangePickerModal from '@components/Statistics/StatsRangePickerModal';
+import DateSelectorModal from '@components/DateSelectorModal';
 import type {RangePreset} from '@components/StatsContextProvider/types';
 import ComparisonToggle from './ComparisonToggle';
 import DrinkTypeChipRow from './DrinkTypeChipRow';
@@ -40,6 +41,7 @@ function StatsFilterToolbar({
   showDrinkTypeFilter = true,
 }: StatsFilterToolbarProps) {
   const {appBG, border} = useTheme();
+  const {translate} = useLocalize();
   const {
     range,
     setRange,
@@ -93,8 +95,13 @@ function StatsFilterToolbar({
           onChange={setDrinkTypeFilter}
         />
       ) : null}
-      <StatsRangePickerModal
+      <DateSelectorModal
+        mode="range"
         isVisible={pickerOpen}
+        title={translate('statistics.filters.customRange.title')}
+        applyText={translate('statistics.filters.customRange.apply')}
+        cancelText={translate('statistics.filters.customRange.cancel')}
+        maxDate={new Date()}
         initialStart={range.start}
         initialEnd={range.end}
         onCancel={() => setPickerOpen(false)}

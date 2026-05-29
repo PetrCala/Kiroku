@@ -1,7 +1,8 @@
-import {setYear} from 'date-fns';
+import {format, parseISO, setYear} from 'date-fns';
 import type {ForwardedRef} from 'react';
 import React, {forwardRef, useEffect, useState} from 'react';
 import {View} from 'react-native';
+import DateSelectorModal from '@components/DateSelectorModal';
 import * as KirokuIcons from '@components/Icon/KirokuIcons';
 import TextInput from '@components/TextInput';
 import type {
@@ -9,12 +10,10 @@ import type {
   BaseTextInputRef,
 } from '@components/TextInput/BaseTextInput/types';
 import useLocalize from '@hooks/useLocalize';
-import useResponsiveLayout from '@hooks/useResponsiveLayout';
 import useThemeStyles from '@hooks/useThemeStyles';
 import * as FormActions from '@userActions/FormActions';
 import CONST from '@src/CONST';
 import type {OnyxFormValuesMapping} from '@src/ONYXKEYS';
-import CalendarPicker from './CalendarPicker';
 
 type DatePickerProps = {
   /**
@@ -37,6 +36,12 @@ type DatePickerProps = {
   /** A maximum date of calendar to select */
   maxDate?: Date;
 
+  /** Optional heading shown above the calendar in the picker modal */
+  pickerTitle?: string;
+
+  /** Optional explanatory copy shown below the title in the picker modal */
+  pickerDescription?: string;
+
   /** A function that is passed by FormWrapper */
   onInputChange?: (value: string) => void;
 
@@ -50,6 +55,24 @@ type DatePickerProps = {
   formID?: keyof OnyxFormValuesMapping;
 } & BaseTextInputProps;
 
+function getInitialDate(
+  value: string | undefined,
+  minDate: Date,
+  maxDate: Date,
+): Date {
+  let date = value ? parseISO(value) : new Date();
+  if (Number.isNaN(date.getTime())) {
+    date = new Date();
+  }
+  if (date > maxDate) {
+    return maxDate;
+  }
+  if (date < minDate) {
+    return minDate;
+  }
+  return date;
+}
+
 function DatePicker(
   {
     containerStyles,
@@ -60,6 +83,8 @@ function DatePicker(
     label,
     maxDate = setYear(new Date(), CONST.CALENDAR_PICKER.MAX_YEAR),
     minDate = setYear(new Date(), CONST.CALENDAR_PICKER.MIN_YEAR),
+    pickerTitle,
+    pickerDescription,
     onInputChange,
     onTouched,
     placeholder,
@@ -75,12 +100,14 @@ function DatePicker(
     // eslint-disable-next-line @typescript-eslint/prefer-nullish-coalescing
     value || defaultValue || undefined,
   );
-  const {shouldUseNarrowLayout} = useResponsiveLayout();
+  const [isPickerVisible, setIsPickerVisible] = useState(false);
 
-  const onSelected = (newValue: string) => {
+  const onApply = (date: Date) => {
+    const formatted = format(date, CONST.DATE.FNS_FORMAT_STRING);
     onTouched?.();
-    onInputChange?.(newValue);
-    setSelectedDate(newValue);
+    onInputChange?.(formatted);
+    setSelectedDate(formatted);
+    setIsPickerVisible(false);
   };
 
   useEffect(() => {
@@ -98,39 +125,41 @@ function DatePicker(
 
   return (
     <View style={styles.datePickerRoot}>
-      <View
-        style={[
-          shouldUseNarrowLayout ? styles.flex2 : {},
-          styles.pointerEventsNone,
-        ]}>
-        <TextInput
-          ref={ref}
-          inputID={inputID}
-          forceActiveLabel
-          icon={KirokuIcons.Calendar}
-          label={label}
-          accessibilityLabel={label}
-          role={CONST.ROLE.PRESENTATION}
-          value={selectedDate}
-          placeholder={placeholder ?? translate('common.dateFormat')}
-          errorText={errorText}
-          containerStyles={containerStyles}
-          textInputContainerStyles={[styles.borderColorFocus]}
-          inputStyle={[styles.pointerEventsNone]}
-          disabled={disabled}
-          readOnly
-        />
-      </View>
-      <View
-        style={[styles.datePickerPopover, styles.border]}
-        collapsable={false}>
-        <CalendarPicker
-          minDate={minDate}
-          maxDate={maxDate}
-          value={selectedDate}
-          onSelected={onSelected}
-        />
-      </View>
+      <TextInput
+        ref={ref}
+        inputID={inputID}
+        forceActiveLabel
+        icon={KirokuIcons.Calendar}
+        label={label}
+        accessibilityLabel={label}
+        role={CONST.ROLE.PRESENTATION}
+        value={selectedDate}
+        placeholder={placeholder ?? translate('common.dateFormat')}
+        errorText={errorText}
+        containerStyles={containerStyles}
+        textInputContainerStyles={[styles.borderColorFocus]}
+        onPress={() => {
+          if (disabled) {
+            return;
+          }
+          setIsPickerVisible(true);
+        }}
+        disabled={disabled}
+        readOnly
+      />
+      <DateSelectorModal
+        mode="single"
+        isVisible={isPickerVisible}
+        title={pickerTitle}
+        description={pickerDescription}
+        applyText={translate('common.done')}
+        cancelText={translate('common.cancel')}
+        minDate={minDate}
+        maxDate={maxDate}
+        initialDate={getInitialDate(selectedDate, minDate, maxDate)}
+        onApply={onApply}
+        onCancel={() => setIsPickerVisible(false)}
+      />
     </View>
   );
 }
