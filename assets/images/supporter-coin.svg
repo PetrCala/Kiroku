@@ -10,10 +10,11 @@
 <stop offset="1" stop-color="#FFFFFF" stop-opacity="0"/>
 </radialGradient>
 </defs>
-<circle cx="12" cy="12" r="11" fill="#23262A"/>
-<circle cx="12" cy="12" r="11" fill="url(#kSSheen)"/>
-<circle cx="12" cy="12" r="11" stroke="url(#kSGold)" stroke-width="1.4"/>
-<g fill="url(#kSGold)" transform="translate(12 12) scale(0.018) translate(-512 -471)">
+<circle cx="12" cy="12" r="11" fill="url(#kSGold)"/>
+<circle cx="12" cy="12" r="9.2" fill="#23262A"/>
+<circle cx="12" cy="12" r="9.2" fill="url(#kSSheen)"/>
+<circle cx="12" cy="12" r="9.2" fill="none" stroke="#7A5408" stroke-width="0.5" stroke-opacity="0.6"/>
+<g fill="url(#kSGold)" transform="translate(12 12) scale(0.017) translate(-512 -539)">
 <path d="M129 808L316 480L374 580L243.117 808H129Z"/>
 <path d="M895.5 808L708.5 480L650.5 580L781.383 808H895.5Z"/>
 <rect x="523" y="618" width="185" height="20" transform="rotate(90 523 618)"/>
