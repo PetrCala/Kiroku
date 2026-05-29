@@ -63,6 +63,7 @@ type ThemeColors = {
   heading: Color;
   textLight: Color;
   textDark: Color;
+  textOnBrand: Color;
   textReversed: Color;
   textBackground: Color;
   textMutedReversed: Color;

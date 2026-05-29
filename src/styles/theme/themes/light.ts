@@ -55,6 +55,10 @@ const lightTheme = {
   heading: colors.productLight900,
   textLight: colors.white,
   textDark: colors.productLight900,
+  // Always-dark text for use on the fixed brand-yellow surface (success
+  // CTA, supporter "best value" pill) — the brand yellow does not flip
+  // between themes, so its foreground must stay dark in both.
+  textOnBrand: colors.productLight900,
   textReversed: colors.productDark900,
   textBackground: colors.productLight200,
   textMutedReversed: colors.productLight700,
