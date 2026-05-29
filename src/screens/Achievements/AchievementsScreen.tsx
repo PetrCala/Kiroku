@@ -79,7 +79,9 @@ function AchievementsScreen() {
   );
 
   const hoursToSober = BACUtils.getTimeToSoberHours(estimate.point);
-  const hasRecentSessions = estimate.contributions.length > 0;
+  // Show the result only when there's a non-zero estimate; a fully decayed
+  // (sober) or absent estimate falls back to the prompt message below.
+  const hasEstimate = estimate.point > 0;
 
   const dismissIntro = () => {
     if (!introSeen && user) {
@@ -140,7 +142,7 @@ function AchievementsScreen() {
       ) : (
         <>
           <View style={styles.flex1}>
-            {hasRecentSessions ? (
+            {hasEstimate ? (
               <BACResult
                 estimate={estimate}
                 decayData={decayData}
