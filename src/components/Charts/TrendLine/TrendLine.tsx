@@ -2,6 +2,10 @@ import {useMemo} from 'react';
 import {View} from 'react-native';
 import {DashPathEffect, Rect} from '@shopify/react-native-skia';
 import {BaseChart, Line} from '@components/Charts/BaseChart';
+import {
+  monthFromIsoWeek,
+  roundTick,
+} from '@components/Charts/BaseChart/axisFormatters';
 import {PressableWithoutFeedback} from '@components/Pressable';
 
 type TrendLineProps = {
@@ -101,6 +105,8 @@ function TrendLine({
       accessibilityLabel={accessibilityLabel}
       emptyLabel={emptyLabel}
       height={height}
+      formatXLabel={value => monthFromIsoWeek(String(value))}
+      formatYLabel={roundTick}
       loading={isLoading}>
       {({points, chartBounds, theme}) => {
         const top = chartBounds.top;

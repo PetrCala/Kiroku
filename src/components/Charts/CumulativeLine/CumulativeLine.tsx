@@ -1,6 +1,10 @@
 import {useMemo} from 'react';
 import {DashPathEffect} from '@shopify/react-native-skia';
 import {BaseChart, Line} from '@components/Charts/BaseChart';
+import {
+  monthFromDate,
+  roundTick,
+} from '@components/Charts/BaseChart/axisFormatters';
 
 type CumulativeLinePoint = {date: string; count: number};
 
@@ -60,6 +64,8 @@ function CumulativeLine({
       accessibilityLabel={accessibilityLabel}
       emptyLabel={emptyLabel}
       height={height}
+      formatXLabel={value => monthFromDate(String(value))}
+      formatYLabel={roundTick}
       loading={isLoading}>
       {({points: linePoints, theme}) => (
         <>

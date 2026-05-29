@@ -1,4 +1,6 @@
-import {View} from 'react-native';
+import {useMemo} from 'react';
+import {Platform, View} from 'react-native';
+import {matchFont} from '@shopify/react-native-skia';
 import {CartesianChart} from 'victory-native';
 import {ChartSkeleton} from '@components/Charts/ChartSkeleton';
 import Text from '@components/Text';
@@ -9,6 +11,14 @@ import useChartTheme from './useChartTheme';
 
 const DEFAULT_HEIGHT = 200;
 const DEFAULT_Y_KEYS = ['y'] as const;
+const AXIS_FONT_SIZE = 10;
+// System font family per platform; victory-native needs an SkFont to draw any
+// axis tick text (without it, no labels render at all).
+const AXIS_FONT_FAMILY = Platform.select({
+  ios: 'Helvetica',
+  android: 'sans-serif',
+  default: 'sans-serif',
+});
 
 /**
  * Theme-aware wrapper around `victory-native`'s `CartesianChart`. The only
@@ -41,11 +51,19 @@ function BaseChart<TYKey extends string = 'y'>({
   emptyLabel,
   height = DEFAULT_HEIGHT,
   hideAxes = false,
+  formatXLabel,
+  formatYLabel,
+  xTickCount = 5,
+  yTickCount = 4,
   loading = false,
   children,
 }: BaseChartProps<TYKey>) {
   const styles = useThemeStyles();
   const theme = useChartTheme();
+  const axisFont = useMemo(
+    () => matchFont({fontFamily: AXIS_FONT_FAMILY, fontSize: AXIS_FONT_SIZE}),
+    [],
+  );
   const isEmpty = data.length === 0;
 
   if (loading) {
@@ -77,7 +95,14 @@ function BaseChart<TYKey extends string = 'y'>({
 
   const axisOptions = hideAxes
     ? undefined
-    : {labelColor: theme.axisLabel, lineColor: theme.axisLine};
+    : {
+        font: axisFont,
+        labelColor: theme.axisLabel,
+        lineColor: theme.axisLine,
+        tickCount: {x: xTickCount, y: yTickCount},
+        ...(formatXLabel ? {formatXLabel} : {}),
+        ...(formatYLabel ? {formatYLabel} : {}),
+      };
   const domainPadding = hideAxes
     ? 0
     : {left: 24, right: 24, top: 16, bottom: 0};
@@ -95,6 +120,9 @@ function BaseChart<TYKey extends string = 'y'>({
   const castedYKeys = resolvedYKeys as ReadonlyArray<
     Extract<keyof CastedRow, string>
   >;
+  // Same structural bridge as `castedYKeys`: the formatters/font are typed
+  // against the generic row, which Victory erases to `never` here.
+  const castedAxisOptions = axisOptions as never;
 
   return (
     <A11yOverlay accessibilityLabel={accessibilityLabel}>
@@ -103,7 +131,7 @@ function BaseChart<TYKey extends string = 'y'>({
           data={castedData}
           xKey="x"
           yKeys={castedYKeys as never}
-          axisOptions={axisOptions}
+          axisOptions={castedAxisOptions}
           domainPadding={domainPadding}>
           {ctx =>
             children?.({...ctx, theme} as unknown as ChartRenderCtx<TYKey>)

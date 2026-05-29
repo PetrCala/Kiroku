@@ -63,6 +63,17 @@ type BaseChartProps<TYKey extends string = 'y'> = {
   /** Suppresses axis labels, ticks, and padding. Use for inline sparklines. */
   hideAxes?: boolean;
   /**
+   * Formats x-axis tick labels. Omit to show the raw value. Charts whose x is
+   * an ISO-week or date string should pass a formatter (e.g. month abbrev).
+   */
+  formatXLabel?: (label: string | number) => string;
+  /** Formats y-axis tick labels (e.g. round units/counts). */
+  formatYLabel?: (label: number) => string;
+  /** Approximate number of x-axis ticks. Default 5. */
+  xTickCount?: number;
+  /** Approximate number of y-axis ticks. Default 4. */
+  yTickCount?: number;
+  /**
    * When true, short-circuits to a layout-faithful skeleton matching
    * `height` instead of rendering the Skia canvas. Used during the
    * Statistics first-paint window so the tab transition stays on a single

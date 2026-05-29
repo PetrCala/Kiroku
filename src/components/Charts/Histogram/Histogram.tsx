@@ -1,5 +1,6 @@
 import {useMemo} from 'react';
 import {Bar, BaseChart} from '@components/Charts/BaseChart';
+import {roundTick} from '@components/Charts/BaseChart/axisFormatters';
 import type {ChartDatum} from '@libs/Statistics';
 
 type HistogramBin = {label: string; count: number};
@@ -45,6 +46,8 @@ function Histogram({
       accessibilityLabel={accessibilityLabel}
       emptyLabel={emptyLabel}
       height={height}
+      formatYLabel={roundTick}
+      xTickCount={bins.length}
       loading={isLoading}>
       {({points, chartBounds, theme}) => (
         <Bar
