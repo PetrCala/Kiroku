@@ -28,9 +28,32 @@ type PerTypeWeeklyMultiplesProps = {
   drinkTypeFilter: ReadonlySet<DrinkKey>;
   rangeStart: Date;
   rangeEnd: Date;
+  /**
+   * Comparison-period per-type weekly units. When provided (Compare on), each
+   * tile overlays a dashed line for the previous period, index-aligned to the
+   * current series.
+   */
+  comparisonByDrinkKeyAndWeek?: ReadonlyMap<string, number>;
+  comparisonStart?: Date;
+  comparisonEnd?: Date;
   /** When true, renders a grid of placeholder tiles. */
   isLoading?: boolean;
 };
+
+/**
+ * Align a comparison y-series to `targetLen` by position: drop the oldest
+ * extras or pad leading zeros. Mirrors the Trends tab's overlay alignment so
+ * the dashed line sits underneath the current line week-for-week.
+ */
+function alignToLength(values: number[], targetLen: number): number[] {
+  if (values.length === targetLen) {
+    return values;
+  }
+  if (values.length > targetLen) {
+    return values.slice(values.length - targetLen);
+  }
+  return [...new Array<number>(targetLen - values.length).fill(0), ...values];
+}
 
 function isoWeekKey(d: Date): string {
   // Matches the `localIsoWeek` format produced by buildDrinkEvents (`yyyy-Www`).
@@ -80,6 +103,9 @@ function PerTypeWeeklyMultiples({
   drinkTypeFilter,
   rangeStart,
   rangeEnd,
+  comparisonByDrinkKeyAndWeek,
+  comparisonStart,
+  comparisonEnd,
   isLoading,
 }: PerTypeWeeklyMultiplesProps) {
   const styles = useThemeStyles();
@@ -97,6 +123,21 @@ function PerTypeWeeklyMultiples({
     () => buildSeriesByDrinkKey(unitsByDrinkKeyAndWeek, weekKeys),
     [unitsByDrinkKeyAndWeek, weekKeys],
   );
+
+  const showComparison =
+    !!comparisonByDrinkKeyAndWeek && !!comparisonStart && !!comparisonEnd;
+  const comparisonSeriesByKey = useMemo(() => {
+    if (!showComparison) {
+      return null;
+    }
+    const cmpWeekKeys = listWeekKeys(comparisonStart, comparisonEnd);
+    return buildSeriesByDrinkKey(comparisonByDrinkKeyAndWeek, cmpWeekKeys);
+  }, [
+    showComparison,
+    comparisonByDrinkKeyAndWeek,
+    comparisonStart,
+    comparisonEnd,
+  ]);
 
   if (isLoading) {
     return (
@@ -142,29 +183,39 @@ function PerTypeWeeklyMultiples({
 
   return (
     <View style={[styles.flexRow, styles.flexWrap, {marginHorizontal: -4}]}>
-      {tiles.map(({key, data, total}) => (
-        <View
-          key={key}
-          style={{
-            width: widthPercent,
-            paddingHorizontal: 4,
-            paddingVertical: 4,
-          }}>
-          <MiniLineChart
-            title={translate(DRINK_LABEL_KEY[key])}
-            caption={translate(
-              'statistics.tabs.breakdown.multiples.tileSubtitle',
-              {units: Math.round(total * 10) / 10},
-            )}
-            data={data}
-            accessibilityLabel={translate(
-              'statistics.tabs.breakdown.multiples.a11yTile',
-              {label: translate(DRINK_LABEL_KEY[key])},
-            )}
-            strokeColor={DRINK_KEY_COLORS[key]}
-          />
-        </View>
-      ))}
+      {tiles.map(({key, data, total}) => {
+        const cmpSeries = comparisonSeriesByKey?.get(key);
+        const comparison = cmpSeries
+          ? alignToLength(
+              cmpSeries.map(d => d.y),
+              data.length,
+            )
+          : undefined;
+        return (
+          <View
+            key={key}
+            style={{
+              width: widthPercent,
+              paddingHorizontal: 4,
+              paddingVertical: 4,
+            }}>
+            <MiniLineChart
+              title={translate(DRINK_LABEL_KEY[key])}
+              caption={translate(
+                'statistics.tabs.breakdown.multiples.tileSubtitle',
+                {units: Math.round(total * 10) / 10},
+              )}
+              data={data}
+              comparison={comparison}
+              accessibilityLabel={translate(
+                'statistics.tabs.breakdown.multiples.a11yTile',
+                {label: translate(DRINK_LABEL_KEY[key])},
+              )}
+              strokeColor={DRINK_KEY_COLORS[key]}
+            />
+          </View>
+        );
+      })}
     </View>
   );
 }

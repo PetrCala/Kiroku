@@ -1041,6 +1041,8 @@ export default {
           sliceCaption: ({label, units, share}: BreakdownSliceCaptionParams) =>
             `${label}: ${units} units (${share}%)`,
           a11y: 'Drink-type composition donut',
+          current: 'Current',
+          previous: 'Previous',
         },
         multiples: {
           title: 'Weekly trend by type',
