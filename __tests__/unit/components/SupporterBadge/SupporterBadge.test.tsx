@@ -2,6 +2,8 @@
 import {render} from '@testing-library/react-native';
 import SupporterBadge from '@components/SupporterBadge';
 
+const ICON_TEST_ID = 'supporter-badge-icon';
+
 jest.mock('@hooks/useLocalize', () => ({
   __esModule: true,
   default: () => ({
@@ -21,20 +23,22 @@ jest.mock('@components/Icon/KirokuIcons', () => ({
   Beer: 'Beer',
 }));
 
-// Stub the Icon component to a host View that echoes its size props, so we can
+// Stub the Icon component to a Text node that echoes its width, so we can
 // assert the badge renders an icon and scales by variant without loading the
 // real (ESM) Icon dependencies.
 jest.mock('@components/Icon', () => {
-  const ReactModule = require('react') as typeof import('react');
-  const {View} = require('react-native') as typeof import('react-native');
+  // eslint-disable-next-line @typescript-eslint/consistent-type-imports
+  const ReactInner = require('react') as typeof import('react');
+  // eslint-disable-next-line @typescript-eslint/consistent-type-imports
+  const RNm = require('react-native') as typeof import('react-native');
   return {
     __esModule: true,
-    default: ({width, height}: {width?: number; height?: number}) =>
-      ReactModule.createElement(View, {
-        testID: 'supporter-badge-icon',
-        width,
-        height,
-      }),
+    default: ({width}: {width?: number; height?: number}) =>
+      ReactInner.createElement(
+        RNm.Text,
+        {testID: 'supporter-badge-icon'},
+        String(width ?? ''),
+      ),
   };
 });
 
@@ -42,20 +46,22 @@ type RenderedNode = {
   props?: {
     accessibilityLabel?: string;
     accessibilityRole?: string;
-    width?: number;
+    testID?: string;
   };
-  children?: RenderedNode[] | null;
+  children?: unknown;
 };
 
-function findIconWidth(node: RenderedNode | null): number | undefined {
-  if (!node) {
+function findIconWidth(node: unknown): number | undefined {
+  if (!node || typeof node !== 'object') {
     return undefined;
   }
-  if (typeof node.props?.width === 'number') {
-    return node.props.width;
+  const typed = node as RenderedNode;
+  const kids = Array.isArray(typed.children) ? typed.children : [];
+  if (typed.props?.testID === ICON_TEST_ID) {
+    const value = Number(kids[0]);
+    return Number.isNaN(value) ? undefined : value;
   }
-  const children = Array.isArray(node.children) ? node.children : [];
-  for (const child of children) {
+  for (const child of kids) {
     const found = findIconWidth(child);
     if (found !== undefined) {
       return found;
@@ -72,7 +78,7 @@ describe('SupporterBadge', () => {
 
   it('renders the supporter (beer) icon when isSupporter is true', () => {
     const tree = render(<SupporterBadge isSupporter />).toJSON();
-    expect(JSON.stringify(tree)).toContain('supporter-badge-icon');
+    expect(JSON.stringify(tree)).toContain(ICON_TEST_ID);
   });
 
   it('exposes the localized accessibility label and image role', () => {
@@ -84,12 +90,10 @@ describe('SupporterBadge', () => {
   });
 
   it('uses a smaller icon for the small variant', () => {
-    const small = render(
-      <SupporterBadge isSupporter size="small" />,
-    ).toJSON() as RenderedNode;
+    const small = render(<SupporterBadge isSupporter size="small" />).toJSON();
     const medium = render(
       <SupporterBadge isSupporter size="medium" />,
-    ).toJSON() as RenderedNode;
+    ).toJSON();
     const smallSize = findIconWidth(small) ?? 0;
     const mediumSize = findIconWidth(medium) ?? 0;
     expect(smallSize).toBeGreaterThan(0);
