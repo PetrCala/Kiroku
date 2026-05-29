@@ -170,11 +170,15 @@ const createModalStyleUtils: StyleUtilGenerator<GetModalStylesStyleUtil> = ({
         shouldAddBottomSafeAreaPadding = false;
         break;
       case CONST.MODAL.MODAL_TYPE.CENTERED_SMALL:
-        // A centered modal that takes up the minimum possible screen space on all devices
+        // A centered modal that takes up the minimum possible screen space on all devices.
+        // Unlike CENTERED it has no flex:1 container to fill the viewport, so it must
+        // center itself on both axes (and the native Container excludes it from the flex1
+        // fill, mirroring BOTTOM_DOCKED, so this justifyContent can take effect).
         modalStyle = {
           ...modalStyle,
           ...{
             alignItems: 'center',
+            justifyContent: 'center',
           },
         };
         modalContainerStyle = {

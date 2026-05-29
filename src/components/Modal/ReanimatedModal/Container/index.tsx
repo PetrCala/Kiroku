@@ -65,7 +65,11 @@ function Container({
         <Animated.View
           style={[
             styles.modalAnimatedContainer,
-            type !== CONST.MODAL.MODAL_TYPE.BOTTOM_DOCKED && styles.flex1,
+            // BOTTOM_DOCKED and CENTERED_SMALL stay content-sized so the outer
+            // `style` (flex-end / center) can position the sheet; the others fill.
+            type !== CONST.MODAL.MODAL_TYPE.BOTTOM_DOCKED &&
+              type !== CONST.MODAL.MODAL_TYPE.CENTERED_SMALL &&
+              styles.flex1,
           ]}
           entering={Entering}
           exiting={Exiting}>
