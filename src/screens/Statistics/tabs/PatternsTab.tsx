@@ -82,7 +82,9 @@ function binDrinksPerSession(values: number[]): HistogramBin[] {
   return DRINK_BIN_LABELS.map((label, i) => ({label, count: counts[i]}));
 }
 
-const DURATION_BIN_LABELS = ['0–30m', '30–60m', '1–2h', '2–4h', '4h+'] as const;
+// Compact upper-bound labels so all five fit the half-width histogram cell
+// (e.g. "1h" = the 30–60m bin). The full ranges live in the bin definitions.
+const DURATION_BIN_LABELS = ['30m', '1h', '2h', '4h', '4h+'] as const;
 
 function binSessionDuration(minutes: number[]): HistogramBin[] {
   const counts = [0, 0, 0, 0, 0];

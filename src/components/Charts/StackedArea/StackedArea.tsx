@@ -2,7 +2,7 @@ import {useMemo} from 'react';
 import {DashPathEffect} from '@shopify/react-native-skia';
 import {Area, BaseChart, Line} from '@components/Charts/BaseChart';
 import {
-  monthFromIsoWeek,
+  formatWeekTick,
   roundTick,
 } from '@components/Charts/BaseChart/axisFormatters';
 import type {DrinkKey} from '@src/types/onyx/Drinks';
@@ -85,7 +85,7 @@ function StackedArea({
       accessibilityLabel={accessibilityLabel}
       emptyLabel={emptyLabel}
       height={height}
-      formatXLabel={value => monthFromIsoWeek(String(value))}
+      formatXLabel={value => formatWeekTick(String(value))}
       formatYLabel={roundTick}
       loading={isLoading}>
       {({points, chartBounds, theme}) => {
