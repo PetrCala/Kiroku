@@ -164,7 +164,7 @@ export default {
     timePrefix: 'Teď je',
     time: 'Čas',
     units: 'Jednotky',
-    drinks: 'Nápoje',
+    drinks: 'Drinky',
     conjunctionFor: 'pro',
     todayAt: 'Dnes v',
     tomorrowAt: 'Zítra v',
@@ -445,7 +445,7 @@ export default {
     location: {
       title: 'Je vyžadován přístup k poloze',
       message:
-        'Kiroku může u nápojů v živé relaci zaznamenat vaši aktuální polohu. Záznam probíhá pouze během otevřené živé relace a pokud máte tuto předvolbu zapnutou.',
+        'Kiroku může u drinků v živé relaci zaznamenat vaši aktuální polohu. Záznam probíhá pouze během otevřené živé relace a pokud máte tuto předvolbu zapnutou.',
     },
   },
   personalDetails: {
@@ -521,10 +521,10 @@ export default {
       theme: 'Motiv aplikace',
     },
     drinksAndUnitsSection: {
-      title: 'Nápoje a jednotky',
+      title: 'Drinky a jednotky',
       description:
-        'Nastavte přepočet nápojů na jednotky a kdy se mění barva relace',
-      drinksToUnits: 'Nápoje na jednotky',
+        'Nastavte přepočet drinků na jednotky a kdy se mění barva relace',
+      drinksToUnits: 'Drinky na jednotky',
       unitsToColors: 'Jednotky na barvy',
       colorPalette: 'Barevná paleta',
     },
@@ -536,9 +536,9 @@ export default {
     },
   },
   locationPrompt: {
-    title: 'Označovat, kde si zapisujete nápoje?',
+    title: 'Označovat, kde si zapisujete drinky?',
     prompt:
-      'Kiroku může ke každému nápoji zaznamenanému během živé relace připojit vaši aktuální polohu, takže se později můžete podívat, kde která relace proběhla. Toto nastavení můžete kdykoli změnit v Nastavení → Soukromí.',
+      'Kiroku může ke každému drinku zaznamenanému během živé relace připojit vaši aktuální polohu, takže se později můžete podívat, kde která relace proběhla. Toto nastavení můžete kdykoli změnit v Nastavení → Soukromí.',
     enable: 'Zapnout',
     notNow: 'Teď ne',
   },
@@ -564,17 +564,17 @@ export default {
       title: 'Poloha',
     },
     trackLocationDuringSessions: {
-      label: 'Označovat nápoje polohou',
-      description: 'Označte každý nápoj místem, kde jste ho zaznamenali.',
+      label: 'Označovat drinky polohou',
+      description: 'Označte každý drink místem, kde jste ho zaznamenali.',
     },
     clearLocationHistory: {
       label: 'Vymazat historii polohy',
       description:
-        'Smažte všechny uložené polohy. Vaše relace a nápoje zůstanou.',
+        'Smažte všechny uložené polohy. Vaše relace a drinky zůstanou.',
       button: 'Vymazat',
       confirmTitle: 'Vymazat historii polohy?',
       confirmPrompt:
-        'Tímto trvale smažete všechny polohy připojené k nápojům ve všech vašich relacích. Samotné relace zůstanou zachovány. Označování polohou můžete kdykoli později znovu zapnout.',
+        'Tímto trvale smažete všechny polohy připojené k drinkům ve všech vašich relacích. Samotné relace zůstanou zachovány. Označování polohou můžete kdykoli později znovu zapnout.',
       confirmAction: 'Vymazat',
       success: 'Vaše historie polohy byla vymazána.',
       error: 'Nepodařilo se vymazat historii polohy. Zkuste to prosím znovu.',
@@ -617,8 +617,8 @@ export default {
     },
   },
   drinksToUnitsScreen: {
-    title: 'Nápoje na jednotky',
-    description: 'Zvolte, kolika jednotkám je roven každý z nápojů',
+    title: 'Drinky na jednotky',
+    description: 'Zvolte, kolika jednotkám je roven každý z drinků',
   },
   languageScreen: {
     language: 'Jazyk',
@@ -665,11 +665,11 @@ export default {
       date: 'Datum',
       type: 'Typ relace',
       startTime: 'Čas zahájení',
-      lastDrinkAdded: 'Poslední přidaný nápoj',
+      lastDrinkAdded: 'Poslední přidaný drink',
       endTime: 'Čas ukončení',
     },
     drinksSection: {
-      title: 'Zkonzumované nápoje',
+      title: 'Zkonzumované drinky',
     },
     otherSection: {
       title: 'Ostatní',
@@ -794,7 +794,7 @@ export default {
     },
     live: {
       title: 'Živá',
-      description: 'Přidávejte nápoje v reálném čase',
+      description: 'Přidávejte drinky v reálném čase',
     },
     edit: {
       title: 'Zpětná',
@@ -1008,8 +1008,8 @@ export default {
           emptyLabel: 'Každý letošní klidný den se počítá.',
         },
         drinkTypeStack: {
-          title: 'Mix nápojů v čase',
-          emptyLabel: 'Váš mix nápojů se ukáže, jak budete přidávat data.',
+          title: 'Mix drinků v čase',
+          emptyLabel: 'Váš mix drinků se ukáže, jak budete přidávat data.',
         },
         comparison: {
           legend: 'Předchozí období',
@@ -1022,14 +1022,14 @@ export default {
       breakdown: {
         label: 'Rozpis',
         donut: {
-          title: 'Jednotky podle druhu nápoje',
+          title: 'Jednotky podle druhu drinku',
           subtitle: 'Složení za aktuální období.',
           centerUnits: ({count}: BreakdownCenterUnitsParams) => `${count}`,
           centerCaption: 'jednotek',
           empty: 'Klidné období — zatím není co rozdělit.',
           sliceCaption: ({label, units, share}: BreakdownSliceCaptionParams) =>
             `${label}: ${units} jednotek (${share} %)`,
-          a11y: 'Koláč složení podle druhu nápoje',
+          a11y: 'Koláč složení podle druhu drinku',
         },
         multiples: {
           title: 'Týdenní trend podle druhu',
@@ -1046,7 +1046,7 @@ export default {
           moreFocused: ({period}: BreakdownPeriodParams) =>
             `Tento ${period} jste se zaměřil/a víc než minulý.`,
           aboutTheSame: ({period}: BreakdownPeriodParams) =>
-            `Skladba nápojů je zhruba stejná jako minulý ${period}.`,
+            `Skladba drinků je zhruba stejná jako minulý ${period}.`,
           period: {
             week: 'týden',
             month: 'měsíc',
@@ -1073,10 +1073,10 @@ export default {
         empty: 'Klidné období — zatím není co zobrazit.',
       },
       drinksPerSession: {
-        title: 'Nápojů na relaci',
+        title: 'Drinků na relaci',
         empty: 'Klidné období — žádné relace k započtení.',
         p75Copy: ({value}: {value: number}) =>
-          `75 % vašich relací má ${value} nápojů nebo méně.`,
+          `75 % vašich relací má ${value} drinků nebo méně.`,
       },
       sessionDuration: {
         title: 'Délka relace',
@@ -1114,7 +1114,7 @@ export default {
         custom: 'Vlastní',
       },
       drinkType: {
-        all: 'Všechny nápoje',
+        all: 'Všechny drinky',
       },
       comparison: {
         none: 'Porovnat',
@@ -1135,7 +1135,7 @@ export default {
       },
       a11y: {
         rangeSegmentedControl: 'Výběr časového rozsahu',
-        drinkTypeChipRow: 'Filtr typu nápoje',
+        drinkTypeChipRow: 'Filtr typu drinku',
         comparisonToggle: 'Režim porovnání',
         previousPeriod: 'Předchozí období',
         nextPeriod: 'Další období',
@@ -1173,7 +1173,7 @@ export default {
       intro: {
         title: 'Alkokalkulačka',
         body1:
-          'Tento nástroj poskytuje hrubý odhad hladiny alkoholu v krvi na základě zaznamenaných nápojů, vaší váhy a pohlaví.',
+          'Tento nástroj poskytuje hrubý odhad hladiny alkoholu v krvi na základě zaznamenaných drinků, vaší váhy a pohlaví.',
         body2:
           'Používá Widmarkův vzorec a předpokládá rovnoměrné odbourávání alkoholu. Každé tělo je jiné, berte proto číslo jen jako orientační, nikoli jako fakt.',
         getStarted: 'Začít',
@@ -1183,11 +1183,11 @@ export default {
         liveSession: 'Živá relace',
         editSession: 'Upravená relace',
         editNote:
-          'Nápoje v upravené relaci jsou zaznamenány k začátku relace, takže jejich přesné načasování není jisté.',
+          'Drinky v upravené relaci jsou zaznamenány k začátku relace, takže jejich přesné načasování není jisté.',
         sessionTotal: ({grams, bac}: BacSessionTotalParams) =>
           `Celkem: ${grams} g čistého alkoholu · přidává až ${bac}`,
         bandNote:
-          'Protože některé nápoje pocházejí z upravených relací, zobrazujeme rozmezí: spodní hranice předpokládá, že byly vypity co nejdříve, horní co nejpozději.',
+          'Protože některé drinky pocházejí z upravených relací, zobrazujeme rozmezí: spodní hranice předpokládá, že byly vypity co nejdříve, horní co nejpozději.',
         howTitle: 'Výpočet',
         formula:
           'Gramy alkoholu = objem (ml) × obsah alkoholu × 0,789. Hladina = gramy ÷ (váha × r × 10), kde r je 0,68 (muž), 0,55 (žena) nebo 0,615 (jiné).',
@@ -1225,7 +1225,7 @@ export default {
     saving: 'Ukládám vaši relaci…',
     synchronizing: 'Synchronizuji data…',
     loading: 'Načítám vaši relaci…',
-    drinksConsumed: 'Zkonzumované nápoje',
+    drinksConsumed: 'Zkonzumované drinky',
     sessionFrom: 'Relace od',
     sessionOn: 'Relace dne',
     blackout: 'Výpadek paměti',
