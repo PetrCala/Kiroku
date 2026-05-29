@@ -101,6 +101,10 @@ type SupporterPurchaseCtaParams = {
   price: string;
 };
 
+type SupporterPriceParams = {
+  price: string;
+};
+
 type SupporterPurchaseErrorParams = {
   message: string;
 };
@@ -152,6 +156,7 @@ export type {
   StatsQuietDaysParams,
   StatsThresholdParams,
   SupporterCancelledStatusParams,
+  SupporterPriceParams,
   SupporterPurchaseCtaParams,
   SupporterPurchaseErrorParams,
   SupporterRenewalDateParams,

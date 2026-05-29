@@ -2749,6 +2749,102 @@ const styles = (theme: ThemeColors) =>
       fontSize: variables.fontSizeLabel,
       lineHeight: variables.lineHeightLarge,
     },
+
+    // Supporter paywall (SupportKirokuScreen)
+    supporterHeroEmoji: {
+      fontSize: variables.fontSizeHeroXL,
+      textAlign: 'center',
+    },
+
+    supporterTitle: {
+      ...headlineFont,
+      color: theme.heading,
+      fontSize: variables.fontSizeXXLarge,
+      lineHeight: variables.lineHeightSizeh1,
+      textAlign: 'center',
+    },
+
+    supporterSubtitle: {
+      ...FontUtils.fontFamily.platform.EXP_NEUE,
+      color: theme.textSupporting,
+      fontSize: variables.fontSizeNormal,
+      lineHeight: variables.lineHeightNormal,
+      textAlign: 'center',
+    },
+
+    supporterFeatureIconContainer: {
+      width: variables.iconSizeExtraLarge,
+      height: variables.iconSizeExtraLarge,
+      borderRadius: variables.componentBorderRadiusNormal,
+      backgroundColor: theme.cardBG,
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+
+    supporterFeatureEmoji: {
+      fontSize: variables.fontSizeXLarge,
+    },
+
+    supporterPlanCard: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      borderWidth: 2,
+      borderColor: theme.border,
+      borderRadius: variables.componentBorderRadiusLarge,
+      backgroundColor: theme.cardBG,
+      paddingVertical: 16,
+      paddingHorizontal: 16,
+    },
+
+    supporterPlanCardSelected: {
+      borderColor: theme.success,
+    },
+
+    supporterPlanRadioOuter: {
+      width: variables.iconSizeNormal,
+      height: variables.iconSizeNormal,
+      borderRadius: variables.iconSizeNormal / 2,
+      borderWidth: 2,
+      borderColor: theme.border,
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+
+    supporterPlanRadioOuterSelected: {
+      borderColor: theme.success,
+    },
+
+    supporterPlanRadioInner: {
+      width: variables.iconSizeNormal / 2,
+      height: variables.iconSizeNormal / 2,
+      borderRadius: variables.iconSizeNormal / 4,
+      backgroundColor: theme.success,
+    },
+
+    supporterPill: {
+      alignSelf: 'center',
+      backgroundColor: theme.success,
+      borderRadius: variables.componentBorderRadiusLarge,
+      paddingHorizontal: 8,
+      paddingVertical: 2,
+    },
+
+    supporterPillText: {
+      ...FontUtils.fontFamily.platform.EXP_NEUE_BOLD,
+      color: theme.textOnBrand,
+      fontSize: variables.fontSizeSmall,
+      textTransform: 'uppercase',
+    },
+
+    supporterBestValuePillPosition: {
+      position: 'absolute',
+      top: -10,
+      right: 12,
+    },
+
+    supporterCtaText: {
+      color: theme.textOnBrand,
+    },
   }) satisfies Styles;
 
 type ThemeStyles = ReturnType<typeof styles>;

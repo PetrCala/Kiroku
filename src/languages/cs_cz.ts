@@ -29,6 +29,7 @@ import type {
   StatsDrillDownTitleParams,
   StatsQuietDaysParams,
   SupporterCancelledStatusParams,
+  SupporterPriceParams,
   SupporterPurchaseCtaParams,
   SupporterPurchaseErrorParams,
   SupporterRenewalDateParams,
@@ -734,6 +735,29 @@ export default {
     menuEntry: 'Podpořit Kiroku 🍺',
     paywallScreen: {
       title: 'Podpořit Kiroku',
+      heroPill: 'Odznak podporovatele',
+      heroTitle: 'Staňte se Kiroku Supporter',
+      heroSubtitle:
+        'Vyjádřete svou podporu a noste na profilu exkluzivní odznak podporovatele.',
+      featureBadgeTitle: 'Odznak podporovatele',
+      featureBadgeDescription:
+        'Exkluzivní odznak 🍺 zobrazený na vašem veřejném profilu',
+      featureSupportTitle: 'Podpora vývoje',
+      featureSupportDescription:
+        'Pomozte udržet Kiroku zdarma a aktivně vyvíjené',
+      featureEarlyAccessTitle: 'Předčasný přístup',
+      featureEarlyAccessDescription:
+        'Buďte první, kdo se dozví o nových funkcích a aktualizacích',
+      planAnnualTitle: 'Roční',
+      planMonthlyTitle: 'Měsíční',
+      planMonthlyBilling: 'Účtováno měsíčně',
+      bestValue: 'Nejlepší cena',
+      pricePerYearShort: ({price}: SupporterPriceParams) => `${price} / rok`,
+      pricePerMonthShort: ({price}: SupporterPriceParams) => `${price} / měs`,
+      pricePerYear: ({price}: SupporterPriceParams) => `${price} / rok`,
+      pricePerMonth: ({price}: SupporterPriceParams) => `${price} / měsíc`,
+      startSupportingCta: ({price}: SupporterPriceParams) =>
+        `Podpořit — ${price}`,
       loading: 'Načítám detaily předplatného…',
       thanksTitle: 'Jste Kiroku Supporter 🍺',
       thanksSubtitle:

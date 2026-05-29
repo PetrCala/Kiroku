@@ -28,6 +28,7 @@ import type {
   StatsDrillDownTitleParams,
   StatsThresholdParams,
   SupporterCancelledStatusParams,
+  SupporterPriceParams,
   SupporterPurchaseCtaParams,
   SupporterPurchaseErrorParams,
   SupporterRenewalDateParams,
@@ -730,6 +731,28 @@ export default {
     menuEntry: 'Support Kiroku 🍺',
     paywallScreen: {
       title: 'Support Kiroku',
+      heroPill: 'Supporter badge',
+      heroTitle: 'Become a Kiroku Supporter',
+      heroSubtitle:
+        'Show your support and wear the exclusive supporter badge on your profile.',
+      featureBadgeTitle: 'Supporter Badge',
+      featureBadgeDescription:
+        'Exclusive 🍺 badge displayed on your public profile',
+      featureSupportTitle: 'Support Development',
+      featureSupportDescription: 'Help keep Kiroku free and actively developed',
+      featureEarlyAccessTitle: 'Early Access',
+      featureEarlyAccessDescription:
+        'First to know about new features and updates',
+      planAnnualTitle: 'Annual',
+      planMonthlyTitle: 'Monthly',
+      planMonthlyBilling: 'Billed every month',
+      bestValue: 'Best value',
+      pricePerYearShort: ({price}: SupporterPriceParams) => `${price} / yr`,
+      pricePerMonthShort: ({price}: SupporterPriceParams) => `${price} / mo`,
+      pricePerYear: ({price}: SupporterPriceParams) => `${price} / year`,
+      pricePerMonth: ({price}: SupporterPriceParams) => `${price} / month`,
+      startSupportingCta: ({price}: SupporterPriceParams) =>
+        `Start Supporting — ${price}`,
       loading: 'Loading subscription details...',
       thanksTitle: "You're a Kiroku Supporter 🍺",
       thanksSubtitle:
