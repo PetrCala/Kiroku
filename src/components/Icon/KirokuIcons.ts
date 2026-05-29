@@ -47,6 +47,7 @@ import GoogleG from '@assets/images/google-g.svg';
 import QrCode from '@assets/images/qrcode.svg';
 import Profile from '@assets/images/profile.svg';
 import RemoveUser from '@assets/images/remove-user.svg';
+import RotateLeft from '@assets/images/rotate-left.svg';
 import Search from '@assets/images/search.svg';
 import Share from '@assets/images/share.svg';
 import Star from '@assets/images/star.svg';
@@ -115,6 +116,7 @@ export {
   Profile,
   QrCode,
   RemoveUser,
+  RotateLeft,
   Search,
   Gear as Settings,
   Share,
