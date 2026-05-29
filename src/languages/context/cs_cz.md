@@ -25,7 +25,7 @@ the product voice should differ.
 
 | Topic                              | Default                               | Alternative                | Notes                                                                                                                                                               |
 | ---------------------------------- | ------------------------------------- | -------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Word for "drink" (the beverage)    | **nápoj / nápoje**                    | drink / drinky             | `nápoj` is neutral and already dominant in the statistics section. Some UI strings still say "drinky" — those should migrate.                                       |
+| Word for "drink" (the beverage)    | **drink / drinky**                    | nápoj / nápoje             | Product voice prefers the loanword `drink`. Declines as a hard masc. inanimate: gen sg `drinku`, nom/acc pl `drinky`, gen pl `drinků`, dat pl `drinkům`, loc pl `drincích`. Do **not** use `nápoj`.                                    |
 | Register (how we address the user) | **vykání** (formal 2nd-person plural) | tykání (informal singular) | The app is overwhelmingly vykání. The `statistics.*` and `achievementsScreen.bac.*` sections drifted to tykání — treat that as drift to fix, not a second standard. |
 | "Kiroku Supporter" tier name       | **keep English** ("Kiroku Supporter") | "podporovatel Kiroku"      | The tier is a brand/product name; the role/verb ("podpořit", "podporovatel") stays translated.                                                                      |
 
@@ -51,7 +51,7 @@ zde`, `Přidejte si je zde`, `Zkuste hledat zde`.
 | live (session)            | **živá** (relace)                                     |                |
 | edit / past (session)     | **zpětná** (relace)                                   |                |
 | unit / units              | **jednotka / jednotky / jednotek**                    |                |
-| drink / drinks (beverage) | **nápoj / nápoje**                                    | drink / drinky |
+| drink / drinks (beverage) | **drink / drinky** (gen sg drinku, gen pl drinků)     | nápoj / nápoje |
 | beer                      | **pivo**                                              |                |
 | small beer                | **malé pivo**                                         |                |
 | wine                      | **víno**                                              |                |
@@ -117,7 +117,9 @@ helper only takes two arguments (singular + one plural).
 
 ## Known inconsistencies to fix (audit backlog)
 
-The previous backlog (term drift to "sezení"/"relace pití"/"drinky", tykání in
+The previous backlog (term drift to "sezení"/"relace pití"/"nápoj", tykání in
 `statistics.*` and `achievementsScreen.bac.*`, the `profileScreen` Title-case +
 "Zkomzumovaných" typo, and the four missing keys) was cleared in the
-`cs_cz.ts` audit. Nothing outstanding — add new items here if drift reappears.
+`cs_cz.ts` audit. The "drink" beverage term was later flipped from `nápoj` back
+to the loanword `drink` per the product owner. Nothing outstanding — add new
+items here if drift reappears.
