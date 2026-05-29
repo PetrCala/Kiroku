@@ -119,6 +119,12 @@ jobs:
           APPLE_DEMO_PASSWORD: ${{ secrets.APPLE_DEMO_PASSWORD }}
           KIROKU_DEMO_EMAIL: ${{ secrets.APPLE_DEMO_EMAIL }}
           KIROKU_DEMO_PASSWORD: ${{ secrets.APPLE_DEMO_PASSWORD }}
+          # `xcodebuild -showBuildSettings` is slow on this project (RN + a
+          # large pod set: skia/skottie/AVKit/Metal/etc.). fastlane's default
+          # 3s base timeout × 4 retries isn't enough on a loaded runner and
+          # fails the lane before the build even starts. Bump both.
+          FASTLANE_XCODEBUILD_SETTINGS_TIMEOUT: "120"
+          FASTLANE_XCODEBUILD_SETTINGS_RETRIES: "10"
 
       - name: Upload iOS screenshots
         if: ${{ always() }}
