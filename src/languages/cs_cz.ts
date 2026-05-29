@@ -1139,6 +1139,7 @@ export default {
     bac: {
       currentBac: 'Odhadovaná hladina alkoholu',
       noSession: 'Začni pít, abys viděl odhadovanou hladinu alkoholu v krvi.',
+      sober: 'Odhadovaná hladina alkoholu v krvi je nyní nulová.',
       disclaimer:
         'Toto je pouze hrubý odhad, nikoli lékařské nebo právní měření. Nikdy neřiď po požití alkoholu.',
       editDetails: 'Upravit mé údaje',

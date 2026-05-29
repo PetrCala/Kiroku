@@ -96,10 +96,11 @@ function BACDetailsModal({
   const {translate} = useLocalize();
   const {windowHeight, windowWidth} = useWindowDimensions();
 
-  // A centered card that sizes to its content but never grows past ~80% of the
-  // screen; the body scrolls inside the cap. Width caps on large screens.
+  // A centered card that hugs its content. The body scrolls within an explicit
+  // maxHeight (a bounded ScrollView reliably scrolls, where flex bounds don't
+  // engage inside this content-sized modal). Width caps on large screens.
   const cardWidth = Math.min(windowWidth - 40, 480);
-  const cardMaxHeight = Math.round(windowHeight * 0.8);
+  const scrollMaxHeight = Math.round(windowHeight * 0.7);
 
   return (
     <Modal
@@ -108,7 +109,7 @@ function BACDetailsModal({
       animationIn="zoomIn"
       animationOut="zoomOut"
       onClose={onClose}>
-      <View style={{width: cardWidth, maxHeight: cardMaxHeight}}>
+      <View style={{width: cardWidth}}>
         <HeaderWithBackButton
           title={translate('achievementsScreen.bac.details.title')}
           shouldShowBackButton={false}
@@ -116,7 +117,7 @@ function BACDetailsModal({
           onCloseButtonPress={onClose}
         />
         <ScrollView
-          style={[styles.flexShrink1, {minHeight: 0}]}
+          style={{maxHeight: scrollMaxHeight}}
           contentContainerStyle={[styles.ph5, styles.pb5]}>
           {estimate.contributions.length === 0 ? (
             <Text style={[styles.textLabelSupporting]}>
