@@ -183,7 +183,15 @@ jobs:
         run: npm run jsbundle
 
       - name: Install iOS platform SDK
-        run: xcodebuild -downloadPlatform iOS
+        uses: nick-invision/retry@0711ba3d7808574133d713a0d92d2941be03a350
+        with:
+          timeout_minutes: 15
+          max_attempts: 3
+          retry_wait_seconds: 30
+          # `xcodebuild -downloadPlatform iOS` intermittently fails with
+          # "Unable to connect to simulator." (exit 70) when CoreSimulator
+          # isn't ready yet on a fresh runner. Retry instead of failing the build.
+          command: xcodebuild -downloadPlatform iOS
 
       - name: Run Fastlane
         run: bundle exec fastlane ios build_internal
