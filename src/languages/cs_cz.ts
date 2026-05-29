@@ -741,7 +741,7 @@ export default {
         'Vyjádřete svou podporu a noste na profilu exkluzivní odznak podporovatele.',
       featureBadgeTitle: 'Odznak podporovatele',
       featureBadgeDescription:
-        'Exkluzivní odznak 🍺 zobrazený na vašem veřejném profilu',
+        'Exkluzivní odznak zobrazený na vašem veřejném profilu',
       featureSupportTitle: 'Podpora vývoje',
       featureSupportDescription:
         'Pomozte udržet Kiroku zdarma a aktivně vyvíjené',
@@ -794,6 +794,9 @@ export default {
       manageInAppStore: 'Spravovat v App Store',
       manageInGooglePlay: 'Spravovat v Google Play',
       restorePurchases: 'Obnovit nákupy',
+      restoreSuccess: 'Nákupy obnoveny — váš status podporovatele je aktivní.',
+      restoreError: ({message}: SupporterPurchaseErrorParams) =>
+        `Obnovení se nezdařilo: ${message}. Zkuste to prosím znovu.`,
       restoreEmpty:
         'Na tomto účtu nebylo nalezeno žádné aktivní předplatné podporovatele.',
       billingIssueCopy:

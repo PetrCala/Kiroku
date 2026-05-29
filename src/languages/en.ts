@@ -737,7 +737,7 @@ export default {
         'Show your support and wear the exclusive supporter badge on your profile.',
       featureBadgeTitle: 'Supporter Badge',
       featureBadgeDescription:
-        'Exclusive 🍺 badge displayed on your public profile',
+        'Exclusive badge displayed on your public profile',
       featureSupportTitle: 'Support Development',
       featureSupportDescription: 'Help keep Kiroku free and actively developed',
       featureEarlyAccessTitle: 'Early Access',
@@ -789,6 +789,9 @@ export default {
       manageInAppStore: 'Manage in App Store',
       manageInGooglePlay: 'Manage in Google Play',
       restorePurchases: 'Restore purchases',
+      restoreSuccess: 'Purchases restored — your supporter status is active.',
+      restoreError: ({message}: SupporterPurchaseErrorParams) =>
+        `Restore failed: ${message}. Please try again.`,
       restoreEmpty:
         'No active supporter subscription was found on this account.',
       billingIssueCopy:

@@ -1,21 +1,22 @@
 import React from 'react';
+import {View} from 'react-native';
 import {useOnyx} from 'react-native-onyx';
 import useLocalize from '@hooks/useLocalize';
+import useTheme from '@hooks/useTheme';
 import SupporterUtils from '@libs/SupporterUtils';
 import * as UserUtils from '@libs/UserUtils';
 import {useFirebase} from '@context/global/FirebaseContext';
 import variables from '@styles/variables';
 import ONYXKEYS from '@src/ONYXKEYS';
 import type {UserID} from '@src/types/onyx/OnyxCommon';
-import Text from './Text';
-
-const SUPPORTER_BADGE_EMOJI = '🍺';
+import Icon from './Icon';
+import * as KirokuIcons from './Icon/KirokuIcons';
 
 type SupporterBadgeSize = 'small' | 'medium';
 
-const SIZE_TO_FONT_SIZE: Record<SupporterBadgeSize, number> = {
-  small: variables.fontSizeSmall,
-  medium: variables.fontSizeMedium,
+const SIZE_TO_ICON_SIZE: Record<SupporterBadgeSize, number> = {
+  small: variables.iconSizeSmall,
+  medium: variables.iconSizeNormal,
 };
 
 type SupporterBadgeProps = {
@@ -27,8 +28,8 @@ type SupporterBadgeProps = {
 };
 
 /**
- * Purely presentational badge that renders the 🍺 marker when the target user
- * is an active supporter. Renders `null` (not an empty wrapper) when not a
+ * Purely presentational badge that renders the supporter (beer) icon when the
+ * target user is an active supporter. Renders `null` (not an empty wrapper) when not a
  * supporter so layout siblings collapse around it.
  *
  * Also renders `null` when the supporter tier is hidden for this build
@@ -38,6 +39,7 @@ type SupporterBadgeProps = {
  */
 function SupporterBadge({isSupporter, size = 'medium'}: SupporterBadgeProps) {
   const {translate} = useLocalize();
+  const theme = useTheme();
 
   if (!SupporterUtils.isSupporterTierVisible()) {
     return null;
@@ -48,14 +50,17 @@ function SupporterBadge({isSupporter, size = 'medium'}: SupporterBadgeProps) {
   }
 
   const label = translate('supporter.badgeAccessibilityLabel');
+  const iconSize = SIZE_TO_ICON_SIZE[size];
 
   return (
-    <Text
-      fontSize={SIZE_TO_FONT_SIZE[size]}
-      accessibilityLabel={label}
-      accessibilityRole="image">
-      {SUPPORTER_BADGE_EMOJI}
-    </Text>
+    <View accessibilityLabel={label} accessibilityRole="image">
+      <Icon
+        src={KirokuIcons.Beer}
+        fill={theme.appColor}
+        width={iconSize}
+        height={iconSize}
+      />
+    </View>
   );
 }
 
