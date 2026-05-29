@@ -111,10 +111,12 @@ function BACDetailsModal({
       <View style={{width: cardWidth, maxHeight: cardMaxHeight}}>
         <HeaderWithBackButton
           title={translate('achievementsScreen.bac.details.title')}
-          onBackButtonPress={onClose}
+          shouldShowBackButton={false}
+          shouldShowCloseButton
+          onCloseButtonPress={onClose}
         />
         <ScrollView
-          style={styles.flexShrink1}
+          style={[styles.flexShrink1, {minHeight: 0}]}
           contentContainerStyle={[styles.ph5, styles.pb5]}>
           {estimate.contributions.length === 0 ? (
             <Text style={[styles.textLabelSupporting]}>

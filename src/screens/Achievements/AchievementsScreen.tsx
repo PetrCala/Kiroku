@@ -19,7 +19,11 @@ import * as Preferences from '@userActions/Preferences';
 import * as UserData from '@userActions/UserData';
 import CONST from '@src/CONST';
 import ONYXKEYS from '@src/ONYXKEYS';
-import type {BacDisplayUnit, DrinkingSession} from '@src/types/onyx';
+import type {
+  BacDisplayUnit,
+  BacTimeFormat,
+  DrinkingSession,
+} from '@src/types/onyx';
 import BACDetailsModal from './components/BACDetailsModal';
 import BACIntroModal from './components/BACIntroModal';
 import BACQuestionnaire from './components/BACQuestionnaire';
@@ -48,6 +52,8 @@ function AchievementsScreen() {
 
   const displayUnit =
     preferences?.bac_display_unit ?? CONST.BAC.DISPLAY_UNIT.PER_MILLE;
+  const timeFormat =
+    preferences?.bac_time_format ?? CONST.BAC.TIME_FORMAT.DURATION;
 
   // The ongoing session is held separately and may not yet be in the cached
   // list; merge by id so an already-persisted live session isn't double-counted.
@@ -94,6 +100,15 @@ function AchievementsScreen() {
     );
   };
 
+  const onChangeTimeFormat = (format: BacTimeFormat) => {
+    if (format === timeFormat || !user) {
+      return;
+    }
+    Preferences.updatePreferences(db, user, {bac_time_format: format}).catch(
+      () => undefined,
+    );
+  };
+
   const onQuestionnaireSubmit = (gender: string, weightKg: number) => {
     UserData.updateBacProfile(gender, weightKg);
     setIsEditing(false);
@@ -132,6 +147,8 @@ function AchievementsScreen() {
                 hoursToSober={hoursToSober}
                 displayUnit={displayUnit}
                 onChangeDisplayUnit={onChangeDisplayUnit}
+                timeFormat={timeFormat}
+                onChangeTimeFormat={onChangeTimeFormat}
                 onShowDetails={() => setShowDetails(true)}
               />
             ) : (
