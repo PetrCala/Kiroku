@@ -50,10 +50,10 @@ function SupporterBadge({isSupporter, size = 'medium'}: SupporterBadgeProps) {
   const label = translate('supporter.badgeAccessibilityLabel');
   const iconSize = SIZE_TO_ICON_SIZE[size];
 
-  // The supporter coin is a full-color "object" (dark coin, gold rim + Kiroku
-  // mark), so it's rendered without a `fill` tint — unlike the app's flat
-  // monochrome icons. That deliberate contrast is what makes the paid perk
-  // feel special.
+  // The supporter coin is a full-color "object" — a beveled gold coin with the
+  // Kiroku mark — so it's rendered without a `fill` tint, unlike the app's flat
+  // monochrome icons. That deliberate contrast is what makes the paid perk feel
+  // special.
   return (
     <View accessibilityLabel={label} accessibilityRole="image">
       <Icon
