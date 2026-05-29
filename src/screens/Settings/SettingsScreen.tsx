@@ -186,7 +186,7 @@ function SettingsScreen() {
           ? [
               {
                 translationKey: 'supporter.menuEntry',
-                icon: KirokuIcons.Star,
+                icon: KirokuIcons.Beer,
                 routeName: ROUTES.SETTINGS_SUPPORT,
               } as MenuData,
             ]

@@ -732,7 +732,7 @@ export default {
     benefit: 'Odznak podporovatele na profilu',
     description:
       'Podpořte Kiroku a získejte odznak podporovatele 🍺 na svém profilu.',
-    menuEntry: 'Podpořit Kiroku 🍺',
+    menuEntry: 'Podpořit Kiroku',
     paywallScreen: {
       title: 'Podpořit Kiroku',
       heroPill: 'Odznak podporovatele',
@@ -759,7 +759,7 @@ export default {
       startSupportingCta: ({price}: SupporterPriceParams) =>
         `Podpořit — ${price}`,
       loading: 'Načítám detaily předplatného…',
-      thanksTitle: 'Jste Kiroku Supporter 🍺',
+      thanksTitle: 'Jste Kiroku Supporter',
       thanksSubtitle:
         'Děkujeme za podporu — odznak podporovatele je nyní viditelný na vašem profilu.',
       unavailableTitle: 'Předplatné není dostupné',
@@ -769,6 +769,8 @@ export default {
         `Stát se podporovatelem — ${price} / měsíc`,
       purchaseError: ({message}: SupporterPurchaseErrorParams) =>
         `Nákup se nezdařil: ${message}. Zkuste to prosím znovu.`,
+      restoreError: ({message}: SupporterPurchaseErrorParams) =>
+        `Obnovení se nezdařilo: ${message}. Zkuste to prosím znovu.`,
       restorePurchases: 'Obnovit nákupy',
       restoreEmpty:
         'Na tomto účtu jsme nenašli žádné předchozí předplatné podporovatele. Pokud jste si jej pořídili na jiném zařízení, přihlaste se stejným účtem a zkuste to znovu.',
