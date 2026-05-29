@@ -111,9 +111,19 @@ function identify(userId: string) {
   if (!isConfigured) {
     return;
   }
-  Purchases.logIn(userId).catch((error: unknown) => {
-    Log.warn('[Subscriptions] logIn failed', {error});
-  });
+  // Reconcile supporter status from the authoritative CustomerInfo on every
+  // login / cold start. The change-listener only fires on *changes*, so
+  // without this an entitlement that lapsed while the app was closed (e.g. a
+  // sandbox subscription expiring) would leave a stale `is_supporter: true`
+  // in Onyx. `entitlements.active` excludes expired entitlements, so this
+  // correctly flips the flag back to false when the subscription is gone.
+  Purchases.logIn(userId)
+    .then(({customerInfo}) => {
+      syncSupporterStatusFromCustomerInfo(customerInfo);
+    })
+    .catch((error: unknown) => {
+      Log.warn('[Subscriptions] logIn failed', {error});
+    });
 }
 
 function forget() {
