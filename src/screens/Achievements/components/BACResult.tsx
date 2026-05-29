@@ -12,7 +12,7 @@ import type {BacEstimate} from '@libs/BACUtils';
 import {roundToTwoDecimalPlaces} from '@libs/NumberUtils';
 import type {ChartDatum} from '@libs/Statistics';
 import CONST from '@src/CONST';
-import type {BacDisplayUnit} from '@src/types/onyx';
+import type {BacDisplayUnit, BacTimeFormat} from '@src/types/onyx';
 
 type BACResultProps = {
   /** The aggregate BAC estimate (point + confidence band). */
@@ -30,11 +30,15 @@ type BACResultProps = {
   /** Called when the user picks a different display unit. */
   onChangeDisplayUnit: (unit: BacDisplayUnit) => void;
 
+  /** Whether time-to-sober shows as a duration or an absolute clock time. */
+  timeFormat: BacTimeFormat;
+
+  /** Called when the user switches the time format. */
+  onChangeTimeFormat: (format: BacTimeFormat) => void;
+
   /** Opens the per-session breakdown modal. */
   onShowDetails: () => void;
 };
-
-type TimeFormat = 'duration' | 'clock';
 
 const MS_PER_HOUR = 60 * 60 * 1000;
 
@@ -61,12 +65,13 @@ function BACResult({
   hoursToSober,
   displayUnit,
   onChangeDisplayUnit,
+  timeFormat,
+  onChangeTimeFormat,
   onShowDetails,
 }: BACResultProps) {
   const styles = useThemeStyles();
   const {translate} = useLocalize();
   const axisFont = useChartFont(11);
-  const [timeFormat, setTimeFormat] = useState<TimeFormat>('duration');
   // Captured once at mount so clock labels stay stable across re-renders.
   const [nowMs] = useState(() => Date.now());
 
@@ -74,7 +79,7 @@ function BACResult({
 
   // Time-to-sober shown either as a remaining duration or an absolute clock
   // time; the same choice drives the graph's X-axis labels below.
-  const isClock = timeFormat === 'clock';
+  const isClock = timeFormat === CONST.BAC.TIME_FORMAT.CLOCK;
   const soberText = isClock
     ? translate('achievementsScreen.bac.soberBy', {
         time: formatClockTime(nowMs + hoursToSober * MS_PER_HOUR),
@@ -82,12 +87,15 @@ function BACResult({
     : translate('achievementsScreen.bac.soberIn', {
         time: formatSoberDuration(hoursToSober),
       });
-  const timeFormatOptions: Array<{value: TimeFormat; label: string}> = [
+  const timeFormatOptions: Array<{value: BacTimeFormat; label: string}> = [
     {
-      value: 'duration',
+      value: CONST.BAC.TIME_FORMAT.DURATION,
       label: translate('achievementsScreen.bac.timeDuration'),
     },
-    {value: 'clock', label: translate('achievementsScreen.bac.timeClock')},
+    {
+      value: CONST.BAC.TIME_FORMAT.CLOCK,
+      label: translate('achievementsScreen.bac.timeClock'),
+    },
   ];
 
   const unitOptions: Array<{value: BacDisplayUnit; label: string}> = [
@@ -188,7 +196,7 @@ function BACResult({
                 small
                 text={option.label}
                 success={timeFormat === option.value}
-                onPress={() => setTimeFormat(option.value)}
+                onPress={() => onChangeTimeFormat(option.value)}
               />
             ))}
           </View>
