@@ -12,15 +12,10 @@ jest.mock('@hooks/useLocalize', () => ({
   }),
 }));
 
-jest.mock('@hooks/useTheme', () => ({
-  __esModule: true,
-  default: () => ({appColor: '#F5C400'}),
-}));
-
 // Mock the icon set so the test doesn't pull the real SVG asset chain.
 jest.mock('@components/Icon/KirokuIcons', () => ({
   __esModule: true,
-  Beer: 'Beer',
+  SupporterCoin: 'SupporterCoin',
 }));
 
 // Stub the Icon component to a Text node that echoes its width, so we can

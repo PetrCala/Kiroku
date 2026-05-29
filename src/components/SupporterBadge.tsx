@@ -2,7 +2,6 @@ import React from 'react';
 import {View} from 'react-native';
 import {useOnyx} from 'react-native-onyx';
 import useLocalize from '@hooks/useLocalize';
-import useTheme from '@hooks/useTheme';
 import SupporterUtils from '@libs/SupporterUtils';
 import * as UserUtils from '@libs/UserUtils';
 import {useFirebase} from '@context/global/FirebaseContext';
@@ -39,7 +38,6 @@ type SupporterBadgeProps = {
  */
 function SupporterBadge({isSupporter, size = 'medium'}: SupporterBadgeProps) {
   const {translate} = useLocalize();
-  const theme = useTheme();
 
   if (!SupporterUtils.isSupporterTierVisible()) {
     return null;
@@ -52,11 +50,14 @@ function SupporterBadge({isSupporter, size = 'medium'}: SupporterBadgeProps) {
   const label = translate('supporter.badgeAccessibilityLabel');
   const iconSize = SIZE_TO_ICON_SIZE[size];
 
+  // The supporter coin is a full-color "object" (dark coin, gold rim + Kiroku
+  // mark), so it's rendered without a `fill` tint — unlike the app's flat
+  // monochrome icons. That deliberate contrast is what makes the paid perk
+  // feel special.
   return (
     <View accessibilityLabel={label} accessibilityRole="image">
       <Icon
-        src={KirokuIcons.Beer}
-        fill={theme.appColor}
+        src={KirokuIcons.SupporterCoin}
         width={iconSize}
         height={iconSize}
       />
