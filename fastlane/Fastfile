@@ -115,6 +115,12 @@ platform :android do
   lane :screenshots do
     ENV["ENVFILE"] = ".env.production"
 
+    # Demo credentials must be exported in the shell before invoking the lane.
+    # The Screengrabfile passes them to the test as instrumentation arguments
+    # (env vars are not visible to the test process running on the emulator).
+    UI.user_error!("KIROKU_DEMO_EMAIL not set") unless ENV["KIROKU_DEMO_EMAIL"]
+    UI.user_error!("KIROKU_DEMO_PASSWORD not set") unless ENV["KIROKU_DEMO_PASSWORD"]
+
     # Build the production APK + the androidTest APK. screengrab needs both.
     gradle(
       project_dir: './android',

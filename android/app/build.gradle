@@ -107,6 +107,11 @@ android {
         // Supported language variants must be declared here to avoid from being removed during the compilation.
         // This also helps us to not include unnecessary language variants in the APK.
         resConfigs "en", "cs"
+
+        // Required for the `androidTest` suite under
+        // android/app/src/androidTest/java/com/alcohol_tracker/screenshots/.
+        // Only affects the androidTest source set — production builds are unaffected.
+        testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
     }
 
     flavorDimensions "default"
@@ -227,6 +232,15 @@ dependencies {
     implementation "com.squareup.okhttp3:okhttp-urlconnection:4.+"
 
     implementation("androidx.lifecycle:lifecycle-viewmodel-ktx:2.4.0")
+
+    // Screengrab + AndroidX test deps for the screenshots androidTest suite.
+    // Production builds do not include these; they only compile under the
+    // androidTest source set. See contributingGuides/SCREENSHOTS.md.
+    androidTestImplementation 'tools.fastlane:screengrab:2.1.1'
+    androidTestImplementation 'androidx.test:runner:1.5.2'
+    androidTestImplementation 'androidx.test:rules:1.5.0'
+    androidTestImplementation 'androidx.test.uiautomator:uiautomator:2.2.0'
+    androidTestImplementation 'androidx.test.ext:junit:1.1.5'
 }
 
 // This has to be at the end of the script to apply env config

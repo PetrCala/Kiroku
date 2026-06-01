@@ -188,12 +188,115 @@ def attach_sources(project, target, source_files)
   end
 end
 
+# The legacy `kirokuTests` Obj-C unit-test target ships a latent build-system
+# bug: it has both `INFOPLIST_FILE = kirokuTests/Info.plist` set AND an `Info.plist`
+# entry in its PBXResourcesBuildPhase that copies `kiroku/Info.plist` (renamed
+# to `Info.plist`) into the bundle. Both produce
+# `kiroku.app/PlugIns/kirokuTests.xctest/Info.plist`, so xcodebuild on Xcode 26+
+# aborts with "Multiple commands produce …/kirokuTests.xctest/Info.plist".
+#
+# The conflict never surfaced before because the `Kiroku (production)` scheme's
+# only testable was kirokuTests (and previous screenshots runs failed earlier
+# for unrelated SDK reasons). Once we add a working KirokuUITests testable,
+# xcodebuild's stricter dependency planner actually builds kirokuTests and
+# trips the collision. Pruning the stale Resources entry is sufficient — the
+# INFOPLIST_FILE path remains the canonical producer. The pbxproj diff is
+# throwaway, so this only affects the CI screenshots build.
+def strip_duplicate_info_plist_resources(project)
+  project.targets.each do |target|
+    phase = target.respond_to?(:resources_build_phase) ? target.resources_build_phase : nil
+    next unless phase
+
+    stale = phase.files.select do |build_file|
+      ref = build_file.file_ref
+      next false unless ref
+
+      # `name` is the destination filename inside the bundle; `path` is the
+      # source on disk. The bug is the destination being `Info.plist` while
+      # the target also has its own INFOPLIST_FILE — that's the collision.
+      effective_name = ref.name || (ref.path ? File.basename(ref.path) : nil)
+      effective_name == 'Info.plist'
+    end
+
+    next if stale.empty?
+
+    has_infoplist_setting = target.build_configurations.any? do |config|
+      value = config.build_settings['INFOPLIST_FILE']
+      value && !value.to_s.empty?
+    end
+    next unless has_infoplist_setting
+
+    stale.each do |build_file|
+      ref = build_file.file_ref
+      log(
+        "Pruning stale 'Info.plist' Resources entry from target '#{target.name}' " \
+        "(source: #{ref.path.inspect}) — collides with INFOPLIST_FILE output.",
+      )
+      phase.remove_build_file(build_file)
+    end
+  end
+end
+
+# Defensive end-of-script check: walk every target and abort if any of them
+# would still produce a duplicate `Info.plist` at build time. Catches future
+# regressions where someone re-adds an Info.plist to a target's Resources
+# phase, or our pruning loop above misses an edge case.
+def assert_no_duplicate_info_plist_outputs(project)
+  offenders = project.targets.each_with_object([]) do |target, acc|
+    phase = target.respond_to?(:resources_build_phase) ? target.resources_build_phase : nil
+    next unless phase
+
+    has_resource_info_plist = phase.files.any? do |build_file|
+      ref = build_file.file_ref
+      next false unless ref
+
+      effective_name = ref.name || (ref.path ? File.basename(ref.path) : nil)
+      effective_name == 'Info.plist'
+    end
+    next unless has_resource_info_plist
+
+    has_infoplist_setting = target.build_configurations.any? do |config|
+      value = config.build_settings['INFOPLIST_FILE']
+      value && !value.to_s.empty?
+    end
+    next unless has_infoplist_setting
+
+    acc << target.name
+  end
+
+  return if offenders.empty?
+
+  abort_with(
+    "target(s) #{offenders.inspect} have both INFOPLIST_FILE set and an " \
+    "'Info.plist' entry in their Resources build phase. xcodebuild will fail " \
+    "with 'Multiple commands produce <product>.xctest/Info.plist'. " \
+    "strip_duplicate_info_plist_resources should have caught this — please " \
+    "investigate why it didn't.",
+  )
+end
+
 # --- Scheme wiring ------------------------------------------------------------
 
 # Add the UI test target to the shared `Kiroku (production)` scheme's
 # TestAction so `xcodebuild test -scheme "Kiroku (production)"` picks it up.
 # We edit the XML directly to avoid xcodeproj's scheme writer reformatting
 # every line in the file.
+# Names of legacy testables we strip out of the scheme before adding
+# KirokuUITests. The legacy `kirokuTests` Obj-C unit-test target is the
+# scheme's original sole testable, but it causes three separate failures when
+# xcodebuild builds it as part of the screenshots run:
+#   1. Pre-existing duplicate `kirokuTests.xctest/Info.plist` output
+#      (INFOPLIST_FILE + a stale Resources entry both produce it).
+#   2. Xcode 26's user-script sandbox blocks its `[CP] Copy Pods Resources`
+#      phase from writing `ios/Pods/resources-to-copy-kirokuTests.txt`.
+#   3. The embedded `kirokuTests.xctest` plug-in re-links nitro-sqlite, so
+#      when the host app launches under the test runner, Nitro's
+#      HybridObjectRegistry sees "NitroSQLite" registered twice and crashes
+#      the app with libc++abi before AuthScreen ever appears.
+# Screenshots only need the new KirokuUITests bundle, so we remove
+# kirokuTests from the scheme entirely for the throwaway CI build.
+LEGACY_TESTABLES_TO_STRIP = %w[kirokuTests].freeze
+
 def add_testable_to_scheme(target)
   abort_with("scheme not found at #{SCHEME_PATH}") unless File.exist?(SCHEME_PATH)
 
@@ -201,26 +304,39 @@ def add_testable_to_scheme(target)
   testables = REXML::XPath.first(doc, '//TestAction/Testables')
   abort_with('no <Testables> node in scheme') unless testables
 
-  already_present = REXML::XPath.match(testables, "TestableReference/BuildableReference[@BlueprintName='#{UI_TESTS_TARGET_NAME}']").any?
-  if already_present
-    log "Scheme already references '#{UI_TESTS_TARGET_NAME}'"
-    return
+  LEGACY_TESTABLES_TO_STRIP.each do |legacy_name|
+    REXML::XPath.match(
+      testables,
+      "TestableReference[BuildableReference[@BlueprintName='#{legacy_name}']]",
+    ).each do |node|
+      log "Removing legacy testable '#{legacy_name}' from scheme's TestAction"
+      testables.delete_element(node)
+    end
   end
 
-  log "Adding '#{UI_TESTS_TARGET_NAME}' to scheme's TestAction"
+  already_present = REXML::XPath.match(
+    testables,
+    "TestableReference/BuildableReference[@BlueprintName='#{UI_TESTS_TARGET_NAME}']",
+  ).any?
 
-  testable = REXML::Element.new('TestableReference')
-  testable.add_attribute('skipped', 'NO')
+  if already_present
+    log "Scheme already references '#{UI_TESTS_TARGET_NAME}'"
+  else
+    log "Adding '#{UI_TESTS_TARGET_NAME}' to scheme's TestAction"
 
-  ref = REXML::Element.new('BuildableReference')
-  ref.add_attribute('BuildableIdentifier', 'primary')
-  ref.add_attribute('BlueprintIdentifier', target.uuid)
-  ref.add_attribute('BuildableName', "#{UI_TESTS_TARGET_NAME}.xctest")
-  ref.add_attribute('BlueprintName', UI_TESTS_TARGET_NAME)
-  ref.add_attribute('ReferencedContainer', 'container:kiroku.xcodeproj')
+    testable = REXML::Element.new('TestableReference')
+    testable.add_attribute('skipped', 'NO')
 
-  testable.add_element(ref)
-  testables.add_element(testable)
+    ref = REXML::Element.new('BuildableReference')
+    ref.add_attribute('BuildableIdentifier', 'primary')
+    ref.add_attribute('BlueprintIdentifier', target.uuid)
+    ref.add_attribute('BuildableName', "#{UI_TESTS_TARGET_NAME}.xctest")
+    ref.add_attribute('BlueprintName', UI_TESTS_TARGET_NAME)
+    ref.add_attribute('ReferencedContainer', 'container:kiroku.xcodeproj')
+
+    testable.add_element(ref)
+    testables.add_element(testable)
+  end
 
   formatter = REXML::Formatters::Pretty.new(3)
   formatter.compact = true
@@ -248,6 +364,9 @@ def main
   ].select { |p| File.exist?(p) }
 
   attach_sources(project, target, source_files)
+
+  strip_duplicate_info_plist_resources(project)
+  assert_no_duplicate_info_plist_outputs(project)
 
   if project.object_version != original_object_version
     abort_with(

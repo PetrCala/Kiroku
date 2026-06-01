@@ -29,26 +29,37 @@ calendar month**. Without an in-month session, the test fails with a missing
 
 1. Go to **Actions → "Capture App Store / Play Store screenshots" → Run
    workflow**.
-2. Pick a branch (usually `master`) and a `device_subset`:
-   - `all` — full matrix (4 devices x 2 locales, ~30-45 min)
-   - `phone-only` — 3 iPhones x 2 locales (~20-30 min)
-   - `ipad-only` — 1 iPad x 2 locales (~10-15 min, fastest for iterating)
-3. When the run finishes, download the `ios-screenshots-<sha>` artifact from
-   the workflow summary page. PNGs are organized as
-   `ios/<locale>/<device>/*.png`.
-4. If the run failed, the `ios-fastlane-logs-<sha>` artifact contains
-   `gym`/`snapshot` logs for triage.
+2. Pick a branch (usually `master`) and fill the inputs:
+   - **`platform`** — `both` (default), `ios-only`, or `android-only`. Each
+     platform is an independent job that runs in parallel when both are
+     selected. Pick a single platform when iterating on the test code for
+     that platform.
+   - **`device_subset`** (iOS only) — `all` (iPhone 17 Pro Max + iPad Pro
+     13" M5, ~30-40 min), `phone-only` (~20 min), `ipad-only` (~15 min).
+     Ignored for Android.
+   - **`android_locales_subset`** — `all` (en-US + cs-CZ, ~30 min),
+     `en-US`, or `cs-CZ`. A single locale halves the Android test phase.
+3. When the run finishes, download the artifacts from the workflow summary:
+   - `ios-screenshots-<sha>` — PNGs organized as `ios/<locale>/<device>/*.png`
+   - `android-screenshots-<sha>` — PNGs organized as
+     `android/<locale>/phone/*.png`
+4. If a job failed, its log artifact (`ios-fastlane-logs-<sha>` /
+   `android-screengrab-logs-<sha>`) contains build + test traces for triage.
 
 ### Required GitHub secrets
 
-| Secret                | Used for                                          |
-| --------------------- | ------------------------------------------------- |
-| `APPLE_DEMO_EMAIL`    | Demo account login (App Store Review credentials) |
-| `APPLE_DEMO_PASSWORD` | Demo account password                             |
-| `PROD_ENV_FILE`       | Contents of `.env.production`                     |
+| Secret                       | Used for                                            |
+| ---------------------------- | --------------------------------------------------- |
+| `APPLE_DEMO_EMAIL`           | Demo account login (App Store Review credentials)   |
+| `APPLE_DEMO_PASSWORD`        | Demo account password                               |
+| `PRODUCTION_ENV_FILE`        | Contents of `.env.production`                       |
+| `LARGE_SECRET_PASSPHRASE`    | Android: decrypts the upload keystore               |
+| `MYAPP_UPLOAD_STORE_PASSWORD`| Android: unlocks the keystore at signing time       |
+| `MYAPP_UPLOAD_KEY_PASSWORD`  | Android: unlocks the upload key at signing time     |
 
-`KIROKU_DEMO_EMAIL` / `KIROKU_DEMO_PASSWORD` (used inside the UI test) are
-aliased from `APPLE_DEMO_*` in the workflow, so you only need one set.
+`KIROKU_DEMO_EMAIL` / `KIROKU_DEMO_PASSWORD` (used inside the UI tests) are
+aliased from `APPLE_DEMO_*` in the workflow, so you only need one set of
+demo creds.
 
 ### How it works
 
@@ -139,51 +150,29 @@ branch and never push the result.
 
 ### Android
 
-The `android :screenshots` lane still needs a few one-time setup steps that
-are documented but not yet wired into CI:
+The Gradle config (`testInstrumentationRunner` + `androidTestImplementation`
+deps) and the `CHANGE_CONFIGURATION` permission in
+`android/app/src/debug/AndroidManifest.xml` are already committed, so the
+lane just works:
 
-1. **Add screengrab dependencies** to `android/app/build.gradle`:
+```bash
+emulator -avd Pixel_6_API_34   # or any phone AVD you've created locally
+bundle exec fastlane android screenshots
+```
 
-   ```groovy
-   android {
-       defaultConfig {
-           testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
-       }
-   }
-   dependencies {
-       androidTestImplementation 'tools.fastlane:screengrab:2.1.1'
-       androidTestImplementation 'androidx.test:runner:1.5.2'
-       androidTestImplementation 'androidx.test:rules:1.5.0'
-       androidTestImplementation 'androidx.test.uiautomator:uiautomator:2.2.0'
-       androidTestImplementation 'androidx.test.ext:junit:1.1.5'
-   }
-   ```
+Output PNGs land in `fastlane/screenshots/android/<locale>/phone/*.png`.
 
-2. **Add the CHANGE_CONFIGURATION permission** to
-   `android/app/src/debug/AndroidManifest.xml` (screengrab needs it to switch
-   locales at runtime). Create the file if it doesn't exist:
+Notes when running locally:
 
-   ```xml
-   <manifest xmlns:android="http://schemas.android.com/apk/res/android">
-       <uses-permission android:name="android.permission.CHANGE_CONFIGURATION"/>
-   </manifest>
-   ```
-
-3. **Boot the AVD you want to capture against** (Pixel 7 emulator is a good
-   default for the phone bucket):
-
-   ```bash
-   emulator -avd Pixel_7_API_34
-   ```
-
-4. **Run:**
-
-   ```bash
-   bundle exec fastlane android screenshots
-   ```
-
-An Android CI job (using `reactivecircus/android-emulator-runner`) is a
-planned follow-up — see the TODO at the bottom of `screenshots.yml`.
+- The lane builds the Production Release APK, which requires the upload
+  keystore (`android/app/kiroku-play-key.keystore`) to be present and
+  unlockable. Set `MYAPP_UPLOAD_STORE_PASSWORD` / `MYAPP_UPLOAD_KEY_PASSWORD`
+  in your shell to match the keystore (the same values the CI workflow uses).
+- The first emulator boot is ~5-10 min; subsequent runs against the same
+  AVD reuse its snapshot and are much faster.
+- If you only want to iterate against a single locale, edit
+  [`fastlane/Screengrabfile`](../fastlane/Screengrabfile) and reduce the
+  `locales([...])` list. Don't commit the change.
 
 ---
 
@@ -218,13 +207,32 @@ makes a few assumptions that may need adjustment after the first run:
   Settings → Preferences → Language → (Czech/English). If the menu structure
   changes, update `switchLocaleIfNeeded()` in both test files.
 
+- **Android `EditText` matching by index.** The Kotlin test uses
+  `By.clazz("android.widget.EditText")` and assumes email is index 0 +
+  password is index 1. If RN ever renders additional inputs on `AuthScreen`
+  this breaks silently — adding `testID`s (which translate to
+  `android:contentDescription` on RN Android) is the same long-term fix as
+  iOS.
+
+- **Android emulator boot flakiness.** `reactivecircus/android-emulator-runner`
+  occasionally fails to bring the AVD up within the 10-minute boot timeout
+  (~10-15% of cold runs). Re-trigger the workflow if the
+  `Run Fastlane - Capture Android screenshots` step fails before the test
+  phase even starts. If this happens often, the next optimization is the
+  2-step AVD cache pattern from the action's README.
+
 ---
 
 ## What this doesn't include (yet)
 
-- **Android CI job** — the `android :screenshots` lane works locally but
-  needs the Gradle setup + AVD wiring + manifest permission landed on master
-  before it can be lifted into CI. Follow-up.
+- **Android AVD caching.** The 2-step `reactivecircus/android-emulator-runner`
+  pattern (pre-warm + cache `~/.android/avd/*`, restore on subsequent runs)
+  shaves ~6-8 min off each Android run. Skipped for v1 — add once the
+  workflow is reliable.
+- **Android tablet capture.** The `Screengrabfile` is `device_type("phone")`
+  only. Play Store accepts phone-only submissions and auto-derives smaller
+  tiers from the largest, but adding a `Pixel_Tablet_API_34` emulator
+  variant covers the 10" tablet tier explicitly.
 - **`frameit` device bezels** — uncomment the line in the iOS lane once
   you've installed it (`bundle exec fastlane frameit setup`).
 - **Auto-upload to App Store Connect / Play Console** — both lanes currently
@@ -235,3 +243,8 @@ makes a few assumptions that may need adjustment after the first run:
   `fastlane/Snapfile` (`xcargs("SWIFT_VERSION=5.0")`). The root-cause fix
   belongs in a separate PR that edits the `kirokuTests` target in
   `ios/kiroku.xcodeproj`.
+- **`testID`s on login + tab bar.** The iOS and Android tests both rely on
+  brittle text/index matchers for login fields and bottom-tab buttons. Add
+  `testID="loginEmail"`, `testID="loginPassword"`, and `testID="tabSettings"`
+  (etc.) to the corresponding RN components in `src/screens/` to make both
+  tests resilient to localization + reorder changes.

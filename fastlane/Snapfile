@@ -25,14 +25,44 @@ languages([
 workspace("./ios/kiroku.xcworkspace")
 scheme("Kiroku (production)")
 
+# Build/run the UI test against a Release configuration. The scheme's Test
+# action defaults to DebugProduction, but React Native's "Bundle React Native
+# code and images" build phase SKIPS JS bundling for Debug configs — it expects
+# the Metro packager to be running. In CI there's no Metro and no embedded
+# bundle, so the app boots straight into a redbox:
+#   "No script URL provided. Make sure the packager is running or you have
+#    embedded a JS bundle in your application bundle."
+# and every UI selector misses because the real UI never renders. Release
+# configs embed the bundle and load from it (DEBUG=0), which is exactly what
+# screenshot capture needs. Simulator build needs no code signing.
+configuration("ReleaseProduction")
+
 # The legacy `kirokuTests` target has no SWIFT_VERSION set in its buildSettings
 # (pre-existing project bug), which crashes `xcodebuild build test` on Xcode 26+
 # with: "SWIFT_VERSION '' is unsupported". Override globally — every Kiroku
 # Swift target uses 5.0 already, so this is a safe no-op for the others.
-xcargs("SWIFT_VERSION=5.0")
+#
+# ENABLE_USER_SCRIPT_SANDBOXING=NO disables Xcode 26's strict user-script
+# sandbox. CocoaPods' Pods-kiroku-kirokuTests-resources.sh writes
+# `ios/Pods/resources-to-copy-kirokuTests.txt` into the source tree, which
+# the sandbox blocks — the build then fails with
+# "Operation not permitted" + downstream "realpath: illegal option -- m"
+# noise on the [CP] Copy Pods Resources phase. Disabling the sandbox is the
+# standard RN+CocoaPods+Xcode26 workaround and only affects this screenshots
+# build (Snapfile values are not used by the main CI/release pipelines).
+xcargs("SWIFT_VERSION=5.0 ENABLE_USER_SCRIPT_SANDBOXING=NO")
 
 output_directory("./fastlane/screenshots/ios")
 clear_previous_screenshots(true)
+
+# DIAGNOSTIC: capture the simulator system log (includes the app process's
+# NSLog / RCTLog / JS console output). The app currently hangs on the native
+# boot splash in CI — and since Release builds suppress the RN redbox, a
+# silent JS startup error looks identical to a hang. The snapshot test log
+# only records XCUITest runner activity, not the app's own output, so we need
+# the simulator log to see the actual startup error. snapshot writes it under
+# the output_directory. Remove once the startup hang is understood.
+output_simulator_logs(true)
 
 # UI test target name — must match the target you create in Xcode.
 # See SCREENSHOTS.md for the one-time manual setup step.

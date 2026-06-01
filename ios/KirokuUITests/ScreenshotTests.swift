@@ -9,6 +9,7 @@ import XCTest
 //      `SnapshotHelper.swift` next to this file; add it to the test target.
 //   3. Set `APPLE_DEMO_EMAIL` / `APPLE_DEMO_PASSWORD` in the shell before
 //      invoking the lane.
+@MainActor
 final class ScreenshotTests: XCTestCase {
     private let app = XCUIApplication()
 
@@ -44,12 +45,42 @@ final class ScreenshotTests: XCTestCase {
     // MARK: - Login
 
     private func logIn() {
-        let auth = app.otherElements["AuthScreen"]
-        XCTAssertTrue(auth.waitForExistence(timeout: 30), "AuthScreen never appeared")
+        // After the splash dismisses, the user lands on the Initial Screen
+        // (src/screens/SignUp/InitialScreen.tsx). The screen container's
+        // `testID` doesn't reliably surface as an XCUI accessibility element
+        // — RN only exposes a View as an element when it has accessibility
+        // properties (`accessible={true}`/label/role), and InitialScreen's
+        // outer View has only `testID`. So we use the unique "Log in" link
+        // (PressableWithFeedback with role=link, accessibilityLabel =
+        // translate('common.logInHere')) as our presence indicator. Tapping
+        // it routes to AuthScreen in sign-in mode — which is what we want
+        // since the demo user already exists.
+        let logInLink = app.buttons.matching(NSPredicate(format:
+            "label IN { 'Log in', 'Přihlaste se zde' }"
+        )).firstMatch
+        if !logInLink.waitForExistence(timeout: 30) {
+            // DIAGNOSTIC: dump the full accessibility tree so we can see the
+            // real element identifiers / labels / types that the simulator
+            // exposes. XCUITest only writes the hierarchy into the .xcresult
+            // bundle (which CI doesn't upload), so print it into stdout where
+            // the snapshot log captures it. Remove once selectors are stable.
+            print("=== KIROKU A11Y TREE (Log in link not found) ===")
+            print(app.debugDescription)
+            print("=== END KIROKU A11Y TREE ===")
+            XCTFail("Log in link on Initial Screen never appeared")
+            return
+        }
+        logInLink.tap()
+
+        // AuthScreen's outer View also only has `testID` (no accessible=true),
+        // so the screen container isn't a discoverable XCUI element. Use the
+        // email text field as the presence indicator — it's a real TextInput
+        // and always exposed under app.textFields.
+        let emailField = app.textFields.firstMatch
+        XCTAssertTrue(emailField.waitForExistence(timeout: 30), "AuthScreen email field never appeared")
 
         // Inputs lack testIDs — match by their containing TextField/SecureTextField.
         // The first text field in the form is email, then password (secure).
-        let emailField = app.textFields.firstMatch
         emailField.tap()
         emailField.typeText(ProcessInfo.processInfo.environment["APPLE_DEMO_EMAIL"] ?? "")
 
@@ -58,9 +89,10 @@ final class ScreenshotTests: XCTestCase {
         passwordField.typeText(ProcessInfo.processInfo.environment["APPLE_DEMO_PASSWORD"] ?? "")
 
         // Submit button has no testID — matched by its localized title.
-        // Update these strings if the labels change in src/languages/{en,cs_cz}.ts.
+        // Labels follow common.logIn / common.signIn in src/languages/{en,cs_cz}.ts
+        // (lowercase 'i' — the en label is "Log in", not "Log In").
         let submit = app.buttons.matching(NSPredicate(format:
-            "label IN { 'Log In', 'Přihlásit se', 'Sign In' }"
+            "label IN { 'Log in', 'Přihlásit se', 'Sign in' }"
         )).firstMatch
         submit.tap()
 

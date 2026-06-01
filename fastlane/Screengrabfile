@@ -18,3 +18,16 @@ output_directory("./fastlane/screenshots/android")
 
 app_apk_path("android/app/build/outputs/apk/production/release/app-production-release.apk")
 tests_apk_path("android/app/build/outputs/apk/androidTest/production/release/app-production-release-androidTest.apk")
+
+# Demo credentials are injected into the test via instrumentation arguments
+# (`-e demoEmail X -e demoPassword Y`) — they cannot ride on the runner's env
+# because the test runs in the emulator process. ScreenshotTest.kt reads these
+# via InstrumentationRegistry.getArguments().getString("demoEmail" / "demoPassword").
+launch_arguments([
+  "demoEmail #{ENV['KIROKU_DEMO_EMAIL']} demoPassword #{ENV['KIROKU_DEMO_PASSWORD']}"
+])
+
+# Defensive — the default is already true, but we set it explicitly so a future
+# screengrab upgrade can't silently flip it and turn a single failure into a
+# multi-hour retry loop (the same pathology snapshot has on iOS).
+exit_on_test_failure(true)
