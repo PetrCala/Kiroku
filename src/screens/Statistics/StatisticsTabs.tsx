@@ -8,6 +8,7 @@ import type {
   TabDescriptor,
 } from 'react-native-tab-view';
 import {ChartSkeleton} from '@components/Charts/ChartSkeleton';
+import {StatsFilterToolbarSkeleton} from '@components/Statistics/StatsFilterToolbar';
 import Text from '@components/Text';
 import useLocalize from '@hooks/useLocalize';
 import useTheme from '@hooks/useTheme';
@@ -60,7 +61,9 @@ const styles = StyleSheet.create({
   },
   lazyPlaceholder: {
     flex: 1,
-    paddingHorizontal: 16,
+  },
+  lazyPlaceholderBody: {
+    paddingHorizontal: 12,
     paddingTop: 16,
   },
   lazyPlaceholderGap: {
@@ -81,13 +84,18 @@ function renderTabLabel({
 function renderLazyPlaceholder(): React.ReactNode {
   // First mount of an inactive tab: paint a generic tab-shell skeleton so the
   // user sees structure for the 200–400ms it takes the tab's actual render +
-  // deferred compute to land. Per-chart skeletons take over once the tab
-  // mounts; this is just the bridge between "tap" and "mount".
+  // deferred compute to land. Every lazy tab (Trends/Patterns/Breakdown) leads
+  // with the filter toolbar followed by chart cards, so mirror that shape.
+  // Per-chart skeletons take over once the tab mounts; this is just the bridge
+  // between "tap" and "mount".
   return (
     <View style={styles.lazyPlaceholder}>
-      <ChartSkeleton variant="kpiRow" />
-      <View style={styles.lazyPlaceholderGap} />
-      <ChartSkeleton variant="card" />
+      <StatsFilterToolbarSkeleton />
+      <View style={styles.lazyPlaceholderBody}>
+        <ChartSkeleton variant="card" />
+        <View style={styles.lazyPlaceholderGap} />
+        <ChartSkeleton variant="card" />
+      </View>
     </View>
   );
 }

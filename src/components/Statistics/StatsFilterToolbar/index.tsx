@@ -116,4 +116,6 @@ function StatsFilterToolbar({
 
 StatsFilterToolbar.displayName = 'StatsFilterToolbar';
 
+export {default as StatsFilterToolbarSkeleton} from './StatsFilterToolbarSkeleton';
+
 export default StatsFilterToolbar;

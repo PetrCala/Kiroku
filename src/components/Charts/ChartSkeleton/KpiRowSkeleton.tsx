@@ -7,6 +7,13 @@ import variables from '@styles/variables';
 type KpiRowSkeletonProps = {
   height: number;
   accessibilityLabel: string;
+  /**
+   * Number of tiles to render. Defaults to the responsive column count so the
+   * row fills one line. Pass an explicit count to mirror a specific
+   * `KpiCardGroup` (e.g. 2 for the wins group, 3 for load/risk) — tiles wrap
+   * onto subsequent lines exactly like the real group.
+   */
+  count?: number;
 };
 
 /**
@@ -17,13 +24,18 @@ type KpiRowSkeletonProps = {
  * skeleton has no need for navigation context. The KPI tile is inlined to
  * avoid a ChartSkeleton ↔ KpiRowSkeleton import cycle.
  */
-function KpiRowSkeleton({height, accessibilityLabel}: KpiRowSkeletonProps) {
+function KpiRowSkeleton({
+  height,
+  accessibilityLabel,
+  count,
+}: KpiRowSkeletonProps) {
   const theme = useTheme();
   const styles = useThemeStyles();
   const {windowWidth} = useWindowDimensions();
   const isNarrow = windowWidth < variables.mobileResponsiveWidthBreakpoint;
   const columns = isNarrow ? 2 : 3;
   const itemWidth = `${100 / columns}%` as const;
+  const tiles = count ?? columns;
   const fill = theme.borderLighter;
   const cardFill = theme.highlightBG;
   return (
@@ -32,7 +44,7 @@ function KpiRowSkeleton({height, accessibilityLabel}: KpiRowSkeletonProps) {
       accessibilityRole="progressbar"
       accessibilityLabel={accessibilityLabel}
       style={[styles.flexRow, styles.flexWrap, {marginHorizontal: -4}]}>
-      {Array.from({length: columns}, (_v, i) => (
+      {Array.from({length: tiles}, (_v, i) => (
         <View
           // eslint-disable-next-line react/no-array-index-key
           key={`kpi-${i}`}

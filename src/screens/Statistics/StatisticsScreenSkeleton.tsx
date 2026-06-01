@@ -2,6 +2,7 @@ import {StyleSheet, View} from 'react-native';
 import {ChartCard} from '@components/Charts/ChartCard';
 import {ChartSkeleton} from '@components/Charts/ChartSkeleton';
 import ScrollView from '@components/ScrollView';
+import {StatsFilterToolbarSkeleton} from '@components/Statistics/StatsFilterToolbar';
 import Text from '@components/Text';
 import useLocalize from '@hooks/useLocalize';
 import useTheme from '@hooks/useTheme';
@@ -14,6 +15,10 @@ const TAB_LABEL_KEYS: readonly TranslationPaths[] = [
   'statistics.tabs.patterns.label',
   'statistics.tabs.breakdown.label',
 ];
+
+// Tile counts for Overview's three KPI groups: wins / load / risk. Matching
+// the real card counts lets the skeleton tiles wrap exactly like KpiCardGroup.
+const KPI_GROUP_COUNTS = [2, 3, 3] as const;
 
 const skeletonStyles = StyleSheet.create({
   tabBar: {
@@ -33,6 +38,12 @@ const skeletonStyles = StyleSheet.create({
     fontSize: 14,
     fontWeight: '600',
     textAlign: 'center',
+  },
+  sectionLabel: {
+    height: 10,
+    width: '30%',
+    borderRadius: 2,
+    marginBottom: 4,
   },
 });
 
@@ -82,24 +93,34 @@ function StatisticsScreenSkeleton() {
         style={[skeletonStyles.tabIndicator, {backgroundColor: theme.success}]}
       />
 
+      <StatsFilterToolbarSkeleton showDrinkTypeFilter={false} />
+
       <ScrollView contentContainerStyle={styles.p4}>
-        {/* Hero KPI (AF days). */}
+        {/* Hero KPI (total units). */}
         <View style={styles.mb3}>
           <ChartSkeleton variant="kpi" />
         </View>
 
-        {/* KPI groups: wins / load / risk. */}
-        <View style={styles.mb3}>
-          <ChartSkeleton variant="kpiRow" />
-        </View>
-        <View style={styles.mb3}>
-          <ChartSkeleton variant="kpiRow" />
-        </View>
+        {/* KPI groups: wins (2) / load (3) / risk (3), each with a label. */}
+        {KPI_GROUP_COUNTS.map((groupCount, idx) => (
+          <View
+            // eslint-disable-next-line react/no-array-index-key
+            key={`kpi-group-${idx}`}
+            style={styles.mb3}>
+            <View
+              style={[
+                skeletonStyles.sectionLabel,
+                {backgroundColor: theme.borderLighter},
+              ]}
+            />
+            <ChartSkeleton variant="kpiRow" count={groupCount} />
+          </View>
+        ))}
 
         {/* Period breakdown (bar list). */}
         <ChartCard
           title={translate('statistics.tabs.overview.texture.series.title')}>
-          <ChartSkeleton variant="line" height={120} />
+          <ChartSkeleton variant="barList" />
         </ChartCard>
 
         {/* Intensity distribution. */}
@@ -107,7 +128,7 @@ function StatisticsScreenSkeleton() {
           title={translate(
             'statistics.tabs.overview.texture.distribution.title',
           )}>
-          <ChartSkeleton variant="line" height={40} />
+          <ChartSkeleton variant="distribution" />
         </ChartCard>
       </ScrollView>
     </View>
