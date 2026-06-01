@@ -7,7 +7,9 @@ import KpiRowSkeleton from './KpiRowSkeleton';
 type ChartSkeletonVariant =
   | 'card'
   | 'bars'
+  | 'barList'
   | 'line'
+  | 'distribution'
   | 'calendar'
   | 'kpiRow'
   | 'kpi'
@@ -24,12 +26,16 @@ type ChartSkeletonProps = {
   width?: number | `${number}%`;
   /** Accessibility label announced to screen readers while loading. */
   accessibilityLabel?: string;
+  /** Tile count for the `kpiRow` variant. Ignored by other variants. */
+  count?: number;
 };
 
 const DEFAULT_HEIGHT: Record<ChartSkeletonVariant, number> = {
   card: 200,
   bars: 200,
+  barList: 120,
   line: 120,
+  distribution: 48,
   calendar: 180,
   kpiRow: 96,
   kpi: 96,
@@ -49,7 +55,9 @@ const DEFAULT_HEIGHT: Record<ChartSkeletonVariant, number> = {
  * Variants:
  * - `card`: plain rounded rectangle, matches generic ChartCard body.
  * - `bars`: row of faint vertical rectangles.
+ * - `barList`: stack of horizontal label + track rows — matches BarList.
  * - `line`: single faint horizontal stripe — matches sparkline/trend-line.
+ * - `distribution`: thin segmented bar + legend — matches DistributionBar.
  * - `calendar`: 6×7 grid of small rounded cells — matches CalendarHeatmap.
  * - `kpiRow`: 3 (or 2 narrow) tile placeholders side by side.
  * - `kpi`: single KPI tile placeholder.
@@ -63,6 +71,7 @@ function ChartSkeleton({
   height,
   width = '100%',
   accessibilityLabel,
+  count,
 }: ChartSkeletonProps) {
   const theme = useTheme();
   const styles = useThemeStyles();
@@ -134,6 +143,99 @@ function ChartSkeleton({
             borderRadius: 1,
           }}
         />
+      </View>
+    );
+  }
+
+  if (variant === 'barList') {
+    // Mirrors BarList: a column of `label … ▮▮▮ value` rows. Fractions hint at
+    // the varying bar lengths without computing real data.
+    const fractions = [0.9, 0.7, 0.85, 0.5, 0.65];
+    return (
+      <View
+        accessible
+        accessibilityRole="progressbar"
+        accessibilityLabel={a11yLabel}
+        style={{height: resolvedHeight, width}}>
+        {fractions.map((frac, idx) => (
+          <View
+            // eslint-disable-next-line react/no-array-index-key
+            key={`barlist-${idx}`}
+            style={[styles.flex1, styles.flexRow, styles.alignItemsCenter]}>
+            <View
+              style={{
+                width: 28,
+                height: 8,
+                backgroundColor: fill,
+                borderRadius: 2,
+              }}
+            />
+            <View style={[styles.flex1, styles.mh1]}>
+              <View
+                style={{
+                  width: `${frac * 100}%`,
+                  height: 8,
+                  backgroundColor: fill,
+                  borderRadius: 4,
+                }}
+              />
+            </View>
+            <View
+              style={{
+                width: 22,
+                height: 8,
+                backgroundColor: fill,
+                borderRadius: 2,
+              }}
+            />
+          </View>
+        ))}
+      </View>
+    );
+  }
+
+  if (variant === 'distribution') {
+    // Mirrors DistributionBar: a thin full-width segmented bar above a wrapped
+    // color-keyed legend row.
+    return (
+      <View
+        accessible
+        accessibilityRole="progressbar"
+        accessibilityLabel={a11yLabel}
+        style={{height: resolvedHeight, width}}>
+        <View
+          style={{
+            height: 12,
+            width: '100%',
+            backgroundColor: fill,
+            borderRadius: 6,
+          }}
+        />
+        <View style={[styles.flexRow, styles.flexWrap, styles.mt2]}>
+          {[0, 1, 2, 3].map(i => (
+            <View
+              key={`legend-${i}`}
+              style={[styles.flexRow, styles.alignItemsCenter, styles.mr3]}>
+              <View
+                style={{
+                  width: 8,
+                  height: 8,
+                  borderRadius: 4,
+                  backgroundColor: fill,
+                  marginRight: 4,
+                }}
+              />
+              <View
+                style={{
+                  width: 36,
+                  height: 8,
+                  borderRadius: 2,
+                  backgroundColor: fill,
+                }}
+              />
+            </View>
+          ))}
+        </View>
       </View>
     );
   }
@@ -238,7 +340,11 @@ function ChartSkeleton({
 
   if (variant === 'kpiRow') {
     return (
-      <KpiRowSkeleton height={resolvedHeight} accessibilityLabel={a11yLabel} />
+      <KpiRowSkeleton
+        height={resolvedHeight}
+        accessibilityLabel={a11yLabel}
+        count={count}
+      />
     );
   }
 
