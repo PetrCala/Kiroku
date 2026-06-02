@@ -100,39 +100,42 @@ function DrinkingSessionOverview({
   })).filter(({count}) => count > 0);
 
   const sessionDetails = (
-    <View style={[styles.flexColumn, styles.flex1]}>
-      <Text style={[styles.textNormal, styles.textStrong]}>
-        {translate('common.units')}: {totalUnits}
-      </Text>
+    <View
+      style={[
+        styles.flexRow,
+        styles.alignItemsCenter,
+        styles.justifyContentBetween,
+        styles.flex1,
+      ]}>
+      {/* Left: units + (live) time */}
+      <View style={styles.flexColumn}>
+        <Text style={[styles.textNormal, styles.textStrong]}>
+          {translate('common.units')}: {totalUnits}
+        </Text>
+        {shouldDisplayTime && (
+          <Text style={[styles.textMicroSupporting, styles.mt1]}>
+            {translate('common.time')}: {timeString}
+          </Text>
+        )}
+      </View>
+      {/* Right: per-drink-type breakdown as compact icon-over-count columns */}
       {drinkBreakdown.length > 0 && (
         <View
-          style={[
-            styles.flexRow,
-            styles.alignItemsCenter,
-            styles.flexWrap,
-            styles.mt1,
-          ]}>
+          style={[styles.flexRow, styles.alignItemsCenter, styles.flexWrap]}>
           {drinkBreakdown.map(({key, icon, count}) => (
-            <View
-              key={key}
-              style={[styles.flexRow, styles.alignItemsCenter, styles.mr3]}>
+            <View key={key} style={[styles.alignItemsCenter, styles.ml3]}>
               <Icon
                 src={icon}
                 fill={theme.textSupporting}
-                width={16}
-                height={16}
+                width={18}
+                height={18}
               />
-              <Text style={[styles.textMicroSupporting, styles.ml1]}>
+              <Text style={[styles.textMicroSupporting, styles.mt1]}>
                 {count}
               </Text>
             </View>
           ))}
         </View>
-      )}
-      {shouldDisplayTime && (
-        <Text style={[styles.textMicroSupporting, styles.mt1]}>
-          {translate('common.time')}: {timeString}
-        </Text>
       )}
     </View>
   );
