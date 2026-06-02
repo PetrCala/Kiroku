@@ -36,12 +36,12 @@ const useWebProxy = get(Config, 'USE_WEB_PROXY', 'true') === 'true';
 const kirokuApiDevRoot = get(
   Config,
   'KIROKU_API_DEV_ROOT',
-  'https://europe-west1-dev-alcohol-tracker-db.cloudfunctions.net/api',
+  'https://api-dev.kiroku.cz',
 ).replace(/\/+$/, '');
 const kirokuApiProdRoot = get(
   Config,
   'KIROKU_API_PROD_ROOT',
-  'https://europe-west1-alcohol-tracker-db.cloudfunctions.net/api',
+  'https://api.kiroku.cz',
 ).replace(/\/+$/, '');
 // const kirokuComWithProxy = getPlatform() === 'web' && useWebProxy ? '/' : kirokuURL;
 const kirokuComWithProxy = kirokuURL;

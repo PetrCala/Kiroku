@@ -838,7 +838,8 @@ const CONST = {
   },
   PULL_REQUEST_NUMBER,
   PUSHER: {
-    PRIVATE_USER_CHANNEL_PREFIX: 'private-encrypted-user-userID-',
+    // kiroku-api authorizes/publishes to plain `private-user-<uid>` channels.
+    PRIVATE_USER_CHANNEL_PREFIX: 'private-user-',
   },
   REASON_FOR_LEAVING: {
     DB_KEY_LENGTH: 32,

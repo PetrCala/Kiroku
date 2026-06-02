@@ -3,6 +3,7 @@ import Onyx from 'react-native-onyx';
 import type {Merge} from 'type-fest';
 import Log from '@libs/Log';
 import * as SequentialQueue from '@libs/Network/SequentialQueue';
+import PusherUtils from '@libs/PusherUtils';
 import CONST from '@src/CONST';
 import ONYXKEYS from '@src/ONYXKEYS';
 import type {
@@ -66,26 +67,18 @@ function applyHTTPSOnyxUpdates(request: Request, response: Response) {
     });
 }
 
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
 function applyPusherOnyxUpdates(updates: OnyxUpdateEvent[]) {
-  pusherEventsPromise = pusherEventsPromise.then(() => {
-    console.debug('[OnyxUpdateManager] Applying pusher update');
-  });
-
-  console.debug('[OnyxUpdateManager] Pusher is not yet implemented');
-
-  // TODO enable
-  // pusherEventsPromise = updates
-  //   .reduce(
-  //     (promise, update) =>
-  //       promise.then(() =>
-  //         PusherUtils.triggerMultiEventHandler(update.eventType, update.data),
-  //       ),
-  //     pusherEventsPromise,
-  //   )
-  //   .then(() => {
-  //     console.debug('[OnyxUpdateManager] Done applying Pusher update');
-  //   });
+  pusherEventsPromise = updates
+    .reduce(
+      (promise, update) =>
+        promise.then(() =>
+          PusherUtils.triggerMultiEventHandler(update.eventType, update.data),
+        ),
+      pusherEventsPromise,
+    )
+    .then(() => {
+      console.debug('[OnyxUpdateManager] Done applying Pusher update');
+    });
 
   return pusherEventsPromise;
 }
