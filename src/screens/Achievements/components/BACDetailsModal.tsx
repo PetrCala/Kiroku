@@ -99,15 +99,13 @@ function BACDetailsModal({
   // The body scrolls within an explicit maxHeight. CONFIRM is used (not
   // CENTERED_SMALL) because it has no swipe PanResponder — that gesture would
   // otherwise swallow the drag before the ScrollView could scroll. The card
-  // still zooms in, shows an X, and dismisses on tap-outside.
+  // fades in centered, shows an X, and dismisses on tap-outside.
   const scrollMaxHeight = Math.round(windowHeight * 0.7);
 
   return (
     <Modal
       isVisible={isVisible}
       type={CONST.MODAL.MODAL_TYPE.CONFIRM}
-      animationIn="zoomIn"
-      animationOut="zoomOut"
       onClose={onClose}>
       <View style={styles.w100}>
         <HeaderWithBackButton
