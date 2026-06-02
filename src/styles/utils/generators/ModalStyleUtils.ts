@@ -86,10 +86,14 @@ const createModalStyleUtils: StyleUtilGenerator<GetModalStylesStyleUtil> = ({
       case CONST.MODAL.MODAL_TYPE.CONFIRM:
         // A confirm modal is one that has a visible backdrop
         // and can be dismissed by clicking outside of the modal.
+        // Like CENTERED_SMALL it is content-sized (the native Container
+        // excludes it from the flex1 fill), so it must center itself on both
+        // axes — without justifyContent it pins to the top of the screen.
         modalStyle = {
           ...modalStyle,
           ...{
             alignItems: 'center',
+            justifyContent: 'center',
           },
         };
         modalContainerStyle = {
