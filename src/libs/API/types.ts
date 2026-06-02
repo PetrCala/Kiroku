@@ -29,6 +29,10 @@ const WRITE_COMMANDS = {
   //   REQUEST_UNLINK_VALIDATION_LINK: 'RequestUnlinkValidationLink',
   OPT_IN_TO_PUSH_NOTIFICATIONS: 'OptInToPushNotifications',
   OPT_OUT_OF_PUSH_NOTIFICATIONS: 'OptOutOfPushNotifications',
+  SEND_FRIEND_REQUEST: 'SendFriendRequest',
+  ACCEPT_FRIEND_REQUEST: 'AcceptFriendRequest',
+  DELETE_FRIEND_REQUEST: 'DeleteFriendRequest',
+  UNFRIEND: 'Unfriend',
   // ...
 } as const;
 
@@ -57,6 +61,10 @@ type WriteCommandParameters = {
   //   [WRITE_COMMANDS.REQUEST_UNLINK_VALIDATION_LINK]: Parameters.RequestUnlinkValidationLinkParams;
   [WRITE_COMMANDS.OPT_IN_TO_PUSH_NOTIFICATIONS]: Parameters.OptInOutToPushNotificationsParams;
   [WRITE_COMMANDS.OPT_OUT_OF_PUSH_NOTIFICATIONS]: Parameters.OptInOutToPushNotificationsParams;
+  [WRITE_COMMANDS.SEND_FRIEND_REQUEST]: Parameters.SendFriendRequestParams;
+  [WRITE_COMMANDS.ACCEPT_FRIEND_REQUEST]: Parameters.AcceptFriendRequestParams;
+  [WRITE_COMMANDS.DELETE_FRIEND_REQUEST]: Parameters.DeleteFriendRequestParams;
+  [WRITE_COMMANDS.UNFRIEND]: Parameters.UnfriendParams;
 };
 
 const READ_COMMANDS = {

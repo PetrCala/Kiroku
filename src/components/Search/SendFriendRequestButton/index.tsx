@@ -5,14 +5,13 @@ import * as ErrorUtils from '@libs/ErrorUtils';
 import Button from '@components/Button';
 import useThemeStyles from '@hooks/useThemeStyles';
 import Text from '@components/Text';
-import {acceptFriendRequest, sendFriendRequest} from '@src/database/friends';
+import * as Friends from '@userActions/Friends';
 import type {TranslationPaths} from '@src/languages/types';
 import ERRORS from '@src/ERRORS';
 import useLocalize from '@hooks/useLocalize';
 import type SendFriendRequestButtonProps from './types';
 
 function SendFriendRequestButton({
-  db,
   userFrom,
   userTo,
   requestStatus,
@@ -26,7 +25,7 @@ function SendFriendRequestButton({
     (async (): Promise<void> => {
       try {
         setIsLoading(true);
-        await sendFriendRequest(db, userFrom, userTo);
+        Friends.sendFriendRequest(userTo);
       } catch (error) {
         ErrorUtils.raiseAppError(ERRORS.USER.FRIEND_REQUEST_SEND_FAILED, error);
       } finally {
@@ -39,7 +38,7 @@ function SendFriendRequestButton({
     (async (): Promise<void> => {
       try {
         setIsLoading(true);
-        await acceptFriendRequest(db, userFrom, userTo);
+        Friends.acceptFriendRequest(userTo);
       } catch (error) {
         ErrorUtils.raiseAppError(ERRORS.USER.FRIEND_REQUEST_SEND_FAILED, error);
       } finally {

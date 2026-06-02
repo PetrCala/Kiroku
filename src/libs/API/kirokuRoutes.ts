@@ -35,6 +35,22 @@ const KIROKU_ROUTES: Record<string, KirokuRoute> = {
       to: Number(data.updateIDTo ?? 0),
     }),
   },
+  [WRITE_COMMANDS.SEND_FRIEND_REQUEST]: {
+    method: 'post',
+    path: '/v1/friends/request',
+  },
+  [WRITE_COMMANDS.ACCEPT_FRIEND_REQUEST]: {
+    method: 'post',
+    path: '/v1/friends/accept',
+  },
+  [WRITE_COMMANDS.DELETE_FRIEND_REQUEST]: {
+    method: 'post',
+    path: '/v1/friends/delete-request',
+  },
+  [WRITE_COMMANDS.UNFRIEND]: {
+    method: 'post',
+    path: '/v1/friends/remove',
+  },
 };
 
 /** Returns the kiroku-api route for a command, or undefined for legacy commands. */

@@ -8,7 +8,7 @@ import {useEffect, useState} from 'react';
 import * as KirokuIcons from '@components/Icon/KirokuIcons';
 import * as ErrorUtils from '@libs/ErrorUtils';
 import {useFirebase} from '@context/global/FirebaseContext';
-import {acceptFriendRequest, deleteFriendRequest} from '@database/friends';
+import * as Friends from '@userActions/Friends';
 import type {Database} from 'firebase/database';
 import NoFriendUserOverview from '@components/Social/NoFriendUserOverview';
 import * as Profile from '@userActions/Profile';
@@ -50,7 +50,7 @@ type FriendRequestItemProps = {
 
 // Component to be shown for a received friend request
 function FriendRequestButtons({requestId}: FriendRequestButtonsProps) {
-  const {auth, db} = useFirebase();
+  const {auth} = useFirebase();
   const user = auth.currentUser;
   const styles = useThemeStyles();
   const {translate} = useLocalize();
@@ -63,7 +63,7 @@ function FriendRequestButtons({requestId}: FriendRequestButtonsProps) {
     (async () => {
       try {
         setIsLoading(true);
-        await acceptFriendRequest(db, user.uid, requestId);
+        Friends.acceptFriendRequest(requestId);
         setIsLoading(false);
       } catch (error) {
         ErrorUtils.raiseAppError(
@@ -78,7 +78,7 @@ function FriendRequestButtons({requestId}: FriendRequestButtonsProps) {
     (async () => {
       try {
         setIsLoading(true);
-        await deleteFriendRequest(db, user.uid, requestId);
+        Friends.deleteFriendRequest(requestId);
         setIsLoading(false);
       } catch (error) {
         ErrorUtils.raiseAppError(ERRORS.USER.FEEDBACK_REMOVAL_FAILED, error);
@@ -109,7 +109,7 @@ function FriendRequestButtons({requestId}: FriendRequestButtonsProps) {
 
 // Component to be shown when the friend request is pending
 function FriendRequestPending({requestId}: FriendRequestButtonsProps) {
-  const {auth, db} = useFirebase();
+  const {auth} = useFirebase();
   const {translate} = useLocalize();
   const styles = useThemeStyles();
   const [isLoading, setIsLoading] = useState<boolean>(false);
@@ -123,7 +123,7 @@ function FriendRequestPending({requestId}: FriendRequestButtonsProps) {
     (async () => {
       try {
         setIsLoading(true);
-        await deleteFriendRequest(db, user.uid, requestId);
+        Friends.deleteFriendRequest(requestId);
         setIsLoading(false);
       } catch (error) {
         ErrorUtils.raiseAppError(ERRORS.USER.FEEDBACK_REMOVAL_FAILED, error);
