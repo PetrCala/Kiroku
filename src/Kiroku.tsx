@@ -19,6 +19,7 @@ import NavigationRoot from './libs/Navigation/NavigationRoot';
 import SplashScreenHider from './components/SplashScreenHider';
 import Log from './libs/Log';
 import migrateOnyx from './libs/migrateOnyx';
+import BootSplash from './libs/BootSplash';
 import * as ActiveClientManager from './libs/ActiveClientManager';
 import * as UserUtils from './libs/UserUtils';
 import Visibility from './libs/Visibility';
@@ -33,6 +34,7 @@ import UnderMaintenanceModal from './components/Modals/UnderMaintenanceModal';
 import UserOfflineModal from './components/UserOfflineModal';
 import CONFIG from './CONFIG';
 import UpdateAppModal from './components/UpdateAppModal';
+import ForceUpdateModal from './components/Modals/ForceUpdateModal';
 import VerifyEmailModal from './components/VerifyEmailModal';
 import FullScreenLoadingIndicator from './components/FullscreenLoadingIndicator';
 import colors from './styles/theme/colors';
@@ -83,7 +85,11 @@ function Kiroku() {
   const [authenticationChecked, setAuthenticationChecked] = useState(false);
   const [isUnderMaintenance, setIsUnderMaintenance] = useState<boolean>(false);
   const [updateAvailable, setUpdateAvailable] = useState<boolean>(false);
-  const [updateRequired, setUpdateRequired] = useState<boolean>(false);
+  const [updateRequiredFromConfig, setUpdateRequiredFromConfig] =
+    useState<boolean>(false);
+  const [updateRequiredFromBackend] = useOnyx(ONYXKEYS.UPDATE_REQUIRED);
+  const updateRequired =
+    updateRequiredFromConfig || !!updateRequiredFromBackend;
   const [shouldShowVerifyEmailModal, setShouldShowVerifyEmailModal] =
     useState<boolean>(false);
   const [shouldShowUpdateModal, setShouldShowUpdateModal] =
@@ -126,9 +132,18 @@ function Kiroku() {
 
     setIsUnderMaintenance(underMaintenance);
     setUpdateAvailable(newUpdateAvailable);
-    setUpdateRequired(newUpdateRequired);
+    setUpdateRequiredFromConfig(newUpdateRequired);
     setShouldShowUpdateModal(newShouldShowUpdateModal);
   }, [config, shouldShowVerifyEmailModal]);
+
+  // A required update replaces the entire app tree via the early return below,
+  // so SplashScreenHider never mounts to hide the native splash — do it here.
+  useEffect(() => {
+    if (!updateRequired) {
+      return;
+    }
+    BootSplash.hide();
+  }, [updateRequired]);
 
   const shouldInit = isNavigationReady && hasCheckedAutoLogin;
 
@@ -279,7 +294,7 @@ function Kiroku() {
   }, [isAuthenticated, auth?.currentUser?.uid]);
 
   if (updateRequired) {
-    throw new Error(CONST.ERROR.UPDATE_REQUIRED);
+    return <ForceUpdateModal />;
   }
 
   // Always render the splash guard and SplashScreenHider, even before
