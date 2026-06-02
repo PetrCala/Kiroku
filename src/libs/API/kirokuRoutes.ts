@@ -51,6 +51,14 @@ const KIROKU_ROUTES: Record<string, KirokuRoute> = {
     method: 'post',
     path: '/v1/friends/remove',
   },
+  [WRITE_COMMANDS.UPDATE_SESSION]: {
+    method: 'post',
+    path: '/v1/sessions/update',
+  },
+  [WRITE_COMMANDS.DELETE_SESSION]: {
+    method: 'post',
+    path: '/v1/sessions/delete',
+  },
 };
 
 /** Returns the kiroku-api route for a command, or undefined for legacy commands. */

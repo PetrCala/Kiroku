@@ -30,7 +30,7 @@ type LiveSessionScreenProps = StackScreenProps<
 
 function LiveSessionScreen({route}: LiveSessionScreenProps) {
   const {sessionId, backTo} = route.params;
-  const {auth, db} = useFirebase();
+  const {auth} = useFirebase();
   const user = auth.currentUser;
   const {isOnline} = useUserConnection();
   const [session] = useOnyx(ONYXKEYS.ONGOING_SESSION_DATA);
@@ -53,26 +53,23 @@ function LiveSessionScreen({route}: LiveSessionScreenProps) {
     }
   };
 
-  const syncWithDb = async (updates: Partial<DrinkingSession>) => {
-    if (!user) {
+  const syncWithDb = async () => {
+    if (!user || !session) {
       return;
     }
     try {
-      await DS.updateDrinkingSessionData(
-        db,
-        user.uid,
-        updates,
-        sessionId,
-        true, // Update live session status
-      );
+      // Persist the full current ongoing session (the live editing state lives in
+      // ONGOING_SESSION_DATA). The 500ms batch keeps the write frequency low; the
+      // server upserts it and mirrors it into the user's live status.
+      DS.updateLiveDrinkingSessionData(user.uid, sessionId, session);
       setDbSyncSuccessful(true);
     } catch (error) {
       ErrorUtils.raiseAppError(ERRORS.SESSION.SAVE_FAILED, error);
     }
   };
 
-  const processUpdates = async (updates: Partial<DrinkingSession>) => {
-    await syncWithDb(updates);
+  const processUpdates = async () => {
+    await syncWithDb();
   };
 
   const {isPending, enqueueUpdate: batchedEnqueue} = useBatchedUpdates(

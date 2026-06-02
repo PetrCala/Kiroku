@@ -1,6 +1,5 @@
 import React, {useState, useEffect, useMemo, useRef} from 'react';
 import {BackHandler, View} from 'react-native';
-import type {Database} from 'firebase/database';
 import {useFirebase} from '@context/global/FirebaseContext';
 import * as DS from '@userActions/DrinkingSession';
 import * as DSUtils from '@libs/DrinkingSessionUtils';
@@ -40,7 +39,7 @@ function DrinkingSessionWindow({
   shouldShowSyncPendingIndicator = false,
   shouldShowSyncSuccessIndicator = false,
 }: DrinkingSessionWindowProps) {
-  const {auth, db} = useFirebase();
+  const {auth} = useFirebase();
   const user = auth.currentUser;
   const styles = useThemeStyles();
   const {translate} = useLocalize();
@@ -65,7 +64,7 @@ function DrinkingSessionWindow({
 
   const isSaveDisabled = totalUnits <= 0;
 
-  const saveSession = (database: Database, usr: User | null) => {
+  const saveSession = (usr: User | null) => {
     (async () => {
       if (!session || !usr) {
         return;
@@ -88,7 +87,6 @@ function DrinkingSessionWindow({
 
       try {
         await DS.saveDrinkingSessionData(
-          database,
           usr.uid,
           newSessionData,
           sessionId,
@@ -122,7 +120,6 @@ function DrinkingSessionWindow({
           }),
         );
         await DS.removeDrinkingSessionData(
-          db,
           user.uid,
           sessionId,
           onyxKey,
@@ -257,7 +254,7 @@ function DrinkingSessionWindow({
           isDisabled={isSaveDisabled}
           text={translate('liveSessionScreen.saveSession')}
           style={styles.buttonLargeSuccess}
-          onPress={() => saveSession(db, user)}
+          onPress={() => saveSession(user)}
         />
       </View>
       <ConfirmModal
