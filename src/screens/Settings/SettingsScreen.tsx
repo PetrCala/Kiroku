@@ -25,7 +25,6 @@ import ScrollView from '@components/ScrollView';
 import Text from '@components/Text';
 import useActiveCentralPaneRoute from '@hooks/useActiveCentralPaneRoute';
 import useLocalize from '@hooks/useLocalize';
-import useNetwork from '@hooks/useNetwork';
 import useSingleExecution from '@hooks/useSingleExecution';
 import useThemeStyles from '@hooks/useThemeStyles';
 import useWaitForNavigation from '@hooks/useWaitForNavigation';
@@ -38,7 +37,6 @@ import ROUTES from '@src/ROUTES';
 import type IconAsset from '@src/types/utils/IconAsset';
 import HeaderWithBackButton from '@components/HeaderWithBackButton';
 import {useFirebase} from '@context/global/FirebaseContext';
-import UserOffline from '@components/UserOfflineModal';
 import FullScreenLoadingIndicator from '@components/FullscreenLoadingIndicator';
 import useCurrentUserData from '@hooks/useCurrentUserData';
 import {useOnyx} from 'react-native-onyx';
@@ -66,7 +64,6 @@ type Menu = {
 };
 
 function SettingsScreen() {
-  const network = useNetwork();
   const {auth} = useFirebase();
   const styles = useThemeStyles();
   const userData = useCurrentUserData();
@@ -339,9 +336,6 @@ function SettingsScreen() {
     scrollViewRef.current.scrollTo({y: scrollOffset, animated: false});
   }, [getScrollOffset, route]);
 
-  if (network.isOffline) {
-    return <UserOffline />;
-  }
   if (isLoading) {
     return <FullScreenLoadingIndicator loadingText={loadingText} />;
   }

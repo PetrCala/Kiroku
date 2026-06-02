@@ -2,8 +2,6 @@ import React, {useCallback, useMemo, useState} from 'react';
 import {StyleSheet, View} from 'react-native';
 import {endOfDay} from 'date-fns';
 import {toZonedTime} from 'date-fns-tz';
-import UserOffline from '@components/UserOfflineModal';
-import {useUserConnection} from '@context/global/UserConnectionContext';
 import type {StackScreenProps} from '@react-navigation/stack';
 import type {DayOverviewNavigatorParamList} from '@libs/Navigation/types';
 import type SCREENS from '@src/SCREENS';
@@ -64,7 +62,6 @@ function noop() {}
 
 function DayOverviewScreen({route}: DayOverviewScreenProps) {
   const {userID, date} = route.params;
-  const {isOnline} = useUserConnection();
   const {translate} = useLocalize();
   const styles = useThemeStyles();
   const theme = useTheme();
@@ -145,9 +142,6 @@ function DayOverviewScreen({route}: DayOverviewScreenProps) {
     [startEditSessionForDate],
   );
 
-  if (!isOnline) {
-    return <UserOffline />;
-  }
   // Show the global loading overlay only before the list has first rendered.
   // Once the list is up (`isScrollReady`), a transient loadingText from a child
   // edit/delete flow (the "Saving…"/"Deleting…" set in `DrinkingSessionWindow`)
