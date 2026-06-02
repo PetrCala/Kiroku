@@ -12,7 +12,7 @@ jobs:
       isValid: ${{ fromJSON(steps.isDeployer.outputs.IS_DEPLOYER) && !fromJSON(steps.checkDeployBlockers.outputs.HAS_DEPLOY_BLOCKERS) }}
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
         with:
           ref: master
           token: ${{ secrets.KIROKU_ADMIN_TOKEN }}

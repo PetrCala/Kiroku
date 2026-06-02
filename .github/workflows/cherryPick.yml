@@ -132,7 +132,7 @@ jobs:
           echo "CONFLICT_BRANCH=cherry-pick-${{ inputs.TARGET }}-${{ steps.extractPRInfo.outputs.PR_NUMBER }}-${{ github.run_id }}-${{ github.run_attempt }}" >> "$GITHUB_OUTPUT"
 
       - name: Checkout target branch
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
         with:
           ref: ${{ inputs.TARGET }}
           token: ${{ secrets.KIROKU_ADMIN_COMMIT_TOKEN }}

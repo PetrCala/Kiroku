@@ -65,7 +65,7 @@ jobs:
           GITHUB_TOKEN: ${{ github.token }}
 
       - name: Check out
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
         with:
           ref: master
           # KIROKU_ADMIN_COMMIT_TOKEN is tied to KirokuAdmin. We keep the PR + admin
@@ -168,7 +168,7 @@ jobs:
     if: ${{ failure() }}
     steps:
       - name: Check out
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
         with:
           ref: master
 

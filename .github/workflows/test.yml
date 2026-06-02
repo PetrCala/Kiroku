@@ -25,7 +25,7 @@ jobs:
     name: test (job ${{ fromJSON(matrix.chunk) }})
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - name: Setup Node
         uses: ./.github/actions/composite/setupNode
@@ -36,7 +36,7 @@ jobs:
 
       - name: Cache Jest cache
         id: cache-jest-cache
-        uses: actions/cache@ac25611caef967612169ab7e95533cf932c32270
+        uses: actions/cache@27d5ce7f107fe9357f9df03efb73ab90386fccae # v5.0.5
         with:
           path: .jest-cache
           key: ${{ runner.os }}-jest-${{ hashFiles('package-lock.json') }}

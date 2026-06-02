@@ -24,7 +24,7 @@ jobs:
       STAGING_TAG: ${{ steps.deploy-metadata.outputs.STAGING_TAG }}
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - name: Get deploy metadata
         id: deploy-metadata
@@ -58,7 +58,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - name: Create or update deploy release
         env:

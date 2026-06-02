@@ -18,7 +18,7 @@ jobs:
     if: github.actor != 'KirokuAdmin' && github.actor != 'imgbot[bot]'
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - name: authorChecklist.ts
         uses: ./.github/actions/javascript/authorChecklist
