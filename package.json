@@ -20,7 +20,7 @@
     "lint-changed": "./scripts/lintChanged.sh",
     "react-compiler-compliance-check": "ts-node scripts/react-compiler-compliance-check.ts",
     "lint-watch": "onchange '**/*.{js,jsx,ts,tsx,mjs,cjs}' -- ./scripts/lint.sh {{changed}}",
-    "lint:quiet": "eslint . --max-warnings=0 --quiet --cache --cache-location=node_modules/.cache/eslint",
+    "lint:quiet": "NODE_OPTIONS='--max_old_space_size=8192 --experimental-require-module' eslint . --quiet --no-warn-ignored --cache --cache-location=node_modules/.cache/eslint",
     "gh-actions-build": "./.github/scripts/buildActions.sh",
     "gh-actions-validate": "./.github/scripts/validateActionsAndWorkflows.sh",
     "merge": "./scripts/mergeAndPush.sh",
