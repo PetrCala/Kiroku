@@ -220,15 +220,10 @@ function AuthScreensContent() {
       User.subscribeToUserEvents();
     });
 
-    // If we are on this screen then we are "logged in", but the user might not have "just logged in". They could be reopening the app
-    // or returning from background. If so, we'll assume they have some app data already and we can call reconnectApp() instead of openApp().
-    // TODO enable this after the API is working
-    // if (SessionUtils.didUserLogInDuringSession()) {
-    //   App.openApp();
-    // } else {
-    //   Log.info('[AuthScreens] Sending ReconnectApp');
-    //   App.reconnectApp(initialLastUpdateIDAppliedToClient);
-    // }
+    // Hydrate the signed-in user's data and seed the realtime `lastUpdateID`
+    // baseline via GET /v1/app/open. (The reconnectApp-vs-openApp optimization
+    // gated on `didUserLogInDuringSession` isn't wired yet — see #774.)
+    App.openApp();
 
     // PriorityMode.autoSwitchToFocusMode();
 
