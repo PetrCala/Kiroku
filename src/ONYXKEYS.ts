@@ -5,7 +5,7 @@ import type * as FormTypes from './types/form';
 import type * as OnyxTypes from './types/onyx';
 import type AssertTypesEqual from './types/utils/AssertTypesEqual';
 import type DeepValueOf from './types/utils/DeepValueOf';
-import type {Timestamp} from './types/onyx/OnyxCommon';
+import type {DateString, Timestamp} from './types/onyx/OnyxCommon';
 
 /**
  * This is a file containing constants for all the top level keys in the onyx store
@@ -91,6 +91,11 @@ const ONYXKEYS = {
 
   //   /** Indicates which locale should be used */
   NVP_PREFERRED_LOCALE: 'nvp_preferredLocale',
+
+  /** The day a user last viewed in an enlarged calendar / day-overview scroll.
+   *  Consumed once by the home & profile calendars on focus so navigating back
+   *  lands on the date the user was looking at. Reset on app launch. */
+  NVP_LAST_VIEWED_CALENDAR_DATE: 'nvp_lastViewedCalendarDate',
 
   //   /** Does this user have push notifications enabled for this device? */
   PUSH_NOTIFICATIONS_ENABLED: 'pushNotificationsEnabled',
@@ -317,6 +322,7 @@ type OnyxValuesMapping = {
   [ONYXKEYS.FOCUS_MODE_NOTIFICATION]: boolean;
   [ONYXKEYS.PUSH_NOTIFICATIONS_ENABLED]: boolean;
   [ONYXKEYS.NVP_PREFERRED_LOCALE]: OnyxTypes.Locale;
+  [ONYXKEYS.NVP_LAST_VIEWED_CALENDAR_DATE]: DateString;
   [ONYXKEYS.ONGOING_SESSION_DATA]: OnyxTypes.DrinkingSession;
   [ONYXKEYS.EDIT_SESSION_DATA]: OnyxTypes.DrinkingSession;
   [ONYXKEYS.IS_CREATING_NEW_SESSION]: boolean;

@@ -34,7 +34,7 @@ import ROUTES from '@src/ROUTES';
 import type * as OnyxTypes from '@src/types/onyx';
 // import type {SelectedTimezone} from '@src/types/onyx/UserData';
 import type {OnyxData} from '@src/types/onyx/Request';
-import type {UserID} from '@src/types/onyx/OnyxCommon';
+import type {DateString, UserID} from '@src/types/onyx/OnyxCommon';
 import type {User} from 'firebase/auth';
 import {resolveDuplicationConflictAction} from './RequestConflictUtils';
 // import * as Session from './Session';
@@ -585,8 +585,27 @@ async function setLoadingText(
   await Onyx.merge(ONYXKEYS.APP_LOADING_TEXT, text);
 }
 
+/** Record the day the user is currently looking at in an enlarged calendar /
+ *  day-overview scroll. The home & profile calendars consume this once on
+ *  focus so backing out lands on the same date. */
+function setLastViewedCalendarDate(date: DateString) {
+  Onyx.set(ONYXKEYS.NVP_LAST_VIEWED_CALENDAR_DATE, date);
+}
+
+/** Clear the consumed last-viewed date so subsequent focuses don't re-apply
+ *  it (and so a fresh app launch defaults to today). */
+function clearLastViewedCalendarDate() {
+  Onyx.set(ONYXKEYS.NVP_LAST_VIEWED_CALENDAR_DATE, null);
+}
+
+// Reset on launch so a value persisted from a previous session never hijacks
+// the home calendar's "show today" default on a cold start.
+clearLastViewedCalendarDate();
+
 export {
   setLoadingText,
+  setLastViewedCalendarDate,
+  clearLastViewedCalendarDate,
   setLocale,
   setLocaleAndNavigate,
   setSidebarLoaded,

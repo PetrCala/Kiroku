@@ -315,6 +315,8 @@ export default {
     loadingOlderMonths: 'Načítání starších měsíců…',
     monthTotalUnits: ({unitCount}: UnitCountParams) =>
       `${unitCount} ${Str.pluralize('jednotka', 'jednotek', unitCount)}`,
+    dayTotalUnits: ({unitCount}: UnitCountParams) =>
+      `${unitCount} ${Str.pluralize('jednotka', 'jednotek', unitCount)}`,
   },
   textInput: {
     accessibilityLabel: 'Textové pole',

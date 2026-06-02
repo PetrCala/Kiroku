@@ -6,6 +6,7 @@ import {
   calculateThisMonthUnits,
   timestampToDate,
   dateToDateData,
+  dateStringToDate,
 } from '@libs/DataHandling';
 import {useUserConnection} from '@context/global/UserConnectionContext';
 import UserOffline from '@components/UserOfflineModal';
@@ -31,6 +32,7 @@ import getPlatform from '@libs/getPlatform';
 import FullScreenLoadingIndicator from '@components/FullscreenLoadingIndicator';
 import * as DSUtils from '@libs/DrinkingSessionUtils';
 import * as DS from '@userActions/DrinkingSession';
+import * as App from '@userActions/App';
 import * as ErrorUtils from '@libs/ErrorUtils';
 import * as Session from '@userActions/Session';
 import Timing from '@userActions/Timing';
@@ -63,12 +65,28 @@ function HomeScreen({route}: HomeScreenProps) {
   const {isOnline} = useUserConnection();
   const [loadingText] = useOnyx(ONYXKEYS.APP_LOADING_TEXT);
   const [ongoingSessionData] = useOnyx(ONYXKEYS.ONGOING_SESSION_DATA);
+  const [lastViewedCalendarDate] = useOnyx(
+    ONYXKEYS.NVP_LAST_VIEWED_CALENDAR_DATE,
+  );
   const {drinkingSessionData, preferences, userData, isFetchingOlderMonths} =
     useDatabaseData();
   const [visibleDate, setVisibleDate] = useState<DateData>(
     dateToDateData(new Date()),
   );
   const hasMarkedReadyRef = useRef(false);
+
+  // When returning from an enlarged calendar / day-overview scroll, sync the
+  // calendar to the date the user was last looking at, then consume the value
+  // so subsequent focuses (and cold starts) default to today.
+  useFocusEffect(
+    React.useCallback(() => {
+      if (!lastViewedCalendarDate) {
+        return;
+      }
+      setVisibleDate(dateToDateData(dateStringToDate(lastViewedCalendarDate)));
+      App.clearLastViewedCalendarDate();
+    }, [lastViewedCalendarDate]),
+  );
 
   // Derive stats synchronously from the visible month + drink unit mapping.
   // Narrowed to `drinksToUnits` so unrelated preference updates (e.g. picking

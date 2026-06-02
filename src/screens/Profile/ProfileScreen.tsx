@@ -6,10 +6,15 @@ import type {StatData} from '@components/Items/StatOverview';
 import StatOverview from '@components/Items/StatOverview';
 import ProfileOverview from '@components/Social/ProfileOverview';
 import React, {useEffect, useMemo, useState} from 'react';
+import {useFocusEffect} from '@react-navigation/native';
+import {useOnyx} from 'react-native-onyx';
+import ONYXKEYS from '@src/ONYXKEYS';
+import * as App from '@userActions/App';
 import {readDataOnce} from '@database/baseFunctions';
 import {
   calculateThisMonthUnits,
   dateToDateData,
+  dateStringToDate,
   objKeys,
   timestampToDate,
 } from '@libs/DataHandling';
@@ -73,6 +78,9 @@ function ProfileScreen({route}: ProfileScreenProps) {
   const [visibleDateData, setVisibleDateData] = useState(
     dateToDateData(new Date()),
   );
+  const [lastViewedCalendarDate] = useOnyx(
+    ONYXKEYS.NVP_LAST_VIEWED_CALENDAR_DATE,
+  );
   const [drinkingSessionsCount, setDrinkingSessionsCount] = useState(0);
   const [unitsConsumed, setUnitsConsumed] = useState(0);
   const [manageFriendModalVisible, setManageFriendModalVisible] =
@@ -119,6 +127,21 @@ function ProfileScreen({route}: ProfileScreenProps) {
         : ROUTES.PROFILE_FRIENDS_FRIENDS.getRoute(userID);
     Navigation.navigate(screenRoute);
   };
+
+  // When returning from an enlarged calendar, sync this profile's calendar to
+  // the date last viewed, then consume the value so later focuses default to
+  // today.
+  useFocusEffect(
+    React.useCallback(() => {
+      if (!lastViewedCalendarDate) {
+        return;
+      }
+      setVisibleDateData(
+        dateToDateData(dateStringToDate(lastViewedCalendarDate)),
+      );
+      App.clearLastViewedCalendarDate();
+    }, [lastViewedCalendarDate]),
+  );
 
   // Track own friends
   useEffect(() => {
