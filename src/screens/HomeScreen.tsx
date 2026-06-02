@@ -8,8 +8,7 @@ import {
   dateToDateData,
   dateStringToDate,
 } from '@libs/DataHandling';
-import {useUserConnection} from '@context/global/UserConnectionContext';
-import UserOffline from '@components/UserOfflineModal';
+import OfflineIndicator from '@components/OfflineIndicator';
 import {syncUserStatus} from '@userActions/User';
 import {useFirebase} from '@context/global/FirebaseContext';
 import ProfileImage from '@components/ProfileImage';
@@ -60,7 +59,6 @@ function HomeScreen({route}: HomeScreenProps) {
   const {auth, storage} = useFirebase();
   const {translate} = useLocalize();
   const user = auth.currentUser;
-  const {isOnline} = useUserConnection();
   const [loadingText] = useOnyx(ONYXKEYS.APP_LOADING_TEXT);
   const [ongoingSessionData] = useOnyx(ONYXKEYS.ONGOING_SESSION_DATA);
   const [lastViewedCalendarDate] = useOnyx(
@@ -202,10 +200,6 @@ function HomeScreen({route}: HomeScreenProps) {
     throw new Error(translate('common.error.userNull'));
   }
 
-  if (!isOnline) {
-    return <UserOffline />;
-  }
-
   // Render the shell + skeletons immediately. Real components swap in for
   // their skeletons as each piece of data resolves from Firebase. The
   // calendar renders even when the user has no sessions yet — empty days
@@ -243,6 +237,7 @@ function HomeScreen({route}: HomeScreenProps) {
       <ScreenWrapper
         testID={HomeScreen.displayName}
         includePaddingTop={false}
+        shouldShowOfflineIndicator={false}
         includeSafeAreaPaddingBottom={getPlatform() !== CONST.PLATFORM.IOS}>
         {/* // TODO rewrite this into the HeaderWithBackButton component */}
         {isUserDataReady ? (
@@ -281,6 +276,7 @@ function HomeScreen({route}: HomeScreenProps) {
           )}
           {renderMainContent()}
         </ScrollView>
+        <OfflineIndicator />
         <BottomTabBar />
       </ScreenWrapper>
       {/* Active operations (e.g. saving a session) take a full-screen overlay so

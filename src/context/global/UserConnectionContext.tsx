@@ -1,7 +1,10 @@
 import type {ReactNode} from 'react';
 import {createContext, useContext, useEffect, useMemo, useState} from 'react';
 import NetInfo from '@react-native-community/netinfo';
+import isBoolean from 'lodash/isBoolean';
+import * as NetworkActions from '@userActions/Network';
 import CONFIG from '@src/CONFIG';
+import CONST from '@src/CONST';
 
 type UserConnectionContextProps = {
   isOnline: boolean | undefined;
@@ -38,17 +41,42 @@ function UserConnectionProvider({children}: UserConnectionProviderProps) {
   const [isOnline, setIsOnline] = useState<boolean | undefined>(true);
 
   useEffect(() => {
+    // Treat emulator/local dev as always online so the request queue keeps
+    // flushing and dev builds aren't pinned offline.
+    const isUsingEmulators = CONFIG.IS_USING_EMULATORS;
+
+    // Mirror device connectivity into both the local context value (drives the
+    // OfflineIndicator/UX) and the NETWORK Onyx key. The latter is what
+    // NetworkStore.isOffline() and useNetwork() read, so populating it here is
+    // what lets the request queue defer writes while offline and replay them on
+    // reconnect. This is the single writer of the NETWORK key's connectivity
+    // fields while NetworkConnection.subscribeToNetInfo() stays disabled.
+    const applyConnectivity = (isConnected: boolean | null | undefined) => {
+      const online = isUsingEmulators || isConnected !== false;
+      setIsOnline(online);
+      NetworkActions.setIsOffline(!online);
+
+      let networkStatus;
+      if (isUsingEmulators || !isBoolean(isConnected)) {
+        networkStatus = isUsingEmulators
+          ? CONST.NETWORK.NETWORK_STATUS.ONLINE
+          : CONST.NETWORK.NETWORK_STATUS.UNKNOWN;
+      } else {
+        networkStatus = isConnected
+          ? CONST.NETWORK.NETWORK_STATUS.ONLINE
+          : CONST.NETWORK.NETWORK_STATUS.OFFLINE;
+      }
+      NetworkActions.setNetWorkStatus(networkStatus);
+    };
+
     // Subscribe to network state updates
     const unsubscribe = NetInfo.addEventListener(state => {
-      setIsOnline(state.isConnected as boolean | undefined);
+      applyConnectivity(state.isConnected);
     });
 
     // Check the initial network status
     NetInfo.fetch().then(state => {
-      const isConnected = state.isConnected as boolean | undefined;
-      // When running against the local emulator suite NetInfo may report an
-      // unknown status; treat that as online so dev builds aren't stuck offline.
-      setIsOnline(isConnected ?? CONFIG.IS_USING_EMULATORS);
+      applyConnectivity(state.isConnected);
     });
 
     // Unsubscribe to clean up the subscription
