@@ -1,5 +1,5 @@
 import type {StyleProp, ViewStyle} from 'react-native';
-import {View} from 'react-native';
+import {StyleSheet, View} from 'react-native';
 import * as KirokuIcons from '@components/Icon/KirokuIcons';
 import {useEffect, useState} from 'react';
 import Modal from '@components/Modal';
@@ -45,11 +45,15 @@ function FullScreenModal({
       isVisible={modalVisible}
       fullscreen
       shouldUseModalPaddingStyle={false}
-      innerContainerStyle={{borderWidth: 0}}
+      // Paint the surface on the modal container (the always-materialized
+      // Reanimated view) rather than a child view. On the New Architecture, RN
+      // can flatten a background-only child away, which left the modal
+      // see-through; the container is never flattened.
+      innerContainerStyle={StyleSheet.flatten([{borderWidth: 0}, style])}
       swipeDirection={['up', 'down']}
       animationIn="fadeIn"
       animationOut="fadeOut">
-      <View style={[styles.fullScreenCenteredContent, style]}>
+      <View style={styles.fullScreenCenteredContent}>
         {!hideCloseButton && (
           <Button
             onPress={handleCloseModal}

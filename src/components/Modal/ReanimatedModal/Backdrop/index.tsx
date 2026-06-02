@@ -1,4 +1,5 @@
 import React from 'react';
+import {StyleSheet, View} from 'react-native';
 import Animated, {Keyframe} from 'react-native-reanimated';
 import type {BackdropProps} from '@components/Modal/ReanimatedModal/types';
 import {
@@ -29,12 +30,23 @@ function Backdrop({
     animationOutTiming,
   );
 
+  // The shared fadeIn/fadeOut keyframe animates opacity 0<->1 (so modal content
+  // rests fully opaque). The backdrop's dimness is a separate concern, so its
+  // target opacity lives on the fill child while the Animated.View just drives
+  // the reveal — the two compose to a 0 -> backdropOpacity fade.
+  const {backgroundColor, ...frame} =
+    StyleSheet.flatten([styles.modalBackdrop, style]) ?? {};
+
   const BackdropOverlay = (
-    <Animated.View
-      entering={Entering}
-      exiting={Exiting}
-      style={[styles.modalBackdrop, {opacity: backdropOpacity}, style]}>
-      {!!customBackdrop && customBackdrop}
+    <Animated.View entering={Entering} exiting={Exiting} style={frame}>
+      {customBackdrop ?? (
+        <View
+          style={[
+            StyleSheet.absoluteFill,
+            {backgroundColor, opacity: backdropOpacity},
+          ]}
+        />
+      )}
     </Animated.View>
   );
 
