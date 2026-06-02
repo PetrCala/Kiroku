@@ -21,6 +21,7 @@ import {useOnyx} from 'react-native-onyx';
 import ONYXKEYS from '@src/ONYXKEYS';
 import SessionsCalendarView from './SessionsCalendarView';
 import SessionsCalendarWeekListView from './SessionsCalendarWeekListView';
+import DayOverviewListView from './DayOverviewListView';
 import type SessionsCalendarProps from './types';
 
 // How many months of pre-loaded buffer to keep ahead of the user's scroll in
@@ -45,6 +46,8 @@ function SessionsCalendar({
   mode = 'compact',
   initialMonthYear,
   initialFirstWeekY,
+  initialDay,
+  onAddSessionForDay,
   onInitialScrollReady,
 }: SessionsCalendarProps) {
   const {auth} = useFirebase();
@@ -53,6 +56,7 @@ function SessionsCalendar({
     markedDates,
     unitsMap,
     monthlyTotalsMap,
+    sessionEntriesByDay,
     loadedFrom,
     loadedFromDate,
     loadMoreMonths,
@@ -127,7 +131,7 @@ function SessionsCalendar({
   // guard saves the per-render call entirely.
   const hasPrefetchedRef = useRef(false);
   useEffect(() => {
-    if (mode !== 'fullscreen') {
+    if (mode === 'compact') {
       hasPrefetchedRef.current = false;
       return;
     }
@@ -135,18 +139,21 @@ function SessionsCalendar({
       return;
     }
     hasPrefetchedRef.current = true;
-    // If the user opened the fullscreen on a month older than our default
-    // 12-month buffer, deepen the prefetch to cover it. `loadUpTo` takes the
-    // deeper of any requested floor — calling it twice is fine.
+    // If the user opened an enlarged view (fullscreen calendar or day-overview
+    // scroll) on a month older than our default 12-month buffer, deepen the
+    // prefetch to cover it. `loadUpTo` takes the deeper of any requested floor
+    // — calling it twice is fine.
     const defaultFloor = subMonths(new Date(), INITIAL_PREFETCH_MONTHS);
     loadUpTo(defaultFloor);
-    if (initialMonthYear) {
-      const targetFloor = startOfMonth(parseISO(`${initialMonthYear}-01`));
+    const targetMonthYear =
+      initialMonthYear ?? (initialDay ? initialDay.slice(0, 7) : undefined);
+    if (targetMonthYear) {
+      const targetFloor = startOfMonth(parseISO(`${targetMonthYear}-01`));
       if (targetFloor < defaultFloor) {
         loadUpTo(targetFloor);
       }
     }
-  }, [mode, loadUpTo, initialMonthYear]);
+  }, [mode, loadUpTo, initialMonthYear, initialDay]);
 
   const onDayPress = useCallback(
     (dateData: DateData) => {
@@ -163,6 +170,22 @@ function SessionsCalendar({
 
   if (isLoading) {
     return <FlexibleLoadingIndicator />;
+  }
+
+  if (mode === 'dayList') {
+    return (
+      <DayOverviewListView
+        sessionEntriesByDay={sessionEntriesByDay}
+        unitsMap={unitsMap}
+        preferences={preferences}
+        loadedFromDate={loadedFromDate}
+        isFetchingOlderMonths={isFetchingOlderMonths}
+        onRequestOlder={handleRequestOlder}
+        initialDay={initialDay}
+        onInitialScrollReady={onInitialScrollReady}
+        onAddSessionForDay={onAddSessionForDay}
+      />
+    );
   }
 
   if (mode === 'fullscreen') {

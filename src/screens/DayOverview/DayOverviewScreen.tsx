@@ -1,116 +1,83 @@
-import React, {useState, useEffect, useMemo} from 'react';
-import {View, FlatList} from 'react-native';
-import * as KirokuIcons from '@components/Icon/KirokuIcons';
-import {changeDateBySomeDays, dateStringToDate} from '@libs/DataHandling';
+import React, {useCallback, useMemo, useState} from 'react';
+import {StyleSheet, View} from 'react-native';
 import UserOffline from '@components/UserOfflineModal';
 import {useUserConnection} from '@context/global/UserConnectionContext';
-import type {DrinkingSessionList} from '@src/types/onyx';
-import type DrinkingSessionKeyValue from '@src/types/utils/databaseUtils';
 import type {StackScreenProps} from '@react-navigation/stack';
 import type {DayOverviewNavigatorParamList} from '@libs/Navigation/types';
 import type SCREENS from '@src/SCREENS';
+import type {DateString} from '@src/types/onyx/OnyxCommon';
 import Navigation from '@libs/Navigation/Navigation';
 import {useDatabaseData} from '@context/global/DatabaseDataContext';
-import * as DSUtils from '@libs/DrinkingSessionUtils';
-import CONST from '@src/CONST';
+import {useFirebase} from '@context/global/FirebaseContext';
+import {dateStringToDate, dateToDateData} from '@libs/DataHandling';
+import * as App from '@userActions/App';
+import * as DS from '@userActions/DrinkingSession';
+import * as ErrorUtils from '@libs/ErrorUtils';
+import ERRORS from '@src/ERRORS';
 import ScreenWrapper from '@components/ScreenWrapper';
 import HeaderWithBackButton from '@components/HeaderWithBackButton';
 import FullScreenLoadingIndicator from '@components/FullscreenLoadingIndicator';
-import {format} from 'date-fns';
-import Button from '@components/Button';
+import SessionsCalendar from '@components/SessionsCalendar';
 import useLocalize from '@hooks/useLocalize';
 import useThemeStyles from '@hooks/useThemeStyles';
-import Text from '@components/Text';
 import {useOnyx} from 'react-native-onyx';
 import ONYXKEYS from '@src/ONYXKEYS';
-import useStyleUtils from '@hooks/useStyleUtils';
-import useWindowDimensions from '@hooks/useWindowDimensions';
-import type DeepValueOf from '@src/types/utils/DeepValueOf';
-import DrinkingSessionOverview from '@components/DrinkingSessionOverview';
-import AddSessionButton from '@components/DrinkingSessionOverview/AddSessionButton';
-
-type ButtonItemData = {
-  onPress: () => void;
-  direction: DeepValueOf<typeof CONST.DIRECTION>;
-};
 
 type DayOverviewScreenProps = StackScreenProps<
   DayOverviewNavigatorParamList,
   typeof SCREENS.DAY_OVERVIEW.ROOT
 >;
 
+const internalStyles = StyleSheet.create({
+  // Mounted-but-invisible until the list applies its initial scroll, so the
+  // user never sees a jump from "latest at top" to the focused day.
+  hidden: {opacity: 0},
+});
+
+function noop() {}
+
 function DayOverviewScreen({route}: DayOverviewScreenProps) {
   const {date} = route.params;
   const {isOnline} = useUserConnection();
   const {translate} = useLocalize();
   const styles = useThemeStyles();
-  const StyleUtils = useStyleUtils();
+  const {auth, db} = useFirebase();
+  const user = auth.currentUser;
   const [loadingText] = useOnyx(ONYXKEYS.APP_LOADING_TEXT);
-  const {windowWidth} = useWindowDimensions();
-  const {drinkingSessionData} = useDatabaseData();
-  const [currentDate, setCurrentDate] = useState<Date>(
-    date ? dateStringToDate(date) : new Date(),
+  const {drinkingSessionData, preferences, userData, isFetchingOlderMonths} =
+    useDatabaseData();
+
+  // Hold the list invisible until it has scrolled to the focused day. With no
+  // `date` (shouldn't happen via the calendar) we never wait.
+  const [isScrollReady, setIsScrollReady] = useState<boolean>(!date);
+  const onInitialScrollReady = useCallback(() => setIsScrollReady(true), []);
+
+  // dayList mode ignores `visibleDate`/`onDateChange`, but the shared
+  // `SessionsCalendar` props require them.
+  const placeholderVisibleDate = useMemo(() => dateToDateData(new Date()), []);
+
+  const selectedTimezone = userData?.timezone?.selected;
+  const onAddSessionForDay = useCallback(
+    (day: DateString) => {
+      (async () => {
+        try {
+          await App.setLoadingText(translate('liveSessionScreen.loading'));
+          const newSession = await DS.getNewSessionToEdit(
+            db,
+            auth.currentUser,
+            dateStringToDate(day),
+            selectedTimezone,
+          );
+          DS.navigateToEditSessionScreen(newSession?.id);
+        } catch (error) {
+          ErrorUtils.raiseAppError(ERRORS.DATABASE.USER_CREATION_FAILED, error);
+        } finally {
+          await App.setLoadingText(null);
+        }
+      })();
+    },
+    [db, auth, translate, selectedTimezone],
   );
-  const [editMode, setEditMode] = useState<boolean>(false);
-  const [dailyData, setDailyData] = useState<DrinkingSessionKeyValue[]>([]);
-
-  // Monitor the combined data
-  useEffect(() => {
-    if (!drinkingSessionData) {
-      setDailyData([]);
-      return;
-    }
-
-    const relevantData = DSUtils.getSingleDayDrinkingSessions(
-      currentDate,
-      drinkingSessionData,
-      false,
-    ) as DrinkingSessionList;
-    const newDailyData = Object.entries(relevantData).map(
-      ([sessionId, session]) => {
-        return {
-          sessionId,
-          session,
-        };
-      },
-    );
-    setDailyData(newDailyData);
-  }, [currentDate, drinkingSessionData]);
-
-  const changeDayButtons = useMemo(() => {
-    const changeDay = (days: number) =>
-      setCurrentDate(changeDateBySomeDays(currentDate, days));
-
-    const buttonData: ButtonItemData[] = [
-      {
-        onPress: () => changeDay(-1),
-        direction: CONST.DIRECTION.LEFT,
-      },
-      {
-        onPress: () => changeDay(1),
-        direction: CONST.DIRECTION.RIGHT,
-      },
-    ];
-
-    return buttonData.map(item => (
-      <Button
-        key={item.direction as string}
-        iconStyles={[
-          StyleUtils.getDirectionStyle(item.direction),
-          styles.w100,
-          styles.alignItemsEnd,
-        ]}
-        icon={KirokuIcons.ArrowRight}
-        style={[
-          styles.bgTransparent,
-          styles.bottomTabButton,
-          styles.halfScreenWidth(windowWidth),
-          styles.ph5,
-        ]}
-        onPress={item.onPress}
-      />
-    ));
-  }, [currentDate, StyleUtils, windowWidth, styles]);
 
   if (!isOnline) {
     return <UserOffline />;
@@ -119,58 +86,36 @@ function DayOverviewScreen({route}: DayOverviewScreenProps) {
     return <FullScreenLoadingIndicator loadingText={loadingText} />;
   }
 
+  const isReady = !!user && !!preferences && drinkingSessionData !== undefined;
+
   return (
     <ScreenWrapper testID={DayOverviewScreen.displayName}>
       <HeaderWithBackButton
+        title={translate('calendar.fullscreenTitle')}
         onBackButtonPress={Navigation.goBack}
-        customRightButton={
-          <Button
-            success
-            onPress={() => setEditMode(!editMode)}
-            text={translate(
-              !editMode
-                ? 'dayOverviewScreen.enterEditMode'
-                : 'dayOverviewScreen.exitEditMode',
-            )}
-            style={[
-              styles.buttonMedium,
-              editMode ? styles.buttonSuccessPressed : styles.buttonSuccess,
-            ]}
-          />
-        }
       />
-      <View style={[styles.p2, styles.flex1]}>
-        <Text
-          style={[styles.textHeadlineH1, styles.alignSelfCenter, styles.mb2]}>
-          {date
-            ? format(currentDate, CONST.DATE.SHORT_DATE_FORMAT)
-            : translate('dayOverviewScreen.loadingDate')}
-        </Text>
-        <FlatList
-          data={dailyData}
-          renderItem={({item}) => (
-            <DrinkingSessionOverview
-              sessionId={item.sessionId}
-              session={item.session}
-              isEditModeOn={editMode}
-            />
-          )}
-          keyExtractor={item => String(item.sessionId)} // Use start time as id
-          ListEmptyComponent={
-            <Text style={[styles.noResultsText, styles.mb2]}>
-              {translate('dayOverviewScreen.noDrinkingSessions')}
-            </Text>
-          }
-          ListFooterComponent={
-            <AddSessionButton
-              currentDate={currentDate}
-              isEditModeOn={editMode}
-            />
-          }
-          ListFooterComponentStyle={[styles.alignSelfCenter, styles.mt3]}
-        />
-      </View>
-      <View style={[styles.bottomTabBarContainer]}>{changeDayButtons}</View>
+      {isReady && (
+        <View
+          style={[
+            styles.flex1,
+            styles.ph2,
+            !isScrollReady && internalStyles.hidden,
+          ]}>
+          <SessionsCalendar
+            userID={user.uid}
+            visibleDate={placeholderVisibleDate}
+            onDateChange={noop}
+            drinkingSessionData={drinkingSessionData}
+            preferences={preferences}
+            isFetchingOlderMonths={isFetchingOlderMonths}
+            mode="dayList"
+            initialDay={date}
+            onAddSessionForDay={onAddSessionForDay}
+            onInitialScrollReady={onInitialScrollReady}
+          />
+        </View>
+      )}
+      {(!isReady || !isScrollReady) && <FullScreenLoadingIndicator />}
     </ScreenWrapper>
   );
 }

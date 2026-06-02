@@ -1,7 +1,9 @@
 import React from 'react';
 import {View} from 'react-native';
 import * as KirokuIcons from '@components/Icon/KirokuIcons';
-import {convertUnitsToColors} from '@libs/DataHandling';
+import Icon from '@components/Icon';
+import {convertUnitsToColors, sumDrinksOfSingleType} from '@libs/DataHandling';
+import DrinkData from '@libs/DrinkData';
 import {resolvePalette} from '@libs/SessionColorPalettes';
 import Navigation from '@libs/Navigation/Navigation';
 import ROUTES from '@src/ROUTES';
@@ -12,6 +14,7 @@ import CONST from '@src/CONST';
 import {nonMidnightString} from '@libs/StringUtilsKiroku';
 import Button from '@components/Button';
 import useLocalize from '@hooks/useLocalize';
+import useTheme from '@hooks/useTheme';
 import useThemeStyles from '@hooks/useThemeStyles';
 import useStyleUtils from '@hooks/useStyleUtils';
 import Text from '@components/Text';
@@ -30,6 +33,7 @@ function DrinkingSessionOverview({
   const {preferences: ownPreferences} = useDatabaseData();
   const preferences = preferencesProp ?? ownPreferences;
   const {translate} = useLocalize();
+  const theme = useTheme();
   const styles = useThemeStyles();
   const StyleUtils = useStyleUtils();
   // Convert the timestamp to a Date object
@@ -87,11 +91,44 @@ function DrinkingSessionOverview({
     {minHeight: 84},
   ];
 
+  // Per-drink-type counts (non-zero only), shown as a compact icon + count row
+  // so the tile surfaces what the session actually contained at a glance.
+  const drinkBreakdown = DrinkData.map(({key, icon}) => ({
+    key,
+    icon,
+    count: sumDrinksOfSingleType(session.drinks, key),
+  })).filter(({count}) => count > 0);
+
   const sessionDetails = (
     <View style={[styles.flexColumn, styles.flex1]}>
       <Text style={[styles.textNormal, styles.textStrong]}>
         {translate('common.units')}: {totalUnits}
       </Text>
+      {drinkBreakdown.length > 0 && (
+        <View
+          style={[
+            styles.flexRow,
+            styles.alignItemsCenter,
+            styles.flexWrap,
+            styles.mt1,
+          ]}>
+          {drinkBreakdown.map(({key, icon, count}) => (
+            <View
+              key={key}
+              style={[styles.flexRow, styles.alignItemsCenter, styles.mr3]}>
+              <Icon
+                src={icon}
+                fill={theme.textSupporting}
+                width={16}
+                height={16}
+              />
+              <Text style={[styles.textMicroSupporting, styles.ml1]}>
+                {count}
+              </Text>
+            </View>
+          ))}
+        </View>
+      )}
       {shouldDisplayTime && (
         <Text style={[styles.textMicroSupporting, styles.mt1]}>
           {translate('common.time')}: {timeString}

@@ -12,6 +12,7 @@ import {runOnJS} from 'react-native-reanimated';
 import {FlashList} from '@shopify/flash-list';
 import type {FlashListRef} from '@shopify/flash-list';
 import {format, parseISO, startOfDay} from 'date-fns';
+import lodashDebounce from 'lodash/debounce';
 import type {DateData} from 'react-native-calendars';
 import {LocaleConfig} from 'react-native-calendars';
 import type {MarkedDates} from 'react-native-calendars/src/types';
@@ -22,6 +23,7 @@ import useTheme from '@hooks/useTheme';
 import useThemeStyles from '@hooks/useThemeStyles';
 import ONYXKEYS from '@src/ONYXKEYS';
 import CONST from '@src/CONST';
+import * as App from '@userActions/App';
 import {roundToTwoDecimalPlaces} from '@libs/NumberUtils';
 import type {DateString} from '@src/types/onyx/OnyxCommon';
 import buildMonthSections from './buildMonthSections';
@@ -337,6 +339,17 @@ function SessionsCalendarWeekListView({
     [footerHeight],
   );
 
+  // Record the month the user is looking at so the compact calendar can sync
+  // to it on back-navigation. Debounced so a fast scroll writes once at rest.
+  const writeLastViewedDay = useMemo(
+    () =>
+      lodashDebounce((day: DateString) => {
+        App.setLastViewedCalendarDate(day);
+      }, 250),
+    [],
+  );
+  useEffect(() => () => writeLastViewedDay.cancel(), [writeLastViewedDay]);
+
   // Lazy-load older months when the user scrolls within the buffer of the
   // loaded floor. Walk forward from the lowest visible index to the first
   // week item with at least one in-range day; surface that day to the
@@ -345,7 +358,7 @@ function SessionsCalendarWeekListView({
   // of the very first month section.
   const onViewableItemsChanged = useCallback(
     ({viewableItems}: {viewableItems: Array<{index: number | null}>}) => {
-      if (!onRequestOlder || viewableItems.length === 0) {
+      if (viewableItems.length === 0) {
         return;
       }
       let minIndex = Number.POSITIVE_INFINITY;
@@ -354,6 +367,25 @@ function SessionsCalendarWeekListView({
           minIndex = item.index;
         }
       });
+      if (minIndex === Number.POSITIVE_INFINITY) {
+        return;
+      }
+
+      // Surface the top-most visible month as the "last viewed" date.
+      const topItem = items[minIndex];
+      if (topItem) {
+        const topDay =
+          topItem.kind === 'label'
+            ? (`${topItem.monthKey}-01` as DateString)
+            : topItem.row.days.find(d => d !== null);
+        if (topDay) {
+          writeLastViewedDay(topDay);
+        }
+      }
+
+      if (!onRequestOlder) {
+        return;
+      }
       if (minIndex > LOAD_AHEAD_BUFFER_WEEKS) {
         return;
       }
@@ -369,7 +401,7 @@ function SessionsCalendarWeekListView({
         }
       }
     },
-    [items, onRequestOlder],
+    [items, onRequestOlder, writeLastViewedDay],
   );
 
   const renderItem = useCallback(
