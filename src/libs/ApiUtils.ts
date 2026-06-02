@@ -74,4 +74,18 @@ function isUsingStagingApi(): boolean {
   return shouldUseStagingServer;
 }
 
-export {getApiRoot, getCommandURL, isUsingStagingApi};
+/**
+ * Base URL for the kiroku-api HTTPS function, selected by environment. Prod
+ * builds hit the prod project; everything else (dev/staging/adhoc) hits dev.
+ * Route paths (see `libs/API/kirokuRoutes.ts`) include the `/v1` prefix and are
+ * appended to this root.
+ */
+function getKirokuApiRoot(): string {
+  const root =
+    ENV_NAME === CONST.ENVIRONMENT.PROD
+      ? CONFIG.KIROKU_API.PROD_ROOT
+      : CONFIG.KIROKU_API.DEV_ROOT;
+  return root.replace(/\/+$/, '');
+}
+
+export {getApiRoot, getCommandURL, getKirokuApiRoot, isUsingStagingApi};

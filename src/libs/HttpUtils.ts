@@ -9,8 +9,11 @@ import type Response from '@src/types/onyx/Response';
 import * as NetworkActions from './actions/Network';
 import * as UpdateRequired from './actions/UpdateRequired';
 import {SIDE_EFFECT_REQUEST_COMMANDS, WRITE_COMMANDS} from './API/types';
+import {getKirokuRoute} from './API/kirokuRoutes';
+import type {KirokuRoute} from './API/kirokuRoutes';
 import * as ApiUtils from './ApiUtils';
 import HttpsError from './Errors/HttpsError';
+import {getFirebaseAuth} from './Firebase/FirebaseApp';
 
 let shouldFailAllRequests = false;
 let shouldForceOffline = false;
@@ -55,8 +58,9 @@ const APICommandRegex = /\/api\/([^&?]+)\??.*/;
 function processHTTPRequest(
   url: string,
   method: RequestType = 'get',
-  body: FormData | null = null,
+  body: FormData | string | null = null,
   canCancel = true,
+  headers?: Record<string, string>,
 ): Promise<Response> {
   const startTime = new Date().valueOf();
   return fetch(url, {
@@ -64,6 +68,7 @@ function processHTTPRequest(
     signal: canCancel ? cancellationController.signal : undefined,
     method,
     body,
+    headers,
   })
     .then(response => {
       // We are calculating the skew to minimize the delay when posting the messages
@@ -184,12 +189,87 @@ function processHTTPRequest(
  * @param type HTTP request type (get/post)
  * @param shouldUseSecure should we use the secure server
  */
+// Request-data fields internal to the legacy Expensify transport that must not
+// be forwarded in a kiroku-api JSON body (command params + pusherSocketID stay).
+const KIROKU_OMITTED_BODY_FIELDS = new Set<string>([
+  'authToken',
+  'platform',
+  'api_setCookie',
+  'email',
+  'isFromDevEnv',
+  'appversion',
+  'clientUpdateID',
+  'apiRequestType',
+  'shouldRetry',
+  'canCancel',
+]);
+
+function buildKirokuBody(
+  data: Record<string, unknown>,
+): Record<string, unknown> {
+  const body: Record<string, unknown> = {};
+  Object.keys(data).forEach(key => {
+    if (KIROKU_OMITTED_BODY_FIELDS.has(key) || typeof data[key] === 'undefined') {
+      return;
+    }
+    body[key] = data[key];
+  });
+  return body;
+}
+
+/**
+ * Send a request to the kiroku-api REST surface: resolve `{method, path}` from
+ * the route map, attach the caller's Firebase ID token as a Bearer header, and
+ * send a JSON body (non-GET) or a query string (GET). Returns the same
+ * `{jsonCode, onyxData}` envelope the legacy path returns.
+ */
+async function kirokuXhr(
+  data: Record<string, unknown>,
+  route: KirokuRoute,
+): Promise<Response> {
+  const token = await getFirebaseAuth().currentUser?.getIdToken();
+  if (!token) {
+    throw new HttpsError({
+      message: CONST.ERROR.FAILED_TO_FETCH,
+      title: 'Not authenticated',
+    });
+  }
+
+  const headers: Record<string, string> = {Authorization: `Bearer ${token}`};
+  let url = `${ApiUtils.getKirokuApiRoot()}${route.path}`;
+  let body: string | null = null;
+
+  if (route.method === 'get') {
+    const query = route.toQuery?.(data) ?? {};
+    const queryString = Object.entries(query)
+      .map(
+        ([key, value]) =>
+          `${encodeURIComponent(key)}=${encodeURIComponent(String(value))}`,
+      )
+      .join('&');
+    if (queryString) {
+      url += `?${queryString}`;
+    }
+  } else {
+    headers['Content-Type'] = 'application/json';
+    body = JSON.stringify(buildKirokuBody(data));
+  }
+
+  return processHTTPRequest(url, route.method, body, !!data.canCancel, headers);
+}
+
 function xhr(
   command: string,
   data: Record<string, unknown>,
   type: RequestType = CONST.NETWORK.METHOD.POST,
   shouldUseSecure = false,
 ): Promise<Response> {
+  // kiroku-api commands route to the per-route REST surface with Bearer auth.
+  const kirokuRoute = getKirokuRoute(command);
+  if (kirokuRoute) {
+    return kirokuXhr(data, kirokuRoute);
+  }
+
   const formData = new FormData();
   Object.keys(data).forEach(key => {
     if (typeof data[key] === 'undefined') {
