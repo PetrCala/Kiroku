@@ -59,6 +59,7 @@ type PusherEventName = LiteralUnion<DeepValueOf<typeof TYPE>, string>;
 type PusherSubscribtionErrorData = {type?: string; error?: string; status?: string};
 
 let shouldForceOffline = false;
+// eslint-disable-next-line rulesdir/no-onyx-connect -- module-level network state in the Pusher lib
 Onyx.connect({
     key: ONYXKEYS.NETWORK,
     callback: (network) => {

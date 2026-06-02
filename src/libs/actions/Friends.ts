@@ -25,7 +25,7 @@ function userDataPatch(uid: string, patch: Record<string, unknown>): OnyxUpdate 
     onyxMethod: Onyx.METHOD.MERGE,
     key: ONYXKEYS.USER_DATA_LIST,
     value: {[uid]: patch},
-  } as OnyxUpdate;
+  };
 }
 
 function sendFriendRequest(toUserId: string) {

@@ -26,9 +26,11 @@ import type {
 Request.use(Middleware.Logging);
 
 // RecheckConnection - Sets a timer for a request that will "recheck" if we are connected to the internet if time runs out. Also triggers the connection recheck when we encounter any error.
+// eslint-disable-next-line react-hooks/rules-of-hooks -- Request.use is not a React hook (name heuristic false positive)
 Request.use(Middleware.RecheckConnection);
 
 // Reauthentication - Handles jsonCode 407 (expired Firebase ID token): force-refreshes the token and replays the request.
+// eslint-disable-next-line react-hooks/rules-of-hooks -- Request.use is not a React hook (name heuristic false positive)
 Request.use(Middleware.Reauthentication);
 
 // SaveResponseInOnyx - Merges either the successData or failureData (or finallyData, if included in place of the former two values) into Onyx depending on if the call was successful or not. This needs to be the LAST middleware we use, don't add any

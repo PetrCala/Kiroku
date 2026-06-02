@@ -1,4 +1,10 @@
-import type {ChannelAuthorizerGenerator} from 'pusher-js/with-encryption';
+import type {
+  ChannelAuthorizerGenerator,
+  ChannelAuthorizationCallback,
+} from 'pusher-js/with-encryption';
+
+/** The auth-data shape Pusher's authorization callback accepts (`{auth, ...}`). */
+type ChannelAuthData = Parameters<ChannelAuthorizationCallback>[1];
 import * as ApiUtils from '@libs/ApiUtils';
 import {getFirebaseAuth} from '@libs/Firebase/FirebaseApp';
 
@@ -25,6 +31,7 @@ const kirokuPusherAuthorizer: ChannelAuthorizerGenerator = channel => ({
           method: 'post',
           headers: {
             Authorization: `Bearer ${token}`,
+            // eslint-disable-next-line @typescript-eslint/naming-convention -- HTTP header name
             'Content-Type': 'application/x-www-form-urlencoded',
           },
           body,
@@ -40,7 +47,7 @@ const kirokuPusherAuthorizer: ChannelAuthorizerGenerator = channel => ({
         }
         response
           .json()
-          .then(authData => callback(null, authData))
+          .then((authData: ChannelAuthData) => callback(null, authData))
           .catch((error: Error) => callback(error, null));
       })
       .catch((error: Error) => callback(error, null));
