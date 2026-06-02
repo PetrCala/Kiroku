@@ -39,10 +39,14 @@ import {getLastStartedSessionId} from '@libs/DataHandling';
 import * as Localize from '@libs/Localize';
 import type {SelectedTimezone, Timezone} from '@src/types/onyx/UserData';
 import {validateAppVersion} from '@libs/Validation';
-import type {OnyxEntry} from 'react-native-onyx';
+import type {OnyxEntry, OnyxUpdate} from 'react-native-onyx';
 import Onyx from 'react-native-onyx';
 import ONYXKEYS from '@src/ONYXKEYS';
 import CONST from '@src/CONST';
+import {getFirebaseAuth} from '@libs/Firebase/FirebaseApp';
+import PusherUtils from '@libs/PusherUtils';
+import * as Pusher from '@libs/Pusher/pusher';
+import * as OnyxUpdates from '@userActions/OnyxUpdates';
 import {getReasonForLeavingID} from '@libs/ReasonForLeaving';
 import {PALETTES} from '@libs/SessionColorPalettes';
 import Log from '@libs/Log';
@@ -894,7 +898,48 @@ async function signUp(
   }
 }
 
+/** The flat payload kiroku-api pushes on the `onyxApiUpdate` event. */
+type KirokuOnyxApiUpdateEvent = {
+  eventType: string;
+  data: OnyxUpdate[];
+  lastUpdateID: number;
+  previousUpdateID: number;
+};
+
+/**
+ * Subscribe the signed-in user to their realtime channel. kiroku-api pushes an
+ * `onyxApiUpdate` event on `private-user-<uid>` carrying an `OnyxUpdate[]`; we
+ * apply it to Onyx through the standard OnyxUpdates pipeline.
+ */
+function subscribeToUserEvents() {
+  const userID = getFirebaseAuth().currentUser?.uid;
+  if (!userID) {
+    return;
+  }
+
+  // The handler that applies an `onyxApiUpdate`'s OnyxUpdate[] to Onyx.
+  PusherUtils.subscribeToMultiEvent(
+    Pusher.TYPE.MULTIPLE_EVENT_TYPE.ONYX_API_UPDATE,
+    (updates: OnyxUpdate[]) => Onyx.update(updates),
+  );
+
+  PusherUtils.subscribeToPrivateUserChannelEvent(
+    Pusher.TYPE.ONYX_API_UPDATE,
+    userID,
+    pushJSON => {
+      const event = pushJSON as unknown as KirokuOnyxApiUpdateEvent;
+      OnyxUpdates.apply({
+        type: CONST.ONYX_UPDATE_TYPES.PUSHER,
+        lastUpdateID: Number(event.lastUpdateID ?? 0),
+        previousUpdateID: Number(event.previousUpdateID ?? 0),
+        updates: [{eventType: event.eventType, data: event.data}],
+      });
+    },
+  );
+}
+
 export {
+  subscribeToUserEvents,
   changeDisplayName,
   changeUserName,
   deleteUserData,

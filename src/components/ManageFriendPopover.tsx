@@ -1,6 +1,6 @@
 import React, {useRef} from 'react';
 import {View} from 'react-native';
-import {unfriend} from '@database/friends';
+import * as Friends from '@userActions/Friends';
 import {setFriendDataHidden} from '@database/privacy';
 import {useFirebase} from '@src/context/global/FirebaseContext';
 import {useDatabaseData} from '@context/global/DatabaseDataContext';
@@ -74,7 +74,7 @@ function ManageFriendPopover({
         return;
       }
       try {
-        await unfriend(db, user.uid, friendId);
+        Friends.unfriend(friendId);
       } catch (error) {
         ErrorUtils.raiseAppError(ERRORS.USER.COULD_NOT_UNFRIEND, error);
       } finally {

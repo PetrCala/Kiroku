@@ -3,7 +3,7 @@ import Onyx from 'react-native-onyx';
 import Log from '@libs/Log';
 import * as Middleware from '@libs/Middleware';
 import * as SequentialQueue from '@libs/Network/SequentialQueue';
-// import * as Pusher from '@libs/Pusher/pusher';
+import * as Pusher from '@libs/Pusher/pusher';
 import * as Request from '@libs/Request';
 import CONST from '@src/CONST';
 import type OnyxRequest from '@src/types/onyx/Request';
@@ -26,10 +26,12 @@ import type {
 Request.use(Middleware.Logging);
 
 // RecheckConnection - Sets a timer for a request that will "recheck" if we are connected to the internet if time runs out. Also triggers the connection recheck when we encounter any error.
-// Request.use(Middleware.RecheckConnection); // TODO enable this
+// eslint-disable-next-line react-hooks/rules-of-hooks -- Request.use is not a React hook (name heuristic false positive)
+Request.use(Middleware.RecheckConnection);
 
-// Reauthentication - Handles jsonCode 407 which indicates an expired authToken. We need to reauthenticate and get a new authToken with our stored credentials.
-// Request.use(Middleware.Reauthentication);
+// Reauthentication - Handles jsonCode 407 (expired Firebase ID token): force-refreshes the token and replays the request.
+// eslint-disable-next-line react-hooks/rules-of-hooks -- Request.use is not a React hook (name heuristic false positive)
+Request.use(Middleware.Reauthentication);
 
 // SaveResponseInOnyx - Merges either the successData or failureData (or finallyData, if included in place of the former two values) into Onyx depending on if the call was successful or not. This needs to be the LAST middleware we use, don't add any
 // middlewares after this, because the SequentialQueue depends on the result of this middleware to pause the queue (if needed) to bring the app to an up-to-date state.
@@ -79,7 +81,7 @@ function write<TCommand extends WriteCommand>(
 
     // We send the pusherSocketID with all write requests so that the api can include it in push events to prevent Pusher from sending the events to the requesting client. The push event
     // is sent back to the requesting client in the response data instead, which prevents a replay effect in the UI. See https://github.com/Expensify/App/issues/12775.
-    // pusherSocketID: Pusher.getPusherSocketID(),
+    pusherSocketID: Pusher.getPusherSocketID(),
   };
 
   // Assemble all the request data we'll be storing in the queue

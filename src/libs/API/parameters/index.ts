@@ -1,4 +1,8 @@
 export type {default as CloseAccountParams} from './CloseAccountParams';
+export type {default as SendFriendRequestParams} from './SendFriendRequestParams';
+export type {default as AcceptFriendRequestParams} from './AcceptFriendRequestParams';
+export type {default as DeleteFriendRequestParams} from './DeleteFriendRequestParams';
+export type {default as UnfriendParams} from './UnfriendParams';
 export type {default as GetMissingOnyxMessagesParams} from './GetMissingOnyxMessagesParams';
 export type {default as HandleRestrictedEventParams} from './HandleRestrictedEventParams';
 export type {default as OpenAppParams} from './OpenAppParams';

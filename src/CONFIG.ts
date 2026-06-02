@@ -29,6 +29,20 @@ const secureKirokuUrl = Url.addTrailingForwardSlash(
 );
 const useNgrok = get(Config, 'USE_NGROK', 'false') === 'true';
 const useWebProxy = get(Config, 'USE_WEB_PROXY', 'true') === 'true';
+
+// kiroku-api (first-party HTTPS function) base URLs. No trailing slash — route
+// paths in `libs/API/kirokuRoutes.ts` already include the `/v1` prefix. The env
+// vars allow pointing at the emulator / a branded domain during development.
+const kirokuApiDevRoot = get(
+  Config,
+  'KIROKU_API_DEV_ROOT',
+  'https://api-dev.kiroku.cz',
+).replace(/\/+$/, '');
+const kirokuApiProdRoot = get(
+  Config,
+  'KIROKU_API_PROD_ROOT',
+  'https://api.kiroku.cz',
+).replace(/\/+$/, '');
 // const kirokuComWithProxy = getPlatform() === 'web' && useWebProxy ? '/' : kirokuURL;
 const kirokuComWithProxy = kirokuURL;
 
@@ -102,10 +116,18 @@ export default {
     STAGING_API_ROOT: stagingKirokuURL,
     STAGING_SECURE_API_ROOT: stagingSecureKirokuUrl,
   },
+  KIROKU_API: {
+    // Base URL of the kiroku-api HTTPS function, selected by environment in
+    // `ApiUtils.getKirokuApiRoot()`. Route paths include the `/v1` prefix.
+    DEV_ROOT: kirokuApiDevRoot,
+    PROD_ROOT: kirokuApiProdRoot,
+  },
   PUSHER: {
     APP_KEY: get(Config, 'PUSHER_APP_KEY', ''),
+    // kiroku-api publishes to plain `private-user-<uid>` channels with no env
+    // suffix (dev/prod are separate Pusher apps), on the `eu` cluster.
     SUFFIX: get(Config, 'PUSHER_DEV_SUFFIX', ''),
-    CLUSTER: 'mt1',
+    CLUSTER: get(Config, 'PUSHER_CLUSTER', 'eu'),
   },
   APPLE_SIGN_IN: {
     SERVICE_ID: get(Config, 'APPLE_SIGN_IN_SERVICE_ID', ''),
