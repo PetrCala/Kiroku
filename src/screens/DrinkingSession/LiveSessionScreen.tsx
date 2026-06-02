@@ -3,7 +3,6 @@ import {useFirebase} from '@context/global/FirebaseContext';
 import * as DS from '@userActions/DrinkingSession';
 import * as ErrorUtils from '@libs/ErrorUtils';
 import type {DrinkingSession} from '@src/types/onyx';
-import {useUserConnection} from '@context/global/UserConnectionContext';
 import CONST from '@src/CONST';
 import type {StackScreenProps} from '@react-navigation/stack';
 import type {DrinkingSessionNavigatorParamList} from '@libs/Navigation/types';
@@ -15,7 +14,6 @@ import LocationTaggingPrompt from '@components/LocationTaggingPrompt';
 import useBatchedUpdates from '@hooks/useBatchedUpdates';
 import ScreenWrapper from '@components/ScreenWrapper';
 import FullScreenLoadingIndicator from '@components/FullscreenLoadingIndicator';
-import UserOfflineModal from '@components/UserOfflineModal';
 import {computeFirebaseUpdates} from '@database/updates';
 import type DeepValueOf from '@src/types/utils/DeepValueOf';
 import Navigation from '@libs/Navigation/Navigation';
@@ -32,7 +30,6 @@ function LiveSessionScreen({route}: LiveSessionScreenProps) {
   const {sessionId, backTo} = route.params;
   const {auth} = useFirebase();
   const user = auth.currentUser;
-  const {isOnline} = useUserConnection();
   const [session] = useOnyx(ONYXKEYS.ONGOING_SESSION_DATA);
   const sessionRef = useRef<DrinkingSession | undefined>(undefined);
   const [dbSyncSuccessful, setDbSyncSuccessful] = useState(false);
@@ -101,9 +98,6 @@ function LiveSessionScreen({route}: LiveSessionScreenProps) {
     // eslint-disable-next-line react-compiler/react-compiler, react-hooks/exhaustive-deps
   }, [session, user]); // Do not include enqueueUpdate in the dependencies, as it will cause an infinite loop
 
-  if (!isOnline) {
-    return <UserOfflineModal />;
-  }
   if (!session) {
     return <FullScreenLoadingIndicator />;
   }
