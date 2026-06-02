@@ -5,6 +5,7 @@ import type {
   DrinkingSessionList,
   FriendRequestList,
   NicknameToId,
+  OnyxUpdatesFromServer,
   PendingOAuthCredential,
   Preferences,
   Profile,
@@ -928,12 +929,24 @@ function subscribeToUserEvents() {
     userID,
     pushJSON => {
       const event = pushJSON as unknown as KirokuOnyxApiUpdateEvent;
-      OnyxUpdates.apply({
+      const previousUpdateID = Number(event.previousUpdateID ?? 0);
+      const updateParams: OnyxUpdatesFromServer = {
         type: CONST.ONYX_UPDATE_TYPES.PUSHER,
         lastUpdateID: Number(event.lastUpdateID ?? 0),
-        previousUpdateID: Number(event.previousUpdateID ?? 0),
+        previousUpdateID,
         updates: [{eventType: event.eventType, data: event.data}],
-      });
+      };
+
+      // If the client missed updates (e.g. pushes that arrived while offline),
+      // there is a gap between previousUpdateID and what we've applied. Defer this
+      // update and let OnyxUpdateManager backfill the gap via GET /v1/updates,
+      // then apply the deferred updates in order. Otherwise apply it directly.
+      if (OnyxUpdates.doesClientNeedToBeUpdated(previousUpdateID)) {
+        OnyxUpdates.saveUpdateInformation(updateParams);
+        return;
+      }
+
+      OnyxUpdates.apply(updateParams);
     },
   );
 }
