@@ -26,10 +26,10 @@ import type {
 Request.use(Middleware.Logging);
 
 // RecheckConnection - Sets a timer for a request that will "recheck" if we are connected to the internet if time runs out. Also triggers the connection recheck when we encounter any error.
-// Request.use(Middleware.RecheckConnection); // TODO enable this
+Request.use(Middleware.RecheckConnection);
 
-// Reauthentication - Handles jsonCode 407 which indicates an expired authToken. We need to reauthenticate and get a new authToken with our stored credentials.
-// Request.use(Middleware.Reauthentication);
+// Reauthentication - Handles jsonCode 407 (expired Firebase ID token): force-refreshes the token and replays the request.
+Request.use(Middleware.Reauthentication);
 
 // SaveResponseInOnyx - Merges either the successData or failureData (or finallyData, if included in place of the former two values) into Onyx depending on if the call was successful or not. This needs to be the LAST middleware we use, don't add any
 // middlewares after this, because the SequentialQueue depends on the result of this middleware to pause the queue (if needed) to bring the app to an up-to-date state.
