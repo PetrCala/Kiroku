@@ -3,8 +3,7 @@ import {View} from 'react-native';
 import SessionsCalendar from '@components/SessionsCalendar';
 import type {DateData} from 'react-native-calendars';
 import {dateToDateData, dateStringToDate} from '@libs/DataHandling';
-import {useUserConnection} from '@context/global/UserConnectionContext';
-import UserOffline from '@components/UserOfflineModal';
+import OfflineIndicator from '@components/OfflineIndicator';
 import {syncUserStatus} from '@userActions/User';
 import {useFirebase} from '@context/global/FirebaseContext';
 import ProfileImage from '@components/ProfileImage';
@@ -57,7 +56,6 @@ function HomeScreen({route}: HomeScreenProps) {
   const {auth} = useFirebase();
   const {translate} = useLocalize();
   const user = auth.currentUser;
-  const {isOnline} = useUserConnection();
   const [loadingText] = useOnyx(ONYXKEYS.APP_LOADING_TEXT);
   const [ongoingSessionData] = useOnyx(ONYXKEYS.ONGOING_SESSION_DATA);
   const [lastViewedCalendarDate] = useOnyx(
@@ -137,10 +135,6 @@ function HomeScreen({route}: HomeScreenProps) {
 
   if (!user) {
     throw new Error(translate('common.error.userNull'));
-  }
-
-  if (!isOnline) {
-    return <UserOffline />;
   }
 
   // Render the shell + skeletons immediately. Real components swap in for
@@ -243,6 +237,7 @@ function HomeScreen({route}: HomeScreenProps) {
       <ScreenWrapper
         testID={HomeScreen.displayName}
         includePaddingTop={false}
+        shouldShowOfflineIndicator={false}
         includeSafeAreaPaddingBottom={getPlatform() !== CONST.PLATFORM.IOS}>
         {/* // TODO rewrite this into the HeaderWithBackButton component */}
         {isUserDataReady ? (
@@ -271,6 +266,7 @@ function HomeScreen({route}: HomeScreenProps) {
           {renderBanner()}
           {renderMainContent()}
         </ScrollView>
+        <OfflineIndicator />
         <BottomTabBar />
       </ScreenWrapper>
       {/* Active operations (e.g. saving a session) take a full-screen overlay so
