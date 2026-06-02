@@ -1,5 +1,4 @@
 import React from 'react';
-import {useUserConnection} from '@context/global/UserConnectionContext';
 import CONST from '@src/CONST';
 import type {StackScreenProps} from '@react-navigation/stack';
 import type {DrinkingSessionNavigatorParamList} from '@libs/Navigation/types';
@@ -9,7 +8,6 @@ import ONYXKEYS from '@src/ONYXKEYS';
 import DrinkingSessionWindow from '@components/DrinkingSessionWindow';
 import ScreenWrapper from '@components/ScreenWrapper';
 import FullScreenLoadingIndicator from '@components/FullscreenLoadingIndicator';
-import UserOfflineModal from '@components/UserOfflineModal';
 import useLocalize from '@hooks/useLocalize';
 import type DeepValueOf from '@src/types/utils/DeepValueOf';
 import Navigation from '@libs/Navigation/Navigation';
@@ -23,7 +21,6 @@ type EditSessionScreenProps = StackScreenProps<
 
 function EditSessionScreen({route}: EditSessionScreenProps) {
   const {sessionId, backTo} = route.params;
-  const {isOnline} = useUserConnection();
   const {translate} = useLocalize();
   const [session] = useOnyx(ONYXKEYS.EDIT_SESSION_DATA);
 
@@ -56,9 +53,6 @@ function EditSessionScreen({route}: EditSessionScreenProps) {
     }
   };
 
-  if (!isOnline) {
-    return <UserOfflineModal />;
-  }
   if (!session) {
     return (
       <FullScreenLoadingIndicator
