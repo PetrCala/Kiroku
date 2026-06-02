@@ -1232,6 +1232,7 @@ export default {
     exitEditMode: 'Ukončit úpravy',
     noDrinkingSessions: 'Žádné alkoholové relace',
     addSessionExplained: 'Přidat relaci (plovoucí tlačítko)',
+    selectSessionDate: 'Vyberte datum nové relace',
     sessionWindow: ({sessionId}: SessionWindowIdParams) =>
       `Alkoholová relace: ${sessionId}`,
     ongoing: 'Probíhá',

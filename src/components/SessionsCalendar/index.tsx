@@ -47,7 +47,6 @@ function SessionsCalendar({
   initialMonthYear,
   initialFirstWeekY,
   initialDay,
-  onAddSessionForDay,
   onInitialScrollReady,
 }: SessionsCalendarProps) {
   const {auth} = useFirebase();
@@ -107,22 +106,46 @@ function SessionsCalendar({
   // spamming the friend-data fetcher on a fast scroll.
   const deepestRequestedRef = useRef<Date | null>(null);
 
+  // Hard floor: the user's earliest tracked month. Widening past it only loads
+  // empty months — and for the day-list (which renders no empty months) that
+  // means the list never grows, so an unguarded `loadUpTo` would loop until
+  // React's update-depth limit. Clamp to this and short-circuit once reached.
+  const minDateFloor = useMemo(
+    () => startOfMonth(parseISO(minDate)),
+    [minDate],
+  );
+
+  // Whether there is older data still to load — drives the day-list's load
+  // trigger and its "loading older" header. Once the loaded floor reaches the
+  // earliest tracked month there is nothing more to fetch.
+  const canLoadOlder =
+    loadedFromDate !== null &&
+    loadedFromDate.getTime() > minDateFloor.getTime();
+
   // Regular function — `loadedFrom` is a ref whose `.current` mutates
   // without re-rendering. A `useCallback` keyed on it would either be stale
   // or churn on every render. The view only calls this on real scroll
   // events, so referential stability isn't required.
   const handleRequestOlder = (earliestVisible: Date) => {
     const floor = loadedFrom?.current ?? new Date();
-    const target = computeLoadTarget(
+    if (floor.getTime() <= minDateFloor.getTime()) {
+      // Already loaded back to the earliest tracked month — nothing more.
+      return;
+    }
+    let target = computeLoadTarget(
       earliestVisible,
       floor,
       deepestRequestedRef.current,
       LOAD_AHEAD_BUFFER_MONTHS,
     );
-    if (target) {
-      deepestRequestedRef.current = target;
-      loadUpTo(target);
+    if (!target) {
+      return;
     }
+    if (target.getTime() < minDateFloor.getTime()) {
+      target = minDateFloor;
+    }
+    deepestRequestedRef.current = target;
+    loadUpTo(target);
   };
 
   // Eager prefetch on fullscreen open. The ref-guard makes this fire at
@@ -178,12 +201,11 @@ function SessionsCalendar({
         sessionEntriesByDay={sessionEntriesByDay}
         unitsMap={unitsMap}
         preferences={preferences}
-        loadedFromDate={loadedFromDate}
+        canLoadOlder={canLoadOlder}
         isFetchingOlderMonths={isFetchingOlderMonths}
         onRequestOlder={handleRequestOlder}
         initialDay={initialDay}
         onInitialScrollReady={onInitialScrollReady}
-        onAddSessionForDay={onAddSessionForDay}
       />
     );
   }

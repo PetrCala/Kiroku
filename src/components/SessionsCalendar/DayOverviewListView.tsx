@@ -2,12 +2,9 @@ import React, {memo, useCallback, useEffect, useMemo, useRef} from 'react';
 import {ActivityIndicator, View} from 'react-native';
 import {FlashList} from '@shopify/flash-list';
 import type {FlashListRef} from '@shopify/flash-list';
-import {format, startOfDay} from 'date-fns';
+import {format} from 'date-fns';
 import lodashDebounce from 'lodash/debounce';
 import Text from '@components/Text';
-import Icon from '@components/Icon';
-import * as KirokuIcons from '@components/Icon/KirokuIcons';
-import {PressableWithFeedback} from '@components/Pressable';
 import DrinkingSessionOverview from '@components/DrinkingSessionOverview';
 import useLocalize from '@hooks/useLocalize';
 import useTheme from '@hooks/useTheme';
@@ -16,14 +13,15 @@ import {dateStringToDate} from '@libs/DataHandling';
 import {roundToTwoDecimalPlaces} from '@libs/NumberUtils';
 import * as App from '@userActions/App';
 import CONST from '@src/CONST';
-import variables from '@styles/variables';
 import type {Preferences} from '@src/types/onyx';
 import type {DateString} from '@src/types/onyx/OnyxCommon';
 import type DrinkingSessionKeyValue from '@src/types/utils/databaseUtils';
 
-// Trigger an older-window fetch once the user scrolls within this fraction of
-// the list's end (FlashList's `onEndReachedThreshold` is end-relative).
-const END_REACHED_THRESHOLD = 1.5;
+// Trigger an older-window fetch once the lowest visible item is within this
+// many items of the top of the list (index 0). Generous so the parent's
+// prefetch starts well before the user reaches the loaded floor. Mirrors the
+// week-list view's `LOAD_AHEAD_BUFFER_WEEKS`.
+const LOAD_AHEAD_BUFFER_ITEMS = 12;
 
 // Debounce the "last viewed day" Onyx write so a fast scroll fires one write at
 // rest rather than on every viewability tick.
@@ -56,13 +54,15 @@ type DayOverviewListViewProps = {
   unitsMap: Map<DateString, number>;
   /** Preferences driving the session tiles' color/unit computation. */
   preferences: Preferences;
-  /** Earliest day currently loaded — the floor the older-fetch widens from. */
-  loadedFromDate: Date | null;
+  /** False once the loaded window reaches the user's earliest session — stops
+   *  the older-fetch trigger and hides the "loading older" header. */
+  canLoadOlder?: boolean;
   /** True while the data fetcher is widening the loaded window; renders a
-   *  "Loading older months…" row at the bottom of the list. */
+   *  "Loading older months…" row at the top of the list. */
   isFetchingOlderMonths?: boolean;
-  /** Called when the user nears the end of the list; receives the loaded floor
-   *  so the parent can decide (via `computeLoadTarget`) whether to widen. */
+  /** Called when the user scrolls within `LOAD_AHEAD_BUFFER_ITEMS` of the top;
+   *  receives the earliest visible day so the parent can decide whether to
+   *  widen the loaded window. */
   onRequestOlder?: (earliestVisible: Date) => void;
   /** Day ('YYYY-MM-DD') to land on at first render. Falls back to the nearest
    *  session day at-or-before it when the exact day has no sessions. */
@@ -70,29 +70,25 @@ type DayOverviewListViewProps = {
   /** Fires once the initial scroll has been applied (or determined that no
    *  scroll is needed). The parent screen uses this to unhide the list. */
   onInitialScrollReady?: () => void;
-  /** Renders a per-day-header `+` to backfill a session onto that day. Omit to
-   *  hide the affordance (e.g. read-only contexts). */
-  onAddSessionForDay?: (day: DateString) => void;
 };
 
 /**
  * Continuous, all-days scroll of the user's drinking sessions.
  *
- * One vertical list: a sticky header per day (date + total units + an optional
- * `+`), followed by that day's session tiles. Newest day first; scrolling down
- * walks back in time and lazily widens the loaded window. The day-overview
- * counterpart to `SessionsCalendarWeekListView`.
+ * One vertical list: a sticky header per day (date + total units), followed by
+ * that day's session tiles. Oldest day first, newest at the bottom — scrolling
+ * UP walks back in time and lazily widens the loaded window, matching the
+ * `SessionsCalendarWeekListView` direction.
  */
 function DayOverviewListView({
   sessionEntriesByDay,
   unitsMap,
   preferences,
-  loadedFromDate,
+  canLoadOlder,
   isFetchingOlderMonths,
   onRequestOlder,
   initialDay,
   onInitialScrollReady,
-  onAddSessionForDay,
 }: DayOverviewListViewProps) {
   const styles = useThemeStyles();
   const theme = useTheme();
@@ -101,13 +97,14 @@ function DayOverviewListView({
   // Flatten the day→sessions map into a single list: each day emits a header
   // followed by its sessions (chronological within the day). Build the sticky
   // header indices and a 'YYYY-MM-DD' → header-index map in the same pass for
-  // the initial-scroll lookup. Days are descending (newest first).
+  // the initial-scroll lookup. Days are ascending (oldest first, newest at the
+  // bottom).
   const {items, stickyHeaderIndices, dayHeaderIndexByDay, sortedDayKeys} =
     useMemo(() => {
       const out: ListItem[] = [];
       const sticky: number[] = [];
       const headerIndex = new Map<DateString, number>();
-      const days = Array.from(sessionEntriesByDay.keys()).sort().reverse();
+      const days = Array.from(sessionEntriesByDay.keys()).sort();
 
       days.forEach(dayKey => {
         sticky.push(out.length);
@@ -140,7 +137,7 @@ function DayOverviewListView({
     }, [sessionEntriesByDay, unitsMap]);
 
   // Resolve the row to land on. Exact day if it has sessions, else the nearest
-  // session day at-or-before it (days are descending, so the first key <=
+  // session day at-or-before it (days are ascending, so the largest key <=
   // target is the nearest). `undefined` until the loaded window includes a
   // matching day — the apply-scroll effect waits for `items` to widen.
   const targetIndex = useMemo(() => {
@@ -151,7 +148,14 @@ function DayOverviewListView({
     if (exact !== undefined) {
       return exact;
     }
-    const fallbackDay = sortedDayKeys.find(d => d <= initialDay);
+    let fallbackDay: DateString | undefined;
+    for (const day of sortedDayKeys) {
+      if (day <= initialDay) {
+        fallbackDay = day;
+      } else {
+        break;
+      }
+    }
     return fallbackDay ? dayHeaderIndexByDay.get(fallbackDay) : undefined;
   }, [initialDay, dayHeaderIndexByDay, sortedDayKeys]);
 
@@ -177,15 +181,11 @@ function DayOverviewListView({
       onInitialScrollReady?.();
       return;
     }
-    // No matching day yet. If the loaded window already reaches past the target
-    // day, there are simply no sessions at-or-before it to scroll to — stop
-    // waiting and reveal the list (empty/oldest view). Otherwise wait for the
-    // orchestrator to widen the window; this effect re-fires on `items`.
-    const windowCoversTarget =
-      loadedFromDate !== null &&
-      startOfDay(loadedFromDate).getTime() <=
-        dateStringToDate(initialDay).getTime();
-    if (windowCoversTarget || items.length === 0) {
+    // No matching day yet. If we can't load any older data (window already
+    // covers the user's earliest session) or there's nothing to show, stop
+    // waiting and reveal the list. Otherwise wait for the orchestrator to
+    // widen the window; this effect re-fires on `items`.
+    if (canLoadOlder === false || items.length === 0) {
       hasAppliedInitialScrollRef.current = true;
       onInitialScrollReady?.();
     }
@@ -193,13 +193,13 @@ function DayOverviewListView({
     initialDay,
     targetIndex,
     items.length,
-    loadedFromDate,
+    canLoadOlder,
     onInitialScrollReady,
   ]);
 
   // Record the day the user is looking at so the home/profile calendar can
-  // sync to it on back-navigation. Debounced; the writer reads the top-most
-  // visible item on each viewability change.
+  // sync to it on back-navigation. Debounced; reads the top-most visible item
+  // on each viewability change.
   const writeLastViewedDay = useMemo(
     () =>
       lodashDebounce((day: DateString) => {
@@ -209,8 +209,14 @@ function DayOverviewListView({
   );
   useEffect(() => () => writeLastViewedDay.cancel(), [writeLastViewedDay]);
 
+  // Older sessions live at the top (ascending order), so we lazy-load when the
+  // lowest visible index nears index 0 — the mirror image of the week-list's
+  // near-top trigger. The same handler records the top-most visible day.
   const onViewableItemsChanged = useCallback(
     ({viewableItems}: {viewableItems: Array<{index: number | null}>}) => {
+      if (viewableItems.length === 0) {
+        return;
+      }
       let minIndex = Number.POSITIVE_INFINITY;
       viewableItems.forEach(item => {
         if (item.index !== null && item.index < minIndex) {
@@ -220,23 +226,26 @@ function DayOverviewListView({
       if (minIndex === Number.POSITIVE_INFINITY) {
         return;
       }
+
       const topItem = items[minIndex];
       if (topItem) {
         writeLastViewedDay(topItem.dayKey);
       }
-    },
-    [items, writeLastViewedDay],
-  );
 
-  const onEndReached = useCallback(() => {
-    if (!onRequestOlder || items.length === 0) {
-      return;
-    }
-    // Widen relative to the loaded floor — `computeLoadTarget` only extends
-    // when the surfaced date is near the floor, so passing the floor itself
-    // reliably advances the window by the parent's buffer each time.
-    onRequestOlder(loadedFromDate ?? new Date());
-  }, [onRequestOlder, items.length, loadedFromDate]);
+      if (!onRequestOlder || !canLoadOlder) {
+        return;
+      }
+      if (minIndex > LOAD_AHEAD_BUFFER_ITEMS) {
+        return;
+      }
+      // The earliest visible day is the top-most visible item's day.
+      const earliest = items[Math.max(0, minIndex)];
+      if (earliest) {
+        onRequestOlder(dateStringToDate(earliest.dayKey));
+      }
+    },
+    [items, onRequestOlder, canLoadOlder, writeLastViewedDay],
+  );
 
   const renderItem = useCallback(
     (args: {item: ListItem}) => {
@@ -257,22 +266,6 @@ function DayOverviewListView({
                 })}
               </Text>
             )}
-            {onAddSessionForDay && (
-              <PressableWithFeedback
-                accessibilityLabel={translate(
-                  'dayOverviewScreen.addSessionExplained',
-                )}
-                accessibilityRole={CONST.ROLE.BUTTON}
-                onPress={() => onAddSessionForDay(item.dayKey)}
-                style={styles.ml2}>
-                <Icon
-                  src={KirokuIcons.Plus}
-                  fill={theme.textSupporting}
-                  width={variables.iconSizeSmall}
-                  height={variables.iconSizeSmall}
-                />
-              </PressableWithFeedback>
-            )}
           </View>
         );
       }
@@ -287,21 +280,20 @@ function DayOverviewListView({
     },
     [
       preferences,
-      onAddSessionForDay,
       translate,
-      theme.textSupporting,
       styles.sessionsCalendarMonthLabel,
       styles.sessionsCalendarMonthLabelText,
       styles.sessionsCalendarMonthLabelRule,
       styles.sessionsCalendarMonthLabelTotal,
-      styles.ml2,
     ],
   );
 
   const keyExtractor = useCallback((item: ListItem) => item.key, []);
 
-  const listFooter = useMemo(() => {
-    if (!isFetchingOlderMonths) {
+  // Sits above the oldest loaded day (the top of the list) — only while an
+  // older-data fetch is in flight, signaling "more on the way".
+  const listHeader = useMemo(() => {
+    if (!isFetchingOlderMonths || !canLoadOlder) {
       return null;
     }
     return (
@@ -314,6 +306,7 @@ function DayOverviewListView({
     );
   }, [
     isFetchingOlderMonths,
+    canLoadOlder,
     styles.sessionsCalendarLoadingRow,
     styles.sessionsCalendarLoadingRowText,
     theme.spinner,
@@ -338,6 +331,9 @@ function DayOverviewListView({
     ],
   );
 
+  // Land on the focused day, otherwise on the newest sessions (bottom).
+  const initialScrollIndex = targetIndex ?? Math.max(0, items.length - 1);
+
   return (
     <FlashList
       ref={listRef}
@@ -345,12 +341,10 @@ function DayOverviewListView({
       renderItem={renderItem}
       keyExtractor={keyExtractor}
       stickyHeaderIndices={stickyHeaderIndices}
-      initialScrollIndex={targetIndex}
+      initialScrollIndex={initialScrollIndex}
       showsVerticalScrollIndicator
+      ListHeaderComponent={listHeader}
       ListEmptyComponent={listEmpty}
-      ListFooterComponent={listFooter}
-      onEndReached={onEndReached}
-      onEndReachedThreshold={END_REACHED_THRESHOLD}
       onViewableItemsChanged={onViewableItemsChanged}
       viewabilityConfig={VIEWABILITY_CONFIG}
     />

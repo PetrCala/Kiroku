@@ -1243,6 +1243,7 @@ export default {
     exitEditMode: 'Exit Edit Mode',
     noDrinkingSessions: 'No drinking sessions',
     addSessionExplained: 'Add a session (Floating action)',
+    selectSessionDate: 'Select a date for the new session',
     sessionWindow: ({sessionId}: SessionWindowIdParams) =>
       `Drinking session: ${sessionId}`,
     ongoing: 'Ongoing',

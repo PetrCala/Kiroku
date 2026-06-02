@@ -52,10 +52,6 @@ type SessionsCalendarProps = {
   /** dayList-only. Day ('YYYY-MM-DD') to land on at first render. */
   initialDay?: DateString;
 
-  /** dayList-only. Renders a per-day-header `+` to backfill a session onto
-   *  that day. Omit to hide the affordance. */
-  onAddSessionForDay?: (day: DateString) => void;
-
   /** Fullscreen/dayList. Fires once the scroll view has applied its initial
    *  scroll (or determined it doesn't need one). The screen uses this to
    *  drop a loading overlay that hides the brief pre-scroll frame. */
