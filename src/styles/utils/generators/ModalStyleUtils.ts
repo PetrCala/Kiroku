@@ -101,6 +101,9 @@ const createModalStyleUtils: StyleUtilGenerator<GetModalStylesStyleUtil> = ({
           borderRadius: variables.componentBorderRadiusLarge,
           overflow: 'hidden',
           width: variables.sideBarWidth,
+          // The inner animated container is full-width with no alignItems, so a
+          // fixed-width card would pin to the left; center it explicitly.
+          alignSelf: 'center',
         };
 
         // setting this to undefined we effectively disable the
