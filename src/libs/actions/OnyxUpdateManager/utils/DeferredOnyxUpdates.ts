@@ -4,8 +4,6 @@ import * as SequentialQueue from '@libs/Network/SequentialQueue';
 import ONYXKEYS from '@src/ONYXKEYS';
 import type {OnyxUpdatesFromServer, Response} from '@src/types/onyx';
 import {isValidOnyxUpdateFromServer} from '@src/types/onyx/OnyxUpdatesFromServer';
-// eslint-disable-next-line import/no-cycle
-import * as OnyxUpdateManagerUtils from '.';
 
 let missingOnyxUpdatesQueryPromise:
   | Promise<Response | Response[] | void>
@@ -62,20 +60,6 @@ function isEmpty() {
   return Object.keys(deferredUpdates).length === 0;
 }
 
-/**
- * Manually processes and applies the updates from the deferred updates queue. (used e.g. for push notifications)
- */
-function process() {
-  if (missingOnyxUpdatesQueryPromise) {
-    missingOnyxUpdatesQueryPromise.finally(
-      () => OnyxUpdateManagerUtils.validateAndApplyDeferredUpdates,
-    );
-  }
-
-  missingOnyxUpdatesQueryPromise =
-    OnyxUpdateManagerUtils.validateAndApplyDeferredUpdates();
-}
-
 type EnqueueDeferredOnyxUpdatesOptions = {
   shouldPauseSequentialQueue?: boolean;
 };
@@ -111,18 +95,6 @@ function enqueue(
   }
 }
 
-/**
- * Adds updates to the deferred updates queue and processes them immediately
- * @param updates The updates that should be applied (e.g. updates from push notifications)
- */
-function enqueueAndProcess(
-  updates: OnyxUpdatesFromServer | DeferredUpdatesDictionary,
-  options?: EnqueueDeferredOnyxUpdatesOptions,
-) {
-  enqueue(updates, options);
-  process();
-}
-
 type ClearDeferredOnyxUpdatesOptions = {
   shouldResetGetMissingOnyxUpdatesPromise?: boolean;
   shouldUnpauseSequentialQueue?: boolean;
@@ -150,8 +122,6 @@ export {
   setMissingOnyxUpdatesQueryPromise,
   getUpdates,
   isEmpty,
-  process,
   enqueue,
-  enqueueAndProcess,
   clear,
 };

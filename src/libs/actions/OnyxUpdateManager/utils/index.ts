@@ -7,7 +7,6 @@ import type {
 } from '@libs/actions/OnyxUpdateManager/types';
 import ONYXKEYS from '@src/ONYXKEYS';
 import {applyUpdates} from './applyUpdates';
-// eslint-disable-next-line import/no-cycle
 import * as DeferredOnyxUpdates from './DeferredOnyxUpdates';
 
 let lastUpdateIDAppliedToClient = 0;
