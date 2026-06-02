@@ -59,6 +59,10 @@ const KIROKU_ROUTES: Record<string, KirokuRoute> = {
     method: 'post',
     path: '/v1/sessions/delete',
   },
+  [WRITE_COMMANDS.UPDATE_PREFERENCES]: {
+    method: 'post',
+    path: '/v1/preferences',
+  },
 };
 
 /** Returns the kiroku-api route for a command, or undefined for legacy commands. */

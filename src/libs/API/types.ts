@@ -35,6 +35,7 @@ const WRITE_COMMANDS = {
   UNFRIEND: 'Unfriend',
   UPDATE_SESSION: 'UpdateSession',
   DELETE_SESSION: 'DeleteSession',
+  UPDATE_PREFERENCES: 'UpdatePreferences',
   // ...
 } as const;
 
@@ -69,6 +70,7 @@ type WriteCommandParameters = {
   [WRITE_COMMANDS.UNFRIEND]: Parameters.UnfriendParams;
   [WRITE_COMMANDS.UPDATE_SESSION]: Parameters.UpdateSessionParams;
   [WRITE_COMMANDS.DELETE_SESSION]: Parameters.DeleteSessionParams;
+  [WRITE_COMMANDS.UPDATE_PREFERENCES]: Parameters.UpdatePreferencesParams;
 };
 
 const READ_COMMANDS = {

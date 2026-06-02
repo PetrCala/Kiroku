@@ -15,13 +15,11 @@ import CONST from '@src/CONST';
 import ONYXKEYS from '@src/ONYXKEYS';
 import type {Theme} from '@src/types/onyx';
 import ERRORS from '@src/ERRORS';
-import {useFirebase} from '@context/global/FirebaseContext';
 import FullScreenLoadingIndicator from '@components/FullscreenLoadingIndicator';
 
 function ThemeScreen() {
   const styles = useThemeStyles();
   const {translate} = useLocalize();
-  const {auth, db} = useFirebase();
   const [preferredTheme] = useOnyx(ONYXKEYS.PREFERRED_THEME);
   const [isLoading, setIsLoading] = React.useState(false);
   const {DEFAULT, FALLBACK, ...themes} = CONST.THEME;
@@ -36,7 +34,7 @@ function ThemeScreen() {
     (async () => {
       try {
         setIsLoading(true);
-        await Preferences.updateTheme(db, auth.currentUser, theme);
+        await Preferences.updateTheme(theme);
       } catch (error) {
         ErrorUtils.raiseAppError(ERRORS.USER.THEME_UPDATE_FAILED, error);
       } finally {

@@ -1,6 +1,5 @@
 import React, {useCallback, useMemo, useRef, useState} from 'react';
 import {Alert, View} from 'react-native';
-import {useFirebase} from '@context/global/FirebaseContext';
 import {getDefaultPreferences} from '@userActions/User';
 import type {UnitsToColors} from '@src/types/onyx';
 import {useDatabaseData} from '@context/global/DatabaseDataContext';
@@ -35,8 +34,6 @@ type PreferencesSliderConfig = NumericSliderProps & {
 function UnitsToColorsScreen() {
   const styles = useThemeStyles();
   const {translate} = useLocalize();
-  const {auth, db} = useFirebase();
-  const user = auth.currentUser;
   const {preferences} = useDatabaseData();
   const initialValues = useRef(preferences?.units_to_colors);
   const [saving, setSaving] = useState<boolean>(false);
@@ -67,7 +64,7 @@ function UnitsToColorsScreen() {
     (async () => {
       try {
         setSaving(true);
-        await Preferences.updatePreferences(db, user, {
+        await Preferences.updatePreferences({
           units_to_colors: currentValues,
         });
         initialValues.current = currentValues;

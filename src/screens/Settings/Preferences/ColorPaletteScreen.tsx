@@ -1,6 +1,5 @@
 import React, {useState} from 'react';
 import {Alert, View} from 'react-native';
-import {useFirebase} from '@context/global/FirebaseContext';
 import {useDatabaseData} from '@context/global/DatabaseDataContext';
 import Navigation from '@libs/Navigation/Navigation';
 import ScreenWrapper from '@components/ScreenWrapper';
@@ -58,8 +57,6 @@ function ColorPaletteScreen() {
   const StyleUtils = useStyleUtils();
   const theme = useTheme();
   const {translate} = useLocalize();
-  const {auth, db} = useFirebase();
-  const user = auth.currentUser;
   const {preferences} = useDatabaseData();
   const [pendingPaletteId, setPendingPaletteId] = useState<PaletteId | null>(
     null,
@@ -88,7 +85,7 @@ function ColorPaletteScreen() {
     }
     setPendingPaletteId(id);
     setSaving(true);
-    Preferences.updatePreferences(db, user, {
+    Preferences.updatePreferences({
       session_color_palette: PALETTES[id],
     })
       .catch(error => {
@@ -110,7 +107,7 @@ function ColorPaletteScreen() {
     }
     setPendingUseOwnForOthers(next);
     setSavingUseOwnForOthers(true);
-    Preferences.updatePreferences(db, user, {
+    Preferences.updatePreferences({
       use_own_palette_for_others: next,
     })
       .catch(error => {
