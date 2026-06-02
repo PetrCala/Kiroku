@@ -16,7 +16,7 @@ import * as Profile from '@userActions/Profile';
 import SearchResult from '@components/Search/SearchResult';
 import SearchWindow from '@components/Social/SearchWindow';
 import type {UserSearchResults} from '@src/types/various/Search';
-import {useDatabaseData} from '@context/global/DatabaseDataContext';
+import useCurrentUserData from '@hooks/useCurrentUserData';
 import Navigation from '@libs/Navigation/Navigation';
 import ScreenWrapper from '@components/ScreenWrapper';
 import HeaderWithBackButton from '@components/HeaderWithBackButton';
@@ -29,7 +29,7 @@ import ERRORS from '@src/ERRORS';
 function FriendSearchScreen() {
   const {auth, db, storage} = useFirebase();
   const styles = useThemeStyles();
-  const {userData} = useDatabaseData();
+  const userData = useCurrentUserData();
   const user = auth.currentUser;
   const {translate} = useLocalize();
   const [searchResultData, setSearchResultData] = useState<UserSearchResults>(
@@ -131,14 +131,13 @@ function FriendSearchScreen() {
       <SearchResult
         userID={userID}
         userDisplayData={displayData[userID]}
-        db={db}
         storage={storage}
         userFrom={user?.uid ?? ''}
         requestStatus={requestStatuses[userID]}
         alreadyAFriend={friends ? friends[userID] : false}
       />
     ),
-    [displayData, db, storage, user?.uid, requestStatuses, friends],
+    [displayData, storage, user?.uid, requestStatuses, friends],
   );
 
   if (!user) {

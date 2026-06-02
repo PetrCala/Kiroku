@@ -1,6 +1,5 @@
 import React from 'react';
 import {View} from 'react-native';
-import type {Database} from 'firebase/database';
 import type {FirebaseStorage} from 'firebase/storage';
 import ProfileImage from '@components/ProfileImage';
 import {SupporterBadgeForUser} from '@components/SupporterBadge';
@@ -13,7 +12,6 @@ import SendFriendRequestButton from './SendFriendRequestButton';
 type SearchResultProps = {
   userID: string;
   userDisplayData: Profile;
-  db: Database;
   storage: FirebaseStorage;
   userFrom: string;
   requestStatus: FriendRequestStatus | undefined;
@@ -24,7 +22,6 @@ type SearchResultProps = {
 function SearchResult({
   userID,
   userDisplayData,
-  db,
   storage,
   userFrom,
   requestStatus,
@@ -54,7 +51,6 @@ function SearchResult({
       </View>
       {customButton ?? (
         <SendFriendRequestButton
-          db={db}
           userFrom={userFrom}
           userTo={userID}
           requestStatus={requestStatus}
