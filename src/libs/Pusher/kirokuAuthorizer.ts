@@ -2,11 +2,11 @@ import type {
   ChannelAuthorizerGenerator,
   ChannelAuthorizationCallback,
 } from 'pusher-js/with-encryption';
+import * as ApiUtils from '@libs/ApiUtils';
+import {getFirebaseAuth} from '@libs/Firebase/FirebaseApp';
 
 /** The auth-data shape Pusher's authorization callback accepts (`{auth, ...}`). */
 type ChannelAuthData = Parameters<ChannelAuthorizationCallback>[1];
-import * as ApiUtils from '@libs/ApiUtils';
-import {getFirebaseAuth} from '@libs/Firebase/FirebaseApp';
 
 /**
  * Custom Pusher channel authorizer for kiroku-api. pusher-js's default
