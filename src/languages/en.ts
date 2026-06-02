@@ -1369,10 +1369,6 @@ export default {
     howToOpen:
       'Open via ⌘D → Open Test Preferences, or a four-finger tap anywhere in the app.',
   },
-  userOffline: {
-    heading: 'You are offline',
-    text: 'Unfortunately, Kiroku does not support offline mode yet. We appreciate your patience while we work on this feature.',
-  },
   userList: {
     noFriendsFound: 'No friends found.',
     tryModifyingSearch: 'Try modifying the search text.',

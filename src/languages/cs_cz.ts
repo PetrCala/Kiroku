@@ -1368,10 +1368,6 @@ export default {
     howToOpen:
       'Otevřete přes ⌘D → Open Test Preferences nebo čtyřprstovým ťuknutím kdekoli v aplikaci.',
   },
-  userOffline: {
-    heading: 'Jste offline',
-    text: 'Aplikace Kiroku zatím nepodporuje offline režim. Děkujeme vám za trpělivost při vývoji této funkce.',
-  },
   userList: {
     noFriendsFound: 'Žádní přátelé nenalezeni.',
     tryModifyingSearch: 'Zkuste upravit vyhledávaný text.',

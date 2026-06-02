@@ -40,6 +40,7 @@ import Mail from '@assets/images/mail.svg';
 import Menu from '@assets/images/menu.svg';
 import Minus from '@assets/images/minus.svg';
 import NewWindow from '@assets/images/new-window.svg';
+import OfflineCloud from '@assets/images/offline-cloud.svg';
 import Plus from '@assets/images/plus.svg';
 import AppleLogo from '@assets/images/apple-logo.svg';
 import Gear from '@assets/images/gear.svg';
@@ -112,6 +113,7 @@ export {
   Menu,
   Minus,
   NewWindow,
+  OfflineCloud,
   Edit as Pencil,
   Plus,
   Profile,
