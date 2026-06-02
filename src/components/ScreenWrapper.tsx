@@ -30,7 +30,7 @@ import CONST from '@src/CONST';
 // import CustomDevMenu from './CustomDevMenu';
 import HeaderGap from './HeaderGap';
 import KeyboardAvoidingView from './KeyboardAvoidingView';
-// import OfflineIndicator from './OfflineIndicator';
+import OfflineIndicator from './OfflineIndicator';
 import SafeAreaConsumer from './SafeAreaConsumer';
 import TestToolsModal from './TestToolsModal';
 import withNavigationFallback from './withNavigationFallback';
@@ -128,8 +128,8 @@ function ScreenWrapper(
     shouldEnablePickerAvoiding = true, // eslint-disable-line @typescript-eslint/no-unused-vars
     headerGapStyles,
     children,
-    shouldShowOfflineIndicator = true, // eslint-disable-line @typescript-eslint/no-unused-vars
-    offlineIndicatorStyle, // eslint-disable-line @typescript-eslint/no-unused-vars
+    shouldShowOfflineIndicator = true,
+    offlineIndicatorStyle,
     style,
     shouldDismissKeyboardBeforeClose = true,
     onEntryTransitionEnd,
@@ -314,28 +314,9 @@ function ScreenWrapper(
                         })
                       : children
                   }
-                  {/* {isSmallScreenWidth && shouldShowOfflineIndicator && (
-                    <>
-                      <OfflineIndicator style={offlineIndicatorStyle} /> */}
-                  {/* Since import state is tightly coupled to the offline state, it is safe to display it when showing offline indicator */}
-                  {/* <ImportedStateIndicator />
-                    </>
+                  {shouldShowOfflineIndicator && (
+                    <OfflineIndicator style={offlineIndicatorStyle} />
                   )}
-                  {!shouldUseNarrowLayout &&
-                    shouldShowOfflineIndicatorInWideScreen && (
-                      <>
-                        <OfflineIndicator
-                          containerStyles={[]}
-                          style={[
-                            styles.pl5,
-                            styles.offlineIndicatorRow,
-                            offlineIndicatorStyle,
-                          ]}
-                        /> */}
-                  {/* Since import state is tightly coupled to the offline state, it is safe to display it when showing offline indicator */}
-                  {/* <ImportedStateIndicator />
-                      </>
-                    )} */}
                 </ScreenWrapperStatusContext.Provider>
                 {/* </PickerAvoidingView> */}
               </KeyboardAvoidingView>

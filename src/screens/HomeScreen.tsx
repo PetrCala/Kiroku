@@ -7,8 +7,7 @@ import {
   timestampToDate,
   dateToDateData,
 } from '@libs/DataHandling';
-import {useUserConnection} from '@context/global/UserConnectionContext';
-import UserOffline from '@components/UserOfflineModal';
+import OfflineIndicator from '@components/OfflineIndicator';
 import {synchronizeUserStatus} from '@userActions/User';
 import {useFirebase} from '@context/global/FirebaseContext';
 import ProfileImage from '@components/ProfileImage';
@@ -60,7 +59,6 @@ function HomeScreen({route}: HomeScreenProps) {
   const {auth, db, storage} = useFirebase();
   const {translate} = useLocalize();
   const user = auth.currentUser;
-  const {isOnline} = useUserConnection();
   const [loadingText] = useOnyx(ONYXKEYS.APP_LOADING_TEXT);
   const [ongoingSessionData] = useOnyx(ONYXKEYS.ONGOING_SESSION_DATA);
   const {drinkingSessionData, preferences, userData, isFetchingOlderMonths} =
@@ -154,10 +152,6 @@ function HomeScreen({route}: HomeScreenProps) {
     throw new Error(translate('common.error.userNull'));
   }
 
-  if (!isOnline) {
-    return <UserOffline />;
-  }
-
   // Active operations (e.g. saving a session) still take a full-screen overlay
   // so they don't compete with the home UI for attention.
   if (loadingText) {
@@ -201,6 +195,7 @@ function HomeScreen({route}: HomeScreenProps) {
     <ScreenWrapper
       testID={HomeScreen.displayName}
       includePaddingTop={false}
+      shouldShowOfflineIndicator={false}
       includeSafeAreaPaddingBottom={getPlatform() !== CONST.PLATFORM.IOS}>
       {/* // TODO rewrite this into the HeaderWithBackButton component */}
       {isUserDataReady ? (
@@ -239,6 +234,7 @@ function HomeScreen({route}: HomeScreenProps) {
         )}
         {renderMainContent()}
       </ScrollView>
+      <OfflineIndicator />
       <BottomTabBar />
     </ScreenWrapper>
   );

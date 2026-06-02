@@ -10,7 +10,6 @@ import type {NativeEventSubscription} from 'react-native';
 import {AppState, Linking, Platform, StyleSheet, View} from 'react-native';
 import Onyx, {useOnyx} from 'react-native-onyx';
 import {useFirebase} from '@context/global/FirebaseContext';
-import {useUserConnection} from '@context/global/UserConnectionContext';
 import SplashScreenStateContext from '@context/global/SplashScreenStateContext';
 import {useConfig} from '@context/global/ConfigContext';
 import Navigation from './libs/Navigation/Navigation';
@@ -31,8 +30,6 @@ import setCrashlyticsUserId from './libs/setCrashlyticsUserId';
 import {checkIfUnderMaintenance} from './libs/Maintenance';
 import {validateAppVersion} from './libs/Validation';
 import UnderMaintenanceModal from './components/Modals/UnderMaintenanceModal';
-import UserOfflineModal from './components/UserOfflineModal';
-import CONFIG from './CONFIG';
 import UpdateAppModal from './components/UpdateAppModal';
 import ForceUpdateModal from './components/Modals/ForceUpdateModal';
 import VerifyEmailModal from './components/VerifyEmailModal';
@@ -65,7 +62,6 @@ const SplashScreenHiddenContext = React.createContext({});
 
 function Kiroku() {
   const {auth} = useFirebase();
-  const {isOnline} = useUserConnection();
   const appStateChangeListener = useRef<NativeEventSubscription | null>(null);
   const [isNavigationReady, setIsNavigationReady] = useState(false);
   const [isOnyxMigrated, setIsOnyxMigrated] = useState(false);
@@ -311,10 +307,7 @@ function Kiroku() {
           {loadingText ? (
             <FullScreenLoadingIndicator loadingText={loadingText} />
           ) : (
-            <>
-              {!isOnline && !CONFIG.IS_USING_EMULATORS && <UserOfflineModal />}
-              {isUnderMaintenance && <UnderMaintenanceModal config={config} />}
-            </>
+            isUnderMaintenance && <UnderMaintenanceModal config={config} />
           )}
 
           {shouldInit && (

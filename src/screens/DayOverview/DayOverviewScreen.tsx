@@ -2,8 +2,7 @@ import React, {useState, useEffect, useMemo} from 'react';
 import {View, FlatList} from 'react-native';
 import * as KirokuIcons from '@components/Icon/KirokuIcons';
 import {changeDateBySomeDays, dateStringToDate} from '@libs/DataHandling';
-import UserOffline from '@components/UserOfflineModal';
-import {useUserConnection} from '@context/global/UserConnectionContext';
+import OfflineIndicator from '@components/OfflineIndicator';
 import type {DrinkingSessionList} from '@src/types/onyx';
 import type DrinkingSessionKeyValue from '@src/types/utils/databaseUtils';
 import type {StackScreenProps} from '@react-navigation/stack';
@@ -41,7 +40,6 @@ type DayOverviewScreenProps = StackScreenProps<
 
 function DayOverviewScreen({route}: DayOverviewScreenProps) {
   const {date} = route.params;
-  const {isOnline} = useUserConnection();
   const {translate} = useLocalize();
   const styles = useThemeStyles();
   const StyleUtils = useStyleUtils();
@@ -112,15 +110,14 @@ function DayOverviewScreen({route}: DayOverviewScreenProps) {
     ));
   }, [currentDate, StyleUtils, windowWidth, styles]);
 
-  if (!isOnline) {
-    return <UserOffline />;
-  }
   if (!date || !!loadingText) {
     return <FullScreenLoadingIndicator loadingText={loadingText} />;
   }
 
   return (
-    <ScreenWrapper testID={DayOverviewScreen.displayName}>
+    <ScreenWrapper
+      testID={DayOverviewScreen.displayName}
+      shouldShowOfflineIndicator={false}>
       <HeaderWithBackButton
         onBackButtonPress={Navigation.goBack}
         customRightButton={
@@ -170,6 +167,7 @@ function DayOverviewScreen({route}: DayOverviewScreenProps) {
           ListFooterComponentStyle={[styles.alignSelfCenter, styles.mt3]}
         />
       </View>
+      <OfflineIndicator />
       <View style={[styles.bottomTabBarContainer]}>{changeDayButtons}</View>
     </ScreenWrapper>
   );

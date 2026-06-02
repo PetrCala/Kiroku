@@ -2853,6 +2853,11 @@ const styles = (theme: ThemeColors) =>
     supporterCtaText: {
       color: theme.textOnBrand,
     },
+
+    offlineIndicatorContainer: {
+      paddingHorizontal: 20,
+      paddingVertical: 8,
+    },
   }) satisfies Styles;
 
 type ThemeStyles = ReturnType<typeof styles>;
