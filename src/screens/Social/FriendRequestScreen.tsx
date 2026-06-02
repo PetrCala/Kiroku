@@ -15,7 +15,7 @@ import * as Profile from '@userActions/Profile';
 import GrayHeader from '@components/Header/GrayHeader';
 import {objKeys} from '@libs/DataHandling';
 import CONST from '@src/CONST';
-import {useDatabaseData} from '@context/global/DatabaseDataContext';
+import useCurrentUserData from '@hooks/useCurrentUserData';
 import Navigation from '@libs/Navigation/Navigation';
 import ROUTES from '@src/ROUTES';
 import NoFriendInfo from '@components/Social/NoFriendInfo';
@@ -194,7 +194,7 @@ function FriendRequestItem({
 
 function FriendRequestScreen() {
   const {db} = useFirebase();
-  const {userData} = useDatabaseData();
+  const userData = useCurrentUserData();
   const theme = useTheme();
   const styles = useThemeStyles();
   const {translate} = useLocalize();

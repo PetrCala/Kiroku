@@ -24,7 +24,7 @@ import FillerView from '@components/FillerView';
 import type {StackScreenProps} from '@react-navigation/stack';
 import type {ProfileNavigatorParamList} from '@libs/Navigation/types';
 import type SCREENS from '@src/SCREENS';
-import {useDatabaseData} from '@context/global/DatabaseDataContext';
+import useCurrentUserData from '@hooks/useCurrentUserData';
 import Navigation from '@libs/Navigation/Navigation';
 import ROUTES from '@src/ROUTES';
 import DBPATHS from '@src/DBPATHS';
@@ -48,7 +48,7 @@ function FriendsFriendsScreen({route}: FriendsFriendsScreenProps) {
   const styles = useThemeStyles();
   const {userID} = route.params;
   const {auth, db, storage} = useFirebase();
-  const {userData} = useDatabaseData();
+  const userData = useCurrentUserData();
   const user = auth.currentUser;
   const {translate} = useLocalize();
   const [searching, setSearching] = useState<boolean>(false);
@@ -97,7 +97,6 @@ function FriendsFriendsScreen({route}: FriendsFriendsScreenProps) {
           key={`${id}-container`}
           userID={id}
           userDisplayData={displayData[id]}
-          db={db}
           storage={storage}
           userFrom={currentUserId}
           requestStatus={requestStatuses[id]}

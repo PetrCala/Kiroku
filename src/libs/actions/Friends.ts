@@ -7,12 +7,14 @@ import CONST from '@src/CONST';
 import ONYXKEYS from '@src/ONYXKEYS';
 
 /**
- * Friend actions, cut over from direct Firebase RTDB writes
- * (`src/database/friends.ts`) to kiroku-api `API.write` calls. Authority is
- * server-side (the caller's Firebase ID token), so callers pass only the
- * counterpart id; the caller's own uid is used solely for the optimistic Onyx
- * update, which mirrors the server's `onyxData` so the inline response is
- * idempotent. Friend reads still flow through the existing Firebase listeners.
+ * Friend actions, cut over from direct Firebase RTDB writes to kiroku-api
+ * `API.write` calls. Authority is server-side (the caller's Firebase ID token),
+ * so callers pass only the counterpart id; the caller's own uid is used solely
+ * for the optimistic Onyx update, which mirrors the server's `onyxData` so the
+ * inline response is idempotent. Friend reads are sourced from Onyx
+ * `userDataList` (the signed-in user's `friends`/`friend_requests`), hydrated by
+ * `app/open` and kept in sync via Pusher + `/v1/updates` — not Firebase
+ * listeners.
  */
 
 function getCurrentUserID(): string | undefined {
@@ -20,7 +22,10 @@ function getCurrentUserID(): string | undefined {
 }
 
 /** Optimistic `merge userDataList { [uid]: patch }`, matching server onyxData. */
-function userDataPatch(uid: string, patch: Record<string, unknown>): OnyxUpdate {
+function userDataPatch(
+  uid: string,
+  patch: Record<string, unknown>,
+): OnyxUpdate {
   return {
     onyxMethod: Onyx.METHOD.MERGE,
     key: ONYXKEYS.USER_DATA_LIST,

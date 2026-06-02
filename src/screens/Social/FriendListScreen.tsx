@@ -4,7 +4,7 @@ import type {UserIDToNicknameMapping} from '@src/types/various/Search';
 import React, {useCallback, useEffect, useMemo, useState} from 'react';
 import {objKeys} from '@libs/DataHandling';
 import {getNicknameMapping, searchArrayByText} from '@libs/Search';
-import {useDatabaseData} from '@context/global/DatabaseDataContext';
+import useCurrentUserData from '@hooks/useCurrentUserData';
 import type {UserArray} from '@src/types/onyx/OnyxCommon';
 import Text from '@components/Text';
 import * as ErrorUtils from '@libs/ErrorUtils';
@@ -16,7 +16,7 @@ import useThemeStyles from '@hooks/useThemeStyles';
 import ERRORS from '@src/ERRORS';
 
 function FriendListScreen() {
-  const {userData} = useDatabaseData();
+  const userData = useCurrentUserData();
   const {translate} = useLocalize();
   const styles = useThemeStyles();
   const [friends, setFriends] = useState<UserArray>([]);

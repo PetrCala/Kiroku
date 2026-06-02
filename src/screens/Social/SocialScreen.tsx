@@ -2,13 +2,12 @@ import React, {useState} from 'react';
 import {Dimensions, StyleSheet, View} from 'react-native';
 import * as KirokuIcons from '@components/Icon/KirokuIcons';
 import {getReceivedRequestsCount} from '@libs/FriendUtils';
-import type {UserData} from '@src/types/onyx';
 import type {StackScreenProps} from '@react-navigation/stack';
 import type SCREENS from '@src/SCREENS';
 import type {SocialNavigatorParamList} from '@libs/Navigation/types';
 import Navigation from '@libs/Navigation/Navigation';
 import {PressableWithFeedback} from '@components/Pressable';
-import {useDatabaseData} from '@context/global/DatabaseDataContext';
+import useCurrentUserData from '@hooks/useCurrentUserData';
 import ScreenWrapper from '@components/ScreenWrapper';
 import HeaderWithBackButton from '@components/HeaderWithBackButton';
 import useLocalize from '@hooks/useLocalize';
@@ -84,21 +83,19 @@ type SocialScreenProps = StackScreenProps<
 type RouteType = {
   key: string;
   title: string;
-  userData: UserData | undefined;
 };
 
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 function SocialScreen(_: SocialScreenProps) {
-  const {userData} = useDatabaseData();
+  const userData = useCurrentUserData();
   const {translate} = useLocalize();
   const styles = useThemeStyles();
   const [routes] = useState([
-    {key: 'friendList', title: translate('socialScreen.friendList'), userData},
-    // {key: 'friendSearch', translate('socialScreen.friendSearch'), userData: userData},
+    {key: 'friendList', title: translate('socialScreen.friendList')},
+    // {key: 'friendSearch', title: translate('socialScreen.friendSearch')},
     {
       key: 'friendRequests',
       title: translate('socialScreen.friendRequests'),
-      userData,
     },
   ]);
 
