@@ -20,7 +20,7 @@ jobs:
     name: Seed macOS node_modules cache
     runs-on: macos-26
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       - uses: ./.github/actions/composite/setupNode
 
   confirmPassingBuild:
@@ -29,7 +29,7 @@ jobs:
     if: ${{ always() }}
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
       - name: Announce failed workflow in Discord
         if: ${{ needs.typecheck.result == 'failure' || needs.lint.result == 'failure' || needs.test.result == 'failure' }}
@@ -52,7 +52,7 @@ jobs:
       IS_AUTOMATION_PR: ${{ steps.shouldDeploy.outputs.IS_AUTOMATION_PR }}
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
       - name: Get merged pull request
         id: getMergedPullRequest

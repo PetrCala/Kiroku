@@ -39,7 +39,7 @@ jobs:
           fi
 
       - name: Checkout source branch
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
         with:
           ref: ${{ steps.getSourceBranch.outputs.SOURCE_BRANCH }}
           token: ${{ secrets.KIROKU_ADMIN_COMMIT_TOKEN }}

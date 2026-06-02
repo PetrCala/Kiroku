@@ -20,7 +20,7 @@ jobs:
       contents: write
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
         with:
           # Checkout the PR head ref (not the merge ref) so the bootstrap
           # step below can push the seatbelt baseline back to the branch.
@@ -31,7 +31,7 @@ jobs:
         uses: ./.github/actions/composite/setupNode
 
       - name: Cache ESLint cache
-        uses: actions/cache@v4
+        uses: actions/cache@v5
         with:
           path: node_modules/.cache/eslint
           key: ${{ runner.os }}-eslint-${{ hashFiles('package-lock.json', 'eslint.config.mjs') }}

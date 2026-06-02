@@ -44,7 +44,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - name: Setup Node
         uses: ./.github/actions/composite/setupNode
@@ -64,7 +64,7 @@ jobs:
         run: echo "REACT_NATIVE_DOWNLOADS_DIR=$HOME/.rn-downloads" >> "$GITHUB_ENV"
 
       - name: Cache Gradle and React Native downloads (Boost, etc.)
-        uses: actions/cache@v4
+        uses: actions/cache@v5
         with:
           path: |
             ~/.gradle/caches
@@ -135,7 +135,7 @@ jobs:
     runs-on: macos-26
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - name: Setup Node
         id: setup-node
@@ -147,7 +147,7 @@ jobs:
           bundler-cache: true
 
       - name: Cache Pod dependencies
-        uses: actions/cache@v4
+        uses: actions/cache@v5
         id: pods-cache
         with:
           path: |
@@ -233,7 +233,7 @@ jobs:
       # the dSYM for debugging.
       - name: Stash iOS dSYM as workflow artifact
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         with:
           name: ios-dsym-${{ inputs.APP_VERSION }}
           path: |
@@ -273,7 +273,7 @@ jobs:
     needs: [android, iOS]
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - name: Copy release assets
         env:
@@ -308,7 +308,7 @@ jobs:
     needs: [android, iOS, copyProductionReleaseAssets]
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - name: Warn deployers if staging deploy failed
         uses: ./.github/actions/composite/announceFailedWorkflowInDiscord
@@ -322,7 +322,7 @@ jobs:
     needs: [android, iOS, copyProductionReleaseAssets]
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - name: 'Announces the deploy in the #announce Discord channel'
         shell: bash
@@ -373,7 +373,7 @@ jobs:
     needs: [android, iOS]
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - name: Setup Node
         uses: ./.github/actions/composite/setupNode

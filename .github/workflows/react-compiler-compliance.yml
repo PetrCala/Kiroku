@@ -18,7 +18,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
         with:
           # Leave `ref` unset so the default `pull_request` merge ref
           # (refs/pull/N/merge = master + this PR) is checked out. The script

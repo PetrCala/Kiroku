@@ -34,7 +34,7 @@ jobs:
       DEVELOPER_DIR: /Applications/Xcode_26.1.1.app/Contents/Developer
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - name: Stage .env.production from secret
         run: echo "${{ secrets.PRODUCTION_ENV_FILE }}" > .env.production
@@ -49,7 +49,7 @@ jobs:
           bundler-cache: true
 
       - name: Cache Pod dependencies
-        uses: actions/cache@v4
+        uses: actions/cache@v5
         id: pods-cache
         with:
           path: |
@@ -63,7 +63,7 @@ jobs:
         run: echo "IS_PODFILE_SAME_AS_MANIFEST=${{ hashFiles('ios/Podfile.lock') == hashFiles('ios/Pods/Manifest.lock') }}" >> "$GITHUB_OUTPUT"
 
       - name: Install cocoapods
-        uses: nick-invision/retry@0711ba3d7808574133d713a0d92d2941be03a350
+        uses: nick-fields/retry@ad984534de44a9489a53aefd81eb77f87c70dc60 # v4.0.0
         if: steps.pods-cache.outputs.cache-hit != 'true' || steps.compare-podfile-and-manifest.outputs.IS_PODFILE_SAME_AS_MANIFEST != 'true' || steps.setup-node.outputs.cache-hit != 'true'
         with:
           timeout_minutes: 10
@@ -79,7 +79,7 @@ jobs:
       # simulator runtime — xcodebuild crashes with "iOS 26.1 is not installed"
       # otherwise. Same step that testBuild.yml uses.
       - name: Install iOS platform SDK
-        uses: nick-invision/retry@0711ba3d7808574133d713a0d92d2941be03a350
+        uses: nick-fields/retry@ad984534de44a9489a53aefd81eb77f87c70dc60 # v4.0.0
         with:
           timeout_minutes: 15
           max_attempts: 3
@@ -108,7 +108,7 @@ jobs:
 
       - name: Upload iOS screenshots
         if: ${{ always() }}
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         with:
           name: ios-screenshots-${{ github.sha }}
           path: fastlane/screenshots/ios/**/*.png
@@ -117,7 +117,7 @@ jobs:
 
       - name: Upload fastlane logs on failure
         if: ${{ failure() }}
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         with:
           name: ios-fastlane-logs-${{ github.sha }}
           path: |
