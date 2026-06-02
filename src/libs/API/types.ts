@@ -36,6 +36,9 @@ const WRITE_COMMANDS = {
   UPDATE_SESSION: 'UpdateSession',
   DELETE_SESSION: 'DeleteSession',
   UPDATE_PREFERENCES: 'UpdatePreferences',
+  CAPTURE_SESSION_LOCATION: 'CaptureSessionLocation',
+  CLEAR_SESSION_LOCATIONS: 'ClearSessionLocations',
+  PURGE_SESSION_LOCATIONS: 'PurgeSessionLocations',
   // ...
 } as const;
 
@@ -71,6 +74,9 @@ type WriteCommandParameters = {
   [WRITE_COMMANDS.UPDATE_SESSION]: Parameters.UpdateSessionParams;
   [WRITE_COMMANDS.DELETE_SESSION]: Parameters.DeleteSessionParams;
   [WRITE_COMMANDS.UPDATE_PREFERENCES]: Parameters.UpdatePreferencesParams;
+  [WRITE_COMMANDS.CAPTURE_SESSION_LOCATION]: Parameters.CaptureSessionLocationParams;
+  [WRITE_COMMANDS.CLEAR_SESSION_LOCATIONS]: Parameters.ClearSessionLocationsParams;
+  [WRITE_COMMANDS.PURGE_SESSION_LOCATIONS]: EmptyObject;
 };
 
 const READ_COMMANDS = {

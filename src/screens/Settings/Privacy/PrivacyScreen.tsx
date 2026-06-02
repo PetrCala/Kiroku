@@ -122,19 +122,13 @@ function PrivacyScreen() {
       return;
     }
     setIsPurging(true);
-    SessionLocations.purgeAll(db, user)
-      .then(() => {
-        setShowPurgeConfirmModal(false);
-        Alert.alert(translate('privacyScreen.clearLocationHistory.success'));
-      })
-      .catch(error => {
-        const errorMessage = error instanceof Error ? error.message : '';
-        Alert.alert(
-          translate('privacyScreen.clearLocationHistory.error'),
-          errorMessage,
-        );
-      })
-      .finally(() => setIsPurging(false));
+    // Fire-and-forget: the write is queued and replayed offline, so reflect it
+    // optimistically. There is no Onyx state to roll back and the queued write
+    // never throws here.
+    SessionLocations.purgeAll();
+    setShowPurgeConfirmModal(false);
+    Alert.alert(translate('privacyScreen.clearLocationHistory.success'));
+    setIsPurging(false);
   };
 
   // Match PreferencesScreen: the system back press goes back through the

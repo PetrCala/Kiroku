@@ -63,6 +63,18 @@ const KIROKU_ROUTES: Record<string, KirokuRoute> = {
     method: 'post',
     path: '/v1/preferences',
   },
+  [WRITE_COMMANDS.CAPTURE_SESSION_LOCATION]: {
+    method: 'post',
+    path: '/v1/session-locations/capture',
+  },
+  [WRITE_COMMANDS.CLEAR_SESSION_LOCATIONS]: {
+    method: 'post',
+    path: '/v1/session-locations/clear',
+  },
+  [WRITE_COMMANDS.PURGE_SESSION_LOCATIONS]: {
+    method: 'post',
+    path: '/v1/session-locations/purge',
+  },
 };
 
 /** Returns the kiroku-api route for a command, or undefined for legacy commands. */
