@@ -17,7 +17,7 @@ import * as Session from '@userActions/Session';
 import Timing from '@userActions/Timing';
 import * as User from '@userActions/User';
 import {getDatabase} from 'firebase/database';
-// import CONFIG from '@src/CONFIG';
+import CONFIG from '@src/CONFIG';
 import CONST from '@src/CONST';
 import NAVIGATORS from '@src/NAVIGATORS';
 import ONYXKEYS from '@src/ONYXKEYS';
@@ -30,6 +30,9 @@ import {
 import {useSplashScreenStateContext} from '@context/global/SplashScreenStateContext';
 import type {SelectedTimezone, Timezone} from '@src/types/onyx/UserData';
 import {FirebaseApp, getFirebaseAuth} from '@libs/Firebase/FirebaseApp';
+import * as Pusher from '@libs/Pusher/pusher';
+import * as ApiUtils from '@libs/ApiUtils';
+import kirokuPusherAuthorizer from '@libs/Pusher/kirokuAuthorizer';
 import type ReactComponentModule from '@src/types/utils/ReactComponentModule';
 import useResponsiveLayout from '@hooks/useResponsiveLayout';
 import {useFirebase} from '@context/global/FirebaseContext';
@@ -208,13 +211,14 @@ function AuthScreensContent() {
     // NetworkConnection.listenForReconnect();
     // NetworkConnection.onReconnect(handleNetworkReconnect);
     // PusherConnectionManager.init();
-    // Pusher.init({
-    //   appKey: CONFIG.PUSHER.APP_KEY,
-    //   cluster: CONFIG.PUSHER.CLUSTER,
-    //   authEndpoint: `${CONFIG.KIROKU.DEFAULT_API_ROOT}api/AuthenticatePusher?`,
-    // }).then(() => {
-    //   User.subscribeToUserEvents();
-    // });
+    Pusher.registerCustomAuthorizer(kirokuPusherAuthorizer);
+    Pusher.init({
+      appKey: CONFIG.PUSHER.APP_KEY,
+      cluster: CONFIG.PUSHER.CLUSTER,
+      authEndpoint: `${ApiUtils.getKirokuApiRoot()}/v1/pusher/auth`,
+    }).then(() => {
+      User.subscribeToUserEvents();
+    });
 
     // If we are on this screen then we are "logged in", but the user might not have "just logged in". They could be reopening the app
     // or returning from background. If so, we'll assume they have some app data already and we can call reconnectApp() instead of openApp().

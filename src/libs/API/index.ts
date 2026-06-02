@@ -3,7 +3,7 @@ import Onyx from 'react-native-onyx';
 import Log from '@libs/Log';
 import * as Middleware from '@libs/Middleware';
 import * as SequentialQueue from '@libs/Network/SequentialQueue';
-// import * as Pusher from '@libs/Pusher/pusher';
+import * as Pusher from '@libs/Pusher/pusher';
 import * as Request from '@libs/Request';
 import CONST from '@src/CONST';
 import type OnyxRequest from '@src/types/onyx/Request';
@@ -79,7 +79,7 @@ function write<TCommand extends WriteCommand>(
 
     // We send the pusherSocketID with all write requests so that the api can include it in push events to prevent Pusher from sending the events to the requesting client. The push event
     // is sent back to the requesting client in the response data instead, which prevents a replay effect in the UI. See https://github.com/Expensify/App/issues/12775.
-    // pusherSocketID: Pusher.getPusherSocketID(),
+    pusherSocketID: Pusher.getPusherSocketID(),
   };
 
   // Assemble all the request data we'll be storing in the queue
