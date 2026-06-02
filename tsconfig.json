@@ -34,6 +34,19 @@
       "@userActions/*": ["./src/libs/actions/*"]
     }
   },
+  // ts-node-only overrides (ignored by tsc). The root config inherits
+  // `module: preserve` + `moduleResolution: bundler` from expo/tsconfig.base so
+  // `tsc` passes, but ts-node would then hand `.ts` entries to Node's native ESM
+  // loader (ERR_UNKNOWN_FILE_EXTENSION on Node 20). Force CommonJS so ts-node's
+  // require hook compiles `.ts` itself; `node` resolution avoids TS5095 (bundler
+  // requires module preserve/es2015+); tsconfig-paths resolves `@src/*` aliases.
+  "ts-node": {
+    "require": ["tsconfig-paths/register"],
+    "compilerOptions": {
+      "module": "CommonJS",
+      "moduleResolution": "node"
+    }
+  },
   "include": [
     "__mocks__",
     "__tests__",
