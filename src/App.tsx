@@ -24,7 +24,7 @@ import CustomStatusBarAndBackgroundContextProvider from './components/CustomStat
 import AppleAuthWrapper from './components/SignInButtons/AppleAuthWrapper';
 import type {Route} from './ROUTES';
 import Kiroku from './Kiroku';
-// import OnyxUpdateManager from './libs/actions/OnyxUpdateManager';
+import OnyxUpdateManager from './libs/actions/OnyxUpdateManager';
 // import {LogBox} from 'react-native';
 
 type KirokuProps = {
@@ -42,7 +42,7 @@ type KirokuProps = {
 const fill = {flex: 1};
 
 function App({url}: KirokuProps): React.JSX.Element {
-  // OnyxUpdateManager(); // Fix the API first before enabling this
+  OnyxUpdateManager();
 
   return (
     <SplashScreenStateContextProvider>
