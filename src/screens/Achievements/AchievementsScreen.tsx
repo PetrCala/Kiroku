@@ -10,6 +10,7 @@ import ScreenWrapper from '@components/ScreenWrapper';
 import Text from '@components/Text';
 import {useDatabaseData} from '@context/global/DatabaseDataContext';
 import {useFirebase} from '@context/global/FirebaseContext';
+import useCurrentUserDrinkingSessions from '@hooks/useCurrentUserDrinkingSessions';
 import useLocalize from '@hooks/useLocalize';
 import useTheme from '@hooks/useTheme';
 import useThemeStyles from '@hooks/useThemeStyles';
@@ -35,7 +36,8 @@ function AchievementsScreen() {
   const theme = useTheme();
   const {auth, db} = useFirebase();
   const user = auth.currentUser;
-  const {preferences, drinkingSessionData} = useDatabaseData();
+  const {preferences} = useDatabaseData();
+  const drinkingSessionData = useCurrentUserDrinkingSessions();
   const [privateData] = useOnyx(ONYXKEYS.USER_PRIVATE_DATA);
   const [ongoingSession] = useOnyx(ONYXKEYS.ONGOING_SESSION_DATA);
   const [isEditing, setIsEditing] = useState(false);

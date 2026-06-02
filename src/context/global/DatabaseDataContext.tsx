@@ -5,7 +5,6 @@ import Onyx from 'react-native-onyx';
 import type {
   Config,
   DataVisibility,
-  DrinkingSessionList,
   Preferences,
   UnconfirmedDays,
   UserData,
@@ -20,7 +19,6 @@ import {useFirebase} from './FirebaseContext';
 
 type DatabaseDataContextType = {
   userStatusData?: UserStatus;
-  drinkingSessionData?: DrinkingSessionList;
   preferences?: Preferences;
   unconfirmedDays?: UnconfirmedDays;
   userData?: UserData;
@@ -29,8 +27,10 @@ type DatabaseDataContextType = {
   dataVisibility?: DataVisibility;
   /** Global app configuration, including the terms re-consent signal. */
   config?: Config;
-  /** True while a wider-window resubscribe for `drinkingSessionData` is in
-   *  flight (calendar scrolled past the loaded edge). */
+  /** Legacy windowed-listener flag. Always `false` now that the signed-in
+   *  user's sessions are read in full from Onyx `cachedDrinkingSessions`
+   *  (the Firebase session listener was removed); kept until the calendar's
+   *  older-months loading UI is cleaned up. */
   isFetchingOlderMonths: boolean;
 };
 
@@ -60,7 +60,6 @@ function DatabaseDataProvider({children}: DatabaseDataProviderProps) {
   const dataTypes: FetchDataKeys = [
     'config',
     'userStatusData',
-    'drinkingSessionData',
     'preferences',
     'unconfirmedDays',
     'userData',
@@ -72,7 +71,6 @@ function DatabaseDataProvider({children}: DatabaseDataProviderProps) {
   const value = useMemo(
     () => ({
       userStatusData: data.userStatusData,
-      drinkingSessionData: data.drinkingSessionData,
       preferences: data.preferences,
       unconfirmedDays: data.unconfirmedDays,
       userData: data.userData,

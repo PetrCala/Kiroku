@@ -10,7 +10,7 @@ import type {StackScreenProps} from '@react-navigation/stack';
 import type {DayOverviewNavigatorParamList} from '@libs/Navigation/types';
 import type SCREENS from '@src/SCREENS';
 import Navigation from '@libs/Navigation/Navigation';
-import {useDatabaseData} from '@context/global/DatabaseDataContext';
+import useCurrentUserDrinkingSessions from '@hooks/useCurrentUserDrinkingSessions';
 import * as DSUtils from '@libs/DrinkingSessionUtils';
 import CONST from '@src/CONST';
 import ScreenWrapper from '@components/ScreenWrapper';
@@ -47,7 +47,7 @@ function DayOverviewScreen({route}: DayOverviewScreenProps) {
   const StyleUtils = useStyleUtils();
   const [loadingText] = useOnyx(ONYXKEYS.APP_LOADING_TEXT);
   const {windowWidth} = useWindowDimensions();
-  const {drinkingSessionData} = useDatabaseData();
+  const drinkingSessionData = useCurrentUserDrinkingSessions();
   const [currentDate, setCurrentDate] = useState<Date>(
     date ? dateStringToDate(date) : new Date(),
   );
