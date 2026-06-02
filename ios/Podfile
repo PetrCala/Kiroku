@@ -12,6 +12,11 @@ end
 node_require('react-native/scripts/react_native_pods.rb')
 node_require('react-native-permissions/scripts/setup.rb')
 
+# Download prebuilt React Native third-party dependencies (folly, fmt, glog,
+# double-conversion, boost, etc.) as an xcframework instead of compiling them
+# from source on every cold build. RN 0.81 feature — big cold-build win.
+ENV['RCT_USE_RN_DEP'] ||= '1'
+
 platform :ios, min_ios_version_supported
 prepare_react_native_project!
 
@@ -85,12 +90,20 @@ target 'kiroku' do
 
   post_install do |installer|
 
+    # Enable React Native's built-in ccache integration when the `ccache` binary
+    # is on PATH. Routes pod compilation through ccache so unchanged native code
+    # (Reanimated, Skia wrapper, SVG, Firebase glue, Nitro, codegen specs, etc.)
+    # is served from cache across clean builds and branch switches. No-ops safely
+    # for anyone without ccache installed.
+    ccache_enabled = !`command -v ccache 2>/dev/null`.strip.empty?
+
     react_native_post_install(
       installer,
       config[:reactNativePath],
       # Set `mac_catalyst_enabled` to `true` in order to apply patches
       # necessary for Mac Catalyst builds
-      :mac_catalyst_enabled => false
+      :mac_catalyst_enabled => false,
+      :ccache_enabled => ccache_enabled
     )
     __apply_Xcode_14_3_RC_post_install_workaround(installer)
 
