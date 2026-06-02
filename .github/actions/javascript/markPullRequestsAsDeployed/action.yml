@@ -22,5 +22,5 @@ inputs:
         description: "iOS job result ('success', 'failure', 'cancelled', or 'skipped')"
         required: true
 runs:
-    using: "node20"
+    using: "node24"
     main: "./index.js"

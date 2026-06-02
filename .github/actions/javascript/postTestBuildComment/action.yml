@@ -20,5 +20,5 @@ inputs:
         description: "Link for the iOS build"
         required: false
 runs:
-    using: "node20"
+    using: "node24"
     main: "./index.js"
