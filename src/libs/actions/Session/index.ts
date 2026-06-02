@@ -38,7 +38,7 @@ import navigationRef from '@libs/Navigation/navigationRef';
 import * as MainQueue from '@libs/Network/MainQueue';
 // import * as NetworkStore from '@libs/Network/NetworkStore';
 // import NetworkConnection from '@libs/NetworkConnection';
-// import * as Pusher from '@libs/Pusher/pusher';
+import * as Pusher from '@libs/Pusher/pusher';
 // import * as ReportUtils from '@libs/ReportUtils';
 import Timers from '@libs/Timers';
 // import {hideContextMenu} from '@pages/home/report/ContextMenu/ReportActionContextMenu';
@@ -662,8 +662,11 @@ function setHasCheckedAutoLogin(val: boolean) {
  * - Clears all current params of the Home route - the login page URL should not contain any parameter
  */
 function cleanupSession() {
-  // TODO enable this
-  // Pusher.disconnect();
+  // Tear down the realtime socket so stale `private-user-<uid>` subscriptions
+  // don't survive logout. Without this the socket is reused across account
+  // switches on the same device, leaving the previous user's channel bound and
+  // leaking their onyxApiUpdate stream into the next user's Onyx store.
+  Pusher.disconnect();
   Timers.clearAll();
   // PriorityMode.resetHasReadRequiredDataFromStorage();
   MainQueue.clear();
