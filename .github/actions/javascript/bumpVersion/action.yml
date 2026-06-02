@@ -13,5 +13,5 @@ outputs:
   NEW_IOS_VERSION:
     description: The new CFBundleVersion written to the iOS plist files.
 runs:
-  using: 'node20'
+  using: 'node24'
   main: './index.js'
