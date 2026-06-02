@@ -1,67 +1,64 @@
 import Onyx from 'react-native-onyx';
-import type {Database} from 'firebase/database';
-import {update, ref, set} from 'firebase/database';
-import ONYXKEYS from '@src/ONYXKEYS';
-import * as Localize from '@libs/Localize';
+import type {OnyxUpdate} from 'react-native-onyx';
+import * as API from '@libs/API';
+import {WRITE_COMMANDS} from '@libs/API/types';
 import Navigation from '@libs/Navigation/Navigation';
+import ONYXKEYS from '@src/ONYXKEYS';
 import type {Preferences, Theme} from '@src/types/onyx';
-import DBPATHS from '@src/DBPATHS';
-import type {User} from '@firebase/auth';
 
-/** Save preferences data into the database.
+/**
+ * Preference writes, cut over from direct Firebase RTDB writes to the kiroku-api
+ * `POST /v1/preferences` endpoint. The server validates the partial update and
+ * writes each recognized field under `user_preferences/$uid` (the same nodes the
+ * legacy writes targeted). Authority is server-side (the caller's Firebase ID
+ * token), so callers pass only the changed fields.
  *
- * Throw an error in case the save attempt fails.
- *
- * @param db Firebase database object
- * @param userID User ID
- * @param preferencesData New preferences
- * @returns
- *
- * @example
- * ```ts
- * const db = getDatabase();
- * const user = getCurrentUser();
- * const newDrinksToUnits = getDrinksToUnits();
- * await savePreferences(db, user.uid, {drinks_to_units: newDrinksToUnits});
- * ```
+ * Reads are untouched: every preference field still hydrates through the Firebase
+ * preferences listener (`DatabaseDataContext`), so this coexists with no behavior
+ * change until the read cutover (#809).
  */
-async function updatePreferences(
-  db: Database,
-  user: User | null,
+
+/**
+ * Optimistic Onyx updates mirroring the server's `onyxData`. Only `theme` and
+ * `locale` have dedicated top-level Onyx keys, so only those are echoed; the
+ * remaining fields have no top-level key and are reflected by the Firebase
+ * listener after the write lands. Mirroring the server keeps the inline/pushed
+ * response idempotent.
+ */
+function preferencesOptimisticData(
   updates: Partial<Preferences>,
-): Promise<void> {
-  if (!user) {
-    throw new Error(Localize.translateLocal('common.error.userNull'));
+): OnyxUpdate[] {
+  const optimisticData: OnyxUpdate[] = [];
+  if (updates.theme !== undefined) {
+    optimisticData.push({
+      onyxMethod: Onyx.METHOD.SET,
+      key: ONYXKEYS.PREFERRED_THEME,
+      value: updates.theme,
+    });
   }
-  const preferencesRoute = DBPATHS.USER_PREFERENCES_USER_ID.getRoute(user.uid);
-  await update(ref(db, preferencesRoute), updates);
+  if (updates.locale !== undefined) {
+    optimisticData.push({
+      onyxMethod: Onyx.METHOD.SET,
+      key: ONYXKEYS.NVP_PREFERRED_LOCALE,
+      value: updates.locale,
+    });
+  }
+  return optimisticData;
 }
 
-/** Update the user's preferred theme */
-async function updateTheme(db: Database, user: User | null, theme: Theme) {
-  if (!user) {
-    throw new Error(Localize.translateLocal('common.error.userNull'));
-  }
-  // const optimisticData: OnyxUpdate[] = [
-  //   {
-  //     onyxMethod: Onyx.METHOD.SET,
-  //     key: ONYXKEYS.PREFERRED_THEME,
-  //     value: theme,
-  //   },
-  // ];
+/** Persist a partial preferences update via kiroku-api. */
+function updatePreferences(updates: Partial<Preferences>): Promise<void> {
+  API.write(WRITE_COMMANDS.UPDATE_PREFERENCES, updates, {
+    optimisticData: preferencesOptimisticData(updates),
+  });
+  return Promise.resolve();
+}
 
-  // const parameters: UpdateThemeParams = {
-  //   value: theme,
-  // };
-
-  // API.write(WRITE_COMMANDS.UPDATE_THEME, parameters, {optimisticData});
-
-  const dbPath = DBPATHS.USER_PREFERENCES_USER_ID_THEME;
-
-  await set(ref(db, dbPath.getRoute(user.uid)), theme);
-  await Onyx.set(ONYXKEYS.PREFERRED_THEME, theme);
-
+/** Update the user's preferred theme, then navigate back. */
+function updateTheme(theme: Theme): Promise<void> {
+  const result = updatePreferences({theme});
   Navigation.goBack();
+  return result;
 }
 
 export {updatePreferences, updateTheme};

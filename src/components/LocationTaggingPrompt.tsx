@@ -1,6 +1,5 @@
 import React, {useState} from 'react';
 import {Alert} from 'react-native';
-import {useFirebase} from '@context/global/FirebaseContext';
 import {useDatabaseData} from '@context/global/DatabaseDataContext';
 import useLocalize from '@hooks/useLocalize';
 import * as Preferences from '@userActions/Preferences';
@@ -20,8 +19,6 @@ import ConfirmModal from './ConfirmModal';
 function LocationTaggingPrompt() {
   const {translate} = useLocalize();
   const {preferences} = useDatabaseData();
-  const {auth, db} = useFirebase();
-  const user = auth.currentUser;
 
   const [dismissed, setDismissed] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -44,7 +41,7 @@ function LocationTaggingPrompt() {
     checkPermission('location')
       .then(allowed => (allowed ? true : requestPermission('location')))
       .then(isGranted =>
-        Preferences.updatePreferences(db, user, {
+        Preferences.updatePreferences({
           location_prompt_seen: true,
           ...(isGranted ? {track_location_during_sessions: true} : {}),
         }),
@@ -60,12 +57,10 @@ function LocationTaggingPrompt() {
 
   const onCancel = () => {
     setDismissed(true);
-    Preferences.updatePreferences(db, user, {location_prompt_seen: true}).catch(
-      () => {
-        // Best-effort: if persisting "seen" fails (e.g. offline write error),
-        // the prompt may reappear on a future live session, which is acceptable.
-      },
-    );
+    Preferences.updatePreferences({location_prompt_seen: true}).catch(() => {
+      // Best-effort: if persisting "seen" fails (e.g. offline write error),
+      // the prompt may reappear on a future live session, which is acceptable.
+    });
   };
 
   return (

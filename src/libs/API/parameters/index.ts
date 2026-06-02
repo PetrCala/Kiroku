@@ -16,6 +16,7 @@ export type {default as UpdateDateOfBirthParams} from './UpdateDateOfBirthParams
 export type {default as UpdateDisplayNameParams} from './UpdateDisplayNameParams';
 export type {default as UpdateHomeAddressParams} from './UpdateHomeAddressParams';
 export type {default as UpdateLegalNameParams} from './UpdateLegalNameParams';
+export type {default as UpdatePreferencesParams} from './UpdatePreferencesParams';
 export type {default as UpdatePreferredLocaleParams} from './UpdatePreferredLocaleParams';
 export type {default as UpdatePronounsParams} from './UpdatePronounsParams';
 export type {default as UpdateSelectedTimezoneParams} from './UpdateSelectedTimezoneParams';

@@ -75,7 +75,7 @@ function PrivacyScreen() {
     }
     setPendingCrashReporting(next);
     setSavingCrashReporting(true);
-    Preferences.updatePreferences(db, user, {
+    Preferences.updatePreferences({
       crash_reporting_enabled: next,
     })
       .catch(error => {
@@ -105,7 +105,7 @@ function PrivacyScreen() {
           setPendingTrackLocation(null);
           return undefined;
         }
-        return Preferences.updatePreferences(db, user, {
+        return Preferences.updatePreferences({
           track_location_during_sessions: next,
         });
       })
