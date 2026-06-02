@@ -67,7 +67,7 @@ const CONST = {
     IN: 'in',
     OUT: 'out',
   },
-  APP_DOWNLOAD_LINK: KIROKU_URL,
+  APP_DOWNLOAD_LINK: `${KIROKU_URL}/get`,
   APP_URLS: {
     DEV: 'https://dev.kiroku.cz',
     STAGING: 'https://staging.kiroku.cz',
