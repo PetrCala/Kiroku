@@ -7,7 +7,6 @@ import * as DS from '@userActions/DrinkingSession';
 import * as SessionLocations from '@userActions/SessionLocations';
 import {findDrinkNameTranslationKey} from '@libs/DataHandling';
 import {useDatabaseData} from '@context/global/DatabaseDataContext';
-import {useFirebase} from '@context/global/FirebaseContext';
 import CONST from '@src/CONST';
 import useTheme from '@hooks/useTheme';
 import * as KirokuIcons from './Icon/KirokuIcons';
@@ -24,7 +23,6 @@ type DrinkTypesViewProps = {
 function DrinkTypesView({session}: DrinkTypesViewProps) {
   const {translate} = useLocalize();
   const {preferences} = useDatabaseData();
-  const {auth, db} = useFirebase();
   const styles = useThemeStyles();
   const theme = useTheme();
 
@@ -45,12 +43,9 @@ function DrinkTypesView({session}: DrinkTypesViewProps) {
       // Fire-and-forget: capture must never block the drink-add UX.
       // captureForTimestamp swallows its own errors internally; the .catch
       // is a belt-and-suspenders no-op to satisfy no-floating-promises.
-      SessionLocations.captureForTimestamp(
-        db,
-        auth.currentUser,
-        session.id,
-        timestamp,
-      ).catch(() => {});
+      SessionLocations.captureForTimestamp(session.id, timestamp).catch(
+        () => {},
+      );
     }
   };
 

@@ -5,6 +5,8 @@ export type {default as DeleteFriendRequestParams} from './DeleteFriendRequestPa
 export type {default as UnfriendParams} from './UnfriendParams';
 export type {default as UpdateSessionParams} from './UpdateSessionParams';
 export type {default as DeleteSessionParams} from './DeleteSessionParams';
+export type {default as CaptureSessionLocationParams} from './CaptureSessionLocationParams';
+export type {default as ClearSessionLocationsParams} from './ClearSessionLocationsParams';
 export type {default as GetMissingOnyxMessagesParams} from './GetMissingOnyxMessagesParams';
 export type {default as HandleRestrictedEventParams} from './HandleRestrictedEventParams';
 export type {default as OpenAppParams} from './OpenAppParams';
