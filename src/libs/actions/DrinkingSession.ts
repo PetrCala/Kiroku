@@ -15,7 +15,6 @@ import type {
   DrinksToUnits,
   DrinksTimestamp,
   UserDataList,
-  UserStatus,
 } from '@src/types/onyx';
 import * as Localize from '@libs/Localize';
 import * as DSUtils from '@libs/DrinkingSessionUtils';
@@ -25,6 +24,9 @@ import CONST from '@src/CONST';
 import type {FirebaseUpdates} from '@database/updates';
 import {generateDatabaseKey} from '@database/baseFunctions';
 import Onyx from 'react-native-onyx';
+import type {OnyxUpdate} from 'react-native-onyx';
+import * as API from '@libs/API';
+import {WRITE_COMMANDS} from '@libs/API/types';
 import type {OnyxKey} from '@src/ONYXKEYS';
 import ONYXKEYS from '@src/ONYXKEYS';
 import Navigation from '@libs/Navigation/Navigation';
@@ -33,15 +35,10 @@ import ROUTES from '@src/ROUTES';
 import {differenceInDays, startOfDay} from 'date-fns';
 import type {SelectedTimezone} from '@src/types/onyx/UserData';
 import type {ValueOf} from 'type-fest';
-// eslint-disable-next-line you-dont-need-lodash-underscore/for-each
-import forEach from 'lodash/forEach';
 import DBPATHS from '@src/DBPATHS';
 import {Alert} from 'react-native';
 
-const drinkingSessionRef = DBPATHS.USER_DRINKING_SESSIONS_USER_ID_SESSION_ID;
 const userDrinkingSessionsRef = DBPATHS.USER_DRINKING_SESSIONS_USER_ID;
-const userStatusRef = DBPATHS.USER_STATUS_USER_ID;
-const userStatusLatestSessionRef = DBPATHS.USER_STATUS_USER_ID_LATEST_SESSION;
 const earliestSessionAtRef = DBPATHS.USERS_USER_ID_EARLIEST_SESSION_AT;
 
 let ongoingSessionData: DrinkingSession | undefined;
@@ -66,6 +63,54 @@ Onyx.connect({
     userDataList = value ?? undefined;
   },
 });
+
+/**
+ * Optimistic `merge cachedDrinkingSessions { [uid]: { [sessionId]: session } }`,
+ * mirroring the `onyxData` the kiroku-api sessions endpoints emit. A `null`
+ * `session` removes it from the cached snapshot (Onyx merge-delete semantics).
+ */
+function cachedSessionPatch(
+  uid: UserID,
+  sessionId: DrinkingSessionId,
+  session: DrinkingSession | null,
+): OnyxUpdate {
+  return {
+    onyxMethod: Onyx.METHOD.MERGE,
+    key: ONYXKEYS.CACHED_DRINKING_SESSIONS,
+    value: {[uid]: {[sessionId]: session}},
+  };
+}
+
+/** Optimistic `merge userDataList { [uid]: { earliest_session_at } }`. */
+function earliestPatch(uid: UserID, earliest: number): OnyxUpdate {
+  return {
+    onyxMethod: Onyx.METHOD.MERGE,
+    key: ONYXKEYS.USER_DATA_LIST,
+    value: {[uid]: {earliest_session_at: earliest}},
+  };
+}
+
+/**
+ * Optimistic data for a session upsert: the cached-snapshot merge plus, when the
+ * new `start_time` strictly lowers the floor (or there is no floor yet), the
+ * `earliest_session_at` merge. Non-strict edits (which may move the previously
+ * earliest session later) are left to the server, which recomputes the floor and
+ * returns/pushes the authoritative value — the inline response is idempotent.
+ */
+function sessionUpsertOptimisticData(
+  uid: UserID,
+  sessionId: DrinkingSessionId,
+  session: DrinkingSession,
+): OnyxUpdate[] {
+  const optimisticData: OnyxUpdate[] = [
+    cachedSessionPatch(uid, sessionId, session),
+  ];
+  const currentEarliest = userDataList?.[uid]?.earliest_session_at;
+  if (currentEarliest === undefined || session.start_time < currentEarliest) {
+    optimisticData.push(earliestPatch(uid, session.start_time));
+  }
+  return optimisticData;
+}
 
 /**
  * Query Firebase for the user's earliest remaining session and persist the
@@ -136,42 +181,24 @@ async function updateLocalData(
   await Onyx.set(onyxKey, dataToSet);
 }
 
-/** Write drinking session data into the database
- *
- * @param db Firebase Database object
- * @param string userID User ID
- * @param updates The updates to send, with base path set to the session ID
- * @param updateStatus Whether to update the user status data or not
- * @returnsPromise void.
- *  */
-async function updateDrinkingSessionData(
-  db: Database,
+/**
+ * Persist the full live (ongoing) drinking session via kiroku-api. Called from
+ * the live-session screen's batched sync as the user adds drinks/notes. The
+ * server upserts the session and — because `sessionIsLive` — mirrors it into the
+ * user's live status; the optimistic data mirrors the cached snapshot. The live
+ * editing state itself lives in `ONGOING_SESSION_DATA` and is owned by the
+ * screen; this only persists it.
+ */
+function updateLiveDrinkingSessionData(
   userID: UserID,
-  updates: FirebaseUpdates,
   sessionId: DrinkingSessionId,
-  updateStatus?: boolean,
-): Promise<void> {
-  const updatesToDB: FirebaseUpdates = {};
-
-  const dsPath = drinkingSessionRef.getRoute(userID, sessionId);
-
-  // Be mindful of using Object.forEach here, as that leads to an incorrect parsing of the object for some reason
-  // eslint-disable-next-line you-dont-need-lodash-underscore/for-each
-  forEach(updates, (value, key) => {
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
-    updatesToDB[`${dsPath}/${key}`] = value;
-  });
-
-  if (updateStatus) {
-    const userStatusPath = userStatusLatestSessionRef.getRoute(userID);
-    // eslint-disable-next-line you-dont-need-lodash-underscore/for-each
-    forEach(updates, (value, key) => {
-      // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
-      updatesToDB[`${userStatusPath}/${key}`] = value;
-    });
-  }
-
-  await update(ref(db), updatesToDB);
+  session: DrinkingSession,
+): void {
+  API.write(
+    WRITE_COMMANDS.UPDATE_SESSION,
+    {sessionId, session, sessionIsLive: true},
+    {optimisticData: sessionUpsertOptimisticData(userID, sessionId, session)},
+  );
 }
 
 /**
@@ -232,36 +259,22 @@ async function startLiveDrinkingSession(
     timezone,
     ongoing: true,
   });
-  const newStatusData: UserStatus = {
-    last_online: new Date().getTime(),
-    latest_session_id: newSessionId,
-    latest_session: newSessionData,
-  };
 
-  // Update Firebase
-  const updates: FirebaseUpdates = {};
-  updates[userStatusRef.getRoute(user.uid)] = newStatusData;
-  updates[drinkingSessionRef.getRoute(user.uid, newSessionId)] = newSessionData;
-
-  // Live sessions start at "now", so they can only lower the earliest if the
-  // user has none yet. The strict-improvement guard keeps this branch a
-  // single-batch write — no extra Firebase read.
-  const currentEarliest = userDataList?.[user.uid]?.earliest_session_at;
-  const lowersEarliest =
-    currentEarliest === undefined ||
-    newSessionData.start_time < currentEarliest;
-  if (lowersEarliest) {
-    updates[earliestSessionAtRef.getRoute(user.uid)] =
-      newSessionData.start_time;
-  }
-
-  await update(ref(db), updates);
-
-  if (lowersEarliest) {
-    await Onyx.merge(ONYXKEYS.USER_DATA_LIST, {
-      [user.uid]: {earliest_session_at: newSessionData.start_time},
-    });
-  }
+  // The server upserts the session and, because `sessionIsLive`, mirrors it into
+  // the user's live status (`user_status`). Live sessions start at "now", so the
+  // strict-improvement floor only moves when the user has no earlier session —
+  // `sessionUpsertOptimisticData` handles that optimistically.
+  API.write(
+    WRITE_COMMANDS.UPDATE_SESSION,
+    {sessionId: newSessionId, session: newSessionData, sessionIsLive: true},
+    {
+      optimisticData: sessionUpsertOptimisticData(
+        user.uid,
+        newSessionId,
+        newSessionData,
+      ),
+    },
+  );
 
   await Onyx.set(ONYXKEYS.ONGOING_SESSION_DATA, newSessionData);
 }
@@ -275,45 +288,32 @@ async function startLiveDrinkingSession(
  * @returnsPromise void.
  *  */
 async function saveDrinkingSessionData(
-  db: Database,
   userID: string,
   newSessionData: DrinkingSession,
   sessionKey: string,
   onyxKey: OnyxKey,
   sessionIsLive?: boolean,
 ): Promise<void> {
-  const updates: FirebaseUpdates = {};
-  if (sessionIsLive) {
-    const userStatusData: UserStatus = {
-      // ETC - 1
-      last_online: new Date().getTime(),
-      latest_session_id: sessionKey,
-      latest_session: newSessionData,
-    };
-    updates[userStatusRef.getRoute(userID)] = userStatusData;
-  }
-  updates[drinkingSessionRef.getRoute(userID, sessionKey)] = newSessionData;
-
-  // If the new start_time strictly lowers the floor, batch the update — no
-  // extra Firebase read needed. Otherwise the edit may have moved the
-  // previously-earliest session later, so recompute via Firebase post-write.
-  const currentEarliest = userDataList?.[userID]?.earliest_session_at;
-  const newStartTime = newSessionData.start_time;
-  const isStrictImprovement =
-    currentEarliest === undefined || newStartTime < currentEarliest;
-  if (isStrictImprovement) {
-    updates[earliestSessionAtRef.getRoute(userID)] = newStartTime;
-  }
-
-  await update(ref(db), updates);
-
-  if (isStrictImprovement) {
-    await Onyx.merge(ONYXKEYS.USER_DATA_LIST, {
-      [userID]: {earliest_session_at: newStartTime},
-    });
-  } else {
-    await recomputeEarliestSessionAt(db, userID);
-  }
+  // The server upserts the session, owns the `earliest_session_at` floor
+  // (recomputing it when an edit moves the previously-earliest session later),
+  // and — when `sessionIsLive` — updates the user's live status. The optimistic
+  // data mirrors the server `onyxData`; non-strict floor changes are reconciled
+  // by the inline/pushed response.
+  API.write(
+    WRITE_COMMANDS.UPDATE_SESSION,
+    {
+      sessionId: sessionKey,
+      session: newSessionData,
+      sessionIsLive: !!sessionIsLive,
+    },
+    {
+      optimisticData: sessionUpsertOptimisticData(
+        userID,
+        sessionKey,
+        newSessionData,
+      ),
+    },
+  );
 
   await Onyx.set(onyxKey, null);
 }
@@ -326,31 +326,20 @@ async function saveDrinkingSessionData(
  * @returns
  *  */
 async function removeDrinkingSessionData(
-  db: Database,
   userID: string,
   sessionKey: string,
   onyxKey: OnyxKey,
   sessionIsLive?: boolean,
 ): Promise<void> {
-  const updates: FirebaseUpdates = {};
-  updates[drinkingSessionRef.getRoute(userID, sessionKey)] = null;
-  // Drop any GPS locations captured for this session in the same batch so
-  // they don't outlive the session they describe.
-  updates[`user_session_locations/${userID}/${sessionKey}`] = null;
-  if (sessionIsLive) {
-    const userStatusData: UserStatus = {
-      last_online: new Date().getTime(),
-      latest_session: null,
-      latest_session_id: null,
-    };
-    updates[userStatusRef.getRoute(userID)] = userStatusData;
-  }
-
-  await update(ref(db), updates);
-
-  // The removed session may have been the earliest; recompute the floor
-  // unconditionally post-delete (single indexed read, only fires on delete).
-  await recomputeEarliestSessionAt(db, userID);
+  // The server removes the session and its GPS locations, recomputes the
+  // `earliest_session_at` floor, and — when `sessionIsLive` — clears the user's
+  // live status. The optimistic data removes the session from the cached
+  // snapshot; the new floor is reconciled by the inline/pushed response.
+  API.write(
+    WRITE_COMMANDS.DELETE_SESSION,
+    {sessionId: sessionKey, sessionIsLive: !!sessionIsLive},
+    {optimisticData: [cachedSessionPatch(userID, sessionKey, null)]},
+  );
 
   await Onyx.set(onyxKey, null);
   await Onyx.set(`${ONYXKEYS.COLLECTION.SESSION_LOCATIONS}${sessionKey}`, null);
@@ -618,7 +607,7 @@ export {
   startLiveDrinkingSession,
   syncLocalLiveSessionData,
   updateBlackout,
-  updateDrinkingSessionData,
+  updateLiveDrinkingSessionData,
   updateDrinks,
   updateNote,
   updateLocalData,
