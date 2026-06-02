@@ -3,9 +3,12 @@ import {StyleSheet, View} from 'react-native';
 import UserOffline from '@components/UserOfflineModal';
 import {useUserConnection} from '@context/global/UserConnectionContext';
 import type {StackScreenProps} from '@react-navigation/stack';
+import type {Database} from 'firebase/database';
+import type {User} from 'firebase/auth';
 import type {DayOverviewNavigatorParamList} from '@libs/Navigation/types';
 import type SCREENS from '@src/SCREENS';
 import type {DateString} from '@src/types/onyx/OnyxCommon';
+import type {SelectedTimezone} from '@src/types/onyx/UserData';
 import Navigation from '@libs/Navigation/Navigation';
 import {useDatabaseData} from '@context/global/DatabaseDataContext';
 import {useFirebase} from '@context/global/FirebaseContext';
@@ -36,6 +39,26 @@ const internalStyles = StyleSheet.create({
 
 function noop() {}
 
+// Module-level so React Compiler skips it — the `try/finally` it needs bails
+// the compiler, and that would regress the screen's compilation.
+async function createSessionForDay(
+  db: Database,
+  user: User | null,
+  date: Date,
+  timezone: SelectedTimezone | undefined,
+  loadingText: string,
+) {
+  try {
+    await App.setLoadingText(loadingText);
+    const newSession = await DS.getNewSessionToEdit(db, user, date, timezone);
+    await DS.navigateToEditSessionScreen(newSession?.id);
+  } catch (error) {
+    ErrorUtils.raiseAppError(ERRORS.DATABASE.USER_CREATION_FAILED, error);
+  } finally {
+    await App.setLoadingText(null);
+  }
+}
+
 function DayOverviewScreen({route}: DayOverviewScreenProps) {
   const {date} = route.params;
   const {isOnline} = useUserConnection();
@@ -59,22 +82,15 @@ function DayOverviewScreen({route}: DayOverviewScreenProps) {
   const selectedTimezone = userData?.timezone?.selected;
   const onAddSessionForDay = useCallback(
     (day: DateString) => {
-      (async () => {
-        try {
-          await App.setLoadingText(translate('liveSessionScreen.loading'));
-          const newSession = await DS.getNewSessionToEdit(
-            db,
-            auth.currentUser,
-            dateStringToDate(day),
-            selectedTimezone,
-          );
-          DS.navigateToEditSessionScreen(newSession?.id);
-        } catch (error) {
-          ErrorUtils.raiseAppError(ERRORS.DATABASE.USER_CREATION_FAILED, error);
-        } finally {
-          await App.setLoadingText(null);
-        }
-      })();
+      // createSessionForDay handles its own errors; the .catch is a no-op to
+      // satisfy no-floating-promises.
+      createSessionForDay(
+        db,
+        auth.currentUser,
+        dateStringToDate(day),
+        selectedTimezone,
+        translate('liveSessionScreen.loading'),
+      ).catch(() => {});
     },
     [db, auth, translate, selectedTimezone],
   );
