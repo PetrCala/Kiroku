@@ -1008,8 +1008,8 @@ export default {
         },
         empty: {
           neverLogged: {
-            title: 'Zatím není co zaznamenat — i to se počítá.',
-            body: 'Až zaznamenáte relaci, objeví se zde týdenní trendy a měsíční přehled. Do té doby je každý den klidný.',
+            title: 'Zatím není co zaznamenat',
+            body: 'Až zaznamenáte relaci, objeví se zde týdenní trendy a měsíční přehled.',
           },
           noDataInWindow: ({quietDays}: StatsQuietDaysParams) =>
             `${quietDays} klidných dnů a počítáme dál — vaše trendy se vyjasní, jak budete přidávat data.`,
