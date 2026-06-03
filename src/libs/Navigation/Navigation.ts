@@ -305,6 +305,18 @@ function goBack(
 }
 
 /**
+ * Pop `count` screens off the active stack in a single action (one animation).
+ * Useful when more than one screen has gone stale at once — e.g. deleting a
+ * session needs to skip both the edit screen and its now-deleted summary.
+ */
+function pop(count = 1) {
+  if (!canNavigate('pop') || !navigationRef.current?.canGoBack()) {
+    return;
+  }
+  navigationRef.current.dispatch(StackActions.pop(count));
+}
+
+/**
  * Close the current screen and navigate to the route.
  * If the current screen is the first screen in the navigator, we force using the fallback route to replace the current screen.
  * It's useful in a case where we want to close an RHP and navigate to another RHP to prevent any blink effect.
@@ -495,6 +507,7 @@ export default {
   isActiveRoute,
   isNavigationReady,
   navigate,
+  pop,
   resetToHome,
   setIsNavigationReady,
   setParams,

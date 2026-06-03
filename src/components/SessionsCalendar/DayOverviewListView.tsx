@@ -176,10 +176,14 @@ function DayOverviewListView({
       return;
     }
     if (targetIndex !== undefined) {
+      // Center the focused day in the viewport (context above and below).
+      // FlashList clamps when the target is near an edge — so the newest day
+      // settles toward the bottom and the oldest toward the top, and a short
+      // list just lands at the top. No artificial padding needed.
       listRef.current?.scrollToIndex({
         index: targetIndex,
         animated: false,
-        viewPosition: 0,
+        viewPosition: 0.5,
       });
       hasAppliedInitialScrollRef.current = true;
       onInitialScrollReady?.();
