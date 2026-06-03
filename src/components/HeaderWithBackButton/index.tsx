@@ -152,7 +152,12 @@ function HeaderWithBackButton({
               role="button"
               accessibilityLabel={translate('common.back')}
               nativeID={CONST.BACK_BUTTON_NATIVE_ID}>
-              <Icon src={KirokuIcons.BackArrow} fill={iconFill ?? theme.icon} />
+              <Icon
+                src={KirokuIcons.BackArrow}
+                width={variables.iconSizeXLarge}
+                height={variables.iconSizeXLarge}
+                fill={iconFill ?? theme.heading}
+              />
             </PressableWithoutFeedback>
           </Tooltip>
         )}

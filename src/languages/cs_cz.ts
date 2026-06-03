@@ -970,7 +970,7 @@ export default {
     profileImage: 'Profilový obrázek',
   },
   statistics: {
-    title: 'Vaše statistiky',
+    title: 'Statistiky',
     tabs: {
       overview: {
         label: 'Přehled',
