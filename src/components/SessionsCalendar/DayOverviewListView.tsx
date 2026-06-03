@@ -1,5 +1,5 @@
 import React, {memo, useCallback, useEffect, useMemo, useRef} from 'react';
-import {ActivityIndicator, useWindowDimensions, View} from 'react-native';
+import {ActivityIndicator, View} from 'react-native';
 import {FlashList} from '@shopify/flash-list';
 import type {FlashListRef} from '@shopify/flash-list';
 import {format} from 'date-fns';
@@ -9,6 +9,7 @@ import DrinkingSessionOverview from '@components/DrinkingSessionOverview';
 import useLocalize from '@hooks/useLocalize';
 import useTheme from '@hooks/useTheme';
 import useThemeStyles from '@hooks/useThemeStyles';
+import useWindowDimensions from '@hooks/useWindowDimensions';
 import {dateStringToDate} from '@libs/DataHandling';
 import {roundToTwoDecimalPlaces} from '@libs/NumberUtils';
 import * as App from '@userActions/App';
@@ -105,7 +106,7 @@ function DayOverviewListView({
   const styles = useThemeStyles();
   const theme = useTheme();
   const {translate} = useLocalize();
-  const {height: windowHeight} = useWindowDimensions();
+  const {windowHeight} = useWindowDimensions();
 
   // Room below the newest session so `scrollToIndex({viewPosition: 0.5})` can
   // pull a bottom-edge day toward center instead of clamping it to the bottom.
