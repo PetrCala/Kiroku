@@ -37,8 +37,7 @@ import {differenceInDays, startOfDay} from 'date-fns';
 import type {SelectedTimezone} from '@src/types/onyx/UserData';
 import type {ValueOf} from 'type-fest';
 import DBPATHS from '@src/DBPATHS';
-import {Alert} from 'react-native';
-import {resolveDuplicationConflictAction} from './RequestConflictUtils';
+import {Alert, InteractionManager} from 'react-native';
 
 const userDrinkingSessionsRef = DBPATHS.USER_DRINKING_SESSIONS_USER_ID;
 const earliestSessionAtRef = DBPATHS.USERS_USER_ID_EARLIEST_SESSION_AT;
@@ -47,10 +46,11 @@ let ongoingSessionData: DrinkingSession | undefined;
 Onyx.connect({
   key: ONYXKEYS.ONGOING_SESSION_DATA,
   callback: value => {
-    if (!value) {
-      return;
-    }
-    ongoingSessionData = value;
+    // Assign unconditionally (including clearing on null) so the finalize/discard
+    // `Onyx.set(ONGOING_SESSION_DATA, null)` actually drops this cached copy.
+    // Otherwise a tap landing just after Save mutates the stale ongoing session
+    // and re-persists it as `ongoing: true`, clobbering the finalize.
+    ongoingSessionData = value ?? undefined;
   },
 });
 
@@ -196,6 +196,9 @@ let pendingLiveSessionPersist: {
   session: DrinkingSession;
 } | null = null;
 let liveSessionPersistTimer: ReturnType<typeof setTimeout> | null = null;
+let liveSessionPersistInteraction: ReturnType<
+  typeof InteractionManager.runAfterInteractions
+> | null = null;
 
 /** Cancel a scheduled-but-not-yet-sent debounced live-session persist. */
 function cancelPendingLiveSessionPersist(): void {
@@ -203,16 +206,19 @@ function cancelPendingLiveSessionPersist(): void {
     clearTimeout(liveSessionPersistTimer);
     liveSessionPersistTimer = null;
   }
+  if (liveSessionPersistInteraction) {
+    liveSessionPersistInteraction.cancel();
+    liveSessionPersistInteraction = null;
+  }
   pendingLiveSessionPersist = null;
 }
 
 /**
  * Persist the current live (ongoing) drinking session via kiroku-api immediately.
  * The server upserts it and — because `sessionIsLive` — mirrors it into the
- * user's live status; the optimistic data mirrors the cached snapshot.
- * Consecutive pending writes for the same session are coalesced in the request
- * queue (each carries the full session, so replace-with-latest is idempotent and
- * never reorders a later finalize).
+ * user's live status; the optimistic data mirrors the cached snapshot. Throttled
+ * by the debounce in `persistLiveSession`, so it runs at most once per quiet
+ * period rather than per tap.
  */
 function persistLiveSessionNow(
   sessionId: DrinkingSessionId,
@@ -225,18 +231,7 @@ function persistLiveSessionNow(
   API.write(
     WRITE_COMMANDS.UPDATE_SESSION,
     {sessionId, session, sessionIsLive: true},
-    {
-      optimisticData: sessionUpsertOptimisticData(uid, sessionId, session),
-    },
-    {
-      checkAndFixConflictingRequest: persistedRequests =>
-        resolveDuplicationConflictAction(
-          persistedRequests,
-          request =>
-            request.command === WRITE_COMMANDS.UPDATE_SESSION &&
-            request.data?.sessionId === sessionId,
-        ),
-    },
+    {optimisticData: sessionUpsertOptimisticData(uid, sessionId, session)},
   );
 }
 
@@ -255,11 +250,18 @@ function persistLiveSession(
   }
   liveSessionPersistTimer = setTimeout(() => {
     liveSessionPersistTimer = null;
-    const pending = pendingLiveSessionPersist;
-    pendingLiveSessionPersist = null;
-    if (pending) {
-      persistLiveSessionNow(pending.sessionId, pending.session);
-    }
+    // Defer the optimistic-cache + queue work until touches settle so it never
+    // blocks the user mid-tap; if they keep tapping, it simply waits.
+    liveSessionPersistInteraction = InteractionManager.runAfterInteractions(
+      () => {
+        liveSessionPersistInteraction = null;
+        const pending = pendingLiveSessionPersist;
+        pendingLiveSessionPersist = null;
+        if (pending) {
+          persistLiveSessionNow(pending.sessionId, pending.session);
+        }
+      },
+    );
   }, LIVE_SESSION_PERSIST_DEBOUNCE_MS);
 }
 
