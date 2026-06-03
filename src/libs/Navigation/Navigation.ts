@@ -28,6 +28,7 @@ import type {
 } from './types';
 import getTopmostCentralPaneRoute from './getTopmostCentralPaneRoute';
 import getTopmostBottomTabRoute from './getTopmostBottomTabRoute';
+import getPreviousScreenNameFromState from './getPreviousScreenName';
 import getMatchingBottomTabRouteForState from './linkingConfig/getMatchingBottomTabRouteForState';
 
 let resolveNavigationIsReadyPromise: () => void;
@@ -368,6 +369,14 @@ function getLastScreenName(
 }
 
 /**
+ * Returns the name of the screen directly below the focused one in the
+ * innermost active stack. See {@link getPreviousScreenNameFromState}.
+ */
+function getPreviousScreenName(): string | undefined {
+  return getPreviousScreenNameFromState(navigationRef.getRootState());
+}
+
+/**
  * Reset the navigation state to Home page
  */
 function resetToHome() {
@@ -501,6 +510,7 @@ export default {
   getActiveRouteWithoutParams,
   getLastRouteName,
   getLastScreenName,
+  getPreviousScreenName,
   getRouteNameFromStateEvent,
   getTopMostCentralPaneRouteFromRootState,
   goBack,
