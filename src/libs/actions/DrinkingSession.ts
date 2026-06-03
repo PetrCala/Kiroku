@@ -183,18 +183,38 @@ async function updateLocalData(
   await Onyx.set(onyxKey, dataToSet);
 }
 
+// Server persistence for the live (ongoing) session is debounced so rapid drink
+// taps stay snappy: each tap writes `ONGOING_SESSION_DATA` synchronously (instant
+// UI) and only (re)arms this timer, so we issue at most one `UPDATE_SESSION` per
+// quiet period instead of one per tap. The finalize/discard paths call
+// `cancelPendingLiveSessionPersist` and then write the full session themselves,
+// so a debounced live write can never land after them; the request queue also
+// coalesces any that are already in flight.
+const LIVE_SESSION_PERSIST_DEBOUNCE_MS = 500;
+let pendingLiveSessionPersist: {
+  sessionId: DrinkingSessionId;
+  session: DrinkingSession;
+} | null = null;
+let liveSessionPersistTimer: ReturnType<typeof setTimeout> | null = null;
+
+/** Cancel a scheduled-but-not-yet-sent debounced live-session persist. */
+function cancelPendingLiveSessionPersist(): void {
+  if (liveSessionPersistTimer) {
+    clearTimeout(liveSessionPersistTimer);
+    liveSessionPersistTimer = null;
+  }
+  pendingLiveSessionPersist = null;
+}
+
 /**
- * Persist the current live (ongoing) drinking session via kiroku-api. Called by
- * the session-write actions whenever they mutate the ongoing session, and by
- * `startLiveDrinkingSession`. The server upserts it and — because `sessionIsLive`
- * — mirrors it into the user's live status; the optimistic data mirrors the
- * cached snapshot. Consecutive pending writes for the same session are coalesced
- * in the request queue (each carries the full session, so replace-with-latest is
- * idempotent and never reorders a later finalize). The live editing buffer itself
- * lives in `ONGOING_SESSION_DATA` and is owned by the screen; this only persists
- * it.
+ * Persist the current live (ongoing) drinking session via kiroku-api immediately.
+ * The server upserts it and — because `sessionIsLive` — mirrors it into the
+ * user's live status; the optimistic data mirrors the cached snapshot.
+ * Consecutive pending writes for the same session are coalesced in the request
+ * queue (each carries the full session, so replace-with-latest is idempotent and
+ * never reorders a later finalize).
  */
-function persistLiveSession(
+function persistLiveSessionNow(
   sessionId: DrinkingSessionId,
   session: DrinkingSession,
 ): void {
@@ -218,6 +238,29 @@ function persistLiveSession(
         ),
     },
   );
+}
+
+/**
+ * Schedule a debounced server persist of the live session. The caller has already
+ * updated `ONGOING_SESSION_DATA` synchronously (instant UI); this only (re)arms
+ * the timer, coalescing a burst of taps into a single `UPDATE_SESSION`.
+ */
+function persistLiveSession(
+  sessionId: DrinkingSessionId,
+  session: DrinkingSession,
+): void {
+  pendingLiveSessionPersist = {sessionId, session};
+  if (liveSessionPersistTimer) {
+    clearTimeout(liveSessionPersistTimer);
+  }
+  liveSessionPersistTimer = setTimeout(() => {
+    liveSessionPersistTimer = null;
+    const pending = pendingLiveSessionPersist;
+    pendingLiveSessionPersist = null;
+    if (pending) {
+      persistLiveSessionNow(pending.sessionId, pending.session);
+    }
+  }, LIVE_SESSION_PERSIST_DEBOUNCE_MS);
 }
 
 /**
@@ -283,7 +326,7 @@ async function startLiveDrinkingSession(
   // the user's live status (`user_status`). Live sessions start at "now", so the
   // strict-improvement floor only moves when the user has no earlier session —
   // `sessionUpsertOptimisticData` handles that optimistically.
-  persistLiveSession(newSessionId, newSessionData);
+  persistLiveSessionNow(newSessionId, newSessionData);
 
   await Onyx.set(ONYXKEYS.ONGOING_SESSION_DATA, newSessionData);
 }
@@ -303,6 +346,10 @@ async function saveDrinkingSessionData(
   onyxKey: OnyxKey,
   sessionIsLive?: boolean,
 ): Promise<void> {
+  // Cancel any pending debounced live-session persist; this finalize carries the
+  // full session and must be the last writer for it.
+  cancelPendingLiveSessionPersist();
+
   // The server upserts the session, owns the `earliest_session_at` floor
   // (recomputing it when an edit moves the previously-earliest session later),
   // and — when `sessionIsLive` — updates the user's live status. The optimistic
@@ -340,6 +387,10 @@ async function removeDrinkingSessionData(
   onyxKey: OnyxKey,
   sessionIsLive?: boolean,
 ): Promise<void> {
+  // Cancel any pending debounced live-session persist; this delete must be the
+  // last writer for the session.
+  cancelPendingLiveSessionPersist();
+
   // The server removes the session and its GPS locations, recomputes the
   // `earliest_session_at` floor, and — when `sessionIsLive` — clears the user's
   // live status. The optimistic data removes the session from the cached
