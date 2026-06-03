@@ -52,11 +52,16 @@ function EditSessionScreen({route}: EditSessionScreenProps) {
         Navigation.dismissModal();
       }
     } else if (action === CONST.NAVIGATION.SESSION_ACTION.DISCARD) {
-      // The session no longer exists, so returning to its summary would land on
-      // a stale screen. Dismiss the whole session modal so the user lands on
-      // the screen beneath it — the day overview when opened from there,
-      // otherwise home.
-      Navigation.dismissModal();
+      // The session no longer exists. If we came through its summary, pop both
+      // the edit screen and the now-stale summary in one step so we land on the
+      // day overview — not the deleted session's summary, and not all the way
+      // back to home. Otherwise (e.g. a session created from the day-overview
+      // FAB) a single pop returns to the origin.
+      if (previousScreenName === SCREENS.DRINKING_SESSION.SUMMARY) {
+        Navigation.pop(2);
+      } else {
+        Navigation.goBack();
+      }
     } else {
       // BACK — return to wherever we came from (e.g. the summary).
       Navigation.goBack();
