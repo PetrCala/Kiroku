@@ -206,7 +206,7 @@ function DrinkingSessionWindow({
             <Text style={styles.textHeadlineH2}>
               {session?.ongoing
                 ? `${translate('liveSessionScreen.sessionFrom')} ${DateUtils.getLocalizedTime(session.start_time, session.timezone)}`
-                : `${translate('liveSessionScreen.sessionOn')} ${DateUtils.getLocalizedDay(session.start_time, session.timezone)}`}
+                : `${translate('liveSessionScreen.sessionOn')} ${DateUtils.getLocalizedDay(session.start_time, session.timezone, CONST.DATE.MONTH_DAY_YEAR_ABBR_FORMAT)}`}
             </Text>
           </View>
         </View>
