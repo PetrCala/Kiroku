@@ -16,10 +16,15 @@ type FakeState = {
  * Wraps an innermost DrinkingSession stack in the real navigator nesting
  * (RootStack → RightModal → DrinkingSession-modal) so the descent under test
  * mirrors production.
+ *
+ * The root's `index` deliberately points at the central pane (the bottom-tab
+ * navigator), not the RHP — this is how the split layout reports state. The
+ * helper must follow the *last* root route (the RHP) regardless, so these
+ * fixtures double as a regression guard against an `index`-based descent.
  */
 function rootStateWithDrinkingSessionStack(routes: FakeRoute[]): State {
   const state: FakeState = {
-    index: 1,
+    index: 0,
     routes: [
       {name: 'BottomTabNavigator', state: {index: 0, routes: [{name: 'Home'}]}},
       {
@@ -52,14 +57,15 @@ describe('getPreviousScreenName', () => {
     expect(getPreviousScreenName(state)).toBeUndefined();
   });
 
-  it('falls back to the last route when the innermost stack has no index', () => {
-    // The innermost stack omits `index`, so the helper must treat the last
-    // route as the focused one and return the route below it.
+  it('follows the RHP (last root route) even when the root index points elsewhere', () => {
+    // The root index points at the central pane (BottomTabNavigator); an
+    // index-based descent would walk into Home and miss the modal entirely.
     const state = rootStateWithDrinkingSessionStack([
       {name: SCREENS.DRINKING_SESSION.SUMMARY},
       {name: SCREENS.DRINKING_SESSION.EDIT},
     ]);
 
+    expect(state.index).toBe(0);
     expect(getPreviousScreenName(state)).toBe(SCREENS.DRINKING_SESSION.SUMMARY);
   });
 });
