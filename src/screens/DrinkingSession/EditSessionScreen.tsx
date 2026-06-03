@@ -1,10 +1,7 @@
 import React from 'react';
 import CONST from '@src/CONST';
 import type {StackScreenProps} from '@react-navigation/stack';
-import type {
-  DrinkingSessionNavigatorParamList,
-  State,
-} from '@libs/Navigation/types';
+import type {DrinkingSessionNavigatorParamList} from '@libs/Navigation/types';
 import SCREENS from '@src/SCREENS';
 import {useOnyx} from 'react-native-onyx';
 import ONYXKEYS from '@src/ONYXKEYS';
@@ -14,7 +11,6 @@ import FullScreenLoadingIndicator from '@components/FullscreenLoadingIndicator';
 import useLocalize from '@hooks/useLocalize';
 import type DeepValueOf from '@src/types/utils/DeepValueOf';
 import Navigation from '@libs/Navigation/Navigation';
-import navigationRef from '@libs/Navigation/navigationRef';
 import ROUTES from '@src/ROUTES';
 import type {Route} from '@src/ROUTES';
 
@@ -22,24 +18,6 @@ type EditSessionScreenProps = StackScreenProps<
   DrinkingSessionNavigatorParamList,
   typeof SCREENS.DRINKING_SESSION.EDIT
 >;
-
-// TEMP NAV DEBUG — remove after diagnosis. Renders the navigation tree as
-// indented `name` lines, marks the focused route per level with `>`, and shows
-// any `params.screen` so we can see how Day Overview / Summary / Edit nest.
-function serializeNavTree(state: State, depth = 0): string {
-  const focusedIndex = state.index ?? state.routes.length - 1;
-  return state.routes
-    .map((route, i) => {
-      const marker = i === focusedIndex ? '>' : ' ';
-      const params = route.params as {screen?: string} | undefined;
-      const screen = params?.screen ? ` screen=${params.screen}` : '';
-      const child = route.state
-        ? `\n${serializeNavTree(route.state, depth + 1)}`
-        : '';
-      return `${'  '.repeat(depth)}${marker}${route.name}${screen}${child}`;
-    })
-    .join('\n');
-}
 
 function EditSessionScreen({route}: EditSessionScreenProps) {
   const {sessionId, backTo} = route.params;
@@ -49,28 +27,6 @@ function EditSessionScreen({route}: EditSessionScreenProps) {
   const onNavigateBack = (
     action: DeepValueOf<typeof CONST.NAVIGATION.SESSION_ACTION>,
   ) => {
-    // TEMP NAV DEBUG — remove after diagnosis.
-    /* eslint-disable no-console */
-    console.log('[NAVDEBUG] ----------------------------------------');
-    console.log(
-      '[NAVDEBUG] action =',
-      action,
-      '| backTo =',
-      backTo ?? '(none)',
-    );
-    console.log(
-      '[NAVDEBUG] getLastScreenName(true) =',
-      Navigation.getLastScreenName(true),
-    );
-    console.log(
-      '[NAVDEBUG] getPreviousScreenName() =',
-      Navigation.getPreviousScreenName(),
-    );
-    console.log(
-      `[NAVDEBUG] tree:\n${serializeNavTree(navigationRef.getRootState())}`,
-    );
-    /* eslint-enable no-console */
-
     if (backTo) {
       if (backTo === ROUTES.HOME) {
         // The create flow stacks the date-pick and edit screens in the same
@@ -92,13 +48,15 @@ function EditSessionScreen({route}: EditSessionScreenProps) {
 
     // SAVE or DISCARD — land on the originating day overview. When the edit was
     // opened through the session's summary, that summary is now stale (it shows
-    // a just-edited or just-deleted session), so pop it together with the edit
-    // screen. Otherwise (e.g. a session created from the day-overview FAB) a
-    // single pop returns to the origin.
+    // a just-edited or just-deleted session), so pop the whole DrinkingSession
+    // modal (summary + edit) to reveal the day overview beneath it — a single
+    // goBack would only return to the stale summary. Otherwise (e.g. a session
+    // created from the day-overview FAB) the edit screen is the modal's root, so
+    // a single goBack already bubbles back to the origin.
     if (
       Navigation.getPreviousScreenName() === SCREENS.DRINKING_SESSION.SUMMARY
     ) {
-      Navigation.pop(2);
+      Navigation.popModalFlow();
     } else {
       Navigation.goBack();
     }
