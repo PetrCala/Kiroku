@@ -1,7 +1,7 @@
 import type {OnyxUpdate} from 'react-native-onyx';
 import Onyx from 'react-native-onyx';
 import type {Merge} from 'type-fest';
-import {WRITE_COMMANDS} from '@libs/API/types';
+import {SIDE_EFFECT_REQUEST_COMMANDS, WRITE_COMMANDS} from '@libs/API/types';
 import Log from '@libs/Log';
 import * as SequentialQueue from '@libs/Network/SequentialQueue';
 import PusherUtils from '@libs/PusherUtils';
@@ -15,13 +15,6 @@ import type {
 import type Response from '@src/types/onyx/Response';
 import {isEmptyObject} from '@src/types/utils/EmptyObject';
 import * as QueuedOnyxUpdates from './QueuedOnyxUpdates';
-
-// Commands whose response is a full authoritative snapshot of the user's state
-// (not an incremental delta). Their onyxData must be applied even when the
-// response's lastUpdateID is <= the client's applied ID: a client can hold a
-// higher applied ID from incremental Pusher deltas while still missing the full
-// snapshot (e.g. a cold install that received deltas but never the baseline).
-const FULL_BASELINE_COMMANDS: string[] = [WRITE_COMMANDS.OPEN_APP];
 
 // This key needs to be separate from ONYXKEYS.ONYX_UPDATES_FROM_SERVER so that it can be updated without triggering the callback when the server IDs are updated. If that
 // callback were triggered it would lead to duplicate processing of server updates.
@@ -153,22 +146,22 @@ function apply({
     {command: request?.command},
   );
 
-  // OpenApp (and other full-baseline reads) return the authoritative snapshot,
-  // so their onyxData must be applied regardless of how the response's
-  // lastUpdateID compares to the client's applied ID. Skipping them here strands
-  // a client that advanced its applied ID via incremental Pusher deltas but
-  // never received the snapshot (e.g. an empty `cachedDrinkingSessions`).
-  const isFullBaselineUpdate =
-    type === CONST.ONYX_UPDATE_TYPES.HTTPS &&
-    !!request &&
-    FULL_BASELINE_COMMANDS.includes(request.command);
-
-  if (
-    !isFullBaselineUpdate &&
+  // OpenApp and a full ReconnectApp (no `updateIDFrom`) return the authoritative
+  // snapshot rather than an incremental delta, so their onyxData must be applied
+  // even when the response's lastUpdateID is <= the client's applied ID —
+  // otherwise a client that advanced its applied ID via incremental Pusher
+  // deltas but never received the snapshot is stranded (e.g. an empty
+  // `cachedDrinkingSessions`). Mirrors upstream Expensify's `apply`.
+  const isUpdateOld =
     lastUpdateID &&
     lastUpdateIDAppliedToClient &&
-    Number(lastUpdateID) <= lastUpdateIDAppliedToClient
-  ) {
+    Number(lastUpdateID) <= lastUpdateIDAppliedToClient;
+  const isOpenAppRequest = request?.command === WRITE_COMMANDS.OPEN_APP;
+  const isFullReconnectRequest =
+    request?.command === SIDE_EFFECT_REQUEST_COMMANDS.RECONNECT_APP &&
+    !request?.data?.updateIDFrom;
+
+  if (isUpdateOld && !isOpenAppRequest && !isFullReconnectRequest) {
     Log.info(
       '[OnyxUpdateManager] Update received was older than or the same as current state, returning without applying the updates other than successData and failureData',
     );
