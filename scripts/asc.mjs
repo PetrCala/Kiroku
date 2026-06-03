@@ -35,7 +35,6 @@
  *   --yes              submit: actually execute (otherwise dry run)
  *   --help, -h         show this help
  */
-/* global fetch */
 import fs from 'node:fs';
 import path from 'node:path';
 import crypto from 'node:crypto';
@@ -348,7 +347,7 @@ async function cmdSubmit(appId) {
     '\nPlan: POST reviewSubmissions → POST reviewSubmissionItems(appStoreVersion) → PATCH submitted=true',
   );
   if (problems.length) {
-    L('\nBLOCKED:\n' + problems.map(p => `  - ${p}`).join('\n'));
+    L(`\nBLOCKED:\n${problems.map(p => `  - ${p}`).join('\n')}`);
     process.exitCode = 1;
     return;
   }
