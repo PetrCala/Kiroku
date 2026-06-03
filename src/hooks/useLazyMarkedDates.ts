@@ -23,6 +23,7 @@ import type {MarkedDates} from 'react-native-calendars/src/types';
 import {useOnyx} from 'react-native-onyx';
 import ONYXKEYS from '@src/ONYXKEYS';
 import * as Calendar from '@userActions/Calendar';
+import * as DSUtils from '@libs/DrinkingSessionUtils';
 import type {UserID, DateString} from '@src/types/onyx/OnyxCommon';
 
 // Hand-rolled 'yyyy-MM-dd' (matches CONST.DATE.FNS_FORMAT_STRING). date-fns
@@ -85,13 +86,43 @@ function useLazyMarkedDates(
     setLoadedMonths(monthsLoaded ?? 0);
   }, [userID, monthsLoaded, monthsLoadedMeta.status]);
 
+  const [userDataList] = useOnyx(ONYXKEYS.USER_DATA_LIST);
+
+  // Cap the effective scroll depth at the user's earliest tracked month. The
+  // `SESSIONS_CALENDAR_MONTHS_BY_USER_ID` lever is shared with the Statistics
+  // fetch-window widener (`StatsContextProvider`), which a comparison/All
+  // range can push a full span *before* the first session — inflating the
+  // persisted depth well past the user's data. There are no sessions (and no
+  // tracking) before `earliest_session_at`, so building day-keys / week-rows
+  // there is pure waste and would paint "sober day" dots on untracked days.
+  // Prefer the canonical backfilled floor, falling back to the earliest loaded
+  // session for friend profiles and pre-backfill accounts.
+  const earliestTracked = useMemo<Date | null>(() => {
+    const persistedEarliest = userDataList?.[userID]?.earliest_session_at;
+    if (persistedEarliest !== undefined) {
+      return new Date(persistedEarliest);
+    }
+    return DSUtils.getUserTrackingStartDate(sessions);
+  }, [userDataList, userID, sessions]);
+
+  const cappedMonths = useMemo(() => {
+    if (!earliestTracked) {
+      return loadedMonths;
+    }
+    const monthsToEarliest = Math.max(
+      0,
+      differenceInCalendarMonths(new Date(), earliestTracked),
+    );
+    return Math.min(loadedMonths, monthsToEarliest);
+  }, [loadedMonths, earliestTracked]);
+
   // First pass — rebuild the session-by-day index only when sessions or the
   // visible range change. Preferences are *not* a dependency here: a palette
   // or threshold change must not trigger the O(N) session filter+index pass.
   const {sessionIndex, sessionEntriesByDay, dayKeys, loadedFromDate} =
     useMemo(() => {
       const today = new Date();
-      const start = subDays(startOfMonth(subMonths(today, loadedMonths)), 1);
+      const start = subDays(startOfMonth(subMonths(today, cappedMonths)), 1);
       const end = today;
 
       const index = new Map<DateString, DrinkingSessionArray>();
@@ -132,7 +163,7 @@ function useLazyMarkedDates(
         dayKeys: days,
         loadedFromDate: start,
       };
-    }, [sessions, loadedMonths, defaultTimezone]);
+    }, [sessions, cappedMonths, defaultTimezone]);
 
   // Resolve which palette to render with. When the viewer has enabled
   // `use_own_palette_for_others`, this swaps the viewed user's palette for the
