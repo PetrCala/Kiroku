@@ -23,7 +23,6 @@ import type AmountTextInput from '@components/AmountTextInput';
 // import type CheckboxWithLabel from '@components/CheckboxWithLabel';
 // import type CountrySelector from '@components/CountrySelector';
 // import type CurrencySelector from '@components/CurrencySelector';
-import type DatePicker from '@components/DatePicker';
 // import type EmojiPickerButtonDropdown from '@components/EmojiPicker/EmojiPickerButtonDropdown';
 // import type Picker from '@components/Picker';
 // import type RadioButtons from '@components/RadioButtons';
@@ -46,22 +45,20 @@ import type {BaseForm} from '@src/types/form/Form';
  * This type specifies all the inputs that can be used with `InputWrapper` component. Make sure to update it
  * when adding new inputs or removing old ones.
  */
-type ValidInputs =
-  | typeof TextInput
-  | typeof AmountTextInput
-  // | typeof SingleChoiceQuestion
-  // | typeof CheckboxWithLabel
-  // | typeof Picker
-  // | typeof AddressSearch
-  // | typeof CountrySelector
-  // | typeof CurrencySelector
-  // | typeof AmountForm
-  // | typeof BusinessTypePicker
-  // | typeof DimensionTypeSelector
-  // | typeof StateSelector
-  // | typeof RoomNameInput
-  // | typeof ValuePicker
-  | typeof DatePicker;
+type ValidInputs = typeof TextInput | typeof AmountTextInput;
+// | typeof SingleChoiceQuestion
+// | typeof CheckboxWithLabel
+// | typeof Picker
+// | typeof AddressSearch
+// | typeof CountrySelector
+// | typeof CurrencySelector
+// | typeof AmountForm
+// | typeof BusinessTypePicker
+// | typeof DimensionTypeSelector
+// | typeof StateSelector
+// | typeof RoomNameInput
+// | typeof ValuePicker
+// | typeof DatePicker
 // | typeof RadioButtons
 // | typeof AmountPicker
 // | typeof TextPicker

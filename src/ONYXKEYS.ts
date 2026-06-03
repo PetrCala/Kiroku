@@ -237,8 +237,6 @@ const ONYXKEYS = {
     REPORT_BUG_FORM_DRAFT: 'reportBugFormDraft',
     FEEDBACK_FORM: 'feedbackForm',
     FEEDBACK_FORM_DRAFT: 'feedbackFormDraft',
-    SESSION_DATE_FORM: 'sessionDateForm',
-    SESSION_DATE_FORM_DRAFT: 'sessionDateFormDraft',
     SESSION_NOTE_FORM: 'sessionNoteForm',
     SESSION_NOTE_FORM_DRAFT: 'sessionNoteFormDraft',
   },
@@ -268,7 +266,6 @@ type OnyxFormValuesMapping = {
   [ONYXKEYS.FORMS.PASSWORD_FORM]: FormTypes.PasswordForm;
   [ONYXKEYS.FORMS.REPORT_BUG_FORM]: FormTypes.ReportBugForm;
   [ONYXKEYS.FORMS.FEEDBACK_FORM]: FormTypes.FeedbackForm;
-  [ONYXKEYS.FORMS.SESSION_DATE_FORM]: FormTypes.SessionDateForm;
   [ONYXKEYS.FORMS.SESSION_NOTE_FORM]: FormTypes.SessionNoteForm;
 };
 

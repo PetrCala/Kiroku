@@ -1,26 +1,21 @@
-import {endOfToday, format} from 'date-fns';
-import React, {useCallback} from 'react';
-import DatePicker from '@components/DatePicker';
-import FormProvider from '@components/Form/FormProvider';
-import InputWrapper from '@components/Form/InputWrapper';
-import type {FormOnyxValues} from '@components/Form/types';
+import {endOfToday} from 'date-fns';
+import React, {useState} from 'react';
+import {Alert, View} from 'react-native';
+import Button from '@components/Button';
+import Calendar from '@components/DateSelectorModal/Calendar';
 import HeaderWithBackButton from '@components/HeaderWithBackButton';
 import ScreenWrapper from '@components/ScreenWrapper';
+import Text from '@components/Text';
 import useLocalize from '@hooks/useLocalize';
 import useThemeStyles from '@hooks/useThemeStyles';
 import Navigation from '@libs/Navigation/Navigation';
-import * as ValidationUtils from '@libs/ValidationUtils';
-import CONST from '@src/CONST';
 import ONYXKEYS from '@src/ONYXKEYS';
-import INPUT_IDS from '@src/types/form/SessionDateForm';
-import {Alert} from 'react-native';
 import type {StackScreenProps} from '@react-navigation/stack';
 import type {DrinkingSessionNavigatorParamList} from '@libs/Navigation/types';
 import type SCREENS from '@src/SCREENS';
 import {useFirebase} from '@context/global/FirebaseContext';
 import * as DS from '@userActions/DrinkingSession';
 import * as DSUtils from '@libs/DrinkingSessionUtils';
-import Text from '@components/Text';
 import type {TranslationPaths} from '@src/languages/types';
 import {useOnyx} from 'react-native-onyx';
 import type {Route} from '@src/ROUTES';
@@ -39,6 +34,9 @@ function SesssionDateScreen({route}: SessionDateScreenProps) {
   const {translate} = useLocalize();
   const styles = useThemeStyles();
   const session = DSUtils.getDrinkingSessionData(sessionId);
+  const [selectedDate, setSelectedDate] = useState<Date>(
+    session?.start_time ? new Date(session.start_time) : new Date(),
+  );
 
   const confirmTextKey: TranslationPaths = isBeingCreated
     ? 'common.confirm'
@@ -64,15 +62,13 @@ function SesssionDateScreen({route}: SessionDateScreenProps) {
     })();
   };
 
-  const onSubmit = (
-    values: FormOnyxValues<typeof ONYXKEYS.FORMS.SESSION_DATE_FORM>,
-  ) => {
+  const onConfirm = () => {
     (async () => {
       if (!user || !session) {
         Alert.alert(translate('sessionDateScreen.error.load'));
         return;
       }
-      await DS.updateSessionDate(sessionId, session, new Date(values.date));
+      await DS.updateSessionDate(sessionId, session, selectedDate);
       if (isBeingCreated) {
         await DS.setIsCreatingNewSession(false);
         DS.navigateToEditSessionScreen(sessionId, undefined, ROUTES.HOME);
@@ -82,22 +78,6 @@ function SesssionDateScreen({route}: SessionDateScreenProps) {
     })();
   };
 
-  /**
-   * @returns An object containing the errors for each inputID
-   */
-  const validate = useCallback(
-    (values: FormOnyxValues<typeof ONYXKEYS.FORMS.SESSION_DATE_FORM>) => {
-      const requiredFields = ['date' as const];
-      const errors = ValidationUtils.getFieldRequiredErrors(
-        values,
-        requiredFields,
-      );
-
-      return errors;
-    },
-    [],
-  );
-
   return (
     <ScreenWrapper
       includeSafeAreaPaddingBottom={false}
@@ -106,30 +86,26 @@ function SesssionDateScreen({route}: SessionDateScreenProps) {
         title={translate('sessionDateScreen.title')}
         onBackButtonPress={onGoBack}
       />
-      <FormProvider
-        style={[styles.flexGrow1, styles.ph5]}
-        formID={ONYXKEYS.FORMS.SESSION_DATE_FORM}
-        validate={validate}
-        onSubmit={onSubmit}
-        submitButtonText={translate(confirmTextKey)}>
+      <View style={[styles.flex1, styles.ph5]}>
         <Text style={[styles.mb3]}>
           {translate('sessionDateScreen.prompt')}
         </Text>
-        <InputWrapper
-          InputComponent={DatePicker}
-          inputID={INPUT_IDS.DATE}
-          label={translate('common.date')}
-          defaultValue={
-            session?.start_time
-              ? format(
-                  new Date(session?.start_time),
-                  CONST.DATE.FNS_FORMAT_STRING,
-                )
-              : ''
-          }
+        <Calendar
+          mode="single"
+          initialDate={selectedDate}
           maxDate={endOfToday()}
+          onChangeSingle={setSelectedDate}
         />
-      </FormProvider>
+      </View>
+      <View style={[styles.bottomTabBarContainer, styles.ph5]}>
+        <Button
+          large
+          success
+          text={translate(confirmTextKey)}
+          onPress={onConfirm}
+          style={styles.bottomTabButton}
+        />
+      </View>
     </ScreenWrapper>
   );
 }
