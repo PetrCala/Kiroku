@@ -593,14 +593,11 @@ function setLastViewedCalendarDate(date: DateString) {
 }
 
 /** Clear the consumed last-viewed date so subsequent focuses don't re-apply
- *  it (and so a fresh app launch defaults to today). */
+ *  it. The launch reset lives in `Onyx.init`'s `initialKeyStates` (race-free
+ *  with hydration); this is for in-app clears, e.g. manual month navigation. */
 function clearLastViewedCalendarDate() {
   Onyx.set(ONYXKEYS.NVP_LAST_VIEWED_CALENDAR_DATE, null);
 }
-
-// Reset on launch so a value persisted from a previous session never hijacks
-// the home calendar's "show today" default on a cold start.
-clearLastViewedCalendarDate();
 
 export {
   setLoadingText,

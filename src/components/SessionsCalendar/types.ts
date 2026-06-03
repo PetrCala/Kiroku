@@ -40,19 +40,14 @@ type SessionsCalendarProps = {
    */
   mode?: 'compact' | 'fullscreen' | 'dayList';
 
-  /** Fullscreen-only. Month to initially position at `initialFirstWeekY`,
-   *  formatted as 'YYYY-MM'. Carried from the small calendar's header tap. */
+  /** Fullscreen-only. Month to center on first render, formatted as
+   *  'YYYY-MM'. Carried from the small calendar's header tap. */
   initialMonthYear?: string;
-
-  /** Fullscreen-only. Window-Y (px) where the clicked month's first week-row
-   *  should land — measured from the small calendar at click time so the
-   *  open looks seamless. */
-  initialFirstWeekY?: number;
 
   /** dayList-only. Day ('YYYY-MM-DD') to land on at first render. */
   initialDay?: DateString;
 
-  /** dayList-only. Debounced report of the top-most visible day as the user
+  /** dayList-only. Debounced report of the center-most visible day as the user
    *  scrolls — used to open the add-session picker on the viewed month. */
   onVisibleDayChange?: (day: DateString) => void;
 
