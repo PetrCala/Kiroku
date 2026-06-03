@@ -81,8 +81,13 @@ function DrinkingSessionWindow({
       const newSessionData: DrinkingSession = {
         ...session,
         end_time: session?.ongoing ? Date.now() : session.end_time,
+        // A saved session is never ongoing. Set the flag explicitly rather than
+        // `delete`-ing it: cachedDrinkingSessions writes are merges, and a merge
+        // can't clear a key by omission — an omitted `ongoing` leaves a stale
+        // `ongoing: true` in the cache, which re-triggers the "in a session"
+        // banner now that screens read sessions from the cache.
+        ongoing: false,
       };
-      delete newSessionData.ongoing;
       delete newSessionData.id;
 
       try {
