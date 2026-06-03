@@ -43,6 +43,11 @@ export default function () {
       [ONYXKEYS.IS_SIDEBAR_LOADED]: false,
       [ONYXKEYS.HAS_CHECKED_AUTO_LOGIN]: false,
       [ONYXKEYS.SESSIONS_CALENDAR_MONTHS_LOADED]: null, // Reset calendar
+      // Reset to today on launch. This is a transient cross-screen sync value;
+      // resetting it here (rather than via a module-load side effect) is
+      // race-free with Onyx hydration, so a cold start never lands the home
+      // calendar on a month persisted from a previous session.
+      [ONYXKEYS.NVP_LAST_VIEWED_CALENDAR_DATE]: null,
       [ONYXKEYS.SHOULD_SHOW_COMPOSE_INPUT]: true,
       [ONYXKEYS.MODAL]: {
         isVisible: false,

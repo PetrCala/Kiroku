@@ -45,7 +45,6 @@ function SessionsCalendar({
   onForeignDayPress,
   mode = 'compact',
   initialMonthYear,
-  initialFirstWeekY,
   initialDay,
   onVisibleDayChange,
   onInitialScrollReady,
@@ -223,7 +222,6 @@ function SessionsCalendar({
         onDayPress={onDayPress}
         onRequestOlder={handleRequestOlder}
         initialMonthYear={initialMonthYear}
-        initialFirstWeekY={initialFirstWeekY}
         onInitialScrollReady={onInitialScrollReady}
         onSwipeBack={Navigation.goBack}
       />

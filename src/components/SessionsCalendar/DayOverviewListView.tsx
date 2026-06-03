@@ -77,7 +77,7 @@ type DayOverviewListViewProps = {
   /** Fires once the initial scroll has been applied (or determined that no
    *  scroll is needed). The parent screen uses this to unhide the list. */
   onInitialScrollReady?: () => void;
-  /** Debounced report of the top-most visible day as the user scrolls — the
+  /** Debounced report of the center-most visible day as the user scrolls — the
    *  screen uses it to open the add-session picker on the viewed month. */
   onVisibleDayChange?: (day: DateString) => void;
 };
@@ -237,22 +237,24 @@ function DayOverviewListView({
   // near-top trigger. The same handler records the top-most visible day.
   const onViewableItemsChanged = useCallback(
     ({viewableItems}: {viewableItems: Array<{index: number | null}>}) => {
-      if (viewableItems.length === 0) {
+      const visibleIndices = viewableItems
+        .map(item => item.index)
+        .filter((index): index is number => index !== null)
+        .sort((a, b) => a - b);
+      if (visibleIndices.length === 0) {
         return;
       }
-      let minIndex = Number.POSITIVE_INFINITY;
-      viewableItems.forEach(item => {
-        if (item.index !== null && item.index < minIndex) {
-          minIndex = item.index;
-        }
-      });
-      if (minIndex === Number.POSITIVE_INFINITY) {
-        return;
-      }
+      const minIndex = visibleIndices[0];
 
-      const topItem = items[minIndex];
-      if (topItem) {
-        recordVisibleDay(topItem.dayKey);
+      // Sync the *center-most* visible day (not the top-most): the screen opens
+      // with the focused day centered (`viewPosition: 0.5`), so the centered
+      // day is the one the user perceives they're on. Recording that — rather
+      // than the older day clipped at the top edge — makes back-navigation land
+      // the compact calendar on the matching month.
+      const centerIndex = visibleIndices[Math.floor(visibleIndices.length / 2)];
+      const centerItem = items[centerIndex];
+      if (centerItem) {
+        recordVisibleDay(centerItem.dayKey);
       }
 
       if (!onRequestOlder || !canLoadOlder) {
@@ -262,7 +264,7 @@ function DayOverviewListView({
         return;
       }
       // The earliest visible day is the top-most visible item's day.
-      const earliest = items[Math.max(0, minIndex)];
+      const earliest = items[minIndex];
       if (earliest) {
         onRequestOlder(dateStringToDate(earliest.dayKey));
       }

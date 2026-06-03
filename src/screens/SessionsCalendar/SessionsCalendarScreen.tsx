@@ -1,4 +1,4 @@
-import React, {useCallback, useMemo, useState} from 'react';
+import React, {useCallback, useState} from 'react';
 import {StyleSheet, View} from 'react-native';
 import type {StackScreenProps} from '@react-navigation/stack';
 import type {DateData} from 'react-native-calendars';
@@ -47,12 +47,8 @@ const internalStyles = StyleSheet.create({
  */
 function SessionsCalendarScreen({route}: SessionsCalendarScreenProps) {
   const {auth} = useFirebase();
-  const {userID, monthYear, firstWeekY: firstWeekYParam} = route.params;
+  const {userID, monthYear} = route.params;
   const user = auth.currentUser;
-  const firstWeekY = useMemo(
-    () => (firstWeekYParam ? Number(firstWeekYParam) : undefined),
-    [firstWeekYParam],
-  );
   const isSelf = user?.uid === userID;
   const {translate} = useLocalize();
   const styles = useThemeStyles();
@@ -126,7 +122,6 @@ function SessionsCalendarScreen({route}: SessionsCalendarScreenProps) {
               isFetchingOlderMonths={isFetchingOlderMonths}
               mode="fullscreen"
               initialMonthYear={monthYear}
-              initialFirstWeekY={firstWeekY}
               onInitialScrollReady={onInitialScrollReady}
             />
           </View>
