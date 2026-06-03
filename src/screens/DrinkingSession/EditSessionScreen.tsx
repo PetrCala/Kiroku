@@ -38,29 +38,24 @@ function EditSessionScreen({route}: EditSessionScreenProps) {
       }
       return;
     }
-    const previousScreenName = Navigation.getLastScreenName(true);
-    if (action === CONST.NAVIGATION.SESSION_ACTION.SAVE) {
-      if (previousScreenName === SCREENS.DAY_OVERVIEW.ROOT) {
-        Navigation.goBack();
-      } else if (previousScreenName === SCREENS.DRINKING_SESSION.SUMMARY) {
-        Navigation.goBack();
-      } else {
-        // Use dismissModal instead of navigate(HOME) to avoid double animation
-        Navigation.dismissModal();
-      }
-    } else if (action === CONST.NAVIGATION.SESSION_ACTION.DISCARD) {
-      // The session no longer exists. If we came through its summary, pop both
-      // the edit screen and the now-stale summary in one step so we land on the
-      // day overview — not the deleted session's summary, and not all the way
-      // back to home. Otherwise (e.g. a session created from the day-overview
-      // FAB) a single pop returns to the origin.
-      if (previousScreenName === SCREENS.DRINKING_SESSION.SUMMARY) {
-        Navigation.pop(2);
-      } else {
-        Navigation.goBack();
-      }
+
+    // BACK — return to wherever we came from (the summary when the edit was
+    // opened through it, the day overview otherwise).
+    if (action === CONST.NAVIGATION.SESSION_ACTION.BACK) {
+      Navigation.goBack();
+      return;
+    }
+
+    // SAVE or DISCARD — land on the originating day overview. When the edit was
+    // opened through the session's summary, that summary is now stale (it shows
+    // a just-edited or just-deleted session), so pop it together with the edit
+    // screen. Otherwise (e.g. a session created from the day-overview FAB) a
+    // single pop returns to the origin.
+    if (
+      Navigation.getPreviousScreenName() === SCREENS.DRINKING_SESSION.SUMMARY
+    ) {
+      Navigation.pop(2);
     } else {
-      // BACK — return to wherever we came from (e.g. the summary).
       Navigation.goBack();
     }
   };
