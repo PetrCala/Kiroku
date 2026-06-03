@@ -27,6 +27,7 @@ import Onyx from 'react-native-onyx';
 import type {OnyxUpdate} from 'react-native-onyx';
 import * as API from '@libs/API';
 import {WRITE_COMMANDS} from '@libs/API/types';
+import {getFirebaseAuth} from '@libs/Firebase/FirebaseApp';
 import type {OnyxKey} from '@src/ONYXKEYS';
 import ONYXKEYS from '@src/ONYXKEYS';
 import Navigation from '@libs/Navigation/Navigation';
@@ -37,6 +38,7 @@ import type {SelectedTimezone} from '@src/types/onyx/UserData';
 import type {ValueOf} from 'type-fest';
 import DBPATHS from '@src/DBPATHS';
 import {Alert} from 'react-native';
+import {resolveDuplicationConflictAction} from './RequestConflictUtils';
 
 const userDrinkingSessionsRef = DBPATHS.USER_DRINKING_SESSIONS_USER_ID;
 const earliestSessionAtRef = DBPATHS.USERS_USER_ID_EARLIEST_SESSION_AT;
@@ -182,22 +184,39 @@ async function updateLocalData(
 }
 
 /**
- * Persist the full live (ongoing) drinking session via kiroku-api. Called from
- * the live-session screen's batched sync as the user adds drinks/notes. The
- * server upserts the session and — because `sessionIsLive` — mirrors it into the
- * user's live status; the optimistic data mirrors the cached snapshot. The live
- * editing state itself lives in `ONGOING_SESSION_DATA` and is owned by the
- * screen; this only persists it.
+ * Persist the current live (ongoing) drinking session via kiroku-api. Called by
+ * the session-write actions whenever they mutate the ongoing session, and by
+ * `startLiveDrinkingSession`. The server upserts it and — because `sessionIsLive`
+ * — mirrors it into the user's live status; the optimistic data mirrors the
+ * cached snapshot. Consecutive pending writes for the same session are coalesced
+ * in the request queue (each carries the full session, so replace-with-latest is
+ * idempotent and never reorders a later finalize). The live editing buffer itself
+ * lives in `ONGOING_SESSION_DATA` and is owned by the screen; this only persists
+ * it.
  */
-function updateLiveDrinkingSessionData(
-  userID: UserID,
+function persistLiveSession(
   sessionId: DrinkingSessionId,
   session: DrinkingSession,
 ): void {
+  const uid = getFirebaseAuth().currentUser?.uid;
+  if (!uid) {
+    return;
+  }
   API.write(
     WRITE_COMMANDS.UPDATE_SESSION,
     {sessionId, session, sessionIsLive: true},
-    {optimisticData: sessionUpsertOptimisticData(userID, sessionId, session)},
+    {
+      optimisticData: sessionUpsertOptimisticData(uid, sessionId, session),
+    },
+    {
+      checkAndFixConflictingRequest: persistedRequests =>
+        resolveDuplicationConflictAction(
+          persistedRequests,
+          request =>
+            request.command === WRITE_COMMANDS.UPDATE_SESSION &&
+            request.data?.sessionId === sessionId,
+        ),
+    },
   );
 }
 
@@ -264,17 +283,7 @@ async function startLiveDrinkingSession(
   // the user's live status (`user_status`). Live sessions start at "now", so the
   // strict-improvement floor only moves when the user has no earlier session —
   // `sessionUpsertOptimisticData` handles that optimistically.
-  API.write(
-    WRITE_COMMANDS.UPDATE_SESSION,
-    {sessionId: newSessionId, session: newSessionData, sessionIsLive: true},
-    {
-      optimisticData: sessionUpsertOptimisticData(
-        user.uid,
-        newSessionId,
-        newSessionData,
-      ),
-    },
-  );
+  persistLiveSession(newSessionId, newSessionData);
 
   await Onyx.set(ONYXKEYS.ONGOING_SESSION_DATA, newSessionData);
 }
@@ -393,6 +402,10 @@ function updateDrinks(
     });
   }
 
+  if (onyxKey === ONYXKEYS.ONGOING_SESSION_DATA) {
+    persistLiveSession(sessionId, {...session, drinks: drinksList});
+  }
+
   if (action !== CONST.DRINKS.ACTIONS.ADD || !drinksList) {
     return undefined;
   }
@@ -426,6 +439,9 @@ function updateNote(
     Onyx.merge(onyxKey, {
       note: newNote,
     });
+    if (onyxKey === ONYXKEYS.ONGOING_SESSION_DATA && session?.id) {
+      persistLiveSession(session.id, {...session, note: newNote});
+    }
   }
 }
 
@@ -438,6 +454,9 @@ function updateBlackout(
     Onyx.merge(onyxKey, {
       blackout,
     });
+    if (onyxKey === ONYXKEYS.ONGOING_SESSION_DATA && session?.id) {
+      persistLiveSession(session.id, {...session, blackout});
+    }
   }
 }
 
@@ -457,6 +476,9 @@ function updateTimezone(
     Onyx.merge(onyxKey, {
       timezone: newTimezone,
     });
+    if (onyxKey === ONYXKEYS.ONGOING_SESSION_DATA && session?.id) {
+      persistLiveSession(session.id, {...session, timezone: newTimezone});
+    }
   }
 }
 
@@ -488,6 +510,9 @@ async function updateSessionDate(
     ? ONYXKEYS.ONGOING_SESSION_DATA
     : ONYXKEYS.EDIT_SESSION_DATA;
   await updateLocalData(onyxKey, modifiedSession, sessionId);
+  if (shouldUpdateLiveSessionData) {
+    persistLiveSession(sessionId, modifiedSession);
+  }
 }
 
 /** Generate a new key for a drinking session */
@@ -607,7 +632,6 @@ export {
   startLiveDrinkingSession,
   syncLocalLiveSessionData,
   updateBlackout,
-  updateLiveDrinkingSessionData,
   updateDrinks,
   updateNote,
   updateLocalData,
