@@ -70,6 +70,9 @@ type DayOverviewListViewProps = {
   /** Fires once the initial scroll has been applied (or determined that no
    *  scroll is needed). The parent screen uses this to unhide the list. */
   onInitialScrollReady?: () => void;
+  /** Debounced report of the top-most visible day as the user scrolls — the
+   *  screen uses it to open the add-session picker on the viewed month. */
+  onVisibleDayChange?: (day: DateString) => void;
 };
 
 /**
@@ -89,6 +92,7 @@ function DayOverviewListView({
   onRequestOlder,
   initialDay,
   onInitialScrollReady,
+  onVisibleDayChange,
 }: DayOverviewListViewProps) {
   const styles = useThemeStyles();
   const theme = useTheme();
@@ -198,16 +202,18 @@ function DayOverviewListView({
   ]);
 
   // Record the day the user is looking at so the home/profile calendar can
-  // sync to it on back-navigation. Debounced; reads the top-most visible item
-  // on each viewability change.
-  const writeLastViewedDay = useMemo(
+  // sync to it on back-navigation, and report it to the screen (for the
+  // add-session picker). Debounced; reads the top-most visible item on each
+  // viewability change.
+  const recordVisibleDay = useMemo(
     () =>
       lodashDebounce((day: DateString) => {
         App.setLastViewedCalendarDate(day);
+        onVisibleDayChange?.(day);
       }, LAST_VIEWED_DEBOUNCE_MS),
-    [],
+    [onVisibleDayChange],
   );
-  useEffect(() => () => writeLastViewedDay.cancel(), [writeLastViewedDay]);
+  useEffect(() => () => recordVisibleDay.cancel(), [recordVisibleDay]);
 
   // Older sessions live at the top (ascending order), so we lazy-load when the
   // lowest visible index nears index 0 — the mirror image of the week-list's
@@ -229,7 +235,7 @@ function DayOverviewListView({
 
       const topItem = items[minIndex];
       if (topItem) {
-        writeLastViewedDay(topItem.dayKey);
+        recordVisibleDay(topItem.dayKey);
       }
 
       if (!onRequestOlder || !canLoadOlder) {
@@ -244,7 +250,7 @@ function DayOverviewListView({
         onRequestOlder(dateStringToDate(earliest.dayKey));
       }
     },
-    [items, onRequestOlder, canLoadOlder, writeLastViewedDay],
+    [items, onRequestOlder, canLoadOlder, recordVisibleDay],
   );
 
   const renderItem = useCallback(

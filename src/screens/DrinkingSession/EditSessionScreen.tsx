@@ -51,7 +51,14 @@ function EditSessionScreen({route}: EditSessionScreenProps) {
         // Use dismissModal instead of navigate(HOME) to avoid double animation
         Navigation.dismissModal();
       }
+    } else if (action === CONST.NAVIGATION.SESSION_ACTION.DISCARD) {
+      // The session no longer exists, so returning to its summary would land on
+      // a stale screen. Dismiss the whole session modal so the user lands on
+      // the screen beneath it — the day overview when opened from there,
+      // otherwise home.
+      Navigation.dismissModal();
     } else {
+      // BACK — return to wherever we came from (e.g. the summary).
       Navigation.goBack();
     }
   };
