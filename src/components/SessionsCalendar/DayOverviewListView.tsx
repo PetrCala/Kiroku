@@ -1,5 +1,5 @@
 import React, {memo, useCallback, useEffect, useMemo, useRef} from 'react';
-import {ActivityIndicator, View} from 'react-native';
+import {ActivityIndicator, useWindowDimensions, View} from 'react-native';
 import {FlashList} from '@shopify/flash-list';
 import type {FlashListRef} from '@shopify/flash-list';
 import {format} from 'date-fns';
@@ -97,6 +97,16 @@ function DayOverviewListView({
   const styles = useThemeStyles();
   const theme = useTheme();
   const {translate} = useLocalize();
+  const {height: windowHeight} = useWindowDimensions();
+
+  // Room below the newest session so `scrollToIndex({viewPosition: 0.5})` can
+  // actually center a bottom-edge day instead of clamping it to the bottom.
+  // Half the window slightly overshoots the list viewport (window includes the
+  // header/safe areas) — harmless, since the extra is reachable scroll below.
+  const contentContainerStyle = useMemo(
+    () => ({paddingBottom: Math.round(windowHeight / 2)}),
+    [windowHeight],
+  );
 
   // Flatten the day→sessions map into a single list: each day emits a header
   // followed by its sessions (chronological within the day). Build the sticky
@@ -176,10 +186,10 @@ function DayOverviewListView({
       return;
     }
     if (targetIndex !== undefined) {
-      // Center the focused day in the viewport (context above and below).
-      // FlashList clamps when the target is near an edge — so the newest day
-      // settles toward the bottom and the oldest toward the top, and a short
-      // list just lands at the top. No artificial padding needed.
+      // Center the focused day in the viewport (context above and below). The
+      // list's bottom padding (`contentContainerStyle`) gives the newest day
+      // room to settle at center rather than clamping to the bottom edge. The
+      // oldest day (no top padding) and short lists still land toward the top.
       listRef.current?.scrollToIndex({
         index: targetIndex,
         animated: false,
@@ -352,6 +362,7 @@ function DayOverviewListView({
       keyExtractor={keyExtractor}
       stickyHeaderIndices={stickyHeaderIndices}
       initialScrollIndex={initialScrollIndex}
+      contentContainerStyle={contentContainerStyle}
       showsVerticalScrollIndicator
       ListHeaderComponent={listHeader}
       ListEmptyComponent={listEmpty}
