@@ -513,13 +513,16 @@ export default defineConfig([
 
   // Build/CLI tooling under `scripts/` legitimately writes reports and prompts
   // to stdout/stderr, so the app-wide `no-console` allow-list (debug/error only)
-  // doesn't apply. Several files here (e.g. the CLI arg parser, Git helpers) are
+  // doesn't apply. These CLIs also make sequential App Store Connect / Git calls
+  // where awaiting in a loop is intentional, so `no-await-in-loop` is relaxed
+  // too. Several `.ts` files here (e.g. the CLI arg parser, Git helpers) are
   // vendored from Expensify and kept byte-faithful for easy re-syncs, so we also
   // relax `no-unnecessary-type-assertion` rather than diverging the source.
   {
-    files: ['scripts/**/*.ts'],
+    files: ['scripts/**/*.ts', 'scripts/**/*.mjs'],
     rules: {
       'no-console': 'off',
+      'no-await-in-loop': 'off',
       '@typescript-eslint/no-unnecessary-type-assertion': 'off',
     },
   },
