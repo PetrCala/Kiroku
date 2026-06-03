@@ -16,6 +16,7 @@ import FlexibleLoadingIndicator from '@components/FlexibleLoadingIndicator';
 import useCurrentUserData from '@hooks/useCurrentUserData';
 import useLocalize from '@hooks/useLocalize';
 import {isEmptyObject} from '@src/types/utils/EmptyObject';
+import FriendOfflineFeedback from './FriendOfflineFeedback';
 import UserOverview from './UserOverview';
 
 type UserListProps = {
@@ -106,18 +107,19 @@ function UserListComponent({
     }
 
     return (
-      <PressableWithFeedback
-        key={`${index}-user-button`}
-        accessibilityLabel={`${index}-user-button`}
-        onPress={() => navigateToProfile(userID)}>
-        <UserOverview
-          key={`${index}-user-overview`}
-          userID={userID}
-          profileData={profileData}
-          userStatusData={userStatusData}
-          timezone={userData?.timezone}
-        />
-      </PressableWithFeedback>
+      <FriendOfflineFeedback key={`${index}-user-feedback`} userID={userID}>
+        <PressableWithFeedback
+          accessibilityLabel={`${index}-user-button`}
+          onPress={() => navigateToProfile(userID)}>
+          <UserOverview
+            key={`${index}-user-overview`}
+            userID={userID}
+            profileData={profileData}
+            userStatusData={userStatusData}
+            timezone={userData?.timezone}
+          />
+        </PressableWithFeedback>
+      </FriendOfflineFeedback>
     );
   };
 
