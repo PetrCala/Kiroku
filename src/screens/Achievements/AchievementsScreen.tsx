@@ -11,6 +11,7 @@ import Text from '@components/Text';
 import {useDatabaseData} from '@context/global/DatabaseDataContext';
 import {useFirebase} from '@context/global/FirebaseContext';
 import useLocalize from '@hooks/useLocalize';
+import useReadyAfterScreenTransition from '@hooks/useReadyAfterScreenTransition';
 import useTheme from '@hooks/useTheme';
 import useThemeStyles from '@hooks/useThemeStyles';
 import * as BACUtils from '@libs/BACUtils';
@@ -28,11 +29,16 @@ import BACDetailsModal from './components/BACDetailsModal';
 import BACIntroModal from './components/BACIntroModal';
 import BACQuestionnaire from './components/BACQuestionnaire';
 import BACResult from './components/BACResult';
+import BACResultSkeleton from './components/BACResultSkeleton';
 
 function AchievementsScreen() {
   const {translate} = useLocalize();
   const styles = useThemeStyles();
   const theme = useTheme();
+  // Defer the (heavy) BAC decay chart — a cold Skia `BaseChart` mount — until
+  // after the navigation slide so the tab transition can paint immediately.
+  const {isReady: didScreenTransitionEnd, onEntryTransitionEnd} =
+    useReadyAfterScreenTransition();
   const {auth, db} = useFirebase();
   const user = auth.currentUser;
   const {preferences, drinkingSessionData} = useDatabaseData();
@@ -127,8 +133,27 @@ function AchievementsScreen() {
     </PressableWithFeedback>
   );
 
+  // Gate the Skia chart behind the transition; show a layout-faithful skeleton
+  // in the result slot until the slide has finished.
+  const bacResult = didScreenTransitionEnd ? (
+    <BACResult
+      estimate={estimate}
+      decayData={decayData}
+      hoursToSober={hoursToSober}
+      displayUnit={displayUnit}
+      onChangeDisplayUnit={onChangeDisplayUnit}
+      timeFormat={timeFormat}
+      onChangeTimeFormat={onChangeTimeFormat}
+      onShowDetails={() => setShowDetails(true)}
+    />
+  ) : (
+    <BACResultSkeleton />
+  );
+
   return (
-    <ScreenWrapper testID={AchievementsScreen.displayName}>
+    <ScreenWrapper
+      testID={AchievementsScreen.displayName}
+      onEntryTransitionEnd={onEntryTransitionEnd}>
       <HeaderWithBackButton
         title={translate('achievementsScreen.title')}
         onBackButtonPress={Navigation.goBack}
@@ -145,16 +170,7 @@ function AchievementsScreen() {
         <>
           <View style={styles.flex1}>
             {hasEstimate ? (
-              <BACResult
-                estimate={estimate}
-                decayData={decayData}
-                hoursToSober={hoursToSober}
-                displayUnit={displayUnit}
-                onChangeDisplayUnit={onChangeDisplayUnit}
-                timeFormat={timeFormat}
-                onChangeTimeFormat={onChangeTimeFormat}
-                onShowDetails={() => setShowDetails(true)}
-              />
+              bacResult
             ) : (
               <View
                 style={[
