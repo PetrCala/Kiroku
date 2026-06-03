@@ -318,6 +318,34 @@ function pop(count = 1) {
 }
 
 /**
+ * Pop the entire topmost modal flow (e.g. the whole DrinkingSession modal —
+ * Summary + Edit) off the modal navigator, landing on the modal flow beneath it
+ * (e.g. the Day Overview), or the central pane if nothing is beneath.
+ *
+ * `pop(n)` can't do this: `StackActions.pop` clamps at the focused navigator's
+ * own first route, so it never crosses out of the modal flow. `dismissModal`
+ * over-shoots the other way: it targets the root and closes the whole modal
+ * navigator down to the central pane. This targets the modal navigator itself,
+ * removing just its top flow.
+ */
+function popModalFlow() {
+  const rootState = navigationRef.getRootState();
+  const modalNavigatorRoute = rootState.routes[rootState.routes.length - 1];
+  if (
+    !modalNavigatorRoute?.state?.key ||
+    (modalNavigatorRoute.name !== NAVIGATORS.RIGHT_MODAL_NAVIGATOR &&
+      modalNavigatorRoute.name !== NAVIGATORS.LEFT_MODAL_NAVIGATOR) ||
+    !canNavigate('popModalFlow')
+  ) {
+    return;
+  }
+  navigationRef.current?.dispatch({
+    ...StackActions.pop(),
+    target: modalNavigatorRoute.state.key,
+  });
+}
+
+/**
  * Close the current screen and navigate to the route.
  * If the current screen is the first screen in the navigator, we force using the fallback route to replace the current screen.
  * It's useful in a case where we want to close an RHP and navigate to another RHP to prevent any blink effect.
@@ -518,6 +546,7 @@ export default {
   isNavigationReady,
   navigate,
   pop,
+  popModalFlow,
   resetToHome,
   setIsNavigationReady,
   setParams,
