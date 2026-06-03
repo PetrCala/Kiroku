@@ -31,6 +31,12 @@ const LAST_VIEWED_DEBOUNCE_MS = 250;
 // changing viewability handlers on the fly.
 const VIEWABILITY_CONFIG = {itemVisiblePercentThreshold: 50};
 
+// Fraction of the window height left empty below the last (newest) day, so the
+// bottom-edge day has room to scroll toward center instead of clamping to the
+// bottom. Less than 0.5 keeps the newest session sitting a touch below center
+// rather than floating up into the top two-thirds. Tune here.
+const BOTTOM_SPACER_RATIO = 0.4;
+
 type DayHeaderItem = {
   kind: 'dayHeader';
   key: string;
@@ -78,10 +84,12 @@ type DayOverviewListViewProps = {
 /**
  * Continuous, all-days scroll of the user's drinking sessions.
  *
- * One vertical list: a sticky header per day (date + total units), followed by
- * that day's session tiles. Oldest day first, newest at the bottom — scrolling
- * UP walks back in time and lazily widens the loaded window, matching the
- * `SessionsCalendarWeekListView` direction.
+ * One vertical list: a header per day (date + total units), followed by that
+ * day's session tiles. Headers scroll with the content (not pinned) so the
+ * focused day's label stays next to its session after the centering scroll.
+ * Oldest day first, newest at the bottom — scrolling UP walks back in time and
+ * lazily widens the loaded window, matching the `SessionsCalendarWeekListView`
+ * direction.
  */
 function DayOverviewListView({
   sessionEntriesByDay,
@@ -100,55 +108,49 @@ function DayOverviewListView({
   const {height: windowHeight} = useWindowDimensions();
 
   // Room below the newest session so `scrollToIndex({viewPosition: 0.5})` can
-  // actually center a bottom-edge day instead of clamping it to the bottom.
-  // Half the window slightly overshoots the list viewport (window includes the
-  // header/safe areas) — harmless, since the extra is reachable scroll below.
+  // pull a bottom-edge day toward center instead of clamping it to the bottom.
+  // See `BOTTOM_SPACER_RATIO` for the amount.
   const contentContainerStyle = useMemo(
-    () => ({paddingBottom: Math.round(windowHeight / 2)}),
+    () => ({paddingBottom: Math.round(windowHeight * BOTTOM_SPACER_RATIO)}),
     [windowHeight],
   );
 
   // Flatten the day→sessions map into a single list: each day emits a header
-  // followed by its sessions (chronological within the day). Build the sticky
-  // header indices and a 'YYYY-MM-DD' → header-index map in the same pass for
-  // the initial-scroll lookup. Days are ascending (oldest first, newest at the
-  // bottom).
-  const {items, stickyHeaderIndices, dayHeaderIndexByDay, sortedDayKeys} =
-    useMemo(() => {
-      const out: ListItem[] = [];
-      const sticky: number[] = [];
-      const headerIndex = new Map<DateString, number>();
-      const days = Array.from(sessionEntriesByDay.keys()).sort();
+  // followed by its sessions (chronological within the day). Build a
+  // 'YYYY-MM-DD' → header-index map in the same pass for the initial-scroll
+  // lookup. Days are ascending (oldest first, newest at the bottom).
+  const {items, dayHeaderIndexByDay, sortedDayKeys} = useMemo(() => {
+    const out: ListItem[] = [];
+    const headerIndex = new Map<DateString, number>();
+    const days = Array.from(sessionEntriesByDay.keys()).sort();
 
-      days.forEach(dayKey => {
-        sticky.push(out.length);
-        headerIndex.set(dayKey, out.length);
+    days.forEach(dayKey => {
+      headerIndex.set(dayKey, out.length);
+      out.push({
+        kind: 'dayHeader',
+        key: `header-${dayKey}`,
+        dayKey,
+        units: unitsMap.get(dayKey) ?? 0,
+      });
+      const entries = [...(sessionEntriesByDay.get(dayKey) ?? [])].sort(
+        (a, b) => (a.session.start_time ?? 0) - (b.session.start_time ?? 0),
+      );
+      entries.forEach(entry => {
         out.push({
-          kind: 'dayHeader',
-          key: `header-${dayKey}`,
+          kind: 'session',
+          key: `session-${entry.sessionId}`,
           dayKey,
-          units: unitsMap.get(dayKey) ?? 0,
-        });
-        const entries = [...(sessionEntriesByDay.get(dayKey) ?? [])].sort(
-          (a, b) => (a.session.start_time ?? 0) - (b.session.start_time ?? 0),
-        );
-        entries.forEach(entry => {
-          out.push({
-            kind: 'session',
-            key: `session-${entry.sessionId}`,
-            dayKey,
-            entry,
-          });
+          entry,
         });
       });
+    });
 
-      return {
-        items: out,
-        stickyHeaderIndices: sticky,
-        dayHeaderIndexByDay: headerIndex,
-        sortedDayKeys: days,
-      };
-    }, [sessionEntriesByDay, unitsMap]);
+    return {
+      items: out,
+      dayHeaderIndexByDay: headerIndex,
+      sortedDayKeys: days,
+    };
+  }, [sessionEntriesByDay, unitsMap]);
 
   // Resolve the row to land on. Exact day if it has sessions, else the nearest
   // session day at-or-before it (days are ascending, so the largest key <=
@@ -360,7 +362,6 @@ function DayOverviewListView({
       data={items}
       renderItem={renderItem}
       keyExtractor={keyExtractor}
-      stickyHeaderIndices={stickyHeaderIndices}
       initialScrollIndex={initialScrollIndex}
       contentContainerStyle={contentContainerStyle}
       showsVerticalScrollIndicator
