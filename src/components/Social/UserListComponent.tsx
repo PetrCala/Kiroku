@@ -14,10 +14,10 @@ import Navigation from '@libs/Navigation/Navigation';
 import ROUTES from '@src/ROUTES';
 import {sleep} from '@libs/TimeUtils';
 import useThemeStyles from '@hooks/useThemeStyles';
-import {View} from 'react-native';
 import FlatList from '@components/FlatList';
 import {PressableWithFeedback} from '@components/Pressable';
 import FlexibleLoadingIndicator from '@components/FlexibleLoadingIndicator';
+import UserListSkeleton from '@components/Skeletons/UserListSkeleton';
 import {useDatabaseData} from '@context/global/DatabaseDataContext';
 import useLocalize from '@hooks/useLocalize';
 import UserOverview from './UserOverview';
@@ -220,16 +220,7 @@ function UserListComponent({
     (hasLoadedProfiles || !loadingDisplayData);
 
   if (isLoading || !isListReady) {
-    return (
-      <View
-        style={[
-          styles.flex1,
-          styles.justifyContentCenter,
-          styles.alignItemsCenter,
-        ]}>
-        <FlexibleLoadingIndicator />
-      </View>
-    );
+    return <UserListSkeleton />;
   }
 
   return (
