@@ -7,6 +7,7 @@ import type {FriendRequestStatus, Profile} from '@src/types/onyx';
 import useThemeStyles from '@hooks/useThemeStyles';
 import Text from '@components/Text';
 import useLocalize from '@hooks/useLocalize';
+import FriendOfflineFeedback from '@components/Social/FriendOfflineFeedback';
 import SendFriendRequestButton from './SendFriendRequestButton';
 
 type SearchResultProps = {
@@ -31,33 +32,35 @@ function SearchResult({
   const {translate} = useLocalize();
   const styles = useThemeStyles();
   return (
-    <View style={styles.userOverviewContainer}>
-      <View style={styles.userOverviewLeftContent}>
-        <ProfileImage
-          key={`${userID}-profile-icon`}
-          storage={storage}
-          userID={userID}
-          downloadPath={userDisplayData?.photo_url}
-          style={styles.avatarLarge}
-        />
-        <Text style={[styles.headerText, styles.ml3, styles.flexShrink1]}>
-          {userDisplayData?.display_name
-            ? userDisplayData.display_name
-            : translate('common.unknown')}
-        </Text>
-        <View style={styles.ml1}>
-          <SupporterBadgeForUser userID={userID} size="small" />
+    <FriendOfflineFeedback userID={userID}>
+      <View style={styles.userOverviewContainer}>
+        <View style={styles.userOverviewLeftContent}>
+          <ProfileImage
+            key={`${userID}-profile-icon`}
+            storage={storage}
+            userID={userID}
+            downloadPath={userDisplayData?.photo_url}
+            style={styles.avatarLarge}
+          />
+          <Text style={[styles.headerText, styles.ml3, styles.flexShrink1]}>
+            {userDisplayData?.display_name
+              ? userDisplayData.display_name
+              : translate('common.unknown')}
+          </Text>
+          <View style={styles.ml1}>
+            <SupporterBadgeForUser userID={userID} size="small" />
+          </View>
         </View>
+        {customButton ?? (
+          <SendFriendRequestButton
+            userFrom={userFrom}
+            userTo={userID}
+            requestStatus={requestStatus}
+            alreadyAFriend={alreadyAFriend}
+          />
+        )}
       </View>
-      {customButton ?? (
-        <SendFriendRequestButton
-          userFrom={userFrom}
-          userTo={userID}
-          requestStatus={requestStatus}
-          alreadyAFriend={alreadyAFriend}
-        />
-      )}
-    </View>
+    </FriendOfflineFeedback>
   );
 }
 
