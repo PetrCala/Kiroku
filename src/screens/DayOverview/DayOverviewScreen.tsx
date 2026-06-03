@@ -1,5 +1,5 @@
-import React, {useCallback, useMemo, useState} from 'react';
-import {StyleSheet, View} from 'react-native';
+import React, {useCallback, useEffect, useMemo, useState} from 'react';
+import {InteractionManager, StyleSheet, View} from 'react-native';
 import {endOfToday} from 'date-fns';
 import UserOffline from '@components/UserOfflineModal';
 import {useUserConnection} from '@context/global/UserConnectionContext';
@@ -8,11 +8,12 @@ import type {Database} from 'firebase/database';
 import type {User} from 'firebase/auth';
 import type {DayOverviewNavigatorParamList} from '@libs/Navigation/types';
 import type SCREENS from '@src/SCREENS';
+import type {DateString} from '@src/types/onyx/OnyxCommon';
 import type {SelectedTimezone} from '@src/types/onyx/UserData';
 import Navigation from '@libs/Navigation/Navigation';
 import {useDatabaseData} from '@context/global/DatabaseDataContext';
 import {useFirebase} from '@context/global/FirebaseContext';
-import {dateToDateData} from '@libs/DataHandling';
+import {dateStringToDate, dateToDateData} from '@libs/DataHandling';
 import * as App from '@userActions/App';
 import * as DS from '@userActions/DrinkingSession';
 import * as ErrorUtils from '@libs/ErrorUtils';
@@ -90,7 +91,23 @@ function DayOverviewScreen({route}: DayOverviewScreenProps) {
   const [isScrollReady, setIsScrollReady] = useState<boolean>(!date);
   const onInitialScrollReady = useCallback(() => setIsScrollReady(true), []);
 
+  // Defer mounting the (heavy) session list until after the navigation
+  // animation. `useLazyMarkedDates` filters/indexes all sessions synchronously
+  // on first render, which otherwise blocks the modal's slide-in ("nothing
+  // happens, then the screen appears"). Render only the skeleton first.
+  const [didInteract, setDidInteract] = useState(false);
+  useEffect(() => {
+    const handle = InteractionManager.runAfterInteractions(() =>
+      setDidInteract(true),
+    );
+    return () => handle.cancel();
+  }, []);
+
   const [isDatePickerVisible, setIsDatePickerVisible] = useState(false);
+
+  // The day the user is currently looking at — opens the add-session picker on
+  // the viewed month. Seeded with the focused day, updated as the user scrolls.
+  const [visibleDay, setVisibleDay] = useState<DateString | undefined>(date);
 
   // dayList mode ignores `visibleDate`/`onDateChange`, but the shared
   // `SessionsCalendar` props require them.
@@ -121,7 +138,7 @@ function DayOverviewScreen({route}: DayOverviewScreenProps) {
   }
 
   const isReady = !!user && !!preferences && drinkingSessionData !== undefined;
-  const showSkeleton = !isReady || !isScrollReady;
+  const showSkeleton = !didInteract || !isReady || !isScrollReady;
 
   return (
     <ScreenWrapper testID={DayOverviewScreen.displayName}>
@@ -130,7 +147,7 @@ function DayOverviewScreen({route}: DayOverviewScreenProps) {
         onBackButtonPress={Navigation.goBack}
       />
       <View style={styles.flex1}>
-        {isReady && (
+        {isReady && didInteract && (
           <View
             style={[
               styles.flex1,
@@ -147,6 +164,7 @@ function DayOverviewScreen({route}: DayOverviewScreenProps) {
               mode="dayList"
               initialDay={date}
               onInitialScrollReady={onInitialScrollReady}
+              onVisibleDayChange={setVisibleDay}
             />
           </View>
         )}
@@ -176,7 +194,7 @@ function DayOverviewScreen({route}: DayOverviewScreenProps) {
         mode="single"
         isVisible={isDatePickerVisible}
         title={translate('dayOverviewScreen.selectSessionDate')}
-        initialDate={new Date()}
+        initialDate={visibleDay ? dateStringToDate(visibleDay) : new Date()}
         maxDate={endOfToday()}
         applyText={translate('common.confirm')}
         cancelText={translate('common.cancel')}

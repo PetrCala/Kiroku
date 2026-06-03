@@ -47,6 +47,7 @@ function SessionsCalendar({
   initialMonthYear,
   initialFirstWeekY,
   initialDay,
+  onVisibleDayChange,
   onInitialScrollReady,
 }: SessionsCalendarProps) {
   const {auth} = useFirebase();
@@ -206,6 +207,7 @@ function SessionsCalendar({
         onRequestOlder={handleRequestOlder}
         initialDay={initialDay}
         onInitialScrollReady={onInitialScrollReady}
+        onVisibleDayChange={onVisibleDayChange}
       />
     );
   }

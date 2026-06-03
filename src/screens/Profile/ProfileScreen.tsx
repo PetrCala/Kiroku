@@ -5,8 +5,7 @@ import * as Profile from '@userActions/Profile';
 import type {StatData} from '@components/Items/StatOverview';
 import StatOverview from '@components/Items/StatOverview';
 import ProfileOverview from '@components/Social/ProfileOverview';
-import React, {useEffect, useMemo, useState} from 'react';
-import {useFocusEffect} from '@react-navigation/native';
+import React, {useCallback, useEffect, useMemo, useState} from 'react';
 import {useOnyx} from 'react-native-onyx';
 import ONYXKEYS from '@src/ONYXKEYS';
 import * as App from '@userActions/App';
@@ -75,12 +74,29 @@ function ProfileScreen({route}: ProfileScreenProps) {
   const [selfFriends, setSelfFriends] = useState<UserList | null | undefined>();
   const [friendCount, setFriendCount] = useState(0);
   const [commonFriendCount, setCommonFriendCount] = useState(0);
-  const [visibleDateData, setVisibleDateData] = useState(
+  const [localVisibleDateData, setLocalVisibleDateData] = useState(
     dateToDateData(new Date()),
   );
   const [lastViewedCalendarDate] = useOnyx(
     ONYXKEYS.NVP_LAST_VIEWED_CALENDAR_DATE,
   );
+  // The calendar's visible month: the last-viewed day from an enlarged calendar
+  // when present, otherwise the locally-navigated month. Derived (not synced via
+  // an effect) so it's already correct on the first render after the modal
+  // dismisses — the profile updates while still hidden underneath, so the user
+  // never sees the month flip. Reset on app launch → today.
+  const visibleDateData = useMemo(
+    () =>
+      lastViewedCalendarDate
+        ? dateToDateData(dateStringToDate(lastViewedCalendarDate))
+        : localVisibleDateData,
+    [lastViewedCalendarDate, localVisibleDateData],
+  );
+  // Manual month navigation overrides the synced value.
+  const onDateChange = useCallback((date: DateData) => {
+    setLocalVisibleDateData(date);
+    App.clearLastViewedCalendarDate();
+  }, []);
   const [drinkingSessionsCount, setDrinkingSessionsCount] = useState(0);
   const [unitsConsumed, setUnitsConsumed] = useState(0);
   const [manageFriendModalVisible, setManageFriendModalVisible] =
@@ -127,21 +143,6 @@ function ProfileScreen({route}: ProfileScreenProps) {
         : ROUTES.PROFILE_FRIENDS_FRIENDS.getRoute(userID);
     Navigation.navigate(screenRoute);
   };
-
-  // When returning from an enlarged calendar, sync this profile's calendar to
-  // the date last viewed, then consume the value so later focuses default to
-  // today.
-  useFocusEffect(
-    React.useCallback(() => {
-      if (!lastViewedCalendarDate) {
-        return;
-      }
-      setVisibleDateData(
-        dateToDateData(dateStringToDate(lastViewedCalendarDate)),
-      );
-      App.clearLastViewedCalendarDate();
-    }, [lastViewedCalendarDate]),
-  );
 
   // Track own friends
   useEffect(() => {
@@ -254,7 +255,7 @@ function ProfileScreen({route}: ProfileScreenProps) {
           <SessionsCalendar
             userID={userID}
             visibleDate={visibleDateData}
-            onDateChange={(date: DateData) => setVisibleDateData(date)}
+            onDateChange={onDateChange}
             drinkingSessionData={drinkingSessionData}
             preferences={preferences}
             isFetchingOlderMonths={isFetchingOlderMonths}

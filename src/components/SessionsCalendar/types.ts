@@ -52,6 +52,10 @@ type SessionsCalendarProps = {
   /** dayList-only. Day ('YYYY-MM-DD') to land on at first render. */
   initialDay?: DateString;
 
+  /** dayList-only. Debounced report of the top-most visible day as the user
+   *  scrolls — used to open the add-session picker on the viewed month. */
+  onVisibleDayChange?: (day: DateString) => void;
+
   /** Fullscreen/dayList. Fires once the scroll view has applied its initial
    *  scroll (or determined it doesn't need one). The screen uses this to
    *  drop a loading overlay that hides the brief pre-scroll frame. */
