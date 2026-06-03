@@ -3,9 +3,9 @@ import {StyleSheet, View} from 'react-native';
 import type {StackScreenProps} from '@react-navigation/stack';
 import type {DateData} from 'react-native-calendars';
 import SessionsCalendar from '@components/SessionsCalendar';
+import SessionsCalendarSkeleton from '@components/SessionsCalendar/SessionsCalendarSkeleton';
 import ScreenWrapper from '@components/ScreenWrapper';
 import HeaderWithBackButton from '@components/HeaderWithBackButton';
-import FullScreenLoadingIndicator from '@components/FullscreenLoadingIndicator';
 import {useFirebase} from '@context/global/FirebaseContext';
 import {useDatabaseData} from '@context/global/DatabaseDataContext';
 import useFetchData from '@hooks/useFetchData';
@@ -98,28 +98,34 @@ function SessionsCalendarScreen({route}: SessionsCalendarScreenProps) {
         shouldShowCloseButton
         onCloseButtonPress={() => Navigation.goBack()}
       />
-      {!isLoading && preferences && (
-        <View
-          style={[
-            styles.flex1,
-            styles.ph2,
-            !isScrollReady && internalStyles.hidden,
-          ]}>
-          <SessionsCalendar
-            userID={userID}
-            visibleDate={visibleDate}
-            onDateChange={setVisibleDate}
-            drinkingSessionData={drinkingSessionData}
-            preferences={preferences}
-            isFetchingOlderMonths={isFetchingOlderMonths}
-            mode="fullscreen"
-            initialMonthYear={monthYear}
-            initialFirstWeekY={firstWeekY}
-            onInitialScrollReady={onInitialScrollReady}
-          />
-        </View>
-      )}
-      {showLoader && <FullScreenLoadingIndicator />}
+      <View style={styles.flex1}>
+        {!isLoading && preferences && (
+          <View
+            style={[
+              styles.flex1,
+              styles.ph2,
+              !isScrollReady && internalStyles.hidden,
+            ]}>
+            <SessionsCalendar
+              userID={userID}
+              visibleDate={visibleDate}
+              onDateChange={setVisibleDate}
+              drinkingSessionData={drinkingSessionData}
+              preferences={preferences}
+              isFetchingOlderMonths={isFetchingOlderMonths}
+              mode="fullscreen"
+              initialMonthYear={monthYear}
+              initialFirstWeekY={firstWeekY}
+              onInitialScrollReady={onInitialScrollReady}
+            />
+          </View>
+        )}
+        {showLoader && (
+          <View style={StyleSheet.absoluteFill} pointerEvents="none">
+            <SessionsCalendarSkeleton />
+          </View>
+        )}
+      </View>
     </ScreenWrapper>
   );
 }
