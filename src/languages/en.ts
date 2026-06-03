@@ -1017,8 +1017,8 @@ export default {
         },
         empty: {
           neverLogged: {
-            title: 'Nothing to log yet — that counts.',
-            body: 'When you log a session, your period scorecard will show up here. Until then, every day is a quiet one.',
+            title: 'Nothing to log yet',
+            body: 'When you log a session, your period scorecard will show up here.',
           },
           noDataInRange:
             'No sessions in this period — every elapsed day was alcohol-free.',
