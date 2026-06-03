@@ -11,6 +11,7 @@ import {useDatabaseData} from '@context/global/DatabaseDataContext';
 import useFetchData from '@hooks/useFetchData';
 import useDrinkingSessionsFetch from '@hooks/useDrinkingSessionsFetch';
 import useLocalize from '@hooks/useLocalize';
+import useReadyAfterScreenTransition from '@hooks/useReadyAfterScreenTransition';
 import useThemeStyles from '@hooks/useThemeStyles';
 import {dateToDateData} from '@libs/DataHandling';
 import Navigation from '@libs/Navigation/Navigation';
@@ -88,10 +89,20 @@ function SessionsCalendarScreen({route}: SessionsCalendarScreenProps) {
   const [isScrollReady, setIsScrollReady] = useState<boolean>(!monthYear);
   const onInitialScrollReady = useCallback(() => setIsScrollReady(true), []);
 
-  const showLoader = isLoading || !preferences || !isScrollReady;
+  // Defer the (heavy) fullscreen calendar mount until after the navigation
+  // slide. `useLazyMarkedDates` + the week-list build run synchronously on
+  // first render, which otherwise blocks the slide-in from the compact
+  // calendar's header tap. Render only the skeleton first.
+  const {isReady: didScreenTransitionEnd, onEntryTransitionEnd} =
+    useReadyAfterScreenTransition();
+
+  const showLoader =
+    !didScreenTransitionEnd || isLoading || !preferences || !isScrollReady;
 
   return (
-    <ScreenWrapper testID={SessionsCalendarScreen.displayName}>
+    <ScreenWrapper
+      testID={SessionsCalendarScreen.displayName}
+      onEntryTransitionEnd={onEntryTransitionEnd}>
       <HeaderWithBackButton
         title={translate('calendar.fullscreenTitle')}
         shouldShowBackButton={false}
@@ -99,7 +110,7 @@ function SessionsCalendarScreen({route}: SessionsCalendarScreenProps) {
         onCloseButtonPress={() => Navigation.goBack()}
       />
       <View style={styles.flex1}>
-        {!isLoading && preferences && (
+        {didScreenTransitionEnd && !isLoading && preferences && (
           <View
             style={[
               styles.flex1,
