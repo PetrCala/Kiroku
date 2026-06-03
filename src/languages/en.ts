@@ -966,7 +966,7 @@ export default {
     profileImage: 'Profile Image',
   },
   statistics: {
-    title: 'Your stats',
+    title: 'Statistics',
     tabs: {
       overview: {
         label: 'Overview',
