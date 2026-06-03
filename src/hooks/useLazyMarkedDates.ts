@@ -26,6 +26,96 @@ import ONYXKEYS from '@src/ONYXKEYS';
 import * as Calendar from '@userActions/Calendar';
 import type {UserID, DateString} from '@src/types/onyx/OnyxCommon';
 
+type SessionIndexResult = {
+  sessionIndex: Map<DateString, DrinkingSessionArray>;
+  sessionEntriesByDay: Map<DateString, DrinkingSessionKeyValue[]>;
+  dayKeys: DateString[];
+  loadedFromDate: Date;
+};
+
+// Cross-mount cache for the O(N) session-index pass. Mirrors the `lastCall`
+// cache in libs/Statistics/events.ts: the screen that owns this hook (home
+// calendar, day-overview, fullscreen calendar, friend profile) unmounts on
+// navigation, throwing away its `useMemo`, so every return trip re-filtered
+// and re-indexed *all* sessions on the JS thread — the stall felt right after
+// the modal slide-in. Keyed on the session-list reference, which is stable
+// across navigations (it is React state in [[useListenToData]], replaced only
+// on a Firebase push), so a remount with unchanged data reuses the prior
+// index in O(1). A WeakMap lets several lists (auth user + friends) coexist
+// and be collected with their data; the inner key folds in the loaded depth,
+// fallback timezone, and current day, so a wider scroll or a midnight rollover
+// still recomputes.
+const sessionIndexCache = new WeakMap<
+  DrinkingSessionList,
+  Map<string, SessionIndexResult>
+>();
+
+function computeSessionIndex(
+  sessions: DrinkingSessionList,
+  loadedMonths: number,
+  defaultTimezone: string,
+): SessionIndexResult {
+  const today = new Date();
+  const todayKey = format(today, CONST.DATE.FNS_FORMAT_STRING);
+  const cacheKey = `${loadedMonths}|${defaultTimezone}|${todayKey}`;
+  const byInput = sessionIndexCache.get(sessions);
+  const cached = byInput?.get(cacheKey);
+  if (cached) {
+    return cached;
+  }
+
+  const start = subDays(startOfMonth(subMonths(today, loadedMonths)), 1);
+  const end = today;
+
+  const index = new Map<DateString, DrinkingSessionArray>();
+  // Parallel index that keeps the session IDs alongside each session, so
+  // consumers that render session tiles (the day-overview scroll) don't have
+  // to re-derive IDs. Built in the same pass.
+  const entriesByDay = new Map<DateString, DrinkingSessionKeyValue[]>();
+  Object.entries(sessions)
+    .filter(([, session]) => isWithinInterval(session.start_time, {start, end}))
+    .forEach(([sessionId, session]) => {
+      const sessionDate = toZonedTime(
+        session.start_time,
+        session.timezone ?? defaultTimezone,
+      );
+      const dayKey = format(
+        sessionDate,
+        CONST.DATE.FNS_FORMAT_STRING,
+      ) as DateString;
+      const existing = index.get(dayKey);
+      if (existing) {
+        existing.push(session);
+      } else {
+        index.set(dayKey, [session]);
+      }
+      const existingEntries = entriesByDay.get(dayKey);
+      if (existingEntries) {
+        existingEntries.push({sessionId, session});
+      } else {
+        entriesByDay.set(dayKey, [{sessionId, session}]);
+      }
+    });
+
+  const days = eachDayOfInterval({start, end}).map(
+    day => format(day, CONST.DATE.FNS_FORMAT_STRING) as DateString,
+  );
+
+  const result: SessionIndexResult = {
+    sessionIndex: index,
+    sessionEntriesByDay: entriesByDay,
+    dayKeys: days,
+    loadedFromDate: start,
+  };
+
+  if (byInput) {
+    byInput.set(cacheKey, result);
+  } else {
+    sessionIndexCache.set(sessions, new Map([[cacheKey, result]]));
+  }
+  return result;
+}
+
 /**
  * Custom hook to derive a calendar's markedDates and per-day unit counts from a
  * session list and the user's preferences.
@@ -73,56 +163,13 @@ function useLazyMarkedDates(
   // First pass — rebuild the session-by-day index only when sessions or the
   // visible range change. Preferences are *not* a dependency here: a palette
   // or threshold change must not trigger the O(N) session filter+index pass.
-  const {sessionIndex, sessionEntriesByDay, dayKeys, loadedFromDate} =
-    useMemo(() => {
-      const today = new Date();
-      const start = subDays(startOfMonth(subMonths(today, loadedMonths)), 1);
-      const end = today;
-
-      const index = new Map<DateString, DrinkingSessionArray>();
-      // Parallel index that keeps the session IDs alongside each session, so
-      // consumers that render session tiles (the day-overview scroll) don't
-      // have to re-derive IDs. Built in the same pass — the marking/units
-      // passes below keep using `index` unchanged.
-      const entriesByDay = new Map<DateString, DrinkingSessionKeyValue[]>();
-      Object.entries(sessions)
-        .filter(([, session]) =>
-          isWithinInterval(session.start_time, {start, end}),
-        )
-        .forEach(([sessionId, session]) => {
-          const sessionDate = toZonedTime(
-            session.start_time,
-            session.timezone ?? defaultTimezone,
-          );
-          const dayKey = format(
-            sessionDate,
-            CONST.DATE.FNS_FORMAT_STRING,
-          ) as DateString;
-          const existing = index.get(dayKey);
-          if (existing) {
-            existing.push(session);
-          } else {
-            index.set(dayKey, [session]);
-          }
-          const existingEntries = entriesByDay.get(dayKey);
-          if (existingEntries) {
-            existingEntries.push({sessionId, session});
-          } else {
-            entriesByDay.set(dayKey, [{sessionId, session}]);
-          }
-        });
-
-      const days = eachDayOfInterval({start, end}).map(
-        day => format(day, CONST.DATE.FNS_FORMAT_STRING) as DateString,
-      );
-
-      return {
-        sessionIndex: index,
-        sessionEntriesByDay: entriesByDay,
-        dayKeys: days,
-        loadedFromDate: start,
-      };
-    }, [sessions, loadedMonths, defaultTimezone]);
+  // The heavy work is delegated to `computeSessionIndex`, whose module-level
+  // cache also lets the result survive an unmount/remount (navigation) so a
+  // return trip to the calendar doesn't re-walk every session.
+  const {sessionIndex, sessionEntriesByDay, dayKeys, loadedFromDate} = useMemo(
+    () => computeSessionIndex(sessions, loadedMonths, defaultTimezone),
+    [sessions, loadedMonths, defaultTimezone],
+  );
 
   // Resolve which palette to render with. When the viewer has enabled
   // `use_own_palette_for_others`, this swaps the viewed user's palette for the
