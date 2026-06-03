@@ -10,7 +10,6 @@ import CONST from '@src/CONST';
 import {
   differenceInCalendarMonths,
   eachDayOfInterval,
-  format,
   isWithinInterval,
   startOfMonth,
   subDays,
@@ -25,6 +24,22 @@ import {useOnyx} from 'react-native-onyx';
 import ONYXKEYS from '@src/ONYXKEYS';
 import * as Calendar from '@userActions/Calendar';
 import type {UserID, DateString} from '@src/types/onyx/OnyxCommon';
+
+// Hand-rolled 'yyyy-MM-dd' (matches CONST.DATE.FNS_FORMAT_STRING). date-fns
+// `format` is ~100× slower and this runs once per day across the whole loaded
+// range — which can be years deep — so it dominated the day-overview mount
+// (e.g. 77 months ≈ 2.3k `format` calls ≈ ~460ms on Hermes). The Date's local
+// fields already carry the right wall-clock day (`toZonedTime` shifted them to
+// the session's zone for the per-session key; the day list is built in local
+// time), so reading them directly is both correct and cheap.
+function toDateKey(date: Date): DateString {
+  const year = date.getFullYear();
+  const month = date.getMonth() + 1;
+  const day = date.getDate();
+  return `${year}-${month < 10 ? '0' : ''}${month}-${
+    day < 10 ? '0' : ''
+  }${day}` as DateString;
+}
 
 /**
  * Custom hook to derive a calendar's markedDates and per-day unit counts from a
@@ -94,10 +109,7 @@ function useLazyMarkedDates(
             session.start_time,
             session.timezone ?? defaultTimezone,
           );
-          const dayKey = format(
-            sessionDate,
-            CONST.DATE.FNS_FORMAT_STRING,
-          ) as DateString;
+          const dayKey = toDateKey(sessionDate);
           const existing = index.get(dayKey);
           if (existing) {
             existing.push(session);
@@ -112,9 +124,7 @@ function useLazyMarkedDates(
           }
         });
 
-      const days = eachDayOfInterval({start, end}).map(
-        day => format(day, CONST.DATE.FNS_FORMAT_STRING) as DateString,
-      );
+      const days = eachDayOfInterval({start, end}).map(toDateKey);
 
       return {
         sessionIndex: index,
