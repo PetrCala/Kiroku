@@ -1,7 +1,7 @@
 import {useEffect, useRef} from 'react';
 import {View} from 'react-native';
 import Text from '@components/Text';
-import {PressableWithoutFeedback} from '@components/Pressable';
+import {PressableWithFeedback} from '@components/Pressable';
 import useStyleUtils from '@hooks/useStyleUtils';
 import type {DayComponentProps} from '@components/SessionsCalendar/types';
 
@@ -46,8 +46,9 @@ function DayComponent({
 
   return (
     <View ref={viewRef} collapsable={false}>
-      <PressableWithoutFeedback
+      <PressableWithFeedback
         accessibilityLabel=""
+        disabled={isDisabled}
         onPress={() => onPress && date && onPress(date)}>
         <View
           style={StyleUtils.getSessionsCalendarDayCellStyle(
@@ -68,7 +69,7 @@ function DayComponent({
             </Text>
           )}
         </View>
-      </PressableWithoutFeedback>
+      </PressableWithFeedback>
     </View>
   );
 }
