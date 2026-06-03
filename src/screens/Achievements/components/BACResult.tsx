@@ -38,6 +38,12 @@ type BACResultProps = {
 
   /** Opens the per-session breakdown modal. */
   onShowDetails: () => void;
+
+  /** Render the decay chart as a loading skeleton instead of mounting the
+   *  (heavy) Skia canvas. Lets the screen defer the chart past a navigation
+   *  transition while keeping this component's layout identical, so the
+   *  skeleton→chart swap doesn't shift anything. */
+  isChartLoading?: boolean;
 };
 
 const MS_PER_HOUR = 60 * 60 * 1000;
@@ -68,6 +74,7 @@ function BACResult({
   timeFormat,
   onChangeTimeFormat,
   onShowDetails,
+  isChartLoading = false,
 }: BACResultProps) {
   const styles = useThemeStyles();
   const {translate} = useLocalize();
@@ -212,6 +219,7 @@ function BACResult({
             data={chartData}
             range="allTime"
             height={200}
+            loading={isChartLoading}
             accessibilityLabel={translate(
               'achievementsScreen.bac.decayChartLabel',
             )}

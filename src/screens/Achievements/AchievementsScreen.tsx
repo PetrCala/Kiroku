@@ -29,7 +29,6 @@ import BACDetailsModal from './components/BACDetailsModal';
 import BACIntroModal from './components/BACIntroModal';
 import BACQuestionnaire from './components/BACQuestionnaire';
 import BACResult from './components/BACResult';
-import BACResultSkeleton from './components/BACResultSkeleton';
 
 function AchievementsScreen() {
   const {translate} = useLocalize();
@@ -133,23 +132,6 @@ function AchievementsScreen() {
     </PressableWithFeedback>
   );
 
-  // Gate the Skia chart behind the transition; show a layout-faithful skeleton
-  // in the result slot until the slide has finished.
-  const bacResult = didScreenTransitionEnd ? (
-    <BACResult
-      estimate={estimate}
-      decayData={decayData}
-      hoursToSober={hoursToSober}
-      displayUnit={displayUnit}
-      onChangeDisplayUnit={onChangeDisplayUnit}
-      timeFormat={timeFormat}
-      onChangeTimeFormat={onChangeTimeFormat}
-      onShowDetails={() => setShowDetails(true)}
-    />
-  ) : (
-    <BACResultSkeleton />
-  );
-
   return (
     <ScreenWrapper
       testID={AchievementsScreen.displayName}
@@ -170,7 +152,17 @@ function AchievementsScreen() {
         <>
           <View style={styles.flex1}>
             {hasEstimate ? (
-              bacResult
+              <BACResult
+                estimate={estimate}
+                decayData={decayData}
+                hoursToSober={hoursToSober}
+                displayUnit={displayUnit}
+                onChangeDisplayUnit={onChangeDisplayUnit}
+                timeFormat={timeFormat}
+                onChangeTimeFormat={onChangeTimeFormat}
+                onShowDetails={() => setShowDetails(true)}
+                isChartLoading={!didScreenTransitionEnd}
+              />
             ) : (
               <View
                 style={[

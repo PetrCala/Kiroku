@@ -1691,57 +1691,6 @@ const styles = (theme: ThemeColors) =>
       backgroundColor: theme.highlightBG,
     },
 
-    // Placeholder blocks for the BAC result loading skeleton
-    // (`BACResultSkeleton`) — mirror BACResult's value header, unit toggles,
-    // and chart area while the Skia chart mount is deferred past the slide.
-    bacResultSkeletonHeaderLabel: {
-      width: 120,
-      height: 12,
-      borderRadius: 3,
-      backgroundColor: theme.highlightBG,
-    },
-
-    bacResultSkeletonValue: {
-      width: 96,
-      height: 32,
-      borderRadius: 6,
-      marginTop: 8,
-      backgroundColor: theme.highlightBG,
-    },
-
-    bacResultSkeletonPillRow: {
-      flexDirection: 'row',
-      gap: 8,
-    },
-
-    bacResultSkeletonPill: {
-      width: 44,
-      height: 28,
-      borderRadius: 14,
-      backgroundColor: theme.highlightBG,
-    },
-
-    bacResultSkeletonPillWide: {
-      width: 72,
-      height: 28,
-      borderRadius: 14,
-      backgroundColor: theme.highlightBG,
-    },
-
-    bacResultSkeletonSoberLine: {
-      width: 160,
-      height: 12,
-      borderRadius: 3,
-      backgroundColor: theme.highlightBG,
-    },
-
-    bacResultSkeletonDisclaimer: {
-      width: '80%',
-      height: 10,
-      borderRadius: 3,
-      backgroundColor: theme.highlightBG,
-    },
-
     // Inline month-section label rendered as a FlashList sticky header.
     // Acts as both the section separator (with a thin rule on the right)
     // and the always-visible "you are here" indicator.
