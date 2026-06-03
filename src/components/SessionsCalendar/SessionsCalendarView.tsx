@@ -294,19 +294,21 @@ function SessionsCalendarView({
     <GestureDetector gesture={swipeGesture}>
       <View collapsable={false}>
         <Calendar
-          // Two remount triggers folded into one key:
-          //   • `themePreference` — belt-and-suspenders for the lib's first-
-          //     mount stylesheet snapshot (patched in
-          //     `patches/react-native-calendars+*.patch`).
-          //   • `visibleDate.dateString.slice(0, 7)` — the lib reads `current`
-          //     only on initial `useState`, so prop updates don't move its
-          //     internal cursor. Arrow presses sidestep this by calling
-          //     `subtractMonth`/`addMonth`; swipes have no such callback, so
-          //     we force a remount on month change to keep the grid in sync
-          //     with `visibleDate`. Slicing to 'YYYY-MM' avoids day-level
-          //     remounts when the date string changes within a month.
-          key={`${themePreference}-${visibleDate.dateString.slice(0, 7)}`}
-          current={visibleDate.dateString}
+          // Remount on theme change only — belt-and-suspenders for the lib's
+          // first-mount stylesheet snapshot (patched in
+          // `patches/react-native-calendars+*.patch`). The month must NOT be
+          // in this key: a key change unmounts + remounts the grid, blanking it
+          // for a frame — that remount was the month-paging flicker on the
+          // home/profile calendars.
+          key={themePreference}
+          // Drive the visible month from `initialDate`, not `current`. The lib
+          // seeds its internal cursor from `current` only once (initial
+          // `useState`) and never reacts to later `current` changes, but it
+          // *does* run a `useEffect([initialDate])` that pushes prop updates
+          // into that cursor. So both paths stay in sync without a remount:
+          // arrow presses (which also call the lib's `subtractMonth`/`addMonth`)
+          // and swipes (which only update `visibleDate` → `initialDate`).
+          initialDate={visibleDate.dateString}
           dayComponent={dayComponent}
           minDate={resolvedMinDate}
           maxDate={resolvedMaxDate}
