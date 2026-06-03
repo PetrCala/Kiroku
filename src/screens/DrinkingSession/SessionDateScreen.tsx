@@ -119,7 +119,6 @@ function SesssionDateScreen({route}: SessionDateScreenProps) {
           InputComponent={DatePicker}
           inputID={INPUT_IDS.DATE}
           label={translate('common.date')}
-          pickerTitle={translate('sessionDateScreen.title')}
           defaultValue={
             session?.start_time
               ? format(

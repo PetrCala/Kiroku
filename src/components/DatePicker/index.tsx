@@ -2,7 +2,7 @@ import {format, parseISO, setYear} from 'date-fns';
 import type {ForwardedRef} from 'react';
 import React, {forwardRef, useEffect, useState} from 'react';
 import {View} from 'react-native';
-import DateSelectorModal from '@components/DateSelectorModal';
+import Calendar from '@components/DateSelectorModal/Calendar';
 import * as KirokuIcons from '@components/Icon/KirokuIcons';
 import TextInput from '@components/TextInput';
 import type {
@@ -35,12 +35,6 @@ type DatePickerProps = {
 
   /** A maximum date of calendar to select */
   maxDate?: Date;
-
-  /** Optional heading shown above the calendar in the picker modal */
-  pickerTitle?: string;
-
-  /** Optional explanatory copy shown below the title in the picker modal */
-  pickerDescription?: string;
 
   /** A function that is passed by FormWrapper */
   onInputChange?: (value: string) => void;
@@ -83,8 +77,6 @@ function DatePicker(
     label,
     maxDate = setYear(new Date(), CONST.CALENDAR_PICKER.MAX_YEAR),
     minDate = setYear(new Date(), CONST.CALENDAR_PICKER.MIN_YEAR),
-    pickerTitle,
-    pickerDescription,
     onInputChange,
     onTouched,
     placeholder,
@@ -100,14 +92,11 @@ function DatePicker(
     // eslint-disable-next-line @typescript-eslint/prefer-nullish-coalescing
     value || defaultValue || undefined,
   );
-  const [isPickerVisible, setIsPickerVisible] = useState(false);
-
-  const onApply = (date: Date) => {
+  const commitDate = (date: Date) => {
     const formatted = format(date, CONST.DATE.FNS_FORMAT_STRING);
     onTouched?.();
     onInputChange?.(formatted);
     setSelectedDate(formatted);
-    setIsPickerVisible(false);
   };
 
   useEffect(() => {
@@ -138,28 +127,18 @@ function DatePicker(
         errorText={errorText}
         containerStyles={containerStyles}
         textInputContainerStyles={[styles.borderColorFocus]}
-        onPress={() => {
-          if (disabled) {
-            return;
-          }
-          setIsPickerVisible(true);
-        }}
         disabled={disabled}
         readOnly
       />
-      <DateSelectorModal
-        mode="single"
-        isVisible={isPickerVisible}
-        title={pickerTitle}
-        description={pickerDescription}
-        applyText={translate('common.done')}
-        cancelText={translate('common.cancel')}
-        minDate={minDate}
-        maxDate={maxDate}
-        initialDate={getInitialDate(selectedDate, minDate, maxDate)}
-        onApply={onApply}
-        onCancel={() => setIsPickerVisible(false)}
-      />
+      <View style={styles.mt3}>
+        <Calendar
+          mode="single"
+          initialDate={getInitialDate(selectedDate, minDate, maxDate)}
+          minDate={minDate}
+          maxDate={maxDate}
+          onChangeSingle={commitDate}
+        />
+      </View>
     </View>
   );
 }
