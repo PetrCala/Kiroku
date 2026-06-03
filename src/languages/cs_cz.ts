@@ -511,6 +511,18 @@ export default {
     searchYourFriendList: 'Prohledat seznam přátel',
     userList: 'List vašich přátel',
   },
+  friendAction: {
+    error: {
+      couldNotSendRequest:
+        'Nepodařilo se odeslat žádost o přátelství. Zkuste to prosím znovu.',
+      couldNotAcceptRequest:
+        'Nepodařilo se přijmout žádost o přátelství. Zkuste to prosím znovu.',
+      couldNotRemoveRequest:
+        'Nepodařilo se odstranit žádost o přátelství. Zkuste to prosím znovu.',
+      couldNotUnfriend:
+        'Nepodařilo se odebrat tohoto přítele. Zkuste to prosím znovu.',
+    },
+  },
   notFoundScreen: {
     title: 'Nenalezeno',
   },

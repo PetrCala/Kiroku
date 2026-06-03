@@ -22,6 +22,8 @@ import type {
   FriendRequestArray,
   FriendRequestStatus,
 } from './FriendRequestList';
+import type FriendsMetadata from './FriendsMetadata';
+import type {FriendActionMetadata} from './FriendsMetadata';
 import type Locale from './Locale';
 import type Login from './Login';
 import type Modal from './Modal';
@@ -106,6 +108,8 @@ export type {
   FriendRequestArray,
   FriendRequestList,
   FriendRequestStatus,
+  FriendsMetadata,
+  FriendActionMetadata,
   Locale,
   Log,
   Login,

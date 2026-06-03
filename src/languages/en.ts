@@ -508,6 +508,17 @@ export default {
     searchYourFriendList: 'Search your friend list',
     userList: 'The list of your friends',
   },
+  friendAction: {
+    error: {
+      couldNotSendRequest:
+        'Could not send the friend request. Please try again.',
+      couldNotAcceptRequest:
+        'Could not accept the friend request. Please try again.',
+      couldNotRemoveRequest:
+        'Could not remove the friend request. Please try again.',
+      couldNotUnfriend: 'Could not remove this friend. Please try again.',
+    },
+  },
   notFoundScreen: {
     title: 'Not Found',
   },

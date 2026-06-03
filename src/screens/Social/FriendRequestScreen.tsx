@@ -11,6 +11,7 @@ import {useFirebase} from '@context/global/FirebaseContext';
 import * as Friends from '@userActions/Friends';
 import type {Database} from 'firebase/database';
 import NoFriendUserOverview from '@components/Social/NoFriendUserOverview';
+import FriendOfflineFeedback from '@components/Social/FriendOfflineFeedback';
 import * as Profile from '@userActions/Profile';
 import GrayHeader from '@components/Header/GrayHeader';
 import {objKeys} from '@libs/DataHandling';
@@ -180,15 +181,18 @@ function FriendRequestItem({
   const requestStatus = friendRequests[requestId];
 
   return (
-    <NoFriendUserOverview
+    <FriendOfflineFeedback
       key={`${requestId}-friend-request`}
-      userID={requestId}
-      profileData={profileData}
-      RightSideComponent={FriendRequestComponent({
-        requestId,
-        requestStatus,
-      })}
-    />
+      userID={requestId}>
+      <NoFriendUserOverview
+        userID={requestId}
+        profileData={profileData}
+        RightSideComponent={FriendRequestComponent({
+          requestId,
+          requestStatus,
+        })}
+      />
+    </FriendOfflineFeedback>
   );
 }
 
