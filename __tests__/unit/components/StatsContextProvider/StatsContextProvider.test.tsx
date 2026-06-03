@@ -144,4 +144,29 @@ describe('StatsContextProvider', () => {
     ]);
     expect(getCtx().comparison).toBe('none');
   });
+
+  it('does not widen the calendar-depth lever past the earliest session for an All + comparison range', () => {
+    mockOnyxValue = undefined; // monthsLoaded resolves to 0
+
+    renderProvider();
+
+    act(() => {
+      getCtx().setRange({preset: 'All'});
+    });
+    act(() => {
+      getCtx().setComparison('previous-period');
+    });
+
+    // earliest_session_at ≈ 2023-11-14, now = 2026-05-15 → 30 calendar months.
+    // Without the earliest clamp the previous-period window sits a full span
+    // (~30 months) *before* the first session, which would request ~60 months.
+    const calendarWidens = merge.mock.calls.filter(
+      ([key]) => key === 'sessionsCalendarMonthsByUserID_u1',
+    );
+    expect(calendarWidens.length).toBeGreaterThan(0);
+    const deepestRequested = Math.max(
+      ...calendarWidens.map(([, value]) => value as number),
+    );
+    expect(deepestRequested).toBe(30);
+  });
 });

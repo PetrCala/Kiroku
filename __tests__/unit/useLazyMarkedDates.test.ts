@@ -3,7 +3,7 @@
 import {act, renderHook} from '@testing-library/react-native';
 import {addMonths, differenceInMonths, subMonths} from 'date-fns';
 import useLazyMarkedDates from '@hooks/useLazyMarkedDates';
-import type {Preferences} from '@src/types/onyx';
+import type {DrinkingSessionList, Preferences} from '@src/types/onyx';
 
 jest.mock('@hooks/useResolvedPalette', () => ({
   __esModule: true,
@@ -99,5 +99,32 @@ describe('useLazyMarkedDates.loadUpTo', () => {
     });
 
     expect(result.current.loadedFrom.current).toBe(initial);
+  });
+});
+
+describe('useLazyMarkedDates earliest-month cap', () => {
+  test('clamps the loaded window to the earliest tracked month, ignoring an inflated depth', () => {
+    // One session ~10 months ago is the user's entire history.
+    const earliest = subMonths(new Date(), 10);
+    const sessions = {
+      s1: {start_time: earliest.getTime(), timezone: 'UTC', drinks: {}},
+    } as unknown as DrinkingSessionList;
+
+    const {result} = renderHook(() =>
+      useLazyMarkedDates(TEST_UID, sessions, makePreferences()),
+    );
+
+    act(() => {
+      // Stats-style overshoot: a comparison/All range can push the shared
+      // depth lever far deeper than any data ever reaches.
+      result.current.loadUpTo(subMonths(new Date(), 60));
+    });
+
+    // The build floor is clamped to the earliest session's month (~10 months
+    // back), not the requested 60 — so the day-key build never spans empty
+    // pre-tracking months.
+    const depth = differenceInMonths(new Date(), getLoadedFrom(result));
+    expect(depth).toBeGreaterThanOrEqual(9);
+    expect(depth).toBeLessThanOrEqual(11);
   });
 });
