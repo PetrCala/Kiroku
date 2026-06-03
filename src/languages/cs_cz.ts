@@ -1008,7 +1008,7 @@ export default {
         },
         empty: {
           neverLogged: {
-            title: 'Zatím není co zaznamenat',
+            title: 'Zatím není co zobrazit',
             body: 'Až zaznamenáte relaci, objeví se zde týdenní trendy a měsíční přehled.',
           },
           noDataInWindow: ({quietDays}: StatsQuietDaysParams) =>
