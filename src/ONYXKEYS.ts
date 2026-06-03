@@ -54,6 +54,13 @@ const ONYXKEYS = {
   /** Contains all the userData the user has access to, keyed by userID */
   USER_DATA_LIST: 'userDataList',
 
+  /**
+   * Per-friend offline-feedback state (pendingAction + dismissible errors),
+   * keyed by the counterpart's userID. Client-only: the server never writes
+   * this, so it survives `/v1/updates` + Pusher userData merges.
+   */
+  FRIENDS_METADATA: 'friendsMetadata',
+
   /** Contains all the private user data details of the user */
   USER_PRIVATE_DATA: 'private_userData',
 
@@ -288,6 +295,7 @@ type OnyxValuesMapping = {
   [ONYXKEYS.MODAL]: OnyxTypes.Modal;
   [ONYXKEYS.NETWORK]: OnyxTypes.Network;
   [ONYXKEYS.USER_DATA_LIST]: OnyxTypes.UserDataList;
+  [ONYXKEYS.FRIENDS_METADATA]: OnyxTypes.FriendsMetadata;
   [ONYXKEYS.USER_PRIVATE_DATA]: OnyxTypes.UserPrivateData;
   [ONYXKEYS.USER_DATA_METADATA]: Record<string, OnyxTypes.UserDataMetadata>;
   [ONYXKEYS.UPDATE_AVAILABLE]: boolean;
