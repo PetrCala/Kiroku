@@ -1,5 +1,5 @@
-import React, {useCallback, useEffect, useMemo, useState} from 'react';
-import {InteractionManager, StyleSheet, View} from 'react-native';
+import React, {useCallback, useMemo, useState} from 'react';
+import {StyleSheet, View} from 'react-native';
 import {endOfToday} from 'date-fns';
 import UserOffline from '@components/UserOfflineModal';
 import {useUserConnection} from '@context/global/UserConnectionContext';
@@ -28,6 +28,7 @@ import Icon from '@components/Icon';
 import * as KirokuIcons from '@components/Icon/KirokuIcons';
 import {PressableWithFeedback} from '@components/Pressable';
 import useLocalize from '@hooks/useLocalize';
+import useReadyAfterScreenTransition from '@hooks/useReadyAfterScreenTransition';
 import useTheme from '@hooks/useTheme';
 import useThemeStyles from '@hooks/useThemeStyles';
 import variables from '@styles/variables';
@@ -91,17 +92,13 @@ function DayOverviewScreen({route}: DayOverviewScreenProps) {
   const [isScrollReady, setIsScrollReady] = useState<boolean>(!date);
   const onInitialScrollReady = useCallback(() => setIsScrollReady(true), []);
 
-  // Defer mounting the (heavy) session list until after the navigation
-  // animation. `useLazyMarkedDates` filters/indexes all sessions synchronously
-  // on first render, which otherwise blocks the modal's slide-in ("nothing
-  // happens, then the screen appears"). Render only the skeleton first.
-  const [didInteract, setDidInteract] = useState(false);
-  useEffect(() => {
-    const handle = InteractionManager.runAfterInteractions(() =>
-      setDidInteract(true),
-    );
-    return () => handle.cancel();
-  }, []);
+  // Defer mounting the (heavy) session list until after the navigation slide.
+  // `useLazyMarkedDates` filters/indexes all sessions synchronously on first
+  // render, which otherwise blocks the modal's slide-in ("nothing happens,
+  // then the screen appears"). Gate on the screen's transition-end so the
+  // slide paints against the skeleton first, then mount the list.
+  const {isReady: didScreenTransitionEnd, onEntryTransitionEnd} =
+    useReadyAfterScreenTransition();
 
   const [isDatePickerVisible, setIsDatePickerVisible] = useState(false);
 
@@ -138,16 +135,18 @@ function DayOverviewScreen({route}: DayOverviewScreenProps) {
   }
 
   const isReady = !!user && !!preferences && drinkingSessionData !== undefined;
-  const showSkeleton = !didInteract || !isReady || !isScrollReady;
+  const showSkeleton = !didScreenTransitionEnd || !isReady || !isScrollReady;
 
   return (
-    <ScreenWrapper testID={DayOverviewScreen.displayName}>
+    <ScreenWrapper
+      testID={DayOverviewScreen.displayName}
+      onEntryTransitionEnd={onEntryTransitionEnd}>
       <HeaderWithBackButton
         title={translate('calendar.fullscreenTitle')}
         onBackButtonPress={Navigation.goBack}
       />
       <View style={styles.flex1}>
-        {isReady && didInteract && (
+        {isReady && didScreenTransitionEnd && (
           <View
             style={[
               styles.flex1,
