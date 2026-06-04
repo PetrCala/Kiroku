@@ -55,7 +55,7 @@ jobs:
           android: false # keep the Android SDK the build needs
           dotnet: true
           haskell: true
-          large-packages: true
+          large-packages: false # apt autoremove purges libicu-dev, breaking Hermes' CMake ICU lookup
           docker-images: true
           swap-storage: true
 
