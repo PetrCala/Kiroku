@@ -29,6 +29,7 @@ function HeaderWithBackButton({
   onThreeDotsButtonPress = () => {},
   avatar,
   shouldShowBackButton = true,
+  shouldAlignTitleStart = false,
   shouldShowBorderBottom = false,
   shouldShowCloseButton = false,
   shouldShowDownloadButton = false,
@@ -96,13 +97,18 @@ function HeaderWithBackButton({
           titleColor ? StyleUtils.getTextColorStyle(titleColor) : {},
           isCentralPaneSettings && styles.textHeadlineH2,
         ]}
-        containerStyles={styles.justifyContentEnd}
+        // Default end-alignment parks the title by the right-side actions;
+        // `shouldAlignTitleStart` keeps it next to the back button instead.
+        containerStyles={
+          shouldAlignTitleStart ? undefined : styles.justifyContentEnd
+        }
       />
     );
   }, [
     StyleUtils,
     isCentralPaneSettings,
     progressBarPercentage,
+    shouldAlignTitleStart,
     styles.flexGrow1,
     styles.headerProgressBar,
     styles.headerProgressBarContainer,

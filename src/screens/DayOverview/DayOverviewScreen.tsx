@@ -196,6 +196,7 @@ function DayOverviewScreen({route}: DayOverviewScreenProps) {
       <HeaderWithBackButton
         title={translate('calendar.fullscreenTitle')}
         onBackButtonPress={Navigation.goBack}
+        shouldAlignTitleStart
         customRightButton={
           isSelf ? (
             <PressableWithFeedback
