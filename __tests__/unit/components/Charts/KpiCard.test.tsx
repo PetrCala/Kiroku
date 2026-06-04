@@ -20,10 +20,11 @@ jest.mock('@components/Pressable', () => {
   };
 });
 
-// Sparkline composes BaseChart → CartesianChart → Skia. Stub it.
-jest.mock('@components/Charts/Sparkline', () => ({
+// Sparkline composes BaseChart → CartesianChart → Skia. Stub it. KpiCard pulls
+// it in lazily from the component file (not the barrel), so mock that path.
+jest.mock('@components/Charts/Sparkline/Sparkline', () => ({
   __esModule: true,
-  Sparkline: () => null,
+  default: () => null,
 }));
 
 describe('KpiCard', () => {
