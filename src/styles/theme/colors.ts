@@ -26,6 +26,7 @@ const colors: Record<string, Color> = {
   productDark100: '#0D1117', // appBG
   productDark200: '#151B23', // card
   productDark300: '#212830', // search
+  productDark350: '#262D36', // skeleton block
   productDark400: '#3D444D', // border
   productDark500: '#1E2329', // button hovered
   productDark600: '#23282D', // button pressed
@@ -37,6 +38,7 @@ const colors: Record<string, Color> = {
   productLight100: '#FFFFFF', // appBG
   productLight200: '#F6F8FA', // card
   productLight300: '#F6F8FA', // search // TODO
+  productLight350: '#E5E9ED', // skeleton block
   productLight400: '#D0D9E0', // border
   productLight500: '#F2F3F4', // button hovered
   productLight600: '#EDEEEF', // button pressed

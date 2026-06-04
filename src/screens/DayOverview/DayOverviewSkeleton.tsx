@@ -20,7 +20,7 @@ function Block({width, height, radius = 6, style}: BlockProps) {
           width,
           height,
           borderRadius: radius,
-          backgroundColor: theme.highlightBG,
+          backgroundColor: theme.skeletonBlockBG,
         },
         style,
       ]}
@@ -58,7 +58,7 @@ function DayOverviewSkeleton() {
                 styles.mb2,
                 styles.p4,
                 styles.justifyContentCenter,
-                {minHeight: 84, borderRadius: 8, backgroundColor: theme.border},
+                {minHeight: 84, borderRadius: 8, backgroundColor: theme.cardBG},
               ]}>
               <Block width={90} height={16} />
               <Block width={140} height={12} style={styles.mt2} />
