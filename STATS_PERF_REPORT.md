@@ -11,14 +11,39 @@ per-timestamp `formatInTimeZone` (date-fns-tz) calls were collapsed into one
 cached `Intl.DateTimeFormat` + `formatToParts`, with ISO-week / day-of-week
 derived arithmetically. **That is the baseline this report measures against.**
 
-**TL;DR:** The per-timestamp `Intl` call is still ~60–66% of the pass. Resolving
-each timezone's UTC-offset transitions _once_ into a small table and then
-deriving every local field by pure integer arithmetic (candidate **c**) is
-**~2× faster on large datasets (up to ~4× on small/no-DST)**, allocates ~30%
-fewer GC cycles, is byte-identical across an exhaustive timezone sweep, and is in
-fact _more_ correct than date-fns-tz at DST boundaries. **Candidate (c) has been
-adopted into `events.ts`**; the public signature and `DrinkEvent` shape are
-unchanged and all existing tests pass.
+**TL;DR (node):** The per-timestamp `Intl` call is ~60–66% of the pass.
+Resolving each timezone's UTC-offset transitions _once_ into a table and deriving
+every local field by integer arithmetic (candidate **c**) is **~2× faster on
+large datasets in node (V8)**, allocates ~30% fewer GC cycles, is byte-identical
+across an exhaustive timezone sweep, and is _more_ correct than date-fns-tz at
+DST boundaries.
+
+> ## ⚠️ Device result: candidate (c) REGRESSES on Hermes — reverted
+>
+> Candidate (c) was adopted, **device-tested, and reverted.** On Hermes it is
+> **~3.5× _slower_** than the baseline for the real workload:
+>
+> | build                                 | `buildDrinkEvents` | dataset                   |
+> | ------------------------------------- | ------------------ | ------------------------- |
+> | master (baseline, 1× `formatToParts`) | **1039 ms**        | 163 sessions → 724 events |
+> | PR (candidate c, offset-table)        | **3703 ms**        | 163 sessions → 724 events |
+>
+> **Why the node benchmark lied** (see the on-device caveat in §1): (1) Hermes
+> `Intl` is ~1000× slower
+> than V8's — the cost is ~linear in the _number of `Intl` calls_ (~2–3 ms each
+> on Hermes). (2) The offset-table replaces "1 `Intl` call per timestamp" with
+> "many `Intl` calls to build a transition table" (coarse scan + ~30-probe binary
+> search per DST transition); cheap on V8, the bottleneck on Hermes. (3) The
+> table-build cost scales with the **data time-span, not the event count** — the
+> real dataset is small (724 events) but spans years (and can contain outlier
+> timestamps that inflate the range), so it did _more_ `Intl` work than the
+> baseline.
+>
+> **Conclusion:** the already-landed 5→1 fix captured the real win (~5×, matching
+> the ~5× drop from 5096 ms → 1039 ms). The baseline is near-optimal for any
+> per-timestamp-`Intl` approach. `events.ts` is left on the baseline. The
+> harness, candidate code, and correctness suite are kept as an investigation
+> record. Real next steps in §6.
 
 ---
 
@@ -55,10 +80,14 @@ unchanged and all existing tests pass.
   from the civil date at noon. See §4 for why date-fns is _not_ used as the
   wall-clock oracle.
 
-> **On-device caveat:** V8 (node) has a relatively fast `Intl`. Hermes' `Intl`
-> is comparatively slower vs. plain arithmetic, so eliminating the per-timestamp
-> `Intl` call should yield a **larger** relative win on device than the node
-> numbers below.
+> **On-device caveat (this prediction was WRONG — see the device-result box
+> above):** I expected Hermes' slower `Intl` to make (c)'s win _larger_ on
+> device. The opposite happened. The flaw: V8's `Intl` is so fast that the
+> offset-table's table-build calls are invisible in node, so the benchmark only
+> measured the per-timestamp savings. On Hermes every `Intl` call costs ~2–3 ms,
+> the table-build calls dominate, and (c) regresses. **Lesson: an `Intl`-heavy
+> setup cost that is free on V8 can be the entire cost on Hermes — micro-benchmark
+> the call _count_, not just node wall-time, and always confirm on device.**
 
 Reproduce:
 
@@ -291,36 +320,53 @@ alone (`useLazyMarkedDates` is a React-Compiler-sensitive hook).
 
 ## 6. Recommendation
 
-**Adopt candidate (c) — done.** It is the only candidate that meaningfully moves
-the ~60% per-timestamp `Intl` cost, delivering ~2× on large data (more on
-device), ~30% fewer GC cycles, byte-identical output validated across an
-exhaustive timezone sweep, and improved DST correctness. Risk is contained: the
-public API is unchanged, output is proven identical, and a permanent oracle suite
-guards it. The one assumption (offset-transition spacing ≥ scan stride) is safe
-for the app's data domain (recent timestamps, standard IANA zones).
+**Keep the baseline; do NOT ship candidate (c).** Device testing (see the box in
+the header) showed (c) is ~3.5× _slower_ on Hermes. `events.ts` has been reverted
+to the baseline on this branch. The already-landed 5→1 `formatInTimeZone` fix
+captured the real win (~5×); the baseline is near-optimal for any approach that
+calls `Intl` per timestamp. This branch/PR keeps the benchmark harness, candidate
+code, and correctness suite as an investigation record — no `events.ts` change
+ships.
 
-Status of the change on this branch:
+What this investigation establishes for the next round:
 
-- `src/libs/Statistics/events.ts` — candidate (c) adopted; signature + shape
-  unchanged.
-- `__tests__/unit/libs/Statistics/events.test.ts` — unchanged, **29/29 pass**.
-- `__tests__/unit/libs/Statistics/eventsCandidates.test.ts` — new, **30/30 pass**
-  (full Statistics suite: 151/151).
-- `npm run typecheck-tsgo` clean · `./scripts/lint.sh` clean.
-- `scripts/perf/` — reproducible benchmark + profiler harness (dev-only, not
-  shipped).
+- **On Hermes, the metric that matters is the _number_ of `Intl` calls** (~2–3 ms
+  each). Any "optimization" that adds `Intl` setup cost — even cost that is free
+  on V8 — can regress. Profile call _count_, and always confirm on device.
+- **`buildDrinkEvents` (1039 ms) is not the biggest cold-open cost — the "chart
+  bundle parsed" step is ~2000 ms** on both builds (lazy-loading the charting
+  library). That is the larger lever.
+- A genuine further win in `buildDrinkEvents` requires **removing `Intl` from the
+  cold path entirely**, not a faster `Intl` strategy.
 
-**Follow-ups (not in this change):**
+**Next steps (each its own session):**
 
-1. Extract the offset resolver into a shared util; migrate `sessionCounts.ts` and
-   `useLazyMarkedDates.ts` off `formatInTimeZone` / `toZonedTime` (§5).
-2. Audit remaining `formatInTimeZone` call sites for the spring-forward
-   off-by-one (§4) — anything still on date-fns-tz inherits the bug.
-3. Optional: persist/precompute the event stream or daily aggregates so cold
-   launches skip the recompute entirely. Feasibility: high (the stream is a pure
-   function of sessions + prefs); rough win: eliminates the build cost on cold
-   open at the price of a cache-invalidation story (sessions, timezone, weekStart,
-   drinkDefaults are all inputs). Worth it only if §6's compute time is still
-   user-visible after (c) — measure on device first.
+1. **Chart bundle (~2 s).** Investigate the ~2000 ms "chart bundle parsed" gate —
+   the single biggest cold-open cost. Likely code-split / lazy-load or lighten
+   the charting library (Skia / victory-native).
+2. **Persist precomputed local fields.** Compute `localDay` / `localHour` /
+   `localIsoWeek` / `localDow` once when a drink is logged (a single `Intl` call
+   at write time, when the user is already interacting) and store them on the
+   record, so `buildDrinkEvents` does **zero `Intl`** on cold open — eliminating
+   the 1039 ms. Feasibility: high (pure function of sessions + prefs); the cost is
+   a migration/backfill for existing drinks + a small write-path change. This is
+   the real `events.ts` win.
+
+**Other follow-ups:**
+
+3. The date-fns-tz spring-forward off-by-one (§4) is real regardless — audit
+   remaining `formatInTimeZone` call sites (`sessionCounts.ts`,
+   `useLazyMarkedDates.ts`, `DateUtils`) (§5). A shared `Intl`-based day-key
+   resolver fixes correctness, but note the Hermes lesson: keep it to **one**
+   `Intl` call per item, no table build.
 4. Remove the dev-only profiler (`src/libs/Statistics/profiling.ts`) once the
-   Statistics load is confirmed acceptable on device.
+   Statistics load is acceptable on device.
+
+Status on this branch:
+
+- `src/libs/Statistics/events.ts` — **reverted to baseline** (no change ships).
+- `__tests__/unit/libs/Statistics/events.test.ts` — **29/29 pass**.
+- `__tests__/unit/libs/Statistics/eventsCandidates.test.ts` — investigation suite,
+  **30/30 pass** (candidates a/b/c all match the oracle; (c) is correct, just slow
+  on device).
+- `scripts/perf/` — reproducible benchmark + profiler harness (dev-only).
