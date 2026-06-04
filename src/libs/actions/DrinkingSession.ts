@@ -179,6 +179,9 @@ async function updateLocalData(
     }
     dataToSet = {id: sessionId, ...newData};
   }
+  // Keep the synchronous cache in lockstep with this write so a follow-up mutation
+  // reads the fresh value rather than waiting on the async Onyx.connect refresh.
+  DSUtils.setLocalSessionCache(onyxKey, dataToSet ?? undefined);
   await Onyx.set(onyxKey, dataToSet);
 }
 
@@ -474,16 +477,21 @@ function updateDrinks(
     drinksToUnits,
   );
 
+  // Compose on the freshest value: update the cached copy synchronously so a
+  // rapid follow-up mutation (e.g. a remove tapped right after several adds)
+  // composes on the latest drinks instead of the stale Onyx.connect snapshot,
+  // which lags while the JS thread is busy persisting. Without this the remove's
+  // `Onyx.set` below wipes adds that haven't propagated back to the cache yet.
+  const updatedSession: DrinkingSession = {...session, drinks: drinksList};
+  DSUtils.setLocalSessionCache(onyxKey, updatedSession);
+
   // Merge can only be used when adding drinks, or when removing drinks does not delete the drink key
   if (action === CONST.DRINKS.ACTIONS.ADD) {
     Onyx.merge(onyxKey, {
       drinks: drinksList,
     });
   } else {
-    Onyx.set(onyxKey, {
-      ...session,
-      drinks: drinksList,
-    });
+    Onyx.set(onyxKey, updatedSession);
   }
 
   // Live (ongoing) sessions sync to the server through the debounced action-layer
@@ -522,9 +530,13 @@ function updateNote(
 ): void {
   const onyxKey = DSUtils.getDrinkingSessionOnyxKey(session?.id);
   if (onyxKey) {
+    const current = DSUtils.getDrinkingSessionData(session?.id) ?? session;
     Onyx.merge(onyxKey, {
       note: newNote,
     });
+    if (current) {
+      DSUtils.setLocalSessionCache(onyxKey, {...current, note: newNote});
+    }
     if (onyxKey === ONYXKEYS.ONGOING_SESSION_DATA) {
       scheduleLiveSessionPersist();
     }
@@ -537,9 +549,13 @@ function updateBlackout(
 ): void {
   const onyxKey = DSUtils.getDrinkingSessionOnyxKey(session?.id);
   if (onyxKey) {
+    const current = DSUtils.getDrinkingSessionData(session?.id) ?? session;
     Onyx.merge(onyxKey, {
       blackout,
     });
+    if (current) {
+      DSUtils.setLocalSessionCache(onyxKey, {...current, blackout});
+    }
     if (onyxKey === ONYXKEYS.ONGOING_SESSION_DATA) {
       scheduleLiveSessionPersist();
     }
@@ -559,9 +575,16 @@ function updateTimezone(
 ): void {
   const onyxKey = DSUtils.getDrinkingSessionOnyxKey(session?.id);
   if (onyxKey) {
+    const current = DSUtils.getDrinkingSessionData(session?.id) ?? session;
     Onyx.merge(onyxKey, {
       timezone: newTimezone,
     });
+    if (current) {
+      DSUtils.setLocalSessionCache(onyxKey, {
+        ...current,
+        timezone: newTimezone,
+      });
+    }
     if (onyxKey === ONYXKEYS.ONGOING_SESSION_DATA) {
       scheduleLiveSessionPersist();
     }

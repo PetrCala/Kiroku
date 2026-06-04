@@ -97,6 +97,26 @@ function clearOngoingSessionCache(): void {
 }
 
 /**
+ * Synchronously update the cached live/edit session. The `Onyx.connect` callbacks
+ * above only refresh these caches after Onyx applies and notifies a write, which
+ * lags a burst of rapid edits — and lags further while the JS thread is busy
+ * persisting. Updating the cache here lets the next mutation compose on the
+ * freshest value instead of a stale snapshot. Without it, a remove tapped right
+ * after several adds reads an empty/older base and its `Onyx.set` wipes the
+ * un-propagated adds (net-zero change).
+ */
+function setLocalSessionCache(
+  onyxKey: OnyxKey,
+  session: DrinkingSession | undefined,
+): void {
+  if (onyxKey === ONYXKEYS.ONGOING_SESSION_DATA) {
+    ongoingSessionData = session;
+  } else if (onyxKey === ONYXKEYS.EDIT_SESSION_DATA) {
+    editSessionData = session;
+  }
+}
+
+/**
  * @returns An empty drinking session object.
  */
 function getEmptySession(session: Partial<DrinkingSession>): DrinkingSession {
@@ -874,5 +894,6 @@ export {
   modifySessionDrinks,
   removeDrinksFromList,
   sessionIsExpired,
+  setLocalSessionCache,
   shiftSessionTimestamps,
 };

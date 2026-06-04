@@ -167,6 +167,22 @@ describe('live-session persistence', () => {
     expect(call).toHaveLength(2);
   });
 
+  it('synchronously caches the composed session so rapid taps compose on the latest', () => {
+    const session = makeOngoing('s1');
+    routeTo(ONYXKEYS.ONGOING_SESSION_DATA, session);
+    driveOnyx(ONYXKEYS.ONGOING_SESSION_DATA, session);
+
+    tap();
+
+    // updateDrinks must push the freshly-composed session into the synchronous
+    // cache (not wait on Onyx.connect), so a follow-up remove reads it instead of
+    // a stale base and its Onyx.set can't wipe un-propagated adds.
+    expect(mockedDSUtils.setLocalSessionCache).toHaveBeenCalledWith(
+      ONYXKEYS.ONGOING_SESSION_DATA,
+      expect.objectContaining({drinks: {1_000: {beer: 1}}}),
+    );
+  });
+
   it('does not persist edit sessions through the live pipeline', () => {
     const session = {...makeOngoing('e1'), type: CONST.SESSION.TYPES.EDIT};
     routeTo(ONYXKEYS.EDIT_SESSION_DATA, session);
