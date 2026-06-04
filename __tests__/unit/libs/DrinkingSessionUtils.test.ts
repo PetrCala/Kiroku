@@ -3,10 +3,26 @@
  */
 
 import * as DSUtils from '@libs/DrinkingSessionUtils';
-import type {DrinkingSession, DrinksList, DrinksToUnits} from '@src/types/onyx';
+import type {
+  DrinkingSession,
+  DrinkingSessionList,
+  DrinksList,
+  DrinksToUnits,
+} from '@src/types/onyx';
 import CONST from '@src/CONST';
+import ONYXKEYS from '@src/ONYXKEYS';
 import {getZeroDrinksList} from '@libs/DataHandling';
 import {randDrinkingSession} from '../../utils/collections/drinkingSessions';
+
+const ALL_DRINKS_TO_UNITS: DrinksToUnits = {
+  small_beer: 1,
+  beer: 1,
+  cocktail: 1,
+  other: 1,
+  strong_shot: 1,
+  weak_shot: 1,
+  wine: 1,
+};
 
 /* eslint-disable @typescript-eslint/naming-convention */
 
@@ -122,6 +138,104 @@ describe('calculateTotalUnits', () => {
       sampleDrinksToUnits,
     );
     expect(result).toBe(2 * 5 + 1 * 10 + 3 * 1);
+  });
+});
+
+describe('getOngoingSessionId', () => {
+  const base = randDrinkingSession(new Date().getTime());
+
+  it('returns null for empty / nullish input', () => {
+    expect(DSUtils.getOngoingSessionId(undefined)).toBeNull();
+    expect(DSUtils.getOngoingSessionId(null)).toBeNull();
+    expect(DSUtils.getOngoingSessionId({})).toBeNull();
+  });
+
+  it('returns the id of the session whose ongoing flag is true', () => {
+    const list: DrinkingSessionList = {
+      a: {...base, ongoing: false},
+      b: {...base, ongoing: true},
+    };
+    expect(DSUtils.getOngoingSessionId(list)).toBe('b');
+  });
+
+  it('drops a finalized session: ongoing:false yields no ongoing id', () => {
+    const list: DrinkingSessionList = {
+      a: {...base, ongoing: false},
+    };
+    expect(DSUtils.getOngoingSessionId(list)).toBeNull();
+  });
+
+  it('treats a missing ongoing flag as not ongoing', () => {
+    const list: DrinkingSessionList = {
+      a: {...base, ongoing: undefined},
+    };
+    expect(DSUtils.getOngoingSessionId(list)).toBeNull();
+  });
+});
+
+describe('setLocalSessionCache / compose-on-latest', () => {
+  const liveBase: DrinkingSession = {
+    ...randDrinkingSession(new Date().getTime()),
+    id: 'live-1',
+    ongoing: true,
+    drinks: {},
+  };
+
+  afterEach(() => {
+    // Reset the module-level caches the setter mutates.
+    DSUtils.setLocalSessionCache(ONYXKEYS.ONGOING_SESSION_DATA, undefined);
+    DSUtils.setLocalSessionCache(ONYXKEYS.EDIT_SESSION_DATA, undefined);
+  });
+
+  it('makes getDrinkingSessionData return the new value synchronously', () => {
+    DSUtils.setLocalSessionCache(ONYXKEYS.ONGOING_SESSION_DATA, liveBase);
+    expect(DSUtils.getDrinkingSessionData('live-1')).toBe(liveBase);
+
+    const updated = {...liveBase, note: 'changed'};
+    DSUtils.setLocalSessionCache(ONYXKEYS.ONGOING_SESSION_DATA, updated);
+    expect(DSUtils.getDrinkingSessionData('live-1')).toBe(updated);
+  });
+
+  it('clearing the cache makes getDrinkingSessionData return undefined', () => {
+    DSUtils.setLocalSessionCache(ONYXKEYS.ONGOING_SESSION_DATA, liveBase);
+    DSUtils.setLocalSessionCache(ONYXKEYS.ONGOING_SESSION_DATA, undefined);
+    expect(DSUtils.getDrinkingSessionData('live-1')).toBeUndefined();
+  });
+
+  it('three adds then one remove, each composing on the cache, net +2 (dropped-tap repro)', () => {
+    // Mirrors what updateDrinks does per tap: read the cache, modify, write back
+    // synchronously — without driving any async Onyx.connect refresh in between.
+    DSUtils.setLocalSessionCache(ONYXKEYS.ONGOING_SESSION_DATA, liveBase);
+
+    const sequence = [
+      CONST.DRINKS.ACTIONS.ADD,
+      CONST.DRINKS.ACTIONS.ADD,
+      CONST.DRINKS.ACTIONS.ADD,
+      CONST.DRINKS.ACTIONS.REMOVE,
+    ];
+    sequence.forEach(action => {
+      const current = DSUtils.getDrinkingSessionData('live-1');
+      expect(current).toBeDefined();
+      if (!current) {
+        return;
+      }
+      const drinks = DSUtils.modifySessionDrinks(
+        current,
+        CONST.DRINKS.KEYS.BEER,
+        1,
+        action,
+        ALL_DRINKS_TO_UNITS,
+      );
+      DSUtils.setLocalSessionCache(ONYXKEYS.ONGOING_SESSION_DATA, {
+        ...current,
+        drinks,
+      });
+    });
+
+    const final = DSUtils.getDrinkingSessionData('live-1');
+    expect(
+      DSUtils.calculateTotalUnits(final?.drinks, ALL_DRINKS_TO_UNITS),
+    ).toBe(2);
   });
 });
 

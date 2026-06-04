@@ -20,13 +20,10 @@ import * as App from '@userActions/App';
 import {convertUnitsToColors} from '@libs/DataHandling';
 import {resolvePalette} from '@libs/SessionColorPalettes';
 import ScrollView from '@components/ScrollView';
-import FlexibleLoadingIndicator from '@components/FlexibleLoadingIndicator';
-import SuccessIndicator from '@components/SuccessIndicator';
 import Log from '@libs/Log';
 import DateUtils from '@libs/DateUtils';
 import isEqual from 'lodash/isEqual';
 import type {User} from 'firebase/auth';
-import {useFocusEffect} from '@react-navigation/native';
 import ERRORS from '@src/ERRORS';
 import type DrinkingSessionWindowProps from './types';
 
@@ -36,8 +33,6 @@ function DrinkingSessionWindow({
   session,
   onyxKey,
   type,
-  shouldShowSyncPendingIndicator = false,
-  shouldShowSyncSuccessIndicator = false,
 }: DrinkingSessionWindowProps) {
   const {auth} = useFirebase();
   const user = auth.currentUser;
@@ -81,8 +76,13 @@ function DrinkingSessionWindow({
       const newSessionData: DrinkingSession = {
         ...session,
         end_time: session?.ongoing ? Date.now() : session.end_time,
+        // A saved session is never ongoing. Set the flag explicitly rather than
+        // `delete`-ing it: cachedDrinkingSessions writes are merges, and a merge
+        // can't clear a key by omission — an omitted `ongoing` leaves a stale
+        // `ongoing: true` in the cache, which re-triggers the "in a session"
+        // banner now that screens read sessions from the cache.
+        ongoing: false,
       };
-      delete newSessionData.ongoing;
       delete newSessionData.id;
 
       try {
@@ -186,20 +186,9 @@ function DrinkingSessionWindow({
     // eslint-disable-next-line react-compiler/react-compiler, react-hooks/exhaustive-deps
   }, []);
 
-  useFocusEffect(() => {
-    App.setLoadingText(null);
-  });
-
   return (
     <>
       <HeaderWithBackButton onBackButtonPress={handleBackPress} />
-      {shouldShowSyncPendingIndicator && (
-        <FlexibleLoadingIndicator
-          size="small"
-          style={styles.successIndicator}
-        />
-      )}
-      <SuccessIndicator visible={shouldShowSyncSuccessIndicator} />
       <ScrollView contentContainerStyle={[styles.w100]}>
         <View style={styles.pt2}>
           <View style={styles.alignItemsCenter}>

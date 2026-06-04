@@ -12,6 +12,7 @@ import type {DateString} from '@src/types/onyx/OnyxCommon';
 import type {SelectedTimezone} from '@src/types/onyx/UserData';
 import Navigation from '@libs/Navigation/Navigation';
 import {useDatabaseData} from '@context/global/DatabaseDataContext';
+import useCurrentUserDrinkingSessions from '@hooks/useCurrentUserDrinkingSessions';
 import {useFirebase} from '@context/global/FirebaseContext';
 import {dateStringToDate, dateToDateData} from '@libs/DataHandling';
 import * as App from '@userActions/App';
@@ -83,8 +84,8 @@ function DayOverviewScreen({route}: DayOverviewScreenProps) {
   const {auth, db} = useFirebase();
   const user = auth.currentUser;
   const [loadingText] = useOnyx(ONYXKEYS.APP_LOADING_TEXT);
-  const {drinkingSessionData, preferences, userData, isFetchingOlderMonths} =
-    useDatabaseData();
+  const {preferences, userData, isFetchingOlderMonths} = useDatabaseData();
+  const drinkingSessionData = useCurrentUserDrinkingSessions();
 
   // Hold the list invisible (skeleton on top) until it has scrolled to the
   // focused day. With no `date` (shouldn't happen via the calendar) we never

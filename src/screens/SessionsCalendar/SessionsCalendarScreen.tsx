@@ -10,6 +10,7 @@ import {useFirebase} from '@context/global/FirebaseContext';
 import {useDatabaseData} from '@context/global/DatabaseDataContext';
 import useFetchData from '@hooks/useFetchData';
 import useDrinkingSessionsFetch from '@hooks/useDrinkingSessionsFetch';
+import useCurrentUserDrinkingSessions from '@hooks/useCurrentUserDrinkingSessions';
 import useLocalize from '@hooks/useLocalize';
 import useReadyAfterScreenTransition from '@hooks/useReadyAfterScreenTransition';
 import useThemeStyles from '@hooks/useThemeStyles';
@@ -54,6 +55,7 @@ function SessionsCalendarScreen({route}: SessionsCalendarScreenProps) {
   const styles = useThemeStyles();
 
   const ownData = useDatabaseData();
+  const currentUserSessions = useCurrentUserDrinkingSessions();
   const {data: friendFetchedData, isLoading: isFriendFetchLoading} =
     useFetchData(isSelf ? '' : userID, FRIEND_FETCH_KEYS);
   const {
@@ -63,7 +65,7 @@ function SessionsCalendarScreen({route}: SessionsCalendarScreenProps) {
   } = useDrinkingSessionsFetch(isSelf ? '' : userID);
 
   const drinkingSessionData: DrinkingSessionList | null | undefined = isSelf
-    ? ownData.drinkingSessionData
+    ? currentUserSessions
     : friendSessionData;
   const preferences: Preferences | undefined = isSelf
     ? ownData.preferences

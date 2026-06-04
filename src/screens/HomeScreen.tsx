@@ -38,6 +38,7 @@ import * as Session from '@userActions/Session';
 import Timing from '@userActions/Timing';
 import ScrollView from '@components/ScrollView';
 import useLocalize from '@hooks/useLocalize';
+import useCurrentUserDrinkingSessions from '@hooks/useCurrentUserDrinkingSessions';
 import {roundToTwoDecimalPlaces} from '@libs/NumberUtils';
 import Text from '@components/Text';
 import BottomTabBar from '@libs/Navigation/AppNavigator/createCustomBottomTabNavigator/BottomTabBar';
@@ -65,8 +66,8 @@ function HomeScreen({route}: HomeScreenProps) {
   const [lastViewedCalendarDate] = useOnyx(
     ONYXKEYS.NVP_LAST_VIEWED_CALENDAR_DATE,
   );
-  const {drinkingSessionData, preferences, userData, isFetchingOlderMonths} =
-    useDatabaseData();
+  const {preferences, userData, isFetchingOlderMonths} = useDatabaseData();
+  const drinkingSessionData = useCurrentUserDrinkingSessions();
   const [localVisibleDate, setLocalVisibleDate] = useState<DateData>(
     dateToDateData(new Date()),
   );
