@@ -41,6 +41,7 @@ const WRITE_COMMANDS = {
   PURGE_SESSION_LOCATIONS: 'PurgeSessionLocations',
   SET_HIDE_FROM_ALL_FRIENDS: 'SetHideFromAllFriends',
   SET_FRIEND_DATA_HIDDEN: 'SetFriendDataHidden',
+  UPDATE_PROFILE_PHOTO: 'UpdateProfilePhoto',
   // ...
 } as const;
 
@@ -81,6 +82,7 @@ type WriteCommandParameters = {
   [WRITE_COMMANDS.PURGE_SESSION_LOCATIONS]: EmptyObject;
   [WRITE_COMMANDS.SET_HIDE_FROM_ALL_FRIENDS]: Parameters.SetHideFromAllFriendsParams;
   [WRITE_COMMANDS.SET_FRIEND_DATA_HIDDEN]: Parameters.SetFriendDataHiddenParams;
+  [WRITE_COMMANDS.UPDATE_PROFILE_PHOTO]: Parameters.UpdateProfilePhotoParams;
 };
 
 const READ_COMMANDS = {

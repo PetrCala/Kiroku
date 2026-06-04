@@ -1,10 +1,12 @@
 import type {Database} from 'firebase/database';
-import {ref, update} from 'firebase/database';
 import type {FirebaseStorage} from 'firebase/storage';
 import {ref as StorageRef, getDownloadURL} from 'firebase/storage';
 import type {Auth, User} from 'firebase/auth';
 import {updateProfile} from 'firebase/auth';
 import Onyx from 'react-native-onyx';
+import type {OnyxUpdate} from 'react-native-onyx';
+import * as API from '@libs/API';
+import {WRITE_COMMANDS} from '@libs/API/types';
 import type {ProfileList, UserStatusList} from '@src/types/onyx';
 import type {UserID} from '@src/types/onyx/OnyxCommon';
 import DBPATHS from '@src/DBPATHS';
@@ -97,29 +99,22 @@ async function fetchUserStatuses(
 }
 
 /**
- * Using the Firebase realtime database instance, the user UID, and the full name of the
- * profile picture path, set the name of the file to a new path.
+ * Persist a user's new profile photo URL via kiroku-api. The optimistic Onyx
+ * update mirrors the server's `onyxData`. Should be called after the picture
+ * has been uploaded to storage.
  *
- * @description
- * Should be called together with uploading of the picture to the storage.
- *
- * @param db The Firebase realtime database instance.
  * @param userID User UID.
- * @param photoURL Name of the new file, including the suffix (e.g., profile_picture.jpg)
- * @returns Promise with the full path to the image
- *
- * @example
- * await setProfilePictureURL(db, 'test-user-id', 'profile_picture.jpg');
+ * @param photoURL The download URL of the uploaded profile picture.
  */
-async function setProfilePictureURL(
-  db: Database,
-  userID: string,
-  photoURL: string,
-): Promise<void> {
-  const updates: Record<string, string> = {};
-  const photoUrlPath = DBPATHS.USERS_USER_ID_PROFILE_PHOTO_URL.getRoute(userID);
-  updates[photoUrlPath] = photoURL;
-  await update(ref(db), updates);
+function setProfilePictureURL(userID: string, photoURL: string): void {
+  const optimisticData: OnyxUpdate[] = [
+    {
+      onyxMethod: Onyx.METHOD.MERGE,
+      key: ONYXKEYS.USER_DATA_LIST,
+      value: {[userID]: {profile: {photo_url: photoURL}}},
+    },
+  ];
+  API.write(WRITE_COMMANDS.UPDATE_PROFILE_PHOTO, {photoURL}, {optimisticData});
 }
 
 /**
@@ -128,7 +123,6 @@ async function setProfilePictureURL(
  * @param pathToUpload - The path to the file to upload.
  * @param user - The user object.
  * @param auth - The authentication object.
- * @param db - The database object.
  * @param storage - The Firebase storage object.
  * @returns A promise that resolves when the profile information is updated.
  */
@@ -136,14 +130,13 @@ async function updateProfileInfo(
   pathToUpload: string,
   user: User | null,
   auth: Auth,
-  db: Database,
   storage: FirebaseStorage,
 ): Promise<void> {
   if (!user || !auth.currentUser) {
     return;
   }
   const downloadURL = await getDownloadURL(StorageRef(storage, pathToUpload));
-  await setProfilePictureURL(db, user.uid, downloadURL);
+  setProfilePictureURL(user.uid, downloadURL);
   await updateProfile(auth.currentUser, {photoURL: downloadURL});
 }
 
