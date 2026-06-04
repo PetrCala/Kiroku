@@ -67,10 +67,13 @@ let ongoingSessionData: DrinkingSession | undefined;
 Onyx.connect({
   key: ONYXKEYS.ONGOING_SESSION_DATA,
   callback: value => {
-    if (!value) {
-      return;
-    }
-    ongoingSessionData = value;
+    // Assign unconditionally (including clearing on null). This cache routes
+    // every live-session mutation through `getDrinkingSessionData` /
+    // `getDrinkingSessionOnyxKey`, so if it ignored the finalize/discard
+    // `Onyx.set(ONGOING_SESSION_DATA, null)` it would stay stale (ongoing:true)
+    // and a tap landing right after Save would re-route into ONGOING_SESSION_DATA
+    // and re-create the just-finalized session.
+    ongoingSessionData = value ?? undefined;
   },
 });
 
@@ -78,12 +81,20 @@ let editSessionData: DrinkingSession | undefined;
 Onyx.connect({
   key: ONYXKEYS.EDIT_SESSION_DATA,
   callback: value => {
-    if (!value) {
-      return;
-    }
-    editSessionData = value;
+    editSessionData = value ?? undefined;
   },
 });
+
+/**
+ * Synchronously drop the cached ongoing-session copy. Called from the finalize/
+ * discard paths so a tap whose handler runs in the same tick as Save can't
+ * re-route into `ONGOING_SESSION_DATA` before the async Onyx `set(null)`
+ * notification lands. The `Onyx.connect` callback above clears it again when the
+ * notification arrives; this just removes the race window.
+ */
+function clearOngoingSessionCache(): void {
+  ongoingSessionData = undefined;
+}
 
 /**
  * @returns An empty drinking session object.
@@ -838,6 +849,7 @@ export {
   calculateAvailableUnits,
   calculateSessionLength,
   calculateTotalUnits,
+  clearOngoingSessionCache,
   determineSessionMostCommonDrink,
   extractSessionOrEmpty,
   getDisplayNameForParticipant,

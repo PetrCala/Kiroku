@@ -36,7 +36,7 @@ import {differenceInDays, startOfDay} from 'date-fns';
 import type {SelectedTimezone} from '@src/types/onyx/UserData';
 import type {ValueOf} from 'type-fest';
 import DBPATHS from '@src/DBPATHS';
-import {Alert} from 'react-native';
+import {Alert, InteractionManager} from 'react-native';
 
 const userDrinkingSessionsRef = DBPATHS.USER_DRINKING_SESSIONS_USER_ID;
 const earliestSessionAtRef = DBPATHS.USERS_USER_ID_EARLIEST_SESSION_AT;
@@ -45,10 +45,11 @@ let ongoingSessionData: DrinkingSession | undefined;
 Onyx.connect({
   key: ONYXKEYS.ONGOING_SESSION_DATA,
   callback: value => {
-    if (!value) {
-      return;
-    }
-    ongoingSessionData = value;
+    // Assign unconditionally (including clearing on null) so the finalize/discard
+    // `Onyx.set(ONGOING_SESSION_DATA, null)` actually drops this cached copy. The
+    // debounced live persist reads this cache at flush time; a stale (ongoing:true)
+    // copy would let it re-emit the session as ongoing after the finalize.
+    ongoingSessionData = value ?? undefined;
   },
 });
 
@@ -181,24 +182,84 @@ async function updateLocalData(
   await Onyx.set(onyxKey, dataToSet);
 }
 
+// Server persistence for the live (ongoing) session is debounced so rapid drink
+// taps stay snappy: each mutation writes `ONGOING_SESSION_DATA` synchronously
+// (instant UI) and only (re)arms this timer, so a burst of taps coalesces into a
+// single `UPDATE_SESSION` once the user pauses. The write carries NO optimistic
+// `cachedDrinkingSessions` data on purpose — that snapshot feeds Home/Stats,
+// which sit behind the live modal; merging into it on every tap re-rendered them
+// on the touch frame. The server echo updates the snapshot once the request
+// resolves, off the touch frame. Finalize/discard call `cancelLiveSessionPersist`
+// and then write the full session themselves, so a debounced live write can never
+// land after them.
+const LIVE_SESSION_PERSIST_DEBOUNCE_MS = 500;
+let liveSessionPersistTimer: ReturnType<typeof setTimeout> | null = null;
+let liveSessionPersistInteraction: {cancel: () => void} | null = null;
+
 /**
- * Persist the full live (ongoing) drinking session via kiroku-api. Called from
- * the live-session screen's batched sync as the user adds drinks/notes. The
- * server upserts the session and — because `sessionIsLive` — mirrors it into the
- * user's live status; the optimistic data mirrors the cached snapshot. The live
- * editing state itself lives in `ONGOING_SESSION_DATA` and is owned by the
- * screen; this only persists it.
+ * Whether a debounced live-session persist is armed or deferred but not yet sent.
+ * While true this device has un-persisted live edits, so the cached snapshot lags
+ * the local `ONGOING_SESSION_DATA` buffer — `syncLocalLiveSessionData` uses this
+ * to avoid rolling the buffer back to the (older) snapshot.
  */
-function updateLiveDrinkingSessionData(
-  userID: UserID,
-  sessionId: DrinkingSessionId,
-  session: DrinkingSession,
-): void {
-  API.write(
-    WRITE_COMMANDS.UPDATE_SESSION,
-    {sessionId, session, sessionIsLive: true},
-    {optimisticData: sessionUpsertOptimisticData(userID, sessionId, session)},
+function hasPendingLiveSessionPersist(): boolean {
+  return (
+    liveSessionPersistTimer !== null || liveSessionPersistInteraction !== null
   );
+}
+
+/** Cancel a scheduled-but-not-yet-sent debounced live-session persist. */
+function cancelLiveSessionPersist(): void {
+  if (liveSessionPersistTimer) {
+    clearTimeout(liveSessionPersistTimer);
+    liveSessionPersistTimer = null;
+  }
+  if (liveSessionPersistInteraction) {
+    liveSessionPersistInteraction.cancel();
+    liveSessionPersistInteraction = null;
+  }
+}
+
+/**
+ * Persist the current live session via kiroku-api. Reads the latest
+ * `ONGOING_SESSION_DATA` at flush time (not a captured snapshot) so it always
+ * sends the newest drinks; if the session was finalized/discarded in the
+ * meantime the cache is already cleared and there is nothing to send. The server
+ * upserts the session and — because `sessionIsLive` — mirrors it into the user's
+ * live status for cross-device visibility.
+ */
+function flushLiveSessionPersist(): void {
+  const session = ongoingSessionData;
+  if (!session?.ongoing || !session.id) {
+    return;
+  }
+  API.write(WRITE_COMMANDS.UPDATE_SESSION, {
+    sessionId: session.id,
+    session,
+    sessionIsLive: true,
+  });
+}
+
+/**
+ * (Re)arm the debounced live-session persist. The caller has already updated
+ * `ONGOING_SESSION_DATA` synchronously (instant UI); this only schedules the
+ * server write, coalescing a burst of taps into one `UPDATE_SESSION`. The flush
+ * runs behind `InteractionManager` so the queue/serialization work never lands
+ * on a touch frame.
+ */
+function scheduleLiveSessionPersist(): void {
+  if (liveSessionPersistTimer) {
+    clearTimeout(liveSessionPersistTimer);
+  }
+  liveSessionPersistTimer = setTimeout(() => {
+    liveSessionPersistTimer = null;
+    liveSessionPersistInteraction = InteractionManager.runAfterInteractions(
+      () => {
+        liveSessionPersistInteraction = null;
+        flushLiveSessionPersist();
+      },
+    );
+  }, LIVE_SESSION_PERSIST_DEBOUNCE_MS);
 }
 
 /**
@@ -213,13 +274,28 @@ async function syncLocalLiveSessionData(
 ) {
   if (ongoingSessionId && drinkingSessionData) {
     const newData = drinkingSessionData[ongoingSessionId];
-    if (newData) {
-      await updateLocalData(
-        ONYXKEYS.ONGOING_SESSION_DATA,
-        newData,
-        ongoingSessionId,
-      );
+    if (!newData) {
+      return;
     }
+    // `ONGOING_SESSION_DATA` is the authoritative live-editing buffer on the
+    // device that owns the session: its drink taps race ahead of the debounced
+    // server echo. While a persist is still pending the buffer is newer than the
+    // snapshot we'd adopt here, so overwriting it would roll back just-tapped
+    // drinks (and clobber crash-recovered local state). Adopt the snapshot only
+    // once this device has nothing un-persisted — that covers cross-device drink
+    // updates, cold-start resume and crash recovery without the rollback.
+    if (
+      hasPendingLiveSessionPersist() &&
+      ongoingSessionData?.id === ongoingSessionId &&
+      ongoingSessionData?.ongoing
+    ) {
+      return;
+    }
+    await updateLocalData(
+      ONYXKEYS.ONGOING_SESSION_DATA,
+      newData,
+      ongoingSessionId,
+    );
   } else {
     Onyx.set(ONYXKEYS.ONGOING_SESSION_DATA, null);
   }
@@ -294,6 +370,15 @@ async function saveDrinkingSessionData(
   onyxKey: OnyxKey,
   sessionIsLive?: boolean,
 ): Promise<void> {
+  // This finalize carries the full session and must be the deterministic last
+  // writer for it. Cancel any pending debounced live persist, and synchronously
+  // drop the cached ongoing copy so a stray tap whose handler runs in this same
+  // tick can't re-route into ONGOING_SESSION_DATA and re-create the session.
+  if (sessionIsLive) {
+    cancelLiveSessionPersist();
+    DSUtils.clearOngoingSessionCache();
+  }
+
   // The server upserts the session, owns the `earliest_session_at` floor
   // (recomputing it when an edit moves the previously-earliest session later),
   // and — when `sessionIsLive` — updates the user's live status. The optimistic
@@ -331,6 +416,14 @@ async function removeDrinkingSessionData(
   onyxKey: OnyxKey,
   sessionIsLive?: boolean,
 ): Promise<void> {
+  // This delete must be the deterministic last writer for the session. Cancel any
+  // pending debounced live persist, and synchronously drop the cached ongoing
+  // copy so a stray tap landing in this same tick can't re-create the session.
+  if (sessionIsLive) {
+    cancelLiveSessionPersist();
+    DSUtils.clearOngoingSessionCache();
+  }
+
   // The server removes the session and its GPS locations, recomputes the
   // `earliest_session_at` floor, and — when `sessionIsLive` — clears the user's
   // live status. The optimistic data removes the session from the cached
@@ -393,6 +486,12 @@ function updateDrinks(
     });
   }
 
+  // Live (ongoing) sessions sync to the server through the debounced action-layer
+  // persist; edit sessions persist only on save, so don't schedule for them.
+  if (onyxKey === ONYXKEYS.ONGOING_SESSION_DATA) {
+    scheduleLiveSessionPersist();
+  }
+
   if (action !== CONST.DRINKS.ACTIONS.ADD || !drinksList) {
     return undefined;
   }
@@ -426,6 +525,9 @@ function updateNote(
     Onyx.merge(onyxKey, {
       note: newNote,
     });
+    if (onyxKey === ONYXKEYS.ONGOING_SESSION_DATA) {
+      scheduleLiveSessionPersist();
+    }
   }
 }
 
@@ -438,6 +540,9 @@ function updateBlackout(
     Onyx.merge(onyxKey, {
       blackout,
     });
+    if (onyxKey === ONYXKEYS.ONGOING_SESSION_DATA) {
+      scheduleLiveSessionPersist();
+    }
   }
 }
 
@@ -457,6 +562,9 @@ function updateTimezone(
     Onyx.merge(onyxKey, {
       timezone: newTimezone,
     });
+    if (onyxKey === ONYXKEYS.ONGOING_SESSION_DATA) {
+      scheduleLiveSessionPersist();
+    }
   }
 }
 
@@ -488,6 +596,9 @@ async function updateSessionDate(
     ? ONYXKEYS.ONGOING_SESSION_DATA
     : ONYXKEYS.EDIT_SESSION_DATA;
   await updateLocalData(onyxKey, modifiedSession, sessionId);
+  if (shouldUpdateLiveSessionData) {
+    scheduleLiveSessionPersist();
+  }
 }
 
 /** Generate a new key for a drinking session */
@@ -607,7 +718,6 @@ export {
   startLiveDrinkingSession,
   syncLocalLiveSessionData,
   updateBlackout,
-  updateLiveDrinkingSessionData,
   updateDrinks,
   updateNote,
   updateLocalData,

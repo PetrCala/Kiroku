@@ -8,6 +8,7 @@ import ONYXKEYS from '@src/ONYXKEYS';
 import DrinkingSessionWindow from '@components/DrinkingSessionWindow';
 import ScreenWrapper from '@components/ScreenWrapper';
 import FullScreenLoadingIndicator from '@components/FullscreenLoadingIndicator';
+import * as App from '@userActions/App';
 import useLocalize from '@hooks/useLocalize';
 import type DeepValueOf from '@src/types/utils/DeepValueOf';
 import Navigation from '@libs/Navigation/Navigation';
@@ -62,7 +63,13 @@ function EditSessionScreen({route}: EditSessionScreenProps) {
   }
 
   return (
-    <ScreenWrapper testID={EditSessionScreen.displayName}>
+    <ScreenWrapper
+      testID={EditSessionScreen.displayName}
+      // Match LiveSessionScreen: clear the open-time loading overlay only after the
+      // modal transition completes, so Home never flashes mid-slide.
+      onEntryTransitionEnd={() => {
+        App.setLoadingText(null);
+      }}>
       <DrinkingSessionWindow
         onNavigateBack={onNavigateBack}
         sessionId={sessionId}
