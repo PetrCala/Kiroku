@@ -85,6 +85,7 @@ const darkTheme = {
   tooltipPrimaryText: colors.productDark900,
   skeletonLHNIn: colors.productDark400,
   skeletonLHNOut: colors.productDark600,
+  skeletonBlockBG: colors.productDark350,
   QRLogo: colors.yellow,
   appLogo: colors.productDark900,
   white: colors.white,
