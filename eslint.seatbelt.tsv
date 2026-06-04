@@ -722,9 +722,6 @@
 "src/context/global/DatabaseDataContext.tsx"	"rulesdir/prefer-narrow-hook-dependencies"	1
 "src/context/global/SplashScreenStateContext.tsx"	"rulesdir/context-provider-split-values"	1
 "src/context/global/UserConnectionContext.tsx"	"arrow-body-style"	1
-"src/database/updates.ts"	"@typescript-eslint/prefer-nullish-coalescing"	1
-"src/hooks/useBatchedUpdates.ts"	"arrow-body-style"	1
-"src/hooks/useBatchedUpdates.ts"	"react-hooks/immutability"	1
 "src/hooks/useDebouncedState.ts"	"react-hooks/refs"	2
 "src/hooks/useFetchData/index.ts"	"react-hooks/set-state-in-effect"	1
 "src/hooks/useLazyMarkedDates.ts"	"react-hooks/set-state-in-effect"	1
