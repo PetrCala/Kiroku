@@ -8,7 +8,7 @@ import useThemeStyles from '@hooks/useThemeStyles';
 import Navigation from '@libs/Navigation/Navigation';
 import type {FeedbackList, NicknameToId} from '@src/types/onyx';
 import {useFirebase} from '@context/global/FirebaseContext';
-import {removeFeedback} from '@database/feedback';
+import {removeFeedback} from '@libs/actions/Feedback';
 import * as KirokuIcons from '@components/Icon/KirokuIcons';
 import DateUtils from '@libs/DateUtils';
 import MenuItem from '@components/MenuItem';
@@ -70,9 +70,7 @@ function SeeFeedbackScreen() {
   }, [feedbackList, db, nicknames]);
 
   const deleteFeedback = (feedbackKey: string) => {
-    (async () => {
-      await removeFeedback(db, feedbackKey);
-    })();
+    removeFeedback(feedbackKey);
   };
 
   const removeFeedbackButton = (id: string) => {

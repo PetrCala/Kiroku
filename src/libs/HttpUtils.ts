@@ -209,7 +209,10 @@ function buildKirokuBody(
 ): Record<string, unknown> {
   const body: Record<string, unknown> = {};
   Object.keys(data).forEach(key => {
-    if (KIROKU_OMITTED_BODY_FIELDS.has(key) || typeof data[key] === 'undefined') {
+    if (
+      KIROKU_OMITTED_BODY_FIELDS.has(key) ||
+      typeof data[key] === 'undefined'
+    ) {
       return;
     }
     body[key] = data[key];
@@ -236,7 +239,7 @@ async function kirokuXhr(
   }
 
   const headers: Record<string, string> = {Authorization: `Bearer ${token}`};
-  let url = `${ApiUtils.getKirokuApiRoot()}${route.path}`;
+  let url = `${ApiUtils.getKirokuApiRoot()}${route.toPath?.(data) ?? route.path}`;
   let body: string | null = null;
 
   if (route.method === 'get') {

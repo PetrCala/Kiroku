@@ -15,6 +15,11 @@ type KirokuRoute = {
   path: string;
   /** Optional builder for a GET route's query params, derived from request data. */
   toQuery?: (data: Record<string, unknown>) => Record<string, string | number>;
+  /**
+   * Optional builder for a path with URL params (e.g. `/v1/feedback/:id/remove`),
+   * derived from request data. Overrides `path` when present.
+   */
+  toPath?: (data: Record<string, unknown>) => string;
 };
 
 const KIROKU_ROUTES: Record<string, KirokuRoute> = {
@@ -90,6 +95,18 @@ const KIROKU_ROUTES: Record<string, KirokuRoute> = {
   [WRITE_COMMANDS.REPORT_BUG]: {
     method: 'post',
     path: '/v1/feedback/bug',
+  },
+  [WRITE_COMMANDS.REMOVE_FEEDBACK]: {
+    method: 'post',
+    path: '/v1/feedback/:feedbackId/remove',
+    toPath: data =>
+      `/v1/feedback/${encodeURIComponent(String(data.feedbackId))}/remove`,
+  },
+  [WRITE_COMMANDS.REMOVE_BUG]: {
+    method: 'post',
+    path: '/v1/feedback/bug/:bugId/remove',
+    toPath: data =>
+      `/v1/feedback/bug/${encodeURIComponent(String(data.bugId))}/remove`,
   },
   [WRITE_COMMANDS.UPDATE_DISPLAY_NAME]: {
     method: 'post',

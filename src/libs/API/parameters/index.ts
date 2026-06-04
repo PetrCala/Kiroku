@@ -27,5 +27,7 @@ export type {default as SetHideFromAllFriendsParams} from './SetHideFromAllFrien
 export type {default as SetFriendDataHiddenParams} from './SetFriendDataHiddenParams';
 export type {default as SubmitFeedbackParams} from './SubmitFeedbackParams';
 export type {default as ReportBugParams} from './ReportBugParams';
+export type {default as RemoveFeedbackParams} from './RemoveFeedbackParams';
+export type {default as RemoveBugParams} from './RemoveBugParams';
 export type {default as UpdateProfilePhotoParams} from './UpdateProfilePhotoParams';
 // export type {default as UpdateUserAvatarParams} from './UpdateUserAvatarParams';
