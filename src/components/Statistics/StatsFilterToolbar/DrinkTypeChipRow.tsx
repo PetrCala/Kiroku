@@ -92,6 +92,13 @@ function DrinkTypeChipRow({value, onChange}: Props) {
     <ScrollView
       horizontal
       showsHorizontalScrollIndicator={false}
+      // The row sits inside the statistics pager (react-native-pager-view),
+      // which sets up no gesture coordination with nested scroll views. Letting
+      // this row overscroll at its edge bleeds the residual drag into the
+      // pager, nudging the whole tab. Pinning it to its content bounds keeps the
+      // chip scroll fully isolated.
+      bounces={false}
+      overScrollMode="never"
       contentContainerStyle={styles.content}
       accessibilityLabel={translate(
         'statistics.filters.a11y.drinkTypeChipRow',

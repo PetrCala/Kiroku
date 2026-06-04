@@ -96,10 +96,15 @@ function SwipeablePagerIOS<R extends Route>({
 
       if (swipedRight) {
         if (index === 0) {
-          offset.value = withSpring(0, SPRING_CONFIG);
           if (onSwipeBeyondStart) {
+            // Hand off to the navigation transition: leave the content where
+            // the finger released it so the screen slides out to the right
+            // from that position. Springing the offset back to 0 here would
+            // jerk the content left while the screen slides right.
             runOnJS(onSwipeBeyondStart)();
+            return;
           }
+          offset.value = withSpring(0, SPRING_CONFIG);
           return;
         }
         runOnJS(onIndexChange)(index - 1);

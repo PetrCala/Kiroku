@@ -256,9 +256,16 @@ const SocialModalStackNavigator =
 
 const StatisticsModalStackNavigator =
   createModalStackNavigator<StatisticsNavigatorParamList>({
-    [SCREENS.STATISTICS.ROOT]: () =>
-      require<ReactComponentModule>('@screens/Statistics/StatisticsScreen')
-        .default,
+    [SCREENS.STATISTICS.ROOT]: {
+      getComponent: () =>
+        require<ReactComponentModule>('@screens/Statistics/StatisticsScreen')
+          .default,
+      // The screen wraps its tabs in a swipe-back gesture that dispatches
+      // Navigation.goBack() when the user swipes right on the first tab, so
+      // the stack's own swipe-back must stay out of the way (matching Social
+      // and SessionsCalendar).
+      options: {gestureEnabled: false},
+    },
   });
 
 export {

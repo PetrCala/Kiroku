@@ -16,6 +16,7 @@ import type {
 } from 'react-native-tab-view';
 import {ChartSkeleton} from '@components/Charts/ChartSkeleton';
 import {StatsFilterToolbarSkeleton} from '@components/Statistics/StatsFilterToolbar';
+import SwipeBackGestureDetector from '@components/SwipeBackGestureDetector';
 import Text from '@components/Text';
 import useLocalize from '@hooks/useLocalize';
 import useTheme from '@hooks/useTheme';
@@ -83,8 +84,31 @@ function BreakdownScene() {
   );
 }
 
+// Carries the screen's back handler down to the overview scene without
+// threading a prop through SceneMap (which only passes route props).
+const OverviewSwipeBackContext = React.createContext<(() => void) | undefined>(
+  undefined,
+);
+
+// The overview tab is the only one with no horizontal filter-chip row, so it
+// is safe to own horizontal swipes. Wrapping the gesture *here* — inside the
+// pager scene, directly around the content — is what makes the rightward
+// swipe-back fire: a gesture placed around the whole TabView is an ancestor of
+// the native pager-view, which owns same-axis touches and starves it. As a
+// descendant wrapping the content (the same shape friends uses) the gesture is
+// the nearest handler and wins. Leftward swipes fall through to the pager, so
+// swiping to the next tab still works, and the other tabs are untouched.
+function OverviewScene() {
+  const onSwipeBack = React.useContext(OverviewSwipeBackContext);
+  return (
+    <SwipeBackGestureDetector onSwipeBack={onSwipeBack}>
+      <OverviewTab />
+    </SwipeBackGestureDetector>
+  );
+}
+
 const renderScene = SceneMap({
-  overview: OverviewTab,
+  overview: OverviewScene,
   trends: TrendsScene,
   patterns: PatternsScene,
   breakdown: BreakdownScene,
@@ -157,7 +181,14 @@ const COMMON_OPTIONS: TabDescriptor<TabRoute> = {
   label: renderTabLabel,
 };
 
-function StatisticsTabs() {
+type StatisticsTabsProps = {
+  /** Mapped to a navigation back. Wired to the swipe-back gesture that wraps
+   *  the overview (left-most) scene only, so the other tabs keep the pager's
+   *  swipe and their horizontal filter-chip scroll. */
+  onSwipeBack?: () => void;
+};
+
+function StatisticsTabs({onSwipeBack}: StatisticsTabsProps) {
   const {translate} = useLocalize();
   const theme = useTheme();
   const {windowWidth} = useWindowDimensions();
@@ -228,20 +259,23 @@ function StatisticsTabs() {
   );
 
   return (
-    <TabView
-      style={[styles.container, {backgroundColor: theme.appBG}]}
-      navigationState={{index, routes}}
-      onIndexChange={setIndex}
-      renderScene={renderScene}
-      renderTabBar={renderTabBar}
-      initialLayout={{width: windowWidth}}
-      lazy
-      renderLazyPlaceholder={renderLazyPlaceholder}
-      commonOptions={COMMON_OPTIONS}
-    />
+    <OverviewSwipeBackContext.Provider value={onSwipeBack}>
+      <TabView
+        style={[styles.container, {backgroundColor: theme.appBG}]}
+        navigationState={{index, routes}}
+        onIndexChange={setIndex}
+        renderScene={renderScene}
+        renderTabBar={renderTabBar}
+        initialLayout={{width: windowWidth}}
+        lazy
+        renderLazyPlaceholder={renderLazyPlaceholder}
+        commonOptions={COMMON_OPTIONS}
+      />
+    </OverviewSwipeBackContext.Provider>
   );
 }
 
 StatisticsTabs.displayName = 'StatisticsTabs';
 
 export default StatisticsTabs;
+export type {StatisticsTabsProps};
