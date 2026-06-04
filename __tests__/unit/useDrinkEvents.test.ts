@@ -6,6 +6,7 @@ import {useOnyx} from 'react-native-onyx';
 import {useDatabaseData} from '@context/global/DatabaseDataContext';
 import {useFirebase} from '@context/global/FirebaseContext';
 import useCurrentUserData from '@hooks/useCurrentUserData';
+import useCurrentUserPreferences from '@hooks/useCurrentUserPreferences';
 import Statistics from '@libs/actions/Statistics';
 import useDrinkEvents from '@hooks/useStatistics/useDrinkEvents';
 import type {Preferences, UserData} from '@src/types/onyx';
@@ -30,6 +31,11 @@ jest.mock('@hooks/useCurrentUserData', () => ({
   default: jest.fn(),
 }));
 
+jest.mock('@hooks/useCurrentUserPreferences', () => ({
+  __esModule: true,
+  default: jest.fn(),
+}));
+
 // The hook delegates persistence of precomputed time fields to this action.
 jest.mock('@libs/actions/Statistics', () => ({
   __esModule: true,
@@ -40,6 +46,7 @@ const mockedUseOnyx = jest.mocked(useOnyx);
 const mockedUseFirebase = jest.mocked(useFirebase);
 const mockedUseDatabaseData = jest.mocked(useDatabaseData);
 const mockedUseCurrentUserData = jest.mocked(useCurrentUserData);
+const mockedUseCurrentUserPreferences = jest.mocked(useCurrentUserPreferences);
 
 function makePreferences(): Preferences {
   return {
@@ -83,8 +90,8 @@ function setContexts(
   preferences: Preferences | undefined = makePreferences(),
   userData: UserData | undefined = makeUserData(),
 ): void {
+  mockedUseCurrentUserPreferences.mockReturnValue(preferences);
   mockedUseDatabaseData.mockReturnValue({
-    preferences,
     isFetchingOlderMonths: false,
   });
   mockedUseCurrentUserData.mockReturnValue(userData ?? {});
@@ -239,8 +246,8 @@ describe('useDrinkEvents', () => {
   });
 
   test('missing preferences still produces events (units default to 0)', () => {
+    mockedUseCurrentUserPreferences.mockReturnValue(undefined);
     mockedUseDatabaseData.mockReturnValue({
-      preferences: undefined,
       isFetchingOlderMonths: false,
     });
     mockedUseCurrentUserData.mockReturnValue(makeUserData());
