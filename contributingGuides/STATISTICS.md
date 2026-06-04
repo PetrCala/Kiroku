@@ -24,7 +24,7 @@ A prior attempt lives on `origin/feat/graphs` (Sept 2025). It built a sound data
 - Cross-user comparison, friend leaderboards, cohort stats
 - Server-side rollups in kiroku-api
 - Web rendering — web shows a "view on mobile" placeholder until we add a parallel chart layer
-- Streaks tied to consumption thresholds, achievement badges, push-notification stat summaries
+- Streaks tied to consumption thresholds, badges, push-notification stat summaries
 - "Year in Review" / Spotify-Wrapped-style narrative (deferred to v1.x)
 - BAC, body-weight-normalized stats (data integrity not yet sufficient)
 

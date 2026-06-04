@@ -6,7 +6,7 @@ import type {
   UntilTimeParams,
 } from './types';
 import type {
-  AchievementsDayCountParams,
+  BadgesDayCountParams,
   BreakdownCenterUnitsParams,
   BreakdownDrinkLabelParams,
   BreakdownPeriodParams,
@@ -325,7 +325,7 @@ export default {
     friends: 'Přátelé',
     profile: 'Profil',
     settings: 'Nastavení',
-    achievements: 'Odznaky',
+    badges: 'Odznaky',
     statistics: 'Statistiky',
     menu: 'Menu',
   },
@@ -1172,13 +1172,12 @@ export default {
       },
     },
   },
-  achievementsScreen: {
+  badgesScreen: {
     title: 'Odznaky',
     badgesTitle: 'Odznaky',
     empty:
       'Zaznamenejte svou první alkoholovou relaci, abyste začali získávat odznaky a sledovat svou sérii dnů bez alkoholu.',
-    dayUnit: ({count}: AchievementsDayCountParams) =>
-      count === 1 ? 'den' : 'dní',
+    dayUnit: ({count}: BadgesDayCountParams) => (count === 1 ? 'den' : 'dní'),
     streak: {
       label: 'Aktuální série dnů bez alkoholu',
     },

@@ -14,12 +14,12 @@ import useLocalize from '@hooks/useLocalize';
 import useDrinkEvents from '@hooks/useStatistics/useDrinkEvents';
 import useTheme from '@hooks/useTheme';
 import useThemeStyles from '@hooks/useThemeStyles';
-import {computeBadges, summarizeAchievements} from '@libs/AchievementsUtils';
-import type {BadgeStatus} from '@libs/AchievementsUtils';
+import {computeBadges, summarizeBadges} from '@libs/BadgesUtils';
+import type {BadgeStatus} from '@libs/BadgesUtils';
 import Navigation from '@libs/Navigation/Navigation';
 import CONST from '@src/CONST';
 
-function AchievementsScreen() {
+function BadgesScreen() {
   const {translate} = useLocalize();
   const styles = useThemeStyles();
   const theme = useTheme();
@@ -37,30 +37,29 @@ function AchievementsScreen() {
   );
 
   const summary = useMemo(
-    () => summarizeAchievements(events, todayKey),
+    () => summarizeBadges(events, todayKey),
     [events, todayKey],
   );
   const badges = useMemo(() => computeBadges(summary), [summary]);
 
-  const dayUnit = (count: number) =>
-    translate('achievementsScreen.dayUnit', {count});
+  const dayUnit = (count: number) => translate('badgesScreen.dayUnit', {count});
 
   const statCards: KpiCardProps[] = [
     {
-      label: translate('achievementsScreen.stats.longestStreak'),
+      label: translate('badgesScreen.stats.longestStreak'),
       value: summary.longestAfStreak,
       unit: dayUnit(summary.longestAfStreak),
       tone: 'celebratory',
       polarity: 'higher-is-supportive',
     },
     {
-      label: translate('achievementsScreen.stats.totalAfDays'),
+      label: translate('badgesScreen.stats.totalAfDays'),
       value: summary.totalAfDays,
       unit: dayUnit(summary.totalAfDays),
       polarity: 'higher-is-supportive',
     },
     {
-      label: translate('achievementsScreen.stats.sessions'),
+      label: translate('badgesScreen.stats.sessions'),
       value: summary.totalSessions,
       polarity: 'neutral',
     },
@@ -84,10 +83,10 @@ function AchievementsScreen() {
       />
       <View style={[styles.flex1, styles.ml3]}>
         <Text style={[styles.textStrong]} numberOfLines={1}>
-          {translate(`achievementsScreen.badges.${badge.id}.title`)}
+          {translate(`badgesScreen.badges.${badge.id}.title`)}
         </Text>
         <Text style={[styles.textLabelSupporting]}>
-          {translate(`achievementsScreen.badges.${badge.id}.description`)}
+          {translate(`badgesScreen.badges.${badge.id}.description`)}
         </Text>
       </View>
       {badge.earned ? (
@@ -106,9 +105,9 @@ function AchievementsScreen() {
   );
 
   return (
-    <ScreenWrapper testID={AchievementsScreen.displayName}>
+    <ScreenWrapper testID={BadgesScreen.displayName}>
       <HeaderWithBackButton
-        title={translate('achievementsScreen.title')}
+        title={translate('badgesScreen.title')}
         onBackButtonPress={Navigation.goBack}
       />
       {!isLoading && !summary.hasData ? (
@@ -126,7 +125,7 @@ function AchievementsScreen() {
             height={48}
           />
           <Text style={[styles.textAlignCenter, styles.mt3]}>
-            {translate('achievementsScreen.empty')}
+            {translate('badgesScreen.empty')}
           </Text>
         </View>
       ) : (
@@ -136,7 +135,7 @@ function AchievementsScreen() {
           showsVerticalScrollIndicator={false}>
           <View style={styles.mb3}>
             <KpiCard
-              label={translate('achievementsScreen.streak.label')}
+              label={translate('badgesScreen.streak.label')}
               value={summary.currentAfStreak}
               unit={dayUnit(summary.currentAfStreak)}
               tone="celebratory"
@@ -157,7 +156,7 @@ function AchievementsScreen() {
                   styles.textStrong,
                   styles.mb2,
                 ]}>
-                {translate('achievementsScreen.badgesTitle')}
+                {translate('badgesScreen.badgesTitle')}
               </Text>
               {badges.map(renderBadge)}
             </View>
@@ -168,5 +167,5 @@ function AchievementsScreen() {
   );
 }
 
-AchievementsScreen.displayName = 'Achievements Screen';
-export default AchievementsScreen;
+BadgesScreen.displayName = 'Badges Screen';
+export default BadgesScreen;

@@ -1,7 +1,7 @@
 import type {DrinkingSessionId} from '@src/types/onyx';
 import type Platform from '@libs/getPlatform/types';
 
-type AchievementsDayCountParams = {
+type BadgesDayCountParams = {
   count: number;
 };
 
@@ -122,7 +122,7 @@ type SupporterRenewalDateParams = {
 };
 
 export type {
-  AchievementsDayCountParams,
+  BadgesDayCountParams,
   BreakdownCenterUnitsParams,
   BreakdownDrinkLabelParams,
   BreakdownPeriodParams,

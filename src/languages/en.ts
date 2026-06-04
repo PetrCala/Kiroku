@@ -6,7 +6,7 @@ import type {
   UntilTimeParams,
 } from './types';
 import type {
-  AchievementsDayCountParams,
+  BadgesDayCountParams,
   BreakdownCenterUnitsParams,
   BreakdownDrinkLabelParams,
   BreakdownPeriodParams,
@@ -323,7 +323,7 @@ export default {
     friends: 'Friends',
     profile: 'Profile',
     settings: 'Settings',
-    achievements: 'Badges',
+    badges: 'Badges',
     statistics: 'Statistics',
     menu: 'Menu',
   },
@@ -1184,13 +1184,12 @@ export default {
       },
     },
   },
-  achievementsScreen: {
-    title: 'Achievements',
+  badgesScreen: {
+    title: 'Badges',
     badgesTitle: 'Badges',
     empty:
       'Log your first session to start earning badges and tracking your alcohol-free streak.',
-    dayUnit: ({count}: AchievementsDayCountParams) =>
-      count === 1 ? 'day' : 'days',
+    dayUnit: ({count}: BadgesDayCountParams) => (count === 1 ? 'day' : 'days'),
     streak: {
       label: 'Current alcohol-free streak',
     },
