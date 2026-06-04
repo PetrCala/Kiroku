@@ -6,6 +6,7 @@ import type {
   UntilTimeParams,
 } from './types';
 import type {
+  AchievementsDayCountParams,
   BreakdownCenterUnitsParams,
   BreakdownDrinkLabelParams,
   BreakdownPeriodParams,
@@ -1168,6 +1169,56 @@ export default {
         nextPeriod: 'Další období',
         rangeLabel: 'Vybraný rozsah dat, dvojitým klepnutím změníte',
         jumpToLatest: 'Přejít na nejnovější období',
+      },
+    },
+  },
+  achievementsScreen: {
+    title: 'Odznaky',
+    badgesTitle: 'Odznaky',
+    empty:
+      'Zaznamenejte svou první alkoholovou relaci, abyste začali získávat odznaky a sledovat svou sérii dnů bez alkoholu.',
+    dayUnit: ({count}: AchievementsDayCountParams) =>
+      count === 1 ? 'den' : 'dní',
+    streak: {
+      label: 'Aktuální série dnů bez alkoholu',
+    },
+    stats: {
+      longestStreak: 'Nejdelší série',
+      totalAfDays: 'Dny bez alkoholu',
+      sessions: 'Zaznamenané relace',
+    },
+    badges: {
+      firstSession: {
+        title: 'První relace',
+        description: 'Zaznamenejte svou první alkoholovou relaci.',
+      },
+      dryDay: {
+        title: 'První den bez alkoholu',
+        description: 'Zaznamenejte svůj první den bez alkoholu.',
+      },
+      dryWeek: {
+        title: 'Týden bez alkoholu',
+        description: 'Dosáhněte série 7 dní bez alkoholu.',
+      },
+      dryFortnight: {
+        title: 'Dva týdny bez alkoholu',
+        description: 'Dosáhněte série 14 dní bez alkoholu.',
+      },
+      dryMonth: {
+        title: 'Měsíc bez alkoholu',
+        description: 'Dosáhněte série 30 dní bez alkoholu.',
+      },
+      afDays10: {
+        title: '10 dní bez alkoholu',
+        description: 'Nasbírejte 10 dní bez alkoholu.',
+      },
+      afDays50: {
+        title: '50 dní bez alkoholu',
+        description: 'Nasbírejte 50 dní bez alkoholu.',
+      },
+      sessions25: {
+        title: 'Pečlivé zaznamenávání',
+        description: 'Zaznamenejte 25 alkoholových relací.',
       },
     },
   },

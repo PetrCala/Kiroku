@@ -1,6 +1,10 @@
 import type {DrinkingSessionId} from '@src/types/onyx';
 import type Platform from '@libs/getPlatform/types';
 
+type AchievementsDayCountParams = {
+  count: number;
+};
+
 type CommonFriendsLabelParams = {
   hasCommonFriends: boolean;
 };
@@ -118,6 +122,7 @@ type SupporterRenewalDateParams = {
 };
 
 export type {
+  AchievementsDayCountParams,
   BreakdownCenterUnitsParams,
   BreakdownDrinkLabelParams,
   BreakdownPeriodParams,

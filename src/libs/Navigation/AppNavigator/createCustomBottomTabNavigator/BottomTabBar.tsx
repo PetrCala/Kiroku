@@ -23,6 +23,13 @@ function BottomTabBar() {
         onPress={() => Navigation.navigate(ROUTES.SOCIAL)}
         accessibilityLabel={translate('bottomTabBar.friends')}
       />
+      <BottomTabBarIcon
+        src={KirokuIcons.Star}
+        label={translate('bottomTabBar.achievements')}
+        isSelected={selectedTab === SCREENS.ACHIEVEMENTS}
+        onPress={() => Navigation.navigate(ROUTES.ACHIEVEMENTS)}
+        accessibilityLabel={translate('bottomTabBar.achievements')}
+      />
       <StartSessionButtonAndPopover />
       <BottomTabBarIcon
         src={KirokuIcons.Statistics}

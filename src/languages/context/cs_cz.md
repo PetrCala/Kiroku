@@ -70,6 +70,8 @@ zde`, `Přidejte si je zde`, `Zkuste hledat zde`.
 | alcohol-free day(s)       | **dny bez alkoholu**                              |                |
 | quiet day(s)              | **klidné dny**                                    |                |
 | blackout                  | **výpadek paměti**                                |                |
+| streak (alcohol-free)     | **série** (dnů bez alkoholu)                      |                |
+| badge / achievement       | **odznak / odznaky**                              |                |
 
 ## Do-not-translate (keep verbatim)
 
