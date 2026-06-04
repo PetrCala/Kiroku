@@ -46,6 +46,19 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v5
 
+      # ubuntu-latest ships with ~14 GB free; an RN Android release build
+      # (Gradle cache + .rn-downloads + Hermes + AAB) exhausts it. Reclaim
+      # ~20-30 GB by removing preinstalled toolchains we don't use.
+      - name: Free disk space
+        uses: jlumbroso/free-disk-space@54081f138730dfa15788a46383842cd2f914a1be # v1.3.1
+        with:
+          android: false # keep the Android SDK the build needs
+          dotnet: true
+          haskell: true
+          large-packages: true
+          docker-images: true
+          swap-storage: true
+
       - name: Setup Node
         uses: ./.github/actions/composite/setupNode
 
