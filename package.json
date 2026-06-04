@@ -28,7 +28,7 @@
     "prettier": "prettier --write .",
     "prettier-changed": "prettier --experimental-cli --no-cache --write --ignore-unknown $(git diff --diff-filter=AMR --name-only origin/main HEAD)",
     "prettier-watch": "onchange \"**/*.{js,ts,tsx}\" -- prettier --write --ignore-unknown {{changed}}",
-    "start": "react-native start",
+    "start": "NODE_OPTIONS=--max_old_space_size=8192 react-native start",
     "symbolicate:android": "npx metro-symbolicate android/app/build/generated/sourcemaps/react/release/index.android.bundle.map",
     "symbolicate:ios": "npx metro-symbolicate main.jsbundle.map",
     "symbolicate-release:ios": "scripts/release-profile.ts --platform=ios",
