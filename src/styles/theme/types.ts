@@ -15,6 +15,7 @@ type ThemeColors = {
   appBG: Color;
   splashBG: Color;
   highlightBG: Color;
+  calendarRangeBG: Color;
   darkBG: Color;
   appColor: Color;
   border: Color;
