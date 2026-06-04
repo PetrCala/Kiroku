@@ -1,7 +1,7 @@
 import React, {useRef} from 'react';
 import {View} from 'react-native';
 import * as Friends from '@userActions/Friends';
-import {setFriendDataHidden} from '@database/privacy';
+import * as Privacy from '@userActions/Privacy';
 import {useFirebase} from '@src/context/global/FirebaseContext';
 import {useDatabaseData} from '@context/global/DatabaseDataContext';
 import useLocalize from '@hooks/useLocalize';
@@ -31,7 +31,7 @@ function ManageFriendPopover({
   onClose,
   friendId,
 }: ManageFriendPopoverProps) {
-  const {auth, db} = useFirebase();
+  const {auth} = useFirebase();
   const user = auth.currentUser;
   const styles = useThemeStyles();
   const {translate} = useLocalize();
@@ -46,9 +46,7 @@ function ManageFriendPopover({
     if (!user) {
       return;
     }
-    setFriendDataHidden(db, user.uid, friendId, !isHidden).catch(error => {
-      ErrorUtils.raiseAppError(ERRORS.USER.PRIVACY_UPDATE_FAILED, error);
-    });
+    Privacy.setFriendDataHidden(friendId, !isHidden);
   };
 
   const menuItems: PopoverMenuItem[] = [

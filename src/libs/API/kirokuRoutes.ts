@@ -75,6 +75,14 @@ const KIROKU_ROUTES: Record<string, KirokuRoute> = {
     method: 'post',
     path: '/v1/session-locations/purge',
   },
+  [WRITE_COMMANDS.SET_HIDE_FROM_ALL_FRIENDS]: {
+    method: 'post',
+    path: '/v1/privacy/hide-from-all',
+  },
+  [WRITE_COMMANDS.SET_FRIEND_DATA_HIDDEN]: {
+    method: 'post',
+    path: '/v1/privacy/friend',
+  },
 };
 
 /** Returns the kiroku-api route for a command, or undefined for legacy commands. */

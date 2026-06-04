@@ -23,4 +23,6 @@ export type {default as UpdatePreferredLocaleParams} from './UpdatePreferredLoca
 export type {default as UpdatePronounsParams} from './UpdatePronounsParams';
 export type {default as UpdateSelectedTimezoneParams} from './UpdateSelectedTimezoneParams';
 export type {default as UpdateThemeParams} from './UpdateThemeParams';
+export type {default as SetHideFromAllFriendsParams} from './SetHideFromAllFriendsParams';
+export type {default as SetFriendDataHiddenParams} from './SetFriendDataHiddenParams';
 // export type {default as UpdateUserAvatarParams} from './UpdateUserAvatarParams';

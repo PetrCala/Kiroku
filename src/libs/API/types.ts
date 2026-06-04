@@ -39,6 +39,8 @@ const WRITE_COMMANDS = {
   CAPTURE_SESSION_LOCATION: 'CaptureSessionLocation',
   CLEAR_SESSION_LOCATIONS: 'ClearSessionLocations',
   PURGE_SESSION_LOCATIONS: 'PurgeSessionLocations',
+  SET_HIDE_FROM_ALL_FRIENDS: 'SetHideFromAllFriends',
+  SET_FRIEND_DATA_HIDDEN: 'SetFriendDataHidden',
   // ...
 } as const;
 
@@ -77,6 +79,8 @@ type WriteCommandParameters = {
   [WRITE_COMMANDS.CAPTURE_SESSION_LOCATION]: Parameters.CaptureSessionLocationParams;
   [WRITE_COMMANDS.CLEAR_SESSION_LOCATIONS]: Parameters.ClearSessionLocationsParams;
   [WRITE_COMMANDS.PURGE_SESSION_LOCATIONS]: EmptyObject;
+  [WRITE_COMMANDS.SET_HIDE_FROM_ALL_FRIENDS]: Parameters.SetHideFromAllFriendsParams;
+  [WRITE_COMMANDS.SET_FRIEND_DATA_HIDDEN]: Parameters.SetFriendDataHiddenParams;
 };
 
 const READ_COMMANDS = {
