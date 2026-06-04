@@ -38,6 +38,7 @@ import useResponsiveLayout from '@hooks/useResponsiveLayout';
 import {useFirebase} from '@context/global/FirebaseContext';
 import OnboardingGuard from '@libs/Navigation/guards/OnboardingGuard';
 import TermsReConsentGuard from '@libs/Navigation/guards/TermsReConsentGuard';
+import FreezeWrapper from '@libs/Navigation/FreezeWrapper';
 import createCustomStackNavigator from './createCustomStackNavigator';
 import getRootNavigatorScreenOptions from './getRootNavigatorScreenOptions';
 import BottomTabNavigator from './Navigators/BottomTabNavigator';
@@ -111,6 +112,20 @@ Onyx.connect({
 
 // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
 const RootStack = createCustomStackNavigator();
+
+// Freeze the bottom-tab subtree (Home + its StatsContextProvider, calendar, and
+// the `cachedDrinkingSessions` subscribers) whenever a right-hand modal — e.g. the
+// live drinking-session screen — sits on top. While frozen, react-freeze stops
+// the occluded screens from re-rendering on every server echo and stops
+// HomeScreen's `syncLocalLiveSessionData` effect from running, so it can no longer
+// overwrite the live edit buffer with the lagging cache mid-session.
+function BottomTabNavigatorWithFreeze() {
+  return (
+    <FreezeWrapper>
+      <BottomTabNavigator />
+    </FreezeWrapper>
+  );
+}
 // We want to delay the re-rendering for components
 // that depends on modal visibility until Modal is completely closed and its focused
 // When modal screen is focused, update modal visibility in Onyx
@@ -306,7 +321,7 @@ function AuthScreensContent() {
         <RootStack.Screen
           name={NAVIGATORS.BOTTOM_TAB_NAVIGATOR}
           options={screenOptions.bottomTab}
-          component={BottomTabNavigator}
+          component={BottomTabNavigatorWithFreeze}
         />
         <RootStack.Screen
           name={SCREENS.NOT_FOUND}
