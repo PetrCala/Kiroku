@@ -25,4 +25,5 @@ export type {default as UpdateSelectedTimezoneParams} from './UpdateSelectedTime
 export type {default as UpdateThemeParams} from './UpdateThemeParams';
 export type {default as SetHideFromAllFriendsParams} from './SetHideFromAllFriendsParams';
 export type {default as SetFriendDataHiddenParams} from './SetFriendDataHiddenParams';
+export type {default as UpdateProfilePhotoParams} from './UpdateProfilePhotoParams';
 // export type {default as UpdateUserAvatarParams} from './UpdateUserAvatarParams';

@@ -45,6 +45,8 @@ import Onyx from 'react-native-onyx';
 import ONYXKEYS from '@src/ONYXKEYS';
 import CONST from '@src/CONST';
 import {getFirebaseAuth} from '@libs/Firebase/FirebaseApp';
+import * as API from '@libs/API';
+import {WRITE_COMMANDS} from '@libs/API/types';
 import PusherUtils from '@libs/PusherUtils';
 import * as Pusher from '@libs/Pusher/pusher';
 import * as OnyxUpdates from '@userActions/OnyxUpdates';
@@ -362,91 +364,64 @@ async function sendVerifyEmailLink(
 }
 
 /**
- * Change a display name for a user both in the realtime database,
- *  and in the authentication system.
+ * Change a user's display name via kiroku-api, keeping the Firebase Auth
+ * profile in sync. The server owns the nickname-index rebuild; the optimistic
+ * Onyx update mirrors the server's `onyxData`.
  *
- * @param db Database to change the display name in
  * @param user User to change the display name for
- * @param oldDisplayName The old display name
  * @param newDisplayName The new display name
- * @returns An empty promise
  */
-async function changeDisplayName(
-  db: Database,
-  user: User | null,
-  oldDisplayName: string | undefined,
-  newDisplayName: string,
-): Promise<void> {
+function changeDisplayName(user: User | null, newDisplayName: string): void {
   if (!user) {
-    throw new Error(Localize.translateLocal('common.error.userNull'));
-  }
-  if (!oldDisplayName) {
-    throw new Error(
-      'Could not identify the old display name. Try reloading the app.',
-    );
-  }
-  const userID = user.uid;
-  const nicknameRef = DBPATHS.NICKNAME_TO_ID_NICKNAME_KEY_USER_ID;
-  const displayNameRef = DBPATHS.USERS_USER_ID_PROFILE_DISPLAY_NAME;
-
-  const currentDisplayName = await readDataOnce<string>(
-    db,
-    displayNameRef.getRoute(userID),
-  );
-  if (currentDisplayName === newDisplayName) {
     return;
   }
-
-  // Derive the keys to remove from the name currently stored in the database
-  // (not the caller-supplied old name), so renames never leave stale tokens.
-  const oldKeys = getNicknameKeys(currentDisplayName ?? oldDisplayName);
-  const newKeys = getNicknameKeys(newDisplayName);
-  const newKeySet = new Set(newKeys);
-
-  const updates: Record<string, string | null> = {};
-  oldKeys
-    .filter(key => !newKeySet.has(key))
-    .forEach(key => {
-      updates[nicknameRef.getRoute(key, userID)] = null;
-    });
-  newKeys.forEach(key => {
-    updates[nicknameRef.getRoute(key, userID)] = newDisplayName;
+  const optimisticData: OnyxUpdate[] = [
+    {
+      onyxMethod: Onyx.METHOD.MERGE,
+      key: ONYXKEYS.USER_DATA_LIST,
+      value: {[user.uid]: {profile: {display_name: newDisplayName}}},
+    },
+  ];
+  API.write(
+    WRITE_COMMANDS.UPDATE_DISPLAY_NAME,
+    {displayName: newDisplayName},
+    {optimisticData},
+  );
+  updateProfile(user, {displayName: newDisplayName}).catch(() => {
+    // Auth profile sync is best-effort; the server write is authoritative.
   });
-  updates[displayNameRef.getRoute(userID)] = newDisplayName;
-
-  // TODO possibly rewrite these into a transaction
-  await update(ref(db), updates);
-  await updateProfile(user, {displayName: newDisplayName});
 }
 
 /**
- * Change a user name for a user.
+ * Change a user's first/last name via kiroku-api. The optimistic Onyx update
+ * mirrors the server's `onyxData`.
  *
- * @param db Database to change the display name in
- * @param user User to change the display name for
+ * @param user User to change the name for
  * @param firstName The new first name
  * @param lastName The new last name
- * @returns An empty promise
  */
-async function changeUserName(
-  db: Database,
+function changeUserName(
   user: User | null,
   firstName: string,
   lastName: string,
-): Promise<void> {
+): void {
   if (!user) {
-    throw new Error(Localize.translateLocal('common.error.userNull'));
+    return;
   }
-
-  const userID = user.uid;
-  const firstNameRef = DBPATHS.USERS_USER_ID_PROFILE_FIRST_NAME;
-  const lastNameRef = DBPATHS.USERS_USER_ID_PROFILE_LAST_NAME;
-
-  const updates: Record<string, string> = {};
-  updates[firstNameRef.getRoute(userID)] = firstName;
-  updates[lastNameRef.getRoute(userID)] = lastName;
-
-  await update(ref(db), updates);
+  const optimisticData: OnyxUpdate[] = [
+    {
+      onyxMethod: Onyx.METHOD.MERGE,
+      key: ONYXKEYS.USER_DATA_LIST,
+      value: {
+        [user.uid]: {profile: {first_name: firstName, last_name: lastName}},
+      },
+    },
+  ];
+  API.write(
+    WRITE_COMMANDS.UPDATE_LEGAL_NAME,
+    {firstName, lastName},
+    {optimisticData},
+  );
 }
 
 /**

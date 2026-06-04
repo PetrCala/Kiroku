@@ -13,7 +13,6 @@ import useThemeStyles from '@hooks/useThemeStyles';
 import Navigation from '@libs/Navigation/Navigation';
 import * as ErrorUtils from '@libs/ErrorUtils';
 import * as ValidationUtils from '@libs/ValidationUtils';
-import * as App from '@userActions/App';
 import CONST from '@src/CONST';
 import ONYXKEYS from '@src/ONYXKEYS';
 import INPUT_IDS from '@src/types/form/UserNameForm';
@@ -23,7 +22,6 @@ import type SCREENS from '@src/SCREENS';
 import {useFirebase} from '@context/global/FirebaseContext';
 import {useDatabaseData} from '@context/global/DatabaseDataContext';
 import {changeUserName} from '@userActions/User';
-import ERRORS from '@src/ERRORS';
 
 type UserNameScreenProps = StackScreenProps<
   SettingsNavigatorParamList,
@@ -34,11 +32,10 @@ type UserNameScreenProps = StackScreenProps<
 function UserNameScreen({route}: UserNameScreenProps) {
   const styles = useThemeStyles();
   const {translate} = useLocalize();
-  const {db, auth} = useFirebase();
+  const {auth} = useFirebase();
   const [loadingText] = useOnyx(ONYXKEYS.APP_LOADING_TEXT);
   const {userData} = useDatabaseData();
   const profileData = userData?.profile;
-  const [isLoadingName, setIsLoadingName] = React.useState(false);
 
   const currentUserDetails = {
     firstName: profileData?.first_name,
@@ -48,22 +45,12 @@ function UserNameScreen({route}: UserNameScreenProps) {
   const updateUserName = (
     values: FormOnyxValues<typeof ONYXKEYS.FORMS.USER_NAME_FORM>,
   ) => {
-    (async () => {
-      const newFirstName = values.firstName.trim();
-      const newLastName = values.lastName.trim();
-
-      try {
-        setIsLoadingName(true);
-        await App.setLoadingText(translate('userNameScreen.updatingUserName'));
-        await changeUserName(db, auth.currentUser, newFirstName, newLastName);
-        Navigation.goBack();
-      } catch (error) {
-        ErrorUtils.raiseAppError(ERRORS.USER.USERNAME_UPDATE_FAILED, error);
-      } finally {
-        setIsLoadingName(false);
-        await App.setLoadingText(null);
-      }
-    })();
+    changeUserName(
+      auth.currentUser,
+      values.firstName.trim(),
+      values.lastName.trim(),
+    );
+    Navigation.goBack();
   };
 
   const validate = (
@@ -149,7 +136,7 @@ function UserNameScreen({route}: UserNameScreenProps) {
         title={translate('userNameScreen.headerTitle')}
         onBackButtonPress={() => Navigation.goBack()}
       />
-      {!!loadingText || isLoadingName ? (
+      {loadingText ? (
         <FullScreenLoadingIndicator
           style={[styles.flex1]}
           loadingText={loadingText}
