@@ -6,6 +6,7 @@ import type {
   UntilTimeParams,
 } from './types';
 import type {
+  AchievementsDayCountParams,
   BreakdownCenterUnitsParams,
   BreakdownDrinkLabelParams,
   BreakdownPeriodParams,
@@ -1180,6 +1181,56 @@ export default {
         nextPeriod: 'Next period',
         rangeLabel: 'Selected date range, double-tap to change',
         jumpToLatest: 'Jump to the latest period',
+      },
+    },
+  },
+  achievementsScreen: {
+    title: 'Achievements',
+    badgesTitle: 'Badges',
+    empty:
+      'Log your first session to start earning badges and tracking your alcohol-free streak.',
+    dayUnit: ({count}: AchievementsDayCountParams) =>
+      count === 1 ? 'day' : 'days',
+    streak: {
+      label: 'Current alcohol-free streak',
+    },
+    stats: {
+      longestStreak: 'Longest streak',
+      totalAfDays: 'Alcohol-free days',
+      sessions: 'Sessions logged',
+    },
+    badges: {
+      firstSession: {
+        title: 'First session',
+        description: 'Log your first drinking session.',
+      },
+      dryDay: {
+        title: 'First dry day',
+        description: 'Record your first alcohol-free day.',
+      },
+      dryWeek: {
+        title: 'Dry week',
+        description: 'Reach a 7-day alcohol-free streak.',
+      },
+      dryFortnight: {
+        title: 'Dry fortnight',
+        description: 'Reach a 14-day alcohol-free streak.',
+      },
+      dryMonth: {
+        title: 'Dry month',
+        description: 'Reach a 30-day alcohol-free streak.',
+      },
+      afDays10: {
+        title: '10 dry days',
+        description: 'Add up 10 alcohol-free days.',
+      },
+      afDays50: {
+        title: '50 dry days',
+        description: 'Add up 50 alcohol-free days.',
+      },
+      sessions25: {
+        title: 'Diligent logger',
+        description: 'Log 25 drinking sessions.',
       },
     },
   },

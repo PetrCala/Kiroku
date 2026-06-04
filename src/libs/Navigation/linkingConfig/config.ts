@@ -59,6 +59,11 @@ const config: LinkingOptions<RootStackParamList>['config'] = {
     },
     [NAVIGATORS.RIGHT_MODAL_NAVIGATOR]: {
       screens: {
+        [SCREENS.RIGHT_MODAL.ACHIEVEMENTS]: {
+          screens: {
+            [SCREENS.ACHIEVEMENTS.ROOT]: ROUTES.ACHIEVEMENTS,
+          },
+        },
         [SCREENS.RIGHT_MODAL.DAY_OVERVIEW]: {
           screens: {
             [SCREENS.DAY_OVERVIEW.ROOT]: {
