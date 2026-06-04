@@ -23,6 +23,12 @@ type DrinkingSessionWindowProps = {
 
   /** Type of the drinking session */
   type: DrinkingSessionType;
+
+  /** Whether to show an indicator of pending db sync changes */
+  shouldShowSyncPendingIndicator?: boolean;
+
+  /** Whether to show an indicator of successful db sync changes */
+  shouldShowSyncSuccessIndicator?: boolean;
 };
 
 export default DrinkingSessionWindowProps;

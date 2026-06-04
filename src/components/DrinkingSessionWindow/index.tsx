@@ -20,6 +20,8 @@ import * as App from '@userActions/App';
 import {convertUnitsToColors} from '@libs/DataHandling';
 import {resolvePalette} from '@libs/SessionColorPalettes';
 import ScrollView from '@components/ScrollView';
+import FlexibleLoadingIndicator from '@components/FlexibleLoadingIndicator';
+import SuccessIndicator from '@components/SuccessIndicator';
 import Log from '@libs/Log';
 import DateUtils from '@libs/DateUtils';
 import isEqual from 'lodash/isEqual';
@@ -34,6 +36,8 @@ function DrinkingSessionWindow({
   session,
   onyxKey,
   type,
+  shouldShowSyncPendingIndicator = false,
+  shouldShowSyncSuccessIndicator = false,
 }: DrinkingSessionWindowProps) {
   const {auth} = useFirebase();
   const user = auth.currentUser;
@@ -194,6 +198,13 @@ function DrinkingSessionWindow({
   return (
     <>
       <HeaderWithBackButton onBackButtonPress={handleBackPress} />
+      {shouldShowSyncPendingIndicator && (
+        <FlexibleLoadingIndicator
+          size="small"
+          style={styles.successIndicator}
+        />
+      )}
+      <SuccessIndicator visible={shouldShowSyncSuccessIndicator} />
       <ScrollView contentContainerStyle={[styles.w100]}>
         <View style={styles.pt2}>
           <View style={styles.alignItemsCenter}>
