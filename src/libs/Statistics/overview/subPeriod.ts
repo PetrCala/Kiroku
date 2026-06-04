@@ -1,13 +1,11 @@
 import {format, parseISO} from 'date-fns';
-import aggregate from '@libs/Statistics/aggregate';
 import type {Bucketer} from '@libs/Statistics/aggregate';
 import {byDay, byIsoWeek, byMonth, byYear} from '@libs/Statistics/bucketers';
-import {dateRange} from '@libs/Statistics/filters';
-import {sumUnits} from '@libs/Statistics/reducers';
 import {weekKeysInRange} from '@libs/Statistics/trends';
 import type {DrinkEvent} from '@libs/Statistics/types';
 import type {Range} from '@components/StatsContextProvider/types';
 import {dayKeysInRange, monthKeysInRange, yearKeysInRange} from './keys';
+import collectWindowAggregates from './windowAggregates';
 
 type Granularity = 'day' | 'week' | 'month' | 'year';
 
@@ -98,9 +96,28 @@ function keysFor(granularity: Granularity, start: Date, end: Date): string[] {
 }
 
 /**
+ * Gap-filled per-sub-period series from precomputed unit sums: every key in the
+ * window, in order, mapped to its summed units (0 where the bucket is absent).
+ * Splitting this out lets the Overview model feed it the sub-period map from the
+ * shared {@link collectWindowAggregates} pass.
+ */
+function seriesFromUnits(
+  unitsBySubPeriod: ReadonlyMap<string, number>,
+  granularity: Granularity,
+  start: Date,
+  end: Date,
+): SubPeriodPoint[] {
+  return keysFor(granularity, start, end).map(key => ({
+    label: labelFor(granularity, key),
+    units: unitsBySubPeriod.get(key) ?? 0,
+  }));
+}
+
+/**
  * Gap-filled per-sub-period units series for `range`, clamped to `now`. Drives
  * both the hero sparkline and the texture bar-list off one bucketing so they
- * always agree on granularity.
+ * always agree on granularity. Convenience wrapper over a single
+ * {@link collectWindowAggregates} pass; kept as a standalone, tested unit.
  */
 function buildSubPeriodSeries(
   events: readonly DrinkEvent[],
@@ -112,21 +129,21 @@ function buildSubPeriodSeries(
   if (effectiveEndMs < startMs) {
     return [];
   }
-  const effectiveEnd = new Date(effectiveEndMs);
   const granularity = pickGranularity(range);
-  const keys = keysFor(granularity, range.start, effectiveEnd);
-  const byBucket = aggregate(
+  const {unitsBySubPeriod} = collectWindowAggregates(
     events,
+    startMs,
+    effectiveEndMs,
     bucketerFor(granularity),
-    sumUnits,
-    dateRange(startMs, effectiveEndMs),
   );
-  return keys.map(key => ({
-    label: labelFor(granularity, key),
-    units: byBucket.get(key) ?? 0,
-  }));
+  return seriesFromUnits(
+    unitsBySubPeriod,
+    granularity,
+    range.start,
+    new Date(effectiveEndMs),
+  );
 }
 
 export default buildSubPeriodSeries;
-export {pickGranularity};
+export {bucketerFor, pickGranularity, seriesFromUnits};
 export type {Granularity, SubPeriodPoint};

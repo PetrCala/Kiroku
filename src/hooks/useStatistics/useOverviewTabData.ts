@@ -1,10 +1,7 @@
 import {useMemo} from 'react';
 import {useDatabaseData} from '@context/global/DatabaseDataContext';
 import useStatsContext from '@hooks/useStatsContext';
-import {
-  buildPeriodSummary,
-  buildSubPeriodSeries,
-} from '@libs/Statistics/overview';
+import {buildOverviewModel} from '@libs/Statistics/overview';
 import type {
   PeriodSummary,
   SubPeriodPoint,
@@ -57,28 +54,11 @@ function useOverviewTabData(): OverviewTabData {
   // Snapshot `now` once per mount so current/previous/sub-period clamps agree.
   const now = useMemo(() => new Date(), []);
 
-  const current = useMemo(
-    () => buildPeriodSummary(events, range.start, range.end, now, thresholds),
-    [events, range.start, range.end, now, thresholds],
-  );
-
-  const previous = useMemo(
-    () =>
-      comparisonRange
-        ? buildPeriodSummary(
-            events,
-            comparisonRange.start,
-            comparisonRange.end,
-            now,
-            thresholds,
-          )
-        : null,
-    [events, comparisonRange, now, thresholds],
-  );
-
-  const subPeriods = useMemo(
-    () => buildSubPeriodSeries(events, range, now),
-    [events, range, now],
+  // One fused pass for the current window (per-day + sub-period sums + session
+  // count), plus one more only when a comparison is active.
+  const {current, previous, subPeriods} = useMemo(
+    () => buildOverviewModel(events, range, comparisonRange, now, thresholds),
+    [events, range, comparisonRange, now, thresholds],
   );
 
   const hasEverLogged = selectHasEverLogged(events);
