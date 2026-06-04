@@ -36,8 +36,6 @@ import type {
 
 import type Preferences from './Preferences';
 import type {
-  BacDisplayUnit,
-  BacTimeFormat,
   PreferencesList,
   UnitsToColors,
   DrinksToUnits,
@@ -116,8 +114,6 @@ export type {
   NicknameKey,
   NicknameToId,
   NicknameToIdList,
-  BacDisplayUnit,
-  BacTimeFormat,
   PendingOAuthCredential,
   OnboardingData,
   OnyxUpdateEvent,

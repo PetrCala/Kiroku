@@ -17,10 +17,6 @@ PRIVATE BY DESIGN
 
 STAY CONNECTED (OPTIONAL)
 • Add friends to share progress and support each other
-• See a friend's supporter badge
-
-KIROKU SUPPORTER (OPTIONAL SUBSCRIPTION)
-Kiroku is free to use. If you'd like to support development, "Kiroku Supporter" is an optional monthly subscription that adds a cosmetic beer badge to your profile. It unlocks no tracking functionality — every core feature is free. Subscriptions auto-renew unless cancelled; manage or cancel any time in your App Store account settings.
 
 Terms of Use (EULA): https://kiroku.cz/terms
 Privacy Policy: https://kiroku.cz/privacy

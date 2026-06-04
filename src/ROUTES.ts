@@ -31,8 +31,6 @@ const ROUTES = {
 
   HOME: 'home',
 
-  ACHIEVEMENTS: 'achievements',
-
   DAY_OVERVIEW: {
     route: 'day-overview/:date',
     getRoute: (date: DateString) => `day-overview/${date}` as const,

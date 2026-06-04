@@ -67,7 +67,6 @@ for terms that were historically translated inconsistently.
 | supporter                             |                        |            |
 | sober / alcohol-free day              |                        |            |
 | blackout                              |                        |            |
-| BAC / blood alcohol                   |                        |            |
 
 ## Do-not-translate (keep verbatim)
 
