@@ -13,6 +13,8 @@ import type {
   DrinkingSessionArray,
   DrinkingSessionList,
   DrinkingSessionType,
+  SessionTimeParts,
+  StoredLocalParts,
   UserDrinkingSessionsList,
 } from './DrinkingSession';
 import type Feedback from './Feedback';
@@ -36,8 +38,6 @@ import type {
 
 import type Preferences from './Preferences';
 import type {
-  BacDisplayUnit,
-  BacTimeFormat,
   PreferencesList,
   UnitsToColors,
   DrinksToUnits,
@@ -116,8 +116,6 @@ export type {
   NicknameKey,
   NicknameToId,
   NicknameToIdList,
-  BacDisplayUnit,
-  BacTimeFormat,
   PendingOAuthCredential,
   OnboardingData,
   OnyxUpdateEvent,
@@ -137,6 +135,8 @@ export type {
   SessionLocations,
   SessionPlaceholder,
   SessionPlaceholderList,
+  SessionTimeParts,
+  StoredLocalParts,
   RangePreset,
   StartSession,
   StatisticsFilters,

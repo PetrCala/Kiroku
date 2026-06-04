@@ -76,6 +76,7 @@ function SessionSummaryScreen({route}: SessionSummaryScreenProps) {
   const sessionDay = DateUtils.getLocalizedDay(
     session.start_time,
     session?.timezone,
+    CONST.DATE.MONTH_DAY_YEAR_ABBR_FORMAT,
   );
   const sessionStartTime = DateUtils.getLocalizedTime(
     session.start_time,

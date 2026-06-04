@@ -39,16 +39,25 @@ function EditSessionScreen({route}: EditSessionScreenProps) {
       }
       return;
     }
-    const previousScreenName = Navigation.getLastScreenName(true);
-    if (action === CONST.NAVIGATION.SESSION_ACTION.SAVE) {
-      if (previousScreenName === SCREENS.DAY_OVERVIEW.ROOT) {
-        Navigation.goBack();
-      } else if (previousScreenName === SCREENS.DRINKING_SESSION.SUMMARY) {
-        Navigation.goBack();
-      } else {
-        // Use dismissModal instead of navigate(HOME) to avoid double animation
-        Navigation.dismissModal();
-      }
+
+    // BACK — return to wherever we came from (the summary when the edit was
+    // opened through it, the day overview otherwise).
+    if (action === CONST.NAVIGATION.SESSION_ACTION.BACK) {
+      Navigation.goBack();
+      return;
+    }
+
+    // SAVE or DISCARD — land on the originating day overview. When the edit was
+    // opened through the session's summary, that summary is now stale (it shows
+    // a just-edited or just-deleted session), so pop the whole DrinkingSession
+    // modal (summary + edit) to reveal the day overview beneath it — a single
+    // goBack would only return to the stale summary. Otherwise (e.g. a session
+    // created from the day-overview FAB) the edit screen is the modal's root, so
+    // a single goBack already bubbles back to the origin.
+    if (
+      Navigation.getPreviousScreenName() === SCREENS.DRINKING_SESSION.SUMMARY
+    ) {
+      Navigation.popModalFlow();
     } else {
       Navigation.goBack();
     }

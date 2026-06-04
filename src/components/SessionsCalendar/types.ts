@@ -33,21 +33,25 @@ type SessionsCalendarProps = {
    * Rendering mode:
    * - `compact` (default): fixed-size single-month `Calendar` with arrow
    *   pagination. The original embedded variant used on Home/Profile.
-   * - `fullscreen`: virtualized horizontal `CalendarList`, used on the
-   *   dedicated full-screen calendar route.
+   * - `fullscreen`: virtualized vertical week list, used on the dedicated
+   *   full-screen calendar route.
+   * - `dayList`: continuous, all-days scroll of session tiles grouped by day,
+   *   used by the day-overview screen.
    */
-  mode?: 'compact' | 'fullscreen';
+  mode?: 'compact' | 'fullscreen' | 'dayList';
 
-  /** Fullscreen-only. Month to initially position at `initialFirstWeekY`,
-   *  formatted as 'YYYY-MM'. Carried from the small calendar's header tap. */
+  /** Fullscreen-only. Month to center on first render, formatted as
+   *  'YYYY-MM'. Carried from the small calendar's header tap. */
   initialMonthYear?: string;
 
-  /** Fullscreen-only. Window-Y (px) where the clicked month's first week-row
-   *  should land — measured from the small calendar at click time so the
-   *  open looks seamless. */
-  initialFirstWeekY?: number;
+  /** dayList-only. Day ('YYYY-MM-DD') to land on at first render. */
+  initialDay?: DateString;
 
-  /** Fullscreen-only. Fires once the WeekListView has applied its initial
+  /** dayList-only. Debounced report of the center-most visible day as the user
+   *  scrolls — used to open the add-session picker on the viewed month. */
+  onVisibleDayChange?: (day: DateString) => void;
+
+  /** Fullscreen/dayList. Fires once the scroll view has applied its initial
    *  scroll (or determined it doesn't need one). The screen uses this to
    *  drop a loading overlay that hides the brief pre-scroll frame. */
   onInitialScrollReady?: () => void;

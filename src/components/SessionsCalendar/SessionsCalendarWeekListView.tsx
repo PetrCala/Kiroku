@@ -1,17 +1,11 @@
-import React, {
-  memo,
-  useCallback,
-  useEffect,
-  useMemo,
-  useRef,
-  useState,
-} from 'react';
-import {ActivityIndicator, Dimensions, View} from 'react-native';
+import React, {memo, useCallback, useEffect, useMemo, useRef} from 'react';
+import {ActivityIndicator, View} from 'react-native';
 import {Gesture, GestureDetector} from 'react-native-gesture-handler';
 import {runOnJS} from 'react-native-reanimated';
 import {FlashList} from '@shopify/flash-list';
 import type {FlashListRef} from '@shopify/flash-list';
 import {format, parseISO, startOfDay} from 'date-fns';
+import lodashDebounce from 'lodash/debounce';
 import type {DateData} from 'react-native-calendars';
 import {LocaleConfig} from 'react-native-calendars';
 import type {MarkedDates} from 'react-native-calendars/src/types';
@@ -20,8 +14,10 @@ import Text from '@components/Text';
 import useLocalize from '@hooks/useLocalize';
 import useTheme from '@hooks/useTheme';
 import useThemeStyles from '@hooks/useThemeStyles';
+import useWindowDimensions from '@hooks/useWindowDimensions';
 import ONYXKEYS from '@src/ONYXKEYS';
 import CONST from '@src/CONST';
+import * as App from '@userActions/App';
 import {roundToTwoDecimalPlaces} from '@libs/NumberUtils';
 import type {DateString} from '@src/types/onyx/OnyxCommon';
 import buildMonthSections from './buildMonthSections';
@@ -34,18 +30,11 @@ import setCalendarLocale from './setCalendarLocale';
 // before the user catches up to the loaded floor.
 const LOAD_AHEAD_BUFFER_WEEKS = 12;
 
-// Mirrors `styles.sessionsCalendarWeekRow.paddingVertical`. The compact
-// calendar's row uses *marginVertical*, so a measured day cell sits at the
-// row frame's top; the fullscreen row's *paddingVertical* offsets cells by
-// this amount inside the frame. We subtract it from the scroll math so the
-// compact and fullscreen tile rows overlay pixel-perfectly.
-const WEEK_ROW_VERTICAL_PADDING = 6;
-
-// Rough per-item heights used only for sizing the bottom spacer. Deliberate
-// over-estimates so the spacer math errs toward 0 (rather than leaving an
-// over-tall tail of empty space below the latest month).
-const APPROX_WEEK_ROW_HEIGHT = 48;
-const APPROX_LABEL_HEIGHT = 56;
+// Fraction of the window height left empty below the latest week so
+// `scrollToIndex({viewPosition: 0.5})` can pull a near-latest target toward
+// center instead of clamping it to the bottom. Mirrors the day-overview's
+// spacer so both views center their target identically.
+const BOTTOM_SPACER_RATIO = 0.4;
 
 // 50% threshold is generous enough to fire well before the lazy-load buffer
 // runs out, but quiet enough not to thrash on every pixel of scroll. The
@@ -74,12 +63,9 @@ type SessionsCalendarWeekListViewProps = {
    *  visible. The parent decides (via `computeLoadTarget`) whether to
    *  actually widen the loaded window. */
   onRequestOlder?: (earliestVisible: Date) => void;
-  /** Target month ('YYYY-MM') to land at on first render, with its first
-   *  week-row positioned at window-Y `initialFirstWeekY`. When omitted, the
+  /** Target month ('YYYY-MM') to center on first render. When omitted, the
    *  list falls back to "latest at bottom". */
   initialMonthYear?: string;
-  /** Window-Y (px) where the target month's first week-row should land. */
-  initialFirstWeekY?: number;
   /** Fires once the initial scroll has been applied (or determined that no
    *  scroll is needed). The parent screen uses this to unhide the calendar. */
   onInitialScrollReady?: () => void;
@@ -126,13 +112,13 @@ function SessionsCalendarWeekListView({
   onDayPress,
   onRequestOlder,
   initialMonthYear,
-  initialFirstWeekY,
   onInitialScrollReady,
   onSwipeBack,
 }: SessionsCalendarWeekListViewProps) {
   const styles = useThemeStyles();
   const theme = useTheme();
   const {translate} = useLocalize();
+  const {windowHeight} = useWindowDimensions();
   const [preferredLocale] = useOnyx(ONYXKEYS.NVP_PREFERRED_LOCALE);
   const locale = preferredLocale ?? CONST.LOCALES.DEFAULT;
 
@@ -224,23 +210,15 @@ function SessionsCalendarWeekListView({
   }, [locale]);
 
   const listRef = useRef<FlashListRef<ListItem>>(null);
-
-  // Window-Y (px) of the FlashList's top edge, captured via the wrapper
-  // View's onLayout. `null` until first layout pass. Stored in state (not
-  // a ref) so the apply-scroll effect re-runs once it's known.
-  const flashListWrapperRef = useRef<View | null>(null);
-  const [flashTopY, setFlashTopY] = useState<number | null>(null);
   const hasAppliedInitialScrollRef = useRef(false);
-
-  const onFlashListWrapperLayout = useCallback(() => {
-    // `onLayout` reports local coordinates — measure against the window so
-    // we can compare against the small calendar's measured Y.
-    if (!flashListWrapperRef.current) {
-      return;
-    }
-    flashListWrapperRef.current.measureInWindow((_x, y) => {
-      setFlashTopY(y);
-    });
+  // Whether the user has actually dragged the list. Until they do, the only
+  // scroll is our programmatic centering, so there's no new position to sync —
+  // syncing then would write whatever the centering math reports (a neighbour
+  // month for a short latest month). Gating the write on a real drag keeps an
+  // open-and-close-without-moving a no-op: the compact calendar stays put.
+  const hasUserScrolledRef = useRef(false);
+  const onScrollBeginDrag = useCallback(() => {
+    hasUserScrolledRef.current = true;
   }, []);
 
   // Resolve the target index — undefined while data hasn't loaded enough
@@ -252,8 +230,7 @@ function SessionsCalendarWeekListView({
     return firstWeekIndexByMonth.get(initialMonthYear);
   }, [initialMonthYear, firstWeekIndexByMonth]);
 
-  const wantsInitialScroll =
-    !!initialMonthYear && initialFirstWeekY !== undefined;
+  const wantsInitialScroll = !!initialMonthYear;
 
   useEffect(() => {
     if (hasAppliedInitialScrollRef.current) {
@@ -264,78 +241,41 @@ function SessionsCalendarWeekListView({
       onInitialScrollReady?.();
       return;
     }
-    if (flashTopY === null) {
-      return;
-    }
     if (targetIndex === undefined) {
       // Waiting for the data fetcher to widen the loaded range so the
       // target month enters `items`. The effect will re-fire on `items`.
       return;
     }
-    if (initialFirstWeekY === undefined) {
-      return;
-    }
-    // FlashList's `scrollToIndex({viewPosition: 0, viewOffset})` lands the
-    // row at the top of the visible area, then shifts the final offset by
-    // `viewOffset` (positive = item moves up = scroll further). We want the
-    // tile row's *cells* — not the row frame — at window-Y
-    // `initialFirstWeekY`. The frame top sits `WEEK_ROW_VERTICAL_PADDING`
-    // above the cells, so we land the frame top at
-    // `initialFirstWeekY - WEEK_ROW_VERTICAL_PADDING`, i.e. an effective
-    // delta of `(initialFirstWeekY - WEEK_ROW_VERTICAL_PADDING) - flashTopY`.
-    const delta = initialFirstWeekY - WEEK_ROW_VERTICAL_PADDING - flashTopY;
+    // Center the target month's first week-row, mirroring the day-overview's
+    // centered open. The bottom spacer (`contentContainerStyle`) gives a
+    // near-latest target room to reach center rather than clamping to the
+    // bottom edge.
     listRef.current?.scrollToIndex({
       index: targetIndex,
       animated: false,
-      viewPosition: 0,
-      viewOffset: -delta,
+      viewPosition: 0.5,
     });
     hasAppliedInitialScrollRef.current = true;
     onInitialScrollReady?.();
-  }, [
-    items,
-    flashTopY,
-    targetIndex,
-    initialFirstWeekY,
-    wantsInitialScroll,
-    onInitialScrollReady,
-  ]);
+  }, [items, targetIndex, wantsInitialScroll, onInitialScrollReady]);
 
-  // Bottom spacer — only needed when there isn't enough content below the
-  // target row to scroll it up to `initialFirstWeekY`. For past targets the
-  // months below the target already fill the screen, so this clamps to 0.
-  // For the latest month we add just enough headroom — the distance from
-  // the target Y to the bottom of the screen, minus the (approximate)
-  // height of the rows that already sit below the target in the list.
-  const footerHeight = useMemo(() => {
-    if (!wantsInitialScroll || initialFirstWeekY === undefined) {
-      return 0;
-    }
-    if (targetIndex === undefined) {
-      return 0;
-    }
-    let weeksBelow = 0;
-    let labelsBelow = 0;
-    for (let i = targetIndex + 1; i < items.length; i++) {
-      if (items[i].kind === 'week') {
-        weeksBelow++;
-      } else {
-        labelsBelow++;
-      }
-    }
-    const approxHeightBelowTarget =
-      weeksBelow * APPROX_WEEK_ROW_HEIGHT + labelsBelow * APPROX_LABEL_HEIGHT;
-    const windowHeight = Dimensions.get('window').height;
-    return Math.max(
-      0,
-      windowHeight - initialFirstWeekY - approxHeightBelowTarget,
-    );
-  }, [wantsInitialScroll, initialFirstWeekY, targetIndex, items]);
-
-  const ListFooter = useMemo(
-    () => <View style={{height: footerHeight}} />,
-    [footerHeight],
+  // Room below the newest week so `scrollToIndex({viewPosition: 0.5})` can pull
+  // a near-latest target toward center instead of clamping it to the bottom.
+  const contentContainerStyle = useMemo(
+    () => ({paddingBottom: Math.round(windowHeight * BOTTOM_SPACER_RATIO)}),
+    [windowHeight],
   );
+
+  // Record the month the user is looking at so the compact calendar can sync
+  // to it on back-navigation. Debounced so a fast scroll writes once at rest.
+  const writeLastViewedDay = useMemo(
+    () =>
+      lodashDebounce((day: DateString) => {
+        App.setLastViewedCalendarDate(day);
+      }, 250),
+    [],
+  );
+  useEffect(() => () => writeLastViewedDay.cancel(), [writeLastViewedDay]);
 
   // Lazy-load older months when the user scrolls within the buffer of the
   // loaded floor. Walk forward from the lowest visible index to the first
@@ -345,15 +285,37 @@ function SessionsCalendarWeekListView({
   // of the very first month section.
   const onViewableItemsChanged = useCallback(
     ({viewableItems}: {viewableItems: Array<{index: number | null}>}) => {
-      if (!onRequestOlder || viewableItems.length === 0) {
+      const visibleIndices = viewableItems
+        .map(item => item.index)
+        .filter((index): index is number => index !== null)
+        .sort((a, b) => a - b);
+      if (visibleIndices.length === 0) {
         return;
       }
-      let minIndex = Number.POSITIVE_INFINITY;
-      viewableItems.forEach(item => {
-        if (item.index !== null && item.index < minIndex) {
-          minIndex = item.index;
+      const minIndex = visibleIndices[0];
+
+      // Surface the *center-most* visible month as the "last viewed" date, so
+      // backing out to the compact calendar lands on the month the user is
+      // focused on (matching the centered open) rather than a sliver clipped
+      // at the top edge. Only once the user has actually scrolled — otherwise
+      // an open-and-close without moving would overwrite the origin month.
+      if (hasUserScrolledRef.current) {
+        const centerItem =
+          items[visibleIndices[Math.floor(visibleIndices.length / 2)]];
+        if (centerItem) {
+          const centerDay =
+            centerItem.kind === 'label'
+              ? (`${centerItem.monthKey}-01` as DateString)
+              : centerItem.row.days.find(d => d !== null);
+          if (centerDay) {
+            writeLastViewedDay(centerDay);
+          }
         }
-      });
+      }
+
+      if (!onRequestOlder) {
+        return;
+      }
       if (minIndex > LOAD_AHEAD_BUFFER_WEEKS) {
         return;
       }
@@ -369,7 +331,7 @@ function SessionsCalendarWeekListView({
         }
       }
     },
-    [items, onRequestOlder],
+    [items, onRequestOlder, writeLastViewedDay],
   );
 
   const renderItem = useCallback(
@@ -495,11 +457,7 @@ function SessionsCalendarWeekListView({
             </View>
           ))}
         </View>
-        <View
-          ref={flashListWrapperRef}
-          onLayout={onFlashListWrapperLayout}
-          style={styles.flex1}
-          collapsable={false}>
+        <View style={styles.flex1}>
           <FlashList
             ref={listRef}
             data={items}
@@ -507,9 +465,10 @@ function SessionsCalendarWeekListView({
             keyExtractor={keyExtractor}
             stickyHeaderIndices={stickyHeaderIndices}
             initialScrollIndex={initialScrollIndex}
+            contentContainerStyle={contentContainerStyle}
             showsVerticalScrollIndicator
             ListHeaderComponent={listHeader}
-            ListFooterComponent={ListFooter}
+            onScrollBeginDrag={onScrollBeginDrag}
             onViewableItemsChanged={onViewableItemsChanged}
             viewabilityConfig={VIEWABILITY_CONFIG}
           />

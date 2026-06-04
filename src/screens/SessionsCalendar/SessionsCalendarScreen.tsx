@@ -1,17 +1,18 @@
-import React, {useCallback, useMemo, useState} from 'react';
+import React, {useCallback, useState} from 'react';
 import {StyleSheet, View} from 'react-native';
 import type {StackScreenProps} from '@react-navigation/stack';
 import type {DateData} from 'react-native-calendars';
 import SessionsCalendar from '@components/SessionsCalendar';
+import SessionsCalendarSkeleton from '@components/SessionsCalendar/SessionsCalendarSkeleton';
 import ScreenWrapper from '@components/ScreenWrapper';
 import HeaderWithBackButton from '@components/HeaderWithBackButton';
-import FullScreenLoadingIndicator from '@components/FullscreenLoadingIndicator';
 import {useFirebase} from '@context/global/FirebaseContext';
 import {useDatabaseData} from '@context/global/DatabaseDataContext';
 import useFetchData from '@hooks/useFetchData';
 import useDrinkingSessionsFetch from '@hooks/useDrinkingSessionsFetch';
 import useCurrentUserDrinkingSessions from '@hooks/useCurrentUserDrinkingSessions';
 import useLocalize from '@hooks/useLocalize';
+import useReadyAfterScreenTransition from '@hooks/useReadyAfterScreenTransition';
 import useThemeStyles from '@hooks/useThemeStyles';
 import {dateToDateData} from '@libs/DataHandling';
 import Navigation from '@libs/Navigation/Navigation';
@@ -47,12 +48,8 @@ const internalStyles = StyleSheet.create({
  */
 function SessionsCalendarScreen({route}: SessionsCalendarScreenProps) {
   const {auth} = useFirebase();
-  const {userID, monthYear, firstWeekY: firstWeekYParam} = route.params;
+  const {userID, monthYear} = route.params;
   const user = auth.currentUser;
-  const firstWeekY = useMemo(
-    () => (firstWeekYParam ? Number(firstWeekYParam) : undefined),
-    [firstWeekYParam],
-  );
   const isSelf = user?.uid === userID;
   const {translate} = useLocalize();
   const styles = useThemeStyles();
@@ -90,38 +87,53 @@ function SessionsCalendarScreen({route}: SessionsCalendarScreenProps) {
   const [isScrollReady, setIsScrollReady] = useState<boolean>(!monthYear);
   const onInitialScrollReady = useCallback(() => setIsScrollReady(true), []);
 
-  const showLoader = isLoading || !preferences || !isScrollReady;
+  // Defer the (heavy) fullscreen calendar mount until after the navigation
+  // slide. `useLazyMarkedDates` + the week-list build run synchronously on
+  // first render, which otherwise blocks the slide-in from the compact
+  // calendar's header tap. Render only the skeleton first.
+  const {isReady: didScreenTransitionEnd, onEntryTransitionEnd} =
+    useReadyAfterScreenTransition();
+
+  const showLoader =
+    !didScreenTransitionEnd || isLoading || !preferences || !isScrollReady;
 
   return (
-    <ScreenWrapper testID={SessionsCalendarScreen.displayName}>
+    <ScreenWrapper
+      testID={SessionsCalendarScreen.displayName}
+      onEntryTransitionEnd={onEntryTransitionEnd}>
       <HeaderWithBackButton
         title={translate('calendar.fullscreenTitle')}
         shouldShowBackButton={false}
         shouldShowCloseButton
         onCloseButtonPress={() => Navigation.goBack()}
       />
-      {!isLoading && preferences && (
-        <View
-          style={[
-            styles.flex1,
-            styles.ph2,
-            !isScrollReady && internalStyles.hidden,
-          ]}>
-          <SessionsCalendar
-            userID={userID}
-            visibleDate={visibleDate}
-            onDateChange={setVisibleDate}
-            drinkingSessionData={drinkingSessionData}
-            preferences={preferences}
-            isFetchingOlderMonths={isFetchingOlderMonths}
-            mode="fullscreen"
-            initialMonthYear={monthYear}
-            initialFirstWeekY={firstWeekY}
-            onInitialScrollReady={onInitialScrollReady}
-          />
-        </View>
-      )}
-      {showLoader && <FullScreenLoadingIndicator />}
+      <View style={styles.flex1}>
+        {didScreenTransitionEnd && !isLoading && preferences && (
+          <View
+            style={[
+              styles.flex1,
+              styles.ph2,
+              !isScrollReady && internalStyles.hidden,
+            ]}>
+            <SessionsCalendar
+              userID={userID}
+              visibleDate={visibleDate}
+              onDateChange={setVisibleDate}
+              drinkingSessionData={drinkingSessionData}
+              preferences={preferences}
+              isFetchingOlderMonths={isFetchingOlderMonths}
+              mode="fullscreen"
+              initialMonthYear={monthYear}
+              onInitialScrollReady={onInitialScrollReady}
+            />
+          </View>
+        )}
+        {showLoader && (
+          <View style={StyleSheet.absoluteFill} pointerEvents="none">
+            <SessionsCalendarSkeleton />
+          </View>
+        )}
+      </View>
     </ScreenWrapper>
   );
 }

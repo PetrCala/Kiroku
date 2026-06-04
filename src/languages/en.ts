@@ -6,9 +6,7 @@ import type {
   UntilTimeParams,
 } from './types';
 import type {
-  BacRangeParams,
-  BacSessionTotalParams,
-  BacSoberInParams,
+  BadgesDayCountParams,
   BreakdownCenterUnitsParams,
   BreakdownDrinkLabelParams,
   BreakdownPeriodParams,
@@ -313,6 +311,8 @@ export default {
     loadingOlderMonths: 'Loading older months…',
     monthTotalUnits: ({unitCount}: UnitCountParams) =>
       `${unitCount} ${Str.pluralize('unit', 'units', unitCount)}`,
+    dayTotalUnits: ({unitCount}: UnitCountParams) =>
+      `${unitCount} ${Str.pluralize('unit', 'units', unitCount)}`,
   },
   textInput: {
     accessibilityLabel: 'Text input',
@@ -323,8 +323,7 @@ export default {
     friends: 'Friends',
     profile: 'Profile',
     settings: 'Settings',
-    achievements: 'Badges',
-    bac: 'BAC',
+    badges: 'Badges',
     statistics: 'Statistics',
     menu: 'Menu',
   },
@@ -966,7 +965,7 @@ export default {
     profileImage: 'Profile Image',
   },
   statistics: {
-    title: 'Your stats',
+    title: 'Statistics',
     tabs: {
       overview: {
         label: 'Overview',
@@ -1017,8 +1016,8 @@ export default {
         },
         empty: {
           neverLogged: {
-            title: 'Nothing to log yet — that counts.',
-            body: 'When you log a session, your period scorecard will show up here. Until then, every day is a quiet one.',
+            title: 'Nothing to log yet',
+            body: 'When you log a session, your period scorecard will show up here.',
           },
           noDataInRange:
             'No sessions in this period — every elapsed day was alcohol-free.',
@@ -1185,54 +1184,52 @@ export default {
       },
     },
   },
-  achievementsScreen: {
-    title: 'BAC Estimator',
-    bac: {
-      currentBac: 'Estimated BAC',
-      noSession:
-        'Start a drinking session to see your estimated blood alcohol level.',
-      sober: 'Your estimated blood alcohol is back down to zero.',
-      disclaimer:
-        'This is a rough estimate, not a medical or legal measurement. Never drive after drinking.',
-      editDetails: 'Edit my details',
-      formIntro:
-        'We need your weight and gender to estimate your blood alcohol.',
-      male: 'Male',
-      female: 'Female',
-      other: 'Other',
-      kg: 'kg',
-      lb: 'lb',
-      displayBoth: 'Both',
-      range: ({low, high}: BacRangeParams) => `Likely ${low} – ${high}`,
-      soberIn: ({time}: BacSoberInParams) => `Sober in about ${time}`,
-      soberBy: ({time}: BacSoberInParams) => `Sober by ${time}`,
-      timeDuration: 'Duration',
-      timeClock: 'Clock',
-      showDetails: 'How is this calculated?',
-      decayChartLabel: 'Estimated BAC declining to zero over time',
-      intro: {
-        title: 'BAC Estimator',
-        body1:
-          "This tool gives a rough estimate of your blood alcohol content based on the drinks you've logged, your weight, and your gender.",
-        body2:
-          "It uses the Widmark formula and assumes a steady rate of alcohol elimination. Everyone's body is different, so treat the number as a ballpark, not a fact.",
-        getStarted: 'Get started',
+  badgesScreen: {
+    title: 'Badges',
+    badgesTitle: 'Badges',
+    empty:
+      'Log your first session to start earning badges and tracking your alcohol-free streak.',
+    dayUnit: ({count}: BadgesDayCountParams) => (count === 1 ? 'day' : 'days'),
+    streak: {
+      label: 'Current alcohol-free streak',
+    },
+    stats: {
+      longestStreak: 'Longest streak',
+      totalAfDays: 'Alcohol-free days',
+      sessions: 'Sessions logged',
+    },
+    badges: {
+      firstSession: {
+        title: 'First session',
+        description: 'Log your first drinking session.',
       },
-      details: {
-        title: 'How this is calculated',
-        liveSession: 'Live session',
-        editSession: 'Edited session',
-        editNote:
-          'Drinks in an edited session are recorded at the session start, so their exact timing is uncertain.',
-        sessionTotal: ({grams, bac}: BacSessionTotalParams) =>
-          `Total: ${grams} g of pure alcohol · adds up to ${bac}`,
-        bandNote:
-          'Because some drinks come from edited sessions, we show a range: the low end assumes they were drunk as early as possible, the high end as late as possible.',
-        howTitle: 'The math',
-        formula:
-          'Grams of alcohol = volume (ml) × ABV × 0.789. BAC = grams ÷ (weight × r × 10), where r is 0.68 (male), 0.55 (female), or 0.615 (other).',
-        elimination:
-          'Your body clears alcohol at a steady ~0.015% per hour, so the estimate drops over time until it reaches zero.',
+      dryDay: {
+        title: 'First dry day',
+        description: 'Record your first alcohol-free day.',
+      },
+      dryWeek: {
+        title: 'Dry week',
+        description: 'Reach a 7-day alcohol-free streak.',
+      },
+      dryFortnight: {
+        title: 'Dry fortnight',
+        description: 'Reach a 14-day alcohol-free streak.',
+      },
+      dryMonth: {
+        title: 'Dry month',
+        description: 'Reach a 30-day alcohol-free streak.',
+      },
+      afDays10: {
+        title: '10 dry days',
+        description: 'Add up 10 alcohol-free days.',
+      },
+      afDays50: {
+        title: '50 dry days',
+        description: 'Add up 50 alcohol-free days.',
+      },
+      sessions25: {
+        title: 'Diligent logger',
+        description: 'Log 25 drinking sessions.',
       },
     },
   },
@@ -1241,6 +1238,7 @@ export default {
     exitEditMode: 'Exit Edit Mode',
     noDrinkingSessions: 'No drinking sessions',
     addSessionExplained: 'Add a session (Floating action)',
+    selectSessionDate: 'Select a date for the new session',
     sessionWindow: ({sessionId}: SessionWindowIdParams) =>
       `Drinking session: ${sessionId}`,
     ongoing: 'Ongoing',

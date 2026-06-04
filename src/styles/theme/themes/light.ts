@@ -8,6 +8,7 @@ const lightTheme = {
   appBG: colors.productLight100,
   splashBG: colors.yellowStrong,
   highlightBG: colors.productLight200,
+  calendarRangeBG: `${colors.yellowStrong}38`,
   darkBG: colors.productLight900,
   appColor: colors.yellowStrong,
   border: colors.productLight400,
@@ -82,8 +83,8 @@ const lightTheme = {
   tooltipHighlightText: colors.orange500, // TODO check
   tooltipSupportingText: colors.productDark800,
   tooltipPrimaryText: colors.productDark900,
-  skeletonLHNIn: colors.productLight400,
-  skeletonLHNOut: colors.productLight600,
+  skeletonBase: colors.productLight350,
+  skeletonHighlight: colors.productLight200,
   QRLogo: colors.yellow,
   appLogo: colors.productLight900,
   white: colors.white,

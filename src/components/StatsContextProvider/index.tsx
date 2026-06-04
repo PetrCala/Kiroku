@@ -272,13 +272,21 @@ function StatsContextProvider({children, now}: StatsContextProviderProps) {
   // calendar happened to lazy-load. Reuses the calendar's months-back lever
   // (the global listener in DatabaseDataContext re-subscribes when it grows)
   // and only ever widens.
-  const loadStart = useMemo(
-    () =>
+  const loadStart = useMemo(() => {
+    const rawStart =
       comparisonRange && comparisonRange.start < range.start
         ? comparisonRange.start
-        : range.start,
-    [range.start, comparisonRange],
-  );
+        : range.start;
+    // Never widen the shared calendar-depth lever past the user's first
+    // session. A comparison window — and the `All` preset — can sit a full
+    // span *before* `earliest_session_at`; there are no sessions to fetch
+    // there, and the calendar reuses this lever to size its day-key build, so
+    // an unclamped value inflates that build to years of empty months.
+    if (earliestSessionAt && rawStart < earliestSessionAt) {
+      return earliestSessionAt;
+    }
+    return rawStart;
+  }, [range.start, comparisonRange, earliestSessionAt]);
 
   useEffect(() => {
     if (!firebaseUid) {

@@ -1,10 +1,13 @@
-import {formatInTimeZone} from 'date-fns-tz';
 import type {DrinkKey, DrinksList} from '@src/types/onyx/Drinks';
 import type DrinkingSession from '@src/types/onyx/DrinkingSession';
 import type {UserDrinkingSessionsList} from '@src/types/onyx/DrinkingSession';
 import type {DrinksToUnits} from '@src/types/onyx/Preferences';
 import type {SelectedTimezone} from '@src/types/onyx/UserData';
+import type {LocalParts} from './localParts';
+import {resolveLocalParts} from './localParts';
+import {logBuildDrinkEvents} from './profiling';
 import {sduFrom} from './sdu';
+import {isStoredLocalParts} from './sessionTimeParts';
 import type {DrinkEvent, WeekStart} from './types';
 
 /**
@@ -79,6 +82,30 @@ function computeSdu(
 }
 
 /**
+ * Resolve a timestamp's local fields, preferring values stored on the session
+ * at write time (zero `Intl`). `stored` is one entry of `session.drinksTimeParts.byTs`,
+ * already gated on a matching timezone by the caller; on a missing or corrupt
+ * entry we recompute from the raw stamp so a partial map is never wrong. The
+ * month is derived from the day string (a free slice — not stored separately).
+ */
+function localPartsFor(
+  ts: number,
+  sessionTz: string,
+  stored: unknown,
+): LocalParts | null {
+  if (isStoredLocalParts(stored)) {
+    return {
+      localDay: stored.d,
+      localMonth: stored.d.slice(0, 7),
+      localHour: stored.h,
+      localIsoWeek: stored.w,
+      calendarDow: stored.dow,
+    };
+  }
+  return resolveLocalParts(ts, sessionTz);
+}
+
+/**
  * Single-slot last-call cache. Onyx values come in with stable identity
  * until structurally changed, so identity equality on the object inputs is
  * the "hash" the spec refers to. The hook layer in v2-D additionally wraps
@@ -128,6 +155,8 @@ function buildDrinkEvents(
     return lastCall.result;
   }
 
+  const t0 = performance.now();
+  let sessionCount = 0;
   const events: DrinkEvent[] = [];
   if (!sessions) {
     lastCall = {
@@ -166,6 +195,14 @@ function buildDrinkEvents(
       if (!drinks) {
         continue;
       }
+      // Stored fields are trusted only when they were computed under the
+      // session's current timezone; on a mismatch every timestamp falls back to
+      // recomputing, so a stale tag can never serve a wrong value.
+      const storedByTs =
+        session.drinksTimeParts?.tz === sessionTz
+          ? session.drinksTimeParts.byTs
+          : undefined;
+      sessionCount += 1;
       for (const [tsKey, drinksAtTs] of Object.entries(drinks)) {
         const ts = Number(tsKey);
         if (!Number.isFinite(ts)) {
@@ -174,22 +211,17 @@ function buildDrinkEvents(
         if (!drinksAtTs) {
           continue;
         }
-        let localDay: string;
-        let localIsoWeek: string;
-        let localMonth: string;
-        let localHour: number;
-        let isoWeekDay: number;
+        let parts: LocalParts | null;
         try {
-          localDay = formatInTimeZone(ts, sessionTz, 'yyyy-MM-dd');
-          localIsoWeek = formatInTimeZone(ts, sessionTz, "RRRR-'W'II");
-          localMonth = formatInTimeZone(ts, sessionTz, 'yyyy-MM');
-          localHour = Number(formatInTimeZone(ts, sessionTz, 'H'));
-          isoWeekDay = Number(formatInTimeZone(ts, sessionTz, 'i'));
+          parts = localPartsFor(ts, sessionTz, storedByTs?.[ts]);
         } catch {
           continue;
         }
-        // date-fns ISO day: 1=Mon..7=Sun. Convert to calendar 0=Sun..6=Sat.
-        const calendarDow = isoWeekDay === 7 ? 0 : isoWeekDay;
+        if (!parts) {
+          continue;
+        }
+        const {localDay, localMonth, localHour, localIsoWeek, calendarDow} =
+          parts;
         const localDow = (calendarDow - weekStart + 7) % 7;
         const isWeekend = calendarDow === 0 || calendarDow === 6;
         for (const drinkKeyRaw of Object.keys(drinksAtTs)) {
@@ -233,6 +265,7 @@ function buildDrinkEvents(
     weekStart,
     result: events,
   };
+  logBuildDrinkEvents(performance.now() - t0, sessionCount, events.length);
   return events;
 }
 

@@ -5,11 +5,11 @@ import type {
   DrinkingSessionList,
   Preferences,
 } from '@src/types/onyx';
+import type DrinkingSessionKeyValue from '@src/types/utils/databaseUtils';
 import CONST from '@src/CONST';
 import {
   differenceInCalendarMonths,
   eachDayOfInterval,
-  format,
   isWithinInterval,
   startOfMonth,
   subDays,
@@ -23,7 +23,24 @@ import type {MarkedDates} from 'react-native-calendars/src/types';
 import {useOnyx} from 'react-native-onyx';
 import ONYXKEYS from '@src/ONYXKEYS';
 import * as Calendar from '@userActions/Calendar';
+import * as DSUtils from '@libs/DrinkingSessionUtils';
 import type {UserID, DateString} from '@src/types/onyx/OnyxCommon';
+
+// Hand-rolled 'yyyy-MM-dd' (matches CONST.DATE.FNS_FORMAT_STRING). date-fns
+// `format` is ~100× slower and this runs once per day across the whole loaded
+// range — which can be years deep — so it dominated the day-overview mount
+// (e.g. 77 months ≈ 2.3k `format` calls ≈ ~460ms on Hermes). The Date's local
+// fields already carry the right wall-clock day (`toZonedTime` shifted them to
+// the session's zone for the per-session key; the day list is built in local
+// time), so reading them directly is both correct and cheap.
+function toDateKey(date: Date): DateString {
+  const year = date.getFullYear();
+  const month = date.getMonth() + 1;
+  const day = date.getDate();
+  return `${year}-${month < 10 ? '0' : ''}${month}-${
+    day < 10 ? '0' : ''
+  }${day}` as DateString;
+}
 
 /**
  * Custom hook to derive a calendar's markedDates and per-day unit counts from a
@@ -69,40 +86,84 @@ function useLazyMarkedDates(
     setLoadedMonths(monthsLoaded ?? 0);
   }, [userID, monthsLoaded, monthsLoadedMeta.status]);
 
+  const [userDataList] = useOnyx(ONYXKEYS.USER_DATA_LIST);
+
+  // Cap the effective scroll depth at the user's earliest tracked month. The
+  // `SESSIONS_CALENDAR_MONTHS_BY_USER_ID` lever is shared with the Statistics
+  // fetch-window widener (`StatsContextProvider`), which a comparison/All
+  // range can push a full span *before* the first session — inflating the
+  // persisted depth well past the user's data. There are no sessions (and no
+  // tracking) before `earliest_session_at`, so building day-keys / week-rows
+  // there is pure waste and would paint "sober day" dots on untracked days.
+  // Prefer the canonical backfilled floor, falling back to the earliest loaded
+  // session for friend profiles and pre-backfill accounts.
+  const earliestTracked = useMemo<Date | null>(() => {
+    const persistedEarliest = userDataList?.[userID]?.earliest_session_at;
+    if (persistedEarliest !== undefined) {
+      return new Date(persistedEarliest);
+    }
+    return DSUtils.getUserTrackingStartDate(sessions);
+  }, [userDataList, userID, sessions]);
+
+  const cappedMonths = useMemo(() => {
+    if (!earliestTracked) {
+      return loadedMonths;
+    }
+    const monthsToEarliest = Math.max(
+      0,
+      differenceInCalendarMonths(new Date(), earliestTracked),
+    );
+    return Math.min(loadedMonths, monthsToEarliest);
+  }, [loadedMonths, earliestTracked]);
+
   // First pass — rebuild the session-by-day index only when sessions or the
   // visible range change. Preferences are *not* a dependency here: a palette
   // or threshold change must not trigger the O(N) session filter+index pass.
-  const {sessionIndex, dayKeys, loadedFromDate} = useMemo(() => {
-    const today = new Date();
-    const start = subDays(startOfMonth(subMonths(today, loadedMonths)), 1);
-    const end = today;
+  const {sessionIndex, sessionEntriesByDay, dayKeys, loadedFromDate} =
+    useMemo(() => {
+      const today = new Date();
+      const start = subDays(startOfMonth(subMonths(today, cappedMonths)), 1);
+      const end = today;
 
-    const index = new Map<DateString, DrinkingSessionArray>();
-    Object.values(sessions)
-      .filter(session => isWithinInterval(session.start_time, {start, end}))
-      .forEach(session => {
-        const sessionDate = toZonedTime(
-          session.start_time,
-          session.timezone ?? defaultTimezone,
-        );
-        const dayKey = format(
-          sessionDate,
-          CONST.DATE.FNS_FORMAT_STRING,
-        ) as DateString;
-        const existing = index.get(dayKey);
-        if (existing) {
-          existing.push(session);
-        } else {
-          index.set(dayKey, [session]);
-        }
-      });
+      const index = new Map<DateString, DrinkingSessionArray>();
+      // Parallel index that keeps the session IDs alongside each session, so
+      // consumers that render session tiles (the day-overview scroll) don't
+      // have to re-derive IDs. Built in the same pass — the marking/units
+      // passes below keep using `index` unchanged.
+      const entriesByDay = new Map<DateString, DrinkingSessionKeyValue[]>();
+      Object.entries(sessions)
+        .filter(([, session]) =>
+          isWithinInterval(session.start_time, {start, end}),
+        )
+        .forEach(([sessionId, session]) => {
+          const sessionDate = toZonedTime(
+            session.start_time,
+            session.timezone ?? defaultTimezone,
+          );
+          const dayKey = toDateKey(sessionDate);
+          const existing = index.get(dayKey);
+          if (existing) {
+            existing.push(session);
+          } else {
+            index.set(dayKey, [session]);
+          }
+          const existingEntries = entriesByDay.get(dayKey);
+          if (existingEntries) {
+            existingEntries.push({sessionId, session});
+          } else {
+            entriesByDay.set(dayKey, [{sessionId, session}]);
+          }
+        });
 
-    const days = eachDayOfInterval({start, end}).map(
-      day => format(day, CONST.DATE.FNS_FORMAT_STRING) as DateString,
-    );
+      const days = eachDayOfInterval({start, end}).map(toDateKey);
 
-    return {sessionIndex: index, dayKeys: days, loadedFromDate: start};
-  }, [sessions, loadedMonths, defaultTimezone]);
+      return {
+        sessionIndex: index,
+        sessionEntriesByDay: entriesByDay,
+        dayKeys: days,
+        loadedFromDate: start,
+      };
+    }, [sessions, cappedMonths, defaultTimezone]);
 
   // Resolve which palette to render with. When the viewer has enabled
   // `use_own_palette_for_others`, this swaps the viewed user's palette for the
@@ -216,6 +277,7 @@ function useLazyMarkedDates(
     markedDates,
     unitsMap,
     monthlyTotalsMap,
+    sessionEntriesByDay,
     loadedFrom,
     loadedFromDate,
     loadMoreMonths,

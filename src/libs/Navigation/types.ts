@@ -68,8 +68,8 @@ type BackToParams = {
   backTo?: Routes;
 };
 
-type AchievementsNavigatorParamList = {
-  [SCREENS.ACHIEVEMENTS.ROOT]: undefined;
+type BadgesNavigatorParamList = {
+  [SCREENS.BADGES.ROOT]: undefined;
 };
 
 type DayOverviewNavigatorParamList = {
@@ -149,12 +149,8 @@ type SessionsCalendarNavigatorParamList = {
   [SCREENS.SESSIONS_CALENDAR.FULLSCREEN]: {
     userID: string;
     /** Month the user was viewing when they opened the fullscreen calendar,
-     *  formatted as 'YYYY-MM'. Used to position the FlashList so the clicked
-     *  month overlays the small calendar's grid. */
+     *  formatted as 'YYYY-MM'. The FlashList centers this month on open. */
     monthYear?: string;
-    /** Window-Y (px) of the small calendar's first week-row at the moment of
-     *  click. React Navigation passes query params as strings. */
-    firstWeekY?: string;
   };
 };
 
@@ -172,8 +168,7 @@ type StatisticsNavigatorParamList = {
 };
 
 type RightModalNavigatorParamList = {
-  [SCREENS.RIGHT_MODAL
-    .ACHIEVEMENTS]: NavigatorScreenParams<AchievementsNavigatorParamList>;
+  [SCREENS.RIGHT_MODAL.BADGES]: NavigatorScreenParams<BadgesNavigatorParamList>;
   [SCREENS.RIGHT_MODAL
     .DAY_OVERVIEW]: NavigatorScreenParams<DayOverviewNavigatorParamList>;
   [SCREENS.RIGHT_MODAL
@@ -259,7 +254,7 @@ type BottomTabName = keyof BottomTabNavigatorParamList;
 type CentralPaneName = keyof CentralPaneScreensParamList;
 
 export type {
-  AchievementsNavigatorParamList,
+  BadgesNavigatorParamList,
   AuthScreensParamList,
   BottomTabName,
   BottomTabNavigatorParamList,

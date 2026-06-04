@@ -57,8 +57,8 @@ function RightModalNavigator({navigation}: RightModalNavigatorProps) {
       )}
       <Stack.Navigator screenOptions={screenOptions}>
         <Stack.Screen
-          name={SCREENS.RIGHT_MODAL.ACHIEVEMENTS}
-          component={ModalStackNavigators.AchievementsModalStackNavigator}
+          name={SCREENS.RIGHT_MODAL.BADGES}
+          component={ModalStackNavigators.BadgesModalStackNavigator}
         />
         <Stack.Screen
           name={SCREENS.RIGHT_MODAL.DAY_OVERVIEW}

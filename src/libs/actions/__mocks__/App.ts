@@ -8,6 +8,8 @@ import createProxyForObject from '@src/utils/createProxyForObject';
 const AppImplementation =
   jest.requireActual<typeof AppImport>('@libs/actions/App');
 const {
+  setLastViewedCalendarDate,
+  clearLastViewedCalendarDate,
   setLocale,
   setLocaleAndNavigate,
   setSidebarLoaded,
@@ -62,6 +64,8 @@ export {
   mockValuesProxy as mockValues,
 
   // Actual App implementation
+  setLastViewedCalendarDate,
+  clearLastViewedCalendarDate,
   setLocale,
   setLocaleAndNavigate,
   setSidebarLoaded,

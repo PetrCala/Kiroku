@@ -21,6 +21,7 @@ import {useOnyx} from 'react-native-onyx';
 import ONYXKEYS from '@src/ONYXKEYS';
 import SessionsCalendarView from './SessionsCalendarView';
 import SessionsCalendarWeekListView from './SessionsCalendarWeekListView';
+import DayOverviewListView from './DayOverviewListView';
 import type SessionsCalendarProps from './types';
 
 // How many months of pre-loaded buffer to keep ahead of the user's scroll in
@@ -44,7 +45,8 @@ function SessionsCalendar({
   onForeignDayPress,
   mode = 'compact',
   initialMonthYear,
-  initialFirstWeekY,
+  initialDay,
+  onVisibleDayChange,
   onInitialScrollReady,
 }: SessionsCalendarProps) {
   const {auth} = useFirebase();
@@ -53,6 +55,7 @@ function SessionsCalendar({
     markedDates,
     unitsMap,
     monthlyTotalsMap,
+    sessionEntriesByDay,
     loadedFrom,
     loadedFromDate,
     loadMoreMonths,
@@ -103,22 +106,46 @@ function SessionsCalendar({
   // spamming the friend-data fetcher on a fast scroll.
   const deepestRequestedRef = useRef<Date | null>(null);
 
+  // Hard floor: the user's earliest tracked month. Widening past it only loads
+  // empty months — and for the day-list (which renders no empty months) that
+  // means the list never grows, so an unguarded `loadUpTo` would loop until
+  // React's update-depth limit. Clamp to this and short-circuit once reached.
+  const minDateFloor = useMemo(
+    () => startOfMonth(parseISO(minDate)),
+    [minDate],
+  );
+
+  // Whether there is older data still to load — drives the day-list's load
+  // trigger and its "loading older" header. Once the loaded floor reaches the
+  // earliest tracked month there is nothing more to fetch.
+  const canLoadOlder =
+    loadedFromDate !== null &&
+    loadedFromDate.getTime() > minDateFloor.getTime();
+
   // Regular function — `loadedFrom` is a ref whose `.current` mutates
   // without re-rendering. A `useCallback` keyed on it would either be stale
   // or churn on every render. The view only calls this on real scroll
   // events, so referential stability isn't required.
   const handleRequestOlder = (earliestVisible: Date) => {
     const floor = loadedFrom?.current ?? new Date();
-    const target = computeLoadTarget(
+    if (floor.getTime() <= minDateFloor.getTime()) {
+      // Already loaded back to the earliest tracked month — nothing more.
+      return;
+    }
+    let target = computeLoadTarget(
       earliestVisible,
       floor,
       deepestRequestedRef.current,
       LOAD_AHEAD_BUFFER_MONTHS,
     );
-    if (target) {
-      deepestRequestedRef.current = target;
-      loadUpTo(target);
+    if (!target) {
+      return;
     }
+    if (target.getTime() < minDateFloor.getTime()) {
+      target = minDateFloor;
+    }
+    deepestRequestedRef.current = target;
+    loadUpTo(target);
   };
 
   // Eager prefetch on fullscreen open. The ref-guard makes this fire at
@@ -127,7 +154,7 @@ function SessionsCalendar({
   // guard saves the per-render call entirely.
   const hasPrefetchedRef = useRef(false);
   useEffect(() => {
-    if (mode !== 'fullscreen') {
+    if (mode === 'compact') {
       hasPrefetchedRef.current = false;
       return;
     }
@@ -135,18 +162,21 @@ function SessionsCalendar({
       return;
     }
     hasPrefetchedRef.current = true;
-    // If the user opened the fullscreen on a month older than our default
-    // 12-month buffer, deepen the prefetch to cover it. `loadUpTo` takes the
-    // deeper of any requested floor — calling it twice is fine.
+    // If the user opened an enlarged view (fullscreen calendar or day-overview
+    // scroll) on a month older than our default 12-month buffer, deepen the
+    // prefetch to cover it. `loadUpTo` takes the deeper of any requested floor
+    // — calling it twice is fine.
     const defaultFloor = subMonths(new Date(), INITIAL_PREFETCH_MONTHS);
     loadUpTo(defaultFloor);
-    if (initialMonthYear) {
-      const targetFloor = startOfMonth(parseISO(`${initialMonthYear}-01`));
+    const targetMonthYear =
+      initialMonthYear ?? (initialDay ? initialDay.slice(0, 7) : undefined);
+    if (targetMonthYear) {
+      const targetFloor = startOfMonth(parseISO(`${targetMonthYear}-01`));
       if (targetFloor < defaultFloor) {
         loadUpTo(targetFloor);
       }
     }
-  }, [mode, loadUpTo, initialMonthYear]);
+  }, [mode, loadUpTo, initialMonthYear, initialDay]);
 
   const onDayPress = useCallback(
     (dateData: DateData) => {
@@ -165,6 +195,22 @@ function SessionsCalendar({
     return <FlexibleLoadingIndicator />;
   }
 
+  if (mode === 'dayList') {
+    return (
+      <DayOverviewListView
+        sessionEntriesByDay={sessionEntriesByDay}
+        unitsMap={unitsMap}
+        preferences={preferences}
+        canLoadOlder={canLoadOlder}
+        isFetchingOlderMonths={isFetchingOlderMonths}
+        onRequestOlder={handleRequestOlder}
+        initialDay={initialDay}
+        onInitialScrollReady={onInitialScrollReady}
+        onVisibleDayChange={onVisibleDayChange}
+      />
+    );
+  }
+
   if (mode === 'fullscreen') {
     return (
       <SessionsCalendarWeekListView
@@ -176,7 +222,6 @@ function SessionsCalendar({
         onDayPress={onDayPress}
         onRequestOlder={handleRequestOlder}
         initialMonthYear={initialMonthYear}
-        initialFirstWeekY={initialFirstWeekY}
         onInitialScrollReady={onInitialScrollReady}
         onSwipeBack={Navigation.goBack}
       />

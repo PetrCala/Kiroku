@@ -62,6 +62,10 @@ const CONST = {
   ANDROID_PACKAGE_NAME,
   ANIMATED_TRANSITION: 300,
   ANIMATED_TRANSITION_FROM_VALUE: 100,
+  // Safety-net upper bound for a screen's entry transition. Deferred heavy
+  // content flips on at `transitionEnd`; this only matters if that event never
+  // fires for a given platform/modal presentation.
+  SCREEN_TRANSITION_END_TIMEOUT: 1000,
   ANIMATION_IN_TIMING: 100,
   ANIMATION_DIRECTION: {
     IN: 'in',
@@ -1037,18 +1041,6 @@ const CONST = {
     MALE: 'male',
     FEMALE: 'female',
     OTHER: 'other',
-  },
-
-  BAC: {
-    DISPLAY_UNIT: {
-      PER_MILLE: 'per_mille',
-      PERCENT: 'percent',
-      BOTH: 'both',
-    },
-    TIME_FORMAT: {
-      DURATION: 'duration',
-      CLOCK: 'clock',
-    },
   },
 
   // 6 numeric digits

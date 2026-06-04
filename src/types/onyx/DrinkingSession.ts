@@ -28,6 +28,41 @@ type AddDrinksOptions =
 /** Options denoting how drinks should be removed */
 type RemoveDrinksOptions = 'removeFromLatest' | 'removeFromEarliest';
 
+/**
+ * Per-drink-timestamp local calendar fields, precomputed once in the session's
+ * timezone so the Statistics cold path reads them with zero `Intl` work. Keys
+ * are intentionally terse — this is a persisted, network-synced wire format and
+ * a heavy user can accumulate thousands of timestamps.
+ *
+ * `localMonth` is intentionally not stored: it is `localDay.slice(0, 7)`, a free
+ * string slice at read time.
+ */
+type StoredLocalParts = {
+  /** `localDay` — `yyyy-MM-dd` in the session timezone. */
+  d: string;
+  /** `localHour` — 0..23 in the session timezone. */
+  h: number;
+  /** `localIsoWeek` — ISO-8601 week label `RRRR-Www` in the session timezone. */
+  w: string;
+  /** Calendar day of week, 0=Sunday..6=Saturday (weekStart-independent). */
+  dow: number;
+};
+
+/**
+ * Precomputed local fields for every drink timestamp in a session.
+ *
+ * `tz` records the timezone the fields were computed under. The read path only
+ * trusts `byTs` when `tz` matches the session's current timezone; on a mismatch
+ * (or for any timestamp missing from `byTs`) it recomputes from the raw stamp,
+ * so a stale or partial map can never serve a wrong value — only a slower one.
+ */
+type SessionTimeParts = {
+  /** IANA timezone these parts were computed under. */
+  tz: string;
+  /** Keyed by the same ms-timestamp keys as `DrinkingSession.drinks`. */
+  byTs: Record<Timestamp, StoredLocalParts>;
+};
+
 /** A drinking session unique identifier */
 type DrinkingSessionId = string;
 
@@ -50,6 +85,13 @@ type DrinkingSession = {
 
   /** The drinks recorded during the session */
   drinks?: DrinksList;
+
+  /**
+   * Precomputed local calendar fields per drink timestamp, in the session's
+   * timezone. Maintained on save (`saveDrinkingSessionData`) and backfilled
+   * lazily; absence is fine — the Statistics read path recomputes from `drinks`.
+   */
+  drinksTimeParts?: SessionTimeParts;
 
   /** Whether or not the user had a blackout during the session */
   blackout?: boolean;
@@ -81,5 +123,7 @@ export type {
   DrinkingSessionList,
   DrinkingSessionType,
   RemoveDrinksOptions,
+  SessionTimeParts,
+  StoredLocalParts,
   UserDrinkingSessionsList,
 };

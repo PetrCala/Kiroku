@@ -49,11 +49,22 @@ const localStyles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
   },
-  headerTitle: {
+  // PressableWithFeedback applies `style` to the inner pressable, not to the
+  // OpacityView wrapper that is the actual flex child of the header row. The
+  // grow-to-fill must live on `wrapperStyle` or the title collapses to content
+  // width and the whole row packs to the left.
+  headerTitleWrapper: {
     flex: 1,
+  },
+  headerTitle: {
     flexDirection: 'row',
     justifyContent: 'center',
     alignItems: 'center',
+  },
+  // Mirrors the trailing dropdown chevron (12px icon + ml1 4px) so the
+  // month/year label is the true horizontal center of the header.
+  headerTitleChevronSpacer: {
+    width: 16,
   },
   overview: {
     height: OVERVIEW_HEIGHT,
@@ -125,9 +136,16 @@ function Calendar(props: CalendarProps) {
   const monthShortNames = DateUtils.getMonthShortNames(preferredLocale).map(
     month => Str.recapitalize(month),
   );
-  const daysOfWeek = DateUtils.getDaysOfWeek(preferredLocale).map(day =>
-    day.toUpperCase(),
+  const dayShortNames = DateUtils.getDayShortNames(preferredLocale).map(day =>
+    Str.recapitalize(day),
   );
+  // `getDayShortNames` is Sunday-first; rotate to the app's week start so the
+  // header aligns with the Monday-first day grid.
+  const firstDay = CONST.WEEK_STARTS_ON % 7;
+  const daysOfWeek = [
+    ...dayShortNames.slice(firstDay),
+    ...dayShortNames.slice(0, firstDay),
+  ];
 
   const handleDayPress = (day: number) => {
     const picked = new Date(monthView.getFullYear(), monthView.getMonth(), day);
@@ -258,8 +276,10 @@ function Calendar(props: CalendarProps) {
         <PressableWithFeedback
           onPress={() => setView(view === 'month' ? 'overview' : 'month')}
           hoverDimmingValue={1}
+          wrapperStyle={localStyles.headerTitleWrapper}
           style={localStyles.headerTitle}
           accessibilityLabel={titleLabel}>
+          <View style={localStyles.headerTitleChevronSpacer} />
           <Text style={themeStyles.sidebarLinkTextBold}>{titleLabel}</Text>
           <Icon
             src={KirokuIcons.DownArrow}
@@ -304,9 +324,7 @@ function Calendar(props: CalendarProps) {
                   themeStyles.justifyContentCenter,
                   themeStyles.alignItemsCenter,
                 ]}>
-                <Text style={themeStyles.sidebarLinkTextBold}>
-                  {dayOfWeek[0]}
-                </Text>
+                <Text style={themeStyles.sidebarLinkTextBold}>{dayOfWeek}</Text>
               </View>
             ))}
           </View>
@@ -340,7 +358,7 @@ function Calendar(props: CalendarProps) {
                     if (edge) {
                       bgColor = theme.appColor;
                     } else if (inRange) {
-                      bgColor = theme.highlightBG;
+                      bgColor = theme.calendarRangeBG;
                     }
                     const textColor = edge ? theme.textReversed : theme.text;
 

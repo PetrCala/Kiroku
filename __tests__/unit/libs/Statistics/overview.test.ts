@@ -1,10 +1,13 @@
 import {
+  buildOverviewModel,
   buildPeriodSummary,
   buildSubPeriodSeries,
+  collectWindowAggregates,
   dayKeysInRange,
   monthKeysInRange,
   pickGranularity,
 } from '@libs/Statistics/overview';
+import {byMonth} from '@libs/Statistics/bucketers';
 import type {Range} from '@components/StatsContextProvider/types';
 import type {RangePreset} from '@src/types/onyx/StatisticsFilters';
 import type {DrinkEvent} from '@libs/Statistics/types';
@@ -185,6 +188,112 @@ describe('buildSubPeriodSeries', () => {
     expect(series).toHaveLength(7);
     expect(series.reduce((sum, p) => sum + p.units, 0)).toBe(4);
     expect(series.filter(p => p.units === 0)).toHaveLength(6);
+  });
+});
+
+describe('collectWindowAggregates', () => {
+  it('sums units per day and counts distinct sessions in one pass', () => {
+    const events = [
+      event('2026-01-02', 3),
+      event('2026-01-02', 4, {sessionId: 's-other'}),
+      event('2026-01-05', 2),
+    ];
+    const agg = collectWindowAggregates(
+      events,
+      JAN_START.getTime(),
+      JAN_END.getTime(),
+    );
+    expect(agg.unitsByDay.get('2026-01-02')).toBe(7);
+    expect(agg.unitsByDay.get('2026-01-05')).toBe(2);
+    expect(agg.sessionCount).toBe(3);
+    // No sub-period bucketer supplied → that map stays empty.
+    expect(agg.unitsBySubPeriod.size).toBe(0);
+  });
+
+  it('excludes events outside the window', () => {
+    const events = [event('2026-01-02', 3), event('2026-02-15', 9)];
+    const agg = collectWindowAggregates(
+      events,
+      JAN_START.getTime(),
+      JAN_END.getTime(),
+    );
+    expect(agg.unitsByDay.has('2026-02-15')).toBe(false);
+    expect(agg.sessionCount).toBe(1);
+  });
+
+  it('fills the sub-period map when a bucketer is supplied', () => {
+    const events = [event('2026-01-02', 3), event('2026-01-20', 5)];
+    const agg = collectWindowAggregates(
+      events,
+      JAN_START.getTime(),
+      JAN_END.getTime(),
+      byMonth,
+    );
+    expect(agg.unitsBySubPeriod.get('2026-01')).toBe(8);
+  });
+});
+
+describe('buildOverviewModel', () => {
+  const range = makeRange('M', JAN_START, JAN_END);
+
+  it('matches the standalone builders for the current window', () => {
+    const events = [event('2026-01-02', 5), event('2026-01-04', 11)];
+    const model = buildOverviewModel(
+      events,
+      range,
+      null,
+      AFTER_JAN,
+      THRESHOLDS,
+    );
+    expect(model.current).toEqual(
+      buildPeriodSummary(events, range.start, range.end, AFTER_JAN, THRESHOLDS),
+    );
+    expect(model.subPeriods).toEqual(
+      buildSubPeriodSeries(events, range, AFTER_JAN),
+    );
+    expect(model.previous).toBeNull();
+  });
+
+  it('computes the comparison summary when a comparison range is active', () => {
+    const events = [event('2026-01-10', 6), event('2025-12-10', 4)];
+    const comparison = makeRange(
+      'M',
+      new Date(2025, 11, 1, 0, 0, 0),
+      new Date(2025, 11, 31, 23, 59, 59),
+    );
+    const model = buildOverviewModel(
+      events,
+      range,
+      comparison,
+      AFTER_JAN,
+      THRESHOLDS,
+    );
+    expect(model.previous).toEqual(
+      buildPeriodSummary(
+        events,
+        comparison.start,
+        comparison.end,
+        AFTER_JAN,
+        THRESHOLDS,
+      ),
+    );
+  });
+
+  it('returns an empty current summary and no sub-periods for a future window', () => {
+    const future = makeRange(
+      'M',
+      new Date(2027, 0, 1, 0, 0, 0),
+      new Date(2027, 0, 31, 23, 59, 59),
+    );
+    const model = buildOverviewModel(
+      [event('2027-01-05', 3)],
+      future,
+      null,
+      AFTER_JAN,
+      THRESHOLDS,
+    );
+    expect(model.current.elapsedDays).toBe(0);
+    expect(model.subPeriods).toEqual([]);
   });
 });
 

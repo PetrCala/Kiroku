@@ -1,7 +1,9 @@
 import React from 'react';
 import {View} from 'react-native';
 import * as KirokuIcons from '@components/Icon/KirokuIcons';
-import {convertUnitsToColors} from '@libs/DataHandling';
+import Icon from '@components/Icon';
+import {convertUnitsToColors, sumDrinksOfSingleType} from '@libs/DataHandling';
+import DrinkData from '@libs/DrinkData';
 import {resolvePalette} from '@libs/SessionColorPalettes';
 import Navigation from '@libs/Navigation/Navigation';
 import ROUTES from '@src/ROUTES';
@@ -12,6 +14,7 @@ import CONST from '@src/CONST';
 import {nonMidnightString} from '@libs/StringUtilsKiroku';
 import Button from '@components/Button';
 import useLocalize from '@hooks/useLocalize';
+import useTheme from '@hooks/useTheme';
 import useThemeStyles from '@hooks/useThemeStyles';
 import useStyleUtils from '@hooks/useStyleUtils';
 import Text from '@components/Text';
@@ -30,6 +33,7 @@ function DrinkingSessionOverview({
   const {preferences: ownPreferences} = useDatabaseData();
   const preferences = preferencesProp ?? ownPreferences;
   const {translate} = useLocalize();
+  const theme = useTheme();
   const styles = useThemeStyles();
   const StyleUtils = useStyleUtils();
   // Convert the timestamp to a Date object
@@ -87,15 +91,51 @@ function DrinkingSessionOverview({
     {minHeight: 84},
   ];
 
+  // Per-drink-type counts (non-zero only), shown as a compact icon + count row
+  // so the tile surfaces what the session actually contained at a glance.
+  const drinkBreakdown = DrinkData.map(({key, icon}) => ({
+    key,
+    icon,
+    count: sumDrinksOfSingleType(session.drinks, key),
+  })).filter(({count}) => count > 0);
+
   const sessionDetails = (
-    <View style={[styles.flexColumn, styles.flex1]}>
-      <Text style={[styles.textNormal, styles.textStrong]}>
-        {translate('common.units')}: {totalUnits}
-      </Text>
-      {shouldDisplayTime && (
-        <Text style={[styles.textMicroSupporting, styles.mt1]}>
-          {translate('common.time')}: {timeString}
+    <View
+      style={[
+        styles.flexRow,
+        styles.alignItemsCenter,
+        styles.justifyContentBetween,
+        styles.flex1,
+      ]}>
+      {/* Left: units + (live) time */}
+      <View style={styles.flexColumn}>
+        <Text style={[styles.textNormal, styles.textStrong]}>
+          {translate('common.units')}: {totalUnits}
         </Text>
+        {shouldDisplayTime && (
+          <Text style={[styles.textMicroSupporting, styles.mt1]}>
+            {translate('common.time')}: {timeString}
+          </Text>
+        )}
+      </View>
+      {/* Right: per-drink-type breakdown as compact icon-over-count columns */}
+      {drinkBreakdown.length > 0 && (
+        <View
+          style={[styles.flexRow, styles.alignItemsCenter, styles.flexWrap]}>
+          {drinkBreakdown.map(({key, icon, count}) => (
+            <View key={key} style={[styles.alignItemsCenter, styles.ml3]}>
+              <Icon
+                src={icon}
+                fill={theme.textSupporting}
+                width={18}
+                height={18}
+              />
+              <Text style={[styles.textMicroSupporting, styles.mt1]}>
+                {count}
+              </Text>
+            </View>
+          ))}
+        </View>
       )}
     </View>
   );

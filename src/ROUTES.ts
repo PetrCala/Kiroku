@@ -31,7 +31,7 @@ const ROUTES = {
 
   HOME: 'home',
 
-  ACHIEVEMENTS: 'achievements',
+  BADGES: 'badges',
 
   DAY_OVERVIEW: {
     route: 'day-overview/:date',
@@ -139,15 +139,8 @@ const ROUTES = {
 
   SESSIONS_CALENDAR_FULLSCREEN: {
     route: 'sessions-calendar/:userID',
-    getRoute: (userID: UserID, monthYear?: string, firstWeekY?: number) => {
-      const parts: string[] = [];
-      if (monthYear) {
-        parts.push(`monthYear=${monthYear}`);
-      }
-      if (firstWeekY !== undefined) {
-        parts.push(`firstWeekY=${firstWeekY.toFixed(2)}`);
-      }
-      const qs = parts.length > 0 ? `?${parts.join('&')}` : '';
+    getRoute: (userID: UserID, monthYear?: string) => {
+      const qs = monthYear ? `?monthYear=${monthYear}` : '';
       return `sessions-calendar/${userID}${qs}` as const;
     },
   },

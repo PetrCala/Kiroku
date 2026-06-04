@@ -455,6 +455,26 @@ function getDaysOfWeek(preferredLocale: Locale): string[] {
   return daysOfWeek.map(date => format(date, 'eeee'));
 }
 
+/**
+ * Localized abbreviated weekday names in absolute (Sunday-first) order, e.g.
+ * [Sun, Mon, Tue, ...]. Callers rotate to their own week start. Used as the
+ * single source of truth for every calendar's weekday header.
+ */
+function getDayShortNames(preferredLocale: Locale): string[] {
+  if (preferredLocale) {
+    setLocale(preferredLocale);
+  }
+  const startOfCurrentWeek = startOfWeek(new Date(), {weekStartsOn: 0});
+  const endOfCurrentWeek = endOfWeek(new Date(), {weekStartsOn: 0});
+  const daysOfWeek = eachDayOfInterval({
+    start: startOfCurrentWeek,
+    end: endOfCurrentWeek,
+  });
+
+  // eslint-disable-next-line rulesdir/prefer-underscore-method
+  return daysOfWeek.map(date => format(date, 'eee'));
+}
+
 // Used to throttle updates to the timezone when necessary
 let lastUpdatedTimezoneTime = new Date();
 
@@ -934,6 +954,7 @@ const DateUtils = {
   getDateStringFromISOTimestamp,
   getDayValidationErrorKey,
   getDaysOfWeek,
+  getDayShortNames,
   getDeviceTimezone,
   getDayStartAndEndUTC,
   getEndOfToday,

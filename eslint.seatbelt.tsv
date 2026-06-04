@@ -795,9 +795,6 @@
 "src/libs/compose.ts"	"@typescript-eslint/no-unsafe-function-type"	4
 "src/libs/getOperatingSystem/index.native.ts"	"@typescript-eslint/switch-exhaustiveness-check"	1
 "src/libs/mapChildrenFlat.ts"	"@typescript-eslint/no-unsafe-call"	1
-"src/screens/DayOverview/DayOverviewScreen.tsx"	"arrow-body-style"	1
-"src/screens/DayOverview/DayOverviewScreen.tsx"	"react-hooks/set-state-in-effect"	1
-"src/screens/DayOverview/DayOverviewScreen.tsx"	"rulesdir/no-use-state-initializer-functions"	2
 "src/screens/DrinkingSession/EditSessionScreen.tsx"	"@typescript-eslint/no-unnecessary-type-assertion"	1
 "src/screens/DrinkingSession/LiveSessionScreen.tsx"	"@typescript-eslint/no-unnecessary-type-assertion"	1
 "src/screens/DrinkingSession/SessionDateScreen.tsx"	"@typescript-eslint/no-unnecessary-type-assertion"	1

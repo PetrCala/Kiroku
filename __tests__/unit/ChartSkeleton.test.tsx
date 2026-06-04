@@ -1,14 +1,24 @@
 /* eslint-disable @typescript-eslint/naming-convention -- jest module-factory keys (__esModule) are Node-module shape, not our convention */
 
 import React from 'react';
+import type {ViewStyle} from 'react-native';
 import {render} from '@testing-library/react-native';
 import {ChartSkeleton} from '@components/Charts/ChartSkeleton';
+
+function flattenStyle(style: unknown): ViewStyle {
+  return ([] as unknown[])
+    .concat(style ?? [])
+    .filter(Boolean)
+    .reduce<ViewStyle>((acc, s) => ({...acc, ...(s as ViewStyle)}), {});
+}
 
 jest.mock('@hooks/useTheme', () => ({
   __esModule: true,
   default: () => ({
     borderLighter: '#eeeeee',
     highlightBG: '#f7f7f7',
+    skeletonBase: '#262d36',
+    skeletonHighlight: '#3d444d',
   }),
 }));
 
@@ -16,6 +26,18 @@ jest.mock('@hooks/useResponsiveLayout', () => ({
   __esModule: true,
   default: () => ({shouldUseNarrowLayout: false}),
 }));
+
+// Stub the animation engine so variants built on the Skeleton primitive render
+// without the react-content-loader SVG (not transformed under jest).
+jest.mock('@components/SkeletonViewContentLoader', () => {
+  const {View} = require('react-native') as {
+    View: React.ComponentType<{testID?: string}>;
+  };
+  return {
+    __esModule: true,
+    default: () => <View testID="skeleton-loader" />,
+  };
+});
 
 describe('ChartSkeleton', () => {
   const VARIANTS = [
@@ -48,8 +70,10 @@ describe('ChartSkeleton', () => {
       />,
     );
 
-    const tree = toJSON() as {props: {style?: {height?: number}}} | null;
+    const tree = toJSON() as {
+      props: {style?: ViewStyle | ViewStyle[]};
+    } | null;
     expect(tree).not.toBeNull();
-    expect(tree?.props.style?.height).toBe(321);
+    expect(flattenStyle(tree?.props.style).height).toBe(321);
   });
 });

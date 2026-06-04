@@ -23,7 +23,7 @@ const SCREENS = {
   },
 
   RIGHT_MODAL: {
-    ACHIEVEMENTS: 'Achievements',
+    BADGES: 'Badges',
     DAY_OVERVIEW: 'DayOverview',
     DRINKING_SESSION: 'DrinkingSession',
     SETTINGS: 'Settings',
@@ -32,8 +32,8 @@ const SCREENS = {
     STATISTICS: 'Statistics',
   },
 
-  ACHIEVEMENTS: {
-    ROOT: 'Achievements_Root',
+  BADGES: {
+    ROOT: 'Badges_Root',
   },
 
   DAY_OVERVIEW: {

@@ -6,9 +6,7 @@ import type {
   UntilTimeParams,
 } from './types';
 import type {
-  BacRangeParams,
-  BacSessionTotalParams,
-  BacSoberInParams,
+  BadgesDayCountParams,
   BreakdownCenterUnitsParams,
   BreakdownDrinkLabelParams,
   BreakdownPeriodParams,
@@ -315,6 +313,8 @@ export default {
     loadingOlderMonths: 'Načítání starších měsíců…',
     monthTotalUnits: ({unitCount}: UnitCountParams) =>
       `${unitCount} ${Str.pluralize('jednotka', 'jednotek', unitCount)}`,
+    dayTotalUnits: ({unitCount}: UnitCountParams) =>
+      `${unitCount} ${Str.pluralize('jednotka', 'jednotek', unitCount)}`,
   },
   textInput: {
     accessibilityLabel: 'Textové pole',
@@ -325,8 +325,7 @@ export default {
     friends: 'Přátelé',
     profile: 'Profil',
     settings: 'Nastavení',
-    achievements: 'Odznaky',
-    bac: 'Kalkulačka',
+    badges: 'Odznaky',
     statistics: 'Statistiky',
     menu: 'Menu',
   },
@@ -970,7 +969,7 @@ export default {
     profileImage: 'Profilový obrázek',
   },
   statistics: {
-    title: 'Vaše statistiky',
+    title: 'Statistiky',
     tabs: {
       overview: {
         label: 'Přehled',
@@ -1008,8 +1007,8 @@ export default {
         },
         empty: {
           neverLogged: {
-            title: 'Zatím není co zaznamenat — i to se počítá.',
-            body: 'Až zaznamenáte relaci, objeví se zde týdenní trendy a měsíční přehled. Do té doby je každý den klidný.',
+            title: 'Zatím není co zobrazit',
+            body: 'Až zaznamenáte relaci, objeví se zde týdenní trendy a měsíční přehled.',
           },
           noDataInWindow: ({quietDays}: StatsQuietDaysParams) =>
             `${quietDays} klidných dnů a počítáme dál — vaše trendy se vyjasní, jak budete přidávat data.`,
@@ -1173,55 +1172,52 @@ export default {
       },
     },
   },
-  achievementsScreen: {
-    title: 'Alkokalkulačka',
-    bac: {
-      currentBac: 'Odhadovaná hladina alkoholu',
-      noSession:
-        'Začněte pít, abyste viděli odhadovanou hladinu alkoholu v krvi.',
-      sober: 'Odhadovaná hladina alkoholu v krvi je nyní nulová.',
-      disclaimer:
-        'Toto je pouze hrubý odhad, nikoli lékařské nebo právní měření. Nikdy neřiďte po požití alkoholu.',
-      editDetails: 'Upravit mé údaje',
-      formIntro:
-        'Pro odhad hladiny alkoholu v krvi potřebujeme vaši váhu a pohlaví.',
-      male: 'Muž',
-      female: 'Žena',
-      other: 'Jiné',
-      kg: 'kg',
-      lb: 'lb',
-      displayBoth: 'Obojí',
-      range: ({low, high}: BacRangeParams) => `Pravděpodobně ${low} – ${high}`,
-      soberIn: ({time}: BacSoberInParams) =>
-        `Vystřízlivění přibližně za ${time}`,
-      soberBy: ({time}: BacSoberInParams) => `Vystřízlivění v ${time}`,
-      timeDuration: 'Doba',
-      timeClock: 'Čas',
-      showDetails: 'Jak se to počítá?',
-      decayChartLabel: 'Odhadovaná hladina alkoholu klesající k nule v čase',
-      intro: {
-        title: 'Alkokalkulačka',
-        body1:
-          'Tento nástroj poskytuje hrubý odhad hladiny alkoholu v krvi na základě zaznamenaných drinků, vaší váhy a pohlaví.',
-        body2:
-          'Používá Widmarkův vzorec a předpokládá rovnoměrné odbourávání alkoholu. Každé tělo je jiné, berte proto číslo jen jako orientační, nikoli jako fakt.',
-        getStarted: 'Začít',
+  badgesScreen: {
+    title: 'Odznaky',
+    badgesTitle: 'Odznaky',
+    empty:
+      'Zaznamenejte svou první alkoholovou relaci, abyste začali získávat odznaky a sledovat svou sérii dnů bez alkoholu.',
+    dayUnit: ({count}: BadgesDayCountParams) => (count === 1 ? 'den' : 'dní'),
+    streak: {
+      label: 'Aktuální série dnů bez alkoholu',
+    },
+    stats: {
+      longestStreak: 'Nejdelší série',
+      totalAfDays: 'Dny bez alkoholu',
+      sessions: 'Zaznamenané relace',
+    },
+    badges: {
+      firstSession: {
+        title: 'První relace',
+        description: 'Zaznamenejte svou první alkoholovou relaci.',
       },
-      details: {
-        title: 'Jak se to počítá',
-        liveSession: 'Živá relace',
-        editSession: 'Upravená relace',
-        editNote:
-          'Drinky v upravené relaci jsou zaznamenány k začátku relace, takže jejich přesné načasování není jisté.',
-        sessionTotal: ({grams, bac}: BacSessionTotalParams) =>
-          `Celkem: ${grams} g čistého alkoholu · přidává až ${bac}`,
-        bandNote:
-          'Protože některé drinky pocházejí z upravených relací, zobrazujeme rozmezí: spodní hranice předpokládá, že byly vypity co nejdříve, horní co nejpozději.',
-        howTitle: 'Výpočet',
-        formula:
-          'Gramy alkoholu = objem (ml) × obsah alkoholu × 0,789. Hladina = gramy ÷ (váha × r × 10), kde r je 0,68 (muž), 0,55 (žena) nebo 0,615 (jiné).',
-        elimination:
-          'Tělo odbourává alkohol rovnoměrně přibližně 0,015 % za hodinu, takže odhad postupně klesá až k nule.',
+      dryDay: {
+        title: 'První den bez alkoholu',
+        description: 'Zaznamenejte svůj první den bez alkoholu.',
+      },
+      dryWeek: {
+        title: 'Týden bez alkoholu',
+        description: 'Dosáhněte série 7 dní bez alkoholu.',
+      },
+      dryFortnight: {
+        title: 'Dva týdny bez alkoholu',
+        description: 'Dosáhněte série 14 dní bez alkoholu.',
+      },
+      dryMonth: {
+        title: 'Měsíc bez alkoholu',
+        description: 'Dosáhněte série 30 dní bez alkoholu.',
+      },
+      afDays10: {
+        title: '10 dní bez alkoholu',
+        description: 'Nasbírejte 10 dní bez alkoholu.',
+      },
+      afDays50: {
+        title: '50 dní bez alkoholu',
+        description: 'Nasbírejte 50 dní bez alkoholu.',
+      },
+      sessions25: {
+        title: 'Pečlivé zaznamenávání',
+        description: 'Zaznamenejte 25 alkoholových relací.',
       },
     },
   },
@@ -1230,6 +1226,7 @@ export default {
     exitEditMode: 'Ukončit úpravy',
     noDrinkingSessions: 'Žádné alkoholové relace',
     addSessionExplained: 'Přidat relaci (plovoucí tlačítko)',
+    selectSessionDate: 'Vyberte datum nové relace',
     sessionWindow: ({sessionId}: SessionWindowIdParams) =>
       `Alkoholová relace: ${sessionId}`,
     ongoing: 'Probíhá',

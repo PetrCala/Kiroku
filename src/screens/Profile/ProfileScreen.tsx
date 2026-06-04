@@ -5,15 +5,20 @@ import * as Profile from '@userActions/Profile';
 import type {StatData} from '@components/Items/StatOverview';
 import StatOverview from '@components/Items/StatOverview';
 import ProfileOverview from '@components/Social/ProfileOverview';
-import React, {useEffect, useMemo, useState} from 'react';
+import React, {useCallback, useEffect, useMemo, useState} from 'react';
+import {useOnyx} from 'react-native-onyx';
+import ONYXKEYS from '@src/ONYXKEYS';
+import * as App from '@userActions/App';
 import {readDataOnce} from '@database/baseFunctions';
 import {
   calculateThisMonthUnits,
   dateToDateData,
+  dateStringToDate,
   objKeys,
   timestampToDate,
 } from '@libs/DataHandling';
 import SessionsCalendar from '@components/SessionsCalendar';
+import SessionsCalendarCompactSkeleton from '@components/SessionsCalendar/SessionsCalendarCompactSkeleton';
 import {getCommonFriendsCount} from '@libs/FriendUtils';
 import * as DSUtils from '@libs/DrinkingSessionUtils';
 import * as KirokuIcons from '@components/Icon/KirokuIcons';
@@ -31,6 +36,7 @@ import ScreenWrapper from '@components/ScreenWrapper';
 import type {FetchDataKeys} from '@hooks/useFetchData/types';
 import HeaderWithBackButton from '@components/HeaderWithBackButton';
 import useLocalize from '@hooks/useLocalize';
+import useReadyAfterScreenTransition from '@hooks/useReadyAfterScreenTransition';
 import FullScreenLoadingIndicator from '@components/FullscreenLoadingIndicator';
 import useThemeStyles from '@hooks/useThemeStyles';
 import Button from '@components/Button';
@@ -67,12 +73,37 @@ function ProfileScreen({route}: ProfileScreenProps) {
     isFetchingOlderMonths,
   } = useDrinkingSessionsFetch(userID);
   const isLoading = isFetchLoading || isSessionsLoading;
+  // Defer the (heavy) calendar mount until after the navigation slide. The
+  // compact `<SessionsCalendar>` runs `useLazyMarkedDates`' synchronous
+  // indexing on first render, which otherwise blocks the push slide-in.
+  const {isReady: didScreenTransitionEnd, onEntryTransitionEnd} =
+    useReadyAfterScreenTransition();
   const [selfFriends, setSelfFriends] = useState<UserList | null | undefined>();
   const [friendCount, setFriendCount] = useState(0);
   const [commonFriendCount, setCommonFriendCount] = useState(0);
-  const [visibleDateData, setVisibleDateData] = useState(
+  const [localVisibleDateData, setLocalVisibleDateData] = useState(
     dateToDateData(new Date()),
   );
+  const [lastViewedCalendarDate] = useOnyx(
+    ONYXKEYS.NVP_LAST_VIEWED_CALENDAR_DATE,
+  );
+  // The calendar's visible month: the last-viewed day from an enlarged calendar
+  // when present, otherwise the locally-navigated month. Derived (not synced via
+  // an effect) so it's already correct on the first render after the modal
+  // dismisses — the profile updates while still hidden underneath, so the user
+  // never sees the month flip. Reset on app launch → today.
+  const visibleDateData = useMemo(
+    () =>
+      lastViewedCalendarDate
+        ? dateToDateData(dateStringToDate(lastViewedCalendarDate))
+        : localVisibleDateData,
+    [lastViewedCalendarDate, localVisibleDateData],
+  );
+  // Manual month navigation overrides the synced value.
+  const onDateChange = useCallback((date: DateData) => {
+    setLocalVisibleDateData(date);
+    App.clearLastViewedCalendarDate();
+  }, []);
   const [drinkingSessionsCount, setDrinkingSessionsCount] = useState(0);
   const [unitsConsumed, setUnitsConsumed] = useState(0);
   const [manageFriendModalVisible, setManageFriendModalVisible] =
@@ -190,7 +221,9 @@ function ProfileScreen({route}: ProfileScreenProps) {
   }
 
   return (
-    <ScreenWrapper testID={ProfileScreen.displayName}>
+    <ScreenWrapper
+      testID={ProfileScreen.displayName}
+      onEntryTransitionEnd={onEntryTransitionEnd}>
       <HeaderWithBackButton
         title={
           user?.uid === userID
@@ -228,15 +261,19 @@ function ProfileScreen({route}: ProfileScreenProps) {
         </View>
         <View style={styles.ph2}>
           <StatOverview statsData={statsData} />
-          <SessionsCalendar
-            userID={userID}
-            visibleDate={visibleDateData}
-            onDateChange={(date: DateData) => setVisibleDateData(date)}
-            drinkingSessionData={drinkingSessionData}
-            preferences={preferences}
-            isFetchingOlderMonths={isFetchingOlderMonths}
-            onForeignDayPress={setDrillDownDate}
-          />
+          {didScreenTransitionEnd ? (
+            <SessionsCalendar
+              userID={userID}
+              visibleDate={visibleDateData}
+              onDateChange={onDateChange}
+              drinkingSessionData={drinkingSessionData}
+              preferences={preferences}
+              isFetchingOlderMonths={isFetchingOlderMonths}
+              onForeignDayPress={setDrillDownDate}
+            />
+          ) : (
+            <SessionsCalendarCompactSkeleton />
+          )}
         </View>
         <View style={[styles.flexRow, styles.justifyContentEnd]}>
           {user?.uid !== userID && (

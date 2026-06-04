@@ -69,8 +69,8 @@ function ItemListSkeletonView({
           <SkeletonViewContentLoader
             animate={shouldAnimate}
             height={itemViewHeight}
-            backgroundColor={theme.skeletonLHNIn}
-            foregroundColor={theme.skeletonLHNOut}>
+            backgroundColor={theme.skeletonBase}
+            foregroundColor={theme.skeletonHighlight}>
             {renderSkeletonItem({itemIndex: i})}
           </SkeletonViewContentLoader>
         </View>,

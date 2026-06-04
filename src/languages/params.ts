@@ -1,6 +1,10 @@
 import type {DrinkingSessionId} from '@src/types/onyx';
 import type Platform from '@libs/getPlatform/types';
 
+type BadgesDayCountParams = {
+  count: number;
+};
+
 type CommonFriendsLabelParams = {
   hasCommonFriends: boolean;
 };
@@ -117,24 +121,8 @@ type SupporterRenewalDateParams = {
   date: string;
 };
 
-type BacRangeParams = {
-  low: string;
-  high: string;
-};
-
-type BacSoberInParams = {
-  time: string;
-};
-
-type BacSessionTotalParams = {
-  grams: number;
-  bac: string;
-};
-
 export type {
-  BacRangeParams,
-  BacSessionTotalParams,
-  BacSoberInParams,
+  BadgesDayCountParams,
   BreakdownCenterUnitsParams,
   BreakdownDrinkLabelParams,
   BreakdownPeriodParams,

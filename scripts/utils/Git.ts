@@ -386,10 +386,18 @@ class Git {
   static async getMainBranchCommitHash(remote?: string): Promise<string> {
     const baseRefName = GITHUB_BASE_REF ?? 'master';
 
-    // Fetch the base branch from the specified remote (or locally) to ensure it's available
+    // Ensure the base branch ref is available before we diff against it.
+    //
+    // `--depth=1` is a CI-only optimization: CI runs on a throwaway shallow
+    // clone and the `if (IS_CI)` block below reads the remote ref directly
+    // (no merge-base). Locally we must NOT shallow-fetch — `--depth=1`
+    // re-truncates the developer's full clone, which both breaks the
+    // merge-base computation further down AND leaves `origin/<base>` grafted,
+    // surfacing later as a phantom "diverged" `git status`.
     if (IS_CI || remote) {
+      const depthArg = IS_CI ? ' --depth=1' : '';
       await exec(
-        `git fetch ${remote ?? 'origin'} ${baseRefName} --no-tags --depth=1`,
+        `git fetch ${remote ?? 'origin'} ${baseRefName} --no-tags${depthArg}`,
       );
     }
 

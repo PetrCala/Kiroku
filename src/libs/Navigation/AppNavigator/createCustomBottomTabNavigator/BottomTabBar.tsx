@@ -24,11 +24,11 @@ function BottomTabBar() {
         accessibilityLabel={translate('bottomTabBar.friends')}
       />
       <BottomTabBarIcon
-        src={KirokuIcons.Calculator}
-        label={translate('bottomTabBar.bac')}
-        isSelected={selectedTab === SCREENS.ACHIEVEMENTS}
-        onPress={() => Navigation.navigate(ROUTES.ACHIEVEMENTS)}
-        accessibilityLabel={translate('bottomTabBar.bac')}
+        src={KirokuIcons.Star}
+        label={translate('bottomTabBar.badges')}
+        isSelected={selectedTab === SCREENS.BADGES}
+        onPress={() => Navigation.navigate(ROUTES.BADGES)}
+        accessibilityLabel={translate('bottomTabBar.badges')}
       />
       <StartSessionButtonAndPopover />
       <BottomTabBarIcon

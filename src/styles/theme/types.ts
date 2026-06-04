@@ -15,6 +15,7 @@ type ThemeColors = {
   appBG: Color;
   splashBG: Color;
   highlightBG: Color;
+  calendarRangeBG: Color;
   darkBG: Color;
   appColor: Color;
   border: Color;
@@ -87,8 +88,8 @@ type ThemeColors = {
   tooltipHighlightText: Color;
   tooltipSupportingText: Color;
   tooltipPrimaryText: Color;
-  skeletonLHNIn: Color;
-  skeletonLHNOut: Color;
+  skeletonBase: Color;
+  skeletonHighlight: Color;
   QRLogo: Color;
   appLogo: Color;
   white: Color;

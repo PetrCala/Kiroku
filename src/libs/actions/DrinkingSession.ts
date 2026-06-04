@@ -26,6 +26,7 @@ import {generateDatabaseKey} from '@database/baseFunctions';
 import Onyx from 'react-native-onyx';
 import type {OnyxUpdate} from 'react-native-onyx';
 import * as API from '@libs/API';
+import {buildSessionTimeParts} from '@libs/Statistics/sessionTimeParts';
 import {WRITE_COMMANDS} from '@libs/API/types';
 import type {OnyxKey} from '@src/ONYXKEYS';
 import ONYXKEYS from '@src/ONYXKEYS';
@@ -411,6 +412,20 @@ async function startLiveDrinkingSession(
  * @param sesisonKey ID of the session to edit (can be null in case of finishing the session)
  * @returnsPromise void.
  *  */
+/**
+ * Attach precomputed per-drink local calendar fields (`drinksTimeParts`) to a
+ * finalised session so the Statistics cold path reads them with zero `Intl`
+ * work. Computed here — at the single save chokepoint, while the user is
+ * already interacting — over the session's final timezone and drink timestamps,
+ * which is why it transparently picks up timezone changes and date shifts.
+ * Returns the session unchanged when there is nothing to store.
+ */
+function withSessionTimeParts(session: DrinkingSession): DrinkingSession {
+  const sessionTz = session.timezone ?? CONST.DEFAULT_TIME_ZONE.selected;
+  const drinksTimeParts = buildSessionTimeParts(session.drinks, sessionTz);
+  return drinksTimeParts ? {...session, drinksTimeParts} : session;
+}
+
 async function saveDrinkingSessionData(
   userID: string,
   newSessionData: DrinkingSession,
@@ -427,6 +442,7 @@ async function saveDrinkingSessionData(
     DSUtils.clearOngoingSessionCache();
   }
 
+  const sessionToPersist = withSessionTimeParts(newSessionData);
   // The server upserts the session, owns the `earliest_session_at` floor
   // (recomputing it when an edit moves the previously-earliest session later),
   // and — when `sessionIsLive` — updates the user's live status. The optimistic
@@ -437,14 +453,14 @@ async function saveDrinkingSessionData(
     WRITE_COMMANDS.UPDATE_SESSION,
     {
       sessionId: sessionKey,
-      session: newSessionData,
+      session: sessionToPersist,
       sessionIsLive: !!sessionIsLive,
     },
     {
       optimisticData: sessionFinalizeOptimisticData(
         userID,
         sessionKey,
-        newSessionData,
+        sessionToPersist,
       ),
     },
   );
