@@ -55,6 +55,11 @@ const localStyles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
   },
+  // Mirrors the trailing dropdown chevron (12px icon + ml1 4px) so the
+  // month/year label is the true horizontal center of the header.
+  headerTitleChevronSpacer: {
+    width: 16,
+  },
   overview: {
     height: OVERVIEW_HEIGHT,
   },
@@ -260,6 +265,7 @@ function Calendar(props: CalendarProps) {
           hoverDimmingValue={1}
           style={localStyles.headerTitle}
           accessibilityLabel={titleLabel}>
+          <View style={localStyles.headerTitleChevronSpacer} />
           <Text style={themeStyles.sidebarLinkTextBold}>{titleLabel}</Text>
           <Icon
             src={KirokuIcons.DownArrow}
