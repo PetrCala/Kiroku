@@ -15,6 +15,14 @@ type SwipeBackGestureHandlerProps = {
    *  slide the screen out, so the dismissal looks identical across screens. */
   onSwipeBack?: () => void;
 
+  /** Optional leftward-swipe handler. Supply this only when the host owns a
+   *  horizontal pager whose first page has disabled its own swipe so this
+   *  gesture can win the rightward dismiss (a native pager-view swallows
+   *  same-axis touches otherwise). Forwarding the leftward swipe back to the
+   *  host keeps the "swipe to next tab" affordance on that boundary page.
+   *  When set, the gesture activates on both directions. */
+  onSwipeForward?: () => void;
+
   /** When false the gesture is inert and touches pass straight to `children`
    *  — e.g. while the host pager is not on its left-most page, so inner
    *  horizontal swipes still page between tabs. */
@@ -37,6 +45,7 @@ const styles = StyleSheet.create({
  */
 function SwipeBackGestureHandler({
   onSwipeBack,
+  onSwipeForward,
   enabled = true,
   style,
   children,
@@ -44,26 +53,31 @@ function SwipeBackGestureHandler({
   const gesture = useMemo(
     () =>
       Gesture.Pan()
-        .enabled(enabled && !!onSwipeBack)
-        // Only positive translation (rightward swipe) is a candidate; a
-        // generous vertical failOffset hands any near-vertical pan back to
-        // inner scrollables.
-        .activeOffsetX(20)
+        .enabled(enabled && (!!onSwipeBack || !!onSwipeForward))
+        // Rightward swipes drive the back; a forward handler additionally
+        // opts leftward swipes in. A generous vertical failOffset hands any
+        // near-vertical pan back to inner scrollables.
+        .activeOffsetX(onSwipeForward ? [-20, 20] : 20)
         .failOffsetY([-20, 20])
         .onEnd(e => {
           'worklet';
 
-          if (!onSwipeBack) {
+          const swipedRight =
+            e.translationX > SWIPE_THRESHOLD ||
+            e.velocityX > VELOCITY_THRESHOLD;
+          const swipedLeft =
+            e.translationX < -SWIPE_THRESHOLD ||
+            e.velocityX < -VELOCITY_THRESHOLD;
+
+          if (swipedRight && onSwipeBack) {
+            runOnJS(onSwipeBack)();
             return;
           }
-          if (
-            e.translationX > SWIPE_THRESHOLD ||
-            e.velocityX > VELOCITY_THRESHOLD
-          ) {
-            runOnJS(onSwipeBack)();
+          if (swipedLeft && onSwipeForward) {
+            runOnJS(onSwipeForward)();
           }
         }),
-    [enabled, onSwipeBack],
+    [enabled, onSwipeBack, onSwipeForward],
   );
 
   return (

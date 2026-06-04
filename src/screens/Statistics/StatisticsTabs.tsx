@@ -200,8 +200,19 @@ function StatisticsTabs({onSwipeBack}: StatisticsTabsProps) {
     ],
   );
 
+  // On the overview (first) tab we disable the native pager's own swipe so the
+  // swipe-back gesture can win the rightward dismiss — a native pager-view
+  // otherwise swallows same-axis horizontal touches and the back never fires.
+  // The gesture then owns both directions on that tab: rightward dismisses,
+  // leftward advances to the next tab (the affordance the pager would normally
+  // provide). Every other tab keeps the pager's finger-following swipe.
+  const isFirstTab = index === 0;
+
   return (
-    <SwipeBackGestureHandler onSwipeBack={onSwipeBack} enabled={index === 0}>
+    <SwipeBackGestureHandler
+      enabled={isFirstTab}
+      onSwipeBack={onSwipeBack}
+      onSwipeForward={() => setIndex(1)}>
       <TabView
         style={[styles.container, {backgroundColor: theme.appBG}]}
         navigationState={{index, routes}}
@@ -209,6 +220,7 @@ function StatisticsTabs({onSwipeBack}: StatisticsTabsProps) {
         renderScene={renderScene}
         renderTabBar={renderTabBar}
         initialLayout={{width: windowWidth}}
+        swipeEnabled={!isFirstTab}
         lazy
         renderLazyPlaceholder={renderLazyPlaceholder}
         commonOptions={COMMON_OPTIONS}
