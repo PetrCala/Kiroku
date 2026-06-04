@@ -1,8 +1,7 @@
 import {useIsFocused} from '@react-navigation/native';
-import React, {useEffect} from 'react';
+import React from 'react';
 import {Freeze} from 'react-freeze';
 import type ChildrenProps from '@src/types/utils/ChildrenProps';
-import liveTapLog from '@libs/liveTapDebug';
 
 type FreezeWrapperProps = ChildrenProps & {
   /** Prop to disable freeze */
@@ -22,14 +21,7 @@ type FreezeWrapperProps = ChildrenProps & {
 // screen and the freeze never engaged.
 function FreezeWrapper({keepVisible = false, children}: FreezeWrapperProps) {
   const isFocused = useIsFocused();
-  const freeze = !isFocused && !keepVisible;
-
-  // TEMP [live-tap] instrumentation — remove with the rest of the debug logging.
-  useEffect(() => {
-    liveTapLog('FreezeWrapper.freeze', {freeze, isFocused});
-  }, [freeze, isFocused]);
-
-  return <Freeze freeze={freeze}>{children}</Freeze>;
+  return <Freeze freeze={!isFocused && !keepVisible}>{children}</Freeze>;
 }
 
 FreezeWrapper.displayName = 'FreezeWrapper';
