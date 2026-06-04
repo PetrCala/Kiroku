@@ -31,7 +31,6 @@ import DateSelectorModal from '@components/DateSelectorModal';
 import Icon from '@components/Icon';
 import * as KirokuIcons from '@components/Icon/KirokuIcons';
 import {PressableWithFeedback} from '@components/Pressable';
-import Button from '@components/Button';
 import useLocalize from '@hooks/useLocalize';
 import useReadyAfterScreenTransition from '@hooks/useReadyAfterScreenTransition';
 import useTheme from '@hooks/useTheme';
@@ -54,6 +53,15 @@ const internalStyles = StyleSheet.create({
     position: 'absolute',
     right: 20,
     bottom: 20,
+  },
+  // Round brand button in the header — the Edit/Done toggle. Background color
+  // is applied inline since it comes from the (per-render) theme.
+  editToggle: {
+    width: 36,
+    height: 36,
+    borderRadius: 999,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
 });
 
@@ -88,7 +96,7 @@ function DayOverviewScreen({route}: DayOverviewScreenProps) {
   const {isOnline} = useUserConnection();
   const {translate} = useLocalize();
   const styles = useThemeStyles();
-  const {textLight} = useTheme();
+  const theme = useTheme();
   const {auth, db} = useFirebase();
   const user = auth.currentUser;
   const isSelf = user?.uid === userID;
@@ -190,15 +198,27 @@ function DayOverviewScreen({route}: DayOverviewScreenProps) {
         onBackButtonPress={Navigation.goBack}
         customRightButton={
           isSelf ? (
-            <Button
-              small
-              style={styles.bgTransparent}
-              textStyles={styles.link}
-              text={
-                editMode ? translate('common.done') : translate('common.edit')
-              }
+            <PressableWithFeedback
+              accessibilityLabel={translate(
+                editMode ? 'common.done' : 'common.edit',
+              )}
+              accessibilityRole={CONST.ROLE.BUTTON}
               onPress={() => setEditMode(prev => !prev)}
-            />
+              style={[
+                internalStyles.editToggle,
+                {
+                  backgroundColor: editMode
+                    ? theme.successPressed
+                    : theme.appColor,
+                },
+              ]}>
+              <Icon
+                src={editMode ? KirokuIcons.Checkmark : KirokuIcons.Edit}
+                fill={theme.textOnBrand}
+                width={18}
+                height={18}
+              />
+            </PressableWithFeedback>
           ) : undefined
         }
       />
@@ -241,7 +261,7 @@ function DayOverviewScreen({route}: DayOverviewScreenProps) {
             style={[styles.floatingActionButton, internalStyles.fab]}>
             <Icon
               src={KirokuIcons.Plus}
-              fill={textLight}
+              fill={theme.textLight}
               width={variables.iconSizeNormal}
               height={variables.iconSizeNormal}
             />
