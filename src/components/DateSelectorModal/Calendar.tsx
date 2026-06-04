@@ -136,9 +136,16 @@ function Calendar(props: CalendarProps) {
   const monthShortNames = DateUtils.getMonthShortNames(preferredLocale).map(
     month => Str.recapitalize(month),
   );
-  const daysOfWeek = DateUtils.getDaysOfWeek(preferredLocale).map(day =>
-    day.toUpperCase(),
+  const dayShortNames = DateUtils.getDayShortNames(preferredLocale).map(day =>
+    Str.recapitalize(day),
   );
+  // `getDayShortNames` is Sunday-first; rotate to the app's week start so the
+  // header aligns with the Monday-first day grid.
+  const firstDay = CONST.WEEK_STARTS_ON % 7;
+  const daysOfWeek = [
+    ...dayShortNames.slice(firstDay),
+    ...dayShortNames.slice(0, firstDay),
+  ];
 
   const handleDayPress = (day: number) => {
     const picked = new Date(monthView.getFullYear(), monthView.getMonth(), day);
@@ -317,9 +324,7 @@ function Calendar(props: CalendarProps) {
                   themeStyles.justifyContentCenter,
                   themeStyles.alignItemsCenter,
                 ]}>
-                <Text style={themeStyles.sidebarLinkTextBold}>
-                  {dayOfWeek[0]}
-                </Text>
+                <Text style={themeStyles.sidebarLinkTextBold}>{dayOfWeek}</Text>
               </View>
             ))}
           </View>
