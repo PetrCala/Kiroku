@@ -1,8 +1,8 @@
 /**
  * @jest-environment node
  */
-import {summarizeAchievements, computeBadges} from '@libs/AchievementsUtils';
-import type {AchievementsSummary} from '@libs/AchievementsUtils';
+import {summarizeBadges, computeBadges} from '@libs/BadgesUtils';
+import type {BadgesSummary} from '@libs/BadgesUtils';
 import type {DrinkEvent} from '@libs/Statistics';
 
 /** Minimal DrinkEvent fixture — only localDay/units/sessionId matter here. */
@@ -24,9 +24,9 @@ function ev(localDay: string, units: number, sessionId?: string): DrinkEvent {
   };
 }
 
-describe('summarizeAchievements', () => {
+describe('summarizeBadges', () => {
   it('returns an empty summary when there are no events', () => {
-    expect(summarizeAchievements([], '2026-06-07')).toEqual({
+    expect(summarizeBadges([], '2026-06-07')).toEqual({
       hasData: false,
       currentAfStreak: 0,
       longestAfStreak: 0,
@@ -39,7 +39,7 @@ describe('summarizeAchievements', () => {
   });
 
   it('computes streaks and counts across a gap (01 D, 02-04 AF, 05 D, 06-07 AF)', () => {
-    const summary = summarizeAchievements(
+    const summary = summarizeBadges(
       [ev('2026-06-01', 3), ev('2026-06-05', 2)],
       '2026-06-07',
     );
@@ -56,7 +56,7 @@ describe('summarizeAchievements', () => {
   });
 
   it('resets the current streak to 0 when today is a drinking day', () => {
-    const summary = summarizeAchievements([ev('2026-06-07', 4)], '2026-06-07');
+    const summary = summarizeBadges([ev('2026-06-07', 4)], '2026-06-07');
     expect(summary.currentAfStreak).toBe(0);
     expect(summary.longestAfStreak).toBe(0);
     expect(summary.totalDrinkingDays).toBe(1);
@@ -64,14 +64,14 @@ describe('summarizeAchievements', () => {
   });
 
   it('treats a day with only zero-unit drinks as alcohol-free', () => {
-    const summary = summarizeAchievements([ev('2026-06-02', 0)], '2026-06-02');
+    const summary = summarizeBadges([ev('2026-06-02', 0)], '2026-06-02');
     expect(summary.totalAfDays).toBe(1);
     expect(summary.currentAfStreak).toBe(1);
     expect(summary.totalDrinkingDays).toBe(0);
   });
 
   it('counts multiple drinks in one session/day once', () => {
-    const summary = summarizeAchievements(
+    const summary = summarizeBadges(
       [ev('2026-06-03', 2, 's1'), ev('2026-06-03', 1, 's1')],
       '2026-06-03',
     );
@@ -82,7 +82,7 @@ describe('summarizeAchievements', () => {
 });
 
 describe('computeBadges', () => {
-  const summary: AchievementsSummary = {
+  const summary: BadgesSummary = {
     hasData: true,
     currentAfStreak: 2,
     longestAfStreak: 7,

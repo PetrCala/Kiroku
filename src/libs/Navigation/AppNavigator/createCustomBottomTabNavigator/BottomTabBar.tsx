@@ -25,10 +25,10 @@ function BottomTabBar() {
       />
       <BottomTabBarIcon
         src={KirokuIcons.Star}
-        label={translate('bottomTabBar.achievements')}
-        isSelected={selectedTab === SCREENS.ACHIEVEMENTS}
-        onPress={() => Navigation.navigate(ROUTES.ACHIEVEMENTS)}
-        accessibilityLabel={translate('bottomTabBar.achievements')}
+        label={translate('bottomTabBar.badges')}
+        isSelected={selectedTab === SCREENS.BADGES}
+        onPress={() => Navigation.navigate(ROUTES.BADGES)}
+        accessibilityLabel={translate('bottomTabBar.badges')}
       />
       <StartSessionButtonAndPopover />
       <BottomTabBarIcon

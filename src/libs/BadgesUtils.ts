@@ -4,14 +4,14 @@ import type {DrinkEvent} from '@libs/Statistics';
 type DayKey = string;
 
 /**
- * Aggregate, all-time achievement metrics derived from the drink-event stream.
+ * Aggregate, all-time badge metrics derived from the drink-event stream.
  *
  * A calendar day is "alcohol-free" when the sum of its logged units is `<= 0`,
  * matching the Statistics overview's dry-day definition (see
  * `libs/Statistics/overview/periodSummary.ts`) so the two screens never
  * disagree on streaks or alcohol-free-day counts.
  */
-type AchievementsSummary = {
+type BadgesSummary = {
   /** False when the user has never logged a finished session. */
   hasData: boolean;
   /** Consecutive alcohol-free days ending today (0 when today had drinks). */
@@ -43,7 +43,7 @@ function utcMsToDayKey(ms: number): DayKey {
 }
 
 /**
- * Derive all-time achievement metrics from the (already timezone-bucketed)
+ * Derive all-time badge metrics from the (already timezone-bucketed)
  * `DrinkEvent` stream. Pure: `todayKey` is supplied by the caller — computed
  * in the user's timezone — so the streak math is deterministic and testable.
  *
@@ -52,10 +52,10 @@ function utcMsToDayKey(ms: number): DayKey {
  * extended to the latest event day as a guard against clock skew / future-
  * dated sessions, so trailing data is never under-counted.
  */
-function summarizeAchievements(
+function summarizeBadges(
   events: readonly DrinkEvent[],
   todayKey: DayKey,
-): AchievementsSummary {
+): BadgesSummary {
   if (events.length === 0) {
     return {
       hasData: false,
@@ -145,7 +145,7 @@ const BADGE_TARGETS = {
   sessions25: 25,
 } as const;
 
-/** Canonical badge identifier. Mirrors the `achievementsScreen.badges.*` keys. */
+/** Canonical badge identifier. Mirrors the `badgesScreen.badges.*` keys. */
 type BadgeId = keyof typeof BADGE_TARGETS;
 
 /** Render order for the badges grid. */
@@ -170,7 +170,7 @@ type BadgeStatus = {
 };
 
 /** The raw (unclamped) metric backing each badge. */
-function metricFor(id: BadgeId, summary: AchievementsSummary): number {
+function metricFor(id: BadgeId, summary: BadgesSummary): number {
   switch (id) {
     case 'firstSession':
     case 'sessions25':
@@ -193,7 +193,7 @@ function metricFor(id: BadgeId, summary: AchievementsSummary): number {
  * clamped to the target so a locked badge reads e.g. `5 / 7` and an earned one
  * reads `7 / 7`.
  */
-function computeBadges(summary: AchievementsSummary): BadgeStatus[] {
+function computeBadges(summary: BadgesSummary): BadgeStatus[] {
   return BADGE_ORDER.map(id => {
     const target = BADGE_TARGETS[id];
     const current = Math.min(metricFor(id, summary), target);
@@ -201,5 +201,5 @@ function computeBadges(summary: AchievementsSummary): BadgeStatus[] {
   });
 }
 
-export {summarizeAchievements, computeBadges, BADGE_TARGETS, BADGE_ORDER};
-export type {AchievementsSummary, BadgeId, BadgeStatus};
+export {summarizeBadges, computeBadges, BADGE_TARGETS, BADGE_ORDER};
+export type {BadgesSummary, BadgeId, BadgeStatus};

@@ -6,7 +6,7 @@ import type {ThemeStyles} from '@styles/index';
 import type {Screen} from '@src/SCREENS';
 import SCREENS from '@src/SCREENS';
 import type {
-  AchievementsNavigatorParamList,
+  BadgesNavigatorParamList,
   DayOverviewNavigatorParamList,
   DrinkingSessionNavigatorParamList,
   ProfileNavigatorParamList,
@@ -73,11 +73,10 @@ function createModalStackNavigator<TStackParams extends ParamListBase>(
   return ModalStack;
 }
 
-const AchievementsModalStackNavigator =
-  createModalStackNavigator<AchievementsNavigatorParamList>({
-    [SCREENS.ACHIEVEMENTS.ROOT]: () =>
-      require<ReactComponentModule>('@screens/Achievements/AchievementsScreen')
-        .default,
+const BadgesModalStackNavigator =
+  createModalStackNavigator<BadgesNavigatorParamList>({
+    [SCREENS.BADGES.ROOT]: () =>
+      require<ReactComponentModule>('@screens/Badges/BadgesScreen').default,
   });
 
 const DayOverviewModalStackNavigator =
@@ -257,7 +256,7 @@ const StatisticsModalStackNavigator =
   });
 
 export {
-  AchievementsModalStackNavigator,
+  BadgesModalStackNavigator,
   DayOverviewModalStackNavigator,
   DrinkingSessionModalStackNavigator,
   ProfileModalStackNavigator,

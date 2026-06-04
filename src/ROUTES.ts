@@ -31,7 +31,7 @@ const ROUTES = {
 
   HOME: 'home',
 
-  ACHIEVEMENTS: 'achievements',
+  BADGES: 'badges',
 
   DAY_OVERVIEW: {
     route: 'day-overview/:date',

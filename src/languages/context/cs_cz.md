@@ -65,13 +65,12 @@ zde`, `Přidejte si je zde`, `Zkuste hledat zde`.
 | friend / friends          | **přítel / přátelé**                              |                |
 | friend request            | **žádost o přátelství** (short: "žádost")         |                |
 | supporter (role)          | **podporovatel**                                  |                |
-| achievement / badges      | **odznaky**                                       |                |
+| badge / badges            | **odznaky**                                       |                |
 | sober                     | **bez pití**                                      |                |
 | alcohol-free day(s)       | **dny bez alkoholu**                              |                |
 | quiet day(s)              | **klidné dny**                                    |                |
 | blackout                  | **výpadek paměti**                                |                |
 | streak (alcohol-free)     | **série** (dnů bez alkoholu)                      |                |
-| badge / achievement       | **odznak / odznaky**                              |                |
 
 ## Do-not-translate (keep verbatim)
 
