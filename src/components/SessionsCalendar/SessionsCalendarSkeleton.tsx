@@ -3,6 +3,7 @@ import {View} from 'react-native';
 import Skeleton from '@components/Skeleton';
 import useTheme from '@hooks/useTheme';
 import useThemeStyles from '@hooks/useThemeStyles';
+import variables from '@styles/variables';
 
 // 7 day-name columns and a couple of month sections of ~6 week rows each —
 // enough to fill the viewport so the loading state reads as a calendar rather
@@ -25,6 +26,8 @@ const MONTH_SECTIONS = [0, 1];
 function SessionsCalendarSkeleton() {
   const styles = useThemeStyles();
   const theme = useTheme();
+  const daySize = variables.sessionsCalendarDaySize;
+  const dayRadius = variables.componentBorderRadiusNormal;
 
   return (
     <View
@@ -51,7 +54,12 @@ function SessionsCalendarSkeleton() {
                 <View
                   key={`c-${section}-${week}-${col}`}
                   style={styles.sessionsCalendarWeekCell}>
-                  <Skeleton width={20} height={20} radius={6} animate={false} />
+                  <Skeleton
+                    width={daySize}
+                    height={daySize}
+                    radius={dayRadius}
+                    animate={false}
+                  />
                 </View>
               ))}
             </View>
