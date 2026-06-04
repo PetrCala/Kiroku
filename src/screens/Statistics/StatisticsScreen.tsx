@@ -6,6 +6,7 @@ import StatsContextProvider from '@components/StatsContextProvider';
 import useLocalize from '@hooks/useLocalize';
 import useReadyAfterScreenTransition from '@hooks/useReadyAfterScreenTransition';
 import Navigation from '@libs/Navigation/Navigation';
+import {markStatsPhase, resetStatsProfile} from '@libs/Statistics/profiling';
 import DrillDownProvider from './drilldown/DrillDownContext';
 import StatisticsScreenSkeleton from './StatisticsScreenSkeleton';
 import StatsDrillDownSheet from './StatsDrillDownSheet';
@@ -31,6 +32,11 @@ function StatisticsScreen() {
     useReadyAfterScreenTransition();
   const [Tabs, setTabs] = useState<ComponentType | null>(null);
 
+  // Dev-only cold-launch profiler: anchor the timeline at screen mount.
+  useEffect(() => {
+    resetStatsProfile();
+  }, []);
+
   // Only kick off the chart-bundle import once the slide has finished, so its
   // parse and the subsequent heavy mount never compete with the transition for
   // the JS thread.
@@ -38,12 +44,14 @@ function StatisticsScreen() {
     if (!didScreenTransitionEnd) {
       return undefined;
     }
+    markStatsPhase('transition end');
     let cancelled = false;
     import('./StatisticsTabs')
       .then(mod => {
         if (cancelled) {
           return;
         }
+        markStatsPhase('chart bundle parsed');
         setTabs(() => mod.default);
       })
       .catch(() => {
