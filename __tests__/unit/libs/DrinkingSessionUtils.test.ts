@@ -3,7 +3,12 @@
  */
 
 import * as DSUtils from '@libs/DrinkingSessionUtils';
-import type {DrinkingSession, DrinksList, DrinksToUnits} from '@src/types/onyx';
+import type {
+  DrinkingSession,
+  DrinkingSessionList,
+  DrinksList,
+  DrinksToUnits,
+} from '@src/types/onyx';
 import CONST from '@src/CONST';
 import {getZeroDrinksList} from '@libs/DataHandling';
 import {randDrinkingSession} from '../../utils/collections/drinkingSessions';
@@ -122,6 +127,38 @@ describe('calculateTotalUnits', () => {
       sampleDrinksToUnits,
     );
     expect(result).toBe(2 * 5 + 1 * 10 + 3 * 1);
+  });
+});
+
+describe('getOngoingSessionId', () => {
+  const base = randDrinkingSession(new Date().getTime());
+
+  it('returns null for empty / nullish input', () => {
+    expect(DSUtils.getOngoingSessionId(undefined)).toBeNull();
+    expect(DSUtils.getOngoingSessionId(null)).toBeNull();
+    expect(DSUtils.getOngoingSessionId({})).toBeNull();
+  });
+
+  it('returns the id of the session whose ongoing flag is true', () => {
+    const list: DrinkingSessionList = {
+      a: {...base, ongoing: false},
+      b: {...base, ongoing: true},
+    };
+    expect(DSUtils.getOngoingSessionId(list)).toBe('b');
+  });
+
+  it('drops a finalized session: ongoing:false yields no ongoing id', () => {
+    const list: DrinkingSessionList = {
+      a: {...base, ongoing: false},
+    };
+    expect(DSUtils.getOngoingSessionId(list)).toBeNull();
+  });
+
+  it('treats a missing ongoing flag as not ongoing', () => {
+    const list: DrinkingSessionList = {
+      a: {...base, ongoing: undefined},
+    };
+    expect(DSUtils.getOngoingSessionId(list)).toBeNull();
   });
 });
 
