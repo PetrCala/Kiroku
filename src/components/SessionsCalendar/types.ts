@@ -34,6 +34,10 @@ type SessionsCalendarProps = {
    *  doesn't repoint the current user's own compact calendar. */
   isReadOnly?: boolean;
 
+  /** dayList-only. When true, each session tile shows an edit affordance
+   *  (driven by the day-overview screen's Edit/Done header toggle). */
+  isEditModeOn?: boolean;
+
   /**
    * Rendering mode:
    * - `compact` (default): fixed-size single-month `Calendar` with arrow

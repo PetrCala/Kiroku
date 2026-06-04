@@ -31,6 +31,7 @@ import DateSelectorModal from '@components/DateSelectorModal';
 import Icon from '@components/Icon';
 import * as KirokuIcons from '@components/Icon/KirokuIcons';
 import {PressableWithFeedback} from '@components/Pressable';
+import Button from '@components/Button';
 import useLocalize from '@hooks/useLocalize';
 import useReadyAfterScreenTransition from '@hooks/useReadyAfterScreenTransition';
 import useTheme from '@hooks/useTheme';
@@ -134,6 +135,11 @@ function DayOverviewScreen({route}: DayOverviewScreenProps) {
 
   const [isDatePickerVisible, setIsDatePickerVisible] = useState(false);
 
+  // Edit mode reveals a per-session edit affordance on every tile (self only).
+  // Toggled from the header; persists across the edit round-trip so the user
+  // can edit several sessions in a row.
+  const [editMode, setEditMode] = useState(false);
+
   // The day the user is currently looking at — opens the add-session picker on
   // the viewed month. Seeded with the focused day, updated as the user scrolls.
   const [visibleDay, setVisibleDay] = useState<DateString | undefined>(date);
@@ -182,6 +188,19 @@ function DayOverviewScreen({route}: DayOverviewScreenProps) {
       <HeaderWithBackButton
         title={translate('calendar.fullscreenTitle')}
         onBackButtonPress={Navigation.goBack}
+        customRightButton={
+          isSelf ? (
+            <Button
+              small
+              style={styles.bgTransparent}
+              textStyles={styles.link}
+              text={
+                editMode ? translate('common.done') : translate('common.edit')
+              }
+              onPress={() => setEditMode(prev => !prev)}
+            />
+          ) : undefined
+        }
       />
       <View style={styles.flex1}>
         {isReady && didScreenTransitionEnd && (
@@ -203,6 +222,7 @@ function DayOverviewScreen({route}: DayOverviewScreenProps) {
               onInitialScrollReady={onInitialScrollReady}
               onVisibleDayChange={setVisibleDay}
               isReadOnly={!isSelf}
+              isEditModeOn={editMode}
             />
           </View>
         )}

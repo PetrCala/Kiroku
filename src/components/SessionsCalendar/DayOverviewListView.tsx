@@ -84,6 +84,9 @@ type DayOverviewListViewProps = {
    *  history). Also suppresses the "last viewed day" persistence so browsing a
    *  friend's days doesn't repoint the current user's own compact calendar. */
   isReadOnly?: boolean;
+  /** When true, each session tile shows its edit affordance. Driven by the
+   *  day-overview screen's Edit/Done header toggle (self only). */
+  isEditModeOn?: boolean;
 };
 
 /**
@@ -107,6 +110,7 @@ function DayOverviewListView({
   onInitialScrollReady,
   onVisibleDayChange,
   isReadOnly,
+  isEditModeOn,
 }: DayOverviewListViewProps) {
   const styles = useThemeStyles();
   const theme = useTheme();
@@ -320,7 +324,7 @@ function DayOverviewListView({
         <DrinkingSessionOverview
           sessionId={item.entry.sessionId}
           session={item.entry.session}
-          isEditModeOn={false}
+          isEditModeOn={isEditModeOn ?? false}
           readOnly={isReadOnly}
           preferences={preferences}
         />
@@ -329,6 +333,7 @@ function DayOverviewListView({
     [
       preferences,
       isReadOnly,
+      isEditModeOn,
       translate,
       styles.sessionsCalendarMonthLabel,
       styles.sessionsCalendarMonthLabelText,
