@@ -1,7 +1,6 @@
 /**
- * Resolve a UTC instant's local wall-clock fields in a given timezone using a
- * single cached `Intl.DateTimeFormat.formatToParts` call, then derive ISO week
- * and calendar day-of-week arithmetically.
+ * Resolve a UTC instant's local wall-clock fields in a given timezone, then
+ * derive ISO week and calendar day-of-week arithmetically.
  *
  * This is the *one* place the app turns `(timestamp, timezone)` into local
  * calendar fields, shared by:
@@ -10,24 +9,33 @@
  *
  * Sharing it guarantees the value persisted at write time and the value
  * recomputed on the fly are byte-identical — there is no second implementation
- * to drift. Native `Intl` (not `date-fns-tz`) is used deliberately: `date-fns-tz`
- * is off-by-one-hour at the exact spring-forward instant, whereas `Intl` matches
- * the engine the app runs on.
+ * to drift. Native `Intl` (not `date-fns-tz`) is the source of truth for the
+ * UTC offset: `date-fns-tz` is off-by-one-hour at the exact spring-forward
+ * instant, whereas `Intl` matches the engine the app runs on.
  *
- * On Hermes each `formatToParts` call is ~2-3 ms, so the write path pays this
- * once per drink timestamp while the user is interacting, and the cold read path
- * pays nothing once the fields are stored.
+ * On Hermes each `Intl.formatToParts` call is ~1-3 ms, and the cold read path
+ * can face hundreds of timestamps with no stored fields at once (a fresh
+ * install's whole history). So we never format per field: we use `Intl` only to
+ * learn the timezone's *UTC offset*, cache that offset per (timezone, UTC
+ * month), and compute every calendar field with plain `Date.UTC` arithmetic.
+ * A timezone's offset changes at most once inside a calendar month (DST
+ * transitions are months apart), so two probes at a month's edges decide it:
+ * equal offsets ⇒ one offset serves the entire month with zero further `Intl`;
+ * unequal ⇒ the rare transition month, where each timestamp is probed directly
+ * (still exact). The cache is keyed by UTC month, so it is shared across every
+ * session and drink regardless of how the timestamps are distributed.
  */
 
 /**
  * One `Intl.DateTimeFormat` per timezone. Constructing the formatter is the
- * expensive part of timezone resolution, so we build it once and reuse it for
- * every timestamp in that zone — in practice a single zone per user.
+ * expensive part, so we build it once and reuse it for every offset probe in
+ * that zone. Minute and second precision are included so sub-hour offsets
+ * (e.g. UTC+5:45, UTC+10:30) resolve exactly.
  */
-const localPartsFormatters = new Map<string, Intl.DateTimeFormat>();
+const offsetFormatters = new Map<string, Intl.DateTimeFormat>();
 
-function getLocalPartsFormatter(timeZone: string): Intl.DateTimeFormat {
-  let formatter = localPartsFormatters.get(timeZone);
+function getOffsetFormatter(timeZone: string): Intl.DateTimeFormat {
+  let formatter = offsetFormatters.get(timeZone);
   if (!formatter) {
     formatter = new Intl.DateTimeFormat('en-US', {
       timeZone,
@@ -35,11 +43,74 @@ function getLocalPartsFormatter(timeZone: string): Intl.DateTimeFormat {
       month: '2-digit',
       day: '2-digit',
       hour: '2-digit',
+      minute: '2-digit',
+      second: '2-digit',
       hourCycle: 'h23',
     });
-    localPartsFormatters.set(timeZone, formatter);
+    offsetFormatters.set(timeZone, formatter);
   }
   return formatter;
+}
+
+/**
+ * The UTC offset (ms) that applies to `ts` in `timeZone`, via a single `Intl`
+ * call. Derived as `wallClock - ts`: the formatter yields the local wall clock,
+ * and the difference is the offset. Rounded to the nearest minute because the
+ * formatter drops sub-second precision while every real-world offset is a whole
+ * number of minutes. Throws on an invalid timezone (formatter construction) —
+ * the caller skips that timestamp.
+ */
+function probeOffsetMs(ts: number, timeZone: string): number {
+  const fields: Record<string, string> = {};
+  for (const part of getOffsetFormatter(timeZone).formatToParts(ts)) {
+    fields[part.type] = part.value;
+  }
+  const wallUtc = Date.UTC(
+    Number(fields.year),
+    Number(fields.month) - 1,
+    Number(fields.day),
+    Number(fields.hour) % 24,
+    Number(fields.minute),
+    Number(fields.second),
+  );
+  return Math.round((wallUtc - ts) / 60_000) * 60_000;
+}
+
+/** Per timezone: the resolved offset for each seen UTC month. */
+type MonthOffset = number | 'mixed';
+const monthOffsetCache = new Map<string, Map<number, MonthOffset>>();
+
+/** UTC-midnight of the first day of a `year*12 + monthZeroBased` index. */
+function monthStartUtc(monthIndex: number): number {
+  return Date.UTC(Math.floor(monthIndex / 12), monthIndex % 12, 1);
+}
+
+/**
+ * The UTC offset (ms) for `ts` in `timeZone`, memoised per UTC month. The first
+ * timestamp in a month pays two `Intl` probes (month start and end); if they
+ * agree the offset is constant all month and every later timestamp that month
+ * is free. A `'mixed'` month (a DST transition lies inside it) probes each
+ * timestamp directly, so the result stays exact at the transition instant.
+ */
+function getTzOffsetMs(ts: number, timeZone: string): number {
+  const at = new Date(ts);
+  const monthIndex = at.getUTCFullYear() * 12 + at.getUTCMonth();
+  let byMonth = monthOffsetCache.get(timeZone);
+  if (!byMonth) {
+    byMonth = new Map();
+    monthOffsetCache.set(timeZone, byMonth);
+  }
+  let cell = byMonth.get(monthIndex);
+  if (cell === undefined) {
+    const startOffset = probeOffsetMs(monthStartUtc(monthIndex), timeZone);
+    const endOffset = probeOffsetMs(
+      monthStartUtc(monthIndex + 1) - 1,
+      timeZone,
+    );
+    cell = startOffset === endOffset ? startOffset : 'mixed';
+    byMonth.set(monthIndex, cell);
+  }
+  return cell === 'mixed' ? probeOffsetMs(ts, timeZone) : cell;
 }
 
 /**
@@ -75,30 +146,24 @@ type LocalParts = {
 };
 
 /**
- * Resolve a timestamp's local wall-clock fields with a single cached
- * `formatToParts` call, then derive day-of-week and ISO week arithmetically.
- * Throws only on an invalid timezone (the caller skips); returns `null` if the
- * formatter omits a field, which no supported runtime does.
+ * Resolve a timestamp's local wall-clock fields. The timezone's UTC offset
+ * (cached per month) maps the instant onto a local wall clock, and every field
+ * is then `Date.UTC` arithmetic — no per-field formatting. Throws only on an
+ * invalid timezone (the caller skips).
  */
 function resolveLocalParts(ts: number, timeZone: string): LocalParts | null {
-  const fields: Record<string, string> = {};
-  for (const part of getLocalPartsFormatter(timeZone).formatToParts(ts)) {
-    fields[part.type] = part.value;
-  }
-  const {year, month, day, hour} = fields;
-  if (!year || !month || !day || !hour) {
-    return null;
-  }
-  const localMidnightUtc = Date.UTC(
-    Number(year),
-    Number(month) - 1,
-    Number(day),
-  );
+  const wall = new Date(ts + getTzOffsetMs(ts, timeZone));
+  const year = wall.getUTCFullYear();
+  const month = wall.getUTCMonth() + 1;
+  const day = wall.getUTCDate();
+  const yyyy = String(year).padStart(4, '0');
+  const mm = String(month).padStart(2, '0');
+  const dd = String(day).padStart(2, '0');
+  const localMidnightUtc = Date.UTC(year, month - 1, day);
   return {
-    localDay: `${year}-${month}-${day}`,
-    localMonth: `${year}-${month}`,
-    // `% 24` folds the "24" some ICU builds emit for midnight back to 0.
-    localHour: Number(hour) % 24,
+    localDay: `${yyyy}-${mm}-${dd}`,
+    localMonth: `${yyyy}-${mm}`,
+    localHour: wall.getUTCHours(),
     localIsoWeek: isoWeekLabel(localMidnightUtc),
     calendarDow: new Date(localMidnightUtc).getUTCDay(),
   };
