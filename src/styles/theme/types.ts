@@ -87,9 +87,8 @@ type ThemeColors = {
   tooltipHighlightText: Color;
   tooltipSupportingText: Color;
   tooltipPrimaryText: Color;
-  skeletonLHNIn: Color;
-  skeletonLHNOut: Color;
-  skeletonBlockBG: Color;
+  skeletonBase: Color;
+  skeletonHighlight: Color;
   QRLogo: Color;
   appLogo: Color;
   white: Color;

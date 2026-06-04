@@ -2,6 +2,7 @@ import {StyleSheet, View} from 'react-native';
 import {ChartCard} from '@components/Charts/ChartCard';
 import {ChartSkeleton} from '@components/Charts/ChartSkeleton';
 import ScrollView from '@components/ScrollView';
+import Skeleton from '@components/Skeleton';
 import {StatsFilterToolbarSkeleton} from '@components/Statistics/StatsFilterToolbar';
 import Text from '@components/Text';
 import useLocalize from '@hooks/useLocalize';
@@ -40,9 +41,6 @@ const skeletonStyles = StyleSheet.create({
     textAlign: 'center',
   },
   sectionLabel: {
-    height: 10,
-    width: '30%',
-    borderRadius: 2,
     marginBottom: 4,
   },
 });
@@ -107,11 +105,11 @@ function StatisticsScreenSkeleton() {
             // eslint-disable-next-line react/no-array-index-key
             key={`kpi-group-${idx}`}
             style={styles.mb3}>
-            <View
-              style={[
-                skeletonStyles.sectionLabel,
-                {backgroundColor: theme.borderLighter},
-              ]}
+            <Skeleton
+              width="30%"
+              height={10}
+              radius={2}
+              style={skeletonStyles.sectionLabel}
             />
             <ChartSkeleton variant="kpiRow" count={groupCount} />
           </View>

@@ -1,4 +1,5 @@
 import {View} from 'react-native';
+import Skeleton from '@components/Skeleton';
 import useTheme from '@hooks/useTheme';
 import useThemeStyles from '@hooks/useThemeStyles';
 import useWindowDimensions from '@hooks/useWindowDimensions';
@@ -36,7 +37,6 @@ function KpiRowSkeleton({
   const columns = isNarrow ? 2 : 3;
   const itemWidth = `${100 / columns}%` as const;
   const tiles = count ?? columns;
-  const fill = theme.borderLighter;
   const cardFill = theme.highlightBG;
   return (
     <View
@@ -59,30 +59,9 @@ function KpiRowSkeleton({
                 borderRadius: 12,
               },
             ]}>
-            <View
-              style={{
-                height: 10,
-                width: '50%',
-                backgroundColor: fill,
-                borderRadius: 2,
-              }}
-            />
-            <View
-              style={{
-                height: 24,
-                width: '40%',
-                backgroundColor: fill,
-                borderRadius: 4,
-              }}
-            />
-            <View
-              style={{
-                height: 10,
-                width: '60%',
-                backgroundColor: fill,
-                borderRadius: 2,
-              }}
-            />
+            <Skeleton width="50%" height={10} radius={2} />
+            <Skeleton width="40%" height={24} radius={4} />
+            <Skeleton width="60%" height={10} radius={2} />
           </View>
         </View>
       ))}

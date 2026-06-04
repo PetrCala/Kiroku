@@ -82,9 +82,8 @@ const lightTheme = {
   tooltipHighlightText: colors.orange500, // TODO check
   tooltipSupportingText: colors.productDark800,
   tooltipPrimaryText: colors.productDark900,
-  skeletonLHNIn: colors.productLight400,
-  skeletonLHNOut: colors.productLight600,
-  skeletonBlockBG: colors.productLight350,
+  skeletonBase: colors.productLight350,
+  skeletonHighlight: colors.productLight200,
   QRLogo: colors.yellow,
   appLogo: colors.productLight900,
   white: colors.white,

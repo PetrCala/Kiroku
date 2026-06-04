@@ -20,8 +20,8 @@ function SearchStatusSkeleton({
       <SkeletonViewContentLoader
         animate={shouldAnimate}
         height={40}
-        backgroundColor={theme.skeletonLHNIn}
-        foregroundColor={theme.skeletonLHNOut}>
+        backgroundColor={theme.skeletonBase}
+        foregroundColor={theme.skeletonHighlight}>
         <Rect x={0} y={0} rx={20} ry={20} width={68} height={40} />
         <Rect x={80} y={14} width={12} height={12} />
         <Rect x={100} y={16} width={40} height={8} />
