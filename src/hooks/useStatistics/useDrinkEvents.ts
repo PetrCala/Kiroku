@@ -7,6 +7,7 @@ import Statistics from '@libs/actions/Statistics';
 import {useFirebase} from '@context/global/FirebaseContext';
 import {useDatabaseData} from '@context/global/DatabaseDataContext';
 import useCurrentUserData from '@hooks/useCurrentUserData';
+import useCurrentUserPreferences from '@hooks/useCurrentUserPreferences';
 import CONST from '@src/CONST';
 import ONYXKEYS from '@src/ONYXKEYS';
 import type {UserID} from '@src/types/onyx/OnyxCommon';
@@ -56,7 +57,8 @@ function resolveWeekStart(label: string | undefined): WeekStart {
  */
 function useDrinkEvents(userIds?: UserID[]): UseDrinkEventsResult {
   const {auth} = useFirebase();
-  const {preferences, isFetchingOlderMonths} = useDatabaseData();
+  const {isFetchingOlderMonths} = useDatabaseData();
+  const preferences = useCurrentUserPreferences();
   const userData = useCurrentUserData();
   const [allSessions, allSessionsMeta] = useOnyx(
     ONYXKEYS.CACHED_DRINKING_SESSIONS,

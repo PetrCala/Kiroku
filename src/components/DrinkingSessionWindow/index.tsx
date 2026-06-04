@@ -9,7 +9,7 @@ import DrinkTypesView from '@components/DrinkTypesView';
 import SessionDetailsWindow from '@components/SessionDetailsWindow';
 import FillerView from '@components/FillerView';
 import CONST from '@src/CONST';
-import {useDatabaseData} from '@context/global/DatabaseDataContext';
+import useCurrentUserPreferences from '@hooks/useCurrentUserPreferences';
 import useLocalize from '@hooks/useLocalize';
 import HeaderWithBackButton from '@components/HeaderWithBackButton';
 import useThemeStyles from '@hooks/useThemeStyles';
@@ -38,7 +38,7 @@ function DrinkingSessionWindow({
   const user = auth.currentUser;
   const styles = useThemeStyles();
   const {translate} = useLocalize();
-  const {preferences} = useDatabaseData();
+  const preferences = useCurrentUserPreferences();
   const sessionRef = useRef<DrinkingSession | undefined>(session);
   // Session details
   const [totalUnits, setTotalUnits] = useState<number>(0);

@@ -1,6 +1,6 @@
 import React, {useCallback, useEffect, useMemo} from 'react';
 import {BackHandler} from 'react-native';
-import {useDatabaseData} from '@context/global/DatabaseDataContext';
+import useCurrentUserPreferences from '@hooks/useCurrentUserPreferences';
 import type {StackScreenProps} from '@react-navigation/stack';
 import type {SettingsNavigatorParamList} from '@libs/Navigation/types';
 import type SCREENS from '@src/SCREENS';
@@ -50,7 +50,7 @@ function PreferencesScreen({route}: PreferencesScreenProps) {
   const {translate, preferredLocale} = useLocalize();
   const styles = useThemeStyles();
   const {singleExecution} = useSingleExecution();
-  const {preferences} = useDatabaseData();
+  const preferences = useCurrentUserPreferences();
   const waitForNavigate = useWaitForNavigation();
 
   // const handleFirstDayOfWeekToggle = (value: boolean) => {

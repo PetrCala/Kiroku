@@ -2,6 +2,7 @@ import React, {useEffect, useState} from 'react';
 import {Alert, BackHandler, View} from 'react-native';
 import {useFirebase} from '@context/global/FirebaseContext';
 import {useDatabaseData} from '@context/global/DatabaseDataContext';
+import useCurrentUserPreferences from '@hooks/useCurrentUserPreferences';
 import Navigation from '@libs/Navigation/Navigation';
 import ScreenWrapper from '@components/ScreenWrapper';
 import HeaderWithBackButton from '@components/HeaderWithBackButton';
@@ -22,7 +23,8 @@ import requestPermission from '@libs/Permissions/requestPermission';
 function PrivacyScreen() {
   const {translate} = useLocalize();
   const styles = useThemeStyles();
-  const {preferences, dataVisibility} = useDatabaseData();
+  const {dataVisibility} = useDatabaseData();
+  const preferences = useCurrentUserPreferences();
   const {auth} = useFirebase();
   const user = auth.currentUser;
 

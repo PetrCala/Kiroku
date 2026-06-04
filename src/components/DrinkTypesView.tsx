@@ -6,7 +6,7 @@ import DrinkData from '@libs/DrinkData';
 import * as DS from '@userActions/DrinkingSession';
 import * as SessionLocations from '@userActions/SessionLocations';
 import {findDrinkNameTranslationKey} from '@libs/DataHandling';
-import {useDatabaseData} from '@context/global/DatabaseDataContext';
+import useCurrentUserPreferences from '@hooks/useCurrentUserPreferences';
 import CONST from '@src/CONST';
 import useTheme from '@hooks/useTheme';
 import * as KirokuIcons from './Icon/KirokuIcons';
@@ -22,7 +22,7 @@ type DrinkTypesViewProps = {
 
 function DrinkTypesView({session}: DrinkTypesViewProps) {
   const {translate} = useLocalize();
-  const {preferences} = useDatabaseData();
+  const preferences = useCurrentUserPreferences();
   const styles = useThemeStyles();
   const theme = useTheme();
 

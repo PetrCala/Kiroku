@@ -8,7 +8,7 @@ import {HourPolar} from '@components/Charts/HourPolar';
 import {ChartCard} from '@components/Charts/ChartCard';
 import StatsFilterToolbar from '@components/Statistics/StatsFilterToolbar';
 import Text from '@components/Text';
-import {useDatabaseData} from '@context/global/DatabaseDataContext';
+import useCurrentUserPreferences from '@hooks/useCurrentUserPreferences';
 import useLocalize from '@hooks/useLocalize';
 import useStatsContext from '@hooks/useStatsContext';
 import {useAggregate, useDrinkEvents} from '@hooks/useStatistics';
@@ -120,7 +120,7 @@ function formatDurationMin(minutes: number): string {
 
 function PatternsTab() {
   const {range, drinkTypeFilter, userIds} = useStatsContext();
-  const {preferences} = useDatabaseData();
+  const preferences = useCurrentUserPreferences();
   const {events, isLoading} = useDrinkEvents(
     userIds.length > 0 ? [...userIds] : undefined,
   );

@@ -1,11 +1,10 @@
 // DatabaseDataContext.tsx
 import type {ReactNode} from 'react';
 import React, {createContext, useContext, useEffect, useMemo} from 'react';
-import Onyx from 'react-native-onyx';
+import {useOnyx} from 'react-native-onyx';
 import type {
   Config,
   DataVisibility,
-  Preferences,
   UnconfirmedDays,
   UserData,
   UserStatus,
@@ -14,12 +13,10 @@ import type {FetchDataKeys} from '@hooks/useFetchData/types';
 import useListenToData from '@hooks/useListenToData';
 import setCrashReportingCollectionEnabled from '@libs/setCrashReportingCollectionEnabled';
 import ONYXKEYS from '@src/ONYXKEYS';
-import CONST from '@src/CONST';
 import {useFirebase} from './FirebaseContext';
 
 type DatabaseDataContextType = {
   userStatusData?: UserStatus;
-  preferences?: Preferences;
   unconfirmedDays?: UnconfirmedDays;
   userData?: UserData;
   /** Owner-controlled visibility of the current user's drinking data to
@@ -60,7 +57,6 @@ function DatabaseDataProvider({children}: DatabaseDataProviderProps) {
   const dataTypes: FetchDataKeys = [
     'config',
     'userStatusData',
-    'preferences',
     'unconfirmedDays',
     'userData',
     'dataVisibility',
@@ -68,10 +64,11 @@ function DatabaseDataProvider({children}: DatabaseDataProviderProps) {
 
   const {data, isFetchingOlderMonths} = useListenToData(dataTypes, userID);
 
+  const [preferences] = useOnyx(ONYXKEYS.PREFERENCES);
+
   const value = useMemo(
     () => ({
       userStatusData: data.userStatusData,
-      preferences: data.preferences,
       unconfirmedDays: data.unconfirmedDays,
       userData: data.userData,
       dataVisibility: data.dataVisibility,
@@ -81,23 +78,19 @@ function DatabaseDataProvider({children}: DatabaseDataProviderProps) {
     [data, isFetchingOlderMonths],
   );
 
-  // Sync theme preference from Firebase to Onyx when preferences are loaded
-  // This ensures the app theme is consistent with the user's saved preference
+  // Apply the crash-reporting opt-out from the user's preferences (server is the
+  // source of truth via `app/open`, so it survives reinstall) to the native
+  // collectors. Absent ⇒ enabled (the legitimate-interest opt-out default);
+  // gating against the build flag and the web no-op live in the util.
+  // Crashlytics persists this across restarts.
   useEffect(() => {
-    if (data.preferences === undefined) {
+    if (preferences === undefined) {
       return;
     }
-    const theme = data.preferences?.theme ?? CONST.THEME.DEFAULT;
-    // eslint-disable-next-line rulesdir/prefer-actions-set-data
-    Onyx.set(ONYXKEYS.PREFERRED_THEME, theme);
-    // Apply the crash-reporting opt-out from Firebase (source of truth, so it
-    // survives reinstall) to the native collectors. Absent ⇒ enabled (the
-    // legitimate-interest opt-out default); gating against the build flag and
-    // the web no-op live in the util. Crashlytics persists this across restarts.
     setCrashReportingCollectionEnabled(
-      data.preferences?.crash_reporting_enabled !== false,
+      preferences.crash_reporting_enabled !== false,
     );
-  }, [data.preferences]);
+  }, [preferences]);
 
   // Monitor local data for changes - TODO rewrite this later
   // useEffect(() => {

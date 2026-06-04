@@ -7,7 +7,7 @@ import DrinkData from '@libs/DrinkData';
 import {resolvePalette} from '@libs/SessionColorPalettes';
 import Navigation from '@libs/Navigation/Navigation';
 import ROUTES from '@src/ROUTES';
-import {useDatabaseData} from '@context/global/DatabaseDataContext';
+import useCurrentUserPreferences from '@hooks/useCurrentUserPreferences';
 import * as DS from '@userActions/DrinkingSession';
 import * as DSUtils from '@libs/DrinkingSessionUtils';
 import CONST from '@src/CONST';
@@ -30,7 +30,7 @@ function DrinkingSessionOverview({
   readOnly = false,
   preferences: preferencesProp,
 }: DrinkingSessionOverviewProps) {
-  const {preferences: ownPreferences} = useDatabaseData();
+  const ownPreferences = useCurrentUserPreferences();
   const preferences = preferencesProp ?? ownPreferences;
   const {translate} = useLocalize();
   const theme = useTheme();

@@ -1,6 +1,6 @@
 import React, {useState} from 'react';
 import {Alert, View} from 'react-native';
-import {useDatabaseData} from '@context/global/DatabaseDataContext';
+import useCurrentUserPreferences from '@hooks/useCurrentUserPreferences';
 import Navigation from '@libs/Navigation/Navigation';
 import ScreenWrapper from '@components/ScreenWrapper';
 import HeaderWithBackButton from '@components/HeaderWithBackButton';
@@ -57,7 +57,7 @@ function ColorPaletteScreen() {
   const StyleUtils = useStyleUtils();
   const theme = useTheme();
   const {translate} = useLocalize();
-  const {preferences} = useDatabaseData();
+  const preferences = useCurrentUserPreferences();
   const [pendingPaletteId, setPendingPaletteId] = useState<PaletteId | null>(
     null,
   );
