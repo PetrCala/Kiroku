@@ -4,7 +4,10 @@ import {Canvas, RoundedRect} from '@shopify/react-native-skia';
 import {useChartTheme} from '@components/Charts/BaseChart';
 import {ChartSkeleton} from '@components/Charts/ChartSkeleton';
 import Text from '@components/Text';
+import useLocalize from '@hooks/useLocalize';
 import useThemeStyles from '@hooks/useThemeStyles';
+import DateUtils from '@libs/DateUtils';
+import Str from '@libs/common/str';
 import type {WeekStart} from '@libs/Statistics';
 
 type DowHourHeatmapProps = {
@@ -35,15 +38,6 @@ const DAYS = 7;
 const LABEL_GUTTER = 32;
 const HOUR_LABEL_HEIGHT = 16;
 const COMPOSITE_SEP = '\x1f';
-const SHORT_DAY_NAMES = [
-  'Sun',
-  'Mon',
-  'Tue',
-  'Wed',
-  'Thu',
-  'Fri',
-  'Sat',
-] as const;
 
 // Hour ticks rendered below the grid — every 3 hours, 24h clock.
 const HOUR_TICKS = [0, 3, 6, 9, 12, 15, 18, 21] as const;
@@ -83,14 +77,18 @@ function DowHourHeatmap({
   const [width, setWidth] = useState(0);
   const theme = useChartTheme();
   const styles = useThemeStyles();
+  const {preferredLocale} = useLocalize();
 
   const dayLabels = useMemo(() => {
+    const names = DateUtils.getDayShortNames(preferredLocale).map(day =>
+      Str.recapitalize(day),
+    );
     const out: string[] = [];
     for (let i = 0; i < DAYS; i++) {
-      out.push(SHORT_DAY_NAMES[(weekStart + i) % DAYS]);
+      out.push(names[(weekStart + i) % DAYS]);
     }
     return out;
-  }, [weekStart]);
+  }, [weekStart, preferredLocale]);
 
   const gridWidth = Math.max(0, width - LABEL_GUTTER);
   const cellSize = gridWidth > 0 ? Math.floor(gridWidth / HOURS) : 0;
