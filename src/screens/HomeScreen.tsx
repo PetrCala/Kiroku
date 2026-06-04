@@ -45,11 +45,8 @@ import {useOnyx} from 'react-native-onyx';
 import ONYXKEYS from '@src/ONYXKEYS';
 import ERRORS from '@src/ERRORS';
 import Button from '@components/Button';
-import {
-  HomeHeaderSkeleton,
-  SessionsCalendarSkeleton,
-  StatOverviewSkeleton,
-} from './HomeScreenSkeleton';
+import SessionsCalendarCompactSkeleton from '@components/SessionsCalendar/SessionsCalendarCompactSkeleton';
+import {HomeHeaderSkeleton, StatOverviewSkeleton} from './HomeScreenSkeleton';
 
 type HomeScreenProps = StackScreenProps<
   BottomTabNavigatorParamList,
@@ -203,7 +200,7 @@ function HomeScreen({route}: HomeScreenProps) {
       return (
         <>
           <StatOverviewSkeleton />
-          <SessionsCalendarSkeleton />
+          <SessionsCalendarCompactSkeleton />
         </>
       );
     }

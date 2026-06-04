@@ -1661,13 +1661,31 @@ const styles = (theme: ThemeColors) =>
       fontSize: variables.fontSizeSmall,
     },
 
-    // Container for the compact-calendar loading skeleton header
-    // (`SessionsCalendarCompactSkeleton`). The placeholder blocks themselves
-    // are rendered with the shared `Skeleton` primitive.
+    // Compact-calendar loading skeleton (`SessionsCalendarCompactSkeleton`).
+    // These mirror react-native-calendars' compact header geometry so the
+    // skeleton→calendar handover doesn't shift layout. The library's month-row
+    // (`header`) is `marginTop:6` with nav arrows padded out to ~48px tall, and
+    // its day-name strip (`week`/`dayHeader`) sits `marginTop:7` with no
+    // separator rule — unlike the fullscreen `sessionsCalendarDayNamesRow`.
     sessionsCalendarCompactSkeletonHeader: {
-      paddingVertical: 10,
+      flexDirection: 'row',
       alignItems: 'center',
-      justifyContent: 'center',
+      justifyContent: 'space-between',
+      marginTop: 6,
+      paddingHorizontal: 20,
+      minHeight: 48,
+    },
+
+    sessionsCalendarCompactSkeletonDayNamesRow: {
+      flexDirection: 'row',
+      marginTop: 7,
+    },
+
+    sessionsCalendarCompactSkeletonDayNameCell: {
+      flex: 1,
+      alignItems: 'center',
+      paddingTop: 2,
+      paddingBottom: 7,
     },
 
     // Inline month-section label rendered as a FlashList sticky header.
