@@ -353,7 +353,7 @@ function Calendar(props: CalendarProps) {
                     if (edge) {
                       bgColor = theme.appColor;
                     } else if (inRange) {
-                      bgColor = theme.highlightBG;
+                      bgColor = theme.calendarRangeBG;
                     }
                     const textColor = edge ? theme.textReversed : theme.text;
 
