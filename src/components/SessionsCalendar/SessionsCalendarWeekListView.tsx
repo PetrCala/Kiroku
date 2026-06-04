@@ -1,7 +1,5 @@
 import React, {memo, useCallback, useEffect, useMemo, useRef} from 'react';
 import {ActivityIndicator, View} from 'react-native';
-import {Gesture, GestureDetector} from 'react-native-gesture-handler';
-import {runOnJS} from 'react-native-reanimated';
 import {FlashList} from '@shopify/flash-list';
 import type {FlashListRef} from '@shopify/flash-list';
 import {format, parseISO, startOfDay} from 'date-fns';
@@ -10,6 +8,7 @@ import type {DateData} from 'react-native-calendars';
 import {LocaleConfig} from 'react-native-calendars';
 import type {MarkedDates} from 'react-native-calendars/src/types';
 import {useOnyx} from 'react-native-onyx';
+import SwipeBackGestureDetector from '@components/SwipeBackGestureDetector';
 import Text from '@components/Text';
 import useLocalize from '@hooks/useLocalize';
 import useTheme from '@hooks/useTheme';
@@ -412,69 +411,35 @@ function SessionsCalendarWeekListView({
       ? targetIndex
       : Math.max(0, items.length - 1);
 
-  // Side-swipe-right → dismiss the fullscreen view. The Pan gesture only
-  // activates on a clear horizontal drift, and fails the moment a vertical
-  // drift takes the lead, so the FlashList's vertical scroll wins every
-  // intra-list pan. `enabled` keeps the gesture inert when no handler is
-  // wired up (e.g. a future reuse of this view outside the modal stack).
-  const swipeBackGesture = useMemo(
-    () =>
-      Gesture.Pan()
-        .enabled(!!onSwipeBack)
-        // Only positive translation (rightward swipe) should be a candidate;
-        // we leave a generous failOffset on the left so dragging the
-        // scrollbar / horizontal day-row never accidentally trips it.
-        .activeOffsetX(20)
-        .failOffsetY([-20, 20])
-        .onEnd(e => {
-          'worklet';
-
-          const SWIPE_THRESHOLD = 80;
-          const VELOCITY_THRESHOLD = 500;
-          if (!onSwipeBack) {
-            return;
-          }
-          if (
-            e.translationX > SWIPE_THRESHOLD ||
-            e.velocityX > VELOCITY_THRESHOLD
-          ) {
-            runOnJS(onSwipeBack)();
-          }
-        }),
-    [onSwipeBack],
-  );
-
   return (
-    <GestureDetector gesture={swipeBackGesture}>
-      <View style={styles.flex1}>
-        <View style={styles.sessionsCalendarDayNamesRow}>
-          {dayNames.map((name, idx) => (
-            <View
-              // eslint-disable-next-line react/no-array-index-key
-              key={`day-name-${idx}`}
-              style={styles.sessionsCalendarDayNameCell}>
-              <Text style={styles.sessionsCalendarDayNameText}>{name}</Text>
-            </View>
-          ))}
-        </View>
-        <View style={styles.flex1}>
-          <FlashList
-            ref={listRef}
-            data={items}
-            renderItem={renderItem}
-            keyExtractor={keyExtractor}
-            stickyHeaderIndices={stickyHeaderIndices}
-            initialScrollIndex={initialScrollIndex}
-            contentContainerStyle={contentContainerStyle}
-            showsVerticalScrollIndicator
-            ListHeaderComponent={listHeader}
-            onScrollBeginDrag={onScrollBeginDrag}
-            onViewableItemsChanged={onViewableItemsChanged}
-            viewabilityConfig={VIEWABILITY_CONFIG}
-          />
-        </View>
+    <SwipeBackGestureDetector onSwipeBack={onSwipeBack}>
+      <View style={styles.sessionsCalendarDayNamesRow}>
+        {dayNames.map((name, idx) => (
+          <View
+            // eslint-disable-next-line react/no-array-index-key
+            key={`day-name-${idx}`}
+            style={styles.sessionsCalendarDayNameCell}>
+            <Text style={styles.sessionsCalendarDayNameText}>{name}</Text>
+          </View>
+        ))}
       </View>
-    </GestureDetector>
+      <View style={styles.flex1}>
+        <FlashList
+          ref={listRef}
+          data={items}
+          renderItem={renderItem}
+          keyExtractor={keyExtractor}
+          stickyHeaderIndices={stickyHeaderIndices}
+          initialScrollIndex={initialScrollIndex}
+          contentContainerStyle={contentContainerStyle}
+          showsVerticalScrollIndicator
+          ListHeaderComponent={listHeader}
+          onScrollBeginDrag={onScrollBeginDrag}
+          onViewableItemsChanged={onViewableItemsChanged}
+          viewabilityConfig={VIEWABILITY_CONFIG}
+        />
+      </View>
+    </SwipeBackGestureDetector>
   );
 }
 

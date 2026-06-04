@@ -6,6 +6,7 @@ import {format} from 'date-fns';
 import lodashDebounce from 'lodash/debounce';
 import Text from '@components/Text';
 import DrinkingSessionOverview from '@components/DrinkingSessionOverview';
+import SwipeBackGestureDetector from '@components/SwipeBackGestureDetector';
 import useLocalize from '@hooks/useLocalize';
 import useTheme from '@hooks/useTheme';
 import useThemeStyles from '@hooks/useThemeStyles';
@@ -87,6 +88,9 @@ type DayOverviewListViewProps = {
   /** When true, each session tile shows its edit affordance. Driven by the
    *  day-overview screen's Edit/Done header toggle (self only). */
   isEditModeOn?: boolean;
+  /** Dismisses the day-overview modal on a rightward swipe. Omitted in the
+   *  embedded (compact calendar) usages where there's no modal to dismiss. */
+  onSwipeBack?: () => void;
 };
 
 /**
@@ -111,6 +115,7 @@ function DayOverviewListView({
   onVisibleDayChange,
   isReadOnly,
   isEditModeOn,
+  onSwipeBack,
 }: DayOverviewListViewProps) {
   const styles = useThemeStyles();
   const theme = useTheme();
@@ -389,20 +394,22 @@ function DayOverviewListView({
   const initialScrollIndex = targetIndex ?? Math.max(0, items.length - 1);
 
   return (
-    <FlashList
-      ref={listRef}
-      data={items}
-      renderItem={renderItem}
-      keyExtractor={keyExtractor}
-      initialScrollIndex={initialScrollIndex}
-      contentContainerStyle={contentContainerStyle}
-      showsVerticalScrollIndicator
-      ListHeaderComponent={listHeader}
-      ListEmptyComponent={listEmpty}
-      onScrollBeginDrag={onScrollBeginDrag}
-      onViewableItemsChanged={onViewableItemsChanged}
-      viewabilityConfig={VIEWABILITY_CONFIG}
-    />
+    <SwipeBackGestureDetector onSwipeBack={onSwipeBack}>
+      <FlashList
+        ref={listRef}
+        data={items}
+        renderItem={renderItem}
+        keyExtractor={keyExtractor}
+        initialScrollIndex={initialScrollIndex}
+        contentContainerStyle={contentContainerStyle}
+        showsVerticalScrollIndicator
+        ListHeaderComponent={listHeader}
+        ListEmptyComponent={listEmpty}
+        onScrollBeginDrag={onScrollBeginDrag}
+        onViewableItemsChanged={onViewableItemsChanged}
+        viewabilityConfig={VIEWABILITY_CONFIG}
+      />
+    </SwipeBackGestureDetector>
   );
 }
 
