@@ -43,6 +43,8 @@ const WRITE_COMMANDS = {
   SET_FRIEND_DATA_HIDDEN: 'SetFriendDataHidden',
   SUBMIT_FEEDBACK: 'SubmitFeedback',
   REPORT_BUG: 'ReportBug',
+  REMOVE_FEEDBACK: 'RemoveFeedback',
+  REMOVE_BUG: 'RemoveBug',
   UPDATE_PROFILE_PHOTO: 'UpdateProfilePhoto',
   // ...
 } as const;
@@ -86,6 +88,8 @@ type WriteCommandParameters = {
   [WRITE_COMMANDS.SET_FRIEND_DATA_HIDDEN]: Parameters.SetFriendDataHiddenParams;
   [WRITE_COMMANDS.SUBMIT_FEEDBACK]: Parameters.SubmitFeedbackParams;
   [WRITE_COMMANDS.REPORT_BUG]: Parameters.ReportBugParams;
+  [WRITE_COMMANDS.REMOVE_FEEDBACK]: Parameters.RemoveFeedbackParams;
+  [WRITE_COMMANDS.REMOVE_BUG]: Parameters.RemoveBugParams;
   [WRITE_COMMANDS.UPDATE_PROFILE_PHOTO]: Parameters.UpdateProfilePhotoParams;
 };
 

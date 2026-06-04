@@ -8,7 +8,7 @@ import useThemeStyles from '@hooks/useThemeStyles';
 import Navigation from '@libs/Navigation/Navigation';
 import type {BugList, NicknameToId} from '@src/types/onyx';
 import {useFirebase} from '@context/global/FirebaseContext';
-import {removeBug} from '@database/feedback';
+import {removeBug} from '@libs/actions/Feedback';
 import * as KirokuIcons from '@components/Icon/KirokuIcons';
 import DateUtils from '@libs/DateUtils';
 import MenuItem from '@components/MenuItem';
@@ -68,9 +68,7 @@ function SeeBugsScreen() {
   }, [bugList, db, nicknames]);
 
   const deleteBug = (bugKey: string) => {
-    (async () => {
-      await removeBug(db, bugKey);
-    })();
+    removeBug(bugKey);
   };
 
   const removeBugButton = (id: string) => {
