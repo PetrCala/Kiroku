@@ -1,6 +1,5 @@
 import {View} from 'react-native';
 import Skeleton from '@components/Skeleton';
-import useTheme from '@hooks/useTheme';
 import useThemeStyles from '@hooks/useThemeStyles';
 import useWindowDimensions from '@hooks/useWindowDimensions';
 import variables from '@styles/variables';
@@ -30,14 +29,12 @@ function KpiRowSkeleton({
   accessibilityLabel,
   count,
 }: KpiRowSkeletonProps) {
-  const theme = useTheme();
   const styles = useThemeStyles();
   const {windowWidth} = useWindowDimensions();
   const isNarrow = windowWidth < variables.mobileResponsiveWidthBreakpoint;
   const columns = isNarrow ? 2 : 3;
   const itemWidth = `${100 / columns}%` as const;
   const tiles = count ?? columns;
-  const cardFill = theme.highlightBG;
   return (
     <View
       accessible
@@ -49,20 +46,9 @@ function KpiRowSkeleton({
           // eslint-disable-next-line react/no-array-index-key
           key={`kpi-${i}`}
           style={[styles.ph1, styles.pv1, {width: itemWidth}]}>
-          <View
-            style={[
-              styles.p3,
-              styles.justifyContentBetween,
-              {
-                height,
-                backgroundColor: cardFill,
-                borderRadius: 12,
-              },
-            ]}>
-            <Skeleton width="50%" height={10} radius={2} />
-            <Skeleton width="40%" height={24} radius={4} />
-            <Skeleton width="60%" height={10} radius={2} />
-          </View>
+          {/* Whole tile shimmers — small inner bars read as static, so the tile
+           *  itself is the placeholder block (matches the `kpi`/`card` variant). */}
+          <Skeleton width="100%" height={height} radius={12} />
         </View>
       ))}
     </View>

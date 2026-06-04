@@ -86,7 +86,10 @@ function ChartSkeleton({
   const cardFill = theme.highlightBG;
   const a11yLabel = accessibilityLabel ?? 'Loading';
 
-  if (variant === 'card') {
+  // A KPI tile and a generic chart card are both full shimmering blocks while
+  // loading — the tile's inner label/value structure is too small to read as a
+  // moving shimmer, so the whole tile shimmers instead.
+  if (variant === 'card' || variant === 'kpi') {
     return (
       <Skeleton
         width={width}
@@ -237,29 +240,6 @@ function ChartSkeleton({
             ))}
           </View>
         ))}
-      </View>
-    );
-  }
-
-  if (variant === 'kpi') {
-    return (
-      <View
-        accessible
-        accessibilityRole="progressbar"
-        accessibilityLabel={a11yLabel}
-        style={[
-          styles.p3,
-          styles.justifyContentBetween,
-          {
-            height: resolvedHeight,
-            width,
-            backgroundColor: cardFill,
-            borderRadius: 12,
-          },
-        ]}>
-        <Skeleton width="50%" height={10} radius={2} />
-        <Skeleton width="40%" height={24} radius={4} />
-        <Skeleton width="60%" height={10} radius={2} />
       </View>
     );
   }
