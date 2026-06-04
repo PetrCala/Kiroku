@@ -238,6 +238,37 @@ describe('finalize is the deterministic last writer', () => {
     expect(liveUpdateCalls()).toHaveLength(1);
   });
 
+  it('clean-replaces the cached session on save so removed drinks do not linger', async () => {
+    const session = makeOngoing('s1');
+    routeTo(ONYXKEYS.ONGOING_SESSION_DATA, session);
+    driveOnyx(ONYXKEYS.ONGOING_SESSION_DATA, session);
+
+    await DS.saveDrinkingSessionData(
+      'uid',
+      {...session, ongoing: false},
+      's1',
+      ONYXKEYS.ONGOING_SESSION_DATA,
+      true,
+    );
+
+    const onyxData = liveUpdateCalls()[0][2] as {
+      optimisticData?: Array<{
+        key: string;
+        value: Record<string, Record<string, unknown>>;
+      }>;
+    };
+    const cacheWrites = (onyxData.optimisticData ?? []).filter(
+      update => update.key === ONYXKEYS.CACHED_DRINKING_SESSIONS,
+    );
+    // A merge can't drop removed drinks, so the finalize must delete the cached
+    // entry first, then re-add the finalized session.
+    expect(cacheWrites).toHaveLength(2);
+    expect(cacheWrites[0].value).toEqual({uid: {s1: null}});
+    expect(cacheWrites[1].value.uid.s1).toEqual(
+      expect.objectContaining({ongoing: false}),
+    );
+  });
+
   it('keeps the finalize last when a tap lands after Save (save-mid-tap)', async () => {
     const session = makeOngoing('s1');
     routeTo(ONYXKEYS.ONGOING_SESSION_DATA, session);

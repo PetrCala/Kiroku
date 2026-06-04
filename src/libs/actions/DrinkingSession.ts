@@ -115,6 +115,48 @@ function sessionUpsertOptimisticData(
 }
 
 /**
+ * Optimistic CLEAN REPLACE of a cached session: delete the entry, then re-add it
+ * in the same `Onyx.update` batch. A plain merge can't drop drinks the user
+ * removed during the session (Onyx merge keeps keys omitted from the new value),
+ * so finishing/editing a session that had drinks removed would leave those
+ * removed drinks accumulated in the cached snapshot — the saved session would then
+ * display far more drinks/units than it actually has. Replacing clears that.
+ */
+function cachedSessionReplace(
+  uid: UserID,
+  sessionId: DrinkingSessionId,
+  session: DrinkingSession,
+): OnyxUpdate[] {
+  return [
+    {
+      onyxMethod: Onyx.METHOD.MERGE,
+      key: ONYXKEYS.CACHED_DRINKING_SESSIONS,
+      value: {[uid]: {[sessionId]: null}},
+    },
+    cachedSessionPatch(uid, sessionId, session),
+  ];
+}
+
+/**
+ * Optimistic data for finalizing/saving a session. Like
+ * `sessionUpsertOptimisticData`, but clean-replaces the cached snapshot (see
+ * `cachedSessionReplace`) so drinks removed during the session don't linger in the
+ * cache and inflate the saved session's unit count.
+ */
+function sessionFinalizeOptimisticData(
+  uid: UserID,
+  sessionId: DrinkingSessionId,
+  session: DrinkingSession,
+): OnyxUpdate[] {
+  const optimisticData = cachedSessionReplace(uid, sessionId, session);
+  const currentEarliest = userDataList?.[uid]?.earliest_session_at;
+  if (currentEarliest === undefined || session.start_time < currentEarliest) {
+    optimisticData.push(earliestPatch(uid, session.start_time));
+  }
+  return optimisticData;
+}
+
+/**
  * Query Firebase for the user's earliest remaining session and persist the
  * result on the user record. Called post-write from edit and delete paths,
  * where the previous earliest may have shifted and we can't infer the new
@@ -399,11 +441,16 @@ async function saveDrinkingSessionData(
     DSUtils.clearOngoingSessionCache();
   }
 
+  liveTapLog('save', {
+    drinks: countDrinks(newSessionData.drinks),
+    sessionIsLive: !!sessionIsLive,
+  });
   // The server upserts the session, owns the `earliest_session_at` floor
   // (recomputing it when an edit moves the previously-earliest session later),
   // and — when `sessionIsLive` — updates the user's live status. The optimistic
-  // data mirrors the server `onyxData`; non-strict floor changes are reconciled
-  // by the inline/pushed response.
+  // data clean-replaces the cached snapshot so drinks removed during the session
+  // don't linger; non-strict floor changes are reconciled by the inline/pushed
+  // response.
   API.write(
     WRITE_COMMANDS.UPDATE_SESSION,
     {
@@ -412,7 +459,7 @@ async function saveDrinkingSessionData(
       sessionIsLive: !!sessionIsLive,
     },
     {
-      optimisticData: sessionUpsertOptimisticData(
+      optimisticData: sessionFinalizeOptimisticData(
         userID,
         sessionKey,
         newSessionData,
