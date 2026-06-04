@@ -13,7 +13,6 @@ import useLocalize from '@hooks/useLocalize';
 import useThemeStyles from '@hooks/useThemeStyles';
 import * as ErrorUtils from '@libs/ErrorUtils';
 import * as ValidationUtils from '@libs/ValidationUtils';
-import * as App from '@userActions/App';
 import Navigation from '@libs/Navigation/Navigation';
 import CONST from '@src/CONST';
 import ONYXKEYS from '@src/ONYXKEYS';
@@ -24,7 +23,6 @@ import type SCREENS from '@src/SCREENS';
 import {useDatabaseData} from '@context/global/DatabaseDataContext';
 import {useFirebase} from '@context/global/FirebaseContext';
 import {changeDisplayName} from '@userActions/User';
-import ERRORS from '@src/ERRORS';
 
 type DisplayNameScreenProps = StackScreenProps<
   SettingsNavigatorParamList,
@@ -35,43 +33,24 @@ type DisplayNameScreenProps = StackScreenProps<
 function DisplayNameScreen({route}: DisplayNameScreenProps) {
   const styles = useThemeStyles();
   const {translate} = useLocalize();
-  const {db, auth} = useFirebase();
+  const {auth} = useFirebase();
   const [loadingText] = useOnyx(ONYXKEYS.APP_LOADING_TEXT);
   const {userData} = useDatabaseData();
   const profileData = userData?.profile;
-  const [isLoadingName, setIsLoadingName] = React.useState(false);
 
   const currentUserDetails = {
     displayName: profileData?.display_name,
   };
 
   /**
-   * Submit form to update user's display
+   * Submit form to update user's display name. Fire-and-forget: the optimistic
+   * Onyx update lands immediately, so we navigate back without awaiting.
    */
   const updateDisplayName = (
     values: FormOnyxValues<typeof ONYXKEYS.FORMS.DISPLAY_NAME_FORM>,
   ) => {
-    (async () => {
-      const newDisplayName = values.displayName.trim();
-      try {
-        setIsLoadingName(true);
-        await App.setLoadingText(
-          translate('displayNameScreen.updatingDisplayName'),
-        );
-        await changeDisplayName(
-          db,
-          auth.currentUser,
-          profileData?.display_name,
-          newDisplayName,
-        );
-      } catch (error) {
-        ErrorUtils.raiseAppError(ERRORS.USER.NICKNAME_UPDATE_FAILED, error);
-      } finally {
-        Navigation.goBack();
-        App.setLoadingText(null);
-        setIsLoadingName(false);
-      }
-    })();
+    changeDisplayName(auth.currentUser, values.displayName.trim());
+    Navigation.goBack();
   };
 
   const validate = (
@@ -100,7 +79,7 @@ function DisplayNameScreen({route}: DisplayNameScreenProps) {
         title={translate('displayNameScreen.headerTitle')}
         onBackButtonPress={() => Navigation.goBack()}
       />
-      {!!loadingText || isLoadingName ? (
+      {loadingText ? (
         <FullScreenLoadingIndicator
           style={[styles.flex1]}
           loadingText={loadingText}

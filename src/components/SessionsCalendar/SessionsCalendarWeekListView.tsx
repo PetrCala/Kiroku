@@ -8,7 +8,7 @@ import type {DateData} from 'react-native-calendars';
 import {LocaleConfig} from 'react-native-calendars';
 import type {MarkedDates} from 'react-native-calendars/src/types';
 import {useOnyx} from 'react-native-onyx';
-import SwipeBackGestureHandler from '@components/SwipeBackGestureHandler';
+import SwipeBackGestureDetector from '@components/SwipeBackGestureDetector';
 import Text from '@components/Text';
 import useLocalize from '@hooks/useLocalize';
 import useTheme from '@hooks/useTheme';
@@ -411,11 +411,8 @@ function SessionsCalendarWeekListView({
       ? targetIndex
       : Math.max(0, items.length - 1);
 
-  // Side-swipe-right → dismiss the fullscreen view. The shared handler keeps
-  // the gesture inert when no `onSwipeBack` is wired up (e.g. a future reuse of
-  // this view outside the modal stack).
   return (
-    <SwipeBackGestureHandler onSwipeBack={onSwipeBack}>
+    <SwipeBackGestureDetector onSwipeBack={onSwipeBack}>
       <View style={styles.sessionsCalendarDayNamesRow}>
         {dayNames.map((name, idx) => (
           <View
@@ -442,7 +439,7 @@ function SessionsCalendarWeekListView({
           viewabilityConfig={VIEWABILITY_CONFIG}
         />
       </View>
-    </SwipeBackGestureHandler>
+    </SwipeBackGestureDetector>
   );
 }
 

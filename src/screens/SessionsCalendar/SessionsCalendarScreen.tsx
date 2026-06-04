@@ -4,6 +4,7 @@ import type {StackScreenProps} from '@react-navigation/stack';
 import type {DateData} from 'react-native-calendars';
 import SessionsCalendar from '@components/SessionsCalendar';
 import SessionsCalendarSkeleton from '@components/SessionsCalendar/SessionsCalendarSkeleton';
+import DayDrillDownSheet from '@components/SessionsCalendar/DayDrillDownSheet';
 import ScreenWrapper from '@components/ScreenWrapper';
 import HeaderWithBackButton from '@components/HeaderWithBackButton';
 import {useFirebase} from '@context/global/FirebaseContext';
@@ -19,6 +20,7 @@ import Navigation from '@libs/Navigation/Navigation';
 import type {SessionsCalendarNavigatorParamList} from '@libs/Navigation/types';
 import type SCREENS from '@src/SCREENS';
 import type {DrinkingSessionList, Preferences} from '@src/types/onyx';
+import type {DateString} from '@src/types/onyx/OnyxCommon';
 import type {FetchDataKeys} from '@hooks/useFetchData/types';
 
 type SessionsCalendarScreenProps = StackScreenProps<
@@ -81,6 +83,12 @@ function SessionsCalendarScreen({route}: SessionsCalendarScreenProps) {
     dateToDateData(new Date()),
   );
 
+  // The day whose drill-down sheet is open, or null when closed. Tapping a day
+  // in the infinite calendar opens the sheet; for self it's editable (tap a
+  // session → summary, edit button → edit), for friends it's read-only. Kept
+  // mounted across the edit round-trip so it reopens on back with live data.
+  const [drillDownDate, setDrillDownDate] = useState<DateString | null>(null);
+
   // Hold the calendar invisible until the WeekListView has applied its
   // initial scroll, so the user never sees a "latest at bottom → target"
   // jump on open. With no `monthYear` (e.g. deep-link), we never wait.
@@ -125,6 +133,7 @@ function SessionsCalendarScreen({route}: SessionsCalendarScreenProps) {
               mode="fullscreen"
               initialMonthYear={monthYear}
               onInitialScrollReady={onInitialScrollReady}
+              onDayDrillDown={setDrillDownDate}
             />
           </View>
         )}
@@ -134,6 +143,16 @@ function SessionsCalendarScreen({route}: SessionsCalendarScreenProps) {
           </View>
         )}
       </View>
+      {preferences && (
+        <DayDrillDownSheet
+          isVisible={!!drillDownDate}
+          onClose={() => setDrillDownDate(null)}
+          date={drillDownDate}
+          drinkingSessionData={drinkingSessionData}
+          preferences={preferences}
+          canEdit={isSelf}
+        />
+      )}
     </ScreenWrapper>
   );
 }

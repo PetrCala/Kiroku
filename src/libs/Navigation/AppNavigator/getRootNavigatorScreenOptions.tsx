@@ -29,6 +29,7 @@ type ScreenOptions = {
   rightModalNavigator: DynamicScreenOptions;
   onboardingModalNavigator: GetOnboardingModalNavigatorOptions;
   sessionsCalendarNavigator: StackNavigationOptions;
+  dayOverviewNavigator: StackNavigationOptions;
   leftModalNavigator: StackNavigationOptions;
   homeScreen: StackNavigationOptions;
   fullScreen: StackNavigationOptions;
@@ -95,6 +96,23 @@ const getRootNavigatorScreenOptions: GetRootNavigatorScreenOptions = (
     },
   };
 
+  // Shared "lift in from the center" transparent modal: the card fades and
+  // scales in (see sessionsCalendarCardStyleInterpolator) over the screen
+  // beneath it. Both calendar drill-downs — the fullscreen calendar and the
+  // day-overview scroll — use it so they look and behave identically.
+  // `gestureResponseDistance` stays at the platform default so the edge
+  // swipe-back doesn't fight the content's vertical scroll; each screen adds a
+  // content-level SwipeBackGestureDetector for full-width swipe-to-dismiss.
+  const centerModalScreenOptions: StackNavigationOptions = {
+    ...commonScreenOptions,
+    cardStyleInterpolator: sessionsCalendarCardStyleInterpolator,
+    presentation: 'transparentModal',
+    cardOverlayEnabled: false,
+    cardStyle: {backgroundColor: 'transparent'},
+    gestureEnabled: true,
+    gestureDirection: 'horizontal',
+  };
+
   return {
     // Function form so React Navigation re-evaluates gestureEnabled when the
     // nested stack state changes. Root-level swipe-back is enabled only when
@@ -128,20 +146,11 @@ const getRootNavigatorScreenOptions: GetRootNavigatorScreenOptions = (
         position: 'fixed' as ViewStyle['position'],
       },
     }),
-    // Fullscreen sessions calendar — transparent modal so the prior screen
-    // (Home or Profile) stays visible underneath while the calendar fades
-    // and scales in. Standard left-edge swipe-right dismisses; we leave
-    // `gestureResponseDistance` at the platform default to avoid
-    // competing with the FlashList's vertical scroll handler.
-    sessionsCalendarNavigator: {
-      ...commonScreenOptions,
-      cardStyleInterpolator: sessionsCalendarCardStyleInterpolator,
-      presentation: 'transparentModal',
-      cardOverlayEnabled: false,
-      cardStyle: {backgroundColor: 'transparent'},
-      gestureEnabled: true,
-      gestureDirection: 'horizontal',
-    },
+    // Fullscreen sessions calendar and day-overview scroll share the same
+    // center-lift modal (see centerModalScreenOptions) so the two calendar
+    // drill-downs feel identical.
+    sessionsCalendarNavigator: centerModalScreenOptions,
+    dayOverviewNavigator: centerModalScreenOptions,
     leftModalNavigator: {
       ...commonScreenOptions,
       cardStyleInterpolator: props =>

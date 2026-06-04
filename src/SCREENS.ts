@@ -24,7 +24,6 @@ const SCREENS = {
 
   RIGHT_MODAL: {
     BADGES: 'Badges',
-    DAY_OVERVIEW: 'DayOverview',
     DRINKING_SESSION: 'DrinkingSession',
     SETTINGS: 'Settings',
     PROFILE: 'Profile',

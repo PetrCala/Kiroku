@@ -160,12 +160,13 @@ function DrinkingSessionOverview({
         />
       ) : (
         isEditModeOn && (
-          <Button
-            large
-            style={styles.bgTransparent}
-            icon={KirokuIcons.Edit}
+          <PressableWithFeedback
+            accessibilityLabel={translate('common.edit')}
+            accessibilityRole={CONST.ROLE.BUTTON}
             onPress={onNavigateToEditSession}
-          />
+            style={styles.p2}>
+            <Icon src={KirokuIcons.Edit} fill={theme.icon} />
+          </PressableWithFeedback>
         )
       )}
     </PressableWithFeedback>

@@ -83,6 +83,10 @@ type HeaderWithBackButtonProps = Partial<ChildrenProps> & {
   /** Whether we should show a back button */
   shouldShowBackButton?: boolean;
 
+  /** Align the title to the start (next to the back button) instead of the
+   *  default end alignment. */
+  shouldAlignTitleStart?: boolean;
+
   /** Single execution function to prevent concurrent navigation actions */
   singleExecution?: <T extends unknown[]>(action: Action<T>) => Action<T>;
 

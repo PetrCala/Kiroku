@@ -63,6 +63,46 @@ const KIROKU_ROUTES: Record<string, KirokuRoute> = {
     method: 'post',
     path: '/v1/preferences',
   },
+  [WRITE_COMMANDS.CAPTURE_SESSION_LOCATION]: {
+    method: 'post',
+    path: '/v1/session-locations/capture',
+  },
+  [WRITE_COMMANDS.CLEAR_SESSION_LOCATIONS]: {
+    method: 'post',
+    path: '/v1/session-locations/clear',
+  },
+  [WRITE_COMMANDS.PURGE_SESSION_LOCATIONS]: {
+    method: 'post',
+    path: '/v1/session-locations/purge',
+  },
+  [WRITE_COMMANDS.SET_HIDE_FROM_ALL_FRIENDS]: {
+    method: 'post',
+    path: '/v1/privacy/hide-from-all',
+  },
+  [WRITE_COMMANDS.SET_FRIEND_DATA_HIDDEN]: {
+    method: 'post',
+    path: '/v1/privacy/friend',
+  },
+  [WRITE_COMMANDS.SUBMIT_FEEDBACK]: {
+    method: 'post',
+    path: '/v1/feedback',
+  },
+  [WRITE_COMMANDS.REPORT_BUG]: {
+    method: 'post',
+    path: '/v1/feedback/bug',
+  },
+  [WRITE_COMMANDS.UPDATE_DISPLAY_NAME]: {
+    method: 'post',
+    path: '/v1/profile/display-name',
+  },
+  [WRITE_COMMANDS.UPDATE_LEGAL_NAME]: {
+    method: 'post',
+    path: '/v1/profile/name',
+  },
+  [WRITE_COMMANDS.UPDATE_PROFILE_PHOTO]: {
+    method: 'post',
+    path: '/v1/profile/photo',
+  },
 };
 
 /** Returns the kiroku-api route for a command, or undefined for legacy commands. */

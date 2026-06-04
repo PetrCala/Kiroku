@@ -6,6 +6,7 @@ import {format} from 'date-fns';
 import lodashDebounce from 'lodash/debounce';
 import Text from '@components/Text';
 import DrinkingSessionOverview from '@components/DrinkingSessionOverview';
+import SwipeBackGestureDetector from '@components/SwipeBackGestureDetector';
 import useLocalize from '@hooks/useLocalize';
 import useTheme from '@hooks/useTheme';
 import useThemeStyles from '@hooks/useThemeStyles';
@@ -80,6 +81,16 @@ type DayOverviewListViewProps = {
   /** Debounced report of the center-most visible day as the user scrolls — the
    *  screen uses it to open the add-session picker on the viewed month. */
   onVisibleDayChange?: (day: DateString) => void;
+  /** Render the session tiles non-interactively (viewing another user's
+   *  history). Also suppresses the "last viewed day" persistence so browsing a
+   *  friend's days doesn't repoint the current user's own compact calendar. */
+  isReadOnly?: boolean;
+  /** When true, each session tile shows its edit affordance. Driven by the
+   *  day-overview screen's Edit/Done header toggle (self only). */
+  isEditModeOn?: boolean;
+  /** Dismisses the day-overview modal on a rightward swipe. Omitted in the
+   *  embedded (compact calendar) usages where there's no modal to dismiss. */
+  onSwipeBack?: () => void;
 };
 
 /**
@@ -102,6 +113,9 @@ function DayOverviewListView({
   initialDay,
   onInitialScrollReady,
   onVisibleDayChange,
+  isReadOnly,
+  isEditModeOn,
+  onSwipeBack,
 }: DayOverviewListViewProps) {
   const styles = useThemeStyles();
   const theme = useTheme();
@@ -233,10 +247,14 @@ function DayOverviewListView({
   const recordVisibleDay = useMemo(
     () =>
       lodashDebounce((day: DateString) => {
-        App.setLastViewedCalendarDate(day);
+        // Read-only (friend) browsing must not repoint the current user's own
+        // compact calendar, which restores from this NVP.
+        if (!isReadOnly) {
+          App.setLastViewedCalendarDate(day);
+        }
         onVisibleDayChange?.(day);
       }, LAST_VIEWED_DEBOUNCE_MS),
-    [onVisibleDayChange],
+    [onVisibleDayChange, isReadOnly],
   );
   useEffect(() => () => recordVisibleDay.cancel(), [recordVisibleDay]);
 
@@ -311,13 +329,16 @@ function DayOverviewListView({
         <DrinkingSessionOverview
           sessionId={item.entry.sessionId}
           session={item.entry.session}
-          isEditModeOn={false}
+          isEditModeOn={isEditModeOn ?? false}
+          readOnly={isReadOnly}
           preferences={preferences}
         />
       );
     },
     [
       preferences,
+      isReadOnly,
+      isEditModeOn,
       translate,
       styles.sessionsCalendarMonthLabel,
       styles.sessionsCalendarMonthLabelText,
@@ -373,20 +394,22 @@ function DayOverviewListView({
   const initialScrollIndex = targetIndex ?? Math.max(0, items.length - 1);
 
   return (
-    <FlashList
-      ref={listRef}
-      data={items}
-      renderItem={renderItem}
-      keyExtractor={keyExtractor}
-      initialScrollIndex={initialScrollIndex}
-      contentContainerStyle={contentContainerStyle}
-      showsVerticalScrollIndicator
-      ListHeaderComponent={listHeader}
-      ListEmptyComponent={listEmpty}
-      onScrollBeginDrag={onScrollBeginDrag}
-      onViewableItemsChanged={onViewableItemsChanged}
-      viewabilityConfig={VIEWABILITY_CONFIG}
-    />
+    <SwipeBackGestureDetector onSwipeBack={onSwipeBack}>
+      <FlashList
+        ref={listRef}
+        data={items}
+        renderItem={renderItem}
+        keyExtractor={keyExtractor}
+        initialScrollIndex={initialScrollIndex}
+        contentContainerStyle={contentContainerStyle}
+        showsVerticalScrollIndicator
+        ListHeaderComponent={listHeader}
+        ListEmptyComponent={listEmpty}
+        onScrollBeginDrag={onScrollBeginDrag}
+        onViewableItemsChanged={onViewableItemsChanged}
+        viewabilityConfig={VIEWABILITY_CONFIG}
+      />
+    </SwipeBackGestureDetector>
   );
 }
 

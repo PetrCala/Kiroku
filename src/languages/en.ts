@@ -1749,11 +1749,6 @@ export default {
         title: 'Nickname Update Failed',
         message: 'There was an error updating your nickname. Please try again.',
       },
-      privacyUpdateFailed: {
-        title: 'Privacy Update Failed',
-        message:
-          'There was an error updating your privacy settings. Please try again.',
-      },
       statusUpdateFailed: {
         title: 'Status Update Failed',
         message: 'There was an error updating your status. Please try again.',

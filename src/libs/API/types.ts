@@ -36,6 +36,14 @@ const WRITE_COMMANDS = {
   UPDATE_SESSION: 'UpdateSession',
   DELETE_SESSION: 'DeleteSession',
   UPDATE_PREFERENCES: 'UpdatePreferences',
+  CAPTURE_SESSION_LOCATION: 'CaptureSessionLocation',
+  CLEAR_SESSION_LOCATIONS: 'ClearSessionLocations',
+  PURGE_SESSION_LOCATIONS: 'PurgeSessionLocations',
+  SET_HIDE_FROM_ALL_FRIENDS: 'SetHideFromAllFriends',
+  SET_FRIEND_DATA_HIDDEN: 'SetFriendDataHidden',
+  SUBMIT_FEEDBACK: 'SubmitFeedback',
+  REPORT_BUG: 'ReportBug',
+  UPDATE_PROFILE_PHOTO: 'UpdateProfilePhoto',
   // ...
 } as const;
 
@@ -71,6 +79,14 @@ type WriteCommandParameters = {
   [WRITE_COMMANDS.UPDATE_SESSION]: Parameters.UpdateSessionParams;
   [WRITE_COMMANDS.DELETE_SESSION]: Parameters.DeleteSessionParams;
   [WRITE_COMMANDS.UPDATE_PREFERENCES]: Parameters.UpdatePreferencesParams;
+  [WRITE_COMMANDS.CAPTURE_SESSION_LOCATION]: Parameters.CaptureSessionLocationParams;
+  [WRITE_COMMANDS.CLEAR_SESSION_LOCATIONS]: Parameters.ClearSessionLocationsParams;
+  [WRITE_COMMANDS.PURGE_SESSION_LOCATIONS]: EmptyObject;
+  [WRITE_COMMANDS.SET_HIDE_FROM_ALL_FRIENDS]: Parameters.SetHideFromAllFriendsParams;
+  [WRITE_COMMANDS.SET_FRIEND_DATA_HIDDEN]: Parameters.SetFriendDataHiddenParams;
+  [WRITE_COMMANDS.SUBMIT_FEEDBACK]: Parameters.SubmitFeedbackParams;
+  [WRITE_COMMANDS.REPORT_BUG]: Parameters.ReportBugParams;
+  [WRITE_COMMANDS.UPDATE_PROFILE_PHOTO]: Parameters.UpdateProfilePhotoParams;
 };
 
 const READ_COMMANDS = {

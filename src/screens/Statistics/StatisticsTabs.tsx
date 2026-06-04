@@ -1,6 +1,13 @@
 import type {TupleToUnion} from 'type-fest';
-import React, {Suspense, lazy, useCallback, useMemo, useState} from 'react';
-import {StyleSheet, View} from 'react-native';
+import React, {
+  Suspense,
+  lazy,
+  useCallback,
+  useEffect,
+  useMemo,
+  useState,
+} from 'react';
+import {InteractionManager, StyleSheet, View} from 'react-native';
 import {SceneMap, TabBar, TabView} from 'react-native-tab-view';
 import type {
   NavigationState,
@@ -9,7 +16,7 @@ import type {
 } from 'react-native-tab-view';
 import {ChartSkeleton} from '@components/Charts/ChartSkeleton';
 import {StatsFilterToolbarSkeleton} from '@components/Statistics/StatsFilterToolbar';
-import SwipeBackGestureHandler from '@components/SwipeBackGestureHandler';
+import SwipeBackGestureDetector from '@components/SwipeBackGestureDetector';
 import Text from '@components/Text';
 import useLocalize from '@hooks/useLocalize';
 import useTheme from '@hooks/useTheme';
@@ -23,9 +30,19 @@ import OverviewTab from './tabs/OverviewTab';
 // dynamic-import parse (the ~2 s "chart bundle parsed" gate) and defers each
 // to the moment its tab is first activated, behind the same placeholder the
 // TabView already shows for not-yet-rendered tabs.
-const TrendsTab = lazy(() => import('./tabs/TrendsTab'));
-const PatternsTab = lazy(() => import('./tabs/PatternsTab'));
-const BreakdownTab = lazy(() => import('./tabs/BreakdownTab'));
+//
+// The loaders are named so we can also prefetch them in the background once
+// Overview is interactive (see the effect below). Profiling showed first-tap
+// of a non-Overview tab is dominated by this multi-second dynamic import, while
+// the tab's own aggregation is sub-millisecond — so warming the modules ahead
+// of the tap removes essentially the whole stall.
+const loadTrendsTab = () => import('./tabs/TrendsTab');
+const loadPatternsTab = () => import('./tabs/PatternsTab');
+const loadBreakdownTab = () => import('./tabs/BreakdownTab');
+
+const TrendsTab = lazy(loadTrendsTab);
+const PatternsTab = lazy(loadPatternsTab);
+const BreakdownTab = lazy(loadBreakdownTab);
 
 // Tab order is locked per STATISTICS_V2.md and issue #582.
 const ROUTE_KEYS = ['overview', 'trends', 'patterns', 'breakdown'] as const;
@@ -84,9 +101,9 @@ const OverviewSwipeBackContext = React.createContext<(() => void) | undefined>(
 function OverviewScene() {
   const onSwipeBack = React.useContext(OverviewSwipeBackContext);
   return (
-    <SwipeBackGestureHandler onSwipeBack={onSwipeBack}>
+    <SwipeBackGestureDetector onSwipeBack={onSwipeBack}>
       <OverviewTab />
-    </SwipeBackGestureHandler>
+    </SwipeBackGestureDetector>
   );
 }
 
@@ -176,6 +193,24 @@ function StatisticsTabs({onSwipeBack}: StatisticsTabsProps) {
   const theme = useTheme();
   const {windowWidth} = useWindowDimensions();
   const [index, setIndex] = useState(0);
+
+  // Warm the lazy tab chart bundles in the background once Overview has
+  // painted and the navigation transition has settled. Sequential so the three
+  // heavy module evaluations don't compete for the JS thread while the user is
+  // reading Overview; by the time a tab is tapped its module is already
+  // resolved, so React renders it without the first-import stall. Errors are
+  // swallowed — the real lazy render surfaces them on tap as usual.
+  useEffect(() => {
+    const handle = InteractionManager.runAfterInteractions(() => {
+      loadTrendsTab()
+        .then(loadPatternsTab)
+        .then(loadBreakdownTab)
+        .catch(() => undefined);
+    });
+    return () => {
+      handle.cancel?.();
+    };
+  }, []);
 
   const routes = useMemo<TabRoute[]>(
     () =>

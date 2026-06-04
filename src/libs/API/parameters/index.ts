@@ -5,6 +5,8 @@ export type {default as DeleteFriendRequestParams} from './DeleteFriendRequestPa
 export type {default as UnfriendParams} from './UnfriendParams';
 export type {default as UpdateSessionParams} from './UpdateSessionParams';
 export type {default as DeleteSessionParams} from './DeleteSessionParams';
+export type {default as CaptureSessionLocationParams} from './CaptureSessionLocationParams';
+export type {default as ClearSessionLocationsParams} from './ClearSessionLocationsParams';
 export type {default as GetMissingOnyxMessagesParams} from './GetMissingOnyxMessagesParams';
 export type {default as HandleRestrictedEventParams} from './HandleRestrictedEventParams';
 export type {default as OpenAppParams} from './OpenAppParams';
@@ -21,4 +23,9 @@ export type {default as UpdatePreferredLocaleParams} from './UpdatePreferredLoca
 export type {default as UpdatePronounsParams} from './UpdatePronounsParams';
 export type {default as UpdateSelectedTimezoneParams} from './UpdateSelectedTimezoneParams';
 export type {default as UpdateThemeParams} from './UpdateThemeParams';
+export type {default as SetHideFromAllFriendsParams} from './SetHideFromAllFriendsParams';
+export type {default as SetFriendDataHiddenParams} from './SetFriendDataHiddenParams';
+export type {default as SubmitFeedbackParams} from './SubmitFeedbackParams';
+export type {default as ReportBugParams} from './ReportBugParams';
+export type {default as UpdateProfilePhotoParams} from './UpdateProfilePhotoParams';
 // export type {default as UpdateUserAvatarParams} from './UpdateUserAvatarParams';

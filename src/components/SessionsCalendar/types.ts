@@ -24,10 +24,19 @@ type SessionsCalendarProps = {
    *  being fetched after a back-nav past the loaded window edge. */
   isFetchingOlderMonths?: boolean;
 
-  /** Fires when a day is tapped while viewing another user's calendar (the
-   *  self case navigates to the day overview instead). Lets the parent open a
-   *  read-only drill-down. Omit to keep foreign-day taps inert. */
-  onForeignDayPress?: (date: DateString) => void;
+  /** Fullscreen-only. Fires when a day is tapped in the infinite calendar so
+   *  the host screen can open the day drill-down sheet. In `compact` mode taps
+   *  navigate to the day-overview scroll instead. */
+  onDayDrillDown?: (date: DateString) => void;
+
+  /** dayList-only. Render the session tiles non-interactively (viewing another
+   *  user's history). Also suppresses the "last viewed day" persistence so it
+   *  doesn't repoint the current user's own compact calendar. */
+  isReadOnly?: boolean;
+
+  /** dayList-only. When true, each session tile shows an edit affordance
+   *  (driven by the day-overview screen's Edit/Done header toggle). */
+  isEditModeOn?: boolean;
 
   /**
    * Rendering mode:

@@ -14,8 +14,8 @@ import Text from '@components/Text';
 import Button from '@components/Button';
 import ConfirmModal from '@components/ConfirmModal';
 import * as Preferences from '@userActions/Preferences';
+import * as Privacy from '@userActions/Privacy';
 import * as SessionLocations from '@userActions/SessionLocations';
-import {setHideFromAllFriends} from '@database/privacy';
 import checkPermission from '@libs/Permissions/checkPermission';
 import requestPermission from '@libs/Permissions/requestPermission';
 
@@ -23,7 +23,7 @@ function PrivacyScreen() {
   const {translate} = useLocalize();
   const styles = useThemeStyles();
   const {preferences, dataVisibility} = useDatabaseData();
-  const {auth, db} = useFirebase();
+  const {auth} = useFirebase();
   const user = auth.currentUser;
 
   // Absent ⇒ enabled (legitimate-interest opt-out default).
@@ -48,25 +48,20 @@ function PrivacyScreen() {
   const [pendingHideFromAll, setPendingHideFromAll] = useState<boolean | null>(
     null,
   );
-  const [savingHideFromAll, setSavingHideFromAll] = useState(false);
   const displayHideFromAll = pendingHideFromAll ?? persistedHideFromAll;
 
   const [showPurgeConfirmModal, setShowPurgeConfirmModal] = useState(false);
   const [isPurging, setIsPurging] = useState(false);
 
   const onToggleHideFromAll = (next: boolean) => {
-    if (savingHideFromAll || next === displayHideFromAll || !user) {
+    if (next === displayHideFromAll || !user) {
       return;
     }
+    // Fire-and-forget: the write is queued and replayed offline. Reflect the new
+    // value optimistically — there is no Onyx state to roll back (visibility
+    // re-hydrates from the Firebase listener) and the queued write never throws.
     setPendingHideFromAll(next);
-    setSavingHideFromAll(true);
-    setHideFromAllFriends(db, user.uid, next)
-      .catch(error => {
-        setPendingHideFromAll(null);
-        const errorMessage = error instanceof Error ? error.message : '';
-        Alert.alert(translate('privacyScreen.error.save'), errorMessage);
-      })
-      .finally(() => setSavingHideFromAll(false));
+    Privacy.setHideFromAllFriends(next);
   };
 
   const onToggleCrashReporting = (next: boolean) => {
@@ -122,19 +117,13 @@ function PrivacyScreen() {
       return;
     }
     setIsPurging(true);
-    SessionLocations.purgeAll(db, user)
-      .then(() => {
-        setShowPurgeConfirmModal(false);
-        Alert.alert(translate('privacyScreen.clearLocationHistory.success'));
-      })
-      .catch(error => {
-        const errorMessage = error instanceof Error ? error.message : '';
-        Alert.alert(
-          translate('privacyScreen.clearLocationHistory.error'),
-          errorMessage,
-        );
-      })
-      .finally(() => setIsPurging(false));
+    // Fire-and-forget: the write is queued and replayed offline, so reflect it
+    // optimistically. There is no Onyx state to roll back and the queued write
+    // never throws here.
+    SessionLocations.purgeAll();
+    setShowPurgeConfirmModal(false);
+    Alert.alert(translate('privacyScreen.clearLocationHistory.success'));
+    setIsPurging(false);
   };
 
   // Match PreferencesScreen: the system back press goes back through the

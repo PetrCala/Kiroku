@@ -1739,11 +1739,6 @@ export default {
         message:
           'Při aktualizaci přezdívky došlo k chybě. Zkuste to prosím znovu.',
       },
-      privacyUpdateFailed: {
-        title: 'Nepodařilo se aktualizovat soukromí',
-        message:
-          'Při aktualizaci nastavení soukromí došlo k chybě. Zkuste to prosím znovu.',
-      },
       statusUpdateFailed: {
         title: 'Nepodařilo se aktualizovat stav',
         message: 'Při aktualizaci stavu došlo k chybě. Zkuste to prosím znovu.',
