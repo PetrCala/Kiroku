@@ -1,5 +1,4 @@
 type UpdateDisplayNameParams = {
-  firstName: string;
-  lastName: string;
+  displayName: string;
 };
 export default UpdateDisplayNameParams;

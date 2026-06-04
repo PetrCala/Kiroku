@@ -29,7 +29,7 @@ function UploadImageComponent({
   isProfilePicture = false,
   containerStyles,
 }: UploadImageComponentProps) {
-  const {auth, db, storage} = useFirebase();
+  const {auth, storage} = useFirebase();
   const styles = useThemeStyles();
   const user = auth.currentUser;
   const [imageSource, setImageSource] = useState<string | null>(null);
@@ -173,13 +173,7 @@ function UploadImageComponent({
           setSuccess,
         ); // Wait for the promise to resolve
         if (isProfilePicture) {
-          await Profile.updateProfileInfo(
-            pathToUpload,
-            user,
-            auth,
-            db,
-            storage,
-          );
+          await Profile.updateProfileInfo(pathToUpload, user, auth, storage);
         }
       } catch (error) {
         setImageSource(null);
@@ -191,7 +185,7 @@ function UploadImageComponent({
     };
 
     handleUpload(imageSource);
-  }, [auth, db, isProfilePicture, storage, user, pathToUpload, imageSource]);
+  }, [auth, isProfilePicture, storage, user, pathToUpload, imageSource]);
 
   return (
     <View

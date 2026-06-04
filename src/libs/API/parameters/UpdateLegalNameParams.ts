@@ -1,6 +1,6 @@
 type UpdateLegalNameParams = {
-  legalFirstName: string;
-  legalLastName: string;
+  firstName: string;
+  lastName: string;
 };
 
 export default UpdateLegalNameParams;

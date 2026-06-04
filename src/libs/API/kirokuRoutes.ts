@@ -91,6 +91,18 @@ const KIROKU_ROUTES: Record<string, KirokuRoute> = {
     method: 'post',
     path: '/v1/feedback/bug',
   },
+  [WRITE_COMMANDS.UPDATE_DISPLAY_NAME]: {
+    method: 'post',
+    path: '/v1/profile/display-name',
+  },
+  [WRITE_COMMANDS.UPDATE_LEGAL_NAME]: {
+    method: 'post',
+    path: '/v1/profile/name',
+  },
+  [WRITE_COMMANDS.UPDATE_PROFILE_PHOTO]: {
+    method: 'post',
+    path: '/v1/profile/photo',
+  },
 };
 
 /** Returns the kiroku-api route for a command, or undefined for legacy commands. */
