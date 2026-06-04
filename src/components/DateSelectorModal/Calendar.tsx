@@ -49,8 +49,14 @@ const localStyles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
   },
-  headerTitle: {
+  // PressableWithFeedback applies `style` to the inner pressable, not to the
+  // OpacityView wrapper that is the actual flex child of the header row. The
+  // grow-to-fill must live on `wrapperStyle` or the title collapses to content
+  // width and the whole row packs to the left.
+  headerTitleWrapper: {
     flex: 1,
+  },
+  headerTitle: {
     flexDirection: 'row',
     justifyContent: 'center',
     alignItems: 'center',
@@ -263,6 +269,7 @@ function Calendar(props: CalendarProps) {
         <PressableWithFeedback
           onPress={() => setView(view === 'month' ? 'overview' : 'month')}
           hoverDimmingValue={1}
+          wrapperStyle={localStyles.headerTitleWrapper}
           style={localStyles.headerTitle}
           accessibilityLabel={titleLabel}>
           <View style={localStyles.headerTitleChevronSpacer} />
