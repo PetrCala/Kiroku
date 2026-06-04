@@ -424,6 +424,7 @@ export {
   // deleteAvatar,
   // openPublicProfilePage,
   // updateAddress,
+  // eslint-disable-next-line import/prefer-default-export
   updateAutomaticTimezone,
   // updateAvatar,
   // updateDateOfBirth,
