@@ -13,6 +13,7 @@ import Text from '@components/Text';
 import useLocalize from '@hooks/useLocalize';
 import useTheme from '@hooks/useTheme';
 import useWindowDimensions from '@hooks/useWindowDimensions';
+import {measureImport} from '@libs/Statistics/perf';
 import type {TranslationPaths} from '@src/languages/types';
 import OverviewTab from './tabs/OverviewTab';
 
@@ -22,9 +23,18 @@ import OverviewTab from './tabs/OverviewTab';
 // dynamic-import parse (the ~2 s "chart bundle parsed" gate) and defers each
 // to the moment its tab is first activated, behind the same placeholder the
 // TabView already shows for not-yet-rendered tabs.
-const TrendsTab = lazy(() => import('./tabs/TrendsTab'));
-const PatternsTab = lazy(() => import('./tabs/PatternsTab'));
-const BreakdownTab = lazy(() => import('./tabs/BreakdownTab'));
+// `measureImport` times each dynamic import when Statistics perf logging is on
+// (no-op otherwise) so the module-realization cost can be weighed against the
+// tab's aggregation cost.
+const TrendsTab = lazy(
+  measureImport('TrendsTab', () => import('./tabs/TrendsTab')),
+);
+const PatternsTab = lazy(
+  measureImport('PatternsTab', () => import('./tabs/PatternsTab')),
+);
+const BreakdownTab = lazy(
+  measureImport('BreakdownTab', () => import('./tabs/BreakdownTab')),
+);
 
 // Tab order is locked per STATISTICS_V2.md and issue #582.
 const ROUTE_KEYS = ['overview', 'trends', 'patterns', 'breakdown'] as const;

@@ -3,6 +3,7 @@ import {InteractionManager} from 'react-native';
 import {useOnyx} from 'react-native-onyx';
 import {buildDrinkEvents} from '@libs/Statistics';
 import type {DrinkEvent, WeekStart} from '@libs/Statistics';
+import {measure} from '@libs/Statistics/perf';
 import Statistics from '@libs/actions/Statistics';
 import {useFirebase} from '@context/global/FirebaseContext';
 import {useDatabaseData} from '@context/global/DatabaseDataContext';
@@ -81,12 +82,17 @@ function useDrinkEvents(userIds?: UserID[]): UseDrinkEventsResult {
       if (cancelled) {
         return;
       }
-      const next = buildDrinkEvents(
-        allSessions,
-        drinksToUnits,
-        CONST.DRINK_DEFAULTS,
-        timezone,
-        weekStart,
+      const next = measure(
+        'buildDrinkEvents',
+        () =>
+          buildDrinkEvents(
+            allSessions,
+            drinksToUnits,
+            CONST.DRINK_DEFAULTS,
+            timezone,
+            weekStart,
+          ),
+        {sessions: allSessions ? Object.keys(allSessions).length : 0},
       );
       setAllEvents(next);
       setIsCompiled(true);
