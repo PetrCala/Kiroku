@@ -6,9 +6,6 @@ import type {
   UntilTimeParams,
 } from './types';
 import type {
-  BacRangeParams,
-  BacSessionTotalParams,
-  BacSoberInParams,
   BreakdownCenterUnitsParams,
   BreakdownDrinkLabelParams,
   BreakdownPeriodParams,
@@ -328,7 +325,6 @@ export default {
     profile: 'Profil',
     settings: 'Nastavení',
     achievements: 'Odznaky',
-    bac: 'Kalkulačka',
     statistics: 'Statistiky',
     menu: 'Menu',
   },
@@ -1172,58 +1168,6 @@ export default {
         nextPeriod: 'Další období',
         rangeLabel: 'Vybraný rozsah dat, dvojitým klepnutím změníte',
         jumpToLatest: 'Přejít na nejnovější období',
-      },
-    },
-  },
-  achievementsScreen: {
-    title: 'Alkokalkulačka',
-    bac: {
-      currentBac: 'Odhadovaná hladina alkoholu',
-      noSession:
-        'Začněte pít, abyste viděli odhadovanou hladinu alkoholu v krvi.',
-      sober: 'Odhadovaná hladina alkoholu v krvi je nyní nulová.',
-      disclaimer:
-        'Toto je pouze hrubý odhad, nikoli lékařské nebo právní měření. Nikdy neřiďte po požití alkoholu.',
-      editDetails: 'Upravit mé údaje',
-      formIntro:
-        'Pro odhad hladiny alkoholu v krvi potřebujeme vaši váhu a pohlaví.',
-      male: 'Muž',
-      female: 'Žena',
-      other: 'Jiné',
-      kg: 'kg',
-      lb: 'lb',
-      displayBoth: 'Obojí',
-      range: ({low, high}: BacRangeParams) => `Pravděpodobně ${low} – ${high}`,
-      soberIn: ({time}: BacSoberInParams) =>
-        `Vystřízlivění přibližně za ${time}`,
-      soberBy: ({time}: BacSoberInParams) => `Vystřízlivění v ${time}`,
-      timeDuration: 'Doba',
-      timeClock: 'Čas',
-      showDetails: 'Jak se to počítá?',
-      decayChartLabel: 'Odhadovaná hladina alkoholu klesající k nule v čase',
-      intro: {
-        title: 'Alkokalkulačka',
-        body1:
-          'Tento nástroj poskytuje hrubý odhad hladiny alkoholu v krvi na základě zaznamenaných drinků, vaší váhy a pohlaví.',
-        body2:
-          'Používá Widmarkův vzorec a předpokládá rovnoměrné odbourávání alkoholu. Každé tělo je jiné, berte proto číslo jen jako orientační, nikoli jako fakt.',
-        getStarted: 'Začít',
-      },
-      details: {
-        title: 'Jak se to počítá',
-        liveSession: 'Živá relace',
-        editSession: 'Upravená relace',
-        editNote:
-          'Drinky v upravené relaci jsou zaznamenány k začátku relace, takže jejich přesné načasování není jisté.',
-        sessionTotal: ({grams, bac}: BacSessionTotalParams) =>
-          `Celkem: ${grams} g čistého alkoholu · přidává až ${bac}`,
-        bandNote:
-          'Protože některé drinky pocházejí z upravených relací, zobrazujeme rozmezí: spodní hranice předpokládá, že byly vypity co nejdříve, horní co nejpozději.',
-        howTitle: 'Výpočet',
-        formula:
-          'Gramy alkoholu = objem (ml) × obsah alkoholu × 0,789. Hladina = gramy ÷ (váha × r × 10), kde r je 0,68 (muž), 0,55 (žena) nebo 0,615 (jiné).',
-        elimination:
-          'Tělo odbourává alkohol rovnoměrně přibližně 0,015 % za hodinu, takže odhad postupně klesá až k nule.',
       },
     },
   },

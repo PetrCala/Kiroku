@@ -23,17 +23,12 @@ const SCREENS = {
   },
 
   RIGHT_MODAL: {
-    ACHIEVEMENTS: 'Achievements',
     DAY_OVERVIEW: 'DayOverview',
     DRINKING_SESSION: 'DrinkingSession',
     SETTINGS: 'Settings',
     PROFILE: 'Profile',
     SOCIAL: 'Social',
     STATISTICS: 'Statistics',
-  },
-
-  ACHIEVEMENTS: {
-    ROOT: 'Achievements_Root',
   },
 
   DAY_OVERVIEW: {

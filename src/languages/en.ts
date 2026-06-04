@@ -6,9 +6,6 @@ import type {
   UntilTimeParams,
 } from './types';
 import type {
-  BacRangeParams,
-  BacSessionTotalParams,
-  BacSoberInParams,
   BreakdownCenterUnitsParams,
   BreakdownDrinkLabelParams,
   BreakdownPeriodParams,
@@ -326,7 +323,6 @@ export default {
     profile: 'Profile',
     settings: 'Settings',
     achievements: 'Badges',
-    bac: 'BAC',
     statistics: 'Statistics',
     menu: 'Menu',
   },
@@ -1184,57 +1180,6 @@ export default {
         nextPeriod: 'Next period',
         rangeLabel: 'Selected date range, double-tap to change',
         jumpToLatest: 'Jump to the latest period',
-      },
-    },
-  },
-  achievementsScreen: {
-    title: 'BAC Estimator',
-    bac: {
-      currentBac: 'Estimated BAC',
-      noSession:
-        'Start a drinking session to see your estimated blood alcohol level.',
-      sober: 'Your estimated blood alcohol is back down to zero.',
-      disclaimer:
-        'This is a rough estimate, not a medical or legal measurement. Never drive after drinking.',
-      editDetails: 'Edit my details',
-      formIntro:
-        'We need your weight and gender to estimate your blood alcohol.',
-      male: 'Male',
-      female: 'Female',
-      other: 'Other',
-      kg: 'kg',
-      lb: 'lb',
-      displayBoth: 'Both',
-      range: ({low, high}: BacRangeParams) => `Likely ${low} – ${high}`,
-      soberIn: ({time}: BacSoberInParams) => `Sober in about ${time}`,
-      soberBy: ({time}: BacSoberInParams) => `Sober by ${time}`,
-      timeDuration: 'Duration',
-      timeClock: 'Clock',
-      showDetails: 'How is this calculated?',
-      decayChartLabel: 'Estimated BAC declining to zero over time',
-      intro: {
-        title: 'BAC Estimator',
-        body1:
-          "This tool gives a rough estimate of your blood alcohol content based on the drinks you've logged, your weight, and your gender.",
-        body2:
-          "It uses the Widmark formula and assumes a steady rate of alcohol elimination. Everyone's body is different, so treat the number as a ballpark, not a fact.",
-        getStarted: 'Get started',
-      },
-      details: {
-        title: 'How this is calculated',
-        liveSession: 'Live session',
-        editSession: 'Edited session',
-        editNote:
-          'Drinks in an edited session are recorded at the session start, so their exact timing is uncertain.',
-        sessionTotal: ({grams, bac}: BacSessionTotalParams) =>
-          `Total: ${grams} g of pure alcohol · adds up to ${bac}`,
-        bandNote:
-          'Because some drinks come from edited sessions, we show a range: the low end assumes they were drunk as early as possible, the high end as late as possible.',
-        howTitle: 'The math',
-        formula:
-          'Grams of alcohol = volume (ml) × ABV × 0.789. BAC = grams ÷ (weight × r × 10), where r is 0.68 (male), 0.55 (female), or 0.615 (other).',
-        elimination:
-          'Your body clears alcohol at a steady ~0.015% per hour, so the estimate drops over time until it reaches zero.',
       },
     },
   },

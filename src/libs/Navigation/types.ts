@@ -68,10 +68,6 @@ type BackToParams = {
   backTo?: Routes;
 };
 
-type AchievementsNavigatorParamList = {
-  [SCREENS.ACHIEVEMENTS.ROOT]: undefined;
-};
-
 type DayOverviewNavigatorParamList = {
   [SCREENS.DAY_OVERVIEW.ROOT]: {
     date: DateString;
@@ -169,8 +165,6 @@ type StatisticsNavigatorParamList = {
 
 type RightModalNavigatorParamList = {
   [SCREENS.RIGHT_MODAL
-    .ACHIEVEMENTS]: NavigatorScreenParams<AchievementsNavigatorParamList>;
-  [SCREENS.RIGHT_MODAL
     .DAY_OVERVIEW]: NavigatorScreenParams<DayOverviewNavigatorParamList>;
   [SCREENS.RIGHT_MODAL
     .DRINKING_SESSION]: NavigatorScreenParams<DrinkingSessionNavigatorParamList>;
@@ -255,7 +249,6 @@ type BottomTabName = keyof BottomTabNavigatorParamList;
 type CentralPaneName = keyof CentralPaneScreensParamList;
 
 export type {
-  AchievementsNavigatorParamList,
   AuthScreensParamList,
   BottomTabName,
   BottomTabNavigatorParamList,

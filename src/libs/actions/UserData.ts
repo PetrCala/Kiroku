@@ -202,14 +202,6 @@ function updateAutomaticTimezone(timezone: Timezone) {
   // });
 }
 
-/**
- * Stores the user's gender and weight (kg) used by the BAC estimator.
- * Optimistic Onyx-only write for now; the API layer is wired up later.
- */
-function updateBacProfile(gender: string, weight: number) {
-  Onyx.merge(ONYXKEYS.USER_PRIVATE_DATA, {gender, weight});
-}
-
 // /**
 //  * Updates user's 'selected' timezone, then navigates to the
 //  * initial Timezone page.
@@ -433,7 +425,6 @@ export {
   // openPublicProfilePage,
   // updateAddress,
   updateAutomaticTimezone,
-  updateBacProfile,
   // updateAvatar,
   // updateDateOfBirth,
   // updateDisplayName,

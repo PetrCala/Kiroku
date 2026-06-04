@@ -1043,18 +1043,6 @@ const CONST = {
     OTHER: 'other',
   },
 
-  BAC: {
-    DISPLAY_UNIT: {
-      PER_MILLE: 'per_mille',
-      PERCENT: 'percent',
-      BOTH: 'both',
-    },
-    TIME_FORMAT: {
-      DURATION: 'duration',
-      CLOCK: 'clock',
-    },
-  },
-
   // 6 numeric digits
   VALIDATE_CODE_REGEX_STRING: /^\d{6}$/,
 
