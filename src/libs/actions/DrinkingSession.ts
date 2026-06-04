@@ -355,6 +355,9 @@ async function startLiveDrinkingSession(
     },
   );
 
+  // Seed the synchronous cache so a tap fired before the Onyx.connect callback
+  // lands still composes on the new session instead of an empty base.
+  DSUtils.setLocalSessionCache(ONYXKEYS.ONGOING_SESSION_DATA, newSessionData);
   await Onyx.set(ONYXKEYS.ONGOING_SESSION_DATA, newSessionData);
 }
 
