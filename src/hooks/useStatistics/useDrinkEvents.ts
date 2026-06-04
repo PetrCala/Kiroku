@@ -1,9 +1,8 @@
-import {useEffect, useRef, useState} from 'react';
+import {useEffect, useState} from 'react';
 import {InteractionManager} from 'react-native';
 import {useOnyx} from 'react-native-onyx';
 import {buildDrinkEvents} from '@libs/Statistics';
 import type {DrinkEvent, WeekStart} from '@libs/Statistics';
-import {markStatsPhase} from '@libs/Statistics/profiling';
 import Statistics from '@libs/actions/Statistics';
 import {useFirebase} from '@context/global/FirebaseContext';
 import {useDatabaseData} from '@context/global/DatabaseDataContext';
@@ -77,7 +76,6 @@ function useDrinkEvents(userIds?: UserID[]): UseDrinkEventsResult {
     if (!isHydrated) {
       return;
     }
-    markStatsPhase('sessions hydrated');
     let cancelled = false;
     const handle = InteractionManager.runAfterInteractions(() => {
       if (cancelled) {
@@ -92,7 +90,6 @@ function useDrinkEvents(userIds?: UserID[]): UseDrinkEventsResult {
       );
       setAllEvents(next);
       setIsCompiled(true);
-      markStatsPhase('first events ready', {events: next.length});
 
       // Persist the local fields any session was just forced to recompute, so
       // the next cold open reads them with zero `Intl`. Reconstructed from the
@@ -111,18 +108,6 @@ function useDrinkEvents(userIds?: UserID[]): UseDrinkEventsResult {
       handle.cancel?.();
     };
   }, [isHydrated, allSessions, drinksToUnits, timezone, weekStart]);
-
-  // Cold-launch profiler: mark the session-fetch window opening and settling.
-  // The data wait (not the compute) is often the dominant cold-start cost.
-  const prevFetchingRef = useRef(false);
-  useEffect(() => {
-    if (isFetchingOlderMonths && !prevFetchingRef.current) {
-      markStatsPhase('older-months fetch active');
-    } else if (!isFetchingOlderMonths && prevFetchingRef.current) {
-      markStatsPhase('older-months fetch settled');
-    }
-    prevFetchingRef.current = isFetchingOlderMonths;
-  }, [isFetchingOlderMonths]);
 
   const resolvedUserIds = userIds ?? (currentUserID ? [currentUserID] : []);
 
