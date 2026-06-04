@@ -30,7 +30,7 @@ jest.mock('@hooks/useResponsiveLayout', () => ({
 // Stub the animation engine so variants built on the Skeleton primitive render
 // without the react-content-loader SVG (not transformed under jest).
 jest.mock('@components/SkeletonViewContentLoader', () => {
-  const {View} = require('react-native');
+  const {View} = require('react-native') as typeof import('react-native');
   return {
     __esModule: true,
     default: () => <View testID="skeleton-loader" />,
