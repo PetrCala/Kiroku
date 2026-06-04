@@ -1,9 +1,6 @@
-import aggregate from '@libs/Statistics/aggregate';
-import {byDay} from '@libs/Statistics/bucketers';
-import {sumUnits} from '@libs/Statistics/reducers';
-import {dateRange} from '@libs/Statistics/filters';
 import type {DrinkEvent} from '@libs/Statistics/types';
 import {dayKeysInRange} from './keys';
+import collectWindowAggregates from './windowAggregates';
 
 /** Per-day unit cutoffs from the user's preferences (`units_to_colors`). */
 type Thresholds = {yellow: number; orange: number};
@@ -67,38 +64,17 @@ const EMPTY_SUMMARY: PeriodSummary = {
 };
 
 /**
- * Build a {@link PeriodSummary} for the inclusive window `[start, end]`,
- * clamping the effective end to `now` so future days are never counted.
+ * Derive a {@link PeriodSummary} from a window's precomputed per-day unit sums
+ * and session count — a pure pass over `dayKeys`, no event walk. Callers that
+ * already hold a {@link WindowAggregates} (the Overview model) reuse the single
+ * collection pass instead of re-aggregating the events.
  */
-function buildPeriodSummary(
-  events: readonly DrinkEvent[],
-  start: Date,
-  end: Date,
-  now: Date,
+function summarizePeriod(
+  unitsByDay: ReadonlyMap<string, number>,
+  sessionCount: number,
+  dayKeys: readonly string[],
   thresholds: Thresholds,
 ): PeriodSummary {
-  const startMs = start.getTime();
-  const effectiveEndMs = Math.min(end.getTime(), now.getTime());
-  if (effectiveEndMs < startMs) {
-    return EMPTY_SUMMARY;
-  }
-  const effectiveEnd = new Date(effectiveEndMs);
-
-  const unitsByDay = aggregate(
-    events,
-    byDay,
-    sumUnits,
-    dateRange(startMs, effectiveEndMs),
-  );
-
-  const sessionIds = new Set<string>();
-  for (const event of events) {
-    if (event.ts >= startMs && event.ts <= effectiveEndMs) {
-      sessionIds.add(event.sessionId);
-    }
-  }
-
-  const dayKeys = dayKeysInRange(start, effectiveEnd);
   const distribution: BandCounts = {green: 0, yellow: 0, orange: 0, red: 0};
   let totalUnits = 0;
   let drinkingDays = 0;
@@ -134,7 +110,7 @@ function buildPeriodSummary(
   return {
     elapsedDays: dayKeys.length,
     totalUnits,
-    sessions: sessionIds.size,
+    sessions: sessionCount,
     drinkingDays,
     afDays: distribution.green,
     longestDryStreak,
@@ -146,5 +122,34 @@ function buildPeriodSummary(
   };
 }
 
+/**
+ * Build a {@link PeriodSummary} for the inclusive window `[start, end]`,
+ * clamping the effective end to `now` so future days are never counted.
+ * Convenience wrapper over a single {@link collectWindowAggregates} pass — used
+ * directly for the comparison window and kept as a standalone, separately
+ * tested unit.
+ */
+function buildPeriodSummary(
+  events: readonly DrinkEvent[],
+  start: Date,
+  end: Date,
+  now: Date,
+  thresholds: Thresholds,
+): PeriodSummary {
+  const startMs = start.getTime();
+  const effectiveEndMs = Math.min(end.getTime(), now.getTime());
+  if (effectiveEndMs < startMs) {
+    return EMPTY_SUMMARY;
+  }
+  const {unitsByDay, sessionCount} = collectWindowAggregates(
+    events,
+    startMs,
+    effectiveEndMs,
+  );
+  const dayKeys = dayKeysInRange(start, new Date(effectiveEndMs));
+  return summarizePeriod(unitsByDay, sessionCount, dayKeys, thresholds);
+}
+
 export default buildPeriodSummary;
+export {EMPTY_SUMMARY, summarizePeriod};
 export type {BandCounts, PeriodSummary, Thresholds};
