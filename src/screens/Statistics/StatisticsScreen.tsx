@@ -8,6 +8,7 @@ import useReadyAfterScreenTransition from '@hooks/useReadyAfterScreenTransition'
 import Navigation from '@libs/Navigation/Navigation';
 import DrillDownProvider from './drilldown/DrillDownContext';
 import StatisticsScreenSkeleton from './StatisticsScreenSkeleton';
+import type {StatisticsTabsProps} from './StatisticsTabs';
 import StatsDrillDownSheet from './StatsDrillDownSheet';
 
 /**
@@ -29,7 +30,9 @@ function StatisticsScreen() {
   const {translate} = useLocalize();
   const {isReady: didScreenTransitionEnd, onEntryTransitionEnd} =
     useReadyAfterScreenTransition();
-  const [Tabs, setTabs] = useState<ComponentType | null>(null);
+  const [Tabs, setTabs] = useState<ComponentType<StatisticsTabsProps> | null>(
+    null,
+  );
 
   // Only kick off the chart-bundle import once the slide has finished, so its
   // parse and the subsequent heavy mount never compete with the transition for
@@ -66,7 +69,7 @@ function StatisticsScreen() {
       {Tabs ? (
         <StatsContextProvider>
           <DrillDownProvider>
-            <Tabs />
+            <Tabs onSwipeBack={Navigation.goBack} />
             <StatsDrillDownSheet />
           </DrillDownProvider>
         </StatsContextProvider>

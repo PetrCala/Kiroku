@@ -9,6 +9,7 @@ import type {
 } from 'react-native-tab-view';
 import {ChartSkeleton} from '@components/Charts/ChartSkeleton';
 import {StatsFilterToolbarSkeleton} from '@components/Statistics/StatsFilterToolbar';
+import SwipeBackGestureHandler from '@components/SwipeBackGestureHandler';
 import Text from '@components/Text';
 import useLocalize from '@hooks/useLocalize';
 import useTheme from '@hooks/useTheme';
@@ -140,7 +141,14 @@ const COMMON_OPTIONS: TabDescriptor<TabRoute> = {
   label: renderTabLabel,
 };
 
-function StatisticsTabs() {
+type StatisticsTabsProps = {
+  /** Mapped to a navigation back. Wired to the swipe-back gesture, which is
+   *  active only on the left-most (overview) tab so inner tabs still page
+   *  horizontally. */
+  onSwipeBack?: () => void;
+};
+
+function StatisticsTabs({onSwipeBack}: StatisticsTabsProps) {
   const {translate} = useLocalize();
   const theme = useTheme();
   const {windowWidth} = useWindowDimensions();
@@ -193,20 +201,23 @@ function StatisticsTabs() {
   );
 
   return (
-    <TabView
-      style={[styles.container, {backgroundColor: theme.appBG}]}
-      navigationState={{index, routes}}
-      onIndexChange={setIndex}
-      renderScene={renderScene}
-      renderTabBar={renderTabBar}
-      initialLayout={{width: windowWidth}}
-      lazy
-      renderLazyPlaceholder={renderLazyPlaceholder}
-      commonOptions={COMMON_OPTIONS}
-    />
+    <SwipeBackGestureHandler onSwipeBack={onSwipeBack} enabled={index === 0}>
+      <TabView
+        style={[styles.container, {backgroundColor: theme.appBG}]}
+        navigationState={{index, routes}}
+        onIndexChange={setIndex}
+        renderScene={renderScene}
+        renderTabBar={renderTabBar}
+        initialLayout={{width: windowWidth}}
+        lazy
+        renderLazyPlaceholder={renderLazyPlaceholder}
+        commonOptions={COMMON_OPTIONS}
+      />
+    </SwipeBackGestureHandler>
   );
 }
 
 StatisticsTabs.displayName = 'StatisticsTabs';
 
 export default StatisticsTabs;
+export type {StatisticsTabsProps};
