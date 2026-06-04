@@ -11,7 +11,6 @@ import {getPreviousMonth, getNextMonth} from '@libs/DataHandling';
 import * as DSUtils from '@libs/DrinkingSessionUtils';
 import {computeLoadTarget} from '@libs/SessionsCalendarUtils';
 import CONST from '@src/CONST';
-import {useFirebase} from '@context/global/FirebaseContext';
 import Navigation from '@libs/Navigation/Navigation';
 import ROUTES from '@src/ROUTES';
 import type {DateString, Timestamp} from '@src/types/onyx/OnyxCommon';
@@ -42,15 +41,14 @@ function SessionsCalendar({
   drinkingSessionData,
   preferences,
   isFetchingOlderMonths,
-  onForeignDayPress,
+  onDayDrillDown,
+  isReadOnly,
   mode = 'compact',
   initialMonthYear,
   initialDay,
   onVisibleDayChange,
   onInitialScrollReady,
 }: SessionsCalendarProps) {
-  const {auth} = useFirebase();
-  const user = auth.currentUser;
   const {
     markedDates,
     unitsMap,
@@ -180,15 +178,17 @@ function SessionsCalendar({
 
   const onDayPress = useCallback(
     (dateData: DateData) => {
-      if (userID !== user?.uid) {
-        onForeignDayPress?.(dateData.dateString as DateString);
+      const date = dateData.dateString as DateString;
+      // The infinite (fullscreen) calendar opens a drill-down sheet on the host
+      // screen; the compact calendar navigates to the day-overview scroll. The
+      // scroll route carries `userID`, so it works for self and friends alike.
+      if (mode === 'fullscreen') {
+        onDayDrillDown?.(date);
         return;
       }
-      Navigation.navigate(
-        ROUTES.DAY_OVERVIEW.getRoute(dateData.dateString as DateString),
-      );
+      Navigation.navigate(ROUTES.DAY_OVERVIEW.getRoute(userID, date));
     },
-    [userID, user?.uid, onForeignDayPress],
+    [mode, userID, onDayDrillDown],
   );
 
   if (isLoading) {
@@ -207,6 +207,7 @@ function SessionsCalendar({
         initialDay={initialDay}
         onInitialScrollReady={onInitialScrollReady}
         onVisibleDayChange={onVisibleDayChange}
+        isReadOnly={isReadOnly}
       />
     );
   }

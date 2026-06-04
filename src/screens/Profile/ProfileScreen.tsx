@@ -23,7 +23,7 @@ import {getCommonFriendsCount} from '@libs/FriendUtils';
 import * as DSUtils from '@libs/DrinkingSessionUtils';
 import * as KirokuIcons from '@components/Icon/KirokuIcons';
 import type {DrinkingSessionArray} from '@src/types/onyx';
-import type {DateString, UserList} from '@src/types/onyx/OnyxCommon';
+import type {UserList} from '@src/types/onyx/OnyxCommon';
 import type {StackScreenProps} from '@react-navigation/stack';
 import type {ProfileNavigatorParamList} from '@libs/Navigation/types';
 import type SCREENS from '@src/SCREENS';
@@ -45,7 +45,6 @@ import ManageFriendPopover from '@components/ManageFriendPopover';
 import ScrollView from '@components/ScrollView';
 import Text from '@components/Text';
 import useStyleUtils from '@hooks/useStyleUtils';
-import FriendDayDrillDownSheet from './FriendDayDrillDownSheet';
 
 type ProfileScreenProps = StackScreenProps<
   ProfileNavigatorParamList,
@@ -108,7 +107,6 @@ function ProfileScreen({route}: ProfileScreenProps) {
   const [unitsConsumed, setUnitsConsumed] = useState(0);
   const [manageFriendModalVisible, setManageFriendModalVisible] =
     useState(false);
-  const [drillDownDate, setDrillDownDate] = useState<DateString | null>(null);
   const userData = fetchedData?.userData;
   const preferences = fetchedData?.preferences;
   const profileData = userData?.profile;
@@ -269,7 +267,6 @@ function ProfileScreen({route}: ProfileScreenProps) {
               drinkingSessionData={drinkingSessionData}
               preferences={preferences}
               isFetchingOlderMonths={isFetchingOlderMonths}
-              onForeignDayPress={setDrillDownDate}
             />
           ) : (
             <SessionsCalendarCompactSkeleton />
@@ -289,13 +286,6 @@ function ProfileScreen({route}: ProfileScreenProps) {
         isVisible={manageFriendModalVisible}
         onClose={() => setManageFriendModalVisible(false)}
         friendId={userID}
-      />
-      <FriendDayDrillDownSheet
-        isVisible={!!drillDownDate}
-        onClose={() => setDrillDownDate(null)}
-        date={drillDownDate}
-        drinkingSessionData={drinkingSessionData}
-        preferences={preferences}
       />
     </ScreenWrapper>
   );

@@ -34,8 +34,9 @@ const ROUTES = {
   BADGES: 'badges',
 
   DAY_OVERVIEW: {
-    route: 'day-overview/:date',
-    getRoute: (date: DateString) => `day-overview/${date}` as const,
+    route: 'day-overview/:userID/:date',
+    getRoute: (userID: UserID, date: DateString) =>
+      `day-overview/${userID}/${date}` as const,
   },
 
   DRINKING_SESSION: {

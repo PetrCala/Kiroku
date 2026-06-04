@@ -14,6 +14,9 @@ import Navigation from '@libs/Navigation/Navigation';
 import {useDatabaseData} from '@context/global/DatabaseDataContext';
 import useCurrentUserDrinkingSessions from '@hooks/useCurrentUserDrinkingSessions';
 import {useFirebase} from '@context/global/FirebaseContext';
+import useFetchData from '@hooks/useFetchData';
+import useDrinkingSessionsFetch from '@hooks/useDrinkingSessionsFetch';
+import type {FetchDataKeys} from '@hooks/useFetchData/types';
 import {dateStringToDate, dateToDateData} from '@libs/DataHandling';
 import * as App from '@userActions/App';
 import * as DS from '@userActions/DrinkingSession';
@@ -55,6 +58,10 @@ const internalStyles = StyleSheet.create({
 
 function noop() {}
 
+// Non-windowed keys to fetch for a friend (their session data is fetched
+// separately via `useDrinkingSessionsFetch`). Mirrors `SessionsCalendarScreen`.
+const FRIEND_FETCH_KEYS: FetchDataKeys = ['preferences'];
+
 // Module-level so React Compiler skips it — the `try/finally` it needs bails
 // the compiler, and that would regress the screen's compilation.
 async function createSessionForDay(
@@ -76,16 +83,40 @@ async function createSessionForDay(
 }
 
 function DayOverviewScreen({route}: DayOverviewScreenProps) {
-  const {date} = route.params;
+  const {userID, date} = route.params;
   const {isOnline} = useUserConnection();
   const {translate} = useLocalize();
   const styles = useThemeStyles();
   const {textLight} = useTheme();
   const {auth, db} = useFirebase();
   const user = auth.currentUser;
+  const isSelf = user?.uid === userID;
   const [loadingText] = useOnyx(ONYXKEYS.APP_LOADING_TEXT);
-  const {preferences, userData, isFetchingOlderMonths} = useDatabaseData();
-  const drinkingSessionData = useCurrentUserDrinkingSessions();
+
+  // Self reads the current user's sessions from the dedicated hook; a friend's
+  // data is fetched on demand (same self/other gating as
+  // `SessionsCalendarScreen`). The non-needed hook is invoked with an empty
+  // `userID`, which both hooks treat as a no-op.
+  const ownData = useDatabaseData();
+  const currentUserSessions = useCurrentUserDrinkingSessions();
+  const {data: friendFetchedData, isLoading: isFriendFetchLoading} =
+    useFetchData(isSelf ? '' : userID, FRIEND_FETCH_KEYS);
+  const {
+    data: friendSessionData,
+    isLoading: isFriendSessionsLoading,
+    isFetchingOlderMonths: friendFetchingOlder,
+  } = useDrinkingSessionsFetch(isSelf ? '' : userID);
+
+  const drinkingSessionData = isSelf ? currentUserSessions : friendSessionData;
+  const preferences = isSelf
+    ? ownData.preferences
+    : friendFetchedData?.preferences;
+  const isFetchingOlderMonths = isSelf
+    ? ownData.isFetchingOlderMonths
+    : friendFetchingOlder;
+  // Timezone is only read by the self-only add-session flow, so the current
+  // user's own data is always the right source here.
+  const userData = ownData.userData;
 
   // Hold the list invisible (skeleton on top) until it has scrolled to the
   // focused day. With no `date` (shouldn't happen via the calendar) we never
@@ -135,7 +166,13 @@ function DayOverviewScreen({route}: DayOverviewScreenProps) {
     return <FullScreenLoadingIndicator loadingText={loadingText} />;
   }
 
-  const isReady = !!user && !!preferences && drinkingSessionData !== undefined;
+  const isFriendLoading =
+    !isSelf && (isFriendFetchLoading || isFriendSessionsLoading);
+  const isReady =
+    !!user &&
+    !!preferences &&
+    drinkingSessionData !== undefined &&
+    !isFriendLoading;
   const showSkeleton = !didScreenTransitionEnd || !isReady || !isScrollReady;
 
   return (
@@ -155,7 +192,7 @@ function DayOverviewScreen({route}: DayOverviewScreenProps) {
               !isScrollReady && internalStyles.hidden,
             ]}>
             <SessionsCalendar
-              userID={user.uid}
+              userID={userID}
               visibleDate={placeholderVisibleDate}
               onDateChange={noop}
               drinkingSessionData={drinkingSessionData}
@@ -165,6 +202,7 @@ function DayOverviewScreen({route}: DayOverviewScreenProps) {
               initialDay={date}
               onInitialScrollReady={onInitialScrollReady}
               onVisibleDayChange={setVisibleDay}
+              isReadOnly={!isSelf}
             />
           </View>
         )}
@@ -173,7 +211,7 @@ function DayOverviewScreen({route}: DayOverviewScreenProps) {
             <DayOverviewSkeleton />
           </View>
         )}
-        {!showSkeleton && (
+        {!showSkeleton && isSelf && (
           <PressableWithFeedback
             accessibilityLabel={translate(
               'dayOverviewScreen.addSessionExplained',
@@ -190,17 +228,19 @@ function DayOverviewScreen({route}: DayOverviewScreenProps) {
           </PressableWithFeedback>
         )}
       </View>
-      <DateSelectorModal
-        mode="single"
-        isVisible={isDatePickerVisible}
-        title={translate('dayOverviewScreen.selectSessionDate')}
-        initialDate={visibleDay ? dateStringToDate(visibleDay) : new Date()}
-        maxDate={endOfToday()}
-        applyText={translate('common.confirm')}
-        cancelText={translate('common.cancel')}
-        onApply={onPickDate}
-        onCancel={() => setIsDatePickerVisible(false)}
-      />
+      {isSelf && (
+        <DateSelectorModal
+          mode="single"
+          isVisible={isDatePickerVisible}
+          title={translate('dayOverviewScreen.selectSessionDate')}
+          initialDate={visibleDay ? dateStringToDate(visibleDay) : new Date()}
+          maxDate={endOfToday()}
+          applyText={translate('common.confirm')}
+          cancelText={translate('common.cancel')}
+          onApply={onPickDate}
+          onCancel={() => setIsDatePickerVisible(false)}
+        />
+      )}
     </ScreenWrapper>
   );
 }

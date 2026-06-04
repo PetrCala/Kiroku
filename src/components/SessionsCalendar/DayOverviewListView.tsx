@@ -80,6 +80,10 @@ type DayOverviewListViewProps = {
   /** Debounced report of the center-most visible day as the user scrolls — the
    *  screen uses it to open the add-session picker on the viewed month. */
   onVisibleDayChange?: (day: DateString) => void;
+  /** Render the session tiles non-interactively (viewing another user's
+   *  history). Also suppresses the "last viewed day" persistence so browsing a
+   *  friend's days doesn't repoint the current user's own compact calendar. */
+  isReadOnly?: boolean;
 };
 
 /**
@@ -102,6 +106,7 @@ function DayOverviewListView({
   initialDay,
   onInitialScrollReady,
   onVisibleDayChange,
+  isReadOnly,
 }: DayOverviewListViewProps) {
   const styles = useThemeStyles();
   const theme = useTheme();
@@ -233,10 +238,14 @@ function DayOverviewListView({
   const recordVisibleDay = useMemo(
     () =>
       lodashDebounce((day: DateString) => {
-        App.setLastViewedCalendarDate(day);
+        // Read-only (friend) browsing must not repoint the current user's own
+        // compact calendar, which restores from this NVP.
+        if (!isReadOnly) {
+          App.setLastViewedCalendarDate(day);
+        }
         onVisibleDayChange?.(day);
       }, LAST_VIEWED_DEBOUNCE_MS),
-    [onVisibleDayChange],
+    [onVisibleDayChange, isReadOnly],
   );
   useEffect(() => () => recordVisibleDay.cancel(), [recordVisibleDay]);
 
@@ -312,12 +321,14 @@ function DayOverviewListView({
           sessionId={item.entry.sessionId}
           session={item.entry.session}
           isEditModeOn={false}
+          readOnly={isReadOnly}
           preferences={preferences}
         />
       );
     },
     [
       preferences,
+      isReadOnly,
       translate,
       styles.sessionsCalendarMonthLabel,
       styles.sessionsCalendarMonthLabelText,
