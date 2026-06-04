@@ -1,6 +1,6 @@
 import React, {useState} from 'react';
 import {Alert} from 'react-native';
-import {useDatabaseData} from '@context/global/DatabaseDataContext';
+import useCurrentUserPreferences from '@hooks/useCurrentUserPreferences';
 import useLocalize from '@hooks/useLocalize';
 import * as Preferences from '@userActions/Preferences';
 import checkPermission from '@libs/Permissions/checkPermission';
@@ -18,7 +18,7 @@ import ConfirmModal from './ConfirmModal';
  */
 function LocationTaggingPrompt() {
   const {translate} = useLocalize();
-  const {preferences} = useDatabaseData();
+  const preferences = useCurrentUserPreferences();
 
   const [dismissed, setDismissed] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);

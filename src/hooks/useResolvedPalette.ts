@@ -1,4 +1,4 @@
-import {useDatabaseData} from '@context/global/DatabaseDataContext';
+import useCurrentUserPreferences from '@hooks/useCurrentUserPreferences';
 import {resolvePalette} from '@libs/SessionColorPalettes';
 import type {Preferences, SessionColorPalette} from '@src/types/onyx';
 
@@ -16,7 +16,7 @@ import type {Preferences, SessionColorPalette} from '@src/types/onyx';
 function useResolvedPalette(
   viewedUserPreferences: Preferences | undefined,
 ): SessionColorPalette {
-  const {preferences: ownPreferences} = useDatabaseData();
+  const ownPreferences = useCurrentUserPreferences();
   const useOwn = ownPreferences?.use_own_palette_for_others === true;
   const source = useOwn
     ? ownPreferences?.session_color_palette

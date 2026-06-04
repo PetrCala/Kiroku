@@ -14,7 +14,7 @@ import {
   isLightHex,
 } from '@libs/SessionColorPalettes';
 import {PressableWithoutFeedback} from '@components/Pressable';
-import {useDatabaseData} from '@context/global/DatabaseDataContext';
+import useCurrentUserPreferences from '@hooks/useCurrentUserPreferences';
 import Log from '@libs/Log';
 import CONST from '@src/CONST';
 
@@ -37,7 +37,7 @@ function SessionDrinksInputWindow({
   const styles = useThemeStyles();
   const theme = useTheme();
   const {translate} = useLocalize();
-  const {preferences} = useDatabaseData();
+  const preferences = useCurrentUserPreferences();
   const palette = useResolvedPalette(preferences);
   const isClassicPalette =
     getPaletteIdFromColors(palette) === DEFAULT_PALETTE_ID;

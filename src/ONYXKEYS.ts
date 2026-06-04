@@ -151,6 +151,10 @@ const ONYXKEYS = {
   //   // This can be either "light", "dark" or "system"
   PREFERRED_THEME: 'preferredTheme',
 
+  /** The signed-in user's preferences object, hydrated from `app/open`
+   *  (kiroku-api) and kept in sync via the preferences write + `/v1/updates`. */
+  PREFERENCES: 'preferences',
+
   //   // Information about the onyx updates IDs that were received from the server
   ONYX_UPDATES_FROM_SERVER: 'onyxUpdatesFromServer',
 
@@ -336,6 +340,7 @@ type OnyxValuesMapping = {
   [ONYXKEYS.IS_BETA]: boolean;
   [ONYXKEYS.HAS_CHECKED_AUTO_LOGIN]: boolean;
   [ONYXKEYS.PREFERRED_THEME]: ValueOf<typeof CONST.THEME>;
+  [ONYXKEYS.PREFERENCES]: OnyxTypes.Preferences;
   [ONYXKEYS.ONYX_UPDATES_FROM_SERVER]: OnyxTypes.OnyxUpdatesFromServer;
   [ONYXKEYS.ONYX_UPDATES_LAST_UPDATE_ID_APPLIED_TO_CLIENT]: number;
   [ONYXKEYS.LAST_VISITED_PATH]: string | undefined;

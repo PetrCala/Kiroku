@@ -36,6 +36,7 @@ import kirokuPusherAuthorizer from '@libs/Pusher/kirokuAuthorizer';
 import type ReactComponentModule from '@src/types/utils/ReactComponentModule';
 import useResponsiveLayout from '@hooks/useResponsiveLayout';
 import useIdlePrefetch from '@hooks/useIdlePrefetch';
+import useCurrentUserPreferences from '@hooks/useCurrentUserPreferences';
 import prefetchStatisticsBundle from '@screens/Statistics/prefetchStatisticsBundle';
 import {useFirebase} from '@context/global/FirebaseContext';
 import OnboardingGuard from '@libs/Navigation/guards/OnboardingGuard';
@@ -162,7 +163,8 @@ function AuthScreensContent() {
   // splash hides only once these two fields have arrived from the live
   // listener — matches HomeScreen's own render gate so the user sees the
   // splash continuously until real content can paint.
-  const {userData, preferences} = useDatabaseData();
+  const {userData} = useDatabaseData();
+  const preferences = useCurrentUserPreferences();
   const {setIsAuthDataReady} = useSplashScreenStateContext();
   useEffect(() => {
     if (userData === undefined || preferences === undefined) {

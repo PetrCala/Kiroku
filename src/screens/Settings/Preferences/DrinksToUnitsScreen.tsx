@@ -2,7 +2,7 @@ import React, {useCallback, useMemo, useRef, useState} from 'react';
 import {Alert, View} from 'react-native';
 import {getDefaultPreferences} from '@userActions/User';
 import type {DrinksToUnits} from '@src/types/onyx';
-import {useDatabaseData} from '@context/global/DatabaseDataContext';
+import useCurrentUserPreferences from '@hooks/useCurrentUserPreferences';
 import Navigation from '@libs/Navigation/Navigation';
 import isEqual from 'lodash/isEqual';
 import ScreenWrapper from '@components/ScreenWrapper';
@@ -34,7 +34,7 @@ type PreferencesSliderConfig = NumericSliderProps & {
 function DrinksToUnitsScreen() {
   const styles = useThemeStyles();
   const {translate} = useLocalize();
-  const {preferences} = useDatabaseData();
+  const preferences = useCurrentUserPreferences();
   const initialValues = useRef(preferences?.drinks_to_units);
   const [saving, setSaving] = useState<boolean>(false);
   const [currentValues, setCurrentValues] = useState<DrinksToUnits>(

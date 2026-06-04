@@ -1,5 +1,5 @@
 import {useMemo} from 'react';
-import {useDatabaseData} from '@context/global/DatabaseDataContext';
+import useCurrentUserPreferences from '@hooks/useCurrentUserPreferences';
 import useStatsContext from '@hooks/useStatsContext';
 import {buildOverviewModel} from '@libs/Statistics/overview';
 import type {
@@ -45,7 +45,7 @@ type OverviewTabData = {
 function useOverviewTabData(): OverviewTabData {
   const {events, isLoading} = useDrinkEvents();
   const {range, comparisonRange} = useStatsContext();
-  const {preferences} = useDatabaseData();
+  const preferences = useCurrentUserPreferences();
   const thresholds = useMemo(
     () => preferences?.units_to_colors ?? DEFAULT_THRESHOLDS,
     [preferences?.units_to_colors],

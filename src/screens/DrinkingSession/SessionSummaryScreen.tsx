@@ -9,7 +9,7 @@ import {resolvePalette} from '@libs/SessionColorPalettes';
 import useLocalize from '@hooks/useLocalize';
 import * as KirokuIcons from '@components/Icon/KirokuIcons';
 import type {DrinkingSession} from '@src/types/onyx';
-import {useDatabaseData} from '@context/global/DatabaseDataContext';
+import useCurrentUserPreferences from '@hooks/useCurrentUserPreferences';
 import useCurrentUserDrinkingSessions from '@hooks/useCurrentUserDrinkingSessions';
 import type {StackScreenProps} from '@react-navigation/stack';
 import CONST from '@src/CONST';
@@ -58,7 +58,7 @@ type SessionSummaryScreenProps = StackScreenProps<
 
 function SessionSummaryScreen({route}: SessionSummaryScreenProps) {
   const {sessionId} = route.params;
-  const {preferences} = useDatabaseData();
+  const preferences = useCurrentUserPreferences();
   const drinkingSessionData = useCurrentUserDrinkingSessions();
   const {translate} = useLocalize();
   const styles = useThemeStyles();

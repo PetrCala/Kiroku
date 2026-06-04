@@ -13,6 +13,7 @@ import type {SelectedTimezone} from '@src/types/onyx/UserData';
 import Navigation from '@libs/Navigation/Navigation';
 import {useDatabaseData} from '@context/global/DatabaseDataContext';
 import useCurrentUserDrinkingSessions from '@hooks/useCurrentUserDrinkingSessions';
+import useCurrentUserPreferences from '@hooks/useCurrentUserPreferences';
 import {useFirebase} from '@context/global/FirebaseContext';
 import useFetchData from '@hooks/useFetchData';
 import useDrinkingSessionsFetch from '@hooks/useDrinkingSessionsFetch';
@@ -107,6 +108,7 @@ function DayOverviewScreen({route}: DayOverviewScreenProps) {
   // `SessionsCalendarScreen`). The non-needed hook is invoked with an empty
   // `userID`, which both hooks treat as a no-op.
   const ownData = useDatabaseData();
+  const ownPreferences = useCurrentUserPreferences();
   const currentUserSessions = useCurrentUserDrinkingSessions();
   const {data: friendFetchedData, isLoading: isFriendFetchLoading} =
     useFetchData(isSelf ? '' : userID, FRIEND_FETCH_KEYS);
@@ -117,9 +119,7 @@ function DayOverviewScreen({route}: DayOverviewScreenProps) {
   } = useDrinkingSessionsFetch(isSelf ? '' : userID);
 
   const drinkingSessionData = isSelf ? currentUserSessions : friendSessionData;
-  const preferences = isSelf
-    ? ownData.preferences
-    : friendFetchedData?.preferences;
+  const preferences = isSelf ? ownPreferences : friendFetchedData?.preferences;
   const isFetchingOlderMonths = isSelf
     ? ownData.isFetchingOlderMonths
     : friendFetchingOlder;
