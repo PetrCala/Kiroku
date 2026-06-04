@@ -4,13 +4,11 @@
 import {summarizeAchievements, computeBadges} from '@libs/AchievementsUtils';
 import type {AchievementsSummary} from '@libs/AchievementsUtils';
 import type {DrinkEvent} from '@libs/Statistics';
-import type {DrinkKey} from '@src/types/onyx/Drinks';
-import type {UserID} from '@src/types/onyx/OnyxCommon';
 
 /** Minimal DrinkEvent fixture — only localDay/units/sessionId matter here. */
 function ev(localDay: string, units: number, sessionId?: string): DrinkEvent {
   return {
-    userId: 'u1' as UserID,
+    userId: 'u1',
     sessionId: sessionId ?? `s-${localDay}`,
     ts: Date.parse(`${localDay}T12:00:00Z`),
     localDay,
@@ -19,7 +17,7 @@ function ev(localDay: string, units: number, sessionId?: string): DrinkEvent {
     localHour: 12,
     localDow: 1,
     isWeekend: false,
-    drinkKey: 'beer' as DrinkKey,
+    drinkKey: 'beer',
     count: 1,
     units,
     blackoutSession: false,
