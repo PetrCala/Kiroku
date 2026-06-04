@@ -1,11 +1,20 @@
+import {Suspense, lazy} from 'react';
 import {View} from 'react-native';
 import Text from '@components/Text';
 import {PressableWithFeedback} from '@components/Pressable';
 import {ChartSkeleton} from '@components/Charts/ChartSkeleton';
-import {Sparkline} from '@components/Charts/Sparkline';
 import useTheme from '@hooks/useTheme';
 import useThemeStyles from '@hooks/useThemeStyles';
 import type {ChartDatum} from '@libs/Statistics';
+
+// Lazy so the hero sparkline's chart stack (Sparkline → BaseChart →
+// victory-native + @shopify/react-native-skia, ~2 s to evaluate on Hermes) is
+// pulled off the Statistics first-paint critical path: the KPI numbers, bars,
+// and distribution paint immediately, then the sparkline streams in behind a
+// fixed-height skeleton. Only the hero KpiCard passes `sparkline`, so this is
+// the single Skia/victory dependency the default Overview tab would otherwise
+// drag onto the cold-open path.
+const Sparkline = lazy(() => import('@components/Charts/Sparkline/Sparkline'));
 
 type KpiCardTone = 'neutral' | 'supportive' | 'celebratory';
 
@@ -146,11 +155,13 @@ function KpiCard({
       ) : null}
       {sparkline && sparkline.length > 0 ? (
         <View style={styles.mt2}>
-          <Sparkline
-            data={sparkline}
-            accessibilityLabel={`${label} trend`}
-            height={28}
-          />
+          <Suspense fallback={<ChartSkeleton variant="line" height={28} />}>
+            <Sparkline
+              data={sparkline}
+              accessibilityLabel={`${label} trend`}
+              height={28}
+            />
+          </Suspense>
         </View>
       ) : null}
     </View>

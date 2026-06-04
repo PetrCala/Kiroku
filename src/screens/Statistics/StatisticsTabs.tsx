@@ -1,5 +1,5 @@
 import type {TupleToUnion} from 'type-fest';
-import React, {useCallback, useMemo, useState} from 'react';
+import React, {Suspense, lazy, useCallback, useMemo, useState} from 'react';
 import {StyleSheet, View} from 'react-native';
 import {SceneMap, TabBar, TabView} from 'react-native-tab-view';
 import type {
@@ -14,10 +14,17 @@ import useLocalize from '@hooks/useLocalize';
 import useTheme from '@hooks/useTheme';
 import useWindowDimensions from '@hooks/useWindowDimensions';
 import type {TranslationPaths} from '@src/languages/types';
-import BreakdownTab from './tabs/BreakdownTab';
 import OverviewTab from './tabs/OverviewTab';
-import PatternsTab from './tabs/PatternsTab';
-import TrendsTab from './tabs/TrendsTab';
+
+// Overview is the default tab, so it stays statically imported and paints on
+// mount. The other three each pull a distinct slice of the Skia/victory chart
+// stack; loading them lazily keeps their modules out of the screen's first
+// dynamic-import parse (the ~2 s "chart bundle parsed" gate) and defers each
+// to the moment its tab is first activated, behind the same placeholder the
+// TabView already shows for not-yet-rendered tabs.
+const TrendsTab = lazy(() => import('./tabs/TrendsTab'));
+const PatternsTab = lazy(() => import('./tabs/PatternsTab'));
+const BreakdownTab = lazy(() => import('./tabs/BreakdownTab'));
 
 // Tab order is locked per STATISTICS_V2.md and issue #582.
 const ROUTE_KEYS = ['overview', 'trends', 'patterns', 'breakdown'] as const;
@@ -35,11 +42,35 @@ const LABEL_KEYS: Record<RouteKey, TranslationPaths> = {
   breakdown: 'statistics.tabs.breakdown.label',
 };
 
+function TrendsScene() {
+  return (
+    <Suspense fallback={<TabLazyPlaceholder />}>
+      <TrendsTab />
+    </Suspense>
+  );
+}
+
+function PatternsScene() {
+  return (
+    <Suspense fallback={<TabLazyPlaceholder />}>
+      <PatternsTab />
+    </Suspense>
+  );
+}
+
+function BreakdownScene() {
+  return (
+    <Suspense fallback={<TabLazyPlaceholder />}>
+      <BreakdownTab />
+    </Suspense>
+  );
+}
+
 const renderScene = SceneMap({
   overview: OverviewTab,
-  trends: TrendsTab,
-  patterns: PatternsTab,
-  breakdown: BreakdownTab,
+  trends: TrendsScene,
+  patterns: PatternsScene,
+  breakdown: BreakdownScene,
 });
 
 const styles = StyleSheet.create({
@@ -81,13 +112,14 @@ function renderTabLabel({
   return <Text style={[styles.tabBarLabel, {color}]}>{route.title}</Text>;
 }
 
-function renderLazyPlaceholder(): React.ReactNode {
-  // First mount of an inactive tab: paint a generic tab-shell skeleton so the
-  // user sees structure for the 200–400ms it takes the tab's actual render +
-  // deferred compute to land. Every lazy tab (Trends/Patterns/Breakdown) leads
-  // with the filter toolbar followed by chart cards, so mirror that shape.
-  // Per-chart skeletons take over once the tab mounts; this is just the bridge
-  // between "tap" and "mount".
+// First mount of an inactive tab: paint a generic tab-shell skeleton so the
+// user sees structure for the 200–400ms it takes the tab's actual render +
+// deferred compute to land. Every lazy tab (Trends/Patterns/Breakdown) leads
+// with the filter toolbar followed by chart cards, so mirror that shape.
+// Per-chart skeletons take over once the tab mounts; this is the bridge between
+// "tap" and "mount" — used both as the TabView placeholder and as the Suspense
+// fallback while the tab's lazily-imported chart module is parsing.
+function TabLazyPlaceholder(): React.ReactNode {
   return (
     <View style={styles.lazyPlaceholder}>
       <StatsFilterToolbarSkeleton />
@@ -98,6 +130,10 @@ function renderLazyPlaceholder(): React.ReactNode {
       </View>
     </View>
   );
+}
+
+function renderLazyPlaceholder(): React.ReactNode {
+  return <TabLazyPlaceholder />;
 }
 
 const COMMON_OPTIONS: TabDescriptor<TabRoute> = {
