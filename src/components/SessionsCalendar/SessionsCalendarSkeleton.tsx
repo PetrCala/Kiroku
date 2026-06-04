@@ -1,5 +1,6 @@
 import React from 'react';
-import {StyleSheet, View} from 'react-native';
+import {View} from 'react-native';
+import Skeleton from '@components/Skeleton';
 import useTheme from '@hooks/useTheme';
 import useThemeStyles from '@hooks/useThemeStyles';
 
@@ -10,24 +11,20 @@ const DAY_COLUMNS = [0, 1, 2, 3, 4, 5, 6];
 const WEEK_ROWS = [0, 1, 2, 3, 4, 5];
 const MONTH_SECTIONS = [0, 1];
 
-const internalStyles = StyleSheet.create({
-  // Mirrors `variables.sessionColorMarkerSize` (20) — the day cell's marker.
-  dayCell: {width: 20, height: 20, borderRadius: 6},
-  dayNamePlaceholder: {width: 18, height: 10, borderRadius: 3},
-  monthLabelPlaceholder: {width: 96, height: 11, borderRadius: 3},
-});
-
 /**
  * Layout-faithful placeholder for the fullscreen sessions calendar, shown
  * while the week-list mounts and applies its initial scroll. Mirrors the
  * day-name header + month-label + 7-column week-row geometry so the swap to
  * the real grid is visually quiet — the same match-the-destination strategy
  * as `DayOverviewSkeleton` / `StatisticsScreenSkeleton`.
+ *
+ * Cells use the shared `Skeleton` primitive but stay static (`animate={false}`):
+ * this is a dense grid (up to ~84 day markers) and mounting that many
+ * simultaneous shimmer animations on the navigation transition would risk jank.
  */
 function SessionsCalendarSkeleton() {
   const styles = useThemeStyles();
   const theme = useTheme();
-  const block = {backgroundColor: theme.highlightBG};
 
   return (
     <View
@@ -36,14 +33,14 @@ function SessionsCalendarSkeleton() {
       <View style={styles.sessionsCalendarDayNamesRow}>
         {DAY_COLUMNS.map(col => (
           <View key={`dn-${col}`} style={styles.sessionsCalendarDayNameCell}>
-            <View style={[internalStyles.dayNamePlaceholder, block]} />
+            <Skeleton width={18} height={10} radius={3} animate={false} />
           </View>
         ))}
       </View>
       {MONTH_SECTIONS.map(section => (
         <View key={`sec-${section}`}>
           <View style={styles.sessionsCalendarMonthLabel}>
-            <View style={[internalStyles.monthLabelPlaceholder, block]} />
+            <Skeleton width={96} height={11} radius={3} animate={false} />
             <View style={styles.sessionsCalendarMonthLabelRule} />
           </View>
           {WEEK_ROWS.map(week => (
@@ -54,7 +51,7 @@ function SessionsCalendarSkeleton() {
                 <View
                   key={`c-${section}-${week}-${col}`}
                   style={styles.sessionsCalendarWeekCell}>
-                  <View style={[internalStyles.dayCell, block]} />
+                  <Skeleton width={20} height={20} radius={6} animate={false} />
                 </View>
               ))}
             </View>

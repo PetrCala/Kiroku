@@ -1,32 +1,8 @@
 import React from 'react';
-import type {StyleProp, ViewStyle} from 'react-native';
 import {View} from 'react-native';
+import Skeleton from '@components/Skeleton';
 import useTheme from '@hooks/useTheme';
 import useThemeStyles from '@hooks/useThemeStyles';
-
-type BlockProps = {
-  width: number | `${number}%`;
-  height: number;
-  radius?: number;
-  style?: StyleProp<ViewStyle>;
-};
-
-function Block({width, height, radius = 6, style}: BlockProps) {
-  const theme = useTheme();
-  return (
-    <View
-      style={[
-        {
-          width,
-          height,
-          borderRadius: radius,
-          backgroundColor: theme.skeletonBlockBG,
-        },
-        style,
-      ]}
-    />
-  );
-}
 
 // One placeholder day section: a day-header row (date + units) followed by a
 // couple of session-tile placeholders (~84px, matching DrinkingSessionOverview).
@@ -45,9 +21,9 @@ function DayOverviewSkeleton() {
         <View key={`section-${section}`}>
           {/* Day header — mirrors sessionsCalendarMonthLabel (date + rule + units) */}
           <View style={styles.sessionsCalendarMonthLabel}>
-            <Block width={110} height={14} />
+            <Skeleton width={110} height={14} />
             <View style={[styles.sessionsCalendarMonthLabelRule, styles.mh2]} />
-            <Block width={60} height={14} />
+            <Skeleton width={60} height={14} />
           </View>
           {/* Session tiles — match the ~84px tile rows */}
           {SESSIONS_PER_DAY.map(tile => (
@@ -60,8 +36,8 @@ function DayOverviewSkeleton() {
                 styles.justifyContentCenter,
                 {minHeight: 84, borderRadius: 8, backgroundColor: theme.cardBG},
               ]}>
-              <Block width={90} height={16} />
-              <Block width={140} height={12} style={styles.mt2} />
+              <Skeleton width={90} height={16} />
+              <Skeleton width={140} height={12} style={styles.mt2} />
             </View>
           ))}
         </View>

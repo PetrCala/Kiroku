@@ -1,4 +1,5 @@
 import {StyleSheet, View} from 'react-native';
+import Skeleton from '@components/Skeleton';
 import useTheme from '@hooks/useTheme';
 
 type StatsFilterToolbarSkeletonProps = {
@@ -28,31 +29,10 @@ const styles = StyleSheet.create({
   segmented: {
     flex: 1,
     height: 32,
-    borderRadius: 8,
-  },
-  comparison: {
-    width: 88,
-    height: 32,
-    borderRadius: 8,
-  },
-  navArrow: {
-    width: 28,
-    height: 28,
-    borderRadius: 6,
-  },
-  navLabel: {
-    height: 18,
-    width: 140,
-    borderRadius: 6,
   },
   chipRow: {
     flexDirection: 'row',
     columnGap: 8,
-  },
-  chip: {
-    width: 56,
-    height: 28,
-    borderRadius: 14,
   },
 });
 
@@ -61,14 +41,13 @@ const CHIP_COUNT = 4;
 /**
  * Static, layout-faithful placeholder for `StatsFilterToolbar`. Used by the
  * Statistics loading skeletons (full-screen skeleton + per-tab lazy
- * placeholder). Imports nothing heavy — only `View` + the theme — so it stays
- * out of the deferred chart bundle.
+ * placeholder). Imports nothing heavy — only `View` + the shared `Skeleton`
+ * primitive — so it stays out of the deferred chart bundle.
  */
 function StatsFilterToolbarSkeleton({
   showDrinkTypeFilter = true,
 }: StatsFilterToolbarSkeletonProps) {
   const theme = useTheme();
-  const fill = theme.highlightBG;
 
   return (
     <View
@@ -80,21 +59,25 @@ function StatsFilterToolbarSkeleton({
         {backgroundColor: theme.appBG, borderBottomColor: theme.border},
       ]}>
       <View style={styles.row}>
-        <View style={[styles.segmented, {backgroundColor: fill}]} />
-        <View style={[styles.comparison, {backgroundColor: fill}]} />
+        <View style={styles.segmented}>
+          <Skeleton width="100%" height={32} radius={8} />
+        </View>
+        <Skeleton width={88} height={32} radius={8} />
       </View>
       <View style={styles.row}>
-        <View style={[styles.navArrow, {backgroundColor: fill}]} />
-        <View style={[styles.navLabel, {backgroundColor: fill}]} />
-        <View style={[styles.navArrow, {backgroundColor: fill}]} />
+        <Skeleton width={28} height={28} radius={6} />
+        <Skeleton width={140} height={18} radius={6} />
+        <Skeleton width={28} height={28} radius={6} />
       </View>
       {showDrinkTypeFilter ? (
         <View style={styles.chipRow}>
           {Array.from({length: CHIP_COUNT}, (_v, i) => (
-            <View
+            <Skeleton
               // eslint-disable-next-line react/no-array-index-key
               key={`chip-${i}`}
-              style={[styles.chip, {backgroundColor: fill}]}
+              width={56}
+              height={28}
+              radius={14}
             />
           ))}
         </View>

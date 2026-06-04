@@ -1,33 +1,8 @@
 import React from 'react';
-import type {StyleProp, ViewStyle} from 'react-native';
 import {View} from 'react-native';
-import useTheme from '@hooks/useTheme';
+import Skeleton from '@components/Skeleton';
 import useThemeStyles from '@hooks/useThemeStyles';
 import variables from '@styles/variables';
-
-type BlockProps = {
-  width: number;
-  height: number;
-  radius?: number;
-  style?: StyleProp<ViewStyle>;
-};
-
-function Block({width, height, radius = 6, style}: BlockProps) {
-  const theme = useTheme();
-  return (
-    <View
-      style={[
-        {
-          width,
-          height,
-          borderRadius: radius,
-          backgroundColor: theme.highlightBG,
-        },
-        style,
-      ]}
-    />
-  );
-}
 
 /** Placeholder for the home-screen header (profile avatar + display name). */
 function HomeHeaderSkeleton() {
@@ -42,8 +17,8 @@ function HomeHeaderSkeleton() {
         styles.alignItemsCenter,
         styles.ph2,
       ]}>
-      <Block width={avatarSize} height={avatarSize} radius={avatarSize / 2} />
-      <Block width={140} height={16} style={styles.ml3} />
+      <Skeleton circle height={avatarSize} />
+      <Skeleton width={140} height={16} style={styles.ml3} />
     </View>
   );
 }
@@ -62,9 +37,9 @@ function StatOverviewSkeleton() {
             styles.justifyContentCenter,
           ]}>
           {/* Matches fontSizeXXXXLarge (36px) bold value text */}
-          <Block width={72} height={44} style={styles.mb2} />
+          <Skeleton width={72} height={44} style={styles.mb2} />
           {/* Matches fontSizeNormal (15px) label, 2 lines, max-width 150 */}
-          <Block width={130} height={36} />
+          <Skeleton width={130} height={36} />
         </View>
       ))}
     </View>
@@ -87,7 +62,7 @@ function SessionsCalendarSkeleton() {
       {/* Month header — matches the custom renderHeader in SessionsCalendarView
        *  (single centered text, no nav arrows). */}
       <View style={[styles.sessionsCalendarHeader, styles.pv3]}>
-        <Block width={100} height={18} />
+        <Skeleton width={100} height={18} animate={false} />
       </View>
       {/* Day-name row — matches the library's `stylesheet.calendar.header`
        *  spacing (marginTop:7 on the week, marginBottom:7 on each dayHeader). */}
@@ -102,14 +77,15 @@ function SessionsCalendarSkeleton() {
           <View
             key={`name-${day}`}
             style={[styles.flex1, styles.alignItemsCenter]}>
-            <Block width={20} height={12} />
+            <Skeleton width={20} height={12} animate={false} />
           </View>
         ))}
       </View>
       {/* Week rows — each cell mirrors the real DayComponent: a single
        *  heatmap-tile square sized via variables.sessionsCalendarDaySize.
        *  marginVertical:6 matches stylesheet.calendar.main.week in
-       *  getSessionsCalendarStyle, so swap-in lands at the same Y. */}
+       *  getSessionsCalendarStyle, so swap-in lands at the same Y. Dense grid,
+       *  so cells stay static (animate={false}) — see the Skeleton primitive. */}
       {CALENDAR_WEEKS.map(week => (
         <View
           key={`week-${week}`}
@@ -119,11 +95,12 @@ function SessionsCalendarSkeleton() {
             {marginVertical: 6},
           ]}>
           {CALENDAR_DAYS.map(day => (
-            <Block
+            <Skeleton
               key={`day-${week}-${day}`}
               width={daySize}
               height={daySize}
               radius={dayRadius}
+              animate={false}
             />
           ))}
         </View>

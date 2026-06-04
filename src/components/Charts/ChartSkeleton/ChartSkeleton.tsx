@@ -1,5 +1,6 @@
 import {useState} from 'react';
 import {View} from 'react-native';
+import Skeleton from '@components/Skeleton';
 import useTheme from '@hooks/useTheme';
 import useThemeStyles from '@hooks/useThemeStyles';
 import KpiRowSkeleton from './KpiRowSkeleton';
@@ -46,17 +47,19 @@ const DEFAULT_HEIGHT: Record<ChartSkeletonVariant, number> = {
 };
 
 /**
- * Layout-faithful skeleton placeholder for a chart. Renders a static grey
- * scaffold sized to match the real chart's bounding box plus a hint of its
- * internal structure (grid lines, ring, bars). No animation — the goal is
- * a non-distracting hint that "something is loading here," not a moving
- * shimmer that competes for attention with the rest of the screen.
+ * Layout-faithful skeleton placeholder for a chart. Sized to match the real
+ * chart's bounding box plus a hint of its internal structure (bars, ring,
+ * cells). Built on the shared `Skeleton` primitive: the prominent block
+ * placeholders (card body, bars, KPI tiles, etc.) shimmer with the unified
+ * `skeletonBase`/`skeletonHighlight` tokens, while the decorative structure
+ * that doesn't read well as a moving block — thin grid lines, ring outlines,
+ * and the dense calendar/heatmap cell grids — stays static in `skeletonBase`.
  *
  * Variants:
  * - `card`: plain rounded rectangle, matches generic ChartCard body.
- * - `bars`: row of faint vertical rectangles.
+ * - `bars`: row of vertical bars.
  * - `barList`: stack of horizontal label + track rows — matches BarList.
- * - `line`: single faint horizontal stripe — matches sparkline/trend-line.
+ * - `line`: single thin horizontal stripe — matches sparkline/trend-line.
  * - `distribution`: thin segmented bar + legend — matches DistributionBar.
  * - `calendar`: 6×7 grid of small rounded cells — matches CalendarHeatmap.
  * - `kpiRow`: 3 (or 2 narrow) tile placeholders side by side.
@@ -76,22 +79,20 @@ function ChartSkeleton({
   const theme = useTheme();
   const styles = useThemeStyles();
   const resolvedHeight = height ?? DEFAULT_HEIGHT[variant];
-  const fill = theme.borderLighter;
+  // Static fill for decorative structure that doesn't shimmer (rings, grid
+  // lines, dense cell grids) — the resting tone of the shimmering blocks so
+  // every skeleton reads as one colour family.
+  const fill = theme.skeletonBase;
   const cardFill = theme.highlightBG;
   const a11yLabel = accessibilityLabel ?? 'Loading';
 
   if (variant === 'card') {
     return (
-      <View
-        accessible
-        accessibilityRole="progressbar"
+      <Skeleton
+        width={width}
+        height={resolvedHeight}
+        radius={12}
         accessibilityLabel={a11yLabel}
-        style={{
-          height: resolvedHeight,
-          width,
-          backgroundColor: cardFill,
-          borderRadius: 12,
-        }}
       />
     );
   }
@@ -109,21 +110,17 @@ function ChartSkeleton({
           styles.ph2,
           {height: resolvedHeight, width},
         ]}>
-        {[0.5, 0.8, 0.65, 0.95, 0.55, 0.75, 0.6].map((h, idx) => (
-          <View
-            // eslint-disable-next-line react/no-array-index-key
-            key={`bar-${idx}`}
-            style={[
-              styles.flex1,
-              styles.mh1,
-              {
-                height: `${h * 100}%`,
-                backgroundColor: fill,
-                borderRadius: 4,
-              },
-            ]}
-          />
-        ))}
+        {[0.5, 0.8, 0.65, 0.95, 0.55, 0.75, 0.6].map((h, idx) => {
+          const barHeight = Math.round(h * resolvedHeight);
+          return (
+            <View
+              // eslint-disable-next-line react/no-array-index-key
+              key={`bar-${idx}`}
+              style={[styles.flex1, styles.mh1, {height: barHeight}]}>
+              <Skeleton width="100%" height={barHeight} radius={4} />
+            </View>
+          );
+        })}
       </View>
     );
   }
@@ -135,14 +132,7 @@ function ChartSkeleton({
         accessibilityRole="progressbar"
         accessibilityLabel={a11yLabel}
         style={[styles.justifyContentCenter, {height: resolvedHeight, width}]}>
-        <View
-          style={{
-            height: 2,
-            width: '100%',
-            backgroundColor: fill,
-            borderRadius: 1,
-          }}
-        />
+        <Skeleton width="100%" height={2} radius={1} />
       </View>
     );
   }
@@ -162,32 +152,11 @@ function ChartSkeleton({
             // eslint-disable-next-line react/no-array-index-key
             key={`barlist-${idx}`}
             style={[styles.flex1, styles.flexRow, styles.alignItemsCenter]}>
-            <View
-              style={{
-                width: 28,
-                height: 8,
-                backgroundColor: fill,
-                borderRadius: 2,
-              }}
-            />
+            <Skeleton width={28} height={8} radius={2} />
             <View style={[styles.flex1, styles.mh1]}>
-              <View
-                style={{
-                  width: `${frac * 100}%`,
-                  height: 8,
-                  backgroundColor: fill,
-                  borderRadius: 4,
-                }}
-              />
+              <Skeleton width={`${frac * 100}%`} height={8} radius={4} />
             </View>
-            <View
-              style={{
-                width: 22,
-                height: 8,
-                backgroundColor: fill,
-                borderRadius: 2,
-              }}
-            />
+            <Skeleton width={22} height={8} radius={2} />
           </View>
         ))}
       </View>
@@ -203,36 +172,14 @@ function ChartSkeleton({
         accessibilityRole="progressbar"
         accessibilityLabel={a11yLabel}
         style={{height: resolvedHeight, width}}>
-        <View
-          style={{
-            height: 12,
-            width: '100%',
-            backgroundColor: fill,
-            borderRadius: 6,
-          }}
-        />
+        <Skeleton width="100%" height={12} radius={6} />
         <View style={[styles.flexRow, styles.flexWrap, styles.mt2]}>
           {[0, 1, 2, 3].map(i => (
             <View
               key={`legend-${i}`}
               style={[styles.flexRow, styles.alignItemsCenter, styles.mr3]}>
-              <View
-                style={{
-                  width: 8,
-                  height: 8,
-                  borderRadius: 4,
-                  backgroundColor: fill,
-                  marginRight: 4,
-                }}
-              />
-              <View
-                style={{
-                  width: 36,
-                  height: 8,
-                  borderRadius: 2,
-                  backgroundColor: fill,
-                }}
-              />
+              <Skeleton circle height={8} style={styles.mr1} />
+              <Skeleton width={36} height={8} radius={2} />
             </View>
           ))}
         </View>
@@ -310,30 +257,9 @@ function ChartSkeleton({
             borderRadius: 12,
           },
         ]}>
-        <View
-          style={{
-            height: 10,
-            width: '50%',
-            backgroundColor: fill,
-            borderRadius: 2,
-          }}
-        />
-        <View
-          style={{
-            height: 24,
-            width: '40%',
-            backgroundColor: fill,
-            borderRadius: 4,
-          }}
-        />
-        <View
-          style={{
-            height: 10,
-            width: '60%',
-            backgroundColor: fill,
-            borderRadius: 2,
-          }}
-        />
+        <Skeleton width="50%" height={10} radius={2} />
+        <Skeleton width="40%" height={24} radius={4} />
+        <Skeleton width="60%" height={10} radius={2} />
       </View>
     );
   }

@@ -83,9 +83,8 @@ const darkTheme = {
   tooltipHighlightText: colors.orange500, // TODO check
   tooltipSupportingText: colors.productDark800,
   tooltipPrimaryText: colors.productDark900,
-  skeletonLHNIn: colors.productDark400,
-  skeletonLHNOut: colors.productDark600,
-  skeletonBlockBG: colors.productDark350,
+  skeletonBase: colors.productDark350,
+  skeletonHighlight: colors.productDark400,
   QRLogo: colors.yellow,
   appLogo: colors.productDark900,
   white: colors.white,

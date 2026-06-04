@@ -1661,34 +1661,13 @@ const styles = (theme: ThemeColors) =>
       fontSize: variables.fontSizeSmall,
     },
 
-    // Placeholder blocks for the compact-calendar loading skeleton
-    // (`SessionsCalendarCompactSkeleton`). Geometry mirrors the real compact
-    // grid so the swap to the live calendar doesn't shift surrounding content.
+    // Container for the compact-calendar loading skeleton header
+    // (`SessionsCalendarCompactSkeleton`). The placeholder blocks themselves
+    // are rendered with the shared `Skeleton` primitive.
     sessionsCalendarCompactSkeletonHeader: {
       paddingVertical: 10,
       alignItems: 'center',
       justifyContent: 'center',
-    },
-
-    sessionsCalendarCompactSkeletonMonthLabel: {
-      width: 120,
-      height: 16,
-      borderRadius: 3,
-      backgroundColor: theme.highlightBG,
-    },
-
-    sessionsCalendarCompactSkeletonDayName: {
-      width: 18,
-      height: 10,
-      borderRadius: 3,
-      backgroundColor: theme.highlightBG,
-    },
-
-    sessionsCalendarCompactSkeletonDayCell: {
-      width: variables.sessionsCalendarDaySize,
-      height: variables.sessionsCalendarDaySize,
-      borderRadius: variables.componentBorderRadiusNormal,
-      backgroundColor: theme.highlightBG,
     },
 
     // Inline month-section label rendered as a FlashList sticky header.
