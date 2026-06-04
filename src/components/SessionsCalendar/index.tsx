@@ -43,6 +43,7 @@ function SessionsCalendar({
   isFetchingOlderMonths,
   onDayDrillDown,
   isReadOnly,
+  isEditModeOn,
   mode = 'compact',
   initialMonthYear,
   initialDay,
@@ -208,6 +209,7 @@ function SessionsCalendar({
         onInitialScrollReady={onInitialScrollReady}
         onVisibleDayChange={onVisibleDayChange}
         isReadOnly={isReadOnly}
+        isEditModeOn={isEditModeOn}
       />
     );
   }
