@@ -67,8 +67,31 @@ function BreakdownScene() {
   );
 }
 
+// Carries the screen's back handler down to the overview scene without
+// threading a prop through SceneMap (which only passes route props).
+const OverviewSwipeBackContext = React.createContext<(() => void) | undefined>(
+  undefined,
+);
+
+// The overview tab is the only one with no horizontal filter-chip row, so it
+// is safe to own horizontal swipes. Wrapping the gesture *here* — inside the
+// pager scene, directly around the content — is what makes the rightward
+// swipe-back fire: a gesture placed around the whole TabView is an ancestor of
+// the native pager-view, which owns same-axis touches and starves it. As a
+// descendant wrapping the content (the same shape friends uses) the gesture is
+// the nearest handler and wins. Leftward swipes fall through to the pager, so
+// swiping to the next tab still works, and the other tabs are untouched.
+function OverviewScene() {
+  const onSwipeBack = React.useContext(OverviewSwipeBackContext);
+  return (
+    <SwipeBackGestureHandler onSwipeBack={onSwipeBack}>
+      <OverviewTab />
+    </SwipeBackGestureHandler>
+  );
+}
+
 const renderScene = SceneMap({
-  overview: OverviewTab,
+  overview: OverviewScene,
   trends: TrendsScene,
   patterns: PatternsScene,
   breakdown: BreakdownScene,
@@ -142,9 +165,9 @@ const COMMON_OPTIONS: TabDescriptor<TabRoute> = {
 };
 
 type StatisticsTabsProps = {
-  /** Mapped to a navigation back. Wired to the swipe-back gesture, which is
-   *  active only on the left-most (overview) tab so inner tabs still page
-   *  horizontally. */
+  /** Mapped to a navigation back. Wired to the swipe-back gesture that wraps
+   *  the overview (left-most) scene only, so the other tabs keep the pager's
+   *  swipe and their horizontal filter-chip scroll. */
   onSwipeBack?: () => void;
 };
 
@@ -200,19 +223,8 @@ function StatisticsTabs({onSwipeBack}: StatisticsTabsProps) {
     ],
   );
 
-  // On the overview (first) tab we disable the native pager's own swipe so the
-  // swipe-back gesture can win the rightward dismiss — a native pager-view
-  // otherwise swallows same-axis horizontal touches and the back never fires.
-  // The gesture then owns both directions on that tab: rightward dismisses,
-  // leftward advances to the next tab (the affordance the pager would normally
-  // provide). Every other tab keeps the pager's finger-following swipe.
-  const isFirstTab = index === 0;
-
   return (
-    <SwipeBackGestureHandler
-      enabled={isFirstTab}
-      onSwipeBack={onSwipeBack}
-      onSwipeForward={() => setIndex(1)}>
+    <OverviewSwipeBackContext.Provider value={onSwipeBack}>
       <TabView
         style={[styles.container, {backgroundColor: theme.appBG}]}
         navigationState={{index, routes}}
@@ -220,12 +232,11 @@ function StatisticsTabs({onSwipeBack}: StatisticsTabsProps) {
         renderScene={renderScene}
         renderTabBar={renderTabBar}
         initialLayout={{width: windowWidth}}
-        swipeEnabled={!isFirstTab}
         lazy
         renderLazyPlaceholder={renderLazyPlaceholder}
         commonOptions={COMMON_OPTIONS}
       />
-    </SwipeBackGestureHandler>
+    </OverviewSwipeBackContext.Provider>
   );
 }
 
