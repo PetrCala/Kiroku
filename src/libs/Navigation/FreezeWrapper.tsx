@@ -2,6 +2,7 @@ import {useIsFocused, useNavigation, useRoute} from '@react-navigation/native';
 import React, {useEffect, useRef, useState} from 'react';
 import {Freeze} from 'react-freeze';
 import type ChildrenProps from '@src/types/utils/ChildrenProps';
+import liveTapLog from '@libs/liveTapDebug';
 import shouldSetScreenBlurred from './shouldSetScreenBlurred';
 
 type FreezeWrapperProps = ChildrenProps & {
@@ -34,6 +35,15 @@ function FreezeWrapper({keepVisible = false, children}: FreezeWrapperProps) {
     });
     return () => unsubscribe();
   }, [isFocused, isScreenBlurred, navigation]);
+
+  useEffect(() => {
+    liveTapLog('FreezeWrapper.freeze', {
+      route: currentRoute.name,
+      freeze: !isFocused && isScreenBlurred && !keepVisible,
+      isFocused,
+      isScreenBlurred,
+    });
+  }, [isFocused, isScreenBlurred, keepVisible, currentRoute.name]);
 
   return (
     <Freeze freeze={!isFocused && isScreenBlurred && !keepVisible}>

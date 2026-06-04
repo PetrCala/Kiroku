@@ -38,6 +38,7 @@ import {
   getDrinkOverrides,
   makeDrinkEntry,
 } from './DrinkEntryUtils';
+import liveTapLog, {countDrinks} from './liveTapDebug';
 import {roundToTwoDecimalPlaces} from './NumberUtils';
 import {getFirebaseAuth} from './Firebase/FirebaseApp';
 import {numberToVerboseString} from './TimeUtils';
@@ -77,8 +78,15 @@ Onyx.connect({
     // react here to a brand-new session (start / cross-device first arrival / id
     // change) or a clear (finalize/discard).
     if (value && ongoingSessionData?.id === value.id) {
+      liveTapLog('connect.ONGOING.skip(sameId)', {
+        onyx: countDrinks(value.drinks),
+        cached: countDrinks(ongoingSessionData?.drinks),
+      });
       return;
     }
+    liveTapLog('connect.ONGOING.set', {
+      onyx: value ? countDrinks(value.drinks) : null,
+    });
     ongoingSessionData = value ?? undefined;
   },
 });
@@ -122,6 +130,9 @@ function setLocalSessionCache(
   session: DrinkingSession | undefined,
 ): void {
   if (onyxKey === ONYXKEYS.ONGOING_SESSION_DATA) {
+    liveTapLog('setLocalSessionCache.ONGOING', {
+      drinks: countDrinks(session?.drinks),
+    });
     ongoingSessionData = session;
   } else if (onyxKey === ONYXKEYS.EDIT_SESSION_DATA) {
     editSessionData = session;

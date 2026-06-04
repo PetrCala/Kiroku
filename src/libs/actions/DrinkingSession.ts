@@ -18,6 +18,7 @@ import type {
 } from '@src/types/onyx';
 import * as Localize from '@libs/Localize';
 import * as DSUtils from '@libs/DrinkingSessionUtils';
+import liveTapLog, {countDrinks} from '@libs/liveTapDebug';
 import type {UserID} from '@src/types/onyx/OnyxCommon';
 import type {User} from 'firebase/auth';
 import CONST from '@src/CONST';
@@ -234,8 +235,13 @@ function cancelLiveSessionPersist(): void {
 function flushLiveSessionPersist(): void {
   const session = ongoingSessionData;
   if (!session?.ongoing || !session.id) {
+    liveTapLog('flush.skip', {
+      hasSession: !!session,
+      ongoing: session?.ongoing,
+    });
     return;
   }
+  liveTapLog('flush.persist', {drinks: countDrinks(session.drinks)});
   API.write(WRITE_COMMANDS.UPDATE_SESSION, {
     sessionId: session.id,
     session,
@@ -275,6 +281,10 @@ async function syncLocalLiveSessionData(
   ongoingSessionId: DrinkingSessionId | undefined | null,
   drinkingSessionData: DrinkingSessionList | undefined | null,
 ) {
+  liveTapLog('syncLocalLiveSessionData', {
+    ongoingSessionId,
+    pendingPersist: hasPendingLiveSessionPersist(),
+  });
   if (ongoingSessionId && drinkingSessionData) {
     const newData = drinkingSessionData[ongoingSessionId];
     if (!newData) {
@@ -292,8 +302,12 @@ async function syncLocalLiveSessionData(
       ongoingSessionData?.id === ongoingSessionId &&
       ongoingSessionData?.ongoing
     ) {
+      liveTapLog('syncLocalLiveSessionData.skip(pending)');
       return;
     }
+    liveTapLog('syncLocalLiveSessionData.adopt', {
+      drinks: countDrinks(newData.drinks),
+    });
     await updateLocalData(
       ONYXKEYS.ONGOING_SESSION_DATA,
       newData,
@@ -486,6 +500,12 @@ function updateDrinks(
   // which lags while the JS thread is busy persisting. Without this the remove's
   // `Onyx.set` below wipes adds that haven't propagated back to the cache yet.
   const updatedSession: DrinkingSession = {...session, drinks: drinksList};
+  liveTapLog('updateDrinks', {
+    action,
+    key: onyxKey === ONYXKEYS.ONGOING_SESSION_DATA ? 'ONGOING' : 'EDIT',
+    base: countDrinks(session.drinks),
+    composed: countDrinks(drinksList),
+  });
   DSUtils.setLocalSessionCache(onyxKey, updatedSession);
 
   // Merge can only be used when adding drinks, or when removing drinks does not delete the drink key
