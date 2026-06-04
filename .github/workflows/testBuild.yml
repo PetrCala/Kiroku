@@ -238,8 +238,23 @@ jobs:
         with:
           ref: ${{ github.event.pull_request.head.sha || needs.getBranchRef.outputs.REF }}
 
-      - name: Download Artifact
+      # Download each artifact by name into a known directory, guarded by the
+      # platform's build result. A bare download-all extracts a single artifact
+      # straight to the workspace root (no per-name subdir), which breaks the
+      # `./android/...` / `./ios/...` reads below when only one platform built.
+      - name: Download Android artifact
+        if: ${{ needs.android.result == 'success' }}
         uses: actions/download-artifact@v7
+        with:
+          name: android
+          path: android
+
+      - name: Download iOS artifact
+        if: ${{ needs.iOS.result == 'success' }}
+        uses: actions/download-artifact@v7
+        with:
+          name: ios
+          path: ios
 
       - name: Read JSONs with android paths
         id: get_android_path
