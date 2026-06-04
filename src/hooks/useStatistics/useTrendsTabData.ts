@@ -1,5 +1,6 @@
 import {useMemo} from 'react';
 import {useChartTheme} from '@components/Charts/BaseChart';
+import {measure} from '@libs/Statistics/perf';
 import {ewma, mannKendall} from '@libs/Statistics/stats';
 import {
   buildAfYtdSeries,
@@ -71,162 +72,177 @@ function useTrendsTabData(): TrendsTabData {
   );
 
   // Hero — weekly units.
-  const hero = useMemo<Hero>(() => {
-    const weekly = buildWeeklyUnits(events, range.start, range.end);
-    const weeks = weekly.map(p => p.isoWeek);
-    const units = weekly.map(p => p.units);
+  const hero = useMemo<Hero>(
+    () =>
+      measure('trends.hero', () => {
+        const weekly = buildWeeklyUnits(events, range.start, range.end);
+        const weeks = weekly.map(p => p.isoWeek);
+        const units = weekly.map(p => p.units);
 
-    const ewmaSeries =
-      units.length >= MIN_EWMA_N ? ewma(units, 0.3) : undefined;
-    const band = percentileBand(units);
+        const ewmaSeries =
+          units.length >= MIN_EWMA_N ? ewma(units, 0.3) : undefined;
+        const band = percentileBand(units);
 
-    const comparisonUnits = comparisonRange
-      ? buildWeeklyUnits(
-          events,
-          comparisonRange.start,
-          comparisonRange.end,
-        ).map(p => p.units)
-      : undefined;
+        const comparisonUnits = comparisonRange
+          ? buildWeeklyUnits(
+              events,
+              comparisonRange.start,
+              comparisonRange.end,
+            ).map(p => p.units)
+          : undefined;
 
-    // Pad / trim comparison to match weeks.length so the chart can index by
-    // position. We rely on shiftRange producing same-length windows; clamp
-    // defensively.
-    let comparisonAligned: number[] | undefined;
-    if (comparisonUnits) {
-      if (comparisonUnits.length === weeks.length) {
-        comparisonAligned = comparisonUnits;
-      } else if (comparisonUnits.length > weeks.length) {
-        comparisonAligned = comparisonUnits.slice(
-          comparisonUnits.length - weeks.length,
-        );
-      } else {
-        const padding = new Array<number>(
-          weeks.length - comparisonUnits.length,
-        ).fill(0);
-        comparisonAligned = [...padding, ...comparisonUnits];
-      }
-    }
+        // Pad / trim comparison to match weeks.length so the chart can index by
+        // position. We rely on shiftRange producing same-length windows; clamp
+        // defensively.
+        let comparisonAligned: number[] | undefined;
+        if (comparisonUnits) {
+          if (comparisonUnits.length === weeks.length) {
+            comparisonAligned = comparisonUnits;
+          } else if (comparisonUnits.length > weeks.length) {
+            comparisonAligned = comparisonUnits.slice(
+              comparisonUnits.length - weeks.length,
+            );
+          } else {
+            const padding = new Array<number>(
+              weeks.length - comparisonUnits.length,
+            ).fill(0);
+            comparisonAligned = [...padding, ...comparisonUnits];
+          }
+        }
 
-    let captionKey: CaptionKey = 'notEnoughData';
-    if (units.length >= MIN_TREND_N) {
-      const mk = mannKendall(units);
-      if (mk.trend === 'up') captionKey = 'trendingUp';
-      else if (mk.trend === 'down') captionKey = 'trendingDown';
-      else captionKey = 'neutral';
-    }
+        let captionKey: CaptionKey = 'notEnoughData';
+        if (units.length >= MIN_TREND_N) {
+          const mk = mannKendall(units);
+          if (mk.trend === 'up') captionKey = 'trendingUp';
+          else if (mk.trend === 'down') captionKey = 'trendingDown';
+          else captionKey = 'neutral';
+        }
 
-    return {
-      weeks,
-      units,
-      ewma: ewmaSeries,
-      comparison: comparisonAligned,
-      band,
-      captionKey,
-    };
-  }, [events, range.start, range.end, comparisonRange]);
+        return {
+          weeks,
+          units,
+          ewma: ewmaSeries,
+          comparison: comparisonAligned,
+          band,
+          captionKey,
+        };
+      }),
+    [events, range.start, range.end, comparisonRange],
+  );
 
   // AF-days YTD.
-  const afYtd = useMemo(() => {
-    const hidden = range.preset === 'W';
-    if (hidden) {
-      return {points: [] as AfYtdPoint[], hidden};
-    }
-    const points = buildAfYtdSeries(events, range.start, range.end);
-    let comparisonPoints: AfYtdPoint[] | undefined;
-    if (comparisonRange) {
-      const raw = buildAfYtdSeries(
-        events,
-        comparisonRange.start,
-        comparisonRange.end,
-      );
-      // Pad to match `points.length` so the chart layer can index in lock-
-      // step. Drop oldest or pad with the leading count, mirroring the hero
-      // alignment policy.
-      if (raw.length === points.length) {
-        comparisonPoints = raw;
-      } else if (raw.length > points.length) {
-        comparisonPoints = raw.slice(raw.length - points.length);
-      } else if (raw.length > 0) {
-        const padCount = points.length - raw.length;
-        const head = raw[0];
-        const pad: AfYtdPoint[] = Array.from({length: padCount}, () => head);
-        comparisonPoints = [...pad, ...raw];
-      }
-    }
-    return {points, comparisonPoints, hidden};
-  }, [events, range.start, range.end, range.preset, comparisonRange]);
+  const afYtd = useMemo(
+    () =>
+      measure('trends.afYtd', () => {
+        const hidden = range.preset === 'W';
+        if (hidden) {
+          return {points: [] as AfYtdPoint[], hidden};
+        }
+        const points = buildAfYtdSeries(events, range.start, range.end);
+        let comparisonPoints: AfYtdPoint[] | undefined;
+        if (comparisonRange) {
+          const raw = buildAfYtdSeries(
+            events,
+            comparisonRange.start,
+            comparisonRange.end,
+          );
+          // Pad to match `points.length` so the chart layer can index in lock-
+          // step. Drop oldest or pad with the leading count, mirroring the hero
+          // alignment policy.
+          if (raw.length === points.length) {
+            comparisonPoints = raw;
+          } else if (raw.length > points.length) {
+            comparisonPoints = raw.slice(raw.length - points.length);
+          } else if (raw.length > 0) {
+            const padCount = points.length - raw.length;
+            const head = raw[0];
+            const pad: AfYtdPoint[] = Array.from(
+              {length: padCount},
+              () => head,
+            );
+            comparisonPoints = [...pad, ...raw];
+          }
+        }
+        return {points, comparisonPoints, hidden};
+      }),
+    [events, range.start, range.end, range.preset, comparisonRange],
+  );
 
   // Drink-type stacked area.
-  const stack = useMemo<Stack>(() => {
-    const {weeks, trackedKeys} = buildWeeklyStackedSeries(
+  const stack = useMemo<Stack>(
+    () =>
+      measure('trends.stack', () => {
+        const {weeks, trackedKeys} = buildWeeklyStackedSeries(
+          events,
+          range.start,
+          range.end,
+          drinkTypeFilter,
+          ALL_DRINK_KEYS,
+        );
+        // Pivot the per-week row data into per-key arrays for the StackedArea
+        // component, which prefers column-major input.
+        const weekLabels = weeks.map(w => w.isoWeek);
+        const byKey: Partial<Record<DrinkKey, number[]>> = {};
+        for (const key of trackedKeys) {
+          byKey[key] = weeks.map(w => w.byKey[key] ?? 0);
+        }
+
+        // Per-key palette: walk trackedKeys in ALL_DRINK_KEYS order, zipping
+        // against `theme.drinkTypeRamp` positionally so colors stay stable when
+        // the user toggles drink-type chips.
+        const palette: Partial<Record<DrinkKey, string>> = {};
+        ALL_DRINK_KEYS.forEach((key, i) => {
+          if (trackedKeys.includes(key)) {
+            palette[key] = theme.drinkTypeRamp[i] ?? theme.primaryFill;
+          }
+        });
+
+        let comparisonTotal: number[] | undefined;
+        if (comparisonRange) {
+          const cmp = buildWeeklyStackedSeries(
+            events,
+            comparisonRange.start,
+            comparisonRange.end,
+            drinkTypeFilter,
+            ALL_DRINK_KEYS,
+          );
+          const totals = cmp.weeks.map(w => {
+            let sum = 0;
+            for (const k of cmp.trackedKeys) {
+              sum += w.byKey[k] ?? 0;
+            }
+            return sum;
+          });
+          if (totals.length === weekLabels.length) {
+            comparisonTotal = totals;
+          } else if (totals.length > weekLabels.length) {
+            comparisonTotal = totals.slice(totals.length - weekLabels.length);
+          } else {
+            comparisonTotal = [
+              ...new Array<number>(weekLabels.length - totals.length).fill(0),
+              ...totals,
+            ];
+          }
+        }
+
+        return {
+          weeks: weekLabels,
+          byKey,
+          trackedKeys,
+          palette,
+          comparisonTotal,
+        };
+      }),
+    [
       events,
       range.start,
       range.end,
       drinkTypeFilter,
-      ALL_DRINK_KEYS,
-    );
-    // Pivot the per-week row data into per-key arrays for the StackedArea
-    // component, which prefers column-major input.
-    const weekLabels = weeks.map(w => w.isoWeek);
-    const byKey: Partial<Record<DrinkKey, number[]>> = {};
-    for (const key of trackedKeys) {
-      byKey[key] = weeks.map(w => w.byKey[key] ?? 0);
-    }
-
-    // Per-key palette: walk trackedKeys in ALL_DRINK_KEYS order, zipping
-    // against `theme.drinkTypeRamp` positionally so colors stay stable when
-    // the user toggles drink-type chips.
-    const palette: Partial<Record<DrinkKey, string>> = {};
-    ALL_DRINK_KEYS.forEach((key, i) => {
-      if (trackedKeys.includes(key)) {
-        palette[key] = theme.drinkTypeRamp[i] ?? theme.primaryFill;
-      }
-    });
-
-    let comparisonTotal: number[] | undefined;
-    if (comparisonRange) {
-      const cmp = buildWeeklyStackedSeries(
-        events,
-        comparisonRange.start,
-        comparisonRange.end,
-        drinkTypeFilter,
-        ALL_DRINK_KEYS,
-      );
-      const totals = cmp.weeks.map(w => {
-        let sum = 0;
-        for (const k of cmp.trackedKeys) {
-          sum += w.byKey[k] ?? 0;
-        }
-        return sum;
-      });
-      if (totals.length === weekLabels.length) {
-        comparisonTotal = totals;
-      } else if (totals.length > weekLabels.length) {
-        comparisonTotal = totals.slice(totals.length - weekLabels.length);
-      } else {
-        comparisonTotal = [
-          ...new Array<number>(weekLabels.length - totals.length).fill(0),
-          ...totals,
-        ];
-      }
-    }
-
-    return {
-      weeks: weekLabels,
-      byKey,
-      trackedKeys,
-      palette,
-      comparisonTotal,
-    };
-  }, [
-    events,
-    range.start,
-    range.end,
-    drinkTypeFilter,
-    comparisonRange,
-    theme.drinkTypeRamp,
-    theme.primaryFill,
-  ]);
+      comparisonRange,
+      theme.drinkTypeRamp,
+      theme.primaryFill,
+    ],
+  );
 
   return {hero, afYtd, stack, isLoading};
 }

@@ -58,24 +58,28 @@ function BreakdownTab() {
     byDrinkKey,
     sumUnits,
     currentFilter,
+    'breakdown.currentUnitsByDrinkKey',
   );
   const comparisonUnitsByDrinkKey = useAggregate<DrinkKey, number>(
     events,
     byDrinkKey,
     sumUnits,
     comparisonFilter,
+    'breakdown.comparisonUnitsByDrinkKey',
   );
   const unitsByDrinkKeyAndWeek = useAggregate<string, number>(
     events,
     drinkKeyByIsoWeek,
     sumUnits,
     currentFilter,
+    'breakdown.unitsByDrinkKeyAndWeek',
   );
   const comparisonUnitsByDrinkKeyAndWeek = useAggregate<string, number>(
     events,
     drinkKeyByIsoWeek,
     sumUnits,
     comparisonFilter,
+    'breakdown.comparisonUnitsByDrinkKeyAndWeek',
   );
 
   return (
