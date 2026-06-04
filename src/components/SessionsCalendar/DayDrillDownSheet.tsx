@@ -17,7 +17,7 @@ import CONST from '@src/CONST';
 import type {DrinkingSessionList, Preferences} from '@src/types/onyx';
 import type {DateString} from '@src/types/onyx/OnyxCommon';
 
-type FriendDayDrillDownSheetProps = {
+type DayDrillDownSheetProps = {
   /** Whether the modal is visible */
   isVisible: boolean;
 
@@ -27,20 +27,26 @@ type FriendDayDrillDownSheetProps = {
   /** The selected day, or null when no day is selected */
   date: DateString | null;
 
-  /** The viewed friend's drinking session data */
+  /** The viewed user's drinking session data */
   drinkingSessionData: DrinkingSessionList | null | undefined;
 
-  /** The viewed friend's preferences, used for color/unit computation */
+  /** The viewed user's preferences, used for color/unit computation */
   preferences: Preferences;
+
+  /** When true, the session tiles are interactive: tapping a tile opens its
+   *  summary and an edit button is shown. When false (viewing another user's
+   *  history) the tiles are read-only. */
+  canEdit: boolean;
 };
 
-function FriendDayDrillDownSheet({
+function DayDrillDownSheet({
   isVisible,
   onClose,
   date,
   drinkingSessionData,
   preferences,
-}: FriendDayDrillDownSheetProps) {
+  canEdit,
+}: DayDrillDownSheetProps) {
   const styles = useThemeStyles();
   const theme = useTheme();
   const {translate} = useLocalize();
@@ -101,8 +107,8 @@ function FriendDayDrillDownSheet({
               <DrinkingSessionOverview
                 sessionId={item.sessionId}
                 session={item.session}
-                isEditModeOn={false}
-                readOnly
+                isEditModeOn={canEdit}
+                readOnly={!canEdit}
                 preferences={preferences}
               />
             )}
@@ -116,6 +122,6 @@ function FriendDayDrillDownSheet({
   );
 }
 
-FriendDayDrillDownSheet.displayName = 'FriendDayDrillDownSheet';
+DayDrillDownSheet.displayName = 'DayDrillDownSheet';
 
-export default FriendDayDrillDownSheet;
+export default DayDrillDownSheet;
