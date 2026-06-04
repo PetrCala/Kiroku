@@ -7,7 +7,6 @@ import type {
   EventFilter,
   Reducer,
 } from '@libs/Statistics';
-import {measure} from '@libs/Statistics/perf';
 
 const EMPTY_MAP: ReadonlyMap<unknown, unknown> = new Map();
 
@@ -28,17 +27,12 @@ function emptyMap<TKey, TAgg>(): Map<TKey, TAgg> {
  * computes the real aggregate and the tab re-renders with data. Callers
  * read `isLoading` from `useDrinkEvents` upstream — they do not need to
  * track loading per-aggregate.
- *
- * `label` names the pass in Statistics perf logs (see `@libs/Statistics/perf`);
- * it has no effect when perf logging is off. Pass a tab-scoped label (e.g.
- * `patterns.hourBuckets`) so the per-tab passes are distinguishable.
  */
 function useAggregate<TKey, TAgg>(
   events: DrinkEvent[],
   bucketer: Bucketer<TKey>,
   reducer: Reducer<TAgg>,
   filter?: EventFilter,
-  label = 'aggregate',
 ): Map<TKey, TAgg> {
   const [result, setResult] = useState<Map<TKey, TAgg>>(emptyMap);
 
@@ -51,16 +45,14 @@ function useAggregate<TKey, TAgg>(
       setResult(
         events.length === 0
           ? emptyMap<TKey, TAgg>()
-          : measure(label, () => aggregate(events, bucketer, reducer, filter), {
-              events: events.length,
-            }),
+          : aggregate(events, bucketer, reducer, filter),
       );
     });
     return () => {
       cancelled = true;
       handle.cancel?.();
     };
-  }, [events, bucketer, reducer, filter, label]);
+  }, [events, bucketer, reducer, filter]);
 
   return result;
 }
