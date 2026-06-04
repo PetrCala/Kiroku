@@ -5,7 +5,6 @@ import type {DrinksToUnits} from '@src/types/onyx/Preferences';
 import type {SelectedTimezone} from '@src/types/onyx/UserData';
 import type {LocalParts} from './localParts';
 import {resolveLocalParts} from './localParts';
-import {logBuildDrinkEvents} from './profiling';
 import {sduFrom} from './sdu';
 import {isStoredLocalParts} from './sessionTimeParts';
 import type {DrinkEvent, WeekStart} from './types';
@@ -155,8 +154,6 @@ function buildDrinkEvents(
     return lastCall.result;
   }
 
-  const t0 = performance.now();
-  let sessionCount = 0;
   const events: DrinkEvent[] = [];
   if (!sessions) {
     lastCall = {
@@ -202,7 +199,6 @@ function buildDrinkEvents(
         session.drinksTimeParts?.tz === sessionTz
           ? session.drinksTimeParts.byTs
           : undefined;
-      sessionCount += 1;
       for (const [tsKey, drinksAtTs] of Object.entries(drinks)) {
         const ts = Number(tsKey);
         if (!Number.isFinite(ts)) {
@@ -265,7 +261,6 @@ function buildDrinkEvents(
     weekStart,
     result: events,
   };
-  logBuildDrinkEvents(performance.now() - t0, sessionCount, events.length);
   return events;
 }
 

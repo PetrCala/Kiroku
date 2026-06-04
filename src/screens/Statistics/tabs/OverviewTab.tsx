@@ -1,4 +1,4 @@
-import React, {useEffect} from 'react';
+import React from 'react';
 import {View} from 'react-native';
 import {BarList} from '@components/Charts/BarList';
 import {ChartCard} from '@components/Charts/ChartCard';
@@ -14,7 +14,6 @@ import useOverviewTabData from '@hooks/useStatistics/useOverviewTabData';
 import useTheme from '@hooks/useTheme';
 import useThemeStyles from '@hooks/useThemeStyles';
 import type {ChartDatum} from '@libs/Statistics';
-import {markStatsPhase} from '@libs/Statistics/profiling';
 
 type DeltaShape = NonNullable<KpiCardProps['delta']>;
 
@@ -43,14 +42,6 @@ function OverviewTab() {
     previous,
     subPeriods,
   } = useOverviewTabData();
-
-  // Cold-launch profiler: the default tab reaching data-ready is the closest
-  // proxy for first meaningful paint of the Statistics screen.
-  useEffect(() => {
-    if (!isLoading) {
-      markStatsPhase('overview tab data ready');
-    }
-  }, [isLoading]);
 
   // Skip the never-logged copy while loading — the tiles render skeletons.
   if (!isLoading && !hasEverLogged) {
