@@ -178,6 +178,14 @@ function DayOverviewListView({
 
   const listRef = useRef<FlashListRef<ListItem>>(null);
   const hasAppliedInitialScrollRef = useRef(false);
+  // Whether the user has actually dragged the list. Until they do, the only
+  // scroll is our programmatic centering, so there's no new position to sync —
+  // gating the write on a real drag keeps an open-and-close-without-moving a
+  // no-op, so the compact calendar returns to the month the user came from.
+  const hasUserScrolledRef = useRef(false);
+  const onScrollBeginDrag = useCallback(() => {
+    hasUserScrolledRef.current = true;
+  }, []);
 
   useEffect(() => {
     if (hasAppliedInitialScrollRef.current) {
@@ -250,11 +258,16 @@ function DayOverviewListView({
       // with the focused day centered (`viewPosition: 0.5`), so the centered
       // day is the one the user perceives they're on. Recording that — rather
       // than the older day clipped at the top edge — makes back-navigation land
-      // the compact calendar on the matching month.
-      const centerIndex = visibleIndices[Math.floor(visibleIndices.length / 2)];
-      const centerItem = items[centerIndex];
-      if (centerItem) {
-        recordVisibleDay(centerItem.dayKey);
+      // the compact calendar on the matching month. Only once the user has
+      // actually scrolled — otherwise an open-and-close without moving would
+      // overwrite the day the user came from.
+      if (hasUserScrolledRef.current) {
+        const centerIndex =
+          visibleIndices[Math.floor(visibleIndices.length / 2)];
+        const centerItem = items[centerIndex];
+        if (centerItem) {
+          recordVisibleDay(centerItem.dayKey);
+        }
       }
 
       if (!onRequestOlder || !canLoadOlder) {
@@ -370,6 +383,7 @@ function DayOverviewListView({
       showsVerticalScrollIndicator
       ListHeaderComponent={listHeader}
       ListEmptyComponent={listEmpty}
+      onScrollBeginDrag={onScrollBeginDrag}
       onViewableItemsChanged={onViewableItemsChanged}
       viewabilityConfig={VIEWABILITY_CONFIG}
     />
