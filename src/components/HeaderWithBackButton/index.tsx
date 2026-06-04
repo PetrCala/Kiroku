@@ -154,8 +154,8 @@ function HeaderWithBackButton({
               nativeID={CONST.BACK_BUTTON_NATIVE_ID}>
               <Icon
                 src={KirokuIcons.BackArrow}
-                width={variables.iconSizeXLarge}
-                height={variables.iconSizeXLarge}
+                width={variables.iconBottomBar}
+                height={variables.iconBottomBar}
                 fill={iconFill ?? theme.heading}
               />
             </PressableWithoutFeedback>
