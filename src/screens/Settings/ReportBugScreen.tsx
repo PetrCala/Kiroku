@@ -1,12 +1,10 @@
-import React, {useCallback} from 'react';
+import {useCallback} from 'react';
 import {View} from 'react-native';
-import FullscreenLoadingIndicator from '@components/FullscreenLoadingIndicator';
 import HeaderWithBackButton from '@components/HeaderWithBackButton';
 import ScreenWrapper from '@components/ScreenWrapper';
 import useLocalize from '@hooks/useLocalize';
 import useThemeStyles from '@hooks/useThemeStyles';
 import Navigation from '@libs/Navigation/Navigation';
-import * as ErrorUtils from '@libs/ErrorUtils';
 import * as ValidationUtils from '@libs/ValidationUtils';
 import type {SettingsNavigatorParamList} from '@libs/Navigation/types';
 import type {FormOnyxValues} from '@src/components/Form/types';
@@ -21,9 +19,7 @@ import CONST from '@src/CONST';
 import TextInput from '@components/TextInput';
 import type {StackScreenProps} from '@react-navigation/stack';
 import type SCREENS from '@src/SCREENS';
-import {reportABug} from '@database/feedback';
-import {useFirebase} from '@context/global/FirebaseContext';
-import ERRORS from '@src/ERRORS';
+import {reportABug} from '@libs/actions/Feedback';
 
 type ReportBugScreenProps = StackScreenProps<
   SettingsNavigatorParamList,
@@ -34,25 +30,12 @@ type ReportBugScreenProps = StackScreenProps<
 function ReportBugScreen({route}: ReportBugScreenProps) {
   const styles = useThemeStyles();
   const {translate} = useLocalize();
-  const {db, auth} = useFirebase();
-  const userID = auth.currentUser?.uid;
-
-  const [isLoading, setIsLoading] = React.useState(false);
 
   const onSubmit = (
     values: FormOnyxValues<typeof ONYXKEYS.FORMS.REPORT_BUG_FORM>,
   ) => {
-    (async () => {
-      try {
-        setIsLoading(true);
-        await reportABug(db, userID, values.text);
-        Navigation.goBack();
-      } catch (error) {
-        ErrorUtils.raiseAppError(ERRORS.USER.BUG_SUBMISSION_FAILED, error);
-      } finally {
-        setIsLoading(false);
-      }
-    })();
+    reportABug(values.text);
+    Navigation.goBack();
   };
 
   const validate = useCallback(
@@ -72,35 +55,28 @@ function ReportBugScreen({route}: ReportBugScreenProps) {
         shouldShowBackButton
         onBackButtonPress={Navigation.goBack}
       />
-      {isLoading ? (
-        <FullscreenLoadingIndicator
-          style={[styles.flex1]}
-          loadingText={translate('reportBugScreen.sending')}
-        />
-      ) : (
-        <FormProvider
-          formID={ONYXKEYS.FORMS.REPORT_BUG_FORM}
-          validate={validate}
-          onSubmit={onSubmit}
-          submitButtonText={translate('reportBugScreen.submit')}
-          style={[styles.flexGrow1, styles.mh5]}>
-          <View style={[styles.flexGrow1]}>
-            <Text>{translate('reportBugScreen.prompt')}</Text>
-            <InputWrapper
-              InputComponent={TextInput}
-              inputID={INPUT_IDS.TEXT}
-              autoGrowHeight
-              maxAutoGrowHeight={variables.textInputAutoGrowMaxHeight}
-              label={translate('reportBugScreen.describeBug')}
-              aria-label={translate('reportBugScreen.describeBug')}
-              role={CONST.ROLE.PRESENTATION}
-              maxLength={CONST.DESCRIPTION_LIMIT}
-              spellCheck={false}
-              containerStyles={[styles.mt5]}
-            />
-          </View>
-        </FormProvider>
-      )}
+      <FormProvider
+        formID={ONYXKEYS.FORMS.REPORT_BUG_FORM}
+        validate={validate}
+        onSubmit={onSubmit}
+        submitButtonText={translate('reportBugScreen.submit')}
+        style={[styles.flexGrow1, styles.mh5]}>
+        <View style={[styles.flexGrow1]}>
+          <Text>{translate('reportBugScreen.prompt')}</Text>
+          <InputWrapper
+            InputComponent={TextInput}
+            inputID={INPUT_IDS.TEXT}
+            autoGrowHeight
+            maxAutoGrowHeight={variables.textInputAutoGrowMaxHeight}
+            label={translate('reportBugScreen.describeBug')}
+            aria-label={translate('reportBugScreen.describeBug')}
+            role={CONST.ROLE.PRESENTATION}
+            maxLength={CONST.DESCRIPTION_LIMIT}
+            spellCheck={false}
+            containerStyles={[styles.mt5]}
+          />
+        </View>
+      </FormProvider>
     </ScreenWrapper>
   );
 }

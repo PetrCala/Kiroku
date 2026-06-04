@@ -83,6 +83,14 @@ const KIROKU_ROUTES: Record<string, KirokuRoute> = {
     method: 'post',
     path: '/v1/privacy/friend',
   },
+  [WRITE_COMMANDS.SUBMIT_FEEDBACK]: {
+    method: 'post',
+    path: '/v1/feedback',
+  },
+  [WRITE_COMMANDS.REPORT_BUG]: {
+    method: 'post',
+    path: '/v1/feedback/bug',
+  },
 };
 
 /** Returns the kiroku-api route for a command, or undefined for legacy commands. */
