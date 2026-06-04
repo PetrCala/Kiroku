@@ -6,6 +6,7 @@ import {useOnyx} from 'react-native-onyx';
 import {useDatabaseData} from '@context/global/DatabaseDataContext';
 import {useFirebase} from '@context/global/FirebaseContext';
 import useCurrentUserData from '@hooks/useCurrentUserData';
+import Statistics from '@libs/actions/Statistics';
 import useDrinkEvents from '@hooks/useStatistics/useDrinkEvents';
 import type {Preferences, UserData} from '@src/types/onyx';
 import type {UserDrinkingSessionsList} from '@src/types/onyx/DrinkingSession';
@@ -27,6 +28,12 @@ jest.mock('@context/global/DatabaseDataContext', () => ({
 jest.mock('@hooks/useCurrentUserData', () => ({
   __esModule: true,
   default: jest.fn(),
+}));
+
+// The hook delegates persistence of precomputed time fields to this action.
+jest.mock('@libs/actions/Statistics', () => ({
+  __esModule: true,
+  default: {setFilters: jest.fn(), backfillSessionTimeParts: jest.fn()},
 }));
 
 const mockedUseOnyx = jest.mocked(useOnyx);
@@ -270,13 +277,26 @@ describe('useDrinkEvents', () => {
 
   test('cancels deferred work on unmount mid-flight', () => {
     const cancel = jest.fn();
-    runAfterSpy.mockImplementation(
-      () => ({cancel, then: () => {}}) as never,
-    );
+    runAfterSpy.mockImplementation(() => ({cancel, then: () => {}}) as never);
 
     const {unmount} = renderHook(() => useDrinkEvents(['u1']));
     unmount();
 
     expect(cancel).toHaveBeenCalled();
+  });
+
+  test('delegates a time-parts backfill for the computed events', () => {
+    const sessions = makeSessions();
+    setOnyx(sessions, 'loaded');
+
+    renderHook(() => useDrinkEvents(['u1']));
+
+    const backfill = jest.mocked(Statistics.backfillSessionTimeParts);
+    expect(backfill).toHaveBeenCalledTimes(1);
+    const [events, passedSessions, tz, weekStart] = backfill.mock.calls[0];
+    expect(events.length).toBeGreaterThan(0);
+    expect(passedSessions).toBe(sessions);
+    expect(tz).toBe('Africa/Abidjan');
+    expect(weekStart).toBe(1);
   });
 });

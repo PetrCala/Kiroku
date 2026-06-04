@@ -4,6 +4,7 @@ import {useOnyx} from 'react-native-onyx';
 import {buildDrinkEvents} from '@libs/Statistics';
 import type {DrinkEvent, WeekStart} from '@libs/Statistics';
 import {markStatsPhase} from '@libs/Statistics/profiling';
+import Statistics from '@libs/actions/Statistics';
 import {useFirebase} from '@context/global/FirebaseContext';
 import {useDatabaseData} from '@context/global/DatabaseDataContext';
 import useCurrentUserData from '@hooks/useCurrentUserData';
@@ -92,6 +93,18 @@ function useDrinkEvents(userIds?: UserID[]): UseDrinkEventsResult {
       setAllEvents(next);
       setIsCompiled(true);
       markStatsPhase('first events ready', {events: next.length});
+
+      // Persist the local fields any session was just forced to recompute, so
+      // the next cold open reads them with zero `Intl`. Reconstructed from the
+      // events above (no extra `Intl`); the merge re-fires this effect, which
+      // then reads the stored fields and produces an empty patch — so it
+      // converges in one step and never loops.
+      Statistics.backfillSessionTimeParts(
+        next,
+        allSessions,
+        timezone,
+        weekStart,
+      );
     });
     return () => {
       cancelled = true;

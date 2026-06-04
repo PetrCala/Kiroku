@@ -3,8 +3,11 @@ import type DrinkingSession from '@src/types/onyx/DrinkingSession';
 import type {UserDrinkingSessionsList} from '@src/types/onyx/DrinkingSession';
 import type {DrinksToUnits} from '@src/types/onyx/Preferences';
 import type {SelectedTimezone} from '@src/types/onyx/UserData';
+import type {LocalParts} from './localParts';
+import {resolveLocalParts} from './localParts';
 import {logBuildDrinkEvents} from './profiling';
 import {sduFrom} from './sdu';
+import {isStoredLocalParts} from './sessionTimeParts';
 import type {DrinkEvent, WeekStart} from './types';
 
 /**
@@ -79,86 +82,27 @@ function computeSdu(
 }
 
 /**
- * One `Intl.DateTimeFormat` per timezone. Constructing the formatter is the
- * expensive part of timezone resolution, so we build it once and reuse it for
- * every timestamp in that zone — in practice a single zone per user.
+ * Resolve a timestamp's local fields, preferring values stored on the session
+ * at write time (zero `Intl`). `stored` is one entry of `session.drinksTimeParts.byTs`,
+ * already gated on a matching timezone by the caller; on a missing or corrupt
+ * entry we recompute from the raw stamp so a partial map is never wrong. The
+ * month is derived from the day string (a free slice — not stored separately).
  */
-const localPartsFormatters = new Map<string, Intl.DateTimeFormat>();
-
-function getLocalPartsFormatter(timeZone: string): Intl.DateTimeFormat {
-  let formatter = localPartsFormatters.get(timeZone);
-  if (!formatter) {
-    formatter = new Intl.DateTimeFormat('en-US', {
-      timeZone,
-      year: 'numeric',
-      month: '2-digit',
-      day: '2-digit',
-      hour: '2-digit',
-      hourCycle: 'h23',
-    });
-    localPartsFormatters.set(timeZone, formatter);
+function localPartsFor(
+  ts: number,
+  sessionTz: string,
+  stored: unknown,
+): LocalParts | null {
+  if (isStoredLocalParts(stored)) {
+    return {
+      localDay: stored.d,
+      localMonth: stored.d.slice(0, 7),
+      localHour: stored.h,
+      localIsoWeek: stored.w,
+      calendarDow: stored.dow,
+    };
   }
-  return formatter;
-}
-
-/**
- * ISO 8601 week label (`RRRR-'W'II`) for a UTC-midnight stamp of a local wall
- * day. The week-numbering year and week can both differ from the calendar year
- * at the Dec/Jan boundary — e.g. 2021-01-01 belongs to 2020-W53.
- */
-function isoWeekLabel(localMidnightUtc: number): string {
-  const thursday = new Date(localMidnightUtc);
-  const dayFromMonday = (thursday.getUTCDay() + 6) % 7;
-  thursday.setUTCDate(thursday.getUTCDate() - dayFromMonday + 3);
-  const isoYear = thursday.getUTCFullYear();
-  const firstThursday = new Date(Date.UTC(isoYear, 0, 4));
-  const firstOffset = (firstThursday.getUTCDay() + 6) % 7;
-  firstThursday.setUTCDate(firstThursday.getUTCDate() - firstOffset + 3);
-  const week =
-    1 +
-    Math.round((thursday.getTime() - firstThursday.getTime()) / 604_800_000);
-  return `${String(isoYear).padStart(4, '0')}-W${String(week).padStart(2, '0')}`;
-}
-
-type LocalParts = {
-  localDay: string;
-  localMonth: string;
-  localHour: number;
-  localIsoWeek: string;
-  /** Calendar day of week, 0=Sunday..6=Saturday (weekStart-independent). */
-  calendarDow: number;
-};
-
-/**
- * Resolve a timestamp's local wall-clock fields with a single cached
- * `formatToParts` call, then derive day-of-week and ISO week arithmetically.
- * Replaces five per-timestamp `formatInTimeZone` calls — the dominant cost of
- * building the event stream. Throws only on an invalid timezone (the caller
- * skips); returns `null` if the formatter omits a field, which no supported
- * runtime does.
- */
-function resolveLocalParts(ts: number, timeZone: string): LocalParts | null {
-  const fields: Record<string, string> = {};
-  for (const part of getLocalPartsFormatter(timeZone).formatToParts(ts)) {
-    fields[part.type] = part.value;
-  }
-  const {year, month, day, hour} = fields;
-  if (!year || !month || !day || !hour) {
-    return null;
-  }
-  const localMidnightUtc = Date.UTC(
-    Number(year),
-    Number(month) - 1,
-    Number(day),
-  );
-  return {
-    localDay: `${year}-${month}-${day}`,
-    localMonth: `${year}-${month}`,
-    // `% 24` folds the "24" some ICU builds emit for midnight back to 0.
-    localHour: Number(hour) % 24,
-    localIsoWeek: isoWeekLabel(localMidnightUtc),
-    calendarDow: new Date(localMidnightUtc).getUTCDay(),
-  };
+  return resolveLocalParts(ts, sessionTz);
 }
 
 /**
@@ -251,6 +195,13 @@ function buildDrinkEvents(
       if (!drinks) {
         continue;
       }
+      // Stored fields are trusted only when they were computed under the
+      // session's current timezone; on a mismatch every timestamp falls back to
+      // recomputing, so a stale tag can never serve a wrong value.
+      const storedByTs =
+        session.drinksTimeParts?.tz === sessionTz
+          ? session.drinksTimeParts.byTs
+          : undefined;
       sessionCount += 1;
       for (const [tsKey, drinksAtTs] of Object.entries(drinks)) {
         const ts = Number(tsKey);
@@ -262,7 +213,7 @@ function buildDrinkEvents(
         }
         let parts: LocalParts | null;
         try {
-          parts = resolveLocalParts(ts, sessionTz);
+          parts = localPartsFor(ts, sessionTz, storedByTs?.[ts]);
         } catch {
           continue;
         }
