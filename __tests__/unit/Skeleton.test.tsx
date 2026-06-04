@@ -17,7 +17,7 @@ jest.mock('@hooks/useTheme', () => ({
 // logic without rendering the react-content-loader SVG (which isn't transformed
 // under jest). The stub surfaces the `animate` flag it receives for assertion.
 jest.mock('@components/SkeletonViewContentLoader', () => {
-  const {View} = require('react-native');
+  const {View} = require('react-native') as typeof import('react-native');
   return {
     __esModule: true,
     default: ({animate}: {animate?: boolean}) => (
