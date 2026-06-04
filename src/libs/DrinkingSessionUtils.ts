@@ -67,12 +67,18 @@ let ongoingSessionData: DrinkingSession | undefined;
 Onyx.connect({
   key: ONYXKEYS.ONGOING_SESSION_DATA,
   callback: value => {
-    // Assign unconditionally (including clearing on null). This cache routes
-    // every live-session mutation through `getDrinkingSessionData` /
-    // `getDrinkingSessionOnyxKey`, so if it ignored the finalize/discard
-    // `Onyx.set(ONGOING_SESSION_DATA, null)` it would stay stale (ongoing:true)
-    // and a tap landing right after Save would re-route into ONGOING_SESSION_DATA
-    // and re-create the just-finalized session.
+    // For the session we already track, defer to the synchronous
+    // `setLocalSessionCache`: every same-session write (taps, note/blackout/
+    // timezone, cross-device adoption via `updateLocalData`) updates this cache
+    // synchronously, so it is always at least as fresh as this Onyx notification.
+    // The notification can be delayed while the JS thread is busy persisting, and
+    // it may carry an OLDER snapshot of our own in-flight writes — adopting it
+    // would regress the edit buffer mid-burst and drop/scramble taps. So only
+    // react here to a brand-new session (start / cross-device first arrival / id
+    // change) or a clear (finalize/discard).
+    if (value && ongoingSessionData?.id === value.id) {
+      return;
+    }
     ongoingSessionData = value ?? undefined;
   },
 });
@@ -81,6 +87,12 @@ let editSessionData: DrinkingSession | undefined;
 Onyx.connect({
   key: ONYXKEYS.EDIT_SESSION_DATA,
   callback: value => {
+    // See ONGOING_SESSION_DATA above: defer same-session updates to the
+    // synchronous `setLocalSessionCache` so a delayed notification can't regress
+    // an in-progress edit; only adopt a new session or a clear here.
+    if (value && editSessionData?.id === value.id) {
+      return;
+    }
     editSessionData = value ?? undefined;
   },
 });
@@ -94,6 +106,26 @@ Onyx.connect({
  */
 function clearOngoingSessionCache(): void {
   ongoingSessionData = undefined;
+}
+
+/**
+ * Synchronously update the cached live/edit session. The `Onyx.connect` callbacks
+ * above only refresh these caches after Onyx applies and notifies a write, which
+ * lags a burst of rapid edits — and lags further while the JS thread is busy
+ * persisting. Updating the cache here lets the next mutation compose on the
+ * freshest value instead of a stale snapshot. Without it, a remove tapped right
+ * after several adds reads an empty/older base and its `Onyx.set` wipes the
+ * un-propagated adds (net-zero change).
+ */
+function setLocalSessionCache(
+  onyxKey: OnyxKey,
+  session: DrinkingSession | undefined,
+): void {
+  if (onyxKey === ONYXKEYS.ONGOING_SESSION_DATA) {
+    ongoingSessionData = session;
+  } else if (onyxKey === ONYXKEYS.EDIT_SESSION_DATA) {
+    editSessionData = session;
+  }
 }
 
 /**
@@ -874,5 +906,6 @@ export {
   modifySessionDrinks,
   removeDrinksFromList,
   sessionIsExpired,
+  setLocalSessionCache,
   shiftSessionTimestamps,
 };

@@ -167,6 +167,22 @@ describe('live-session persistence', () => {
     expect(call).toHaveLength(2);
   });
 
+  it('synchronously caches the composed session so rapid taps compose on the latest', () => {
+    const session = makeOngoing('s1');
+    routeTo(ONYXKEYS.ONGOING_SESSION_DATA, session);
+    driveOnyx(ONYXKEYS.ONGOING_SESSION_DATA, session);
+
+    tap();
+
+    // updateDrinks must push the freshly-composed session into the synchronous
+    // cache (not wait on Onyx.connect), so a follow-up remove reads it instead of
+    // a stale base and its Onyx.set can't wipe un-propagated adds.
+    expect(mockedDSUtils.setLocalSessionCache).toHaveBeenCalledWith(
+      ONYXKEYS.ONGOING_SESSION_DATA,
+      expect.objectContaining({drinks: {1_000: {beer: 1}}}),
+    );
+  });
+
   it('does not persist edit sessions through the live pipeline', () => {
     const session = {...makeOngoing('e1'), type: CONST.SESSION.TYPES.EDIT};
     routeTo(ONYXKEYS.EDIT_SESSION_DATA, session);
@@ -220,6 +236,37 @@ describe('finalize is the deterministic last writer', () => {
     // The cancelled debounce must not fire a trailing live write.
     jest.advanceTimersByTime(500);
     expect(liveUpdateCalls()).toHaveLength(1);
+  });
+
+  it('clean-replaces the cached session on save so removed drinks do not linger', async () => {
+    const session = makeOngoing('s1');
+    routeTo(ONYXKEYS.ONGOING_SESSION_DATA, session);
+    driveOnyx(ONYXKEYS.ONGOING_SESSION_DATA, session);
+
+    await DS.saveDrinkingSessionData(
+      'uid',
+      {...session, ongoing: false},
+      's1',
+      ONYXKEYS.ONGOING_SESSION_DATA,
+      true,
+    );
+
+    const onyxData = liveUpdateCalls()[0][2] as {
+      optimisticData?: Array<{
+        key: string;
+        value: Record<string, Record<string, unknown>>;
+      }>;
+    };
+    const cacheWrites = (onyxData.optimisticData ?? []).filter(
+      update => update.key === ONYXKEYS.CACHED_DRINKING_SESSIONS,
+    );
+    // A merge can't drop removed drinks, so the finalize must delete the cached
+    // entry first, then re-add the finalized session.
+    expect(cacheWrites).toHaveLength(2);
+    expect(cacheWrites[0].value).toEqual({uid: {s1: null}});
+    expect(cacheWrites[1].value.uid.s1).toEqual(
+      expect.objectContaining({ongoing: false}),
+    );
   });
 
   it('keeps the finalize last when a tap lands after Save (save-mid-tap)', async () => {

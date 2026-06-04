@@ -114,6 +114,48 @@ function sessionUpsertOptimisticData(
 }
 
 /**
+ * Optimistic CLEAN REPLACE of a cached session: delete the entry, then re-add it
+ * in the same `Onyx.update` batch. A plain merge can't drop drinks the user
+ * removed during the session (Onyx merge keeps keys omitted from the new value),
+ * so finishing/editing a session that had drinks removed would leave those
+ * removed drinks accumulated in the cached snapshot — the saved session would then
+ * display far more drinks/units than it actually has. Replacing clears that.
+ */
+function cachedSessionReplace(
+  uid: UserID,
+  sessionId: DrinkingSessionId,
+  session: DrinkingSession,
+): OnyxUpdate[] {
+  return [
+    {
+      onyxMethod: Onyx.METHOD.MERGE,
+      key: ONYXKEYS.CACHED_DRINKING_SESSIONS,
+      value: {[uid]: {[sessionId]: null}},
+    },
+    cachedSessionPatch(uid, sessionId, session),
+  ];
+}
+
+/**
+ * Optimistic data for finalizing/saving a session. Like
+ * `sessionUpsertOptimisticData`, but clean-replaces the cached snapshot (see
+ * `cachedSessionReplace`) so drinks removed during the session don't linger in the
+ * cache and inflate the saved session's unit count.
+ */
+function sessionFinalizeOptimisticData(
+  uid: UserID,
+  sessionId: DrinkingSessionId,
+  session: DrinkingSession,
+): OnyxUpdate[] {
+  const optimisticData = cachedSessionReplace(uid, sessionId, session);
+  const currentEarliest = userDataList?.[uid]?.earliest_session_at;
+  if (currentEarliest === undefined || session.start_time < currentEarliest) {
+    optimisticData.push(earliestPatch(uid, session.start_time));
+  }
+  return optimisticData;
+}
+
+/**
  * Query Firebase for the user's earliest remaining session and persist the
  * result on the user record. Called post-write from edit and delete paths,
  * where the previous earliest may have shifted and we can't infer the new
@@ -179,6 +221,9 @@ async function updateLocalData(
     }
     dataToSet = {id: sessionId, ...newData};
   }
+  // Keep the synchronous cache in lockstep with this write so a follow-up mutation
+  // reads the fresh value rather than waiting on the async Onyx.connect refresh.
+  DSUtils.setLocalSessionCache(onyxKey, dataToSet ?? undefined);
   await Onyx.set(onyxKey, dataToSet);
 }
 
@@ -352,6 +397,9 @@ async function startLiveDrinkingSession(
     },
   );
 
+  // Seed the synchronous cache so a tap fired before the Onyx.connect callback
+  // lands still composes on the new session instead of an empty base.
+  DSUtils.setLocalSessionCache(ONYXKEYS.ONGOING_SESSION_DATA, newSessionData);
   await Onyx.set(ONYXKEYS.ONGOING_SESSION_DATA, newSessionData);
 }
 
@@ -382,8 +430,9 @@ async function saveDrinkingSessionData(
   // The server upserts the session, owns the `earliest_session_at` floor
   // (recomputing it when an edit moves the previously-earliest session later),
   // and — when `sessionIsLive` — updates the user's live status. The optimistic
-  // data mirrors the server `onyxData`; non-strict floor changes are reconciled
-  // by the inline/pushed response.
+  // data clean-replaces the cached snapshot so drinks removed during the session
+  // don't linger; non-strict floor changes are reconciled by the inline/pushed
+  // response.
   API.write(
     WRITE_COMMANDS.UPDATE_SESSION,
     {
@@ -392,7 +441,7 @@ async function saveDrinkingSessionData(
       sessionIsLive: !!sessionIsLive,
     },
     {
-      optimisticData: sessionUpsertOptimisticData(
+      optimisticData: sessionFinalizeOptimisticData(
         userID,
         sessionKey,
         newSessionData,
@@ -474,16 +523,21 @@ function updateDrinks(
     drinksToUnits,
   );
 
+  // Compose on the freshest value: update the cached copy synchronously so a
+  // rapid follow-up mutation (e.g. a remove tapped right after several adds)
+  // composes on the latest drinks instead of the stale Onyx.connect snapshot,
+  // which lags while the JS thread is busy persisting. Without this the remove's
+  // `Onyx.set` below wipes adds that haven't propagated back to the cache yet.
+  const updatedSession: DrinkingSession = {...session, drinks: drinksList};
+  DSUtils.setLocalSessionCache(onyxKey, updatedSession);
+
   // Merge can only be used when adding drinks, or when removing drinks does not delete the drink key
   if (action === CONST.DRINKS.ACTIONS.ADD) {
     Onyx.merge(onyxKey, {
       drinks: drinksList,
     });
   } else {
-    Onyx.set(onyxKey, {
-      ...session,
-      drinks: drinksList,
-    });
+    Onyx.set(onyxKey, updatedSession);
   }
 
   // Live (ongoing) sessions sync to the server through the debounced action-layer
@@ -522,9 +576,13 @@ function updateNote(
 ): void {
   const onyxKey = DSUtils.getDrinkingSessionOnyxKey(session?.id);
   if (onyxKey) {
+    const current = DSUtils.getDrinkingSessionData(session?.id) ?? session;
     Onyx.merge(onyxKey, {
       note: newNote,
     });
+    if (current) {
+      DSUtils.setLocalSessionCache(onyxKey, {...current, note: newNote});
+    }
     if (onyxKey === ONYXKEYS.ONGOING_SESSION_DATA) {
       scheduleLiveSessionPersist();
     }
@@ -537,9 +595,13 @@ function updateBlackout(
 ): void {
   const onyxKey = DSUtils.getDrinkingSessionOnyxKey(session?.id);
   if (onyxKey) {
+    const current = DSUtils.getDrinkingSessionData(session?.id) ?? session;
     Onyx.merge(onyxKey, {
       blackout,
     });
+    if (current) {
+      DSUtils.setLocalSessionCache(onyxKey, {...current, blackout});
+    }
     if (onyxKey === ONYXKEYS.ONGOING_SESSION_DATA) {
       scheduleLiveSessionPersist();
     }
@@ -559,9 +621,16 @@ function updateTimezone(
 ): void {
   const onyxKey = DSUtils.getDrinkingSessionOnyxKey(session?.id);
   if (onyxKey) {
+    const current = DSUtils.getDrinkingSessionData(session?.id) ?? session;
     Onyx.merge(onyxKey, {
       timezone: newTimezone,
     });
+    if (current) {
+      DSUtils.setLocalSessionCache(onyxKey, {
+        ...current,
+        timezone: newTimezone,
+      });
+    }
     if (onyxKey === ONYXKEYS.ONGOING_SESSION_DATA) {
       scheduleLiveSessionPersist();
     }
