@@ -139,33 +139,24 @@ function PatternsTab() {
     [range, drinkTypeFilter],
   );
 
-  const hourBuckets = useAggregate(
-    events,
-    byHour,
-    sumUnits,
-    eventFilter,
-    'patterns.hourBuckets',
-  );
+  const hourBuckets = useAggregate(events, byHour, sumUnits, eventFilter);
   const dowHourBuckets = useAggregate(
     events,
     composeBuckets(byDow, byHour),
     sumUnits,
     eventFilter,
-    'patterns.dowHourBuckets',
   );
   const perSessionCounts = useAggregate(
     events,
     bySessionId,
     countEvents,
     eventFilter,
-    'patterns.perSessionCounts',
   );
   const perSessionDuration = useAggregate(
     events,
     bySessionId,
     sessionDurationMin,
     eventFilter,
-    'patterns.perSessionDuration',
   );
 
   const drinkBins = useMemo(

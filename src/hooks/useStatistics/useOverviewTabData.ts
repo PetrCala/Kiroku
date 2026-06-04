@@ -7,7 +7,6 @@ import type {
   SubPeriodPoint,
   Thresholds,
 } from '@libs/Statistics/overview';
-import {measure} from '@libs/Statistics/perf';
 import {
   selectHasEverLogged,
   selectIsSparse,
@@ -58,10 +57,7 @@ function useOverviewTabData(): OverviewTabData {
   // One fused pass for the current window (per-day + sub-period sums + session
   // count), plus one more only when a comparison is active.
   const {current, previous, subPeriods} = useMemo(
-    () =>
-      measure('overview.model', () =>
-        buildOverviewModel(events, range, comparisonRange, now, thresholds),
-      ),
+    () => buildOverviewModel(events, range, comparisonRange, now, thresholds),
     [events, range, comparisonRange, now, thresholds],
   );
 
