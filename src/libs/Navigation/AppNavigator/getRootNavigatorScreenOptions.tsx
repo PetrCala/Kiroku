@@ -29,6 +29,7 @@ type ScreenOptions = {
   rightModalNavigator: DynamicScreenOptions;
   onboardingModalNavigator: GetOnboardingModalNavigatorOptions;
   sessionsCalendarNavigator: StackNavigationOptions;
+  dayOverviewNavigator: StackNavigationOptions;
   leftModalNavigator: StackNavigationOptions;
   homeScreen: StackNavigationOptions;
   fullScreen: StackNavigationOptions;
@@ -134,6 +135,18 @@ const getRootNavigatorScreenOptions: GetRootNavigatorScreenOptions = (
     // `gestureResponseDistance` at the platform default to avoid
     // competing with the FlashList's vertical scroll handler.
     sessionsCalendarNavigator: {
+      ...commonScreenOptions,
+      cardStyleInterpolator: sessionsCalendarCardStyleInterpolator,
+      presentation: 'transparentModal',
+      cardOverlayEnabled: false,
+      cardStyle: {backgroundColor: 'transparent'},
+      gestureEnabled: true,
+      gestureDirection: 'horizontal',
+    },
+    // Day overview (drinking-sessions list for a tapped day) reuses the
+    // fullscreen calendar's fade-and-scale entrance so both calendar
+    // drill-downs lift in from the center rather than sliding from the right.
+    dayOverviewNavigator: {
       ...commonScreenOptions,
       cardStyleInterpolator: sessionsCalendarCardStyleInterpolator,
       presentation: 'transparentModal',
