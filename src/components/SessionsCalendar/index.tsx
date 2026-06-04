@@ -210,6 +210,7 @@ function SessionsCalendar({
         onVisibleDayChange={onVisibleDayChange}
         isReadOnly={isReadOnly}
         isEditModeOn={isEditModeOn}
+        onSwipeBack={Navigation.goBack}
       />
     );
   }

@@ -81,9 +81,15 @@ const BadgesModalStackNavigator =
 
 const DayOverviewModalStackNavigator =
   createModalStackNavigator<DayOverviewNavigatorParamList>({
-    [SCREENS.DAY_OVERVIEW.ROOT]: () =>
-      require<ReactComponentModule>('@screens/DayOverview/DayOverviewScreen')
-        .default,
+    [SCREENS.DAY_OVERVIEW.ROOT]: {
+      getComponent: () =>
+        require<ReactComponentModule>('@screens/DayOverview/DayOverviewScreen')
+          .default,
+      // The screen owns a horizontal swipe-back gesture (SwipeBackGestureDetector
+      // in DayOverviewListView). Disable the stack's own swipe-back so the two
+      // don't race on iOS — our gesture works on both platforms.
+      options: {gestureEnabled: false},
+    },
   });
 
 const DrinkingSessionModalStackNavigator =
