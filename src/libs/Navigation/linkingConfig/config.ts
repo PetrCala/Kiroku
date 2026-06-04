@@ -64,13 +64,6 @@ const config: LinkingOptions<RootStackParamList>['config'] = {
             [SCREENS.BADGES.ROOT]: ROUTES.BADGES,
           },
         },
-        [SCREENS.RIGHT_MODAL.DAY_OVERVIEW]: {
-          screens: {
-            [SCREENS.DAY_OVERVIEW.ROOT]: {
-              path: ROUTES.DAY_OVERVIEW.route,
-            },
-          },
-        },
         [SCREENS.RIGHT_MODAL.DRINKING_SESSION]: {
           screens: {
             [SCREENS.DRINKING_SESSION.ROOT]: {
@@ -228,6 +221,14 @@ const config: LinkingOptions<RootStackParamList>['config'] = {
       screens: {
         [SCREENS.SESSIONS_CALENDAR.FULLSCREEN]: {
           path: ROUTES.SESSIONS_CALENDAR_FULLSCREEN.route,
+        },
+      },
+    },
+
+    [NAVIGATORS.DAY_OVERVIEW_NAVIGATOR]: {
+      screens: {
+        [SCREENS.DAY_OVERVIEW.ROOT]: {
+          path: ROUTES.DAY_OVERVIEW.route,
         },
       },
     },

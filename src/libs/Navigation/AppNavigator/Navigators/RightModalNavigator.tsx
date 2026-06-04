@@ -61,10 +61,6 @@ function RightModalNavigator({navigation}: RightModalNavigatorProps) {
           component={ModalStackNavigators.BadgesModalStackNavigator}
         />
         <Stack.Screen
-          name={SCREENS.RIGHT_MODAL.DAY_OVERVIEW}
-          component={ModalStackNavigators.DayOverviewModalStackNavigator}
-        />
-        <Stack.Screen
           name={SCREENS.RIGHT_MODAL.DRINKING_SESSION}
           component={ModalStackNavigators.DrinkingSessionModalStackNavigator}
         />

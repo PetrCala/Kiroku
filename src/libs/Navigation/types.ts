@@ -171,8 +171,6 @@ type StatisticsNavigatorParamList = {
 type RightModalNavigatorParamList = {
   [SCREENS.RIGHT_MODAL.BADGES]: NavigatorScreenParams<BadgesNavigatorParamList>;
   [SCREENS.RIGHT_MODAL
-    .DAY_OVERVIEW]: NavigatorScreenParams<DayOverviewNavigatorParamList>;
-  [SCREENS.RIGHT_MODAL
     .DRINKING_SESSION]: NavigatorScreenParams<DrinkingSessionNavigatorParamList>;
   [SCREENS.RIGHT_MODAL
     .PROFILE]: NavigatorScreenParams<ProfileNavigatorParamList>;
@@ -240,6 +238,7 @@ type AuthScreensParamList = CentralPaneScreensParamList &
     [NAVIGATORS.LEFT_MODAL_NAVIGATOR]: NavigatorScreenParams<LeftModalNavigatorParamList>;
     [NAVIGATORS.RIGHT_MODAL_NAVIGATOR]: NavigatorScreenParams<RightModalNavigatorParamList>;
     [NAVIGATORS.SESSIONS_CALENDAR_NAVIGATOR]: NavigatorScreenParams<SessionsCalendarNavigatorParamList>;
+    [NAVIGATORS.DAY_OVERVIEW_NAVIGATOR]: NavigatorScreenParams<DayOverviewNavigatorParamList>;
     [NAVIGATORS.ONBOARDING_MODAL_NAVIGATOR]: NavigatorScreenParams<OnboardingModalNavigatorParamList>;
     // [NAVIGATORS.FULL_SCREEN_NAVIGATOR]: NavigatorScreenParams<FullScreenNavigatorParamList>;
   };
