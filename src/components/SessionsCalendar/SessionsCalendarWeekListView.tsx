@@ -211,6 +211,15 @@ function SessionsCalendarWeekListView({
 
   const listRef = useRef<FlashListRef<ListItem>>(null);
   const hasAppliedInitialScrollRef = useRef(false);
+  // Whether the user has actually dragged the list. Until they do, the only
+  // scroll is our programmatic centering, so there's no new position to sync —
+  // syncing then would write whatever the centering math reports (a neighbour
+  // month for a short latest month). Gating the write on a real drag keeps an
+  // open-and-close-without-moving a no-op: the compact calendar stays put.
+  const hasUserScrolledRef = useRef(false);
+  const onScrollBeginDrag = useCallback(() => {
+    hasUserScrolledRef.current = true;
+  }, []);
 
   // Resolve the target index — undefined while data hasn't loaded enough
   // months yet (the items memo widens as `loadedFromDate` extends).
@@ -288,16 +297,19 @@ function SessionsCalendarWeekListView({
       // Surface the *center-most* visible month as the "last viewed" date, so
       // backing out to the compact calendar lands on the month the user is
       // focused on (matching the centered open) rather than a sliver clipped
-      // at the top edge.
-      const centerItem =
-        items[visibleIndices[Math.floor(visibleIndices.length / 2)]];
-      if (centerItem) {
-        const centerDay =
-          centerItem.kind === 'label'
-            ? (`${centerItem.monthKey}-01` as DateString)
-            : centerItem.row.days.find(d => d !== null);
-        if (centerDay) {
-          writeLastViewedDay(centerDay);
+      // at the top edge. Only once the user has actually scrolled — otherwise
+      // an open-and-close without moving would overwrite the origin month.
+      if (hasUserScrolledRef.current) {
+        const centerItem =
+          items[visibleIndices[Math.floor(visibleIndices.length / 2)]];
+        if (centerItem) {
+          const centerDay =
+            centerItem.kind === 'label'
+              ? (`${centerItem.monthKey}-01` as DateString)
+              : centerItem.row.days.find(d => d !== null);
+          if (centerDay) {
+            writeLastViewedDay(centerDay);
+          }
         }
       }
 
@@ -456,6 +468,7 @@ function SessionsCalendarWeekListView({
             contentContainerStyle={contentContainerStyle}
             showsVerticalScrollIndicator
             ListHeaderComponent={listHeader}
+            onScrollBeginDrag={onScrollBeginDrag}
             onViewableItemsChanged={onViewableItemsChanged}
             viewabilityConfig={VIEWABILITY_CONFIG}
           />
