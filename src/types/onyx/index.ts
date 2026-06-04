@@ -13,6 +13,8 @@ import type {
   DrinkingSessionArray,
   DrinkingSessionList,
   DrinkingSessionType,
+  SessionTimeParts,
+  StoredLocalParts,
   UserDrinkingSessionsList,
 } from './DrinkingSession';
 import type Feedback from './Feedback';
@@ -133,6 +135,8 @@ export type {
   SessionLocations,
   SessionPlaceholder,
   SessionPlaceholderList,
+  SessionTimeParts,
+  StoredLocalParts,
   RangePreset,
   StartSession,
   StatisticsFilters,
