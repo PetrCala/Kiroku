@@ -1,55 +1,35 @@
-import {useIsFocused, useNavigation, useRoute} from '@react-navigation/native';
-import React, {useEffect, useRef, useState} from 'react';
+import {useIsFocused} from '@react-navigation/native';
+import React, {useEffect} from 'react';
 import {Freeze} from 'react-freeze';
 import type ChildrenProps from '@src/types/utils/ChildrenProps';
 import liveTapLog from '@libs/liveTapDebug';
-import shouldSetScreenBlurred from './shouldSetScreenBlurred';
 
 type FreezeWrapperProps = ChildrenProps & {
   /** Prop to disable freeze */
   keepVisible?: boolean;
 };
 
+// Freeze the wrapped subtree (via react-freeze) whenever this screen is not the
+// focused/top screen — i.e. another screen (a right-hand modal such as the live
+// drinking-session screen) is on top of it. While frozen, react-freeze suspends
+// the subtree's renders and effects, so occluded screens stop re-rendering on
+// Onyx echoes (and stop running effects like HomeScreen's syncLocalLiveSessionData)
+// that would otherwise block the JS thread under the modal.
+//
+// We derive `freeze` straight from `useIsFocused()`. The previous navigation-state
+// `addListener('state', …)` approach was unreliable: the listener was re-created on
+// every focus change, so it missed the very push event that should have frozen the
+// screen and the freeze never engaged.
 function FreezeWrapper({keepVisible = false, children}: FreezeWrapperProps) {
-  const [isScreenBlurred, setIsScreenBlurred] = useState(false);
-  // we need to know the screen index to determine if the screen can be frozen
-  const screenIndexRef = useRef<number | null>(null);
   const isFocused = useIsFocused();
-  const navigation = useNavigation();
-  const currentRoute = useRoute();
+  const freeze = !isFocused && !keepVisible;
 
+  // TEMP [live-tap] instrumentation — remove with the rest of the debug logging.
   useEffect(() => {
-    const index =
-      navigation
-        .getState()
-        ?.routes.findIndex(route => route.key === currentRoute.key) ?? 0;
-    screenIndexRef.current = index;
-    // eslint-disable-next-line react-compiler/react-compiler, react-hooks/exhaustive-deps
-  }, []);
+    liveTapLog('FreezeWrapper.freeze', {freeze, isFocused});
+  }, [freeze, isFocused]);
 
-  useEffect(() => {
-    const unsubscribe = navigation.addListener('state', () => {
-      const navigationIndex =
-        (navigation.getState()?.index ?? 0) - (screenIndexRef.current ?? 0);
-      setIsScreenBlurred(shouldSetScreenBlurred(navigationIndex));
-    });
-    return () => unsubscribe();
-  }, [isFocused, isScreenBlurred, navigation]);
-
-  useEffect(() => {
-    liveTapLog('FreezeWrapper.freeze', {
-      route: currentRoute.name,
-      freeze: !isFocused && isScreenBlurred && !keepVisible,
-      isFocused,
-      isScreenBlurred,
-    });
-  }, [isFocused, isScreenBlurred, keepVisible, currentRoute.name]);
-
-  return (
-    <Freeze freeze={!isFocused && isScreenBlurred && !keepVisible}>
-      {children}
-    </Freeze>
-  );
+  return <Freeze freeze={freeze}>{children}</Freeze>;
 }
 
 FreezeWrapper.displayName = 'FreezeWrapper';
