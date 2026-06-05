@@ -31,7 +31,7 @@ function StatsRangeNavigator({
 }: Props) {
   const {translate, preferredLocale} = useLocalize();
   const styles = useThemeStyles();
-  const {text, textReversed} = useTheme();
+  const {text, textReversed, textSupporting} = useTheme();
 
   const label = getStatsRangeLabel({range, translate, preferredLocale});
   const {isPageable, canGoPrev, canGoNext, isLatest} = range;
@@ -93,6 +93,13 @@ function StatsRangeNavigator({
               numberOfLines={1}>
               {label}
             </Text>
+            <Icon
+              src={KirokuIcons.DownArrow}
+              fill={textSupporting}
+              width={12}
+              height={12}
+              additionalStyles={styles.ml1}
+            />
           </PressableWithFeedback>
           {/* Right slot: a fixed-width reserve keeps the label centered. Holds
               the jump-to-latest button (fades in) or the custom-range revert
