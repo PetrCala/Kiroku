@@ -213,6 +213,15 @@ async function deleteUserData(
   await update(ref(db), updates);
 }
 
+/**
+ * Presence heartbeat: ask the server to recompute the current user's
+ * `user_status` from their own sessions. No client-supplied data is sent and
+ * the server emits no `onyxData` (user_status has no top-level Onyx key).
+ */
+function syncUserStatus() {
+  API.write(WRITE_COMMANDS.SYNC_USER_STATUS, {});
+}
+
 /** Reauthentificate a user using the User object and a password
  * Necessary before important operations such as deleting a user
  * or changing a password.
@@ -919,6 +928,7 @@ export {
   sendVerifyEmailLink,
   setAppUpdateDismissed,
   setUsername,
+  syncUserStatus,
   updateAutomaticTimezone,
   updatePassword,
   userExistsInDatabase,
