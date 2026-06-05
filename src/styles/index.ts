@@ -1616,6 +1616,7 @@ const styles = (theme: ThemeColors) =>
       flexDirection: 'row',
       alignItems: 'center',
       justifyContent: 'center',
+      columnGap: 8,
       minHeight: 36,
     },
 
@@ -1625,12 +1626,20 @@ const styles = (theme: ThemeColors) =>
       fontSize: variables.fontSizeLarge,
     },
 
-    // Equal-width slots flanking the month label. The left slot holds the
-    // expand affordance, the right slot the revert button or older-months
-    // spinner — fixed width on both sides keeps the label centered.
+    // Padding around the month label, matching the Statistics range navigator's
+    // label so the gap to the revert control reads the same on both screens.
+    sessionsCalendarHeaderLabel: {
+      paddingHorizontal: 8,
+      paddingVertical: 4,
+      alignItems: 'center',
+    },
+
+    // Equal-width slots flanking the month label: a phantom spacer on the left,
+    // the revert button or older-months spinner on the right. Fixed width on
+    // both sides keeps the label centered. Matches the stats jump slot.
     sessionsCalendarHeaderSideSlot: {
-      width: 32,
-      height: 32,
+      width: 24,
+      height: 24,
       alignItems: 'center',
       justifyContent: 'center',
     },
