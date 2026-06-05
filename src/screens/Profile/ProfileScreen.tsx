@@ -1,7 +1,6 @@
 import {View} from 'react-native';
 import type {DateData} from 'react-native-calendars';
 import {useFirebase} from '@context/global/FirebaseContext';
-import * as Profile from '@userActions/Profile';
 import type {StatData} from '@components/Items/StatOverview';
 import StatOverview from '@components/Items/StatOverview';
 import ProfileOverview from '@components/Social/ProfileOverview';
@@ -30,10 +29,10 @@ import type SCREENS from '@src/SCREENS';
 import Navigation from '@libs/Navigation/Navigation';
 import DBPATHS from '@src/DBPATHS';
 import ROUTES from '@src/ROUTES';
-import useFetchData from '@hooks/useFetchData';
+import useFriendProfile from '@hooks/useFriendProfile';
+import useFriendPreferences from '@hooks/useFriendPreferences';
 import useDrinkingSessionsFetch from '@hooks/useDrinkingSessionsFetch';
 import ScreenWrapper from '@components/ScreenWrapper';
-import type {FetchDataKeys} from '@hooks/useFetchData/types';
 import HeaderWithBackButton from '@components/HeaderWithBackButton';
 import useLocalize from '@hooks/useLocalize';
 import useReadyAfterScreenTransition from '@hooks/useReadyAfterScreenTransition';
@@ -55,23 +54,22 @@ function ProfileScreen({route}: ProfileScreenProps) {
   const {auth, db} = useFirebase();
   const {userID} = route.params;
   const user = auth.currentUser;
-  // `drinkingSessionData` is fetched separately via `useDrinkingSessionsFetch`
-  // — that hook windows the Firebase query by `start_time` and re-fetches when
-  // the calendar widens. `useFetchData` stays for the non-windowed keys.
-  const relevantDataKeys: FetchDataKeys = ['userData', 'preferences'];
+  // Friend data now comes from the kiroku-api (privacy-enforced) instead of
+  // direct Firebase reads: profile + friends via `useFriendProfile`, rendering
+  // preferences via `useFriendPreferences`, and the windowed sessions via
+  // `useDrinkingSessionsFetch`.
   const {translate} = useLocalize();
   const styles = useThemeStyles();
   const StyleUtils = useStyleUtils();
-  const {data: fetchedData, isLoading: isFetchLoading} = useFetchData(
-    userID,
-    relevantDataKeys,
-  );
+  const {userData, isLoading: isProfileFetchLoading} = useFriendProfile(userID);
+  const {preferences, isLoading: isPrefsLoading} = useFriendPreferences(userID);
   const {
     data: drinkingSessionData,
     isLoading: isSessionsLoading,
     isFetchingOlderMonths,
   } = useDrinkingSessionsFetch(userID);
-  const isLoading = isFetchLoading || isSessionsLoading;
+  const isLoading =
+    isProfileFetchLoading || isPrefsLoading || isSessionsLoading;
   // Defer the (heavy) calendar mount until after the navigation slide. The
   // compact `<SessionsCalendar>` runs `useLazyMarkedDates`' synchronous
   // indexing on first render, which otherwise blocks the push slide-in.
@@ -107,8 +105,6 @@ function ProfileScreen({route}: ProfileScreenProps) {
   const [unitsConsumed, setUnitsConsumed] = useState(0);
   const [manageFriendModalVisible, setManageFriendModalVisible] =
     useState(false);
-  const userData = fetchedData?.userData;
-  const preferences = fetchedData?.preferences;
   const profileData = userData?.profile;
   const friends = userData?.friends;
 
@@ -177,16 +173,6 @@ function ProfileScreen({route}: ProfileScreenProps) {
     setFriendCount(newFriendCount);
     setCommonFriendCount(newCommonFriendCount);
   }, [friends, selfFriends]);
-
-  // Mirror the viewed user's public `is_supporter` flag into USER_DATA_LIST so
-  // SupporterBadgeForUser (which reads from that collection) can render
-  // immediately on profiles reached via deep link rather than through a list.
-  useEffect(() => {
-    if (!userID || userData === undefined) {
-      return;
-    }
-    Profile.setSupporterFlagInList(userID, userData.is_supporter ?? false);
-  }, [userID, userData]);
 
   // Monitor stats
   useEffect(() => {

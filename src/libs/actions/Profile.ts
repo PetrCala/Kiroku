@@ -7,7 +7,11 @@ import Onyx from 'react-native-onyx';
 import type {OnyxUpdate} from 'react-native-onyx';
 import * as API from '@libs/API';
 import {READ_COMMANDS, WRITE_COMMANDS} from '@libs/API/types';
-import type {GetUsersBatchParams} from '@libs/API/parameters';
+import type {
+  GetUsersBatchParams,
+  OpenFriendListParams,
+  OpenPublicProfilePageParams,
+} from '@libs/API/parameters';
 import CONST from '@src/CONST';
 import type {
   Profile,
@@ -220,9 +224,45 @@ async function updateProfileInfo(
   await updateProfile(auth.currentUser, {photoURL: downloadURL});
 }
 
+/**
+ * Read a single user's public profile (profile + public_data + public
+ * is_supporter) via `GET /v1/users/:uid/profile`. The response merges those into
+ * `userDataList[userID]`; this returns the promise so a caller can await the
+ * round-trip. Single-user twin of `fetchUserProfiles` for the profile screen.
+ */
+function openPublicProfile(userID: UserID): Promise<void | Response> {
+  const parameters: OpenPublicProfilePageParams = {userID};
+  // eslint-disable-next-line rulesdir/no-api-side-effects-method
+  return API.makeRequestWithSideEffects(
+    READ_COMMANDS.OPEN_PUBLIC_PROFILE_PAGE,
+    parameters,
+    {},
+    CONST.API_REQUEST_TYPE.READ,
+  );
+}
+
+/**
+ * Read a user's friends list via the public `GET /v1/users/:uid/friends`,
+ * replacing the direct Firebase RTDB read. The response merges
+ * `userDataList[userID].friends`; the profile screen reads it back from Onyx to
+ * compute friend / common-friend counts.
+ */
+function openFriendList(userID: UserID): Promise<void | Response> {
+  const parameters: OpenFriendListParams = {userID};
+  // eslint-disable-next-line rulesdir/no-api-side-effects-method
+  return API.makeRequestWithSideEffects(
+    READ_COMMANDS.OPEN_FRIEND_LIST,
+    parameters,
+    {},
+    CONST.API_REQUEST_TYPE.READ,
+  );
+}
+
 export {
   fetchUserProfiles,
   fetchUserStatuses,
+  openPublicProfile,
+  openFriendList,
   setProfilePictureURL,
   setSupporterFlagInList,
   updateProfileInfo,
