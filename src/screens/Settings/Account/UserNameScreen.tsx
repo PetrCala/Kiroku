@@ -20,7 +20,7 @@ import type {StackScreenProps} from '@react-navigation/stack';
 import type {SettingsNavigatorParamList} from '@libs/Navigation/types';
 import type SCREENS from '@src/SCREENS';
 import {useFirebase} from '@context/global/FirebaseContext';
-import {useDatabaseData} from '@context/global/DatabaseDataContext';
+import useCurrentUserData from '@hooks/useCurrentUserData';
 import {changeUserName} from '@userActions/User';
 
 type UserNameScreenProps = StackScreenProps<
@@ -34,7 +34,7 @@ function UserNameScreen({route}: UserNameScreenProps) {
   const {translate} = useLocalize();
   const {auth} = useFirebase();
   const [loadingText] = useOnyx(ONYXKEYS.APP_LOADING_TEXT);
-  const {userData} = useDatabaseData();
+  const userData = useCurrentUserData();
   const profileData = userData?.profile;
 
   const currentUserDetails = {

@@ -1,12 +1,14 @@
 import {useMemo} from 'react';
 import {useDatabaseData} from '@context/global/DatabaseDataContext';
 import {useFirebase} from '@context/global/FirebaseContext';
+import useCurrentUserData from '@hooks/useCurrentUserData';
 import {
   getOnboardingLastVisitedPath,
   hasAcceptedCurrentTerms,
   hasCompletedOnboarding,
   isLegacyGrandfatheredUser,
 } from '@libs/OnboardingSelectors';
+import {isEmptyObject} from '@src/types/utils/EmptyObject';
 import CONFIG from '@src/CONFIG';
 import ROUTES from '@src/ROUTES';
 import type {Route} from '@src/ROUTES';
@@ -31,7 +33,12 @@ type OnboardingFlowState = {
 function useOnboardingFlow(): OnboardingFlowState {
   const {auth} = useFirebase();
   const userID = auth?.currentUser?.uid;
-  const {userData, config} = useDatabaseData();
+  const {config} = useDatabaseData();
+  // `useCurrentUserData` returns {} (truthy) while loading / after the Onyx
+  // record is wiped on account close; the readiness gate and selectors below
+  // expect `undefined` to mean "not loaded yet", so map empty → undefined.
+  const currentUserData = useCurrentUserData();
+  const userData = isEmptyObject(currentUserData) ? undefined : currentUserData;
 
   return useMemo<OnboardingFlowState>(() => {
     const skipOnboarding = CONFIG.SKIP_ONBOARDING;

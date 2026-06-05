@@ -2,12 +2,7 @@
 import type {ReactNode} from 'react';
 import React, {createContext, useContext, useEffect, useMemo} from 'react';
 import {useOnyx} from 'react-native-onyx';
-import type {
-  Config,
-  UnconfirmedDays,
-  UserData,
-  UserStatus,
-} from '@src/types/onyx';
+import type {Config, UserStatus} from '@src/types/onyx';
 import type {FetchDataKeys} from '@hooks/useFetchData/types';
 import useListenToData from '@hooks/useListenToData';
 import setCrashReportingCollectionEnabled from '@libs/setCrashReportingCollectionEnabled';
@@ -16,8 +11,6 @@ import {useFirebase} from './FirebaseContext';
 
 type DatabaseDataContextType = {
   userStatusData?: UserStatus;
-  unconfirmedDays?: UnconfirmedDays;
-  userData?: UserData;
   /** Global app configuration, including the terms re-consent signal. */
   config?: Config;
   /** Legacy windowed-listener flag. Always `false` now that the signed-in
@@ -50,12 +43,7 @@ function DatabaseDataProvider({children}: DatabaseDataProviderProps) {
   const user = auth.currentUser;
   const userID = user ? user.uid : '';
 
-  const dataTypes: FetchDataKeys = [
-    'config',
-    'userStatusData',
-    'unconfirmedDays',
-    'userData',
-  ];
+  const dataTypes: FetchDataKeys = ['config', 'userStatusData'];
 
   const {data, isFetchingOlderMonths} = useListenToData(dataTypes, userID);
 
@@ -64,8 +52,6 @@ function DatabaseDataProvider({children}: DatabaseDataProviderProps) {
   const value = useMemo(
     () => ({
       userStatusData: data.userStatusData,
-      unconfirmedDays: data.unconfirmedDays,
-      userData: data.userData,
       config: data.config,
       isFetchingOlderMonths,
     }),
@@ -85,17 +71,6 @@ function DatabaseDataProvider({children}: DatabaseDataProviderProps) {
       preferences.crash_reporting_enabled !== false,
     );
   }, [preferences]);
-
-  // Monitor local data for changes - TODO rewrite this later
-  // useEffect(() => {
-  //   Object.entries(data).forEach(([key, value]) => {
-  //     if (key === 'userData') {
-  //       Onyx.merge(ONYXKEYS.USER_DATA_LIST, {
-  //         [userID]: value as UserData,
-  //       });
-  //     }
-  //   });
-  // }, [data.userData]);
 
   return (
     <DatabaseDataContext.Provider value={value}>

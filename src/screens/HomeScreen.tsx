@@ -38,6 +38,7 @@ import * as Session from '@userActions/Session';
 import Timing from '@userActions/Timing';
 import ScrollView from '@components/ScrollView';
 import useLocalize from '@hooks/useLocalize';
+import useCurrentUserData from '@hooks/useCurrentUserData';
 import useCurrentUserDrinkingSessions from '@hooks/useCurrentUserDrinkingSessions';
 import useCurrentUserPreferences from '@hooks/useCurrentUserPreferences';
 import {roundToTwoDecimalPlaces} from '@libs/NumberUtils';
@@ -46,6 +47,7 @@ import BottomTabBar from '@libs/Navigation/AppNavigator/createCustomBottomTabNav
 import {useOnyx} from 'react-native-onyx';
 import ONYXKEYS from '@src/ONYXKEYS';
 import ERRORS from '@src/ERRORS';
+import {isEmptyObject} from '@src/types/utils/EmptyObject';
 import Button from '@components/Button';
 import SessionsCalendarCompactSkeleton from '@components/SessionsCalendar/SessionsCalendarCompactSkeleton';
 import {HomeHeaderSkeleton, StatOverviewSkeleton} from './HomeScreenSkeleton';
@@ -67,7 +69,11 @@ function HomeScreen({route}: HomeScreenProps) {
   const [lastViewedCalendarDate] = useOnyx(
     ONYXKEYS.NVP_LAST_VIEWED_CALENDAR_DATE,
   );
-  const {userData, isFetchingOlderMonths} = useDatabaseData();
+  const {isFetchingOlderMonths} = useDatabaseData();
+  // `useCurrentUserData` returns {} (truthy) while loading; the readiness gates
+  // and header below treat `undefined` as "not loaded", so map empty → undefined.
+  const currentUserData = useCurrentUserData();
+  const userData = isEmptyObject(currentUserData) ? undefined : currentUserData;
   const preferences = useCurrentUserPreferences();
   const drinkingSessionData = useCurrentUserDrinkingSessions();
   const [localVisibleDate, setLocalVisibleDate] = useState<DateData>(

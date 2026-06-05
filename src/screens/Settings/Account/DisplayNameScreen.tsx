@@ -20,7 +20,7 @@ import INPUT_IDS from '@src/types/form/DisplayNameForm';
 import type {StackScreenProps} from '@react-navigation/stack';
 import type {SettingsNavigatorParamList} from '@libs/Navigation/types';
 import type SCREENS from '@src/SCREENS';
-import {useDatabaseData} from '@context/global/DatabaseDataContext';
+import useCurrentUserData from '@hooks/useCurrentUserData';
 import {useFirebase} from '@context/global/FirebaseContext';
 import {changeDisplayName} from '@userActions/User';
 
@@ -35,7 +35,7 @@ function DisplayNameScreen({route}: DisplayNameScreenProps) {
   const {translate} = useLocalize();
   const {auth} = useFirebase();
   const [loadingText] = useOnyx(ONYXKEYS.APP_LOADING_TEXT);
-  const {userData} = useDatabaseData();
+  const userData = useCurrentUserData();
   const profileData = userData?.profile;
 
   const currentUserDetails = {

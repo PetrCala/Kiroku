@@ -8,7 +8,7 @@ import FullScreenLoadingIndicator from '@components/FullscreenLoadingIndicator';
 import OnboardingScreenLayout from '@components/OnboardingScreenLayout';
 import Text from '@components/Text';
 import TextInput from '@components/TextInput';
-import {useDatabaseData} from '@context/global/DatabaseDataContext';
+import useCurrentUserData from '@hooks/useCurrentUserData';
 import {useFirebase} from '@context/global/FirebaseContext';
 import useLocalize from '@hooks/useLocalize';
 import useThemeStyles from '@hooks/useThemeStyles';
@@ -33,7 +33,7 @@ function DisplayNameScreen({}: DisplayNameScreenProps) {
   const {translate} = useLocalize();
   const {db, auth} = useFirebase();
   const [loadingText] = useOnyx(ONYXKEYS.APP_LOADING_TEXT);
-  const {userData} = useDatabaseData();
+  const userData = useCurrentUserData();
   const currentDisplayName = userData?.profile?.display_name ?? '';
   const [isSaving, setIsSaving] = useState(false);
   const [serverErrorMessage, setServerErrorMessage] = useState('');

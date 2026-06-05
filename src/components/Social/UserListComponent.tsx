@@ -18,7 +18,7 @@ import {View} from 'react-native';
 import FlatList from '@components/FlatList';
 import {PressableWithFeedback} from '@components/Pressable';
 import FlexibleLoadingIndicator from '@components/FlexibleLoadingIndicator';
-import {useDatabaseData} from '@context/global/DatabaseDataContext';
+import useCurrentUserData from '@hooks/useCurrentUserData';
 import useLocalize from '@hooks/useLocalize';
 import UserOverview from './UserOverview';
 
@@ -52,7 +52,7 @@ function UserListComponent({
 }: UserListProps) {
   const {db} = useFirebase();
   const styles = useThemeStyles();
-  const {userData} = useDatabaseData();
+  const userData = useCurrentUserData();
   const {translate} = useLocalize();
   // Partial list of users for initial display and dynamic updates
   const [displayUserArray, setDisplayUserArray] = useState<UserArray>([]);

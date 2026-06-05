@@ -23,10 +23,8 @@ import NAVIGATORS from '@src/NAVIGATORS';
 import ONYXKEYS from '@src/ONYXKEYS';
 // import ROUTES from '@src/ROUTES';
 import SCREENS from '@src/SCREENS';
-import {
-  DatabaseDataProvider,
-  useDatabaseData,
-} from '@context/global/DatabaseDataContext';
+import {DatabaseDataProvider} from '@context/global/DatabaseDataContext';
+import {isEmptyObject} from '@src/types/utils/EmptyObject';
 import {useSplashScreenStateContext} from '@context/global/SplashScreenStateContext';
 import type {SelectedTimezone, Timezone} from '@src/types/onyx/UserData';
 import {FirebaseApp, getFirebaseAuth} from '@libs/Firebase/FirebaseApp';
@@ -36,6 +34,7 @@ import kirokuPusherAuthorizer from '@libs/Pusher/kirokuAuthorizer';
 import type ReactComponentModule from '@src/types/utils/ReactComponentModule';
 import useResponsiveLayout from '@hooks/useResponsiveLayout';
 import useIdlePrefetch from '@hooks/useIdlePrefetch';
+import useCurrentUserData from '@hooks/useCurrentUserData';
 import useCurrentUserPreferences from '@hooks/useCurrentUserPreferences';
 import prefetchStatisticsBundle from '@screens/Statistics/prefetchStatisticsBundle';
 import {useFirebase} from '@context/global/FirebaseContext';
@@ -163,7 +162,10 @@ function AuthScreensContent() {
   // splash hides only once these two fields have arrived from the live
   // listener — matches HomeScreen's own render gate so the user sees the
   // splash continuously until real content can paint.
-  const {userData} = useDatabaseData();
+  // `useCurrentUserData` returns {} (truthy) while loading; the auth-ready gate
+  // below must treat the empty object as "not loaded", so map empty → undefined.
+  const currentUserData = useCurrentUserData();
+  const userData = isEmptyObject(currentUserData) ? undefined : currentUserData;
   const preferences = useCurrentUserPreferences();
   const {setIsAuthDataReady} = useSplashScreenStateContext();
   useEffect(() => {

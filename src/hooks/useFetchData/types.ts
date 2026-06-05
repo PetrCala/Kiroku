@@ -3,7 +3,6 @@ import type {
   DataVisibility,
   DrinkingSessionList,
   Preferences,
-  UnconfirmedDays,
   UserData,
   UserStatus,
 } from '@src/types/onyx';
@@ -17,7 +16,6 @@ type FetchData = {
   userStatusData?: UserStatus;
   drinkingSessionData?: DrinkingSessionList;
   preferences?: Preferences;
-  unconfirmedDays?: UnconfirmedDays;
   userData?: UserData;
   dataVisibility?: DataVisibility;
 };
