@@ -54,7 +54,7 @@ function buildRootState(innerModalIndex: number): State {
       },
     ],
   };
-  return state as State;
+  return state;
 }
 
 describe('getPopModalFlowTarget', () => {
@@ -93,7 +93,7 @@ describe('getPopModalFlowTarget', () => {
       ],
     };
 
-    expect(getPopModalFlowTarget(state as State)).toBeUndefined();
+    expect(getPopModalFlowTarget(state)).toBeUndefined();
   });
 
   it('returns undefined when the modal navigator has no inner state', () => {
@@ -106,6 +106,6 @@ describe('getPopModalFlowTarget', () => {
       ],
     };
 
-    expect(getPopModalFlowTarget(state as State)).toBeUndefined();
+    expect(getPopModalFlowTarget(state)).toBeUndefined();
   });
 });
