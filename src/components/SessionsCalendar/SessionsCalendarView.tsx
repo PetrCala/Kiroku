@@ -357,6 +357,11 @@ function SessionsCalendarView({
           hideDayNames={hideDayNames}
           renderHeader={renderHeader}
           disableAllTouchEventsForDisabledDays
+          // Drop the library's default 20px arrow hit-slop: combined with the
+          // wide arrow touch container it bled over the header's revert button
+          // and swallowed its taps. The arrow target stays comfortable via its
+          // own width + padding.
+          arrowsHitSlop={0}
           renderArrow={(direction: Direction) => CalendarArrow(direction)}
           style={styles.sessionsCalendarContainer}
           theme={StyleUtils.getSessionsCalendarStyle()}
