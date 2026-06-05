@@ -70,6 +70,21 @@ const KIROKU_ROUTES: Record<string, KirokuRoute> = {
     toPath: data =>
       `/v1/users/${encodeURIComponent(String(data.userID))}/status`,
   },
+  // Batched cross-user read: one request for up to 100 uids (callers chunk
+  // above that), replacing the per-uid profile/status fan-out that tripped the
+  // per-uid rate limiter. `fields` selects the projections (`profile` is public;
+  // `status` is privacy-gated and simply absent for a denied/hidden user). The
+  // server merges `userDataList[uid].{profile,user_status,...}` per uid, same as
+  // the single-user reads. `uids` is comma-joined here and percent-encoded by
+  // the HTTP layer (matches the SEARCH_USERS style — no pre-encoding).
+  [READ_COMMANDS.GET_USERS_BATCH]: {
+    method: 'get',
+    path: '/v1/users/batch',
+    toQuery: data => ({
+      uids: Array.isArray(data.userIDs) ? data.userIDs.join(',') : '',
+      fields: typeof data.fields === 'string' ? data.fields : 'profile,status',
+    }),
+  },
   [SIDE_EFFECT_REQUEST_COMMANDS.GET_MISSING_ONYX_MESSAGES]: {
     method: 'get',
     path: '/v1/updates',
