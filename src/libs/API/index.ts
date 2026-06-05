@@ -2,9 +2,11 @@ import type {OnyxUpdate} from 'react-native-onyx';
 import Onyx from 'react-native-onyx';
 import Log from '@libs/Log';
 import * as Middleware from '@libs/Middleware';
+import * as NetworkStore from '@libs/Network/NetworkStore';
 import * as SequentialQueue from '@libs/Network/SequentialQueue';
 import * as Pusher from '@libs/Pusher/pusher';
 import * as Request from '@libs/Request';
+import * as PersistedRequests from '@userActions/PersistedRequests';
 import CONST from '@src/CONST';
 import type OnyxRequest from '@src/types/onyx/Request';
 import type {RequestConflictResolver} from '@src/types/onyx/Request';
@@ -37,6 +39,11 @@ Request.use(Middleware.Reauthentication);
 // middlewares after this, because the SequentialQueue depends on the result of this middleware to pause the queue (if needed) to bring the app to an up-to-date state.
 Request.use(Middleware.SaveResponseInOnyx);
 
+// Use timestamp-based IDs to avoid collisions between browser tabs.
+// Each tab has its own JS context with its own counter, so a simple
+// incrementing number would collide across tabs.
+let requestIndex = Date.now();
+
 type OnyxData = {
   optimisticData?: OnyxUpdate[];
   successData?: OnyxUpdate[];
@@ -64,12 +71,24 @@ function write<TCommand extends WriteCommand>(
   apiCommandParameters: ApiRequestCommandParameters[TCommand],
   onyxData: OnyxData = {},
   conflictResolver: RequestConflictResolver = {},
-) {
+): Promise<void> {
   Log.info('Called API write', false, {command, ...apiCommandParameters});
+
+  // When a conflict resolver decides this request is a no-op against the queue (e.g. it cancels
+  // out a previously queued request), we must NOT apply its optimistic data: there is no request
+  // that will later reconcile it, so the optimistic update would never be cleared.
+  let shouldApplyOptimisticData = true;
+  if (conflictResolver.checkAndFixConflictingRequest) {
+    const {conflictAction} = conflictResolver.checkAndFixConflictingRequest(
+      PersistedRequests.getAll(),
+    );
+    shouldApplyOptimisticData = conflictAction.type !== 'noAction';
+  }
+
   const {optimisticData, ...onyxDataWithoutOptimisticData} = onyxData;
 
   // Optimistically update Onyx
-  if (optimisticData) {
+  if (optimisticData && shouldApplyOptimisticData) {
     Onyx.update(optimisticData);
   }
 
@@ -94,12 +113,14 @@ function write<TCommand extends WriteCommand>(
       shouldRetry: true,
       canCancel: true,
     },
+    initiatedOffline: NetworkStore.isOffline(),
+    requestID: requestIndex++,
     ...onyxDataWithoutOptimisticData,
     ...conflictResolver,
   };
 
   // Write commands can be saved and retried, so push it to the SequentialQueue
-  SequentialQueue.push(request);
+  return SequentialQueue.push(request);
 }
 
 /**
@@ -154,6 +175,8 @@ function makeRequestWithSideEffects<
   const request: OnyxRequest = {
     command,
     data,
+    initiatedOffline: NetworkStore.isOffline(),
+    requestID: requestIndex++,
     ...onyxDataWithoutOptimisticData,
   };
 

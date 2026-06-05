@@ -262,7 +262,7 @@ function handleConflictActions(
   }
 }
 
-function push(newRequest: OnyxRequest) {
+function push(newRequest: OnyxRequest): Promise<void> {
   const {checkAndFixConflictingRequest} = newRequest;
 
   if (checkAndFixConflictingRequest) {
@@ -281,18 +281,20 @@ function push(newRequest: OnyxRequest) {
     PersistedRequests.save(newRequest);
   }
 
+  // The request is persisted synchronously above, so the returned promise can resolve immediately.
   // If we are offline we don't need to trigger the queue to empty as it will happen when we come back online
   if (NetworkStore.isOffline()) {
-    return;
+    return Promise.resolve();
   }
 
   // If the queue is running this request will run once it has finished processing the current batch
   if (isSequentialQueueRunning) {
     isReadyPromise.then(flush);
-    return;
+    return Promise.resolve();
   }
 
   flush();
+  return Promise.resolve();
 }
 
 function getCurrentRequest(): Promise<void> {
