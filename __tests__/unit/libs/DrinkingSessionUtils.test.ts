@@ -5,10 +5,12 @@
 import * as DSUtils from '@libs/DrinkingSessionUtils';
 import type {
   DrinkingSession,
+  DrinkingSessionArray,
   DrinkingSessionList,
   DrinksList,
   DrinksToUnits,
 } from '@src/types/onyx';
+import type {SelectedTimezone} from '@src/types/onyx/UserData';
 import CONST from '@src/CONST';
 import ONYXKEYS from '@src/ONYXKEYS';
 import {getZeroDrinksList} from '@libs/DataHandling';
@@ -239,82 +241,154 @@ describe('setLocalSessionCache / compose-on-latest', () => {
   });
 });
 
-// TODO
-// describe('getSingleDayDrinkingSessions', () => {
-//   it('should return sessions that only fall within the given date', () => {
-//     const baseDate = new Date('2023-08-20');
-//     const testSessions: DrinkingSessionList = {
-//       [new Date().getTime()]: createMockSession(baseDate, 0), // Session from 'today'
-//       [new Date().getTime() + 1]: createMockSession(baseDate, -1), // Session from 'yesterday'
-//       [new Date().getTime() + 2]: createMockSession(baseDate, 1), // Session from 'tomorrow'
-//     };
+const UTC = 'UTC' as SelectedTimezone;
+const TOKYO = 'Asia/Tokyo' as SelectedTimezone; // UTC+9
+const LA = 'America/Los_Angeles' as SelectedTimezone; // UTC-8 (Jan)
+const NY = 'America/New_York' as SelectedTimezone;
 
-//     const result = DSUtils.getSingleDayDrinkingSessions(baseDate, testSessions);
-//     expect(result).toHaveLength(1);
-//   });
+/**
+ * Local-noon `Date` whose `yyyy-MM-dd` label is stable under any process tz —
+ * the bucketers read the viewed day via `format(date)`, so a noon anchor keeps
+ * that label from drifting while the window is computed in the session tz.
+ */
+function viewDay(year: number, monthZeroBased: number, day: number): Date {
+  return new Date(year, monthZeroBased, day, 12);
+}
 
-//   it('should return an empty array if no sessions fall within the given date', () => {
-//     const baseDate = new Date('2023-08-22');
-//     const testSessions: DrinkingSessionList = {
-//       [new Date().getTime()]: createMockSession(baseDate, -2),
-//       [new Date().getTime() + 1]: createMockSession(baseDate, -3),
-//     };
+describe('getSingleDayDrinkingSessions — buckets by each session timezone', () => {
+  // 06:00 UTC on 2024-01-15 is 15:00 (Jan 15) in Tokyo but 22:00 (Jan 14) in LA.
+  const crossInstant = Date.UTC(2024, 0, 15, 6, 0);
+  const sessions: DrinkingSessionList = {
+    tk: {start_time: crossInstant, timezone: TOKYO},
+    la: {start_time: crossInstant, timezone: LA},
+  };
 
-//     const result = DSUtils.getSingleDayDrinkingSessions(baseDate, testSessions);
-//     expect(result).toHaveLength(0);
-//     expect(result).toEqual([]);
-//   });
-// });
+  it('includes only the session whose own tz places the instant on that day', () => {
+    const onJan15 = DSUtils.getSingleDayDrinkingSessions(
+      viewDay(2024, 0, 15),
+      sessions,
+    ) as DrinkingSessionArray;
+    expect(onJan15).toHaveLength(1);
+    expect(onJan15[0].timezone).toBe(TOKYO);
+  });
 
-// describe('getSingleMonthDrinkingSessions', () => {
-//   it('should return sessions that only fall within the given month', () => {
-//     const baseDate = new Date('2023-08-20');
-//     const testSessions: DrinkingSessionArray = [
-//       createMockSession(baseDate, 0), // Session from this month
-//       createMockSession(baseDate, -30), // Session from last month
-//       createMockSession(baseDate, 30), // Session from next month
-//     ];
+  it('buckets the same instant onto the previous day for a behind-UTC tz', () => {
+    const onJan14 = DSUtils.getSingleDayDrinkingSessions(
+      viewDay(2024, 0, 14),
+      sessions,
+    ) as DrinkingSessionArray;
+    expect(onJan14).toHaveLength(1);
+    expect(onJan14[0].timezone).toBe(LA);
+  });
 
-//     const result = DSUtils.getSingleMonthDrinkingSessions(
-//       baseDate,
-//       testSessions,
-//     );
-//     expect(result).toHaveLength(1);
-//   });
+  it('returns the keyed subset (not an array) when returnArray is false', () => {
+    const subset = DSUtils.getSingleDayDrinkingSessions(
+      viewDay(2024, 0, 15),
+      sessions,
+      false,
+    ) as DrinkingSessionList;
+    expect(Object.keys(subset)).toEqual(['tk']);
+  });
 
-//   it('should return sessions until today when untilToday flag is true', () => {
-//     const baseDate = new Date('2023-08-20');
-//     const futureSessionDate = new Date();
-//     futureSessionDate.setDate(futureSessionDate.getDate() + 5); // A session 5 days into the future
+  it('falls back to the base timezone when a session has no timezone', () => {
+    // Under the TZ=utc test process the base resolves to UTC, so 06:00 UTC on
+    // 2024-01-15 belongs to Jan 15 and not Jan 14.
+    const noTz: DrinkingSessionList = {x: {start_time: crossInstant}};
+    expect(
+      DSUtils.getSingleDayDrinkingSessions(viewDay(2024, 0, 15), noTz),
+    ).toHaveLength(1);
+    expect(
+      DSUtils.getSingleDayDrinkingSessions(viewDay(2024, 0, 14), noTz),
+    ).toHaveLength(0);
+  });
 
-//     const testSessions: DrinkingSessionArray = [
-//       createMockSession(baseDate, 0), // Session from this month
-//       {
-//         ...createMockSession(baseDate, 0),
-//         start_time: futureSessionDate.getTime(),
-//       },
-//     ];
+  it('returns an empty array for undefined sessions', () => {
+    expect(
+      DSUtils.getSingleDayDrinkingSessions(viewDay(2024, 0, 15), undefined),
+    ).toEqual([]);
+  });
+});
 
-//     const result = DSUtils.getSingleMonthDrinkingSessions(
-//       baseDate,
-//       testSessions,
-//       true,
-//     );
-//     expect(result).toHaveLength(1);
-//   });
+describe('getSingleMonthDrinkingSessions — buckets by each session timezone', () => {
+  // 20:00 UTC on 2024-01-31 is 05:00 (Feb 1) in Tokyo but 12:00 (Jan 31) in LA.
+  const monthEdgeInstant = Date.UTC(2024, 0, 31, 20, 0);
+  const arr: DrinkingSessionArray = [
+    {start_time: monthEdgeInstant, timezone: TOKYO},
+    {start_time: monthEdgeInstant, timezone: LA},
+  ];
 
-//   it('should return an empty array if no sessions fall within the given month', () => {
-//     const baseDate = new Date('2023-08-22');
-//     const testSessions: DrinkingSessionArray = [
-//       createMockSession(baseDate, -60),
-//       createMockSession(baseDate, -90),
-//     ];
+  it('keeps the behind-UTC session in January and the ahead-of-UTC session in February', () => {
+    const january = DSUtils.getSingleMonthDrinkingSessions(
+      viewDay(2024, 0, 15),
+      arr,
+    );
+    expect(january).toHaveLength(1);
+    expect(january[0].timezone).toBe(LA);
 
-//     const result = DSUtils.getSingleMonthDrinkingSessions(
-//       baseDate,
-//       testSessions,
-//     );
-//     expect(result).toHaveLength(0);
-//     expect(result).toEqual([]);
-//   });
-// });
+    const february = DSUtils.getSingleMonthDrinkingSessions(
+      viewDay(2024, 1, 15),
+      arr,
+    );
+    expect(february).toHaveLength(1);
+    expect(february[0].timezone).toBe(TOKYO);
+  });
+
+  it('untilToday=true drops sessions later than the current instant', () => {
+    // Pin "now" so the until-today clamp is deterministic.
+    jest.useFakeTimers({now: new Date('2024-01-15T12:00:00Z')});
+    try {
+      const sameMonth: DrinkingSessionArray = [
+        {start_time: Date.UTC(2024, 0, 10, 12), timezone: UTC},
+        {start_time: Date.UTC(2024, 0, 20, 12), timezone: UTC},
+      ];
+      const upToToday = DSUtils.getSingleMonthDrinkingSessions(
+        viewDay(2024, 0, 15),
+        sameMonth,
+        true,
+      );
+      expect(upToToday).toHaveLength(1);
+      expect(upToToday[0].start_time).toBe(Date.UTC(2024, 0, 10, 12));
+    } finally {
+      jest.useRealTimers();
+    }
+  });
+});
+
+describe('isDifferentDay', () => {
+  it('is false when the session tz and target tz agree on the day', () => {
+    // 06:00 UTC = 15:00 Jan 15 in Tokyo.
+    const session: DrinkingSession = {
+      start_time: Date.UTC(2024, 0, 15, 6, 0),
+      timezone: TOKYO,
+    };
+    expect(DSUtils.isDifferentDay(session, TOKYO)).toBe(false);
+  });
+
+  it('is true when converting to the target tz crosses midnight', () => {
+    // Same instant is Jan 15 in Tokyo but Jan 14 in LA.
+    const session: DrinkingSession = {
+      start_time: Date.UTC(2024, 0, 15, 6, 0),
+      timezone: TOKYO,
+    };
+    expect(DSUtils.isDifferentDay(session, LA)).toBe(true);
+  });
+
+  it('does not flip the day across a same-tz DST transition', () => {
+    // NY spring-forward 2025: 07:00 UTC = 03:00 EDT, still 2025-03-09.
+    const session: DrinkingSession = {
+      start_time: Date.UTC(2025, 2, 9, 7, 0),
+      timezone: NY,
+    };
+    expect(DSUtils.isDifferentDay(session, NY)).toBe(false);
+  });
+
+  it('falls back to the device-formatted day when the session has no timezone', () => {
+    // No session.timezone → the current day comes from the process tz (UTC here):
+    // 23:30 UTC on 2024-01-15 is still Jan 15 locally, but Jan 16 in Tokyo.
+    const session: DrinkingSession = {
+      start_time: Date.UTC(2024, 0, 15, 23, 30),
+    };
+    expect(DSUtils.isDifferentDay(session, TOKYO)).toBe(true);
+    expect(DSUtils.isDifferentDay(session, UTC)).toBe(false);
+  });
+});
