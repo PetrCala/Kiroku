@@ -20,6 +20,7 @@ const WRITE_COMMANDS = {
   UPDATE_SELECTED_TIMEZONE: 'UpdateSelectedTimezone',
   // UPDATE_USER_AVATAR: 'UpdateUserAvatar',
   DELETE_USER_AVATAR: 'DeleteUserAvatar',
+  PROVISION_USER: 'ProvisionUser',
   CLOSE_ACCOUNT: 'CloseAccount',
   //   OPEN_PROFILE: 'OpenProfile',
   //   SIGN_IN_WITH_APPLE: 'SignInWithApple',
@@ -66,6 +67,7 @@ type WriteCommandParameters = {
   [WRITE_COMMANDS.UPDATE_SELECTED_TIMEZONE]: Parameters.UpdateSelectedTimezoneParams;
   // [WRITE_COMMANDS.UPDATE_USER_AVATAR]: Parameters.UpdateUserAvatarParams;
   [WRITE_COMMANDS.DELETE_USER_AVATAR]: EmptyObject;
+  [WRITE_COMMANDS.PROVISION_USER]: Parameters.ProvisionUserParams;
   [WRITE_COMMANDS.CLOSE_ACCOUNT]: Parameters.CloseAccountParams;
   //   [WRITE_COMMANDS.OPEN_PROFILE]: Parameters.OpenProfileParams;
   //   [WRITE_COMMANDS.SIGN_IN_WITH_APPLE]: Parameters.BeginAppleSignInParams;

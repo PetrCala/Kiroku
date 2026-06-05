@@ -1,3 +1,4 @@
+export type {default as ProvisionUserParams} from './ProvisionUserParams';
 export type {default as CloseAccountParams} from './CloseAccountParams';
 export type {default as SendFriendRequestParams} from './SendFriendRequestParams';
 export type {default as AcceptFriendRequestParams} from './AcceptFriendRequestParams';
