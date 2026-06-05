@@ -1,20 +1,7 @@
-import {readDataOnce} from '@database/baseFunctions';
 import type {FriendRequestList, FriendRequestStatus} from '@src/types/onyx';
-import type {UserArray, UserList} from '@src/types/onyx/OnyxCommon';
-import type {Database} from 'firebase/database';
+import type {UserArray} from '@src/types/onyx/OnyxCommon';
 import CONST from '@src/CONST';
-import DBPATHS from '@src/DBPATHS';
 import {isEmptyArray} from '@src/types/utils/EmptyObject';
-
-async function fetchUserFriends(
-  db: Database,
-  userID: string,
-): Promise<UserList | null> {
-  return readDataOnce<UserList>(
-    db,
-    DBPATHS.USERS_USER_ID_FRIENDS.getRoute(userID),
-  );
-}
 
 /**
  * Returns an array of common friends between two users.
@@ -84,7 +71,6 @@ const getSentRequestsCount = (
 };
 
 export {
-  fetchUserFriends,
   getCommonFriends,
   getCommonFriendsCount,
   getFriendRequestsCount,

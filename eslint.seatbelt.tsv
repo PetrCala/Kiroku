@@ -720,7 +720,6 @@
 "src/context/global/SplashScreenStateContext.tsx"	"rulesdir/context-provider-split-values"	1
 "src/context/global/UserConnectionContext.tsx"	"arrow-body-style"	1
 "src/hooks/useDebouncedState.ts"	"react-hooks/refs"	2
-"src/hooks/useFetchData/index.ts"	"react-hooks/set-state-in-effect"	1
 "src/hooks/useLazyMarkedDates.ts"	"react-hooks/set-state-in-effect"	1
 "src/hooks/useMouseContext.tsx"	"rulesdir/context-provider-split-values"	1
 "src/hooks/useNetwork.ts"	"react-hooks/refs"	1
