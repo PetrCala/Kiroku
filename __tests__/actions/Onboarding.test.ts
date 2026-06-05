@@ -213,6 +213,7 @@ describe('completeOnboarding', () => {
     });
     mockedWrite.mockImplementation(() => {
       callOrder.push('api');
+      return Promise.resolve();
     });
 
     await Onboarding.completeOnboarding();
