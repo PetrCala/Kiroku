@@ -53,6 +53,16 @@ type RequestData = {
 
   /** Whether the app should skip the web proxy to connect to API endpoints */
   shouldSkipWebProxy?: boolean;
+
+  /**
+   * Whether the request is initiated offline.
+   *
+   * This field is used to indicate if the app initiates the request while offline.
+   */
+  initiatedOffline?: boolean;
+
+  /** The unique ID of the request */
+  requestID?: number;
 };
 
 /**

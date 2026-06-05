@@ -408,7 +408,7 @@ function getPusherSocketID(): string {
     return pusherSocketID;
 }
 
-if (window) {
+if (typeof window !== 'undefined') {
     /**
      * Pusher socket for debugging purposes
      */
