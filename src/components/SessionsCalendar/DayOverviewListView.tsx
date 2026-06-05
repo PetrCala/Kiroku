@@ -331,6 +331,7 @@ function DayOverviewListView({
           session={item.entry.session}
           isEditModeOn={isEditModeOn ?? false}
           readOnly={isReadOnly}
+          enableLongPressToEdit
           preferences={preferences}
         />
       );

@@ -28,6 +28,7 @@ function DrinkingSessionOverview({
   session,
   isEditModeOn,
   readOnly = false,
+  enableLongPressToEdit = false,
   preferences: preferencesProp,
 }: DrinkingSessionOverviewProps) {
   const ownPreferences = useCurrentUserPreferences();
@@ -144,13 +145,22 @@ function DrinkingSessionOverview({
     return <View style={rowStyle}>{sessionDetails}</View>;
   }
 
+  // Long-press jumps straight to edit, skipping the Edit/Done toggle. Withheld
+  // for ongoing sessions, which surface the live-session button instead of an
+  // edit affordance. The heavy-impact haptic fires from GenericPressable.
+  const onLongPress =
+    enableLongPressToEdit && !session?.ongoing
+      ? onNavigateToEditSession
+      : undefined;
+
   return (
     <PressableWithFeedback
       accessibilityLabel={translate('dayOverviewScreen.sessionWindow', {
         sessionId,
       })}
       style={rowStyle}
-      onPress={() => onSessionButtonPress()}>
+      onPress={() => onSessionButtonPress()}
+      onLongPress={onLongPress}>
       {sessionDetails}
       {session?.ongoing ? (
         <Button
