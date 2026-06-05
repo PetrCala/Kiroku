@@ -57,7 +57,7 @@ function setStoredTimezone(timezone?: Timezone, isLoaded = true): void {
     ? {userID: 'uid-A', ...(timezone ? {timezone} : {})}
     : {};
   mockedUseCurrentUserData.mockReturnValue(
-    currentUserData as ReturnType<typeof useCurrentUserData>,
+    currentUserData as unknown as ReturnType<typeof useCurrentUserData>,
   );
 }
 
