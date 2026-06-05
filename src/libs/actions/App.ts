@@ -336,56 +336,6 @@ function endSignOnTransition() {
   return resolveSignOnTransitionToFinishPromise();
 }
 
-// /**
-//  * Create a new draft workspace and navigate to it
-//  *
-//  * @param [policyOwnerEmail] Optional, the email of the account to make the owner of the policy
-//  * @param [policyName] Optional, custom policy name we will use for created workspace
-//  * @param [transitionFromOldDot] Optional, if the user is transitioning from old dot
-//  * @param [makeMeAdmin] Optional, leave the calling account as an admin on the policy
-//  */
-// function createWorkspaceWithPolicyDraftAndNavigateToIt(
-//   policyOwnerEmail = '',
-//   policyName = '',
-//   transitionFromOldDot = false,
-//   makeMeAdmin = false,
-// ) {
-//   const policyID = Policy.generatePolicyID();
-//   Policy.createDraftInitialWorkspace(
-//     policyOwnerEmail,
-//     policyName,
-//     policyID,
-//     makeMeAdmin,
-//   );
-
-//   Navigation.isNavigationReady()
-//     .then(() => {
-//       if (transitionFromOldDot) {
-//         // We must call goBack() to remove the /transition route from history
-//         Navigation.goBack();
-//       }
-//       Navigation.navigate(ROUTES.WORKSPACE_INITIAL.getRoute(policyID));
-//     })
-//     .then(endSignOnTransition);
-// }
-
-/**
- * Create a new workspace and delete the draft
- *
- * @param [policyID] the ID of the policy to use
- * @param [policyName] custom policy name we will use for created workspace
- * @param [policyOwnerEmail] Optional, the email of the account to make the owner of the policy
- * @param [makeMeAdmin] Optional, leave the calling account as an admin on the policy
- */
-// function savePolicyDraftByNewWorkspace(
-//   policyID?: string,
-//   policyName?: string,
-//   policyOwnerEmail = '',
-//   makeMeAdmin = false,
-// ) {
-//   Policy.createWorkspace(policyOwnerEmail, makeMeAdmin, policyName, policyID);
-// }
-
 /**
  * This action runs when the Navigator is ready and the current route changes
  *
@@ -618,8 +568,6 @@ export {
   // beginDeepLinkRedirectAfterTransition,
   getMissingOnyxUpdates,
   finalReconnectAppAfterActivatingReliableUpdates,
-  // savePolicyDraftByNewWorkspace,
-  // createWorkspaceWithPolicyDraftAndNavigateToIt,
   updateLastVisitedPath,
   updateLastRoute,
   waitForSignOnTransitionToFinish,

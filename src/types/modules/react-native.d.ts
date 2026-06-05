@@ -376,8 +376,6 @@ declare module 'react-native' {
     readOnly?: boolean;
   }
   interface TextInputProps extends WebTextInputProps {
-    // TODO: remove once the app is updated to RN 0.73
-    smartInsertDelete?: boolean;
     isFullComposerAvailable?: boolean;
   }
 
