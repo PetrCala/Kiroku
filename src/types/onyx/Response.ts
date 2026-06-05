@@ -1,4 +1,5 @@
 import type {OnyxUpdate} from 'react-native-onyx';
+import type NicknameToId from './NicknameToId';
 
 /** Model of commands data */
 type Data = {
@@ -83,6 +84,9 @@ type Response = {
 
   /** If there is newer data to load for pagination commands */
   hasNewerActions?: boolean;
+
+  /** Friend prefix-search matches (`GET /v1/users/search`): userID → display name */
+  searchResults?: NicknameToId;
 };
 
 export default Response;

@@ -39,8 +39,9 @@ import ONYXKEYS from '@src/ONYXKEYS';
 import CONST from '@src/CONST';
 import {getFirebaseAuth} from '@libs/Firebase/FirebaseApp';
 import * as API from '@libs/API';
-import {WRITE_COMMANDS} from '@libs/API/types';
+import {READ_COMMANDS, WRITE_COMMANDS} from '@libs/API/types';
 import type Response from '@src/types/onyx/Response';
+import type {UserSearchResults} from '@src/types/various/Search';
 import PusherUtils from '@libs/PusherUtils';
 import * as Pusher from '@libs/Pusher/pusher';
 import * as OnyxUpdates from '@userActions/OnyxUpdates';
@@ -165,6 +166,36 @@ function provisionUser(
  */
 function syncUserStatus() {
   API.write(WRITE_COMMANDS.SYNC_USER_STATUS, {});
+}
+
+/**
+ * Friend-search lookup: find users whose name matches `searchText`.
+ *
+ * Delegates to kiroku-api `GET /v1/users/search?q=`, which ports the former
+ * direct-Firebase logic — tokenize the query, drive a single `nickname_to_id`
+ * prefix-range query off the longest token, flatten the matches, and AND-refine
+ * multi-word queries so every word must appear in the name. The matches come
+ * back in the response's `searchResults` (a pure read — nothing is merged into
+ * Onyx), so we read them straight off the response.
+ *
+ * @param searchText The text to search for.
+ * @returns A Promise resolving to the matching user IDs.
+ */
+async function searchDatabaseForUsers(
+  searchText: string,
+): Promise<UserSearchResults> {
+  if (!searchText.trim()) {
+    return [];
+  }
+  // makeRequestWithSideEffects (not API.read) so the response is returned to us
+  // and the matches can be read off it rather than merged into Onyx.
+  // eslint-disable-next-line rulesdir/no-api-side-effects-method
+  const response = await API.makeRequestWithSideEffects(
+    READ_COMMANDS.SEARCH_USERS,
+    {q: searchText},
+  );
+  const searchResults: NicknameToId = response?.searchResults ?? {};
+  return Object.keys(searchResults);
 }
 
 /** Reauthentificate a user using the User object and a password
@@ -803,6 +834,7 @@ export {
   changeDisplayName,
   changeUserName,
   fetchUserNicknames,
+  searchDatabaseForUsers,
   getDefaultPreferences,
   getDefaultUserData,
   reauthentificateUser,

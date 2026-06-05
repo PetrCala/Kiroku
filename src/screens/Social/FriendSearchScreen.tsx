@@ -9,10 +9,9 @@ import Text from '@components/Text';
 import type {UserList} from '@src/types/onyx/OnyxCommon';
 import {useFirebase} from '@src/context/global/FirebaseContext';
 import {isEmptyArray} from '@src/types/utils/EmptyObject';
-import type {Database} from 'firebase/database';
-import {searchDatabaseForUsers} from '@libs/Search';
 import * as ErrorUtils from '@libs/ErrorUtils';
 import * as Profile from '@userActions/Profile';
+import {searchDatabaseForUsers} from '@userActions/User';
 import SearchResult from '@components/Search/SearchResult';
 import SearchWindow from '@components/Social/SearchWindow';
 import type {UserSearchResults} from '@src/types/various/Search';
@@ -80,7 +79,7 @@ function FriendSearchScreen() {
   }, []);
 
   const dbSearch = useCallback(
-    async (searchText: string, database?: Database): Promise<void> => {
+    async (searchText: string): Promise<void> => {
       // An empty/whitespace query (e.g. on mount or after clearing) should
       // clear the screen rather than render the "no users found" message.
       if (!searchText.trim()) {
@@ -89,10 +88,8 @@ function FriendSearchScreen() {
       }
       try {
         setSearching(true);
-        const newData: UserSearchResults = await searchDatabaseForUsers(
-          database,
-          searchText,
-        );
+        const newData: UserSearchResults =
+          await searchDatabaseForUsers(searchText);
         const newDisplayData: ProfileList = await Profile.fetchUserProfiles(
           db,
           newData,
