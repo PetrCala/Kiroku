@@ -19,7 +19,7 @@ import type {DrinkingSessionArray} from '@src/types/onyx';
 import ROUTES from '@src/ROUTES';
 import Navigation from '@navigation/Navigation';
 import type {StackScreenProps} from '@react-navigation/stack';
-import {useFocusEffect} from '@react-navigation/native';
+import {useFocusEffect, useIsFocused} from '@react-navigation/native';
 import type {BottomTabNavigatorParamList} from '@libs/Navigation/types';
 import type SCREENS from '@src/SCREENS';
 import {useDatabaseData} from '@context/global/DatabaseDataContext';
@@ -131,8 +131,14 @@ function HomeScreen({route}: HomeScreenProps) {
   // filter keeps it scoped to the visible month (0 for past months / no live
   // session). The session COUNT is left untouched — the cache already seeds the
   // ongoing session (with 0 units) at start, so it is already counted once.
+  //
+  // Gated on `isFocused` for the same reason as the calendar overlay: the live
+  // buffer mutates on every drink tap, and Home stays mounted behind the live
+  // session screen. Skipping this while blurred keeps taps snappy; it recomputes
+  // when the user returns to Home.
+  const isFocused = useIsFocused();
   const liveExtraUnits = useMemo(() => {
-    if (!drinksToUnits || !ongoingSessionData?.ongoing) {
+    if (!isFocused || !drinksToUnits || !ongoingSessionData?.ongoing) {
       return 0;
     }
     return calculateThisMonthUnits(
@@ -140,7 +146,7 @@ function HomeScreen({route}: HomeScreenProps) {
       [ongoingSessionData],
       drinksToUnits,
     );
-  }, [ongoingSessionData, visibleDate, drinksToUnits]);
+  }, [isFocused, ongoingSessionData, visibleDate, drinksToUnits]);
   const unitsConsumed = baseUnitsConsumed + liveExtraUnits;
 
   const statsData: StatData = [
