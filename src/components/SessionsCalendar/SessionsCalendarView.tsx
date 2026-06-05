@@ -1,5 +1,5 @@
-import React, {memo, useCallback, useEffect, useMemo} from 'react';
-import {ActivityIndicator, View} from 'react-native';
+import React, {memo, useCallback, useEffect, useMemo, useState} from 'react';
+import {ActivityIndicator, Animated, View} from 'react-native';
 import {Gesture, GestureDetector} from 'react-native-gesture-handler';
 import {runOnJS} from 'react-native-reanimated';
 import {PressableWithFeedback} from '@components/Pressable';
@@ -10,6 +10,7 @@ import type {DateData} from 'react-native-calendars';
 import type {MarkedDates} from 'react-native-calendars/src/types';
 import {useOnyx} from 'react-native-onyx';
 import {format, parseISO, startOfMonth} from 'date-fns';
+import useLocalize from '@hooks/useLocalize';
 import useTheme from '@hooks/useTheme';
 import useThemePreference from '@hooks/useThemePreference';
 import useThemeStyles from '@hooks/useThemeStyles';
@@ -58,6 +59,10 @@ type SessionsCalendarViewProps = {
   onLeftArrowPress?: (subtractMonth: () => void) => void;
   onRightArrowPress?: (addMonth: () => void) => void;
 
+  /** Snap the calendar back to the current month. When provided, a revert
+   *  control appears in the header while the user is viewing a past month. */
+  onJumpToCurrent?: () => void;
+
   /** Hide month-nav arrows entirely (e.g. for an inline preview) */
   hideArrows?: boolean;
 
@@ -94,6 +99,7 @@ function SessionsCalendarView({
   onDayLongPress,
   onLeftArrowPress,
   onRightArrowPress,
+  onJumpToCurrent,
   hideArrows,
   hideMonthHeader,
   hideDayNames,
@@ -102,6 +108,7 @@ function SessionsCalendarView({
   const styles = useThemeStyles();
   const StyleUtils = useStyleUtils();
   const theme = useTheme();
+  const {translate} = useLocalize();
   const themePreference = useThemePreference();
   const [preferredLocale] = useOnyx(ONYXKEYS.NVP_PREFERRED_LOCALE);
   const locale = preferredLocale ?? CONST.LOCALES.DEFAULT;
@@ -152,6 +159,31 @@ function SessionsCalendarView({
     );
   }, [userID, visibleDate.timestamp]);
 
+  const isCurrentMonth = useMemo(
+    () =>
+      startOfMonth(new Date(visibleDate.timestamp)).getTime() ===
+      startOfMonth(new Date()).getTime(),
+    [visibleDate.timestamp],
+  );
+  // The revert control only makes sense once the user has paged off the
+  // current month, and only when the host wired up a jump handler.
+  const showRevert = !!onJumpToCurrent && !isCurrentMonth;
+
+  // Fade the revert control in whenever it (re)appears — mirrors the
+  // jump-to-latest treatment on the Statistics range navigator.
+  const [revertOpacity] = useState(() => new Animated.Value(0));
+  useEffect(() => {
+    if (!showRevert) {
+      return;
+    }
+    revertOpacity.setValue(0);
+    Animated.timing(revertOpacity, {
+      toValue: 1,
+      duration: 150,
+      useNativeDriver: true,
+    }).start();
+  }, [showRevert, revertOpacity]);
+
   const renderHeader = useCallback(
     (date?: {getTime(): number}) => {
       if (hideMonthHeader || !date) {
@@ -164,36 +196,53 @@ function SessionsCalendarView({
       const monthText = (
         <Text style={styles.sessionsCalendarHeaderMonthText}>{formatted}</Text>
       );
-      const expandIcon = isHeaderTappable ? (
-        <Icon
-          src={KirokuIcons.ArrowUpDown}
-          fill={theme.textSupporting}
-          width={14}
-          height={14}
-          additionalStyles={styles.sessionsCalendarExpandIcon}
-        />
-      ) : null;
       return (
+        // Symmetric layout: equal-width side slots keep the month label dead
+        // centered, so it never shifts when the revert control or the
+        // older-months spinner toggle in/out of the right slot.
         <View style={styles.sessionsCalendarHeader}>
+          <View style={styles.sessionsCalendarHeaderSideSlot}>
+            {isHeaderTappable && (
+              <Icon
+                src={KirokuIcons.ArrowUpDown}
+                fill={theme.textSupporting}
+                width={14}
+                height={14}
+              />
+            )}
+          </View>
           {isHeaderTappable ? (
             <PressableWithFeedback
               onPress={onHeaderPress}
               role={CONST.ROLE.BUTTON}
-              accessibilityLabel={formatted}
-              style={styles.sessionsCalendarHeader}>
+              accessibilityLabel={formatted}>
               {monthText}
-              {expandIcon}
             </PressableWithFeedback>
           ) : (
             monthText
           )}
-          {isFetchingOlderMonths && (
-            <ActivityIndicator
-              size="small"
-              color={theme.spinner}
-              style={styles.sessionsCalendarHeaderSpinner}
-            />
-          )}
+          <View style={styles.sessionsCalendarHeaderSideSlot}>
+            {isFetchingOlderMonths ? (
+              <ActivityIndicator size="small" color={theme.spinner} />
+            ) : showRevert ? (
+              <Animated.View style={{opacity: revertOpacity}}>
+                <PressableWithFeedback
+                  onPress={onJumpToCurrent}
+                  role={CONST.ROLE.BUTTON}
+                  accessibilityLabel={translate(
+                    'sessionsCalendar.jumpToCurrentMonth',
+                  )}
+                  style={styles.sessionsCalendarHeaderRevert}>
+                  <Icon
+                    src={KirokuIcons.RotateLeft}
+                    fill={theme.textReversed}
+                    width={14}
+                    height={14}
+                  />
+                </PressableWithFeedback>
+              </Animated.View>
+            ) : null}
+          </View>
         </View>
       );
     },
@@ -202,12 +251,17 @@ function SessionsCalendarView({
       isFetchingOlderMonths,
       isHeaderTappable,
       onHeaderPress,
-      styles.sessionsCalendarExpandIcon,
+      onJumpToCurrent,
+      showRevert,
+      revertOpacity,
+      translate,
       styles.sessionsCalendarHeader,
       styles.sessionsCalendarHeaderMonthText,
-      styles.sessionsCalendarHeaderSpinner,
+      styles.sessionsCalendarHeaderSideSlot,
+      styles.sessionsCalendarHeaderRevert,
       theme.spinner,
       theme.textSupporting,
+      theme.textReversed,
     ],
   );
 

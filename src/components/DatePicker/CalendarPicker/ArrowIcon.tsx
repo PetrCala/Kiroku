@@ -14,11 +14,15 @@ type ArrowIconProps = {
 
   /** Specifies direction of icon */
   direction?: ValueOf<typeof CONST.DIRECTION>;
+
+  /** Render at the smaller icon size (to fit denser headers like the stats toolbar) */
+  small?: boolean;
 };
 
 function ArrowIcon({
   disabled = false,
   direction = CONST.DIRECTION.RIGHT,
+  small = false,
 }: ArrowIconProps) {
   const theme = useTheme();
   const styles = useThemeStyles();
@@ -30,7 +34,7 @@ function ArrowIcon({
         StyleUtils.getDirectionStyle(direction),
         disabled ? styles.buttonOpacityDisabled : {},
       ]}>
-      <Icon fill={theme.icon} src={KirokuIcons.ArrowRight} />
+      <Icon small={small} fill={theme.icon} src={KirokuIcons.ArrowRight} />
     </View>
   );
 }

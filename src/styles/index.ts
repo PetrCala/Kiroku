@@ -798,8 +798,14 @@ const styles = (theme: ThemeColors) =>
       justifyContent: 'center',
     },
 
-    statsRangeNavigatorIconDisabled: {
-      opacity: 0.4,
+    // Fixed-width slot reserved on both sides of the label — the right slot
+    // holds the jump-to-latest button, the left is a phantom spacer — so the
+    // centered label never shifts when the jump button toggles.
+    statsRangeNavigatorJumpSlot: {
+      width: 24,
+      height: 24,
+      alignItems: 'center',
+      justifyContent: 'center',
     },
 
     cardBG: {
@@ -1610,6 +1616,7 @@ const styles = (theme: ThemeColors) =>
       flexDirection: 'row',
       alignItems: 'center',
       justifyContent: 'center',
+      minHeight: 36,
     },
 
     sessionsCalendarHeaderMonthText: {
@@ -1618,12 +1625,25 @@ const styles = (theme: ThemeColors) =>
       fontSize: variables.fontSizeLarge,
     },
 
-    sessionsCalendarHeaderSpinner: {
-      marginLeft: 8,
+    // Equal-width slots flanking the month label. The left slot holds the
+    // expand affordance, the right slot the revert button or older-months
+    // spinner — fixed width on both sides keeps the label centered.
+    sessionsCalendarHeaderSideSlot: {
+      width: 32,
+      height: 32,
+      alignItems: 'center',
+      justifyContent: 'center',
     },
 
-    sessionsCalendarExpandIcon: {
-      marginLeft: 8,
+    // Accent circle for the jump-to-current-month control; mirrors the
+    // Statistics range navigator's jump-to-latest pill.
+    sessionsCalendarHeaderRevert: {
+      width: 24,
+      height: 24,
+      borderRadius: 12,
+      backgroundColor: theme.appColor,
+      alignItems: 'center',
+      justifyContent: 'center',
     },
 
     sessionsCalendarWeekRow: {

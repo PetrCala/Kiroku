@@ -1247,6 +1247,7 @@ export default {
   },
   sessionsCalendar: {
     dayOverviewButton: 'Přehled dne',
+    jumpToCurrentMonth: 'Přejít na aktuální měsíc',
   },
   liveSessionScreen: {
     saving: 'Ukládám vaši relaci…',
