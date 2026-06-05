@@ -83,6 +83,7 @@ function SessionsCalendarScreen({route}: SessionsCalendarScreenProps) {
   // session → summary, edit button → edit), for friends it's read-only. Kept
   // mounted across the edit round-trip so it reopens on back with live data.
   const [drillDownDate, setDrillDownDate] = useState<DateString | null>(null);
+  const handleDrillDownClose = useCallback(() => setDrillDownDate(null), []);
 
   // Hold the calendar invisible until the WeekListView has applied its
   // initial scroll, so the user never sees a "latest at bottom → target"
@@ -141,7 +142,7 @@ function SessionsCalendarScreen({route}: SessionsCalendarScreenProps) {
       {preferences && (
         <DayDrillDownSheet
           isVisible={!!drillDownDate}
-          onClose={() => setDrillDownDate(null)}
+          onClose={handleDrillDownClose}
           date={drillDownDate}
           drinkingSessionData={drinkingSessionData}
           preferences={preferences}

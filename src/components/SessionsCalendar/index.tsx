@@ -281,13 +281,18 @@ function SessionsCalendar({
   );
   const dayLongPressHandler = isSelf ? onDayLongPress : undefined;
 
+  const handleDrillDownClose = useCallback(
+    () => setLongPressDrillDownDate(null),
+    [],
+  );
+
   // The drill-down sheet shown when a day with multiple sessions is long-
   // pressed. Mounted only for self (long-press is gated to self) and kept
   // mounted across the edit round-trip so it reopens on back with live data.
   const longPressDrillDown = isSelf ? (
     <DayDrillDownSheet
       isVisible={!!longPressDrillDownDate}
-      onClose={() => setLongPressDrillDownDate(null)}
+      onClose={handleDrillDownClose}
       date={longPressDrillDownDate}
       drinkingSessionData={drinkingSessionData}
       preferences={preferences}

@@ -1,4 +1,5 @@
-import {useMemo} from 'react';
+import {useEffect, useMemo} from 'react';
+import {useIsFocused} from '@react-navigation/native';
 import {FlatList, View} from 'react-native';
 import {format} from 'date-fns';
 import Button from '@components/Button';
@@ -66,9 +67,26 @@ function DayDrillDownSheet({
     }));
   }, [date, drinkingSessionData]);
 
+  const isFocused = useIsFocused();
+  const hasSessions = sessions.length > 0;
+
+  // Don't let the sheet reappear on a day whose last session was just removed
+  // (deleted, or an edit moved it to another day) — clear the parent's date.
+  // Guarded on `isVisible` so it only fires for an open sheet; `onClose` is
+  // memoized by the parents, so this won't loop.
+  useEffect(() => {
+    if (isVisible && !hasSessions) {
+      onClose();
+    }
+  }, [isVisible, hasSessions, onClose]);
+
   return (
     <Modal
-      isVisible={isVisible}
+      // Hide while the host screen is blurred (the user tapped through to a
+      // session's summary/edit screen, which is presented over it in the RHP) so
+      // the sheet doesn't float over the pushed screen, and reappears with live
+      // data on return — unless the day has been emptied in the meantime.
+      isVisible={isVisible && isFocused && hasSessions}
       onClose={onClose}
       type={CONST.MODAL.MODAL_TYPE.BOTTOM_DOCKED}>
       <View style={[styles.pt3, styles.pb5, {minHeight: 240, maxHeight: 560}]}>
