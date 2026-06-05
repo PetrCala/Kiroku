@@ -1,4 +1,11 @@
-import React, {memo, useCallback, useEffect, useMemo, useRef} from 'react';
+import React, {
+  memo,
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from 'react';
 import {useIsFocused} from '@react-navigation/native';
 import type {DateData} from 'react-native-calendars';
 import {
@@ -21,6 +28,7 @@ import CONST from '@src/CONST';
 import Navigation from '@libs/Navigation/Navigation';
 import ROUTES from '@src/ROUTES';
 import type {DateString, Timestamp} from '@src/types/onyx/OnyxCommon';
+import type {DrinkingSessionList} from '@src/types/onyx';
 import {useFirebase} from '@context/global/FirebaseContext';
 import useLazyMarkedDates from '@hooks/useLazyMarkedDates';
 import useStartEditSessionForDate from '@hooks/useStartEditSessionForDate';
@@ -30,6 +38,7 @@ import ONYXKEYS from '@src/ONYXKEYS';
 import SessionsCalendarView from './SessionsCalendarView';
 import SessionsCalendarWeekListView from './SessionsCalendarWeekListView';
 import DayOverviewListView from './DayOverviewListView';
+import DayDrillDownSheet from './DayDrillDownSheet';
 import type SessionsCalendarProps from './types';
 
 // How many months of pre-loaded buffer to keep ahead of the user's scroll in
@@ -232,29 +241,59 @@ function SessionsCalendar({
     [mode, userID, onDayDrillDown],
   );
 
-  // Long-press a day → jump straight to the edit screen. If the day already has
-  // one or more sessions, open the latest of them for edit; otherwise create a
-  // new edit session dated to that day. Gated to self at the call site below, so
-  // the heavy-impact haptic (fired by GenericPressable when an onLongPress is
-  // present) never triggers on a friend's calendar.
+  // The day whose long-press drill-down sheet is open, or null when closed.
+  // Only used for days with more than one session (see `onDayLongPress`).
+  const [longPressDrillDownDate, setLongPressDrillDownDate] =
+    useState<DateString | null>(null);
+
+  // Long-press a day → the fastest path to editing that day:
+  //  - no session yet  → create a new edit session dated to that day,
+  //  - exactly one     → jump straight into editing it,
+  //  - more than one   → open a drill-down sheet listing the day's sessions so
+  //                      the user can pick which one to edit (each tile carries
+  //                      an edit affordance, like the day-overview screen).
+  // Gated to self at the call site below, so the heavy-impact haptic (fired by
+  // GenericPressable when an onLongPress is present) never triggers on a
+  // friend's calendar.
   const onDayLongPress = useCallback(
     (dateData: DateData) => {
-      const date = dateStringToDate(dateData.dateString as DateString);
-      const latest = DSUtils.getLatestDayDrinkingSession(
+      const dateString = dateData.dateString as DateString;
+      const date = dateStringToDate(dateString);
+      const daySessions = DSUtils.getSingleDayDrinkingSessions(
         date,
         drinkingSessionData ?? undefined,
-      );
-      if (latest) {
-        DS.navigateToEditSessionScreen(latest.sessionId, latest.session).catch(
-          () => {},
-        );
+        false,
+      ) as DrinkingSessionList;
+      const entries = Object.entries(daySessions);
+
+      if (entries.length === 0) {
+        startEditSessionForDate(date);
         return;
       }
-      startEditSessionForDate(date);
+      if (entries.length === 1) {
+        const [sessionId, session] = entries[0];
+        DS.navigateToEditSessionScreen(sessionId, session).catch(() => {});
+        return;
+      }
+      setLongPressDrillDownDate(dateString);
     },
     [drinkingSessionData, startEditSessionForDate],
   );
   const dayLongPressHandler = isSelf ? onDayLongPress : undefined;
+
+  // The drill-down sheet shown when a day with multiple sessions is long-
+  // pressed. Mounted only for self (long-press is gated to self) and kept
+  // mounted across the edit round-trip so it reopens on back with live data.
+  const longPressDrillDown = isSelf ? (
+    <DayDrillDownSheet
+      isVisible={!!longPressDrillDownDate}
+      onClose={() => setLongPressDrillDownDate(null)}
+      date={longPressDrillDownDate}
+      drinkingSessionData={drinkingSessionData}
+      preferences={preferences}
+      canEdit
+    />
+  ) : null;
 
   if (isLoading) {
     return <FlexibleLoadingIndicator />;
@@ -281,36 +320,42 @@ function SessionsCalendar({
 
   if (mode === 'fullscreen') {
     return (
-      <SessionsCalendarWeekListView
-        markedDates={markedDates}
-        unitsMap={unitsMap}
-        monthlyTotalsMap={monthlyTotalsMap}
-        loadedFromDate={loadedFromDate}
-        isFetchingOlderMonths={isFetchingOlderMonths}
-        onDayPress={onDayPress}
-        onDayLongPress={dayLongPressHandler}
-        onRequestOlder={handleRequestOlder}
-        initialMonthYear={initialMonthYear}
-        onInitialScrollReady={onInitialScrollReady}
-        onSwipeBack={Navigation.goBack}
-      />
+      <>
+        <SessionsCalendarWeekListView
+          markedDates={markedDates}
+          unitsMap={unitsMap}
+          monthlyTotalsMap={monthlyTotalsMap}
+          loadedFromDate={loadedFromDate}
+          isFetchingOlderMonths={isFetchingOlderMonths}
+          onDayPress={onDayPress}
+          onDayLongPress={dayLongPressHandler}
+          onRequestOlder={handleRequestOlder}
+          initialMonthYear={initialMonthYear}
+          onInitialScrollReady={onInitialScrollReady}
+          onSwipeBack={Navigation.goBack}
+        />
+        {longPressDrillDown}
+      </>
     );
   }
 
   return (
-    <SessionsCalendarView
-      userID={userID}
-      markedDates={markedDates}
-      unitsMap={unitsMap}
-      visibleDate={visibleDate}
-      minDate={minDate}
-      onDayPress={onDayPress}
-      onDayLongPress={dayLongPressHandler}
-      onLeftArrowPress={handleLeftArrowPress}
-      onRightArrowPress={handleRightArrowPress}
-      onJumpToCurrent={handleJumpToCurrent}
-      isFetchingOlderMonths={isFetchingOlderMonths}
-    />
+    <>
+      <SessionsCalendarView
+        userID={userID}
+        markedDates={markedDates}
+        unitsMap={unitsMap}
+        visibleDate={visibleDate}
+        minDate={minDate}
+        onDayPress={onDayPress}
+        onDayLongPress={dayLongPressHandler}
+        onLeftArrowPress={handleLeftArrowPress}
+        onRightArrowPress={handleRightArrowPress}
+        onJumpToCurrent={handleJumpToCurrent}
+        isFetchingOlderMonths={isFetchingOlderMonths}
+      />
+      {longPressDrillDown}
+    </>
   );
 }
 
