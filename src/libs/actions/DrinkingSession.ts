@@ -18,7 +18,9 @@ import Onyx from 'react-native-onyx';
 import type {OnyxUpdate} from 'react-native-onyx';
 import * as API from '@libs/API';
 import {buildSessionTimeParts} from '@libs/Statistics/sessionTimeParts';
-import {WRITE_COMMANDS} from '@libs/API/types';
+import {READ_COMMANDS, WRITE_COMMANDS} from '@libs/API/types';
+import type Response from '@src/types/onyx/Response';
+import type {OpenFriendDrinkingSessionsParams} from '@libs/API/parameters';
 import type {OnyxKey} from '@src/ONYXKEYS';
 import ONYXKEYS from '@src/ONYXKEYS';
 import Navigation from '@libs/Navigation/Navigation';
@@ -750,8 +752,37 @@ async function navigateToEditSessionScreen(
   );
 }
 
+/**
+ * Read a FRIEND's drinking sessions, windowed by `start_time` (`>= from`), via
+ * the privacy-enforced `GET /v1/users/:uid/sessions` endpoint. This replaces the
+ * client's direct, unguarded Firebase RTDB `get()` of `user_drinking_sessions/$uid`:
+ * the API now enforces the friends + visibility check that used to live only in
+ * the RTDB security rules (which the admin SDK bypasses).
+ *
+ * The server returns the windowed map as onyxData merged under
+ * `cachedDrinkingSessions[userID]`. A denied / hidden read returns an EVICTION
+ * (that key set to `null`) so a viewer who has lost access stops showing the
+ * sessions they cached while previously allowed (Kiroku #786). Both flow through
+ * the standard `SaveResponseInOnyx` pipeline; this returns the promise so the
+ * fetch hook can clear its own loading state once the round-trip settles.
+ */
+function openFriendDrinkingSessions(
+  userID: UserID,
+  from: number,
+): Promise<void | Response> {
+  const parameters: OpenFriendDrinkingSessionsParams = {userID, from};
+  // eslint-disable-next-line rulesdir/no-api-side-effects-method
+  return API.makeRequestWithSideEffects(
+    READ_COMMANDS.OPEN_FRIEND_DRINKING_SESSIONS,
+    parameters,
+    {},
+    CONST.API_REQUEST_TYPE.READ,
+  );
+}
+
 export {
   generateDrinkingSessionId,
+  openFriendDrinkingSessions,
   navigateToEditSessionScreen,
   navigateToOngoingSessionScreen,
   removeDrinkingSessionData,

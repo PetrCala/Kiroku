@@ -36,6 +36,16 @@ const KIROKU_ROUTES: Record<string, KirokuRoute> = {
     method: 'get',
     path: '/v1/app/open',
   },
+  // Friend drinking sessions, windowed by start_time and privacy-enforced
+  // server-side (friends + visibility). Denied reads return 200 with an
+  // eviction patch (cachedDrinkingSessions[uid] -> null), see Kiroku #786.
+  [READ_COMMANDS.OPEN_FRIEND_DRINKING_SESSIONS]: {
+    method: 'get',
+    path: '/v1/users/:uid/sessions',
+    toPath: data =>
+      `/v1/users/${encodeURIComponent(String(data.userID))}/sessions`,
+    toQuery: data => ({from: Number(data.from ?? 0)}),
+  },
   [SIDE_EFFECT_REQUEST_COMMANDS.GET_MISSING_ONYX_MESSAGES]: {
     method: 'get',
     path: '/v1/updates',

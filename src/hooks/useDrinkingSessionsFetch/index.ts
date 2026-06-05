@@ -1,57 +1,69 @@
-import {useFirebase} from '@context/global/FirebaseContext';
-import {fetchDataKeyToDbPath} from '@hooks/useFetchData/utils';
+import * as DrinkingSession from '@libs/actions/DrinkingSession';
 import CONST from '@src/CONST';
 import ONYXKEYS from '@src/ONYXKEYS';
 import type {DrinkingSessionList} from '@src/types/onyx';
 import type {UserID} from '@src/types/onyx/OnyxCommon';
 import {startOfMonth, subMonths} from 'date-fns';
-import {get, orderByChild, query, ref, startAt} from 'firebase/database';
 import {useEffect, useRef, useState} from 'react';
 import {useOnyx} from 'react-native-onyx';
 
 type UseDrinkingSessionsFetchReturn = {
   /** Last-good snapshot of the windowed session list. Stays populated across
-   *  widen re-fetches so the calendar doesn't blank out during the round trip. */
+   *  widen re-fetches so the calendar doesn't blank out during the round trip.
+   *  `undefined` once the server denies/evicts access (see below). */
   data: DrinkingSessionList | undefined;
   /** True only on the initial fetch — later widens swap `data` on resolve
    *  without flipping this back to true. Consumers should NOT show a full
    *  loading state on widens. */
   isLoading: boolean;
   /** True while a wider-window re-fetch is in flight (user scrolled the
-   *  calendar past the loaded edge). Cleared when the new `get()` resolves. */
+   *  calendar past the loaded edge). Cleared when the read resolves. */
   isFetchingOlderMonths: boolean;
 };
 
 /**
- * One-shot Firebase `get()` for a target user's drinking sessions, windowed
- * server-side by `start_time` to the most recent
- * `CONST.SESSIONS_INITIAL_FETCH_MONTHS` months (or wider if the user has
- * scrolled the calendar back, persisted per-UID in
- * `${COLLECTION.SESSIONS_CALENDAR_MONTHS_BY_USER_ID}${userID}`).
+ * Windowed read of a target user's drinking sessions through the
+ * privacy-enforced `GET /v1/users/:uid/sessions` API — previously a direct
+ * Firebase RTDB `get()` of `user_drinking_sessions/$uid`.
  *
- * Used by the friend-profile screen so opening a profile with thousands of
- * sessions doesn't download the entire collection. When the calendar widens
- * (via [[useLazyMarkedDates.loadMoreMonths]]) the Onyx entry bumps and this
- * hook fires a new `get()` with an earlier `startAt`. Stale in-flight
- * responses are dropped via a request token.
+ * The server windows by `start_time` to the most recent
+ * `CONST.SESSIONS_INITIAL_FETCH_MONTHS` months (or wider if the calendar has
+ * scrolled back, persisted per-UID in
+ * `${COLLECTION.SESSIONS_CALENDAR_MONTHS_BY_USER_ID}${userID}`) AND enforces the
+ * friends + visibility check that used to live only in the RTDB security rules
+ * (which the admin SDK bypasses). The windowed map is delivered as onyxData into
+ * `cachedDrinkingSessions[userID]`, which this hook reads back via Onyx.
+ *
+ * When the server denies/hides the data it evicts that key (Kiroku #786), so
+ * `data` becomes `undefined` the instant a viewer loses access — the UI can no
+ * longer show sessions it cached while previously allowed.
+ *
+ * When the calendar widens (via [[useLazyMarkedDates.loadMoreMonths]]) the Onyx
+ * depth bumps and this hook re-issues the read with an earlier `from`. A request
+ * token guards the loading flags so a stale in-flight widen does not clear them
+ * early. An empty `userID` (the self branch of screens that show both) is a
+ * no-op.
  */
 function useDrinkingSessionsFetch(
   userID: UserID,
 ): UseDrinkingSessionsFetchReturn {
-  const {db} = useFirebase();
   const [monthsLoaded, monthsLoadedMeta] = useOnyx(
     `${ONYXKEYS.COLLECTION.SESSIONS_CALENDAR_MONTHS_BY_USER_ID}${userID}`,
   );
+  // The API delivers the windowed sessions into cachedDrinkingSessions[userID];
+  // reading them back here means eviction-on-deny (#786) flows straight to the
+  // UI without any local bookkeeping.
+  const [cachedDrinkingSessions] = useOnyx(ONYXKEYS.CACHED_DRINKING_SESSIONS);
+  const data = userID ? cachedDrinkingSessions?.[userID] : undefined;
 
-  const [data, setData] = useState<DrinkingSessionList | undefined>(undefined);
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [isFetchingOlderMonths, setIsFetchingOlderMonths] =
     useState<boolean>(false);
   const prevSessionsMonthsBackRef = useRef<number | null>(null);
 
   // Latest-wins request token. Bumped before each fetch; on resolve we ignore
-  // the response unless its token still matches `currentTokenRef.current`.
-  // Prevents stale wider/narrower responses from clobbering a newer fetch.
+  // the result unless its token still matches `currentTokenRef.current`, so a
+  // stale wider/narrower round-trip can't clear the loading flags out of turn.
   const currentTokenRef = useRef(0);
   const hasResolvedInitialRef = useRef(false);
 
@@ -62,20 +74,10 @@ function useDrinkingSessionsFetch(
 
   useEffect(() => {
     // Skip until prerequisites are in place. `isLoading` stays `true` —
-    // ProfileScreen mounts after auth so `db` and `userID` are always set in
-    // practice, and Onyx hydration is fast.
-    if (
-      !db ||
-      !userID ||
-      // Wait for Onyx to hydrate so we don't fetch the default 3 months and
-      // then immediately re-fetch when the saved wider depth arrives.
-      monthsLoadedMeta.status !== 'loaded'
-    ) {
-      return;
-    }
-
-    const path = fetchDataKeyToDbPath('drinkingSessionData', userID);
-    if (!path) {
+    // ProfileScreen mounts after auth so `userID` is always set in practice,
+    // and Onyx hydration is fast. Wait for the saved depth to hydrate so we
+    // don't fetch the default 3 months and then immediately re-fetch wider.
+    if (!userID || monthsLoadedMeta.status !== 'loaded') {
       return;
     }
 
@@ -89,25 +91,14 @@ function useDrinkingSessionsFetch(
     // Snap to the start of the earliest visible month so every month inside the
     // fetched window is loaded in full — without this, a sliding window that
     // stops mid-month would leave the early days unfetched and misrender them as
-    // "before tracking started".
-    const startAtMillis = startOfMonth(
+    // "before tracking started". Matches the server's `start_time >= from`.
+    const from = startOfMonth(
       subMonths(new Date(), sessionsMonthsBack),
     ).getTime();
-    const sessionsQuery = query(
-      ref(db, path),
-      orderByChild('start_time'),
-      startAt(startAtMillis),
-    );
 
-    const finalize = (next: DrinkingSessionList | undefined) => {
+    const finalize = () => {
       if (token !== currentTokenRef.current) {
         return;
-      }
-      if (next !== undefined) {
-        setData(next);
-      } else if (!hasResolvedInitialRef.current) {
-        // First resolve with no sessions — clear any stale state.
-        setData(undefined);
       }
       if (!hasResolvedInitialRef.current) {
         hasResolvedInitialRef.current = true;
@@ -116,16 +107,8 @@ function useDrinkingSessionsFetch(
       setIsFetchingOlderMonths(false);
     };
 
-    get(sessionsQuery)
-      .then(snapshot => {
-        finalize(
-          snapshot.exists()
-            ? (snapshot.val() as DrinkingSessionList)
-            : undefined,
-        );
-      })
-      .catch(() => finalize(undefined));
-  }, [db, userID, sessionsMonthsBack, monthsLoadedMeta.status]);
+    DrinkingSession.openFriendDrinkingSessions(userID, from).finally(finalize);
+  }, [userID, sessionsMonthsBack, monthsLoadedMeta.status]);
 
   return {data, isLoading, isFetchingOlderMonths};
 }
