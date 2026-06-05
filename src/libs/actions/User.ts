@@ -710,12 +710,15 @@ async function signUp(
   });
 
   try {
+    // Set the Auth profile display name BEFORE provisioning so the rollback
+    // path below is always orphan-free: the only RTDB write (provisionUser) is
+    // the last statement, so if anything in this block throws there is no
+    // half-created RTDB graph to clean up — deleting the Auth user suffices.
+    await updateProfile(newUser, {displayName: derivedName});
+
     // Provision the user's backing data server-side (kiroku-api owns the atomic
     // RTDB creation). Awaited so a failure can roll the Auth user back below.
     await provisionUser(newUserID, newProfileData);
-
-    // Update Firebase authentication
-    await updateProfile(newUser, {displayName: derivedName});
 
     Session.clearSignInData();
 
