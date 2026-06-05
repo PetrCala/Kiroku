@@ -1181,6 +1181,7 @@ export default {
         nextPeriod: 'Next period',
         rangeLabel: 'Selected date range, double-tap to change',
         jumpToLatest: 'Jump to the latest period',
+        revertToPreset: 'Revert to the previous range',
       },
     },
   },

@@ -48,6 +48,7 @@ function StatsFilterToolbar({
     goToPreviousPeriod,
     goToNextPeriod,
     goToLatest,
+    revertFromCustom,
     comparison,
     setComparison,
     drinkTypeFilter,
@@ -87,6 +88,7 @@ function StatsFilterToolbar({
         onPrev={goToPreviousPeriod}
         onNext={goToNextPeriod}
         onJumpToLatest={goToLatest}
+        onRevert={revertFromCustom}
         onPressLabel={() => setPickerOpen(true)}
       />
       {showDrinkTypeFilter ? (

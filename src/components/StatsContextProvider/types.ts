@@ -32,6 +32,12 @@ type StatsContextValue = {
   goToPreviousPeriod: () => void;
   goToNextPeriod: () => void;
   goToLatest: () => void;
+  /**
+   * Leave the `Custom` range, returning to the pageable preset that was active
+   * when `Custom` was selected (falls back to the default preset), positioned
+   * on the period holding the custom range's start.
+   */
+  revertFromCustom: () => void;
 
   comparison: Comparison;
   setComparison: (next: Comparison) => void;

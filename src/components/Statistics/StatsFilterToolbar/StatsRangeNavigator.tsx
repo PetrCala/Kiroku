@@ -17,6 +17,7 @@ type Props = {
   onPrev: () => void;
   onNext: () => void;
   onJumpToLatest: () => void;
+  onRevert: () => void;
   onPressLabel: () => void;
 };
 
@@ -25,6 +26,7 @@ function StatsRangeNavigator({
   onPrev,
   onNext,
   onJumpToLatest,
+  onRevert,
   onPressLabel,
 }: Props) {
   const {translate, preferredLocale} = useLocalize();
@@ -36,6 +38,9 @@ function StatsRangeNavigator({
   const {isPageable, canGoPrev, canGoNext, isLatest} = range;
 
   const showJump = isPageable && !isLatest;
+  // The revert button replaces the jump-to-latest button on a custom range
+  // (which isn't pageable, so the two never appear together).
+  const showRevert = range.preset === 'Custom';
   // Fade the inline jump-to-latest button in whenever it (re)appears.
   const [jumpOpacity] = useState(() => new Animated.Value(0));
   useEffect(() => {
@@ -109,6 +114,17 @@ function StatsRangeNavigator({
                 <Icon small src={KirokuIcons.RotateLeft} fill={textReversed} />
               </PressableWithFeedback>
             </Animated.View>
+          )}
+          {showRevert && (
+            <PressableWithFeedback
+              onPress={onRevert}
+              accessibilityLabel={translate(
+                'statistics.filters.a11y.revertToPreset',
+              )}
+              accessibilityRole="button"
+              style={styles.statsRangeNavigatorInlineJump}>
+              <Icon small src={KirokuIcons.Undo} fill={textReversed} />
+            </PressableWithFeedback>
           )}
         </View>
       </View>

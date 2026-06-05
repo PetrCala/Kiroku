@@ -22,6 +22,7 @@ import CONST from '@src/CONST';
 import ONYXKEYS from '@src/ONYXKEYS';
 import type {DrinkKey} from '@src/types/onyx/Drinks';
 import type {UserID} from '@src/types/onyx/OnyxCommon';
+import type {StatisticsFilters} from '@src/types/onyx';
 import derivePresetRange from './derivePresetRange';
 import type {
   Comparison,
@@ -33,7 +34,7 @@ import type {
 
 const DATE_FORMAT = CONST.DATE.FNS_FORMAT_STRING;
 
-const DEFAULT_PRESET: RangePreset = 'M';
+const DEFAULT_PRESET: Exclude<RangePreset, 'Custom'> = 'M';
 const EMPTY_DRINK_FILTER: ReadonlySet<DrinkKey> = new Set();
 
 type StatsStateContextValue = {
@@ -50,6 +51,12 @@ type StatsActionsContextValue = {
   goToPreviousPeriod: () => void;
   goToNextPeriod: () => void;
   goToLatest: () => void;
+  /**
+   * Leave the `Custom` range, returning to the pageable preset that was active
+   * when `Custom` was selected (falls back to the default preset). The target
+   * period is the one holding the custom range's start. No-op off `Custom`.
+   */
+  revertFromCustom: () => void;
   setComparison: (next: Comparison) => void;
   setDrinkTypeFilter: (next: ReadonlySet<DrinkKey>) => void;
   setUserIds: (next: readonly UserID[]) => void;
@@ -79,6 +86,38 @@ function canStepBack(params: {
     derivePresetRange(params).end.getTime() >=
     startOfDay(earliestSessionAt).getTime()
   );
+}
+
+/**
+ * Offset of the pageable window that contains `target`, found by walking back
+ * from the current period. Windows are contiguous and descending, so the first
+ * window whose start is at or before `target` is the one holding it. Clamped by
+ * `canStepBack` so it never lands earlier than the oldest window still
+ * overlapping recorded history (e.g. when a custom range starts before the
+ * user's first session). Returns `0` for non-pageable presets.
+ */
+function offsetForDate(params: {
+  preset: RangePreset;
+  now: Date;
+  target: Date;
+  earliestSessionAt?: Date;
+}): number {
+  const {preset, now, target, earliestSessionAt} = params;
+  if (preset === 'All' || preset === 'Custom') {
+    return 0;
+  }
+  const targetTime = target.getTime();
+  let offset = 0;
+  while (
+    derivePresetRange({preset, now, offset}).start.getTime() > targetTime
+  ) {
+    const next = offset - 1;
+    if (!canStepBack({preset, now, offset: next, earliestSessionAt})) {
+      return offset;
+    }
+    offset = next;
+  }
+  return offset;
 }
 
 /**
@@ -201,6 +240,12 @@ function StatsContextProvider({children, now}: StatsContextProviderProps) {
       ? {start: initialCustomStart, end: initialCustomEnd}
       : undefined,
   );
+  // The pageable preset to fall back to when reverting out of `Custom`.
+  // Persisted alongside the custom range so the revert target survives a
+  // restart while the user is on a custom range.
+  const [presetBeforeCustom, setPresetBeforeCustom] = useState<
+    Exclude<RangePreset, 'Custom'> | undefined
+  >(persisted?.presetBeforeCustom);
 
   const [drinkTypeFilter, setDrinkTypeFilterState] = useState<
     ReadonlySet<DrinkKey>
@@ -298,28 +343,56 @@ function StatsContextProvider({children, now}: StatsContextProviderProps) {
     }
   }, [firebaseUid, loadStart, nowSnapshot, monthsLoaded]);
 
-  const setRange = useCallback((next: SetRangeInput) => {
-    // Any range change returns to the current period.
-    setPeriodOffset(0);
-    if (next.preset === 'Custom') {
-      setCustomRange({start: next.start, end: next.end});
-      setPreset('Custom');
+  const setRange = useCallback(
+    (next: SetRangeInput) => {
+      if (next.preset === 'Custom') {
+        const patch: Partial<StatisticsFilters> = {
+          preset: 'Custom',
+          customStart: format(next.start, DATE_FORMAT),
+          customEnd: format(next.end, DATE_FORMAT),
+        };
+        // Remember the preset we're leaving so the revert button can return to
+        // it. Only capture when entering Custom from a pageable preset —
+        // re-picking a range while already on Custom keeps the original.
+        if (preset !== 'Custom') {
+          setPresetBeforeCustom(preset);
+          patch.presetBeforeCustom = preset;
+        }
+        setPeriodOffset(0);
+        setCustomRange({start: next.start, end: next.end});
+        setPreset('Custom');
+        Statistics.setFilters(patch);
+        return;
+      }
+      // Leaving Custom for a pageable preset: land on the window that holds the
+      // custom range's start rather than snapping back to the current period.
+      // Any other preset→preset change still returns to the current period.
+      setPeriodOffset(
+        preset === 'Custom' && customRange
+          ? offsetForDate({
+              preset: next.preset,
+              now: nowSnapshot,
+              target: customRange.start,
+              earliestSessionAt,
+            })
+          : 0,
+      );
+      setPreset(next.preset);
+      // Clear the custom dates and remembered preset — they're only meaningful
+      // for the Custom preset.
       Statistics.setFilters({
-        preset: 'Custom',
-        customStart: format(next.start, DATE_FORMAT),
-        customEnd: format(next.end, DATE_FORMAT),
+        preset: next.preset,
+        customStart: undefined,
+        customEnd: undefined,
+        presetBeforeCustom: undefined,
       });
-      return;
-    }
-    setPreset(next.preset);
-    // Clear stored custom dates when switching away — they're only meaningful
-    // for the Custom preset.
-    Statistics.setFilters({
-      preset: next.preset,
-      customStart: undefined,
-      customEnd: undefined,
-    });
-  }, []);
+    },
+    [preset, customRange, nowSnapshot, earliestSessionAt],
+  );
+
+  const revertFromCustom = useCallback(() => {
+    setRange({preset: presetBeforeCustom ?? DEFAULT_PRESET});
+  }, [presetBeforeCustom, setRange]);
 
   const goToPreviousPeriod = useCallback(() => {
     setPeriodOffset(current => {
@@ -359,6 +432,7 @@ function StatsContextProvider({children, now}: StatsContextProviderProps) {
       goToPreviousPeriod,
       goToNextPeriod,
       goToLatest,
+      revertFromCustom,
       setComparison,
       setDrinkTypeFilter,
       setUserIds,
@@ -368,6 +442,7 @@ function StatsContextProvider({children, now}: StatsContextProviderProps) {
       goToPreviousPeriod,
       goToNextPeriod,
       goToLatest,
+      revertFromCustom,
       setDrinkTypeFilter,
     ],
   );

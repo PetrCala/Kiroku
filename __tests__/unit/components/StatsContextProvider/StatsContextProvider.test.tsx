@@ -145,6 +145,104 @@ describe('StatsContextProvider', () => {
     expect(getCtx().comparison).toBe('none');
   });
 
+  it('switching from Custom back to a preset lands on the period holding the custom range start', () => {
+    renderProvider();
+    const customStart = new Date('2026-01-10T00:00:00Z');
+    const customEnd = new Date('2026-01-20T23:59:59Z');
+
+    act(() => {
+      getCtx().setRange({preset: 'Custom', start: customStart, end: customEnd});
+    });
+    act(() => {
+      getCtx().setRange({preset: 'M'});
+    });
+
+    // now = 2026-05-15, custom start = January → the January window, not "this
+    // month".
+    expect(getCtx().range.preset).toBe('M');
+    expect(getCtx().range.isLatest).toBe(false);
+    expect(getCtx().range.start.getFullYear()).toBe(2026);
+    expect(getCtx().range.start.getMonth()).toBe(0);
+    expect(getCtx().range.end.getMonth()).toBe(0);
+  });
+
+  it('entering Custom remembers the previous preset, and revertFromCustom returns to it at the custom start', () => {
+    renderProvider();
+    act(() => {
+      getCtx().setRange({preset: 'W'});
+    });
+
+    merge.mockClear();
+    const customStart = new Date('2025-12-10T00:00:00Z');
+    const customEnd = new Date('2025-12-20T23:59:59Z');
+    act(() => {
+      getCtx().setRange({preset: 'Custom', start: customStart, end: customEnd});
+    });
+
+    expect(merge).toHaveBeenCalledWith(
+      'statisticsFilters',
+      expect.objectContaining({preset: 'Custom', presetBeforeCustom: 'W'}),
+    );
+
+    act(() => {
+      getCtx().revertFromCustom();
+    });
+
+    const {range} = getCtx();
+    expect(range.preset).toBe('W');
+    expect(range.isLatest).toBe(false);
+    // The landing window contains the custom range's start (week-alignment
+    // agnostic).
+    expect(range.start.getTime()).toBeLessThanOrEqual(customStart.getTime());
+    expect(range.end.getTime()).toBeGreaterThanOrEqual(customStart.getTime());
+    expect(merge).toHaveBeenCalledWith(
+      'statisticsFilters',
+      expect.objectContaining({
+        preset: 'W',
+        customStart: undefined,
+        customEnd: undefined,
+        presetBeforeCustom: undefined,
+      }),
+    );
+  });
+
+  it('revertFromCustom uses the persisted presetBeforeCustom after a restart', () => {
+    mockOnyxValue = {
+      preset: 'Custom',
+      customStart: '2025-12-10',
+      customEnd: '2025-12-20',
+      presetBeforeCustom: 'Y',
+      drinkTypeFilter: [],
+    };
+
+    renderProvider();
+    expect(getCtx().range.preset).toBe('Custom');
+
+    act(() => {
+      getCtx().revertFromCustom();
+    });
+
+    expect(getCtx().range.preset).toBe('Y');
+    expect(getCtx().range.start.getFullYear()).toBe(2025);
+  });
+
+  it('revertFromCustom falls back to the default preset when none was remembered', () => {
+    mockOnyxValue = {
+      preset: 'Custom',
+      customStart: '2025-12-10',
+      customEnd: '2025-12-20',
+      drinkTypeFilter: [],
+    };
+
+    renderProvider();
+
+    act(() => {
+      getCtx().revertFromCustom();
+    });
+
+    expect(getCtx().range.preset).toBe('M');
+  });
+
   it('does not widen the calendar-depth lever past the earliest session for an All + comparison range', () => {
     mockOnyxValue = undefined; // monthsLoaded resolves to 0
 
