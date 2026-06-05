@@ -17,7 +17,6 @@ import * as Onboarding from '@libs/actions/Onboarding';
 import CONST from '@src/CONST';
 import ONYXKEYS from '@src/ONYXKEYS';
 import ROUTES from '@src/ROUTES';
-import type {Database} from 'firebase/database';
 import type {User} from 'firebase/auth';
 
 const TEST_UID = 'user-abc';
@@ -57,7 +56,6 @@ const mockedSetUsername = jest.mocked(UserActions.setUsername);
 const mockedGetFirebaseAuth = jest.mocked(getFirebaseAuth);
 
 const TEST_USER = {uid: TEST_UID} as User;
-const TEST_DB = {} as Database;
 
 type WriteCall = [
   string,
@@ -167,7 +165,7 @@ describe('acceptTerms', () => {
 
 describe('setDisplayName', () => {
   test('delegates to setUsername (now via kiroku-api) and writes last_visited_path via kiroku-api', async () => {
-    await Onboarding.setDisplayName(TEST_DB, TEST_USER, 'new');
+    await Onboarding.setDisplayName(TEST_USER, 'new');
 
     expect(mockedSetUsername).toHaveBeenCalledWith(TEST_USER, 'new');
 
@@ -191,9 +189,9 @@ describe('setDisplayName', () => {
   });
 
   test('rejects when user is null and never writes', async () => {
-    await expect(
-      Onboarding.setDisplayName(TEST_DB, null, 'new'),
-    ).rejects.toThrow('common.error.userNull');
+    await expect(Onboarding.setDisplayName(null, 'new')).rejects.toThrow(
+      'common.error.userNull',
+    );
     expect(mockedSetUsername).not.toHaveBeenCalled();
     expect(mockedWrite).not.toHaveBeenCalled();
   });

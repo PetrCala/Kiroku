@@ -1,4 +1,3 @@
-import type {Database} from 'firebase/database';
 import type {User} from 'firebase/auth';
 import Onyx from 'react-native-onyx';
 import type {OnyxUpdate} from 'react-native-onyx';
@@ -118,11 +117,9 @@ function acceptTerms(onboardingPath?: string): void {
  * it left off.
  *
  * `setUsername` is fire-and-forget (optimistic API write), so it is not
- * awaited; only the resume-path write is awaited here. `db` is retained for
- * call-site compatibility and is no longer used (a follow-up can drop it).
+ * awaited; only the resume-path write is awaited here.
  */
 async function setDisplayName(
-  db: Database,
   user: User | null,
   newDisplayName: string,
 ): Promise<void> {
