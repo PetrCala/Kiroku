@@ -1629,9 +1629,16 @@ const styles = (theme: ThemeColors) =>
     // Padding around the month label, matching the Statistics range navigator's
     // label so the gap to the revert control reads the same on both screens.
     sessionsCalendarHeaderLabel: {
+      flexDirection: 'row',
       paddingHorizontal: 8,
       paddingVertical: 4,
       alignItems: 'center',
+    },
+
+    // Subtle caret trailing the month label, hinting that tapping it expands to
+    // the full-screen calendar. Shown only when the header is tappable.
+    sessionsCalendarHeaderCaret: {
+      marginLeft: 4,
     },
 
     // Equal-width slots flanking the month label: a phantom spacer on the left,
