@@ -111,22 +111,26 @@ function acceptTerms(onboardingPath?: string): void {
 /**
  * Persist the display name chosen during onboarding.
  *
- * Wraps {@link setUsername} (still a direct Firebase write — atomically writes
- * `profile.display_name`, flips `profile.username_chosen`, and updates the
- * nickname index + Firebase auth profile) and additionally records the
- * onboarding resume path via kiroku-api so the flow resumes where it left off.
+ * Wraps {@link setUsername} (now served by kiroku-api — it writes
+ * `profile.display_name`, flips `profile.username_chosen`, rebuilds the
+ * nickname index, and syncs the Firebase auth profile) and additionally
+ * records the onboarding resume path via kiroku-api so the flow resumes where
+ * it left off.
+ *
+ * `setUsername` is fire-and-forget (optimistic API write), so it is not
+ * awaited; only the resume-path write is awaited here. `db` is retained for
+ * call-site compatibility and is no longer used (a follow-up can drop it).
  */
 async function setDisplayName(
   db: Database,
   user: User | null,
-  currentDisplayName: string | undefined,
   newDisplayName: string,
 ): Promise<void> {
   if (!user) {
     throw new Error(Localize.translateLocal('common.error.userNull'));
   }
 
-  await setUsername(db, user, currentDisplayName, newDisplayName);
+  setUsername(user, newDisplayName);
 
   writeLastVisitedPath(ROUTES.ONBOARDING_DISPLAY_NAME, user.uid);
 }

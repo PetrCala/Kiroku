@@ -1,5 +1,5 @@
 import type {Database} from 'firebase/database';
-import {update, ref, get} from 'firebase/database';
+import {ref, get} from 'firebase/database';
 import type {
   AppSettings,
   Config,
@@ -27,7 +27,6 @@ import {
   updateProfile,
   verifyBeforeUpdateEmail,
 } from 'firebase/auth';
-import {getNicknameKeys} from '@libs/StringUtilsKiroku';
 import {getOAuthCredential} from '@libs/OAuthCredential';
 import DBPATHS from '@src/DBPATHS';
 import {readDataOnce} from '@database/baseFunctions';
@@ -397,50 +396,38 @@ async function setAppUpdateDismissed(timestamp: Timestamp): Promise<void> {
 }
 
 /**
- * Persist the username the user chose on the post-auth username screen.
- * Writes the new display_name and the `username_chosen` flag in one update so
- * the routing gate can never observe an inconsistent state.
+ * Persist the username the user chose on the post-auth username screen via
+ * kiroku-api. The server owns the multi-path write — it renames
+ * `profile.display_name`, rebuilds the `nickname_to_id` search index from the
+ * name currently stored (so renames never leave stale tokens), and flips
+ * `profile.username_chosen` in the SAME update so the routing gate can never
+ * observe an inconsistent state. The optimistic Onyx update mirrors the
+ * server's `onyxData`. The Firebase Auth profile is kept in sync separately
+ * (best-effort); it is not RTDB state.
+ *
+ * @param user User choosing the username
+ * @param newUsername The chosen username (also stored as the display name)
  */
-async function setUsername(
-  db: Database,
-  user: User | null,
-  oldDisplayName: string | undefined,
-  newUsername: string,
-): Promise<void> {
+function setUsername(user: User | null, newUsername: string): void {
   if (!user) {
-    throw new Error(Localize.translateLocal('common.error.userNull'));
+    return;
   }
-  const userID = user.uid;
   const trimmed = newUsername.trim();
-  const nicknameRef = DBPATHS.NICKNAME_TO_ID_NICKNAME_KEY_USER_ID;
-  const displayNameRef = DBPATHS.USERS_USER_ID_PROFILE_DISPLAY_NAME;
-  const usernameChosenRef = DBPATHS.USERS_USER_ID_PROFILE_USERNAME_CHOSEN;
-
-  // Prefer the name currently stored in the database when deciding which index
-  // keys to remove, so a drifted caller-supplied old name can't leave stale
-  // tokens behind.
-  const currentDisplayName = await readDataOnce<string>(
-    db,
-    displayNameRef.getRoute(userID),
-  );
-  const newKeys = getNicknameKeys(trimmed);
-  const newKeySet = new Set(newKeys);
-  const oldKeys = getNicknameKeys(currentDisplayName ?? oldDisplayName ?? '');
-
-  const updates: Record<string, string | boolean | null> = {};
-  oldKeys
-    .filter(key => !newKeySet.has(key))
-    .forEach(key => {
-      updates[nicknameRef.getRoute(key, userID)] = null;
-    });
-  newKeys.forEach(key => {
-    updates[nicknameRef.getRoute(key, userID)] = trimmed;
+  const optimisticData: OnyxUpdate[] = [
+    {
+      onyxMethod: Onyx.METHOD.MERGE,
+      key: ONYXKEYS.USER_DATA_LIST,
+      value: {
+        [user.uid]: {
+          profile: {display_name: trimmed, username_chosen: true},
+        },
+      },
+    },
+  ];
+  API.write(WRITE_COMMANDS.SET_USERNAME, {username: trimmed}, {optimisticData});
+  updateProfile(user, {displayName: trimmed}).catch(() => {
+    // Auth profile sync is best-effort; the server write is authoritative.
   });
-  updates[displayNameRef.getRoute(userID)] = trimmed;
-  updates[usernameChosenRef.getRoute(userID)] = true;
-
-  await update(ref(db), updates);
-  await updateProfile(user, {displayName: trimmed});
 }
 
 /**

@@ -130,6 +130,10 @@ const KIROKU_ROUTES: Record<string, KirokuRoute> = {
     method: 'post',
     path: '/v1/profile/display-name',
   },
+  [WRITE_COMMANDS.SET_USERNAME]: {
+    method: 'post',
+    path: '/v1/profile/username',
+  },
   [WRITE_COMMANDS.UPDATE_LEGAL_NAME]: {
     method: 'post',
     path: '/v1/profile/name',
