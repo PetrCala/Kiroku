@@ -160,6 +160,12 @@ const ONYXKEYS = {
    *  visible (grandfathered default). */
   DATA_VISIBILITY: 'dataVisibility',
 
+  /** Global app configuration (version gating, maintenance, terms-update
+   *  timestamp). Hydrated from `app/open` (kiroku-api) and kept live via the
+   *  public `config` Pusher broadcast — global + last-write-wins, so it bypasses
+   *  the per-user OnyxUpdates gap-detection pipeline. */
+  CONFIG: 'config',
+
   //   // Information about the onyx updates IDs that were received from the server
   ONYX_UPDATES_FROM_SERVER: 'onyxUpdatesFromServer',
 
@@ -347,6 +353,7 @@ type OnyxValuesMapping = {
   [ONYXKEYS.PREFERRED_THEME]: ValueOf<typeof CONST.THEME>;
   [ONYXKEYS.PREFERENCES]: OnyxTypes.Preferences;
   [ONYXKEYS.DATA_VISIBILITY]: OnyxTypes.DataVisibility;
+  [ONYXKEYS.CONFIG]: OnyxTypes.Config;
   [ONYXKEYS.ONYX_UPDATES_FROM_SERVER]: OnyxTypes.OnyxUpdatesFromServer;
   [ONYXKEYS.ONYX_UPDATES_LAST_UPDATE_ID_APPLIED_TO_CLIENT]: number;
   [ONYXKEYS.LAST_VISITED_PATH]: string | undefined;

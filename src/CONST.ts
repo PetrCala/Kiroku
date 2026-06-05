@@ -841,6 +841,9 @@ const CONST = {
   PUSHER: {
     // kiroku-api authorizes/publishes to plain `private-user-<uid>` channels.
     PRIVATE_USER_CHANNEL_PREFIX: 'private-user-',
+    // Public (unauthenticated) channel carrying global app-config broadcasts.
+    CONFIG_CHANNEL: 'config',
+    CONFIG_UPDATE_EVENT: 'configUpdate',
   },
   REASON_FOR_LEAVING: {
     DB_KEY_LENGTH: 32,

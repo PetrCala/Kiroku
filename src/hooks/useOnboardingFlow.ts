@@ -1,5 +1,5 @@
 import {useMemo} from 'react';
-import {useDatabaseData} from '@context/global/DatabaseDataContext';
+import {useConfig} from '@context/global/ConfigContext';
 import {useFirebase} from '@context/global/FirebaseContext';
 import useCurrentUserData from '@hooks/useCurrentUserData';
 import {
@@ -33,7 +33,7 @@ type OnboardingFlowState = {
 function useOnboardingFlow(): OnboardingFlowState {
   const {auth} = useFirebase();
   const userID = auth?.currentUser?.uid;
-  const {config} = useDatabaseData();
+  const {config} = useConfig();
   // `useCurrentUserData` returns {} (truthy) while loading / after the Onyx
   // record is wiped on account close; the readiness gate and selectors below
   // expect `undefined` to mean "not loaded yet", so map empty → undefined.
