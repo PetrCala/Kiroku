@@ -29,6 +29,7 @@ import type {
 import getTopmostCentralPaneRoute from './getTopmostCentralPaneRoute';
 import getTopmostBottomTabRoute from './getTopmostBottomTabRoute';
 import getPreviousScreenNameFromState from './getPreviousScreenName';
+import getPopModalFlowTarget from './getPopModalFlowTarget';
 import getMatchingBottomTabRouteForState from './linkingConfig/getMatchingBottomTabRouteForState';
 
 let resolveNavigationIsReadyPromise: () => void;
@@ -318,30 +319,19 @@ function pop(count = 1) {
 }
 
 /**
- * Pop the entire topmost modal flow (e.g. the whole DrinkingSession modal —
- * Summary + Edit) off the modal navigator, landing on the modal flow beneath it
- * (e.g. the Day Overview), or the central pane if nothing is beneath.
- *
- * `pop(n)` can't do this: `StackActions.pop` clamps at the focused navigator's
- * own first route, so it never crosses out of the modal flow. `dismissModal`
- * over-shoots the other way: it targets the root and closes the whole modal
- * navigator down to the central pane. This targets the modal navigator itself,
- * removing just its top flow.
+ * Pop the topmost modal flow off, landing on whatever is beneath it (e.g. the
+ * Day Overview), or the central pane if nothing is beneath. The target-selection
+ * logic — and why a single-flow modal must be popped off the ROOT rather than
+ * its own inner stack — lives in {@link getPopModalFlowTarget}.
  */
 function popModalFlow() {
-  const rootState = navigationRef.getRootState();
-  const modalNavigatorRoute = rootState.routes[rootState.routes.length - 1];
-  if (
-    !modalNavigatorRoute?.state?.key ||
-    (modalNavigatorRoute.name !== NAVIGATORS.RIGHT_MODAL_NAVIGATOR &&
-      modalNavigatorRoute.name !== NAVIGATORS.LEFT_MODAL_NAVIGATOR) ||
-    !canNavigate('popModalFlow')
-  ) {
+  const target = getPopModalFlowTarget(navigationRef.getRootState());
+  if (!target || !canNavigate('popModalFlow')) {
     return;
   }
   navigationRef.current?.dispatch({
     ...StackActions.pop(),
-    target: modalNavigatorRoute.state.key,
+    target,
   });
 }
 
