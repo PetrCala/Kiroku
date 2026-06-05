@@ -1,4 +1,5 @@
 import React, {memo, useCallback, useEffect, useMemo, useRef} from 'react';
+import {useIsFocused} from '@react-navigation/native';
 import type {DateData} from 'react-native-calendars';
 import {
   differenceInMonths,
@@ -53,12 +54,21 @@ function SessionsCalendar({
 }: SessionsCalendarProps) {
   const {auth} = useFirebase();
   const [ongoingSession] = useOnyx(ONYXKEYS.ONGOING_SESSION_DATA);
-  // Overlay the live session's drinks onto the calendar, but only on the
-  // signed-in user's OWN calendar — this same component renders friends' data,
-  // which must never receive our local live buffer.
+  // `useIsFocused` is false whenever this calendar's screen sits behind the live
+  // session screen (it is presented over the central pane via the RHP, which
+  // blurs the screen underneath — the same signal `FreezeWrapper` relies on).
+  const isFocused = useIsFocused();
+  // Overlay the live session's drinks onto the calendar, but only:
+  //  - on the signed-in user's OWN calendar (this same component renders
+  //    friends' data, which must never receive our local live buffer), and
+  //  - while this calendar is actually on screen. The live buffer mutates on
+  //    every drink tap; recomputing the (heavy, react-native-calendars) grid for
+  //    an occluded calendar on each tap stalled the live screen's own paint. Drop
+  //    the overlay while blurred so taps stay snappy; it recomputes once when the
+  //    user returns and the screen refocuses.
   const isSelf = auth?.currentUser?.uid === userID;
   const ongoingOverlay =
-    isSelf && ongoingSession?.ongoing && ongoingSession.id
+    isSelf && isFocused && ongoingSession?.ongoing && ongoingSession.id
       ? ongoingSession
       : undefined;
   const {
