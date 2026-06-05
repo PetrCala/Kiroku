@@ -41,13 +41,10 @@ const useProfileList = (userArray: UserArray) => {
           db,
           newUsers,
         );
+        // fetchUserProfiles now reads via the public-profile API, whose
+        // response also merges `is_supporter` into USER_DATA_LIST — so the
+        // SupporterBadge data path is hydrated without a second fetch.
         setProfileList({...profileList, ...newProfileList});
-        // Hydrate the SupporterBadge data path for these users — the badge
-        // reads `is_supporter` off USER_DATA_LIST, which is otherwise only
-        // populated for the current user.
-        Profile.fetchAndStoreSupporterFlags(db, newUsers).catch(() => {
-          // Non-fatal: badge will simply remain hidden for these users.
-        });
       }
     } catch (error) {
       ErrorUtils.raiseAppError(ERRORS.USER.DATA_FETCH_FAILED, error);

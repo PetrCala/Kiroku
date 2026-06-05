@@ -2,6 +2,8 @@ import type {TupleToUnion} from 'type-fest';
 import type TIMEZONES from '@src/TIMEZONES';
 import type {Timestamp, UserID, UserList} from './OnyxCommon';
 import type FriendRequestList from './FriendRequestList';
+import type Preferences from './Preferences';
+import type UserStatus from './UserStatus';
 
 /** Selectable timezones */
 type SelectedTimezone = TupleToUnion<typeof TIMEZONES>;
@@ -130,6 +132,24 @@ type UserData = {
    * server-side by the RevenueCat webhook; undefined is treated as false.
    */
   is_supporter?: boolean;
+
+  /**
+   * A FRIEND's rendering preferences (units→colors, drinks→units, palette),
+   * denormalized here by the privacy-enforced `GET /v1/users/:uid/preferences`
+   * read so their sessions render with their own colors. Only present for
+   * friends whose data the viewer is allowed to see; a denied/hidden read
+   * evicts it (Kiroku #786). The signed-in user's own preferences live in the
+   * top-level `preferences` Onyx key, not here.
+   */
+  preferences?: Preferences;
+
+  /**
+   * A FRIEND's presence + latest session (`user_status`), denormalized here by
+   * the privacy-enforced `GET /v1/users/:uid/status` read. Only present for
+   * friends whose data the viewer is allowed to see; a denied/hidden read
+   * evicts it (#786). The own user's status has no top-level Onyx key.
+   */
+  user_status?: UserStatus;
 };
 
 /** A collection of user data of multiple users */

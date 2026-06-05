@@ -14,9 +14,8 @@ import useCurrentUserData from '@hooks/useCurrentUserData';
 import useCurrentUserDrinkingSessions from '@hooks/useCurrentUserDrinkingSessions';
 import useCurrentUserPreferences from '@hooks/useCurrentUserPreferences';
 import {useFirebase} from '@context/global/FirebaseContext';
-import useFetchData from '@hooks/useFetchData';
+import useFriendPreferences from '@hooks/useFriendPreferences';
 import useDrinkingSessionsFetch from '@hooks/useDrinkingSessionsFetch';
-import type {FetchDataKeys} from '@hooks/useFetchData/types';
 import {dateStringToDate, dateToDateData} from '@libs/DataHandling';
 import CONST from '@src/CONST';
 import ScreenWrapper from '@components/ScreenWrapper';
@@ -63,10 +62,6 @@ const internalStyles = StyleSheet.create({
 
 function noop() {}
 
-// Non-windowed keys to fetch for a friend (their session data is fetched
-// separately via `useDrinkingSessionsFetch`). Mirrors `SessionsCalendarScreen`.
-const FRIEND_FETCH_KEYS: FetchDataKeys = ['preferences'];
-
 function DayOverviewScreen({route}: DayOverviewScreenProps) {
   const {userID, date} = route.params;
   const {isOnline} = useUserConnection();
@@ -99,8 +94,8 @@ function DayOverviewScreen({route}: DayOverviewScreenProps) {
   // `userID`, which both hooks treat as a no-op.
   const ownPreferences = useCurrentUserPreferences();
   const currentUserSessions = useCurrentUserDrinkingSessions();
-  const {data: friendFetchedData, isLoading: isFriendFetchLoading} =
-    useFetchData(isSelf ? '' : userID, FRIEND_FETCH_KEYS);
+  const {preferences: friendPreferences, isLoading: isFriendFetchLoading} =
+    useFriendPreferences(isSelf ? '' : userID);
   const {
     data: friendSessionData,
     isLoading: isFriendSessionsLoading,
@@ -108,7 +103,7 @@ function DayOverviewScreen({route}: DayOverviewScreenProps) {
   } = useDrinkingSessionsFetch(isSelf ? '' : userID);
 
   const drinkingSessionData = isSelf ? currentUserSessions : friendSessionData;
-  const preferences = isSelf ? ownPreferences : friendFetchedData?.preferences;
+  const preferences = isSelf ? ownPreferences : friendPreferences;
   const isFetchingOlderMonths = isSelf ? false : friendFetchingOlder;
   // Hold the list invisible (skeleton on top) until it has scrolled to the
   // focused day. With no `date` (shouldn't happen via the calendar) we never

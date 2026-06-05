@@ -6,20 +6,61 @@ import {updateProfile} from 'firebase/auth';
 import Onyx from 'react-native-onyx';
 import type {OnyxUpdate} from 'react-native-onyx';
 import * as API from '@libs/API';
-import {WRITE_COMMANDS} from '@libs/API/types';
+import {READ_COMMANDS, WRITE_COMMANDS} from '@libs/API/types';
+import type {
+  OpenFriendStatusParams,
+  OpenPublicProfilePageParams,
+} from '@libs/API/parameters';
+import CONST from '@src/CONST';
 import type {ProfileList, UserStatusList} from '@src/types/onyx';
+import type Response from '@src/types/onyx/Response';
+import type UserData from '@src/types/onyx/UserData';
 import type {UserID} from '@src/types/onyx/OnyxCommon';
-import DBPATHS from '@src/DBPATHS';
 import ONYXKEYS from '@src/ONYXKEYS';
-import {
-  fetchDisplayDataForUsers,
-  readDataOnce,
-} from '@src/database/baseFunctions';
 
 /**
- * Fetches user profiles from the database.
+ * Pull a single user's merged `userDataList` patch out of a read response's
+ * `onyxData`. The cross-user read endpoints all return
+ * `merge userDataList { [uid]: { ... } }`; this extracts that `{ ... }` so a
+ * caller can return the legacy list shape synchronously. Returns `undefined`
+ * when the response carried no such patch (a denied/evicted read or a 404).
+ */
+function userDataPatchFromResponse(
+  response: void | Response,
+  userID: UserID,
+): Partial<UserData> | undefined {
+  if (!response || !Array.isArray(response.onyxData)) {
+    return undefined;
+  }
+  for (const update of response.onyxData) {
+    if (
+      update.onyxMethod === Onyx.METHOD.MERGE &&
+      update.key === ONYXKEYS.USER_DATA_LIST
+    ) {
+      const value = update.value as
+        | Record<UserID, Partial<UserData>>
+        | undefined;
+      const patch = value?.[userID];
+      if (patch) {
+        return patch;
+      }
+    }
+  }
+  return undefined;
+}
+
+/**
+ * Fetches the given users' public profiles via the kiroku-api public-profile
+ * read (`GET /v1/users/:uid/profile`), replacing the direct Firebase RTDB read.
+ * Each response ALSO merges that user's `profile` + public `is_supporter` flag
+ * into `USER_DATA_LIST`, so the SupporterBadge data path is hydrated without a
+ * separate fetch (this is why the old `fetchAndStoreSupporterFlags` pass is
+ * gone). Returns the same `ProfileList` shape the callers render from. A user
+ * whose profile is missing (404) is omitted rather than throwing, so one
+ * deleted account can't blank the whole list.
  *
- * @param db The database instance.
+ * @param db Unused (retained for call-site compatibility); authority is the
+ *   caller's Firebase ID token, attached by the API layer.
  * @param userIDs An array of user IDs.
  * @returns A promise that resolves to a list of user profiles.
  */
@@ -27,41 +68,27 @@ async function fetchUserProfiles(
   db: Database,
   userIDs: UserID[],
 ): Promise<ProfileList> {
-  const profileRef = 'users/{userID}/profile'; // TODO clear this up
-  return (await fetchDisplayDataForUsers(
-    db,
-    userIDs,
-    profileRef,
-  )) as ProfileList;
-}
-
-/**
- * Fetches each given user's public `is_supporter` flag and merges the result
- * into `USER_DATA_LIST` so the SupporterBadge can render for friends. The
- * public flag is the only supporter field readable across users — renewal
- * dates stay private. A missing node is treated as `false` to keep the badge
- * a positive-only signal.
- */
-async function fetchAndStoreSupporterFlags(
-  db: Database | undefined,
-  userIDs: UserID[],
-): Promise<void> {
-  if (!db || !userIDs || userIDs.length === 0) {
-    return;
+  const list: ProfileList = {};
+  if (!db || !userIDs?.length) {
+    return list;
   }
-  const flags = await Promise.all(
-    userIDs.map(id =>
-      readDataOnce<boolean>(
-        db,
-        DBPATHS.USERS_USER_ID_IS_SUPPORTER.getRoute(id),
-      ),
-    ),
+  await Promise.all(
+    userIDs.map(async userID => {
+      const parameters: OpenPublicProfilePageParams = {userID};
+      // eslint-disable-next-line rulesdir/no-api-side-effects-method
+      const response = await API.makeRequestWithSideEffects(
+        READ_COMMANDS.OPEN_PUBLIC_PROFILE_PAGE,
+        parameters,
+        {},
+        CONST.API_REQUEST_TYPE.READ,
+      );
+      const profile = userDataPatchFromResponse(response, userID)?.profile;
+      if (profile) {
+        list[userID] = profile;
+      }
+    }),
   );
-  const merge: Record<UserID, {is_supporter: boolean}> = {};
-  userIDs.forEach((id, index) => {
-    merge[id] = {is_supporter: flags[index] ?? false};
-  });
-  await Onyx.merge(ONYXKEYS.USER_DATA_LIST, merge);
+  return list;
 }
 
 /**
@@ -80,9 +107,15 @@ async function setSupporterFlagInList(
 }
 
 /**
- * Fetches the statuses of multiple users from the database.
+ * Fetches the given users' presence + latest session via the privacy-enforced
+ * kiroku-api friend-status read (`GET /v1/users/:uid/status`), replacing the
+ * direct Firebase RTDB read. The server gates the read (friends + visibility);
+ * a denied/hidden user simply yields no entry (the response evicts
+ * `userDataList[uid].user_status`). Returns the same `UserStatusList` shape the
+ * caller renders from.
  *
- * @param db The database instance.
+ * @param db Unused (retained for call-site compatibility); authority is the
+ *   caller's Firebase ID token, attached by the API layer.
  * @param userIDs An array of user IDs.
  * @returns A promise that resolves to a UserStatusList object.
  */
@@ -90,12 +123,27 @@ async function fetchUserStatuses(
   db: Database,
   userIDs: UserID[],
 ): Promise<UserStatusList> {
-  const profileRef = 'user_status/{userID}';
-  return (await fetchDisplayDataForUsers(
-    db,
-    userIDs,
-    profileRef,
-  )) as UserStatusList;
+  const list: UserStatusList = {};
+  if (!db || !userIDs?.length) {
+    return list;
+  }
+  await Promise.all(
+    userIDs.map(async userID => {
+      const parameters: OpenFriendStatusParams = {userID};
+      // eslint-disable-next-line rulesdir/no-api-side-effects-method
+      const response = await API.makeRequestWithSideEffects(
+        READ_COMMANDS.OPEN_FRIEND_STATUS,
+        parameters,
+        {},
+        CONST.API_REQUEST_TYPE.READ,
+      );
+      const status = userDataPatchFromResponse(response, userID)?.user_status;
+      if (status) {
+        list[userID] = status;
+      }
+    }),
+  );
+  return list;
 }
 
 /**
@@ -141,7 +189,6 @@ async function updateProfileInfo(
 }
 
 export {
-  fetchAndStoreSupporterFlags,
   fetchUserProfiles,
   fetchUserStatuses,
   setProfilePictureURL,

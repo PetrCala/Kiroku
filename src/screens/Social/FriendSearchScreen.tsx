@@ -98,9 +98,6 @@ function FriendSearchScreen() {
         setDisplayData(newDisplayData);
         setNoUsersFound(isEmptyArray(newData));
         setSearchResultData(newData);
-        Profile.fetchAndStoreSupporterFlags(db, newData).catch(() => {
-          // Non-fatal: badge will simply remain hidden for these users.
-        });
       } catch (error) {
         ErrorUtils.raiseAppError(ERRORS.DATABASE.SEARCH_FAILED, error);
       } finally {
