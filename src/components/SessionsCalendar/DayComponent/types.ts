@@ -12,6 +12,7 @@ type DayComponentProps = {
   marking?: MarkingProps;
   theme?: Theme;
   onPress?: (day: DateData) => void;
+  onLongPress?: (day: DateData) => void;
 };
 
 export type {DayComponentProps, CalendarColors};

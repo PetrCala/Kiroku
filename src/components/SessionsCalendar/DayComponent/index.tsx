@@ -11,6 +11,7 @@ function DayComponent({
   marking,
   theme, // eslint-disable-line @typescript-eslint/no-unused-vars
   onPress,
+  onLongPress,
 }: DayComponentProps) {
   const StyleUtils = useStyleUtils();
   const isDisabled = state === 'disabled';
@@ -24,7 +25,8 @@ function DayComponent({
       <PressableWithFeedback
         accessibilityLabel=""
         disabled={isDisabled}
-        onPress={() => onPress && date && onPress(date)}>
+        onPress={() => onPress && date && onPress(date)}
+        onLongPress={onLongPress ? () => date && onLongPress(date) : undefined}>
         <View
           style={StyleUtils.getSessionsCalendarDayCellStyle(
             marking,

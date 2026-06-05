@@ -51,6 +51,9 @@ type SessionsCalendarViewProps = {
   /** Tapped-day handler; omit to make the calendar non-interactive */
   onDayPress?: (day: DateData) => void;
 
+  /** Long-pressed-day handler; omit to disable the long-press shortcut */
+  onDayLongPress?: (day: DateData) => void;
+
   /** Month-arrow handlers; omit (with hideArrows) to make the calendar static */
   onLeftArrowPress?: (subtractMonth: () => void) => void;
   onRightArrowPress?: (addMonth: () => void) => void;
@@ -88,6 +91,7 @@ function SessionsCalendarView({
   minDate,
   maxDate,
   onDayPress,
+  onDayLongPress,
   onLeftArrowPress,
   onRightArrowPress,
   hideArrows,
@@ -115,9 +119,10 @@ function SessionsCalendarView({
         marking={marking}
         theme={dayTheme}
         onPress={onDayPress}
+        onLongPress={onDayLongPress}
       />
     ),
-    [unitsMap, onDayPress],
+    [unitsMap, onDayPress, onDayLongPress],
   );
 
   // Custom header: matches the default month-text styling but reserves space

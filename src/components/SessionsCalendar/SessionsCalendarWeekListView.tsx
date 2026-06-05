@@ -57,6 +57,8 @@ type SessionsCalendarWeekListViewProps = {
   isFetchingOlderMonths?: boolean;
   /** Day cell tap handler. */
   onDayPress?: (day: DateData) => void;
+  /** Day cell long-press handler (create-session shortcut). */
+  onDayLongPress?: (day: DateData) => void;
   /** Called when the user scrolls within `LOAD_AHEAD_BUFFER_WEEKS` of the
    *  loaded floor; receives the date of the earliest in-range day currently
    *  visible. The parent decides (via `computeLoadTarget`) whether to
@@ -109,6 +111,7 @@ function SessionsCalendarWeekListView({
   endDate,
   isFetchingOlderMonths,
   onDayPress,
+  onDayLongPress,
   onRequestOlder,
   initialMonthYear,
   onInitialScrollReady,
@@ -359,6 +362,7 @@ function SessionsCalendarWeekListView({
           markedDates={markedDates}
           unitsMap={unitsMap}
           onDayPress={onDayPress}
+          onDayLongPress={onDayLongPress}
         />
       );
     },
@@ -367,6 +371,7 @@ function SessionsCalendarWeekListView({
       unitsMap,
       monthlyTotalsMap,
       onDayPress,
+      onDayLongPress,
       translate,
       styles.sessionsCalendarMonthLabel,
       styles.sessionsCalendarMonthLabelText,

@@ -4,15 +4,12 @@ import {endOfToday} from 'date-fns';
 import UserOffline from '@components/UserOfflineModal';
 import {useUserConnection} from '@context/global/UserConnectionContext';
 import type {StackScreenProps} from '@react-navigation/stack';
-import type {Database} from 'firebase/database';
-import type {User} from 'firebase/auth';
 import type {DayOverviewNavigatorParamList} from '@libs/Navigation/types';
 import type SCREENS from '@src/SCREENS';
 import type {DateString} from '@src/types/onyx/OnyxCommon';
-import type {SelectedTimezone} from '@src/types/onyx/UserData';
 import Navigation from '@libs/Navigation/Navigation';
 import {useDatabaseData} from '@context/global/DatabaseDataContext';
-import useCurrentUserData from '@hooks/useCurrentUserData';
+import useStartEditSessionForDate from '@hooks/useStartEditSessionForDate';
 import useCurrentUserDrinkingSessions from '@hooks/useCurrentUserDrinkingSessions';
 import useCurrentUserPreferences from '@hooks/useCurrentUserPreferences';
 import {useFirebase} from '@context/global/FirebaseContext';
@@ -20,10 +17,6 @@ import useFetchData from '@hooks/useFetchData';
 import useDrinkingSessionsFetch from '@hooks/useDrinkingSessionsFetch';
 import type {FetchDataKeys} from '@hooks/useFetchData/types';
 import {dateStringToDate, dateToDateData} from '@libs/DataHandling';
-import * as App from '@userActions/App';
-import * as DS from '@userActions/DrinkingSession';
-import * as ErrorUtils from '@libs/ErrorUtils';
-import ERRORS from '@src/ERRORS';
 import CONST from '@src/CONST';
 import ScreenWrapper from '@components/ScreenWrapper';
 import HeaderWithBackButton from '@components/HeaderWithBackButton';
@@ -73,35 +66,16 @@ function noop() {}
 // separately via `useDrinkingSessionsFetch`). Mirrors `SessionsCalendarScreen`.
 const FRIEND_FETCH_KEYS: FetchDataKeys = ['preferences'];
 
-// Module-level so React Compiler skips it — the `try/finally` it needs bails
-// the compiler, and that would regress the screen's compilation.
-async function createSessionForDay(
-  db: Database,
-  user: User | null,
-  date: Date,
-  timezone: SelectedTimezone | undefined,
-  loadingText: string,
-) {
-  try {
-    await App.setLoadingText(loadingText);
-    const newSession = await DS.getNewSessionToEdit(db, user, date, timezone);
-    await DS.navigateToEditSessionScreen(newSession?.id);
-  } catch (error) {
-    ErrorUtils.raiseAppError(ERRORS.DATABASE.USER_CREATION_FAILED, error);
-  } finally {
-    await App.setLoadingText(null);
-  }
-}
-
 function DayOverviewScreen({route}: DayOverviewScreenProps) {
   const {userID, date} = route.params;
   const {isOnline} = useUserConnection();
   const {translate} = useLocalize();
   const styles = useThemeStyles();
   const theme = useTheme();
-  const {auth, db} = useFirebase();
+  const {auth} = useFirebase();
   const user = auth.currentUser;
   const isSelf = user?.uid === userID;
+  const startEditSessionForDate = useStartEditSessionForDate();
   const [loadingText] = useOnyx(ONYXKEYS.APP_LOADING_TEXT);
 
   // Self reads the current user's sessions from the dedicated hook; a friend's
@@ -124,10 +98,6 @@ function DayOverviewScreen({route}: DayOverviewScreenProps) {
   const isFetchingOlderMonths = isSelf
     ? ownData.isFetchingOlderMonths
     : friendFetchingOlder;
-  // Timezone is only read by the self-only add-session flow, so the current
-  // user's own data is always the right source here.
-  const userData = useCurrentUserData();
-
   // Hold the list invisible (skeleton on top) until it has scrolled to the
   // focused day. With no `date` (shouldn't happen via the calendar) we never
   // wait.
@@ -157,21 +127,12 @@ function DayOverviewScreen({route}: DayOverviewScreenProps) {
   // `SessionsCalendar` props require them.
   const placeholderVisibleDate = useMemo(() => dateToDateData(new Date()), []);
 
-  const selectedTimezone = userData?.timezone?.selected;
   const onPickDate = useCallback(
     (selectedDate: Date) => {
       setIsDatePickerVisible(false);
-      // createSessionForDay handles its own errors; the .catch is a no-op to
-      // satisfy no-floating-promises.
-      createSessionForDay(
-        db,
-        auth.currentUser,
-        selectedDate,
-        selectedTimezone,
-        translate('liveSessionScreen.loading'),
-      ).catch(() => {});
+      startEditSessionForDate(selectedDate);
     },
-    [db, auth, selectedTimezone, translate],
+    [startEditSessionForDate],
   );
 
   if (!isOnline) {
