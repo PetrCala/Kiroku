@@ -10,6 +10,7 @@ import {
 } from 'date-fns';
 import {
   dateStringToDate,
+  dateToDateData,
   getPreviousMonth,
   getNextMonth,
 } from '@libs/DataHandling';
@@ -130,6 +131,12 @@ function SessionsCalendar({
     const nextMonth = getNextMonth(visibleDate);
     onDateChange(nextMonth);
     addMonth();
+  };
+
+  // Snap the compact calendar back to the current month. Always moves toward
+  // today (forward through already-loaded months), so no widening is needed.
+  const handleJumpToCurrent = () => {
+    onDateChange(dateToDateData(new Date()));
   };
 
   // Coalesce scroll-driven `loadUpTo` calls — store the deepest target we've
@@ -290,6 +297,7 @@ function SessionsCalendar({
       onDayLongPress={dayLongPressHandler}
       onLeftArrowPress={handleLeftArrowPress}
       onRightArrowPress={handleRightArrowPress}
+      onJumpToCurrent={handleJumpToCurrent}
       isFetchingOlderMonths={isFetchingOlderMonths}
     />
   );

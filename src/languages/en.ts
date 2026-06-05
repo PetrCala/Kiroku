@@ -1259,6 +1259,7 @@ export default {
   },
   sessionsCalendar: {
     dayOverviewButton: "Day's overview",
+    jumpToCurrentMonth: 'Jump to the current month',
   },
   liveSessionScreen: {
     saving: 'Saving your session...',
