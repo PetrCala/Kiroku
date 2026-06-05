@@ -24,7 +24,8 @@ import ONYXKEYS from '@src/ONYXKEYS';
 import Navigation from '@libs/Navigation/Navigation';
 import type {Route} from '@src/ROUTES';
 import ROUTES from '@src/ROUTES';
-import {differenceInDays, startOfDay} from 'date-fns';
+import {differenceInCalendarDays} from 'date-fns';
+import {toZonedTime} from 'date-fns-tz';
 import type {SelectedTimezone} from '@src/types/onyx/UserData';
 import type {ValueOf} from 'type-fest';
 import DBPATHS from '@src/DBPATHS';
@@ -621,8 +622,14 @@ async function updateSessionDate(
   newDate: Date,
   shouldUpdateLiveSessionData?: boolean,
 ): Promise<void> {
-  const currentDate = startOfDay(new Date(session.start_time));
-  const daysDelta = differenceInDays(currentDate, startOfDay(newDate));
+  // Resolve the day shift in the session's own timezone, not the device's.
+  // `newDate` carries the picked calendar day in its local fields; `currentDay`
+  // re-expresses the session start in the same frame so the difference is the
+  // number of calendar days the user actually moved, even when the device tz
+  // differs from the session tz.
+  const sessionTimezone = session.timezone ?? CONST.DEFAULT_TIME_ZONE.selected;
+  const currentDay = toZonedTime(session.start_time, sessionTimezone);
+  const daysDelta = differenceInCalendarDays(currentDay, newDate);
   const millisecondsToSub = daysDelta * 24 * 60 * 60 * 1000;
   const modifiedSession = DSUtils.shiftSessionTimestamps(
     session,

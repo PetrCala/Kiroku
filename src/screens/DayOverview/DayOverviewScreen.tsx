@@ -1,6 +1,7 @@
 import React, {useCallback, useMemo, useState} from 'react';
 import {StyleSheet, View} from 'react-native';
-import {endOfToday} from 'date-fns';
+import {endOfDay} from 'date-fns';
+import {toZonedTime} from 'date-fns-tz';
 import UserOffline from '@components/UserOfflineModal';
 import {useUserConnection} from '@context/global/UserConnectionContext';
 import type {StackScreenProps} from '@react-navigation/stack';
@@ -9,6 +10,7 @@ import type SCREENS from '@src/SCREENS';
 import type {DateString} from '@src/types/onyx/OnyxCommon';
 import Navigation from '@libs/Navigation/Navigation';
 import useStartEditSessionForDate from '@hooks/useStartEditSessionForDate';
+import useCurrentUserData from '@hooks/useCurrentUserData';
 import useCurrentUserDrinkingSessions from '@hooks/useCurrentUserDrinkingSessions';
 import useCurrentUserPreferences from '@hooks/useCurrentUserPreferences';
 import {useFirebase} from '@context/global/FirebaseContext';
@@ -76,6 +78,12 @@ function DayOverviewScreen({route}: DayOverviewScreenProps) {
   const isSelf = user?.uid === userID;
   const startEditSessionForDate = useStartEditSessionForDate();
   const [loadingText] = useOnyx(ONYXKEYS.APP_LOADING_TEXT);
+  const userData = useCurrentUserData();
+  // The add-session date picker spans the user's calendar days in their selected
+  // timezone, so the "today" cap matches the day they actually live in rather
+  // than the device's local day.
+  const timezone =
+    userData?.timezone?.selected ?? CONST.DEFAULT_TIME_ZONE.selected;
 
   // Self reads the current user's sessions from the dedicated hook; a friend's
   // data is fetched on demand (same self/other gating as
@@ -232,8 +240,12 @@ function DayOverviewScreen({route}: DayOverviewScreenProps) {
           mode="single"
           isVisible={isDatePickerVisible}
           title={translate('dayOverviewScreen.selectSessionDate')}
-          initialDate={visibleDay ? dateStringToDate(visibleDay) : new Date()}
-          maxDate={endOfToday()}
+          initialDate={
+            visibleDay
+              ? dateStringToDate(visibleDay)
+              : toZonedTime(new Date(), timezone)
+          }
+          maxDate={endOfDay(toZonedTime(new Date(), timezone))}
           applyText={translate('common.confirm')}
           cancelText={translate('common.cancel')}
           onApply={onPickDate}

@@ -332,3 +332,89 @@ describe('finalize is the deterministic last writer', () => {
     ).toHaveLength(1);
   });
 });
+
+describe('updateSessionDate shifts in the session timezone', () => {
+  const DAY_MS = 24 * 60 * 60 * 1000;
+  // Pin the "device" timezone to one that differs from every session timezone
+  // used below, so these assertions exercise the device-tz ≠ session-tz path
+  // (the bug). The computed delta must depend only on the session timezone, so
+  // it stays correct regardless of this value.
+  const originalTZ = process.env.TZ;
+  beforeAll(() => {
+    process.env.TZ = 'Pacific/Honolulu';
+  });
+  afterAll(() => {
+    process.env.TZ = originalTZ;
+  });
+  beforeEach(() => {
+    // Pass the session through unchanged so the (real) updateLocalData runs and
+    // we can assert on the millisecond shift this helper receives.
+    mockedDSUtils.shiftSessionTimestamps.mockImplementation(
+      (s: DrinkingSession) => s,
+    );
+  });
+
+  function makeEditSession(
+    startTime: number,
+    timezone: DrinkingSession['timezone'],
+  ): DrinkingSession {
+    return {
+      id: 's1',
+      start_time: startTime,
+      end_time: startTime,
+      blackout: false,
+      note: '',
+      timezone,
+      type: CONST.SESSION.TYPES.EDIT,
+      drinks: {},
+    };
+  }
+
+  it('does not shift when the picked day already matches the session-tz day', async () => {
+    // 2026-06-05 06:30 UTC is still 2026-06-04 23:30 in Los Angeles, so picking
+    // June 4 is a no-op. Device-local (UTC/Honolulu) math would see June 5 and
+    // wrongly shift by a day.
+    const session = makeEditSession(
+      Date.UTC(2026, 5, 5, 6, 30),
+      'America/Los_Angeles',
+    );
+
+    await DS.updateSessionDate('s1', session, new Date(2026, 5, 4));
+
+    expect(mockedDSUtils.shiftSessionTimestamps).toHaveBeenCalledWith(
+      session,
+      0,
+    );
+  });
+
+  it('shifts by the calendar-day delta measured in the session tz', async () => {
+    // Same instant (June 4 in LA); moving it to June 6 is a +2 calendar-day
+    // move. The buggy device-local path would compute only +1.
+    const session = makeEditSession(
+      Date.UTC(2026, 5, 5, 6, 30),
+      'America/Los_Angeles',
+    );
+
+    await DS.updateSessionDate('s1', session, new Date(2026, 5, 6));
+
+    expect(mockedDSUtils.shiftSessionTimestamps).toHaveBeenCalledWith(
+      session,
+      -2 * DAY_MS,
+    );
+  });
+
+  it('computes the delta for a standard (non-diverging) session tz', async () => {
+    // June 5 10:00 UTC is June 5 12:00 in Prague; moving to June 8 is -3 days.
+    const session = makeEditSession(
+      Date.UTC(2026, 5, 5, 10, 0),
+      'Europe/Prague',
+    );
+
+    await DS.updateSessionDate('s1', session, new Date(2026, 5, 8));
+
+    expect(mockedDSUtils.shiftSessionTimestamps).toHaveBeenCalledWith(
+      session,
+      -3 * DAY_MS,
+    );
+  });
+});
