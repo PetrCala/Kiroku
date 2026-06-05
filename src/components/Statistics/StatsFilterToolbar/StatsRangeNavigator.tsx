@@ -123,7 +123,7 @@ function StatsRangeNavigator({
               )}
               accessibilityRole="button"
               style={styles.statsRangeNavigatorInlineJump}>
-              <Icon small src={KirokuIcons.ThinX} fill={textReversed} />
+              <Icon small src={KirokuIcons.RotateLeft} fill={textReversed} />
             </PressableWithFeedback>
           )}
         </View>
