@@ -75,6 +75,18 @@ describe('resolveLocalParts — exact DST transition instants', () => {
       label: 'NY fall-back',
     },
     {
+      // The exact instant date-fns-tz is documented to mishandle: 02:00 EST
+      // jumps to 03:00 EDT at 07:00 UTC. The cached-offset path must match Intl.
+      zone: 'America/New_York',
+      instant: Date.UTC(2025, 2, 9, 7),
+      label: 'NY spring-forward (2025)',
+    },
+    {
+      zone: 'America/New_York',
+      instant: Date.UTC(2025, 10, 2, 6),
+      label: 'NY fall-back (2025)',
+    },
+    {
       zone: 'Europe/London',
       instant: Date.UTC(2024, 2, 31, 1),
       label: 'London spring-forward',
@@ -132,6 +144,57 @@ describe('resolveLocalParts — cache behaviour within a month', () => {
     // Same wall hour (07:00 -> different offsets give different local hours)
     expect(resolveLocalParts(before, 'America/New_York')?.localHour).toBe(7); // 12:00 UTC = 07:00 EST
     expect(resolveLocalParts(after, 'America/New_York')?.localHour).toBe(8); // 12:00 UTC = 08:00 EDT
+  });
+});
+
+describe('resolveLocalParts — exact named DST instants (America/New_York)', () => {
+  const NY = 'America/New_York';
+
+  it('skips the lost hour at the 2025 spring-forward (01:59 EST → 03:00 EDT)', () => {
+    // The clock jumps 02:00 → 03:00 at 07:00 UTC; 02:xx local never exists.
+    const jump = Date.UTC(2025, 2, 9, 7);
+    expect(resolveLocalParts(jump - 60_000, NY)).toMatchObject({
+      localDay: '2025-03-09',
+      localHour: 1, // 06:59 UTC = 01:59 EST
+    });
+    expect(resolveLocalParts(jump, NY)).toMatchObject({
+      localDay: '2025-03-09',
+      localHour: 3, // 07:00 UTC = 03:00 EDT
+    });
+  });
+
+  it('resolves the repeated hour at the 2025 fall-back (01:00 EDT then 01:00 EST)', () => {
+    // The clock falls 02:00 → 01:00 at 06:00 UTC, so 01:00 local occurs twice.
+    const fallBack = Date.UTC(2025, 10, 2, 6);
+    expect(resolveLocalParts(fallBack - 60 * 60_000, NY)).toMatchObject({
+      localDay: '2025-11-02',
+      localHour: 1, // 05:00 UTC = 01:00 EDT (first pass)
+    });
+    expect(resolveLocalParts(fallBack, NY)).toMatchObject({
+      localDay: '2025-11-02',
+      localHour: 1, // 06:00 UTC = 01:00 EST (second pass)
+    });
+  });
+});
+
+describe('resolveLocalParts — the date-fns-tz failure instant', () => {
+  // The header for localParts.ts cites date-fns-tz being off-by-one at the exact
+  // spring-forward instant as the reason it uses Intl instead. London flips
+  // 00:00→01:00 (GMT→BST) at 01:00 UTC, so the first BST instant is 02:00 local.
+  // Pin that the Intl-backed path lands on 02:00 (date-fns-tz's miscount here is
+  // host-tz-dependent, so we assert our own correctness rather than its bug).
+  const londonSpringForward = Date.UTC(2025, 2, 30, 1, 0, 0);
+
+  it('resolves the London spring-forward instant to 02:00 local', () => {
+    expect(
+      resolveLocalParts(londonSpringForward, 'Europe/London'),
+    ).toMatchObject({localDay: '2025-03-30', localHour: 2});
+  });
+
+  it('agrees with the independent Intl reference at that instant', () => {
+    expect(resolveLocalParts(londonSpringForward, 'Europe/London')).toEqual(
+      referenceLocalParts(londonSpringForward, 'Europe/London'),
+    );
   });
 });
 
