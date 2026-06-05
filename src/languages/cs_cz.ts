@@ -340,8 +340,8 @@ export default {
     other: 'Ostatní',
   },
   units: {
-    yellow: 'Žlutá',
-    orange: 'Oranžová',
+    light: 'Lehká',
+    moderate: 'Střední',
   },
   timePeriods: {
     never: 'Nikdy',
@@ -586,7 +586,7 @@ export default {
   unitsToColorsScreen: {
     title: 'Jednotky na barvy',
     description:
-      'Nastavte hraniční body, při kterých se mění barvy relace; tyto body představují maximální hodnotu, do které zůstane relace v dané barvě',
+      'Nastavte maximální počet jednotek pro lehkou a střední relaci. Cokoli nad tím už je těžká relace.',
   },
   colorPaletteScreen: {
     title: 'Barvy relací',

@@ -81,12 +81,12 @@ function UnitsToColorsScreen() {
   const unitsToColorsMenuItems = useMemo(() => {
     const unitsHelperData: MenuItemProps[] = [
       {
-        title: translate('units.yellow'),
+        title: translate('units.light'),
         key: 'yellow',
         currentValue: currentValues.yellow,
       },
       {
-        title: translate('units.orange'),
+        title: translate('units.moderate'),
         key: 'orange',
         currentValue: currentValues.orange,
       },

@@ -338,8 +338,8 @@ export default {
     other: 'Other',
   },
   units: {
-    yellow: 'Yellow',
-    orange: 'Orange',
+    light: 'Light',
+    moderate: 'Moderate',
   },
   timePeriods: {
     never: 'Never',
@@ -581,7 +581,7 @@ export default {
   unitsToColorsScreen: {
     title: 'Units to Colors',
     description:
-      'Set cutoff points where session colors change; each is the maximum value up to which the session retains that color',
+      'Set the maximum units for a Light and a Moderate session. Anything above becomes Heavy.',
   },
   colorPaletteScreen: {
     title: 'Session colors',
