@@ -155,6 +155,11 @@ const ONYXKEYS = {
    *  (kiroku-api) and kept in sync via the preferences write + `/v1/updates`. */
   PREFERENCES: 'preferences',
 
+  /** The signed-in user's data-visibility settings, hydrated from `app/open`
+   *  (kiroku-api) and echoed by the privacy write endpoints. Absent ⇒ fully
+   *  visible (grandfathered default). */
+  DATA_VISIBILITY: 'dataVisibility',
+
   //   // Information about the onyx updates IDs that were received from the server
   ONYX_UPDATES_FROM_SERVER: 'onyxUpdatesFromServer',
 
@@ -341,6 +346,7 @@ type OnyxValuesMapping = {
   [ONYXKEYS.HAS_CHECKED_AUTO_LOGIN]: boolean;
   [ONYXKEYS.PREFERRED_THEME]: ValueOf<typeof CONST.THEME>;
   [ONYXKEYS.PREFERENCES]: OnyxTypes.Preferences;
+  [ONYXKEYS.DATA_VISIBILITY]: OnyxTypes.DataVisibility;
   [ONYXKEYS.ONYX_UPDATES_FROM_SERVER]: OnyxTypes.OnyxUpdatesFromServer;
   [ONYXKEYS.ONYX_UPDATES_LAST_UPDATE_ID_APPLIED_TO_CLIENT]: number;
   [ONYXKEYS.LAST_VISITED_PATH]: string | undefined;

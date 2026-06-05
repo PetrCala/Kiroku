@@ -1,7 +1,7 @@
 import React, {useEffect, useState} from 'react';
 import {Alert, BackHandler, View} from 'react-native';
 import {useFirebase} from '@context/global/FirebaseContext';
-import {useDatabaseData} from '@context/global/DatabaseDataContext';
+import useCurrentUserDataVisibility from '@hooks/useCurrentUserDataVisibility';
 import useCurrentUserPreferences from '@hooks/useCurrentUserPreferences';
 import Navigation from '@libs/Navigation/Navigation';
 import ScreenWrapper from '@components/ScreenWrapper';
@@ -23,7 +23,7 @@ import requestPermission from '@libs/Permissions/requestPermission';
 function PrivacyScreen() {
   const {translate} = useLocalize();
   const styles = useThemeStyles();
-  const {dataVisibility} = useDatabaseData();
+  const dataVisibility = useCurrentUserDataVisibility();
   const preferences = useCurrentUserPreferences();
   const {auth} = useFirebase();
   const user = auth.currentUser;
@@ -61,7 +61,8 @@ function PrivacyScreen() {
     }
     // Fire-and-forget: the write is queued and replayed offline. Reflect the new
     // value optimistically — there is no Onyx state to roll back (visibility
-    // re-hydrates from the Firebase listener) and the queued write never throws.
+    // re-hydrates from Onyx, server-echoed by the privacy write) and the queued
+    // write never throws.
     setPendingHideFromAll(next);
     Privacy.setHideFromAllFriends(next);
   };
