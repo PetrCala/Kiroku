@@ -18,6 +18,7 @@ import useLazyMarkedDates from '@hooks/useLazyMarkedDates';
 import FlexibleLoadingIndicator from '@components/FlexibleLoadingIndicator';
 import {useOnyx} from 'react-native-onyx';
 import ONYXKEYS from '@src/ONYXKEYS';
+import {useFirebase} from '@context/global/FirebaseContext';
 import SessionsCalendarView from './SessionsCalendarView';
 import SessionsCalendarWeekListView from './SessionsCalendarWeekListView';
 import DayOverviewListView from './DayOverviewListView';
@@ -50,6 +51,16 @@ function SessionsCalendar({
   onVisibleDayChange,
   onInitialScrollReady,
 }: SessionsCalendarProps) {
+  const {auth} = useFirebase();
+  const [ongoingSession] = useOnyx(ONYXKEYS.ONGOING_SESSION_DATA);
+  // Overlay the live session's drinks onto the calendar, but only on the
+  // signed-in user's OWN calendar — this same component renders friends' data,
+  // which must never receive our local live buffer.
+  const isSelf = auth?.currentUser?.uid === userID;
+  const ongoingOverlay =
+    isSelf && ongoingSession?.ongoing && ongoingSession.id
+      ? ongoingSession
+      : undefined;
   const {
     markedDates,
     unitsMap,
@@ -60,7 +71,12 @@ function SessionsCalendar({
     loadMoreMonths,
     loadUpTo,
     isLoading,
-  } = useLazyMarkedDates(userID, drinkingSessionData ?? {}, preferences);
+  } = useLazyMarkedDates(
+    userID,
+    drinkingSessionData ?? {},
+    preferences,
+    ongoingOverlay,
+  );
   const [userDataList] = useOnyx(ONYXKEYS.USER_DATA_LIST);
   // Persisted floor for the viewed user — the canonical "started tracking on"
   // boundary. Falls back to the in-memory derivation when undefined, which

@@ -103,27 +103,45 @@ function HomeScreen({route}: HomeScreenProps) {
   // Narrowed to `drinksToUnits` so unrelated preference updates (e.g. picking
   // a color palette) don't recompute the stats.
   const drinksToUnits = preferences?.drinks_to_units;
-  const {drinkingSessionsCount, unitsConsumed} = useMemo(() => {
-    if (!drinksToUnits || !drinkingSessionData) {
-      return {drinkingSessionsCount: 0, unitsConsumed: 0};
+  const {drinkingSessionsCount, unitsConsumed: baseUnitsConsumed} =
+    useMemo(() => {
+      if (!drinksToUnits || !drinkingSessionData) {
+        return {drinkingSessionsCount: 0, unitsConsumed: 0};
+      }
+      const drinkingSessionArray: DrinkingSessionArray =
+        Object.values(drinkingSessionData);
+      const monthUnits = calculateThisMonthUnits(
+        visibleDate,
+        drinkingSessionArray,
+        drinksToUnits,
+      );
+      const monthSessionCount = DSUtils.getSingleMonthDrinkingSessions(
+        timestampToDate(visibleDate.timestamp),
+        drinkingSessionArray,
+        false,
+      ).length;
+      return {
+        drinkingSessionsCount: monthSessionCount,
+        unitsConsumed: monthUnits,
+      };
+    }, [drinkingSessionData, visibleDate, drinksToUnits]);
+
+  // The live session's drinks live only in ONGOING_SESSION_DATA, not the cached
+  // snapshot the base stats read from, so add them on top. Reusing the month
+  // filter keeps it scoped to the visible month (0 for past months / no live
+  // session). The session COUNT is left untouched — the cache already seeds the
+  // ongoing session (with 0 units) at start, so it is already counted once.
+  const liveExtraUnits = useMemo(() => {
+    if (!drinksToUnits || !ongoingSessionData?.ongoing) {
+      return 0;
     }
-    const drinkingSessionArray: DrinkingSessionArray =
-      Object.values(drinkingSessionData);
-    const monthUnits = calculateThisMonthUnits(
+    return calculateThisMonthUnits(
       visibleDate,
-      drinkingSessionArray,
+      [ongoingSessionData],
       drinksToUnits,
     );
-    const monthSessionCount = DSUtils.getSingleMonthDrinkingSessions(
-      timestampToDate(visibleDate.timestamp),
-      drinkingSessionArray,
-      false,
-    ).length;
-    return {
-      drinkingSessionsCount: monthSessionCount,
-      unitsConsumed: monthUnits,
-    };
-  }, [drinkingSessionData, visibleDate, drinksToUnits]);
+  }, [ongoingSessionData, visibleDate, drinksToUnits]);
+  const unitsConsumed = baseUnitsConsumed + liveExtraUnits;
 
   const statsData: StatData = [
     {
