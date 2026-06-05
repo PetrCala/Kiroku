@@ -1,6 +1,6 @@
 import {endOfDay} from 'date-fns';
 import {toZonedTime} from 'date-fns-tz';
-import React, {useState} from 'react';
+import React, {useMemo, useState} from 'react';
 import {Alert, View} from 'react-native';
 import Button from '@components/Button';
 import Calendar from '@components/DateSelectorModal/Calendar';
@@ -47,6 +47,12 @@ function SesssionDateScreen({route}: SessionDateScreenProps) {
     CONST.DEFAULT_TIME_ZONE.selected;
   const [selectedDate, setSelectedDate] = useState<Date>(() =>
     toZonedTime(session?.start_time ?? new Date(), sessionTimezone),
+  );
+  // `toZonedTime` is an Intl-backed (Hermes-slow) call; cache the picker cap so
+  // it is computed once per tz change rather than on every render.
+  const maxDate = useMemo(
+    () => endOfDay(toZonedTime(new Date(), sessionTimezone)),
+    [sessionTimezone],
   );
 
   const confirmTextKey: TranslationPaths = isBeingCreated
@@ -104,7 +110,7 @@ function SesssionDateScreen({route}: SessionDateScreenProps) {
         <Calendar
           mode="single"
           initialDate={selectedDate}
-          maxDate={endOfDay(toZonedTime(new Date(), sessionTimezone))}
+          maxDate={maxDate}
           onChangeSingle={setSelectedDate}
         />
       </View>

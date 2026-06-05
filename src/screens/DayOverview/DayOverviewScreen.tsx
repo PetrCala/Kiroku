@@ -85,6 +85,14 @@ function DayOverviewScreen({route}: DayOverviewScreenProps) {
   // than the device's local day.
   const timezone =
     userData?.timezone?.selected ?? CONST.DEFAULT_TIME_ZONE.selected;
+  // `toZonedTime` goes through Intl (slow on Hermes) and this screen re-renders
+  // on calendar scroll, so snapshot "today" in the user's tz once per tz change
+  // rather than recomputing it every frame.
+  const todayInTz = useMemo(
+    () => toZonedTime(new Date(), timezone),
+    [timezone],
+  );
+  const maxDate = useMemo(() => endOfDay(todayInTz), [todayInTz]);
 
   // Self reads the current user's sessions from the dedicated hook; a friend's
   // data is fetched on demand (same self/other gating as
@@ -244,12 +252,8 @@ function DayOverviewScreen({route}: DayOverviewScreenProps) {
           mode="single"
           isVisible={isDatePickerVisible}
           title={translate('dayOverviewScreen.selectSessionDate')}
-          initialDate={
-            visibleDay
-              ? dateStringToDate(visibleDay)
-              : toZonedTime(new Date(), timezone)
-          }
-          maxDate={endOfDay(toZonedTime(new Date(), timezone))}
+          initialDate={visibleDay ? dateStringToDate(visibleDay) : todayInTz}
+          maxDate={maxDate}
           applyText={translate('common.confirm')}
           cancelText={translate('common.cancel')}
           onApply={onPickDate}
