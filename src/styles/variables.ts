@@ -230,7 +230,7 @@ export default {
   floatingActionButtonSize: 70,
   bottomTabBarCounterSize: 20,
   calendarHeaderHeight: 50,
-  sessionsCalendarArrowWidth: 90,
+  sessionsCalendarArrowWidth: 44,
   goToSearchButtonOffset: 20,
   qrCodeScreenSizePercentage: 0.7,
   qrCodeMinSizeLargeScreen: 300,
