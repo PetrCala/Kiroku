@@ -13,6 +13,7 @@ export type {default as HandleRestrictedEventParams} from './HandleRestrictedEve
 export type {default as OpenAppParams} from './OpenAppParams';
 export type {default as OpenPublicProfilePageParams} from './OpenPublicProfilePageParams';
 export type {default as SearchUsersParams} from './SearchUsersParams';
+export type {default as OpenFriendDrinkingSessionsParams} from './OpenFriendDrinkingSessionsParams';
 export type {default as OptInOutToPushNotificationsParams} from './OptInOutToPushNotificationsParams';
 export type {default as ReconnectAppParams} from './ReconnectAppParams';
 export type {default as UpdateAutomaticTimezoneParams} from './UpdateAutomaticTimezoneParams';

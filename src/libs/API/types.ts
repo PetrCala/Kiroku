@@ -111,6 +111,7 @@ const READ_COMMANDS = {
   //   OPEN_USER_DATA: 'OpenUserDataPage',
   OPEN_PUBLIC_PROFILE_PAGE: 'OpenPublicProfilePage',
   SEARCH_USERS: 'SearchUsers',
+  OPEN_FRIEND_DRINKING_SESSIONS: 'OpenFriendDrinkingSessions',
   //   OPEN_PLAID_BANK_LOGIN: 'OpenPlaidBankLogin',
   //   OPEN_PLAID_BANK_ACCOUNT_SELECTOR: 'OpenPlaidBankAccountSelector',
   //   GET_ROUTE: 'GetRoute',
@@ -130,6 +131,7 @@ type ReadCommandParameters = {
   //   [READ_COMMANDS.OPEN_USER_DATA]: EmptyObject;
   [READ_COMMANDS.OPEN_PUBLIC_PROFILE_PAGE]: Parameters.OpenPublicProfilePageParams;
   [READ_COMMANDS.SEARCH_USERS]: Parameters.SearchUsersParams;
+  [READ_COMMANDS.OPEN_FRIEND_DRINKING_SESSIONS]: Parameters.OpenFriendDrinkingSessionsParams;
   //    ...
 };
 
