@@ -9,7 +9,7 @@ import type {UserArray} from '@src/types/onyx/OnyxCommon';
 import Text from '@components/Text';
 import * as ErrorUtils from '@libs/ErrorUtils';
 import UserListComponent from '@components/Social/UserListComponent';
-import useProfileList from '@hooks/useProfileList';
+import useFriendsData from '@hooks/useFriendsData';
 import NoFriendInfo from '@components/Social/NoFriendInfo';
 import useLocalize from '@hooks/useLocalize';
 import useThemeStyles from '@hooks/useThemeStyles';
@@ -22,13 +22,17 @@ function FriendListScreen() {
   const [friends, setFriends] = useState<UserArray>([]);
   const [friendsToDisplay, setFriendsToDisplay] = useState<UserArray>([]);
   const [userHasFriends, setUserHasFriends] = useState<boolean>(false);
-  const {profileList} = useProfileList(friends);
-  const [isLoading, setIsLoading] = useState<boolean>(false);
+  const {
+    profileList,
+    userStatusList,
+    isLoading: isLoadingFriends,
+  } = useFriendsData(friends);
+  const [isSearching, setIsSearching] = useState<boolean>(false);
 
   const localSearch = useCallback(
     (searchText: string): void => {
       try {
-        setIsLoading(true);
+        setIsSearching(true);
         const searchMapping: UserIDToNicknameMapping = getNicknameMapping(
           profileList,
           'display_name',
@@ -42,7 +46,7 @@ function FriendListScreen() {
       } catch (error) {
         ErrorUtils.raiseAppError(ERRORS.DATABASE.SEARCH_FAILED, error);
       } finally {
-        setIsLoading(false);
+        setIsSearching(false);
       }
     },
     [friends, profileList],
@@ -81,10 +85,12 @@ function FriendListScreen() {
       <UserListComponent
         fullUserArray={friends}
         initialLoadSize={20}
+        profileList={profileList}
+        userStatusList={userStatusList}
         emptyListComponent={emptyListComponent}
         userSubset={friendsToDisplay}
         orderUsers
-        isLoading={isLoading}
+        isLoading={isLoadingFriends || isSearching}
       />
     </View>
   );
