@@ -117,6 +117,14 @@ const KIROKU_ROUTES: Record<string, KirokuRoute> = {
     method: 'post',
     path: '/v1/privacy/friend',
   },
+  [SIDE_EFFECT_REQUEST_COMMANDS.GET_FEEDBACK_LIST]: {
+    method: 'get',
+    path: '/v1/feedback',
+  },
+  [SIDE_EFFECT_REQUEST_COMMANDS.GET_BUG_LIST]: {
+    method: 'get',
+    path: '/v1/feedback/bug',
+  },
   [WRITE_COMMANDS.SUBMIT_FEEDBACK]: {
     method: 'post',
     path: '/v1/feedback',

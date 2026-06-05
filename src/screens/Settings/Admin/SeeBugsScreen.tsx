@@ -8,14 +8,12 @@ import useThemeStyles from '@hooks/useThemeStyles';
 import Navigation from '@libs/Navigation/Navigation';
 import type {BugList, NicknameToId} from '@src/types/onyx';
 import {useFirebase} from '@context/global/FirebaseContext';
-import {removeBug} from '@libs/actions/Feedback';
+import {getBugList, removeBug} from '@libs/actions/Feedback';
 import * as KirokuIcons from '@components/Icon/KirokuIcons';
 import DateUtils from '@libs/DateUtils';
 import MenuItem from '@components/MenuItem';
 import Button from '@components/Button';
 import useTheme from '@hooks/useTheme';
-import {listenForDataChanges} from '@database/baseFunctions';
-import DBPATHS from '@src/DBPATHS';
 import {fetchUserNicknames} from '@libs/actions/User';
 import type {Timestamp} from '@src/types/onyx/OnyxCommon';
 import CONST from '@src/CONST';
@@ -29,21 +27,21 @@ function SeeBugsScreen() {
   const [bugList, setBugList] = useState<BugList>({});
 
   useEffect(() => {
-    const dbRef = DBPATHS.BUGS;
-    const stopListening = listenForDataChanges(
-      db,
-      dbRef,
-      (data: BugList | null) => {
-        const newData = data ?? {};
-        setBugList(newData);
-      },
-    );
+    let isMounted = true;
+    getBugList()
+      .then(data => {
+        if (isMounted) {
+          setBugList(data);
+        }
+      })
+      .catch(error => {
+        console.error('Error fetching bugs:', error);
+      });
 
-    // Stop listening for changes when the component unmounts
     return () => {
-      stopListening();
+      isMounted = false;
     };
-  }, [db]);
+  }, []);
 
   useEffect(() => {
     const fetchNicknames = async () => {
