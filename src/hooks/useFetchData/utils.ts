@@ -22,9 +22,6 @@ function fetchDataKeyToDbPath(key: FetchDataKey, userID?: UserID) {
     case 'preferences':
       path = DBPATHS.USER_PREFERENCES_USER_ID.getRoute(id);
       break;
-    case 'unconfirmedDays':
-      path = DBPATHS.USER_UNCONFIRMED_DAYS_USER_ID.getRoute(id);
-      break;
     case 'userData':
       path = DBPATHS.USERS_USER_ID.getRoute(id);
       break;

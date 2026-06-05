@@ -12,6 +12,7 @@ import type {DateString} from '@src/types/onyx/OnyxCommon';
 import type {SelectedTimezone} from '@src/types/onyx/UserData';
 import Navigation from '@libs/Navigation/Navigation';
 import {useDatabaseData} from '@context/global/DatabaseDataContext';
+import useCurrentUserData from '@hooks/useCurrentUserData';
 import useCurrentUserDrinkingSessions from '@hooks/useCurrentUserDrinkingSessions';
 import useCurrentUserPreferences from '@hooks/useCurrentUserPreferences';
 import {useFirebase} from '@context/global/FirebaseContext';
@@ -125,7 +126,7 @@ function DayOverviewScreen({route}: DayOverviewScreenProps) {
     : friendFetchingOlder;
   // Timezone is only read by the self-only add-session flow, so the current
   // user's own data is always the right source here.
-  const userData = ownData.userData;
+  const userData = useCurrentUserData();
 
   // Hold the list invisible (skeleton on top) until it has scrolled to the
   // focused day. With no `date` (shouldn't happen via the calendar) we never

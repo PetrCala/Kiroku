@@ -107,7 +107,6 @@ const useFetchData = (
       userStatusData: data.userStatusData,
       drinkingSessionData: data.drinkingSessionData,
       preferences: data.preferences,
-      unconfirmedDays: data.unconfirmedDays,
       userData: data.userData,
     },
     isLoading,

@@ -13,7 +13,7 @@ import {useFirebase} from '@context/global/FirebaseContext';
 import * as ErrorUtils from '@libs/ErrorUtils';
 import FullScreenLoadingIndicator from '@components/FullscreenLoadingIndicator';
 import TimezoneSelect from '@components/TimezoneSelect';
-import {useDatabaseData} from '@context/global/DatabaseDataContext';
+import useCurrentUserData from '@hooks/useCurrentUserData';
 import CONST from '@src/CONST';
 import ERRORS from '@src/ERRORS';
 
@@ -26,7 +26,7 @@ type TimezoneSelectScreenProps = StackScreenProps<
 function TimezoneSelectScreen({route}: TimezoneSelectScreenProps) {
   const {translate} = useLocalize();
   const {db, auth} = useFirebase();
-  const {userData} = useDatabaseData();
+  const userData = useCurrentUserData();
   const timezone = userData?.timezone ?? CONST.DEFAULT_TIME_ZONE;
   const [isLoading, setIsLoading] = useState(false);
 

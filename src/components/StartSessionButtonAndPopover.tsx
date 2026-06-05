@@ -16,6 +16,7 @@ import * as DSUtils from '@libs/DrinkingSessionUtils';
 import * as DS from '@userActions/DrinkingSession';
 import * as ErrorUtils from '@libs/ErrorUtils';
 import * as App from '@userActions/App';
+import useCurrentUserData from '@hooks/useCurrentUserData';
 import useLocalize from '@hooks/useLocalize';
 import usePrevious from '@hooks/usePrevious';
 import useResponsiveLayout from '@hooks/useResponsiveLayout';
@@ -65,7 +66,8 @@ function StartSessionButtonAndPopover(
   const {auth, db} = useFirebase();
   const {translate} = useLocalize();
   const user = auth.currentUser;
-  const {userData, userStatusData} = useDatabaseData();
+  const {userStatusData} = useDatabaseData();
+  const userData = useCurrentUserData();
   const [ongoingSessionData] = useOnyx(ONYXKEYS.ONGOING_SESSION_DATA);
   const [startSession] = useOnyx(ONYXKEYS.START_SESSION_GLOBAL_CREATE);
   const [isCreateMenuActive, setIsCreateMenuActive] = useState(false);

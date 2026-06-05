@@ -40,7 +40,7 @@ import HeaderWithBackButton from '@components/HeaderWithBackButton';
 import {useFirebase} from '@context/global/FirebaseContext';
 import UserOffline from '@components/UserOfflineModal';
 import FullScreenLoadingIndicator from '@components/FullscreenLoadingIndicator';
-import {useDatabaseData} from '@context/global/DatabaseDataContext';
+import useCurrentUserData from '@hooks/useCurrentUserData';
 import {useOnyx} from 'react-native-onyx';
 import * as UserUtils from '@libs/UserUtils';
 import ONYXKEYS from '@src/ONYXKEYS';
@@ -69,7 +69,7 @@ function SettingsScreen() {
   const network = useNetwork();
   const {auth} = useFirebase();
   const styles = useThemeStyles();
-  const {userData} = useDatabaseData();
+  const userData = useCurrentUserData();
   const {isExecuting, singleExecution} = useSingleExecution();
   const waitForNavigate = useWaitForNavigation();
   const popoverAnchor = useRef(null);
@@ -77,7 +77,7 @@ function SettingsScreen() {
   const activeCentralPaneRoute = useActiveCentralPaneRoute();
   const [isLoading, setIsLoading] = useState(false);
   const [loadingText, setLoadingText] = useState('');
-  const userIsAdmin = userData && userData.role === 'admin';
+  const userIsAdmin = userData?.role === 'admin';
   const [privateData] = useOnyx(ONYXKEYS.USER_PRIVATE_DATA);
   const supporter = UserUtils.getCurrentUserSupporterStatus(privateData);
   // Hidden entirely in production builds until v1.1 launch clears Apple's

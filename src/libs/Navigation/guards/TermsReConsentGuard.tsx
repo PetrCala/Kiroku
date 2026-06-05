@@ -4,12 +4,14 @@ import SafeAreaConsumer from '@components/SafeAreaConsumer';
 import TermsScreenContent from '@components/TermsScreenContent';
 import {useDatabaseData} from '@context/global/DatabaseDataContext';
 import {useFirebase} from '@context/global/FirebaseContext';
+import useCurrentUserData from '@hooks/useCurrentUserData';
 import useLocalize from '@hooks/useLocalize';
 import * as Onboarding from '@userActions/Onboarding';
 import {
   hasAcceptedCurrentTerms,
   hasCompletedOnboarding,
 } from '@libs/OnboardingSelectors';
+import {isEmptyObject} from '@src/types/utils/EmptyObject';
 import CONST from '@src/CONST';
 import {View} from 'react-native';
 
@@ -22,7 +24,11 @@ import {View} from 'react-native';
 function TermsReConsentGuard() {
   const {auth, db} = useFirebase();
   const {translate} = useLocalize();
-  const {userData, config} = useDatabaseData();
+  const {config} = useDatabaseData();
+  // `useCurrentUserData` returns {} (truthy) while loading; the selectors below
+  // expect `undefined` to mean "not loaded yet", so map empty → undefined.
+  const currentUserData = useCurrentUserData();
+  const userData = isEmptyObject(currentUserData) ? undefined : currentUserData;
 
   const shouldPrompt = useMemo(() => {
     if (!auth?.currentUser) {

@@ -23,7 +23,8 @@ import type SCREENS from '@src/SCREENS';
 import INPUT_IDS from '@src/types/form/CloseAccountForm';
 import FullScreenLoadingIndicator from '@components/FullscreenLoadingIndicator';
 import {useFirebase} from '@context/global/FirebaseContext';
-import {useDatabaseData} from '@context/global/DatabaseDataContext';
+import useCurrentUserData from '@hooks/useCurrentUserData';
+import {isEmptyObject} from '@src/types/utils/EmptyObject';
 import ERRORS from '@src/ERRORS';
 
 type DeleteAccountScreenProps = StackScreenProps<
@@ -36,7 +37,10 @@ function DeleteAccountScreen({route}: DeleteAccountScreenProps) {
   const styles = useThemeStyles();
   const {translate} = useLocalize();
   const {db, auth} = useFirebase();
-  const {userData} = useDatabaseData();
+  const currentUserData = useCurrentUserData();
+  // `useCurrentUserData` returns {} (truthy) while loading; closeAccount guards
+  // on `!userData` then dereferences `userData.profile`, so map empty → undefined.
+  const userData = isEmptyObject(currentUserData) ? undefined : currentUserData;
 
   const currentUser = auth?.currentUser;
   const providerId =

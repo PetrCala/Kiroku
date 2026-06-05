@@ -4,7 +4,7 @@ import HeaderWithBackButton from '@components/HeaderWithBackButton';
 import MenuItemGroup from '@components/MenuItemGroup';
 import ScreenWrapper from '@components/ScreenWrapper';
 import Section from '@components/Section';
-import {useDatabaseData} from '@context/global/DatabaseDataContext';
+import useCurrentUserData from '@hooks/useCurrentUserData';
 import {useFirebase} from '@context/global/FirebaseContext';
 import useLocalize from '@hooks/useLocalize';
 import useStyleUtils from '@hooks/useStyleUtils';
@@ -35,7 +35,7 @@ function AccountScreen({route}: AccountScreenProps) {
   const {auth} = useFirebase();
   const user = auth.currentUser;
   const [loadingText] = useOnyx(ONYXKEYS.APP_LOADING_TEXT);
-  const {userData} = useDatabaseData();
+  const userData = useCurrentUserData();
   const profileData = userData?.profile;
 
   const hasEmailProvider = (user?.providerData ?? []).some(
