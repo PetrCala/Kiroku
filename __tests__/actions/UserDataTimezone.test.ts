@@ -9,7 +9,7 @@ import * as API from '@libs/API';
 import {WRITE_COMMANDS} from '@libs/API/types';
 import {getFirebaseAuth} from '@libs/Firebase/FirebaseApp';
 import ONYXKEYS from '@src/ONYXKEYS';
-import type {SelectedTimezone} from '@src/types/onyx/UserData';
+import type {SelectedTimezone, Timezone} from '@src/types/onyx/UserData';
 import * as UserData from '@userActions/UserData';
 
 jest.mock('react-native-onyx', () => ({
@@ -33,6 +33,17 @@ jest.mock('@libs/Firebase/FirebaseApp', () => ({
 const mockedWrite = API.write as jest.Mock;
 const mockedGetAuth = getFirebaseAuth as unknown as jest.Mock;
 
+/** The optimistic Onyx update the action attaches for the current user. */
+function expectedOptimisticData(timezone: Timezone) {
+  return [
+    {
+      onyxMethod: 'merge',
+      key: ONYXKEYS.USER_DATA_LIST,
+      value: {'uid-A': {timezone}},
+    },
+  ];
+}
+
 describe('UserData timezone actions', () => {
   beforeEach(() => {
     jest.clearAllMocks();
@@ -46,21 +57,13 @@ describe('UserData timezone actions', () => {
         selected: 'Europe/Prague',
       });
 
+      const timezone: Timezone = {automatic: true, selected: 'Europe/Prague'};
       expect(mockedWrite).toHaveBeenCalledTimes(1);
-      const [command, params, options] = mockedWrite.mock.calls[0];
-      expect(command).toBe(WRITE_COMMANDS.UPDATE_AUTOMATIC_TIMEZONE);
-      expect(params).toEqual({
-        timezone: {automatic: true, selected: 'Europe/Prague'},
-      });
-      expect(options.optimisticData).toEqual([
-        {
-          onyxMethod: 'merge',
-          key: ONYXKEYS.USER_DATA_LIST,
-          value: {
-            'uid-A': {timezone: {automatic: true, selected: 'Europe/Prague'}},
-          },
-        },
-      ]);
+      expect(mockedWrite).toHaveBeenCalledWith(
+        WRITE_COMMANDS.UPDATE_AUTOMATIC_TIMEZONE,
+        {timezone},
+        {optimisticData: expectedOptimisticData(timezone)},
+      );
     });
 
     it('normalizes a deprecated IANA name before persisting (params + optimistic data)', () => {
@@ -69,10 +72,11 @@ describe('UserData timezone actions', () => {
         selected: 'Asia/Calcutta' as SelectedTimezone,
       });
 
-      const [, params, options] = mockedWrite.mock.calls[0];
-      expect(params.timezone.selected).toBe('Asia/Kolkata');
-      expect(options.optimisticData[0].value['uid-A'].timezone.selected).toBe(
-        'Asia/Kolkata',
+      const timezone: Timezone = {automatic: true, selected: 'Asia/Kolkata'};
+      expect(mockedWrite).toHaveBeenCalledWith(
+        WRITE_COMMANDS.UPDATE_AUTOMATIC_TIMEZONE,
+        {timezone},
+        {optimisticData: expectedOptimisticData(timezone)},
       );
     });
 
@@ -92,24 +96,27 @@ describe('UserData timezone actions', () => {
     it('persists the selected zone with automatic turned off via UPDATE_SELECTED_TIMEZONE', () => {
       UserData.saveSelectedTimezone('Europe/Prague');
 
+      const timezone: Timezone = {selected: 'Europe/Prague', automatic: false};
       expect(mockedWrite).toHaveBeenCalledTimes(1);
-      const [command, params, options] = mockedWrite.mock.calls[0];
-      expect(command).toBe(WRITE_COMMANDS.UPDATE_SELECTED_TIMEZONE);
-      expect(params).toEqual({
-        timezone: {selected: 'Europe/Prague', automatic: false},
-      });
-      expect(options.optimisticData[0].value['uid-A'].timezone).toEqual({
-        selected: 'Europe/Prague',
-        automatic: false,
-      });
+      expect(mockedWrite).toHaveBeenCalledWith(
+        WRITE_COMMANDS.UPDATE_SELECTED_TIMEZONE,
+        {timezone},
+        {optimisticData: expectedOptimisticData(timezone)},
+      );
     });
 
     it('normalizes a deprecated selected zone before persisting', () => {
       UserData.saveSelectedTimezone('US/Pacific' as SelectedTimezone);
 
-      const [, params] = mockedWrite.mock.calls[0];
-      expect(params.timezone.selected).toBe('America/Los_Angeles');
-      expect(params.timezone.automatic).toBe(false);
+      const timezone: Timezone = {
+        selected: 'America/Los_Angeles',
+        automatic: false,
+      };
+      expect(mockedWrite).toHaveBeenCalledWith(
+        WRITE_COMMANDS.UPDATE_SELECTED_TIMEZONE,
+        {timezone},
+        {optimisticData: expectedOptimisticData(timezone)},
+      );
     });
   });
 });
