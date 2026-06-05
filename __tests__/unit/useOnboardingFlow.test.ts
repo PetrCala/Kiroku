@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/naming-convention -- jest mock factory keys (__esModule) are dictated by Node module shape */
 import {renderHook} from '@testing-library/react-native';
-import {useDatabaseData} from '@context/global/DatabaseDataContext';
+import {useConfig} from '@context/global/ConfigContext';
 import {useFirebase} from '@context/global/FirebaseContext';
 import useCurrentUserData from '@hooks/useCurrentUserData';
 import useOnboardingFlow from '@hooks/useOnboardingFlow';
@@ -12,8 +12,8 @@ jest.mock('@context/global/FirebaseContext', () => ({
   useFirebase: jest.fn(),
 }));
 
-jest.mock('@context/global/DatabaseDataContext', () => ({
-  useDatabaseData: jest.fn(),
+jest.mock('@context/global/ConfigContext', () => ({
+  useConfig: jest.fn(),
 }));
 
 jest.mock('@hooks/useCurrentUserData', () => ({
@@ -22,7 +22,7 @@ jest.mock('@hooks/useCurrentUserData', () => ({
 }));
 
 const mockedUseFirebase = jest.mocked(useFirebase);
-const mockedUseDatabaseData = jest.mocked(useDatabaseData);
+const mockedUseConfig = jest.mocked(useConfig);
 const mockedUseCurrentUserData = jest.mocked(useCurrentUserData);
 
 const TEST_UID = 'user-123';
@@ -33,12 +33,10 @@ function setAuth(uid: string | undefined): void {
   } as unknown as ReturnType<typeof useFirebase>);
 }
 
-// `userData` now comes from `useCurrentUserData` (Onyx), which returns {} (not
-// undefined) while not hydrated; `config` still comes from `useDatabaseData`.
+// `userData` comes from `useCurrentUserData` (Onyx), which returns {} (not
+// undefined) while not hydrated; `config` comes from `useConfig` (Onyx-backed).
 function setUserData(userData: UserData | undefined, config?: Config): void {
-  mockedUseDatabaseData.mockReturnValue({
-    config,
-  } as unknown as ReturnType<typeof useDatabaseData>);
+  mockedUseConfig.mockReturnValue({config});
   mockedUseCurrentUserData.mockReturnValue(userData ?? {});
 }
 
