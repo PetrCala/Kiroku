@@ -25,10 +25,12 @@ function getWeekRowCount(date: Date): number {
  * `useLazyMarkedDates` indexing — is deferred past the navigation slide.
  *
  * Mirrors `SessionsCalendarView`'s react-native-calendars geometry so the swap
- * is visually quiet: the `componentBG` body, the month-header row (nav arrows
- * flanking a centered month-year title, `marginTop:6`, ~48px tall from the
- * library's arrow padding), the borderless day-name strip (`marginTop:7`), and
- * the variable-height 7×N day grid. Sibling to the fullscreen
+ * is visually quiet: the `componentBG` body, the month-header row (just a
+ * centered month-year title — the real nav arrows are intentionally omitted
+ * from the skeleton, but the row keeps its `marginTop:6` and ~48px height from
+ * the library's arrow padding so the handover doesn't jolt vertically), the
+ * borderless day-name strip (`marginTop:7`), and the variable-height 7×N day
+ * grid. Sibling to the fullscreen
  * `SessionsCalendarSkeleton`; cells stay static (`animate={false}`) on this
  * dense grid for the same anti-jank reason.
  */
@@ -50,9 +52,7 @@ function SessionsCalendarCompactSkeleton() {
       ]}
       testID="SessionsCalendarCompactSkeleton">
       <View style={styles.sessionsCalendarCompactSkeletonHeader}>
-        <Skeleton width={10} height={18} radius={3} animate={false} />
         <Skeleton width={78} height={18} radius={3} animate={false} />
-        <Skeleton width={10} height={18} radius={3} animate={false} />
       </View>
       <View style={styles.sessionsCalendarCompactSkeletonDayNamesRow}>
         {DAY_COLUMNS.map(col => (

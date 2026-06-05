@@ -1664,15 +1664,16 @@ const styles = (theme: ThemeColors) =>
     // Compact-calendar loading skeleton (`SessionsCalendarCompactSkeleton`).
     // These mirror react-native-calendars' compact header geometry so the
     // skeleton→calendar handover doesn't shift layout. The library's month-row
-    // (`header`) is `marginTop:6` with nav arrows padded out to ~48px tall, and
+    // (`header`) is `marginTop:6` and ~48px tall (its nav-arrow padding), and
     // its day-name strip (`week`/`dayHeader`) sits `marginTop:7` with no
-    // separator rule — unlike the fullscreen `sessionsCalendarDayNamesRow`.
+    // separator rule — unlike the fullscreen `sessionsCalendarDayNamesRow`. The
+    // skeleton omits the arrow placeholders, so the month title is centered and
+    // the row height alone reproduces the real arrows' vertical footprint.
     sessionsCalendarCompactSkeletonHeader: {
       flexDirection: 'row',
       alignItems: 'center',
-      justifyContent: 'space-between',
+      justifyContent: 'center',
       marginTop: 6,
-      paddingHorizontal: 20,
       minHeight: 48,
     },
 
