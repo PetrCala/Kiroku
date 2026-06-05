@@ -196,6 +196,33 @@ function SessionsCalendarView({
       const monthText = (
         <Text style={styles.sessionsCalendarHeaderMonthText}>{formatted}</Text>
       );
+      // Right slot holds at most one of: the older-months spinner (priority) or
+      // the revert control. Computed up front to avoid a nested ternary in JSX.
+      let rightSlotContent: React.ReactNode = null;
+      if (isFetchingOlderMonths) {
+        rightSlotContent = (
+          <ActivityIndicator size="small" color={theme.spinner} />
+        );
+      } else if (showRevert) {
+        rightSlotContent = (
+          <Animated.View style={{opacity: revertOpacity}}>
+            <PressableWithFeedback
+              onPress={onJumpToCurrent}
+              role={CONST.ROLE.BUTTON}
+              accessibilityLabel={translate(
+                'sessionsCalendar.jumpToCurrentMonth',
+              )}
+              style={styles.sessionsCalendarHeaderRevert}>
+              <Icon
+                src={KirokuIcons.RotateLeft}
+                fill={theme.textReversed}
+                width={14}
+                height={14}
+              />
+            </PressableWithFeedback>
+          </Animated.View>
+        );
+      }
       return (
         // Symmetric layout: equal-width side slots keep the month label dead
         // centered, so it never shifts when the revert control or the
@@ -222,26 +249,7 @@ function SessionsCalendarView({
             monthText
           )}
           <View style={styles.sessionsCalendarHeaderSideSlot}>
-            {isFetchingOlderMonths ? (
-              <ActivityIndicator size="small" color={theme.spinner} />
-            ) : showRevert ? (
-              <Animated.View style={{opacity: revertOpacity}}>
-                <PressableWithFeedback
-                  onPress={onJumpToCurrent}
-                  role={CONST.ROLE.BUTTON}
-                  accessibilityLabel={translate(
-                    'sessionsCalendar.jumpToCurrentMonth',
-                  )}
-                  style={styles.sessionsCalendarHeaderRevert}>
-                  <Icon
-                    src={KirokuIcons.RotateLeft}
-                    fill={theme.textReversed}
-                    width={14}
-                    height={14}
-                  />
-                </PressableWithFeedback>
-              </Animated.View>
-            ) : null}
+            {rightSlotContent}
           </View>
         </View>
       );
