@@ -53,7 +53,7 @@ function DisplayNameScreen({}: DisplayNameScreenProps) {
           currentDisplayName,
           values.username,
         );
-        await Onboarding.completeOnboarding(db, auth.currentUser);
+        await Onboarding.completeOnboarding();
         Onboarding.navigateAfterOnboarding();
       } catch (error) {
         const appError = ErrorUtils.getAppError(undefined, error);

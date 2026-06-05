@@ -22,7 +22,7 @@ import {View} from 'react-native';
  * post-onboarding re-consent stay independent flows.
  */
 function TermsReConsentGuard() {
-  const {auth, db} = useFirebase();
+  const {auth} = useFirebase();
   const {translate} = useLocalize();
   const {config} = useConfig();
   // `useCurrentUserData` returns {} (truthy) while loading; the selectors below
@@ -43,9 +43,9 @@ function TermsReConsentGuard() {
     return !hasAcceptedCurrentTerms(userData, config);
   }, [auth?.currentUser, userData, config]);
 
-  const handleAccept = useCallback(async () => {
-    await Onboarding.acceptTerms(db, auth.currentUser);
-  }, [auth, db]);
+  const handleAccept = useCallback(() => {
+    Onboarding.acceptTerms();
+  }, []);
 
   if (!shouldPrompt) {
     return null;

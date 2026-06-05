@@ -1,78 +1,120 @@
 import type {Database} from 'firebase/database';
-import {ref, set, update} from 'firebase/database';
 import type {User} from 'firebase/auth';
 import Onyx from 'react-native-onyx';
+import type {OnyxUpdate} from 'react-native-onyx';
+import * as API from '@libs/API';
+import {WRITE_COMMANDS} from '@libs/API/types';
+import {getFirebaseAuth} from '@libs/Firebase/FirebaseApp';
 import * as Localize from '@libs/Localize';
-import Log from '@libs/Log';
 import Navigation from '@libs/Navigation/Navigation';
 import {setUsername} from '@userActions/User';
 import CONST from '@src/CONST';
-import DBPATHS from '@src/DBPATHS';
 import ONYXKEYS from '@src/ONYXKEYS';
 import ROUTES from '@src/ROUTES';
 
 /**
- * Persist a user's acceptance of the current Terms & Conditions.
+ * Onboarding writes, cut over from direct Firebase RTDB writes to kiroku-api
+ * `API.write` calls (#778). Authority is server-side (the caller's Firebase ID
+ * token), so the uid is used only for the optimistic Onyx update, which mirrors
+ * each server route's `onyxData` to keep the inline/pushed response idempotent.
  *
- * Writes `agreed_to_terms_at`, `agreed_to_terms_version`, and (when a
- * resume path is supplied) `onboarding.last_visited_path` to Firebase, then
- * mirrors the same values into Onyx so the UI updates without waiting for
- * the server round-trip.
- *
- * @param onboardingPath When acceptance happens inside the onboarding flow,
- *  pass the route to record as the resume point. Omit for standalone
- *  re-consent so onboarding state is not mutated for users who have
- *  already finished onboarding.
+ * `setDisplayName` still wraps {@link setUsername}, which has no server endpoint
+ * yet and remains a direct Firebase write — a separate chip cuts it over.
  */
-async function acceptTerms(
-  db: Database,
-  user: User | null,
-  onboardingPath?: string,
-): Promise<void> {
-  if (!user) {
-    throw new Error(Localize.translateLocal('common.error.userNull'));
-  }
 
-  const userID = user.uid;
-  const now = Date.now();
-  const version = CONST.CURRENT_TERMS_VERSION;
-
-  const updates: Record<string, number | string> = {};
-  updates[DBPATHS.USERS_USER_ID_AGREED_TO_TERMS_AT.getRoute(userID)] = now;
-  updates[DBPATHS.USERS_USER_ID_AGREED_TO_TERMS_VERSION.getRoute(userID)] =
-    version;
-  if (onboardingPath !== undefined) {
-    updates[
-      DBPATHS.USERS_USER_ID_ONBOARDING_LAST_VISITED_PATH.getRoute(userID)
-    ] = onboardingPath;
-  }
-
-  await update(ref(db), updates);
-
-  await Onyx.merge(ONYXKEYS.USER_DATA_LIST, {
-    [userID]: {
-      agreed_to_terms_at: now,
-      agreed_to_terms_version: version,
-      ...(onboardingPath !== undefined && {
-        onboarding: {last_visited_path: onboardingPath},
-      }),
-    },
-  });
-  await Onyx.merge(ONYXKEYS.NVP_TERMS_ACCEPTED_VERSION, version);
-  if (onboardingPath !== undefined) {
-    await Onyx.merge(ONYXKEYS.NVP_ONBOARDING, {
-      last_visited_path: onboardingPath,
-    });
-  }
+function getCurrentUserID(): string | undefined {
+  return getFirebaseAuth().currentUser?.uid ?? undefined;
 }
 
 /**
- * Persist the display name chosen during the onboarding flow.
+ * Persist the onboarding resume point via `POST /v1/onboarding/last-visited-path`.
+ * Optimistic data mirrors the route's `onyxData`. No-op when signed out.
+ */
+function writeLastVisitedPath(path: string, uid: string | undefined): void {
+  if (!uid) {
+    return;
+  }
+  const optimisticData: OnyxUpdate[] = [
+    {
+      onyxMethod: Onyx.METHOD.MERGE,
+      key: ONYXKEYS.NVP_ONBOARDING,
+      value: {last_visited_path: path},
+    },
+    {
+      onyxMethod: Onyx.METHOD.MERGE,
+      key: ONYXKEYS.USER_DATA_LIST,
+      value: {[uid]: {onboarding: {last_visited_path: path}}},
+    },
+  ];
+  API.write(
+    WRITE_COMMANDS.SET_ONBOARDING_LAST_VISITED_PATH,
+    {path},
+    {optimisticData},
+  );
+}
+
+/**
+ * Record acceptance of the current Terms & Conditions via
+ * `POST /v1/onboarding/accept-terms`.
  *
- * Wraps {@link setUsername} (which atomically writes the new
+ * The server decides the accepted version, so the client never sends one; the
+ * locally known `CURRENT_TERMS_VERSION` is used purely for the optimistic echo
+ * (the server's response is authoritative). Optimistic data mirrors the route's
+ * `onyxData`.
+ *
+ * @param onboardingPath When acceptance happens inside the onboarding flow, the
+ *  route to record as the resume point. Omit for standalone re-consent so
+ *  onboarding state is not mutated for users who have already finished.
+ */
+function acceptTerms(onboardingPath?: string): void {
+  const uid = getCurrentUserID();
+  if (!uid) {
+    return;
+  }
+  const now = Date.now();
+  const version = CONST.CURRENT_TERMS_VERSION;
+  const hasPath = onboardingPath !== undefined;
+
+  const userEntry: Record<string, unknown> = {
+    agreed_to_terms_at: now,
+    agreed_to_terms_version: version,
+  };
+  if (hasPath) {
+    userEntry.onboarding = {last_visited_path: onboardingPath};
+  }
+
+  const optimisticData: OnyxUpdate[] = [
+    {
+      onyxMethod: Onyx.METHOD.MERGE,
+      key: ONYXKEYS.USER_DATA_LIST,
+      value: {[uid]: userEntry},
+    },
+    {
+      onyxMethod: Onyx.METHOD.SET,
+      key: ONYXKEYS.NVP_TERMS_ACCEPTED_VERSION,
+      value: version,
+    },
+  ];
+  if (hasPath) {
+    optimisticData.push({
+      onyxMethod: Onyx.METHOD.MERGE,
+      key: ONYXKEYS.NVP_ONBOARDING,
+      value: {last_visited_path: onboardingPath},
+    });
+  }
+
+  API.write(WRITE_COMMANDS.ACCEPT_TERMS, hasPath ? {onboardingPath} : {}, {
+    optimisticData,
+  });
+}
+
+/**
+ * Persist the display name chosen during onboarding.
+ *
+ * Wraps {@link setUsername} (still a direct Firebase write — atomically writes
  * `profile.display_name`, flips `profile.username_chosen`, and updates the
  * nickname index + Firebase auth profile) and additionally records the
- * onboarding resume path so the flow can be picked up where it left off.
+ * onboarding resume path via kiroku-api so the flow resumes where it left off.
  */
 async function setDisplayName(
   db: Database,
@@ -86,53 +128,31 @@ async function setDisplayName(
 
   await setUsername(db, user, currentDisplayName, newDisplayName);
 
-  const userID = user.uid;
-  const path = ROUTES.ONBOARDING_DISPLAY_NAME;
-  const updates: Record<string, string> = {};
-  updates[DBPATHS.USERS_USER_ID_ONBOARDING_LAST_VISITED_PATH.getRoute(userID)] =
-    path;
-
-  await update(ref(db), updates);
-
-  await Onyx.merge(ONYXKEYS.USER_DATA_LIST, {
-    [userID]: {
-      onboarding: {last_visited_path: path},
-    },
-  });
-  await Onyx.merge(ONYXKEYS.NVP_ONBOARDING, {last_visited_path: path});
+  writeLastVisitedPath(ROUTES.ONBOARDING_DISPLAY_NAME, user.uid);
 }
 
 /**
- * Mark the onboarding flow complete for the given user.
+ * Mark the onboarding flow complete via `POST /v1/onboarding/complete`.
  *
- * Performs the Onyx merge first so `shouldFireOnboarding` flips to false
- * before any subsequent navigation — this lets `OnboardingGuard`
- * deactivate before the dismissal pop, preventing it from re-routing the
- * user back into onboarding. The Firebase write is fired without `await`
- * — Firebase RTDB queues offline writes and replays them on reconnect, so
- * blocking the caller would defeat the optimistic guarantee.
+ * The optimistic completion merge is applied and awaited BEFORE the server
+ * write so `shouldFireOnboarding` flips to false before the caller's dismissal
+ * pop — otherwise `OnboardingGuard` races the dismissal and re-routes the user
+ * back into onboarding. Awaiting guarantees the flip has propagated, so this
+ * cannot use `API.write`'s fire-and-forget optimistic update.
  */
-async function completeOnboarding(
-  db: Database,
-  user: User | null,
-): Promise<void> {
-  if (!user) {
-    throw new Error(Localize.translateLocal('common.error.userNull'));
+async function completeOnboarding(): Promise<void> {
+  const uid = getCurrentUserID();
+  if (!uid) {
+    return;
   }
-
-  const userID = user.uid;
   const now = Date.now();
 
   await Onyx.merge(ONYXKEYS.NVP_ONBOARDING, {completed_at: now});
   await Onyx.merge(ONYXKEYS.USER_DATA_LIST, {
-    [userID]: {onboarding: {completed_at: now}},
+    [uid]: {onboarding: {completed_at: now}},
   });
 
-  const completedAtPath =
-    DBPATHS.USERS_USER_ID_ONBOARDING_COMPLETED_AT.getRoute(userID);
-  set(ref(db, completedAtPath), now).catch(error => {
-    Log.warn('[Onboarding] Failed to persist onboarding completion', {error});
-  });
+  API.write(WRITE_COMMANDS.COMPLETE_ONBOARDING, {});
 }
 
 /**
@@ -156,9 +176,7 @@ function navigateAfterOnboarding(): void {
 }
 
 function setLastVisitedPath(path: string): void {
-  Log.info(
-    `[Onboarding] setLastVisitedPath stub — not yet implemented (path="${path}")`,
-  );
+  writeLastVisitedPath(path, getCurrentUserID());
 }
 
 export {

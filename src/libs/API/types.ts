@@ -47,6 +47,9 @@ const WRITE_COMMANDS = {
   REMOVE_BUG: 'RemoveBug',
   UPDATE_PROFILE_PHOTO: 'UpdateProfilePhoto',
   SYNC_USER_STATUS: 'SyncUserStatus',
+  ACCEPT_TERMS: 'AcceptTerms',
+  COMPLETE_ONBOARDING: 'CompleteOnboarding',
+  SET_ONBOARDING_LAST_VISITED_PATH: 'SetOnboardingLastVisitedPath',
   // ...
 } as const;
 
@@ -93,6 +96,9 @@ type WriteCommandParameters = {
   [WRITE_COMMANDS.REMOVE_BUG]: Parameters.RemoveBugParams;
   [WRITE_COMMANDS.UPDATE_PROFILE_PHOTO]: Parameters.UpdateProfilePhotoParams;
   [WRITE_COMMANDS.SYNC_USER_STATUS]: Parameters.SyncUserStatusParams;
+  [WRITE_COMMANDS.ACCEPT_TERMS]: Parameters.AcceptTermsParams;
+  [WRITE_COMMANDS.COMPLETE_ONBOARDING]: EmptyObject;
+  [WRITE_COMMANDS.SET_ONBOARDING_LAST_VISITED_PATH]: Parameters.SetOnboardingLastVisitedPathParams;
 };
 
 const READ_COMMANDS = {
