@@ -1,5 +1,7 @@
+import type {Timezone} from '@src/types/onyx/UserData';
+
 type UpdateSelectedTimezoneParams = {
-  timezone: string;
+  timezone: Timezone;
 };
 
 export default UpdateSelectedTimezoneParams;

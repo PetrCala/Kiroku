@@ -68,6 +68,16 @@ const KIROKU_ROUTES: Record<string, KirokuRoute> = {
     method: 'post',
     path: '/v1/preferences',
   },
+  // Timezone lives under `users/$uid` but is written through the same
+  // preferences endpoint (it handles a `timezone` object in the body).
+  [WRITE_COMMANDS.UPDATE_AUTOMATIC_TIMEZONE]: {
+    method: 'post',
+    path: '/v1/preferences',
+  },
+  [WRITE_COMMANDS.UPDATE_SELECTED_TIMEZONE]: {
+    method: 'post',
+    path: '/v1/preferences',
+  },
   [WRITE_COMMANDS.CAPTURE_SESSION_LOCATION]: {
     method: 'post',
     path: '/v1/session-locations/capture',

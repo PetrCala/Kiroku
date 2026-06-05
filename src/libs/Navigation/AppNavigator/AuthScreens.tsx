@@ -11,12 +11,10 @@ import useThemeStyles from '@hooks/useThemeStyles';
 import * as App from '@userActions/App';
 // import * as Download from '@userActions/Download';
 import * as Modal from '@userActions/Modal';
-import * as UserData from '@userActions/UserData';
 // import * as PriorityMode from '@userActions/PriorityMode';
 import * as Session from '@userActions/Session';
 import Timing from '@userActions/Timing';
 import * as User from '@userActions/User';
-import {getDatabase} from 'firebase/database';
 import CONFIG from '@src/CONFIG';
 import CONST from '@src/CONST';
 import NAVIGATORS from '@src/NAVIGATORS';
@@ -26,14 +24,13 @@ import SCREENS from '@src/SCREENS';
 import CrashReportingSync from '@components/CrashReportingSync';
 import {isEmptyObject} from '@src/types/utils/EmptyObject';
 import {useSplashScreenStateContext} from '@context/global/SplashScreenStateContext';
-import type {SelectedTimezone, Timezone} from '@src/types/onyx/UserData';
-import {FirebaseApp, getFirebaseAuth} from '@libs/Firebase/FirebaseApp';
 import * as Pusher from '@libs/Pusher/pusher';
 import * as ApiUtils from '@libs/ApiUtils';
 import kirokuPusherAuthorizer from '@libs/Pusher/kirokuAuthorizer';
 import type ReactComponentModule from '@src/types/utils/ReactComponentModule';
 import useResponsiveLayout from '@hooks/useResponsiveLayout';
 import useIdlePrefetch from '@hooks/useIdlePrefetch';
+import useAutoUpdateTimezone from '@hooks/useAutoUpdateTimezone';
 import useCurrentUserData from '@hooks/useCurrentUserData';
 import useCurrentUserPreferences from '@hooks/useCurrentUserPreferences';
 import prefetchStatisticsBundle from '@screens/Statistics/prefetchStatisticsBundle';
@@ -60,43 +57,6 @@ const notFoundScreen = () =>
 
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 let lastUpdateIDAppliedToClient: OnyxEntry<number>;
-let timezone: Timezone | null;
-
-Onyx.connect({
-  key: ONYXKEYS.USER_DATA_LIST,
-  callback: value => {
-    // Safe to call getFirebaseAuth() here - Onyx callbacks run after app initialization
-    const auth = getFirebaseAuth();
-    // eslint-disable-next-line @typescript-eslint/prefer-nullish-coalescing
-    if (!value || timezone || !auth.currentUser) {
-      return;
-    }
-
-    timezone = value?.[auth.currentUser?.uid]?.timezone ?? {};
-    const currentTimezone = Intl.DateTimeFormat().resolvedOptions()
-      .timeZone as SelectedTimezone;
-
-    if (!timezone?.selected) {
-      timezone = {automatic: true, selected: currentTimezone};
-      User.updateAutomaticTimezone(
-        getDatabase(FirebaseApp),
-        auth.currentUser,
-        true,
-        currentTimezone,
-      );
-      return;
-    }
-
-    // If the current timezone is different than the user's timezone, and their timezone is set to automatic, then update their timezone.
-    if (timezone?.automatic && timezone?.selected !== currentTimezone) {
-      timezone.selected = currentTimezone;
-      UserData.updateAutomaticTimezone({
-        automatic: true,
-        selected: currentTimezone,
-      });
-    }
-  },
-});
 
 Onyx.connect({
   key: ONYXKEYS.ONYX_UPDATES_LAST_UPDATE_ID_APPLIED_TO_CLIENT,
@@ -144,6 +104,9 @@ function AuthScreensContent() {
   const styles = useThemeStyles();
   const StyleUtils = useStyleUtils();
   const {auth} = useFirebase();
+
+  // Keep the stored timezone in sync with the device at login and on foreground.
+  useAutoUpdateTimezone();
 
   // We need to use isSmallScreenWidth for the root stack navigator
   const {

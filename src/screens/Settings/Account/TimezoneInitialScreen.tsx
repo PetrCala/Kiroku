@@ -15,11 +15,8 @@ import type {StackScreenProps} from '@react-navigation/stack';
 import type {SettingsNavigatorParamList} from '@libs/Navigation/types';
 import type SCREENS from '@src/SCREENS';
 import useCurrentUserData from '@hooks/useCurrentUserData';
-import {useFirebase} from '@context/global/FirebaseContext';
-import * as User from '@userActions/User';
+import * as UserData from '@userActions/UserData';
 import {isEmptyObject} from '@src/types/utils/EmptyObject';
-import * as ErrorUtils from '@libs/ErrorUtils';
-import ERRORS from '@src/ERRORS';
 
 type TimezoneInitialScreenProps = StackScreenProps<
   SettingsNavigatorParamList,
@@ -29,7 +26,6 @@ type TimezoneInitialScreenProps = StackScreenProps<
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 function TimezoneInitialScreen({route}: TimezoneInitialScreenProps) {
   const styles = useThemeStyles();
-  const {db, auth} = useFirebase();
   const userData = useCurrentUserData();
   const timezone: Timezone = userData?.timezone ?? CONST.DEFAULT_TIME_ZONE;
 
@@ -43,22 +39,15 @@ function TimezoneInitialScreen({route}: TimezoneInitialScreenProps) {
    * Note: If we are updating automatically, we'll immediately calculate the user's timezone.
    */
   const updateAutomaticTimezone = (isAutomatic: boolean) => {
-    (async () => {
-      const defaultTimezone =
-        timezone.selected ?? CONST.DEFAULT_TIME_ZONE.selected;
-      try {
-        await User.updateAutomaticTimezone(
-          db,
-          auth.currentUser,
-          isAutomatic,
-          isAutomatic && !isEmptyObject(currentTimezone)
-            ? currentTimezone
-            : defaultTimezone,
-        );
-      } catch (error) {
-        ErrorUtils.raiseAppError(ERRORS.USER.TIMEZONE_UPDATE_FAILED, error);
-      }
-    })();
+    const defaultTimezone =
+      timezone.selected ?? CONST.DEFAULT_TIME_ZONE.selected;
+    UserData.updateAutomaticTimezone({
+      automatic: isAutomatic,
+      selected:
+        isAutomatic && !isEmptyObject(currentTimezone)
+          ? currentTimezone
+          : defaultTimezone,
+    });
   };
 
   return (

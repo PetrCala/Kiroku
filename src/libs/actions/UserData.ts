@@ -1,32 +1,16 @@
 // TODO this module should hold API actions related to user data
-// import type {OnyxEntry, OnyxUpdate} from 'react-native-onyx';
-// import Onyx from 'react-native-onyx';
-// import * as API from '@libs/API';
-import type {} from // OpenPublicProfilePageParams,
-// UpdateAutomaticTimezoneParams,
-// UpdateDateOfBirthParams,
-// UpdateHomeAddressParams,
-// UpdateLegalNameParams,
-// UpdateSelectedTimezoneParams,
-// UpdateUserAvatarParams,
-'@libs/API/parameters';
-import {getFirebaseAuth} from '@libs/Firebase/FirebaseApp';
-// import {READ_COMMANDS, WRITE_COMMANDS} from '@libs/API/types';
-// // import type {CustomRNImageManipulatorResult} from '@libs/cropOrRotateImage/types';
-import DateUtils from '@libs/DateUtils';
-// import Navigation from '@libs/Navigation/Navigation';
-// import * as UserDataUtils from '@libs/UserDataUtils';
-// import * as UserUtils from '@libs/UserUtils';
-// import type {Country} from '@src/CONST';
-// import CONST from '@src/CONST';
-// import ONYXKEYS from '@src/ONYXKEYS';
-// import ROUTES from '@src/ROUTES';
-// import type {DateOfBirthForm} from '@src/types/form';
-// import type {UserData, UserDataList} from '@src/types/onyx';
-// import type {UserID} from '@src/types/onyx/OnyxCommon';
-import type {Timezone} from '@src/types/onyx/UserData';
 import Onyx from 'react-native-onyx';
+import type {OnyxUpdate} from 'react-native-onyx';
+import * as API from '@libs/API';
+import {WRITE_COMMANDS} from '@libs/API/types';
+import type {
+  UpdateAutomaticTimezoneParams,
+  UpdateSelectedTimezoneParams,
+} from '@libs/API/parameters';
+import DateUtils from '@libs/DateUtils';
+import {getFirebaseAuth} from '@libs/Firebase/FirebaseApp';
 import ONYXKEYS from '@src/ONYXKEYS';
+import type {SelectedTimezone, Timezone} from '@src/types/onyx/UserData';
 
 // let currentUserEmail = '';
 // let currentUserID = '';
@@ -159,15 +143,32 @@ import ONYXKEYS from '@src/ONYXKEYS';
 // }
 
 /**
- * Updates timezone's 'automatic' setting, and updates
- * selected timezone if set to automatically update.
+ * Build the optimistic Onyx update mirroring the server's `onyxData` for a
+ * timezone write — a MERGE of the full `{selected, automatic}` object onto the
+ * current user's `userDataList` entry.
+ */
+function timezoneOptimisticData(
+  currentUserID: string,
+  timezone: Timezone,
+): OnyxUpdate[] {
+  return [
+    {
+      onyxMethod: Onyx.METHOD.MERGE,
+      key: ONYXKEYS.USER_DATA_LIST,
+      value: {
+        [currentUserID]: {timezone},
+      },
+    },
+  ];
+}
+
+/**
+ * Persist the user's timezone via the kiroku-api preferences endpoint,
+ * normalizing deprecated IANA names first. The server replaces
+ * `users/$uid/timezone` with the object sent, so callers MUST pass the complete
+ * `{selected, automatic}` — a partial write would drop the other field.
  */
 function updateAutomaticTimezone(timezone: Timezone) {
-  // TODO enable this
-  // if (Session.isAnonymousUser()) {
-  //   return;
-  // }
-  // Safe to call getFirebaseAuth() here - actions are called after app initialization
   const auth = getFirebaseAuth();
   const currentUserID = auth.currentUser?.uid;
 
@@ -175,65 +176,41 @@ function updateAutomaticTimezone(timezone: Timezone) {
     return;
   }
 
-  const formatedTimezone = DateUtils.formatToSupportedTimezone(timezone);
-  // const parameters: UpdateAutomaticTimezoneParams = {
-  //   timezone: JSON.stringify(formatedTimezone),
-  // };
+  const formattedTimezone = DateUtils.formatToSupportedTimezone(timezone);
+  const parameters: UpdateAutomaticTimezoneParams = {
+    timezone: formattedTimezone,
+  };
 
-  Onyx.merge(ONYXKEYS.USER_DATA_LIST, {
-    [currentUserID]: {
-      timezone: formatedTimezone,
-    },
+  API.write(WRITE_COMMANDS.UPDATE_AUTOMATIC_TIMEZONE, parameters, {
+    optimisticData: timezoneOptimisticData(currentUserID, formattedTimezone),
   });
-
-  // TODO enable this
-  // API.write(WRITE_COMMANDS.UPDATE_AUTOMATIC_TIMEZONE, parameters, {
-  //   optimisticData: [
-  //     {
-  //       onyxMethod: Onyx.METHOD.MERGE,
-  //       key: ONYXKEYS.USER_DATA_LIST,
-  //       value: {
-  //         [currentUserID]: {
-  //           timezone: formatedTimezone,
-  //         },
-  //       },
-  //     },
-  //   ],
-  // });
 }
 
-// /**
-//  * Updates user's 'selected' timezone, then navigates to the
-//  * initial Timezone page.
-//  */
-// function updateSelectedTimezone(selectedTimezone: SelectedTimezone) {
-//   const timezone: Timezone = {
-//     selected: selectedTimezone,
-//   };
+/**
+ * Persist a manually selected timezone. Selecting a zone implies turning the
+ * automatic setting off, so the full `{selected, automatic: false}` object is
+ * written.
+ */
+function saveSelectedTimezone(selectedTimezone: SelectedTimezone) {
+  const auth = getFirebaseAuth();
+  const currentUserID = auth.currentUser?.uid;
 
-//   const parameters: UpdateSelectedTimezoneParams = {
-//     timezone: JSON.stringify(timezone),
-//   };
+  if (!currentUserID) {
+    return;
+  }
 
-//   if (currentUserID) {
-//     API.write(WRITE_COMMANDS.UPDATE_SELECTED_TIMEZONE, parameters, {
-//       optimisticData: [
-//         {
-//           onyxMethod: Onyx.METHOD.MERGE,
-//           key: ONYXKEYS.USER_DATA_LIST,
-//           value: {
-//             [currentUserID]: {
-//               timezone,
-//             },
-//           },
-//         },
-//       ],
-//     });
-//   }
+  const formattedTimezone = DateUtils.formatToSupportedTimezone({
+    selected: selectedTimezone,
+    automatic: false,
+  });
+  const parameters: UpdateSelectedTimezoneParams = {
+    timezone: formattedTimezone,
+  };
 
-//   //   Navigation.goBack(ROUTES.SETTINGS_TIMEZONE); // TODO uncomment this
-//   Navigation.goBack(ROUTES.HOME);
-// }
+  API.write(WRITE_COMMANDS.UPDATE_SELECTED_TIMEZONE, parameters, {
+    optimisticData: timezoneOptimisticData(currentUserID, formattedTimezone),
+  });
+}
 
 // /**
 //  * Fetches public profile info about a given user.
@@ -419,16 +396,4 @@ function updateAutomaticTimezone(timezone: Timezone) {
 //   });
 // }
 
-export {
-  // clearAvatarErrors,
-  // deleteAvatar,
-  // openPublicProfilePage,
-  // updateAddress,
-  // eslint-disable-next-line import/prefer-default-export
-  updateAutomaticTimezone,
-  // updateAvatar,
-  // updateDateOfBirth,
-  // updateDisplayName,
-  // updateLegalName,
-  // updateSelectedTimezone,
-};
+export {updateAutomaticTimezone, saveSelectedTimezone};
