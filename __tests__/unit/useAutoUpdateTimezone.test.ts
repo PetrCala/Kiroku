@@ -56,9 +56,7 @@ function setStoredTimezone(timezone?: Timezone, isLoaded = true): void {
   const currentUserData = isLoaded
     ? {userID: 'uid-A', ...(timezone ? {timezone} : {})}
     : {};
-  mockedUseCurrentUserData.mockReturnValue(
-    currentUserData as unknown as ReturnType<typeof useCurrentUserData>,
-  );
+  mockedUseCurrentUserData.mockReturnValue(currentUserData);
 }
 
 describe('useAutoUpdateTimezone', () => {
