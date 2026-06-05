@@ -9,16 +9,11 @@ function HomeHeaderSkeleton() {
   const styles = useThemeStyles();
   const avatarSize = variables.avatarSizeMedium;
   return (
-    <View
-      style={[
-        styles.headerBar,
-        styles.borderBottom,
-        styles.flexRow,
-        styles.alignItemsCenter,
-        styles.ph2,
-      ]}>
-      <Skeleton circle height={avatarSize} />
-      <Skeleton width={140} height={16} style={styles.ml3} />
+    <View style={[styles.headerBar, styles.borderBottom, styles.ph2]}>
+      <View style={[styles.flexRow, styles.alignItemsCenter]}>
+        <Skeleton circle height={avatarSize} />
+        <Skeleton width={140} height={16} style={styles.ml3} />
+      </View>
     </View>
   );
 }
