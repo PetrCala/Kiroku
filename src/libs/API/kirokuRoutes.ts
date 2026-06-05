@@ -1,5 +1,9 @@
 import type {RequestType} from '@src/types/onyx/Request';
-import {SIDE_EFFECT_REQUEST_COMMANDS, WRITE_COMMANDS} from './types';
+import {
+  READ_COMMANDS,
+  SIDE_EFFECT_REQUEST_COMMANDS,
+  WRITE_COMMANDS,
+} from './types';
 
 /**
  * kiroku-api is a per-route REST surface (e.g. `GET /v1/app/open`,
@@ -39,6 +43,13 @@ const KIROKU_ROUTES: Record<string, KirokuRoute> = {
       from: Number(data.updateIDFrom ?? 0),
       to: Number(data.updateIDTo ?? 0),
     }),
+  },
+  // Friend prefix search. The server tokenizes `q` and prefix-matches the
+  // `nickname_to_id` index; matches ride back in the response's `searchResults`.
+  [READ_COMMANDS.SEARCH_USERS]: {
+    method: 'get',
+    path: '/v1/users/search',
+    toQuery: data => ({q: typeof data.q === 'string' ? data.q : ''}),
   },
   [WRITE_COMMANDS.PROVISION_USER]: {
     method: 'post',
