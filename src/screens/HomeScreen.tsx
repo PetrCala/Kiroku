@@ -10,6 +10,7 @@ import {
 } from '@libs/DataHandling';
 import {useUserConnection} from '@context/global/UserConnectionContext';
 import UserOffline from '@components/UserOfflineModal';
+import {syncUserStatus} from '@userActions/User';
 import {useFirebase} from '@context/global/FirebaseContext';
 import ProfileImage from '@components/ProfileImage';
 import {SupporterBadgeForUser} from '@components/SupporterBadge';
@@ -32,8 +33,6 @@ import FullScreenLoadingIndicator from '@components/FullscreenLoadingIndicator';
 import * as DSUtils from '@libs/DrinkingSessionUtils';
 import * as DS from '@userActions/DrinkingSession';
 import * as App from '@userActions/App';
-import * as API from '@libs/API';
-import {WRITE_COMMANDS} from '@libs/API/types';
 import * as Session from '@userActions/Session';
 import Timing from '@userActions/Timing';
 import ScrollView from '@components/ScrollView';
@@ -155,7 +154,7 @@ function HomeScreen({route}: HomeScreenProps) {
         return;
       }
 
-      API.write(WRITE_COMMANDS.SYNC_USER_STATUS, {});
+      syncUserStatus();
     }, [user, userData, preferences]),
   );
 

@@ -705,7 +705,6 @@
 "src/components/SelectionList/types.ts"	"@typescript-eslint/no-duplicate-type-constituents"	1
 "src/components/Skeletons/ItemListSkeletonView.tsx"	"rulesdir/prefer-narrow-hook-dependencies"	2
 "src/components/StartSessionButtonAndPopover.tsx"	"react-hooks/set-state-in-effect"	1
-"src/components/StartSessionButtonAndPopover.tsx"	"rulesdir/prefer-narrow-hook-dependencies"	1
 "src/components/Switch.tsx"	"react-hooks/refs"	1
 "src/components/TermsScreenContent.tsx"	"rulesdir/prefer-narrow-hook-dependencies"	1
 "src/components/TextInput/BaseTextInput/index.native.tsx"	"react-hooks/refs"	5
