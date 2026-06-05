@@ -31,7 +31,7 @@ type DisplayNameScreenProps = StackScreenProps<
 function DisplayNameScreen({}: DisplayNameScreenProps) {
   const styles = useThemeStyles();
   const {translate} = useLocalize();
-  const {db, auth} = useFirebase();
+  const {auth} = useFirebase();
   const [loadingText] = useOnyx(ONYXKEYS.APP_LOADING_TEXT);
   const userData = useCurrentUserData();
   const currentDisplayName = userData?.profile?.display_name ?? '';
@@ -47,7 +47,7 @@ function DisplayNameScreen({}: DisplayNameScreenProps) {
       }
       setIsSaving(true);
       try {
-        await Onboarding.setDisplayName(db, auth.currentUser, values.username);
+        await Onboarding.setDisplayName(auth.currentUser, values.username);
         await Onboarding.completeOnboarding();
         Onboarding.navigateAfterOnboarding();
       } catch (error) {
