@@ -778,6 +778,7 @@ const styles = (theme: ThemeColors) =>
     },
 
     statsRangeNavigatorLabelPressable: {
+      flexDirection: 'row',
       paddingHorizontal: 8,
       paddingVertical: 4,
       alignItems: 'center',
