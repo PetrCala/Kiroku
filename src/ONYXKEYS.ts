@@ -67,16 +67,9 @@ const ONYXKEYS = {
   /** Indicates whether an update is available and ready to be installed. */
   UPDATE_AVAILABLE: 'updateAvailable',
 
-  //   /** Indicates that a request to join a screen share with a GuidesPlus agent was received */
-  //   SCREEN_SHARE_REQUEST: 'screenShareRequest',
-
   /** Saves the current country code which is displayed when the user types a phone number without
    *  an international code */
   COUNTRY_CODE: 'countryCode',
-
-  //   /**  The 'country' field in this code represents the return country based on the user's IP address.
-  //    * It is expected to provide a two-letter country code such as US for United States, and so on. */
-  //   COUNTRY: 'country',
 
   /** Contains all the users settings for the Settings page and sub pages */
   USER: 'user',
@@ -86,8 +79,6 @@ const ONYXKEYS = {
 
   //   /** Information about the current session (authToken, userID, email, loading, error) */
   SESSION: 'session',
-  //   STASHED_SESSION: 'stashedSession',
-  // BETAS: 'betas',
 
   //   /** Indicates which locale should be used */
   NVP_PREFERRED_LOCALE: 'nvp_preferredLocale',
@@ -179,9 +170,6 @@ const ONYXKEYS = {
   /** Stores the route to open after changing app permission from settings */
   LAST_ROUTE: 'lastRoute',
 
-  //   // Stores the recently used report fields
-  //   RECENTLY_USED_REPORT_FIELDS: 'recentlyUsedReportFields',
-
   /** Indicates whether an forced upgrade is required */
   UPDATE_REQUIRED: 'updateRequired',
 
@@ -214,10 +202,6 @@ const ONYXKEYS = {
      * `/user_session_locations/$uid/$sessionId`.
      */
     SESSION_LOCATIONS: 'sessionLocations_',
-    //     POLICY: 'policy_',
-    //     POLICY_TAGS: 'policyTags_',
-    //     POLICY_RECENTLY_USED_TAGS: 'nvp_recentlyUsedTags_',
-    //     REPORT: 'report_',
   },
 
   //   /** List of Form ids */
@@ -226,18 +210,12 @@ const ONYXKEYS = {
     AUTH_FORM_DRAFT: 'authFormDraft',
     PICK_USERNAME_FORM: 'pickUsernameForm',
     PICK_USERNAME_FORM_DRAFT: 'pickUsernameFormDraft',
-    // ADD_DEBIT_CARD_FORM: 'addDebitCardForm',
     CLOSE_ACCOUNT_FORM: 'closeAccount',
     CLOSE_ACCOUNT_FORM_DRAFT: 'closeAccountDraft',
-    //     PROFILE_SETTINGS_FORM: 'profileSettingsForm',
-    //     PROFILE_SETTINGS_FORM_DRAFT: 'profileSettingsFormDraft',
     DISPLAY_NAME_FORM: 'displayNameForm',
     DISPLAY_NAME_FORM_DRAFT: 'displayNameFormDraft',
     USER_NAME_FORM: 'userNameForm',
     USER_NAME_FORM_DRAFT: 'userNameFormDraft',
-    //     ONBOARDING_USER_DATA_FORM: 'onboardingUserDataForm',
-    //     ONBOARDING_USER_DATA_FORM_DRAFT:
-    //       'onboardingUserDataFormDraft',
     LEGAL_NAME_FORM: 'legalNameForm',
     LEGAL_NAME_FORM_DRAFT: 'legalNameFormDraft',
     DATE_OF_BIRTH_FORM: 'dateOfBirthForm',
@@ -263,19 +241,10 @@ type OnyxFormValuesMapping = {
   [ONYXKEYS.FORMS.AUTH_FORM]: FormTypes.AuthForm;
   [ONYXKEYS.FORMS.PICK_USERNAME_FORM]: FormTypes.PickUsernameForm;
   [ONYXKEYS.FORMS.CLOSE_ACCOUNT_FORM]: FormTypes.CloseAccountForm;
-  //   [ONYXKEYS.FORMS.PROFILE_SETTINGS_FORM]: FormTypes.ProfileSettingsForm;
   [ONYXKEYS.FORMS.DISPLAY_NAME_FORM]: FormTypes.DisplayNameForm;
   [ONYXKEYS.FORMS.USER_NAME_FORM]: FormTypes.UserNameForm;
   [ONYXKEYS.FORMS.LEGAL_NAME_FORM]: FormTypes.LegalNameForm;
   [ONYXKEYS.FORMS.DATE_OF_BIRTH_FORM]: FormTypes.DateOfBirthForm;
-  // [ONYXKEYS.FORMS.HOME_ADDRESS_FORM]: FormTypes.HomeAddressForm;
-  //   [ONYXKEYS.FORMS.EXIT_SURVEY_REASON_FORM]: FormTypes.ExitSurveyReasonForm;
-  //   [ONYXKEYS.FORMS.EXIT_SURVEY_RESPONSE_FORM]: FormTypes.ExitSurveyResponseForm;
-  //   [ONYXKEYS.FORMS
-  //     .SETTINGS_STATUS_CLEAR_DATE_FORM]: FormTypes.SettingsStatusClearDateForm;
-  //   [ONYXKEYS.FORMS
-  //     .SETTINGS_STATUS_SET_CLEAR_AFTER_FORM]: FormTypes.SettingsStatusSetClearAfterForm;
-  //   [ONYXKEYS.FORMS.PRIVATE_NOTES_FORM]: FormTypes.PrivateNotesForm;
   [ONYXKEYS.FORMS.EMAIL_FORM]: FormTypes.EmailForm;
   [ONYXKEYS.FORMS.FORGOT_PASSWORD_FORM]: FormTypes.ForgotPasswordForm;
   [ONYXKEYS.FORMS.PASSWORD_FORM]: FormTypes.PasswordForm;
@@ -296,18 +265,11 @@ type OnyxCollectionValuesMapping = {
   [ONYXKEYS.COLLECTION.BUG]: OnyxTypes.Bug;
   [ONYXKEYS.COLLECTION.SESSIONS_CALENDAR_MONTHS_BY_USER_ID]: number;
   [ONYXKEYS.COLLECTION.SESSION_LOCATIONS]: OnyxTypes.SessionLocations;
-  //   [ONYXKEYS.COLLECTION.POLICY]: OnyxTypes.Policy;
-  //   [ONYXKEYS.COLLECTION.POLICY_DRAFTS]: OnyxTypes.Policy;
-  //     .POLICY_RECENTLY_USED_CATEGORIES]: OnyxTypes.RecentlyUsedCategories;
-  //   [ONYXKEYS.COLLECTION.DEPRECATED_POLICY_MEMBER_LIST]: OnyxTypes.PolicyMembers;
 };
 
 type OnyxValuesMapping = {
   [ONYXKEYS.NVP_ONBOARDING]: OnyxTypes.OnboardingData | [];
   [ONYXKEYS.NVP_TERMS_ACCEPTED_VERSION]: number;
-  //   [ONYXKEYS.ACCOUNT_MANAGER_REPORT_ID]: string;
-  //   [ONYXKEYS.NVP_IS_FIRST_TIME_NEW_EXPENSIFY_USER]: boolean;
-  //   [ONYXKEYS.ACTIVE_CLIENTS]: string[];
   [ONYXKEYS.DEVICE_ID]: string;
   [ONYXKEYS.IS_SIDEBAR_LOADED]: boolean;
   [ONYXKEYS.PERSISTED_REQUESTS]: OnyxTypes.Request[];
@@ -319,15 +281,11 @@ type OnyxValuesMapping = {
   [ONYXKEYS.START_SESSION_GLOBAL_CREATE]: OnyxTypes.StartSession;
   [ONYXKEYS.MODAL]: OnyxTypes.Modal;
   [ONYXKEYS.NETWORK]: OnyxTypes.Network;
-  //   [ONYXKEYS.NEW_GROUP_CHAT_DRAFT]: OnyxTypes.NewGroupChatDraft;
-  //   [ONYXKEYS.CUSTOM_STATUS_DRAFT]: OnyxTypes.CustomStatusDraft;
-  //   [ONYXKEYS.INPUT_FOCUSED]: boolean;
   [ONYXKEYS.USER_DATA_LIST]: OnyxTypes.UserDataList;
   [ONYXKEYS.USER_PRIVATE_DATA]: OnyxTypes.UserPrivateData;
   [ONYXKEYS.USER_DATA_METADATA]: Record<string, OnyxTypes.UserDataMetadata>;
   [ONYXKEYS.UPDATE_AVAILABLE]: boolean;
   [ONYXKEYS.COUNTRY_CODE]: number;
-  //   [ONYXKEYS.COUNTRY]: string;
   [ONYXKEYS.USER]: OnyxTypes.User;
   [ONYXKEYS.USER_LOCATION]: OnyxTypes.UserLocation;
   [ONYXKEYS.SESSION]: OnyxTypes.Session;
@@ -341,8 +299,6 @@ type OnyxValuesMapping = {
   [ONYXKEYS.SESSIONS_CALENDAR_MONTHS_LOADED]: number;
   [ONYXKEYS.CACHED_DRINKING_SESSIONS]: OnyxTypes.UserDrinkingSessionsList;
   [ONYXKEYS.APP_LOADING_TEXT]: string;
-  //   [ONYXKEYS.IS_TEST_TOOLS_MODAL_OPEN]: boolean;
-  //   [ONYXKEYS.APP_PROFILING_IN_PROGRESS]: boolean;
   [ONYXKEYS.IS_LOADING_APP]: boolean;
   [ONYXKEYS.IS_TEST_TOOLS_MODAL_OPEN]: boolean;
   [ONYXKEYS.SHOULD_SHOW_COMPOSE_INPUT]: boolean;

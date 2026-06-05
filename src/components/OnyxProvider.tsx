@@ -9,40 +9,9 @@ const [NetworkProvider, NetworkContext] = createOnyxContext(ONYXKEYS.NETWORK);
 const [UserDataProvider, , useUserData] = createOnyxContext(
   ONYXKEYS.USER_DATA_LIST,
 );
-// const [withCurrentDate, CurrentDateProvider] = createOnyxContext(
-//   ONYXKEYS.CURRENT_DATE,
-// );
-// const [
-//   withReportActionsDrafts,
-//   ReportActionsDraftsProvider,
-//   ,
-//   useReportActionsDrafts,
-// ] = createOnyxContext(ONYXKEYS.COLLECTION.REPORT_ACTIONS_DRAFTS);
-// const [
-//   withBlockedFromConcierge,
-//   BlockedFromConciergeProvider,
-//   ,
-//   useBlockedFromConcierge,
-// ] = createOnyxContext(ONYXKEYS.NVP_BLOCKED_FROM_CONCIERGE);
-// const [withBetas, BetasProvider, BetasContext, useBetas] = createOnyxContext(
-//   ONYXKEYS.BETAS,
-// );
-// const [withReportCommentDrafts, ReportCommentDraftsProvider] =
-//   createOnyxContext(ONYXKEYS.COLLECTION.REPORT_DRAFT_COMMENT);
 const [PreferredThemeProvider, PreferredThemeContext] = createOnyxContext(
   ONYXKEYS.PREFERRED_THEME,
 );
-// const [
-//   withFrequentlyUsedEmojis,
-//   FrequentlyUsedEmojisProvider,
-//   ,
-//   useFrequentlyUsedEmojis,
-// ] = createOnyxContext(ONYXKEYS.FREQUENTLY_USED_EMOJIS);
-// const [
-//   withPreferredEmojiSkinTone,
-//   PreferredEmojiSkinToneProvider,
-//   PreferredEmojiSkinToneContext,
-// ] = createOnyxContext(ONYXKEYS.PREFERRED_EMOJI_SKIN_TONE);
 const [SessionProvider, , useSession] = createOnyxContext(ONYXKEYS.SESSION);
 
 type OnyxProviderProps = {
@@ -56,14 +25,7 @@ function OnyxProvider(props: OnyxProviderProps) {
       components={[
         NetworkProvider,
         UserDataProvider,
-        // ReportActionsDraftsProvider,
-        // CurrentDateProvider,
-        // BlockedFromConciergeProvider,
-        // BetasProvider,
-        // ReportCommentDraftsProvider,
         PreferredThemeProvider,
-        // FrequentlyUsedEmojisProvider,
-        // PreferredEmojiSkinToneProvider,
         SessionProvider,
       ]}>
       {props.children}
