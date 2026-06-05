@@ -1,19 +1,23 @@
 import * as API from '@libs/API';
-import {WRITE_COMMANDS} from '@libs/API/types';
+import {SIDE_EFFECT_REQUEST_COMMANDS, WRITE_COMMANDS} from '@libs/API/types';
+import type {BugList, FeedbackList} from '@src/types/onyx';
 
 /**
- * Feedback + bug-report writes, cut over from direct Firebase RTDB writes to
- * kiroku-api `API.write` calls. The server owns
- * the generated id, `submit_time`, and `user_id` (derived from the caller's
- * Firebase ID token), so callers pass only the free-text body. The feedback/bug
- * collections are admin-only and fetched on demand, so the server route's
- * `onyxData` is empty — there is nothing to optimistically write.
+ * Feedback + bug-report writes and admin reads, cut over from direct Firebase
+ * RTDB access to kiroku-api calls. The server owns the generated id,
+ * `submit_time`, and `user_id` (derived from the caller's Firebase ID token), so
+ * callers pass only the free-text body. The feedback/bug collections are
+ * admin-only and fetched on demand, so the write routes' `onyxData` is empty —
+ * there is nothing to optimistically write.
  *
- * The admin removes are also empty-`onyxData` writes: the SeeFeedbackScreen /
- * SeeBugsScreen lists are still hydrated by a Firebase read listener (read
- * cutover is #809), so the server-side delete drives the list refresh and no
- * optimistic Onyx data is needed. Authority is the caller's admin claim,
- * enforced server-side.
+ * The admin removes are also empty-`onyxData` writes; authority is the caller's
+ * admin claim, enforced server-side.
+ *
+ * The admin reads (`getFeedbackList` / `getBugList`) back the SeeFeedbackScreen /
+ * SeeBugsScreen lists. The GET routes return the whole collection as plain JSON
+ * (not an `onyxData` envelope), so `makeRequestWithSideEffects` resolves with the
+ * list itself and the screens load it into local component state rather than
+ * Onyx. Part of the #809 realtime cutover.
  */
 
 function submitFeedback(text: string) {
@@ -32,4 +36,27 @@ function removeBug(bugId: string) {
   API.write(WRITE_COMMANDS.REMOVE_BUG, {bugId});
 }
 
-export {submitFeedback, reportABug, removeFeedback, removeBug};
+function getFeedbackList(): Promise<FeedbackList> {
+  // eslint-disable-next-line rulesdir/no-api-side-effects-method
+  return API.makeRequestWithSideEffects(
+    SIDE_EFFECT_REQUEST_COMMANDS.GET_FEEDBACK_LIST,
+    {},
+  ).then(response => (response as unknown as FeedbackList | undefined) ?? {});
+}
+
+function getBugList(): Promise<BugList> {
+  // eslint-disable-next-line rulesdir/no-api-side-effects-method
+  return API.makeRequestWithSideEffects(
+    SIDE_EFFECT_REQUEST_COMMANDS.GET_BUG_LIST,
+    {},
+  ).then(response => (response as unknown as BugList | undefined) ?? {});
+}
+
+export {
+  submitFeedback,
+  reportABug,
+  removeFeedback,
+  removeBug,
+  getFeedbackList,
+  getBugList,
+};
