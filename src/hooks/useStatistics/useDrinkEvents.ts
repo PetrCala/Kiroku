@@ -5,7 +5,6 @@ import {buildDrinkEvents} from '@libs/Statistics';
 import type {DrinkEvent, WeekStart} from '@libs/Statistics';
 import Statistics from '@libs/actions/Statistics';
 import {useFirebase} from '@context/global/FirebaseContext';
-import {useDatabaseData} from '@context/global/DatabaseDataContext';
 import useCurrentUserData from '@hooks/useCurrentUserData';
 import useCurrentUserPreferences from '@hooks/useCurrentUserPreferences';
 import CONST from '@src/CONST';
@@ -43,7 +42,7 @@ function resolveWeekStart(label: string | undefined): WeekStart {
  * materialised `DrinkEvent[]` for the requested users.
  *
  * Sessions live on Onyx (`CACHED_DRINKING_SESSIONS`); preferences and the
- * user's timezone flow through `DatabaseDataContext` / `useCurrentUserData`.
+ * user's timezone come from `useCurrentUserPreferences` / `useCurrentUserData`.
  * `buildDrinkEvents` walks every session × drink timestamp and is the
  * dominant Statistics-tab cost, so we defer the first pass past the
  * navigation transition with `InteractionManager.runAfterInteractions` —
@@ -57,7 +56,6 @@ function resolveWeekStart(label: string | undefined): WeekStart {
  */
 function useDrinkEvents(userIds?: UserID[]): UseDrinkEventsResult {
   const {auth} = useFirebase();
-  const {isFetchingOlderMonths} = useDatabaseData();
   const preferences = useCurrentUserPreferences();
   const userData = useCurrentUserData();
   const [allSessions, allSessionsMeta] = useOnyx(
@@ -124,11 +122,7 @@ function useDrinkEvents(userIds?: UserID[]): UseDrinkEventsResult {
     events = allEvents.filter(e => ids.has(e.userId));
   }
 
-  // Also "loading" while the session listener is widening its window to cover
-  // a newly-selected (older) range — every chart already renders a skeleton
-  // for `isLoading`, which avoids the messy stale-data-plus-empty-label state
-  // during a range-driven refetch.
-  const isLoading = !isHydrated || !isCompiled || isFetchingOlderMonths;
+  const isLoading = !isHydrated || !isCompiled;
 
   return {events, isLoading};
 }

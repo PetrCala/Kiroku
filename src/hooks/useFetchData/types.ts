@@ -1,5 +1,4 @@
 import type {
-  Config,
   DataVisibility,
   DrinkingSessionList,
   Preferences,
@@ -12,7 +11,6 @@ import type {StringKeyOf, ValueOf} from 'type-fest';
  * for general use (such as upon app start).
  */
 type FetchData = {
-  config?: Config;
   userStatusData?: UserStatus;
   drinkingSessionData?: DrinkingSessionList;
   preferences?: Preferences;

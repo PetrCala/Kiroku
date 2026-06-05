@@ -1,12 +1,4 @@
 import type {Database} from 'firebase/database';
-import {
-  get,
-  limitToFirst,
-  orderByChild,
-  query,
-  ref,
-  update,
-} from 'firebase/database';
 import type {
   DrinkingSession,
   DrinkingSessionId,
@@ -21,7 +13,6 @@ import * as DSUtils from '@libs/DrinkingSessionUtils';
 import type {UserID} from '@src/types/onyx/OnyxCommon';
 import type {User} from 'firebase/auth';
 import CONST from '@src/CONST';
-import type {FirebaseUpdates} from '@database/updates';
 import {generateDatabaseKey} from '@database/baseFunctions';
 import Onyx from 'react-native-onyx';
 import type {OnyxUpdate} from 'react-native-onyx';
@@ -38,9 +29,6 @@ import type {SelectedTimezone} from '@src/types/onyx/UserData';
 import type {ValueOf} from 'type-fest';
 import DBPATHS from '@src/DBPATHS';
 import {Alert, InteractionManager} from 'react-native';
-
-const userDrinkingSessionsRef = DBPATHS.USER_DRINKING_SESSIONS_USER_ID;
-const earliestSessionAtRef = DBPATHS.USERS_USER_ID_EARLIEST_SESSION_AT;
 
 let ongoingSessionData: DrinkingSession | undefined;
 Onyx.connect({
@@ -154,43 +142,6 @@ function sessionFinalizeOptimisticData(
     optimisticData.push(earliestPatch(uid, session.start_time));
   }
   return optimisticData;
-}
-
-/**
- * Query Firebase for the user's earliest remaining session and persist the
- * result on the user record. Called post-write from edit and delete paths,
- * where the previous earliest may have shifted and we can't infer the new
- * floor from the mutated session alone.
- */
-async function recomputeEarliestSessionAt(
-  db: Database,
-  userID: UserID,
-): Promise<void> {
-  const sessionsPath = userDrinkingSessionsRef.getRoute(userID);
-  const earliestQuery = query(
-    ref(db, sessionsPath),
-    orderByChild('start_time'),
-    limitToFirst(1),
-  );
-  const snapshot = await get(earliestQuery);
-  const val = snapshot.val() as Record<
-    DrinkingSessionId,
-    DrinkingSession
-  > | null;
-  const earliest = DSUtils.getEarliestSessionStartTime(val);
-
-  const current = userDataList?.[userID]?.earliest_session_at;
-  if (earliest === current) {
-    return;
-  }
-
-  const updates: FirebaseUpdates = {};
-  updates[earliestSessionAtRef.getRoute(userID)] = earliest ?? null;
-  await update(ref(db), updates);
-
-  await Onyx.merge(ONYXKEYS.USER_DATA_LIST, {
-    [userID]: {earliest_session_at: earliest ?? null},
-  });
 }
 
 // let editSessionData: DrinkingSession | undefined;
@@ -796,7 +747,6 @@ export {
   generateDrinkingSessionId,
   navigateToEditSessionScreen,
   navigateToOngoingSessionScreen,
-  recomputeEarliestSessionAt,
   removeDrinkingSessionData,
   saveDrinkingSessionData,
   setIsCreatingNewSession,

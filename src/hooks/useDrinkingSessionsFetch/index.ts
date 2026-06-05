@@ -86,9 +86,10 @@ function useDrinkingSessionsFetch(
     if (isWiden) {
       setIsFetchingOlderMonths(true);
     }
-    // Snap to the start of the earliest visible month — see useListenToData
-    // for the matching change; both fetchers must agree so the calendar's
-    // partial-month rendering bug is fixed on home and friend profiles alike.
+    // Snap to the start of the earliest visible month so every month inside the
+    // fetched window is loaded in full — without this, a sliding window that
+    // stops mid-month would leave the early days unfetched and misrender them as
+    // "before tracking started".
     const startAtMillis = startOfMonth(
       subMonths(new Date(), sessionsMonthsBack),
     ).getTime();
