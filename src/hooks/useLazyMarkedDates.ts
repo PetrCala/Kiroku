@@ -1,6 +1,7 @@
 import {useEffect, useMemo, useRef, useState} from 'react';
 import {toZonedTime} from 'date-fns-tz';
 import type {
+  DrinkingSession,
   DrinkingSessionArray,
   DrinkingSessionList,
   Preferences,
@@ -61,11 +62,18 @@ function toDateKey(date: Date): DateString {
  * @param userID  ID of the user whose sessions/preferences these are
  * @param sessions Session list to render
  * @param preferences Preferences driving thresholds and palette
+ * @param ongoingOverlay The current user's live (in-progress) session, when its
+ *   live drinks should be reflected on top of `sessions`. The caller is
+ *   responsible for gating this to the signed-in user (a friend's calendar must
+ *   never receive it). Live drinks live only in `ONGOING_SESSION_DATA`, not the
+ *   cached snapshot — see `DrinkingSession.flushLiveSessionPersist`. Overlaid as
+ *   a cheap single-day patch so the heavy index passes stay off the per-tap path.
  */
 function useLazyMarkedDates(
   userID: UserID,
   sessions: DrinkingSessionList,
   preferences: Preferences,
+  ongoingOverlay?: DrinkingSession,
 ) {
   const [monthsLoaded, monthsLoadedMeta] = useOnyx(
     `${ONYXKEYS.COLLECTION.SESSIONS_CALENDAR_MONTHS_BY_USER_ID}${userID}`,
@@ -222,6 +230,85 @@ function useLazyMarkedDates(
     [markedDatesMap],
   );
 
+  // Overlay the live (in-progress) session on top of the base outputs. The live
+  // buffer's drinks are deliberately kept out of `cachedDrinkingSessions` (the
+  // server skips the cache echo while `sessionIsLive && ongoing`), so without
+  // this the day tile / day-overview / month totals show the session flagged
+  // ongoing but with 0 units until it is finalized. Patches only the overlay
+  // session's single day — the O(N)/Intl index pass and the O(D) marking pass
+  // above stay keyed on `sessions`, so a drink tap costs one day's recompute
+  // plus shallow map clones, not a full re-index. When there is no live session
+  // the base outputs are returned untouched (refs stable, zero overhead).
+  const {
+    markedDates: overlaidMarkedDates,
+    unitsMap: overlaidUnitsMap,
+    monthlyTotalsMap: overlaidMonthlyTotalsMap,
+    sessionEntriesByDay: overlaidSessionEntriesByDay,
+  } = useMemo(() => {
+    if (!ongoingOverlay?.ongoing || !ongoingOverlay.id) {
+      return {markedDates, unitsMap, monthlyTotalsMap, sessionEntriesByDay};
+    }
+
+    const overlayId = ongoingOverlay.id;
+    const overlayDate = toZonedTime(
+      ongoingOverlay.start_time,
+      ongoingOverlay.timezone ?? defaultTimezone,
+    );
+    const dayKey = toDateKey(overlayDate);
+    const monthKey = dayKey.slice(0, 7);
+
+    // Replace the stale cached entry for this session (same id) with the live
+    // one, keeping any other sessions on that day; append if the cache has not
+    // seeded it yet.
+    const baseEntries = sessionEntriesByDay.get(dayKey) ?? [];
+    const liveEntry = {sessionId: overlayId, session: ongoingOverlay};
+    const patchedEntries = baseEntries.some(
+      entry => entry.sessionId === overlayId,
+    )
+      ? baseEntries.map(entry =>
+          entry.sessionId === overlayId ? liveEntry : entry,
+        )
+      : [...baseEntries, liveEntry];
+
+    const newMarking = sessionsToDayMarking(
+      patchedEntries.map(entry => entry.session),
+      effectivePreferences,
+    );
+    const newUnits = newMarking?.units ?? 0;
+    const oldUnits = unitsMap.get(dayKey) ?? 0;
+
+    const nextUnitsMap = new Map(unitsMap);
+    nextUnitsMap.set(dayKey, newUnits);
+
+    const nextMonthlyTotalsMap = new Map(monthlyTotalsMap);
+    nextMonthlyTotalsMap.set(
+      monthKey,
+      (monthlyTotalsMap.get(monthKey) ?? 0) - oldUnits + newUnits,
+    );
+
+    const nextSessionEntriesByDay = new Map(sessionEntriesByDay);
+    nextSessionEntriesByDay.set(dayKey, patchedEntries);
+
+    return {
+      markedDates: {
+        ...markedDates,
+        [dayKey]: newMarking ? newMarking.marking : {color: paletteGreen},
+      },
+      unitsMap: nextUnitsMap,
+      monthlyTotalsMap: nextMonthlyTotalsMap,
+      sessionEntriesByDay: nextSessionEntriesByDay,
+    };
+  }, [
+    ongoingOverlay,
+    markedDates,
+    unitsMap,
+    monthlyTotalsMap,
+    sessionEntriesByDay,
+    effectivePreferences,
+    paletteGreen,
+    defaultTimezone,
+  ]);
+
   // Mirror `loadedFromDate` into a ref for the orchestrator's arrow handler,
   // which needs a stable reference (preserves the existing public interface).
   // Only read in event handlers, so an effect-driven update is safe.
@@ -274,10 +361,10 @@ function useLazyMarkedDates(
   };
 
   return {
-    markedDates,
-    unitsMap,
-    monthlyTotalsMap,
-    sessionEntriesByDay,
+    markedDates: overlaidMarkedDates,
+    unitsMap: overlaidUnitsMap,
+    monthlyTotalsMap: overlaidMonthlyTotalsMap,
+    sessionEntriesByDay: overlaidSessionEntriesByDay,
     loadedFrom,
     loadedFromDate,
     loadMoreMonths,
