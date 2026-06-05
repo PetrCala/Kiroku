@@ -1672,7 +1672,11 @@ const styles = (theme: ThemeColors) =>
       alignItems: 'center',
       justifyContent: 'space-between',
       marginTop: 6,
-      paddingHorizontal: 20,
+      // Centre the 10px arrow placeholders on the real chevrons: the library
+      // pads the header by 10 and the arrow touchable by another 10, then our
+      // `ArrowIcon` adds `p1` (4) before its 20px glyph — so each arrow centre
+      // sits 34px from the edge (10+10+4+10). 34 − half the placeholder = 29.
+      paddingHorizontal: 29,
       minHeight: 48,
     },
 
