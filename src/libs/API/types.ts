@@ -13,6 +13,7 @@ const WRITE_COMMANDS = {
   HANDLE_RESTRICTED_EVENT: 'HandleRestrictedEvent',
   UPDATE_PRONOUNS: 'UpdatePronouns',
   UPDATE_DISPLAY_NAME: 'UpdateDisplayName',
+  SET_USERNAME: 'SetUsername',
   UPDATE_LEGAL_NAME: 'UpdateLegalName',
   UPDATE_DATE_OF_BIRTH: 'UpdateDateOfBirth',
   UPDATE_HOME_ADDRESS: 'UpdateHomeAddress',
@@ -63,6 +64,7 @@ type WriteCommandParameters = {
   [WRITE_COMMANDS.HANDLE_RESTRICTED_EVENT]: Parameters.HandleRestrictedEventParams;
   [WRITE_COMMANDS.UPDATE_PRONOUNS]: Parameters.UpdatePronounsParams;
   [WRITE_COMMANDS.UPDATE_DISPLAY_NAME]: Parameters.UpdateDisplayNameParams;
+  [WRITE_COMMANDS.SET_USERNAME]: Parameters.SetUsernameParams;
   [WRITE_COMMANDS.UPDATE_LEGAL_NAME]: Parameters.UpdateLegalNameParams;
   [WRITE_COMMANDS.UPDATE_DATE_OF_BIRTH]: Parameters.UpdateDateOfBirthParams;
   [WRITE_COMMANDS.UPDATE_HOME_ADDRESS]: Parameters.UpdateHomeAddressParams;

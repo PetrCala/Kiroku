@@ -47,12 +47,7 @@ function DisplayNameScreen({}: DisplayNameScreenProps) {
       }
       setIsSaving(true);
       try {
-        await Onboarding.setDisplayName(
-          db,
-          auth.currentUser,
-          currentDisplayName,
-          values.username,
-        );
+        await Onboarding.setDisplayName(db, auth.currentUser, values.username);
         await Onboarding.completeOnboarding();
         Onboarding.navigateAfterOnboarding();
       } catch (error) {

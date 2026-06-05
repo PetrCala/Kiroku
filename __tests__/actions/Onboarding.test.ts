@@ -166,15 +166,10 @@ describe('acceptTerms', () => {
 });
 
 describe('setDisplayName', () => {
-  test('delegates to setUsername (still Firebase) and writes last_visited_path via kiroku-api', async () => {
-    await Onboarding.setDisplayName(TEST_DB, TEST_USER, 'old', 'new');
+  test('delegates to setUsername (now via kiroku-api) and writes last_visited_path via kiroku-api', async () => {
+    await Onboarding.setDisplayName(TEST_DB, TEST_USER, 'new');
 
-    expect(mockedSetUsername).toHaveBeenCalledWith(
-      TEST_DB,
-      TEST_USER,
-      'old',
-      'new',
-    );
+    expect(mockedSetUsername).toHaveBeenCalledWith(TEST_USER, 'new');
 
     expect(mockedWrite).toHaveBeenCalledTimes(1);
     const [command, params, onyxData] = firstWriteCall();
@@ -197,7 +192,7 @@ describe('setDisplayName', () => {
 
   test('rejects when user is null and never writes', async () => {
     await expect(
-      Onboarding.setDisplayName(TEST_DB, null, 'old', 'new'),
+      Onboarding.setDisplayName(TEST_DB, null, 'new'),
     ).rejects.toThrow('common.error.userNull');
     expect(mockedSetUsername).not.toHaveBeenCalled();
     expect(mockedWrite).not.toHaveBeenCalled();
