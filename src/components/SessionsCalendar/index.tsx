@@ -8,18 +8,23 @@ import {
   startOfMonth,
   subMonths,
 } from 'date-fns';
-import {getPreviousMonth, getNextMonth} from '@libs/DataHandling';
+import {
+  dateStringToDate,
+  getPreviousMonth,
+  getNextMonth,
+} from '@libs/DataHandling';
 import * as DSUtils from '@libs/DrinkingSessionUtils';
 import {computeLoadTarget} from '@libs/SessionsCalendarUtils';
 import CONST from '@src/CONST';
 import Navigation from '@libs/Navigation/Navigation';
 import ROUTES from '@src/ROUTES';
 import type {DateString, Timestamp} from '@src/types/onyx/OnyxCommon';
+import {useFirebase} from '@context/global/FirebaseContext';
 import useLazyMarkedDates from '@hooks/useLazyMarkedDates';
+import useStartEditSessionForDate from '@hooks/useStartEditSessionForDate';
 import FlexibleLoadingIndicator from '@components/FlexibleLoadingIndicator';
 import {useOnyx} from 'react-native-onyx';
 import ONYXKEYS from '@src/ONYXKEYS';
-import {useFirebase} from '@context/global/FirebaseContext';
 import SessionsCalendarView from './SessionsCalendarView';
 import SessionsCalendarWeekListView from './SessionsCalendarWeekListView';
 import DayOverviewListView from './DayOverviewListView';
@@ -87,6 +92,7 @@ function SessionsCalendar({
     preferences,
     ongoingOverlay,
   );
+  const startEditSessionForDate = useStartEditSessionForDate();
   const [userDataList] = useOnyx(ONYXKEYS.USER_DATA_LIST);
   // Persisted floor for the viewed user — the canonical "started tracking on"
   // boundary. Falls back to the in-memory derivation when undefined, which
@@ -218,6 +224,20 @@ function SessionsCalendar({
     [mode, userID, onDayDrillDown],
   );
 
+  // Long-press a day → create a new edit session dated to that day and jump
+  // straight to the edit screen. Gated to self at the call site below, so the
+  // heavy-impact haptic (fired by GenericPressable when an onLongPress is
+  // present) never triggers on a friend's calendar.
+  const onDayLongPress = useCallback(
+    (dateData: DateData) => {
+      startEditSessionForDate(
+        dateStringToDate(dateData.dateString as DateString),
+      );
+    },
+    [startEditSessionForDate],
+  );
+  const dayLongPressHandler = isSelf ? onDayLongPress : undefined;
+
   if (isLoading) {
     return <FlexibleLoadingIndicator />;
   }
@@ -250,6 +270,7 @@ function SessionsCalendar({
         loadedFromDate={loadedFromDate}
         isFetchingOlderMonths={isFetchingOlderMonths}
         onDayPress={onDayPress}
+        onDayLongPress={dayLongPressHandler}
         onRequestOlder={handleRequestOlder}
         initialMonthYear={initialMonthYear}
         onInitialScrollReady={onInitialScrollReady}
@@ -266,6 +287,7 @@ function SessionsCalendar({
       visibleDate={visibleDate}
       minDate={minDate}
       onDayPress={onDayPress}
+      onDayLongPress={dayLongPressHandler}
       onLeftArrowPress={handleLeftArrowPress}
       onRightArrowPress={handleRightArrowPress}
       isFetchingOlderMonths={isFetchingOlderMonths}

@@ -14,6 +14,7 @@ type WeekRowProps = {
   markedDates: MarkedDates;
   unitsMap: Map<DateString, number>;
   onDayPress?: (day: DateData) => void;
+  onDayLongPress?: (day: DateData) => void;
 };
 
 function dayKeyToDateData(key: DateString): DateData {
@@ -38,7 +39,13 @@ function dayKeyToDateData(key: DateString): DateData {
  * draws for "today" is redundant chrome. The compact calendar still uses the
  * rim because today can sit anywhere in its fixed month grid.
  */
-function WeekRow({row, markedDates, unitsMap, onDayPress}: WeekRowProps) {
+function WeekRow({
+  row,
+  markedDates,
+  unitsMap,
+  onDayPress,
+  onDayLongPress,
+}: WeekRowProps) {
   const styles = useThemeStyles();
   return (
     <View style={styles.sessionsCalendarWeekRow}>
@@ -61,6 +68,7 @@ function WeekRow({row, markedDates, unitsMap, onDayPress}: WeekRowProps) {
               units={unitsMap.get(dayKey)}
               marking={marking}
               onPress={onDayPress}
+              onLongPress={onDayLongPress}
             />
           </View>
         );
