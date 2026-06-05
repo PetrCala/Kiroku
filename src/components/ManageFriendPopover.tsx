@@ -3,7 +3,7 @@ import {View} from 'react-native';
 import * as Friends from '@userActions/Friends';
 import * as Privacy from '@userActions/Privacy';
 import {useFirebase} from '@src/context/global/FirebaseContext';
-import {useDatabaseData} from '@context/global/DatabaseDataContext';
+import useCurrentUserDataVisibility from '@hooks/useCurrentUserDataVisibility';
 import useLocalize from '@hooks/useLocalize';
 import useThemeStyles from '@hooks/useThemeStyles';
 import Navigation from '@libs/Navigation/Navigation';
@@ -35,7 +35,7 @@ function ManageFriendPopover({
   const user = auth.currentUser;
   const styles = useThemeStyles();
   const {translate} = useLocalize();
-  const {dataVisibility} = useDatabaseData();
+  const dataVisibility = useCurrentUserDataVisibility();
   const fabRef = useRef<HTMLDivElement>(null);
   const {windowHeight} = useWindowDimensions();
   const [unfriendModalVisible, setUnfriendModalVisible] = React.useState(false);

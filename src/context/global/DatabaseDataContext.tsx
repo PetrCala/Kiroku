@@ -4,7 +4,6 @@ import React, {createContext, useContext, useEffect, useMemo} from 'react';
 import {useOnyx} from 'react-native-onyx';
 import type {
   Config,
-  DataVisibility,
   UnconfirmedDays,
   UserData,
   UserStatus,
@@ -19,9 +18,6 @@ type DatabaseDataContextType = {
   userStatusData?: UserStatus;
   unconfirmedDays?: UnconfirmedDays;
   userData?: UserData;
-  /** Owner-controlled visibility of the current user's drinking data to
-   *  friends. Absent ⇒ fully visible (grandfathered default). */
-  dataVisibility?: DataVisibility;
   /** Global app configuration, including the terms re-consent signal. */
   config?: Config;
   /** Legacy windowed-listener flag. Always `false` now that the signed-in
@@ -59,7 +55,6 @@ function DatabaseDataProvider({children}: DatabaseDataProviderProps) {
     'userStatusData',
     'unconfirmedDays',
     'userData',
-    'dataVisibility',
   ];
 
   const {data, isFetchingOlderMonths} = useListenToData(dataTypes, userID);
@@ -71,7 +66,6 @@ function DatabaseDataProvider({children}: DatabaseDataProviderProps) {
       userStatusData: data.userStatusData,
       unconfirmedDays: data.unconfirmedDays,
       userData: data.userData,
-      dataVisibility: data.dataVisibility,
       config: data.config,
       isFetchingOlderMonths,
     }),
