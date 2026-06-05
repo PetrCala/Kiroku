@@ -239,6 +239,13 @@ function SessionsCalendarView({
               accessibilityLabel={formatted}
               style={styles.sessionsCalendarHeaderLabel}>
               {monthText}
+              <Icon
+                src={KirokuIcons.DownArrow}
+                fill={theme.textSupporting}
+                width={12}
+                height={12}
+                additionalStyles={styles.sessionsCalendarHeaderCaret}
+              />
             </PressableWithFeedback>
           ) : (
             <View style={styles.sessionsCalendarHeaderLabel}>{monthText}</View>
@@ -260,11 +267,13 @@ function SessionsCalendarView({
       translate,
       styles.sessionsCalendarHeader,
       styles.sessionsCalendarHeaderLabel,
+      styles.sessionsCalendarHeaderCaret,
       styles.sessionsCalendarHeaderMonthText,
       styles.sessionsCalendarHeaderSideSlot,
       styles.sessionsCalendarHeaderRevert,
       theme.spinner,
       theme.textReversed,
+      theme.textSupporting,
     ],
   );
 
