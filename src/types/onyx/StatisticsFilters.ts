@@ -20,6 +20,13 @@ type StatisticsFilters = {
   /** Inclusive end date for `Custom`, in `yyyy-MM-dd`. Only meaningful when `preset === 'Custom'`. */
   customEnd?: string;
 
+  /**
+   * The pageable preset that was active when the user switched to `Custom`.
+   * Powers the "revert to previous preset" button. Only meaningful when
+   * `preset === 'Custom'`; cleared on any switch back to a preset.
+   */
+  presetBeforeCustom?: Exclude<RangePreset, 'Custom'>;
+
   /** Drink-type subset; empty array means "all drinks". Persisted as array (Onyx-friendly); hydrated into a Set at the provider boundary. */
   drinkTypeFilter: DrinkKey[];
 };

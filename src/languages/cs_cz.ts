@@ -1169,6 +1169,7 @@ export default {
         nextPeriod: 'Další období',
         rangeLabel: 'Vybraný rozsah dat, dvojitým klepnutím změníte',
         jumpToLatest: 'Přejít na nejnovější období',
+        revertToPreset: 'Vrátit se na předchozí rozsah',
       },
     },
   },
