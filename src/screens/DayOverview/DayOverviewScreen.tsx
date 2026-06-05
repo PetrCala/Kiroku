@@ -8,7 +8,6 @@ import type {DayOverviewNavigatorParamList} from '@libs/Navigation/types';
 import type SCREENS from '@src/SCREENS';
 import type {DateString} from '@src/types/onyx/OnyxCommon';
 import Navigation from '@libs/Navigation/Navigation';
-import {useDatabaseData} from '@context/global/DatabaseDataContext';
 import useStartEditSessionForDate from '@hooks/useStartEditSessionForDate';
 import useCurrentUserDrinkingSessions from '@hooks/useCurrentUserDrinkingSessions';
 import useCurrentUserPreferences from '@hooks/useCurrentUserPreferences';
@@ -82,7 +81,6 @@ function DayOverviewScreen({route}: DayOverviewScreenProps) {
   // data is fetched on demand (same self/other gating as
   // `SessionsCalendarScreen`). The non-needed hook is invoked with an empty
   // `userID`, which both hooks treat as a no-op.
-  const ownData = useDatabaseData();
   const ownPreferences = useCurrentUserPreferences();
   const currentUserSessions = useCurrentUserDrinkingSessions();
   const {data: friendFetchedData, isLoading: isFriendFetchLoading} =
@@ -95,9 +93,7 @@ function DayOverviewScreen({route}: DayOverviewScreenProps) {
 
   const drinkingSessionData = isSelf ? currentUserSessions : friendSessionData;
   const preferences = isSelf ? ownPreferences : friendFetchedData?.preferences;
-  const isFetchingOlderMonths = isSelf
-    ? ownData.isFetchingOlderMonths
-    : friendFetchingOlder;
+  const isFetchingOlderMonths = isSelf ? false : friendFetchingOlder;
   // Hold the list invisible (skeleton on top) until it has scrolled to the
   // focused day. With no `date` (shouldn't happen via the calendar) we never
   // wait.

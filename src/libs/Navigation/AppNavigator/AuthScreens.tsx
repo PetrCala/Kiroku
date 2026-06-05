@@ -23,7 +23,7 @@ import NAVIGATORS from '@src/NAVIGATORS';
 import ONYXKEYS from '@src/ONYXKEYS';
 // import ROUTES from '@src/ROUTES';
 import SCREENS from '@src/SCREENS';
-import {DatabaseDataProvider} from '@context/global/DatabaseDataContext';
+import CrashReportingSync from '@components/CrashReportingSync';
 import {isEmptyObject} from '@src/types/utils/EmptyObject';
 import {useSplashScreenStateContext} from '@context/global/SplashScreenStateContext';
 import type {SelectedTimezone, Timezone} from '@src/types/onyx/UserData';
@@ -415,9 +415,10 @@ AuthScreensContent.displayName = 'AuthScreensContent';
 
 function AuthScreens() {
   return (
-    <DatabaseDataProvider>
+    <>
+      <CrashReportingSync />
       <AuthScreensContent />
-    </DatabaseDataProvider>
+    </>
   );
 }
 

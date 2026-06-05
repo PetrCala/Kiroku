@@ -13,9 +13,8 @@ import type {Preferences, Theme} from '@src/types/onyx';
  * legacy writes targeted). Authority is server-side (the caller's Firebase ID
  * token), so callers pass only the changed fields.
  *
- * Reads are untouched: every preference field still hydrates through the Firebase
- * preferences listener (`DatabaseDataContext`), so this coexists with no behavior
- * change until the read cutover (#809).
+ * Reads now hydrate from Onyx (`app/open` + kiroku-api updates) rather than a
+ * Firebase preferences listener — the #809 read cutover is complete.
  */
 
 /**

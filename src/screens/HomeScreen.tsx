@@ -22,7 +22,6 @@ import type {StackScreenProps} from '@react-navigation/stack';
 import {useFocusEffect, useIsFocused} from '@react-navigation/native';
 import type {BottomTabNavigatorParamList} from '@libs/Navigation/types';
 import type SCREENS from '@src/SCREENS';
-import {useDatabaseData} from '@context/global/DatabaseDataContext';
 import type {StatData} from '@components/Items/StatOverview';
 import StatOverview from '@components/Items/StatOverview';
 import ScreenWrapper from '@components/ScreenWrapper';
@@ -67,7 +66,6 @@ function HomeScreen({route}: HomeScreenProps) {
   const [lastViewedCalendarDate] = useOnyx(
     ONYXKEYS.NVP_LAST_VIEWED_CALENDAR_DATE,
   );
-  const {isFetchingOlderMonths} = useDatabaseData();
   // `useCurrentUserData` returns {} (truthy) while loading; the readiness gates
   // and header below treat `undefined` as "not loaded", so map empty → undefined.
   const currentUserData = useCurrentUserData();
@@ -241,7 +239,6 @@ function HomeScreen({route}: HomeScreenProps) {
           onDateChange={onDateChange}
           drinkingSessionData={drinkingSessionData}
           preferences={preferences}
-          isFetchingOlderMonths={isFetchingOlderMonths}
         />
       </>
     );

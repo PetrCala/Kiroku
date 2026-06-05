@@ -156,9 +156,9 @@ function Kiroku() {
   // For authenticated users, wait for the user's RTDB data (userData +
   // preferences) to hydrate before hiding the splash, so the home screen
   // can paint real content immediately and OnboardingGuard can redirect
-  // without flicker. The signal is set from inside AuthScreens (which
-  // lives below DatabaseDataProvider) via `setIsAuthDataReady`. For
-  // unauthenticated users this condition is bypassed — the public stack
+  // without flicker. The signal is set from inside AuthScreens via
+  // `setIsAuthDataReady`. For unauthenticated users this condition is
+  // bypassed — the public stack
   // is ready as soon as nav + theme are ready.
   const isAuthScreenReady = !isAuthenticated || isAuthDataReady;
 

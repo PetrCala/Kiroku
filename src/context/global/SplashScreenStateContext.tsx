@@ -9,10 +9,10 @@ type SplashScreenStateContextType = {
     React.SetStateAction<ValueOf<typeof CONST.BOOT_SPLASH_STATE>>
   >;
   /**
-   * True once the authenticated subtree has hydrated the user's RTDB data
-   * (userData + preferences). Set from inside AuthScreens (which lives
-   * below DatabaseDataProvider) and consumed by Kiroku.tsx as one of the
-   * splash-hide preconditions for authenticated users. Has no meaning for
+   * True once the authenticated subtree has hydrated the user's data
+   * (userData + preferences). Set from inside AuthScreens and consumed by
+   * Kiroku.tsx as one of the splash-hide preconditions for authenticated
+   * users. Has no meaning for
    * the unauthenticated path — Kiroku gates on isAuthenticated separately.
    */
   isAuthDataReady: boolean;

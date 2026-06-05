@@ -8,7 +8,6 @@ import DayDrillDownSheet from '@components/SessionsCalendar/DayDrillDownSheet';
 import ScreenWrapper from '@components/ScreenWrapper';
 import HeaderWithBackButton from '@components/HeaderWithBackButton';
 import {useFirebase} from '@context/global/FirebaseContext';
-import {useDatabaseData} from '@context/global/DatabaseDataContext';
 import useFetchData from '@hooks/useFetchData';
 import useDrinkingSessionsFetch from '@hooks/useDrinkingSessionsFetch';
 import useCurrentUserDrinkingSessions from '@hooks/useCurrentUserDrinkingSessions';
@@ -57,7 +56,6 @@ function SessionsCalendarScreen({route}: SessionsCalendarScreenProps) {
   const {translate} = useLocalize();
   const styles = useThemeStyles();
 
-  const ownData = useDatabaseData();
   const ownPreferences = useCurrentUserPreferences();
   const currentUserSessions = useCurrentUserDrinkingSessions();
   const {data: friendFetchedData, isLoading: isFriendFetchLoading} =
@@ -74,9 +72,7 @@ function SessionsCalendarScreen({route}: SessionsCalendarScreenProps) {
   const preferences: Preferences | undefined = isSelf
     ? ownPreferences
     : friendFetchedData?.preferences;
-  const isFetchingOlderMonths = isSelf
-    ? ownData.isFetchingOlderMonths
-    : friendFetchingOlder;
+  const isFetchingOlderMonths = isSelf ? false : friendFetchingOlder;
   const isLoading = isSelf
     ? !preferences || drinkingSessionData === undefined
     : isFriendFetchLoading || isFriendSessionsLoading;

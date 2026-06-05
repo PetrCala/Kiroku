@@ -748,8 +748,6 @@ function isDifferentDay(
 
 /**
  * Earliest `start_time` across a session collection, or undefined if empty.
- * Shared with the Firebase-backed `recomputeEarliestSessionAt` so both the
- * in-memory derivation and the persisted floor agree on a single rule.
  */
 function getEarliestSessionStartTime(
   data:

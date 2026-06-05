@@ -312,11 +312,11 @@ function StatsContextProvider({children, now}: StatsContextProviderProps) {
     [range, comparison, nowSnapshot, customStart, customEnd, earliestSessionAt],
   );
 
-  // Widen the session listener's fetch window so Statistics reflect the whole
-  // selected range (and its comparison window), not just the months the
-  // calendar happened to lazy-load. Reuses the calendar's months-back lever
-  // (the global listener in DatabaseDataContext re-subscribes when it grows)
-  // and only ever widens.
+  // Widen the session fetch window so Statistics reflect the whole selected
+  // range (and its comparison window), not just the months the calendar
+  // happened to lazy-load. Reuses the calendar's months-back lever
+  // (`useDrinkingSessionsFetch` re-subscribes when it grows) and only ever
+  // widens.
   const loadStart = useMemo(() => {
     const rawStart =
       comparisonRange && comparisonRange.start < range.start

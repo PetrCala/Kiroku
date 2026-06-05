@@ -3,7 +3,6 @@
 import {act, renderHook} from '@testing-library/react-native';
 import {InteractionManager} from 'react-native';
 import {useOnyx} from 'react-native-onyx';
-import {useDatabaseData} from '@context/global/DatabaseDataContext';
 import {useFirebase} from '@context/global/FirebaseContext';
 import useCurrentUserData from '@hooks/useCurrentUserData';
 import useCurrentUserPreferences from '@hooks/useCurrentUserPreferences';
@@ -20,10 +19,6 @@ jest.mock('react-native-onyx', () => ({
 
 jest.mock('@context/global/FirebaseContext', () => ({
   useFirebase: jest.fn(),
-}));
-
-jest.mock('@context/global/DatabaseDataContext', () => ({
-  useDatabaseData: jest.fn(),
 }));
 
 jest.mock('@hooks/useCurrentUserData', () => ({
@@ -44,7 +39,6 @@ jest.mock('@libs/actions/Statistics', () => ({
 
 const mockedUseOnyx = jest.mocked(useOnyx);
 const mockedUseFirebase = jest.mocked(useFirebase);
-const mockedUseDatabaseData = jest.mocked(useDatabaseData);
 const mockedUseCurrentUserData = jest.mocked(useCurrentUserData);
 const mockedUseCurrentUserPreferences = jest.mocked(useCurrentUserPreferences);
 
@@ -91,9 +85,6 @@ function setContexts(
   userData: UserData | undefined = makeUserData(),
 ): void {
   mockedUseCurrentUserPreferences.mockReturnValue(preferences);
-  mockedUseDatabaseData.mockReturnValue({
-    isFetchingOlderMonths: false,
-  });
   mockedUseCurrentUserData.mockReturnValue(userData ?? {});
 }
 
@@ -247,9 +238,6 @@ describe('useDrinkEvents', () => {
 
   test('missing preferences still produces events (units default to 0)', () => {
     mockedUseCurrentUserPreferences.mockReturnValue(undefined);
-    mockedUseDatabaseData.mockReturnValue({
-      isFetchingOlderMonths: false,
-    });
     mockedUseCurrentUserData.mockReturnValue(makeUserData());
 
     const {result} = renderHook(() => useDrinkEvents(['u1']));

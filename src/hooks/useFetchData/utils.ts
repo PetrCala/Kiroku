@@ -10,9 +10,6 @@ function fetchDataKeyToDbPath(key: FetchDataKey, userID?: UserID) {
 
   let path;
   switch (key) {
-    case 'config':
-      path = DBPATHS.CONFIG;
-      break;
     case 'userStatusData':
       path = DBPATHS.USER_STATUS_USER_ID.getRoute(id);
       break;
