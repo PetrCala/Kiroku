@@ -58,22 +58,29 @@ function Backdrop({
     .duration(animationOutTiming)
     .reduceMotion(ReduceMotion.Never);
 
-  // The reveal opacity (0->1) lives on the Animated.View; the dim color and its
-  // target opacity live on a plain fill child, so the two compose to a
+  // The reveal opacity (0->1) lives on the inner Animated.View; the dim color and
+  // its target opacity live on a plain fill child, so the two compose to a
   // 0 -> backdropOpacity fade and the surface paints reliably.
   const {backgroundColor, ...frame} =
     StyleSheet.flatten([styles.modalBackdrop, style]) ?? {};
 
+  // The exiting (fadeOut) layout animation lives on the OUTER wrapper, which
+  // carries no opacity of its own; the reveal opacity (`animatedStyles`) lives on
+  // the inner view. Keeping the layout animation and the animated opacity on
+  // separate elements avoids Reanimated's "Property "opacity" may be overwritten
+  // by a layout animation" dev warning.
   const BackdropOverlay = (
-    <Animated.View style={[frame, animatedStyles]} exiting={Exiting}>
-      {customBackdrop ?? (
-        <View
-          style={[
-            StyleSheet.absoluteFill,
-            {backgroundColor, opacity: backdropOpacity},
-          ]}
-        />
-      )}
+    <Animated.View style={frame} exiting={Exiting}>
+      <Animated.View style={[StyleSheet.absoluteFill, animatedStyles]}>
+        {customBackdrop ?? (
+          <View
+            style={[
+              StyleSheet.absoluteFill,
+              {backgroundColor, opacity: backdropOpacity},
+            ]}
+          />
+        )}
+      </Animated.View>
     </Animated.View>
   );
 

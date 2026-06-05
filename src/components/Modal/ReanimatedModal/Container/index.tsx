@@ -92,6 +92,13 @@ function Container({
       .reduceMotion(ReduceMotion.Never);
   }, [animationOutTiming, onCloseCallBack, animationOut]);
 
+  // BOTTOM_DOCKED, CENTERED_SMALL and CONFIRM stay content-sized so the outer
+  // `style` (flex-end / center) can position the sheet; the others fill.
+  const fillContainer =
+    type !== CONST.MODAL.MODAL_TYPE.BOTTOM_DOCKED &&
+    type !== CONST.MODAL.MODAL_TYPE.CENTERED_SMALL &&
+    type !== CONST.MODAL.MODAL_TYPE.CONFIRM;
+
   return (
     <View
       // `flex1` fills the RN Modal's content area so each modal type's own
@@ -106,20 +113,22 @@ function Container({
         swipeThreshold={swipeThreshold}
         swipeDirection={swipeDirection}
         onSwipeComplete={onSwipeComplete}>
+        {/*
+          The outer wrapper carries ONLY the `exiting` layout animation; the open
+          transform/opacity (`animatedStyles`) lives on the inner view. Keeping the
+          layout animation and the animated style on separate elements avoids
+          Reanimated's "Property ... may be overwritten by a layout animation"
+          dev warning (the exiting Keyframe animates the same transform/opacity).
+          The wrapper keeps the sizing so the exiting transform's percentage and
+          the inner view's flex fill both resolve against the full container.
+        */}
         <Animated.View
-          style={[
-            styles.modalAnimatedContainer,
-            // BOTTOM_DOCKED, CENTERED_SMALL and CONFIRM stay content-sized so the
-            // outer `style` (flex-end / center) can position the sheet; the
-            // others fill.
-            type !== CONST.MODAL.MODAL_TYPE.BOTTOM_DOCKED &&
-              type !== CONST.MODAL.MODAL_TYPE.CENTERED_SMALL &&
-              type !== CONST.MODAL.MODAL_TYPE.CONFIRM &&
-              styles.flex1,
-            animatedStyles,
-          ]}
+          style={[styles.modalAnimatedContainer, fillContainer && styles.flex1]}
           exiting={Exiting}>
-          {props.children}
+          <Animated.View
+            style={[fillContainer && styles.flex1, animatedStyles]}>
+            {props.children}
+          </Animated.View>
         </Animated.View>
       </GestureHandler>
     </View>
