@@ -18,7 +18,9 @@ function orderUsersByPriority(
   userIDs: UserID[],
   usersPriority: UserPriorityList,
 ): string[] {
-  return userIDs.sort((a, b) => usersPriority[b] - usersPriority[a]);
+  // Copy before sorting — `Array.prototype.sort` mutates in place, and callers
+  // pass arrays they keep rendering from (the friend list / its subset).
+  return [...userIDs].sort((a, b) => usersPriority[b] - usersPriority[a]);
 }
 
 function calculateAllUsersPriority(

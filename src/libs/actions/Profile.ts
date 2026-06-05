@@ -13,12 +13,7 @@ import type {
   OpenPublicProfilePageParams,
 } from '@libs/API/parameters';
 import CONST from '@src/CONST';
-import type {
-  Profile,
-  ProfileList,
-  UserStatus,
-  UserStatusList,
-} from '@src/types/onyx';
+import type {Profile, ProfileList, UserStatusList} from '@src/types/onyx';
 import type Response from '@src/types/onyx/Response';
 import type UserData from '@src/types/onyx/UserData';
 import type {UserID} from '@src/types/onyx/OnyxCommon';
@@ -157,29 +152,47 @@ async function setSupporterFlagInList(
 }
 
 /**
- * Fetches the given users' presence + latest session via the batched
- * privacy-enforced kiroku-api read (`GET /v1/users/batch?fields=status`),
- * replacing the per-uid friend-status fan-out. The server gates each uid
- * (friends + visibility); a denied/hidden user simply yields no entry. Returns
- * the same `UserStatusList` shape the caller renders from.
+ * Fetches the given users' public profile AND privacy-gated status in ONE
+ * batched call (`GET /v1/users/batch?fields=profile,status`), replacing the two
+ * separate `fetchUserProfiles` + `fetchUserStatuses` round trips the friend list
+ * used to fire. The server resolves both field groups concurrently per uid and
+ * merges `userDataList[uid].{profile,is_supporter?,user_status}` in one patch, so
+ * the SupporterBadge + status render paths are hydrated without extra fetches.
+ * A user whose profile is missing (404) is omitted from `profiles`; a status the
+ * viewer may not see is `null` (silent eviction), exactly as the single-field
+ * readers behaved. Callers that need only one field keep using
+ * `fetchUserProfiles`.
  *
  * @param db Unused (retained for call-site compatibility); authority is the
  *   caller's Firebase ID token, attached by the API layer.
  * @param userIDs An array of user IDs.
- * @returns A promise that resolves to a UserStatusList object.
+ * @returns A promise resolving to the profile + status lists keyed by user ID.
  */
-async function fetchUserStatuses(
+async function fetchUsersData(
   db: Database,
   userIDs: UserID[],
-): Promise<UserStatusList> {
+): Promise<{profiles: ProfileList; statuses: UserStatusList}> {
   if (!db || !userIDs?.length) {
-    return {};
+    return {profiles: {}, statuses: {}};
   }
-  return fetchUsersBatch<UserStatus>(
+  const patches = await fetchUsersBatch<Partial<UserData>>(
     userIDs,
-    'status',
-    patch => patch?.user_status,
+    'profile,status',
+    patch => patch,
   );
+  const profiles: ProfileList = {};
+  const statuses: UserStatusList = {};
+  for (const [userID, patch] of Object.entries(patches)) {
+    if (patch.profile) {
+      profiles[userID] = patch.profile;
+    }
+    // Keep a `null` status (the server's silent eviction for a denied/hidden
+    // user) so callers see the same "no status" signal the old reader emitted.
+    if (patch.user_status !== undefined) {
+      statuses[userID] = patch.user_status;
+    }
+  }
+  return {profiles, statuses};
 }
 
 /**
@@ -260,7 +273,7 @@ function openFriendList(userID: UserID): Promise<void | Response> {
 
 export {
   fetchUserProfiles,
-  fetchUserStatuses,
+  fetchUsersData,
   openPublicProfile,
   openFriendList,
   setProfilePictureURL,
