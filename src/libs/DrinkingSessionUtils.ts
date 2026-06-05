@@ -619,6 +619,38 @@ function getSingleDayDrinkingSessions(
   return filteredSessions;
 }
 
+/** Find the most recent drinking session on a given day, i.e. the one with the
+ * latest `start_time`. Day membership respects each session's own timezone, the
+ * same as {@link getSingleDayDrinkingSessions}.
+ *
+ * @param date Date type object for whose day to look up the latest session
+ * @param sessions The drinking session list to search
+ * @returns The latest session paired with its id, or `undefined` when the day
+ *  has no sessions
+ */
+function getLatestDayDrinkingSession(
+  date: Date,
+  sessions: DrinkingSessionList | undefined,
+): {sessionId: DrinkingSessionId; session: DrinkingSession} | undefined {
+  const daySessions = getSingleDayDrinkingSessions(
+    date,
+    sessions,
+    false,
+  ) as DrinkingSessionList;
+
+  return Object.entries(daySessions).reduce<
+    {sessionId: DrinkingSessionId; session: DrinkingSession} | undefined
+  >((latest, [sessionId, session]) => {
+    if (
+      !latest ||
+      (session.start_time ?? 0) > (latest.session.start_time ?? 0)
+    ) {
+      return {sessionId, session};
+    }
+    return latest;
+  }, undefined);
+}
+
 /** Subset an array of drinking sessions to the current month only.
  *
  * @param date Date type object for whose month to subset the sessions to
@@ -888,6 +920,7 @@ export {
   getEarliestSessionStartTime,
   getEmptySession,
   getIconForSession,
+  getLatestDayDrinkingSession,
   getOngoingSessionId,
   getSessionAddDrinksOptions,
   getSessionRemoveDrinksOptions,

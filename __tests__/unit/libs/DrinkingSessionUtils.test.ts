@@ -309,6 +309,48 @@ describe('getSingleDayDrinkingSessions — buckets by each session timezone', ()
   });
 });
 
+describe('getLatestDayDrinkingSession — latest session on a day', () => {
+  it('returns the session with the latest start_time on that day', () => {
+    const sessions: DrinkingSessionList = {
+      early: {start_time: Date.UTC(2024, 0, 15, 8, 0), timezone: UTC},
+      late: {start_time: Date.UTC(2024, 0, 15, 20, 0), timezone: UTC},
+      mid: {start_time: Date.UTC(2024, 0, 15, 14, 0), timezone: UTC},
+    };
+    const latest = DSUtils.getLatestDayDrinkingSession(
+      viewDay(2024, 0, 15),
+      sessions,
+    );
+    expect(latest?.sessionId).toBe('late');
+  });
+
+  it('ignores sessions that belong to a different day', () => {
+    const sessions: DrinkingSessionList = {
+      prevDay: {start_time: Date.UTC(2024, 0, 14, 23, 0), timezone: UTC},
+      onDay: {start_time: Date.UTC(2024, 0, 15, 9, 0), timezone: UTC},
+    };
+    const latest = DSUtils.getLatestDayDrinkingSession(
+      viewDay(2024, 0, 15),
+      sessions,
+    );
+    expect(latest?.sessionId).toBe('onDay');
+  });
+
+  it('returns undefined when the day has no sessions', () => {
+    const sessions: DrinkingSessionList = {
+      other: {start_time: Date.UTC(2024, 0, 14, 9, 0), timezone: UTC},
+    };
+    expect(
+      DSUtils.getLatestDayDrinkingSession(viewDay(2024, 0, 15), sessions),
+    ).toBeUndefined();
+  });
+
+  it('returns undefined for undefined sessions', () => {
+    expect(
+      DSUtils.getLatestDayDrinkingSession(viewDay(2024, 0, 15), undefined),
+    ).toBeUndefined();
+  });
+});
+
 describe('getSingleMonthDrinkingSessions — buckets by each session timezone', () => {
   // 20:00 UTC on 2024-01-31 is 05:00 (Feb 1) in Tokyo but 12:00 (Jan 31) in LA.
   const monthEdgeInstant = Date.UTC(2024, 0, 31, 20, 0);

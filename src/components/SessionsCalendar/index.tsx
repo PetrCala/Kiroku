@@ -15,6 +15,7 @@ import {
   getNextMonth,
 } from '@libs/DataHandling';
 import * as DSUtils from '@libs/DrinkingSessionUtils';
+import * as DS from '@userActions/DrinkingSession';
 import {computeLoadTarget} from '@libs/SessionsCalendarUtils';
 import CONST from '@src/CONST';
 import Navigation from '@libs/Navigation/Navigation';
@@ -231,17 +232,27 @@ function SessionsCalendar({
     [mode, userID, onDayDrillDown],
   );
 
-  // Long-press a day → create a new edit session dated to that day and jump
-  // straight to the edit screen. Gated to self at the call site below, so the
-  // heavy-impact haptic (fired by GenericPressable when an onLongPress is
+  // Long-press a day → jump straight to the edit screen. If the day already has
+  // one or more sessions, open the latest of them for edit; otherwise create a
+  // new edit session dated to that day. Gated to self at the call site below, so
+  // the heavy-impact haptic (fired by GenericPressable when an onLongPress is
   // present) never triggers on a friend's calendar.
   const onDayLongPress = useCallback(
     (dateData: DateData) => {
-      startEditSessionForDate(
-        dateStringToDate(dateData.dateString as DateString),
+      const date = dateStringToDate(dateData.dateString as DateString);
+      const latest = DSUtils.getLatestDayDrinkingSession(
+        date,
+        drinkingSessionData ?? undefined,
       );
+      if (latest) {
+        DS.navigateToEditSessionScreen(latest.sessionId, latest.session).catch(
+          () => {},
+        );
+        return;
+      }
+      startEditSessionForDate(date);
     },
-    [startEditSessionForDate],
+    [drinkingSessionData, startEditSessionForDate],
   );
   const dayLongPressHandler = isSelf ? onDayLongPress : undefined;
 
