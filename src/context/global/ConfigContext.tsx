@@ -1,9 +1,9 @@
 // ConfigContext.tsx
 import type {ReactNode} from 'react';
 import React, {createContext, useContext, useMemo} from 'react';
+import {useOnyx} from 'react-native-onyx';
 import type {Config} from '@src/types/onyx';
-import type {FetchDataKeys} from '@hooks/useFetchData/types';
-import useListenToData from '@hooks/useListenToData';
+import ONYXKEYS from '@src/ONYXKEYS';
 
 type ConfigContextType = {
   config?: Config;
@@ -24,15 +24,15 @@ type ConfigProviderProps = {
 };
 
 function ConfigProvider({children}: ConfigProviderProps) {
-  const dataTypes: FetchDataKeys = ['config'];
-
-  const {data} = useListenToData(dataTypes);
+  // Global app config is hydrated from `app/open` (kiroku-api) and kept live via
+  // the public `config` Pusher broadcast (subscribed at boot in AuthScreens).
+  const [config] = useOnyx(ONYXKEYS.CONFIG);
 
   const value = useMemo(
     () => ({
-      config: data.config,
+      config,
     }),
-    [data],
+    [config],
   );
   return (
     <ConfigContext.Provider value={value}>{children}</ConfigContext.Provider>

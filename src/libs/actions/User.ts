@@ -2,6 +2,7 @@ import type {Database} from 'firebase/database';
 import {update, ref, get} from 'firebase/database';
 import type {
   AppSettings,
+  Config,
   FriendRequestList,
   NicknameToId,
   OnyxUpdatesFromServer,
@@ -911,8 +912,25 @@ function subscribeToUserEvents() {
   );
 }
 
+/**
+ * Subscribe to global app-config broadcasts. kiroku-api publishes the full
+ * `Config` object on the public `config` channel (event `configUpdate`). Config
+ * is global + last-write-wins, so we idempotently overwrite the Onyx key on each
+ * push rather than routing it through the per-user OnyxUpdates gap-detection
+ * pipeline (that's only for `private-user-<uid>`). `app/open` seeds the baseline;
+ * this keeps it live.
+ */
+function subscribeToConfigEvents() {
+  PusherUtils.subscribeToPublicChannelEvent<Config>(
+    CONST.PUSHER.CONFIG_CHANNEL,
+    CONST.PUSHER.CONFIG_UPDATE_EVENT,
+    config => Onyx.set(ONYXKEYS.CONFIG, config),
+  );
+}
+
 export {
   subscribeToUserEvents,
+  subscribeToConfigEvents,
   changeDisplayName,
   changeUserName,
   deleteUserData,

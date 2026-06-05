@@ -71,8 +71,45 @@ function subscribeToPrivateUserChannelEvent(
   ).catch(onSubscriptionFailed);
 }
 
+/**
+ * Abstraction around subscribing to a public Pusher channel event. Unlike
+ * `subscribeToPrivateUserChannelEvent`, the channel name carries no
+ * `private-`/`presence-` prefix, so Pusher subscribes without hitting the auth
+ * endpoint — used for global broadcasts (e.g. app config) that aren't scoped to
+ * a single user, hence there's no reconnect-callback coupling either.
+ */
+function subscribeToPublicChannelEvent<TEventData>(
+  channelName: string,
+  eventName: string,
+  onEvent: (eventData: TEventData) => void,
+) {
+  function onEventPush(eventData: TEventData) {
+    Log.info(
+      `[Pusher] Handled ${eventName} event on public channel ${channelName}`,
+      false,
+      eventData as Record<string, unknown>,
+    );
+    onEvent(eventData);
+  }
+
+  function onSubscriptionFailed(error: Error) {
+    Log.hmmm('[Pusher] Failed to subscribe to public channel', {
+      error,
+      channelName,
+      eventName,
+    });
+  }
+
+  Pusher.subscribe(
+    channelName,
+    eventName,
+    onEventPush as (data: unknown) => void,
+  ).catch(onSubscriptionFailed);
+}
+
 export default {
   subscribeToPrivateUserChannelEvent,
+  subscribeToPublicChannelEvent,
   subscribeToMultiEvent,
   triggerMultiEventHandler,
 };

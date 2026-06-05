@@ -231,6 +231,9 @@ function AuthScreensContent() {
       authEndpoint: `${ApiUtils.getKirokuApiRoot()}/v1/pusher/auth`,
     }).then(() => {
       User.subscribeToUserEvents();
+      // Global app config broadcasts on a public channel (no per-user auth), but
+      // co-locating the subscription here keeps all Pusher wiring at boot.
+      User.subscribeToConfigEvents();
     });
 
     // Hydrate the signed-in user's data and seed the realtime `lastUpdateID`

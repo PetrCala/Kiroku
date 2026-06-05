@@ -2,7 +2,7 @@ import React, {useCallback, useMemo} from 'react';
 import Modal from '@components/Modal';
 import SafeAreaConsumer from '@components/SafeAreaConsumer';
 import TermsScreenContent from '@components/TermsScreenContent';
-import {useDatabaseData} from '@context/global/DatabaseDataContext';
+import {useConfig} from '@context/global/ConfigContext';
 import {useFirebase} from '@context/global/FirebaseContext';
 import useCurrentUserData from '@hooks/useCurrentUserData';
 import useLocalize from '@hooks/useLocalize';
@@ -24,7 +24,7 @@ import {View} from 'react-native';
 function TermsReConsentGuard() {
   const {auth, db} = useFirebase();
   const {translate} = useLocalize();
-  const {config} = useDatabaseData();
+  const {config} = useConfig();
   // `useCurrentUserData` returns {} (truthy) while loading; the selectors below
   // expect `undefined` to mean "not loaded yet", so map empty → undefined.
   const currentUserData = useCurrentUserData();

@@ -2,7 +2,6 @@
 import type {ReactNode} from 'react';
 import React, {createContext, useContext, useEffect, useMemo} from 'react';
 import {useOnyx} from 'react-native-onyx';
-import type {Config} from '@src/types/onyx';
 import type {FetchDataKeys} from '@hooks/useFetchData/types';
 import useListenToData from '@hooks/useListenToData';
 import setCrashReportingCollectionEnabled from '@libs/setCrashReportingCollectionEnabled';
@@ -10,8 +9,6 @@ import ONYXKEYS from '@src/ONYXKEYS';
 import {useFirebase} from './FirebaseContext';
 
 type DatabaseDataContextType = {
-  /** Global app configuration, including the terms re-consent signal. */
-  config?: Config;
   /** Legacy windowed-listener flag. Always `false` now that the signed-in
    *  user's sessions are read in full from Onyx `cachedDrinkingSessions`
    *  (the Firebase session listener was removed); kept until the calendar's
@@ -42,18 +39,22 @@ function DatabaseDataProvider({children}: DatabaseDataProviderProps) {
   const user = auth.currentUser;
   const userID = user ? user.uid : '';
 
-  const dataTypes: FetchDataKeys = ['config'];
+  // Every realtime read has migrated off the Firebase listener to Onyx
+  // (hydrated via `app/open` + kiroku-api updates), so no node keys remain. The
+  // `useListenToData` / `useFetchData` / `baseFunctions` listener infra is now
+  // dead and slated for the #809 final-teardown follow-up. `isFetchingOlderMonths`
+  // is retained until the calendar's older-months loading UI is cleaned up.
+  const dataTypes: FetchDataKeys = [];
 
-  const {data, isFetchingOlderMonths} = useListenToData(dataTypes, userID);
+  const {isFetchingOlderMonths} = useListenToData(dataTypes, userID);
 
   const [preferences] = useOnyx(ONYXKEYS.PREFERENCES);
 
   const value = useMemo(
     () => ({
-      config: data.config,
       isFetchingOlderMonths,
     }),
-    [data, isFetchingOlderMonths],
+    [isFetchingOlderMonths],
   );
 
   // Apply the crash-reporting opt-out from the user's preferences (server is the
