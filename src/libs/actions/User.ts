@@ -446,73 +446,6 @@ async function fetchUserNicknames(
   }, {} as NicknameToId);
 }
 
-/**
- * Change a user's automatic timezone setting.
- *
- * @param db Database to change the display name in
- * @param user User to change the display name for
- * @param isAutomatic Whether the timezone is automatic
- * @param newTimezone A new timezone
- * @returns An empty promise
- */
-async function updateAutomaticTimezone(
-  db: Database,
-  user: User | null,
-  isAutomatic: boolean,
-  selectedTimezone: SelectedTimezone,
-): Promise<void> {
-  if (!user) {
-    throw new Error(Localize.translateLocal('common.error.userNull'));
-  }
-
-  const userID = user.uid;
-  const timezoneRef = DBPATHS.USERS_USER_ID_TIMEZONE;
-
-  const newData: Timezone = {
-    selected: selectedTimezone,
-    automatic: isAutomatic,
-  };
-
-  const updates: Record<string, Timezone> = {};
-  updates[timezoneRef.getRoute(userID)] = newData;
-
-  await update(ref(db), updates);
-
-  await Onyx.merge(ONYXKEYS.USER_DATA_LIST, {
-    [userID]: {timezone: newData},
-  });
-}
-
-/**
- * Change a user's selected timezone
- *
- * @param db Database to change the display name in
- * @param user User to change the display name for
- * @param selectedTimezone The selected timezone
- * @returns An empty promise
- */
-async function saveSelectedTimezone(
-  db: Database,
-  user: User | null,
-  selectedTimezone: SelectedTimezone,
-): Promise<void> {
-  if (!user) {
-    throw new Error(Localize.translateLocal('common.error.userNull'));
-  }
-
-  const userID = user.uid;
-  const timezoneRef = DBPATHS.USERS_USER_ID_TIMEZONE_SELECTED;
-
-  const updates: Record<string, SelectedTimezone> = {};
-  updates[timezoneRef.getRoute(userID)] = selectedTimezone;
-
-  await update(ref(db), updates);
-
-  await Onyx.merge(ONYXKEYS.USER_DATA_LIST, {
-    [userID]: {timezone: {selected: selectedTimezone}},
-  });
-}
-
 /** Set the information about when the app update was last dimmissed */
 async function setAppUpdateDismissed(timestamp: Timestamp): Promise<void> {
   await Onyx.merge(ONYXKEYS.APP_UPDATE_DISMISSED, timestamp);
@@ -943,13 +876,11 @@ export {
   pushNewUserInfo,
   reauthentificateUser,
   reauthenticateWithOAuth,
-  saveSelectedTimezone,
   sendUpdateEmailLink,
   sendVerifyEmailLink,
   setAppUpdateDismissed,
   setUsername,
   syncUserStatus,
-  updateAutomaticTimezone,
   updatePassword,
   userExistsInDatabase,
   logIn,

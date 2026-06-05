@@ -475,14 +475,22 @@ function getDayShortNames(preferredLocale: Locale): string[] {
   return daysOfWeek.map(date => format(date, 'eee'));
 }
 
-// Used to throttle updates to the timezone when necessary
-let lastUpdatedTimezoneTime = new Date();
+// Used to throttle automatic timezone updates (e.g. on app foreground).
+const TIMEZONE_UPDATE_THROTTLE_MINUTES = 5;
+// Seed in the past so the first update after launch/login is allowed through.
+let lastUpdatedTimezoneTime = subMinutes(
+  new Date(),
+  TIMEZONE_UPDATE_THROTTLE_MINUTES + 1,
+);
 
 function canUpdateTimezone(): boolean {
   const currentTime = new Date();
-  const fiveMinutesAgo = subMinutes(currentTime, 5);
-  // Compare the last updated time with five minutes ago
-  return isBefore(lastUpdatedTimezoneTime, fiveMinutesAgo);
+  const throttleCutoff = subMinutes(
+    currentTime,
+    TIMEZONE_UPDATE_THROTTLE_MINUTES,
+  );
+  // Compare the last updated time with the throttle window.
+  return isBefore(lastUpdatedTimezoneTime, throttleCutoff);
 }
 
 function setTimezoneUpdated() {
