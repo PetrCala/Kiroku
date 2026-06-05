@@ -46,6 +46,30 @@ const KIROKU_ROUTES: Record<string, KirokuRoute> = {
       `/v1/users/${encodeURIComponent(String(data.userID))}/sessions`,
     toQuery: data => ({from: Number(data.from ?? 0)}),
   },
+  // Public profile read (profile + public_data + public is_supporter flag). Any
+  // authenticated user may read it (mirrors the rules' `users/$uid/profile`).
+  [READ_COMMANDS.OPEN_PUBLIC_PROFILE_PAGE]: {
+    method: 'get',
+    path: '/v1/users/:uid/profile',
+    toPath: data =>
+      `/v1/users/${encodeURIComponent(String(data.userID))}/profile`,
+  },
+  // Friend rendering preferences (units/colors), privacy-enforced server-side
+  // (friends + visibility). Denied reads evict userDataList[uid].preferences.
+  [READ_COMMANDS.OPEN_FRIEND_PREFERENCES]: {
+    method: 'get',
+    path: '/v1/users/:uid/preferences',
+    toPath: data =>
+      `/v1/users/${encodeURIComponent(String(data.userID))}/preferences`,
+  },
+  // Friend presence + latest session, privacy-enforced (friends + visibility).
+  // Denied reads evict userDataList[uid].user_status.
+  [READ_COMMANDS.OPEN_FRIEND_STATUS]: {
+    method: 'get',
+    path: '/v1/users/:uid/status',
+    toPath: data =>
+      `/v1/users/${encodeURIComponent(String(data.userID))}/status`,
+  },
   [SIDE_EFFECT_REQUEST_COMMANDS.GET_MISSING_ONYX_MESSAGES]: {
     method: 'get',
     path: '/v1/updates',

@@ -226,9 +226,6 @@ function FriendRequestScreen() {
       userIDs,
     );
     setDisplayData(newDisplayData);
-    Profile.fetchAndStoreSupporterFlags(database, userIDs).catch(() => {
-      // Non-fatal: badge will simply remain hidden for these users.
-    });
   };
 
   useEffect(() => {

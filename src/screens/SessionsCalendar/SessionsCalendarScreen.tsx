@@ -8,7 +8,7 @@ import DayDrillDownSheet from '@components/SessionsCalendar/DayDrillDownSheet';
 import ScreenWrapper from '@components/ScreenWrapper';
 import HeaderWithBackButton from '@components/HeaderWithBackButton';
 import {useFirebase} from '@context/global/FirebaseContext';
-import useFetchData from '@hooks/useFetchData';
+import useFriendPreferences from '@hooks/useFriendPreferences';
 import useDrinkingSessionsFetch from '@hooks/useDrinkingSessionsFetch';
 import useCurrentUserDrinkingSessions from '@hooks/useCurrentUserDrinkingSessions';
 import useCurrentUserPreferences from '@hooks/useCurrentUserPreferences';
@@ -21,14 +21,11 @@ import type {SessionsCalendarNavigatorParamList} from '@libs/Navigation/types';
 import type SCREENS from '@src/SCREENS';
 import type {DrinkingSessionList, Preferences} from '@src/types/onyx';
 import type {DateString} from '@src/types/onyx/OnyxCommon';
-import type {FetchDataKeys} from '@hooks/useFetchData/types';
 
 type SessionsCalendarScreenProps = StackScreenProps<
   SessionsCalendarNavigatorParamList,
   typeof SCREENS.SESSIONS_CALENDAR.FULLSCREEN
 >;
-
-const FRIEND_FETCH_KEYS: FetchDataKeys = ['preferences'];
 
 const internalStyles = StyleSheet.create({
   // Render the calendar mounted but invisible so FlashList can lay out and
@@ -58,8 +55,8 @@ function SessionsCalendarScreen({route}: SessionsCalendarScreenProps) {
 
   const ownPreferences = useCurrentUserPreferences();
   const currentUserSessions = useCurrentUserDrinkingSessions();
-  const {data: friendFetchedData, isLoading: isFriendFetchLoading} =
-    useFetchData(isSelf ? '' : userID, FRIEND_FETCH_KEYS);
+  const {preferences: friendPreferences, isLoading: isFriendFetchLoading} =
+    useFriendPreferences(isSelf ? '' : userID);
   const {
     data: friendSessionData,
     isLoading: isFriendSessionsLoading,
@@ -71,7 +68,7 @@ function SessionsCalendarScreen({route}: SessionsCalendarScreenProps) {
     : friendSessionData;
   const preferences: Preferences | undefined = isSelf
     ? ownPreferences
-    : friendFetchedData?.preferences;
+    : friendPreferences;
   const isFetchingOlderMonths = isSelf ? false : friendFetchingOlder;
   const isLoading = isSelf
     ? !preferences || drinkingSessionData === undefined

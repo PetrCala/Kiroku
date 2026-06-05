@@ -1,10 +1,14 @@
 import Onyx from 'react-native-onyx';
 import type {OnyxUpdate} from 'react-native-onyx';
 import * as API from '@libs/API';
-import {WRITE_COMMANDS} from '@libs/API/types';
+import {READ_COMMANDS, WRITE_COMMANDS} from '@libs/API/types';
+import type {OpenFriendPreferencesParams} from '@libs/API/parameters';
 import Navigation from '@libs/Navigation/Navigation';
+import CONST from '@src/CONST';
 import ONYXKEYS from '@src/ONYXKEYS';
 import type {Preferences, Theme} from '@src/types/onyx';
+import type Response from '@src/types/onyx/Response';
+import type {UserID} from '@src/types/onyx/OnyxCommon';
 
 /**
  * Preference writes, cut over from direct Firebase RTDB writes to the kiroku-api
@@ -60,4 +64,25 @@ function updateTheme(theme: Theme): Promise<void> {
   return result;
 }
 
-export {updatePreferences, updateTheme};
+/**
+ * Read a FRIEND's rendering preferences (units→colors, drinks→units, palette)
+ * via the privacy-enforced `GET /v1/users/:uid/preferences` API — replacing the
+ * direct Firebase RTDB read the friend calendar used to do through
+ * `useFetchData(['preferences'])`. The server gates the read (friends +
+ * visibility) and delivers the prefs as onyxData under
+ * `userDataList[userID].preferences`; a denied/hidden read evicts that key
+ * (Kiroku #786). Returns the promise so the friend-preferences hook can settle
+ * its loading state once the round-trip lands.
+ */
+function openFriendPreferences(userID: UserID): Promise<void | Response> {
+  const parameters: OpenFriendPreferencesParams = {userID};
+  // eslint-disable-next-line rulesdir/no-api-side-effects-method
+  return API.makeRequestWithSideEffects(
+    READ_COMMANDS.OPEN_FRIEND_PREFERENCES,
+    parameters,
+    {},
+    CONST.API_REQUEST_TYPE.READ,
+  );
+}
+
+export {updatePreferences, updateTheme, openFriendPreferences};
