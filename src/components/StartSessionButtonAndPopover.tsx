@@ -26,7 +26,6 @@ import CONST from '@src/CONST';
 import ONYXKEYS from '@src/ONYXKEYS';
 import type {DrinkingSessionType} from '@src/types/onyx';
 import Log from '@libs/Log';
-import {useDatabaseData} from '@context/global/DatabaseDataContext';
 import {useFirebase} from '@context/global/FirebaseContext';
 import DateUtils from '@libs/DateUtils';
 import Navigation from '@libs/Navigation/Navigation';
@@ -66,7 +65,6 @@ function StartSessionButtonAndPopover(
   const {auth, db} = useFirebase();
   const {translate} = useLocalize();
   const user = auth.currentUser;
-  const {userStatusData} = useDatabaseData();
   const userData = useCurrentUserData();
   const [ongoingSessionData] = useOnyx(ONYXKEYS.ONGOING_SESSION_DATA);
   const [startSession] = useOnyx(ONYXKEYS.START_SESSION_GLOBAL_CREATE);
@@ -246,7 +244,7 @@ function StartSessionButtonAndPopover(
       text: translate(DSUtils.getSessionTypeTitle(sessionType)),
     });
 
-    const session = userStatusData?.latest_session;
+    const session = ongoingSessionData;
     let ongoingItems: PopoverMenuItem[] = [];
 
     if (session?.ongoing && session.type) {
@@ -285,7 +283,7 @@ function StartSessionButtonAndPopover(
 
     return [ongoingItems, staticItems];
   }, [
-    userStatusData,
+    ongoingSessionData,
     userData?.timezone?.selected,
     hideCreateMenu,
     navigateToSessionType,

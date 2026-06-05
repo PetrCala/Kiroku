@@ -46,6 +46,7 @@ const WRITE_COMMANDS = {
   REMOVE_FEEDBACK: 'RemoveFeedback',
   REMOVE_BUG: 'RemoveBug',
   UPDATE_PROFILE_PHOTO: 'UpdateProfilePhoto',
+  SYNC_USER_STATUS: 'SyncUserStatus',
   // ...
 } as const;
 
@@ -91,6 +92,7 @@ type WriteCommandParameters = {
   [WRITE_COMMANDS.REMOVE_FEEDBACK]: Parameters.RemoveFeedbackParams;
   [WRITE_COMMANDS.REMOVE_BUG]: Parameters.RemoveBugParams;
   [WRITE_COMMANDS.UPDATE_PROFILE_PHOTO]: Parameters.UpdateProfilePhotoParams;
+  [WRITE_COMMANDS.SYNC_USER_STATUS]: Parameters.SyncUserStatusParams;
 };
 
 const READ_COMMANDS = {
