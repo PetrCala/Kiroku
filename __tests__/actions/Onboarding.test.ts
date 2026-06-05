@@ -4,6 +4,8 @@
 
 /* eslint-disable @typescript-eslint/naming-convention -- jest mock factory keys (__esModule) are dictated by Node module shape */
 /* eslint-disable @typescript-eslint/unbound-method -- references to mocked methods are read-only assertions, not actual call sites */
+/* eslint-disable rulesdir/no-api-in-views -- this test mocks and asserts the API.write calls the Onboarding action makes */
+/* eslint-disable rulesdir/prefer-actions-set-data -- this test asserts that completeOnboarding calls Onyx.merge with the expected payload */
 
 import type {OnyxUpdate} from 'react-native-onyx';
 import Onyx from 'react-native-onyx';
