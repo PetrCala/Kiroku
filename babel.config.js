@@ -73,7 +73,10 @@ const testEnv = {
 
 // ─── WEBPACK (web bundler) ────────────────────────────────────────────────────
 const defaultPresets = [
-  '@babel/preset-react',
+  // Use the automatic JSX runtime to match the native build (babel-preset-expo
+  // defaults to automatic). Kiroku source omits `import React` in most files, so
+  // the classic runtime would throw "React is not defined" on web.
+  ['@babel/preset-react', {runtime: 'automatic'}],
   ['@babel/preset-env', {targets: {node: 20}}],
   '@babel/preset-flow',
   '@babel/preset-typescript',
