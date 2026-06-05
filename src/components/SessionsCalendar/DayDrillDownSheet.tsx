@@ -69,16 +69,20 @@ function DayDrillDownSheet({
 
   const isFocused = useIsFocused();
   const hasSessions = sessions.length > 0;
+  // `undefined` means the cached sessions are still resolving; only a resolved
+  // (object or null) value with no sessions for this day counts as truly empty.
+  const isSessionDataReady = drinkingSessionData !== undefined;
 
-  // Don't let the sheet reappear on a day whose last session was just removed
-  // (deleted, or an edit moved it to another day) — clear the parent's date.
-  // Guarded on `isVisible` so it only fires for an open sheet; `onClose` is
-  // memoized by the parents, so this won't loop.
+  // Clear the remembered date only when the user is back on the calendar
+  // (focused) and the day has genuinely no sessions left — never during the
+  // blurred edit round-trip or while the cache is mid-update. That keeps
+  // deleting one of several sessions from wrongly dismissing the sheet, while
+  // still dismissing it for a day whose last session was removed.
   useEffect(() => {
-    if (isVisible && !hasSessions) {
+    if (isVisible && isFocused && isSessionDataReady && !hasSessions) {
       onClose();
     }
-  }, [isVisible, hasSessions, onClose]);
+  }, [isVisible, isFocused, isSessionDataReady, hasSessions, onClose]);
 
   return (
     <Modal
