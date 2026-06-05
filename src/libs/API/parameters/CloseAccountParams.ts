@@ -1,3 +1,3 @@
-type CloseAccountParams = {message: string};
+type CloseAccountParams = {reasonForLeaving?: string};
 
 export default CloseAccountParams;

@@ -46,7 +46,7 @@ function useOnboardingFlow(): OnboardingFlowState {
     // Treat both `undefined` (listener not yet emitted) and `null` (RTDB node
     // missing — either pre-write during signup or post-delete during account
     // closure) as "not enough info, defer." Without this, account deletion
-    // briefly flashes the T&C screen: `deleteUserData` wipes the RTDB node
+    // briefly flashes the T&C screen: account closure wipes the RTDB node
     // before `signOut` runs, the listener emits `null`, and the onboarding
     // selectors interpret that as "needs onboarding" while the user is still
     // authenticated.

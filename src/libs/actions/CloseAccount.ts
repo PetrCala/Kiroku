@@ -1,16 +1,12 @@
 import Onyx from 'react-native-onyx';
 import type {Auth} from 'firebase/auth';
 import {deleteUser, signOut} from 'firebase/auth';
-import type {Database} from 'firebase/database';
 import CONST from '@src/CONST';
 import ONYXKEYS from '@src/ONYXKEYS';
-import type {UserData} from '@src/types/onyx';
 import * as Localize from '@libs/Localize';
-import {
-  deleteUserData,
-  reauthentificateUser,
-  reauthenticateWithOAuth,
-} from './User';
+import * as API from '@libs/API';
+import {WRITE_COMMANDS} from '@libs/API/types';
+import {reauthentificateUser, reauthenticateWithOAuth} from './User';
 
 /**
  * Clear CloseAccount error message to hide modal
@@ -35,16 +31,14 @@ function setSuccessMessage(message: string) {
 }
 
 async function closeAccount(
-  db: Database | null,
   auth: Auth | null,
-  userData: UserData | undefined,
   reasonForLeaving: string,
   password: string,
   providerId: string,
 ) {
   const user = auth?.currentUser;
 
-  if (!db || !userData || !user) {
+  if (!auth || !user) {
     throw new Error('Missing data. Try reloading the page');
   }
 
@@ -62,15 +56,19 @@ async function closeAccount(
     }
   }
 
-  const userNickname = userData.profile.display_name;
-  await deleteUserData(
-    db,
-    user.uid,
-    userNickname,
-    userData.friends,
-    userData.friend_requests,
-    reasonForLeaving,
+  // kiroku-api owns the RTDB graph cleanup — the user's own subtrees, their
+  // removal from every friend's/requester's map, and the exit-survey reason —
+  // keyed off the caller's Firebase ID token. Awaited via
+  // makeRequestWithSideEffects so the Firebase Auth deletion below only runs
+  // after the server cleanup succeeds AND while the token is still valid (a
+  // deleted Auth user can no longer mint one). The server emits the
+  // state-clearing onyxData; an empty reason is omitted so none is recorded.
+  // eslint-disable-next-line rulesdir/no-api-side-effects-method
+  await API.makeRequestWithSideEffects(
+    WRITE_COMMANDS.CLOSE_ACCOUNT,
+    reasonForLeaving ? {reasonForLeaving} : {},
   );
+
   await deleteUser(user);
 
   // Updating the loading state here might cause some issues

@@ -3,17 +3,14 @@ import {update, ref, get} from 'firebase/database';
 import type {
   AppSettings,
   Config,
-  FriendRequestList,
   NicknameToId,
   OnyxUpdatesFromServer,
   PendingOAuthCredential,
   Preferences,
   Profile,
-  ReasonForLeaving,
-  ReasonForLeavingId,
   UserData,
 } from '@src/types/onyx';
-import type {Timestamp, UserID, UserList} from '@src/types/onyx/OnyxCommon';
+import type {Timestamp, UserID} from '@src/types/onyx/OnyxCommon';
 import type {Auth, AuthCredential, User, UserCredential} from 'firebase/auth';
 import {
   EmailAuthProvider,
@@ -34,7 +31,6 @@ import {getNicknameKeys} from '@libs/StringUtilsKiroku';
 import {getOAuthCredential} from '@libs/OAuthCredential';
 import DBPATHS from '@src/DBPATHS';
 import {readDataOnce} from '@database/baseFunctions';
-import type {FirebaseUpdates} from '@database/updates';
 import * as Localize from '@libs/Localize';
 import type {SelectedTimezone, Timezone} from '@src/types/onyx/UserData';
 import {validateAppVersion} from '@libs/Validation';
@@ -45,10 +41,10 @@ import CONST from '@src/CONST';
 import {getFirebaseAuth} from '@libs/Firebase/FirebaseApp';
 import * as API from '@libs/API';
 import {WRITE_COMMANDS} from '@libs/API/types';
+import type Response from '@src/types/onyx/Response';
 import PusherUtils from '@libs/PusherUtils';
 import * as Pusher from '@libs/Pusher/pusher';
 import * as OnyxUpdates from '@userActions/OnyxUpdates';
-import {getReasonForLeavingID} from '@libs/ReasonForLeaving';
 import {PALETTES} from '@libs/SessionColorPalettes';
 import Log from '@libs/Log';
 import ERRORS from '@src/ERRORS';
@@ -97,10 +93,6 @@ const getDefaultUserData = (profileData: Profile): UserData => {
   };
 };
 
-const getDefaultUserStatus = (): {last_online: number} => ({
-  last_online: new Date().getTime(),
-});
-
 /**
  * Check if a user exists in the realtime database.
  *
@@ -118,100 +110,53 @@ async function userExistsInDatabase(
   return snapshot.exists();
 }
 
-/** In the database, create base info for a user. This will
- * be stored under the "users" object in the database.
+/**
+ * Provision a brand-new user's backing data via kiroku-api. Replaces the former
+ * direct RTDB write (`pushNewUserInfo`): the server owns the atomic creation of
+ * `users/$uid`, `user_status/$uid`, `user_preferences/$uid`, and the
+ * nickname-index tokens, keyed off the caller's Firebase ID token (so a new
+ * user can only provision their OWN record) and 409-guarded so a replay can
+ * never clobber an established account.
  *
- * @param db The firebase realtime database object
- * @param userID The user ID
+ * Routed through `makeRequestWithSideEffects` rather than the fire-and-forget
+ * `API.write` because the signup flow must observe success/failure to roll the
+ * Firebase Auth user back on failure. The optimistic Onyx update mirrors the
+ * server's `onyxData` so the post-auth routing gate can read the new user
+ * immediately.
+ *
+ * @param userID The new user's Firebase uid — used only for the optimistic update
  * @param profileData Profile data of the user to create
- * @returns
  */
-async function pushNewUserInfo(
-  db: Database,
+function provisionUser(
   userID: string,
   profileData: Profile,
-): Promise<void> {
-  const userNickname = profileData.display_name;
+): Promise<void | Response> {
+  const userData = getDefaultUserData(profileData);
+  const preferences = getDefaultPreferences();
+  const optimisticData: OnyxUpdate[] = [
+    {
+      onyxMethod: Onyx.METHOD.MERGE,
+      key: ONYXKEYS.USER_DATA_LIST,
+      value: {[userID]: userData},
+    },
+    {
+      onyxMethod: Onyx.METHOD.SET,
+      key: ONYXKEYS.PREFERENCES,
+      value: preferences,
+    },
+    {
+      onyxMethod: Onyx.METHOD.SET,
+      key: ONYXKEYS.PREFERRED_THEME,
+      value: preferences.theme ?? CONST.THEME.SYSTEM,
+    },
+  ];
 
-  const nicknameRef = DBPATHS.NICKNAME_TO_ID_NICKNAME_KEY_USER_ID;
-  const userStatusRef = DBPATHS.USER_STATUS_USER_ID;
-  const userPreferencesRef = DBPATHS.USER_PREFERENCES_USER_ID;
-  const userRef = DBPATHS.USERS_USER_ID;
-
-  const updates: FirebaseUpdates = {};
-  getNicknameKeys(userNickname).forEach(key => {
-    updates[nicknameRef.getRoute(key, userID)] = userNickname;
-  });
-  updates[userStatusRef.getRoute(userID)] = getDefaultUserStatus();
-  updates[userPreferencesRef.getRoute(userID)] = getDefaultPreferences();
-  updates[userRef.getRoute(userID)] = getDefaultUserData(profileData);
-
-  await update(ref(db), updates);
-}
-
-/** Delete all user info from the realtime database, including their
- * user information, drinking sessions, etc.
- *
- *
- * @param db The firebase database object;
- * @param userID The user ID
- * @param userNickname The user nickname
- * @param friends The user's friends
- * @param friendRequests The user's friend requests
- * @param reasonForLeaving The reason for leaving
- * @returns
- */
-async function deleteUserData(
-  db: Database,
-  userID: string,
-  userNickname: string,
-  friends: UserList | undefined,
-  friendRequests: FriendRequestList | undefined,
-  reasonForLeaving?: ReasonForLeaving,
-): Promise<void> {
-  const nicknameRef = DBPATHS.NICKNAME_TO_ID_NICKNAME_KEY_USER_ID;
-  const userStatusRef = DBPATHS.USER_STATUS_USER_ID;
-  const userPreferencesRef = DBPATHS.USER_PREFERENCES_USER_ID;
-  const userRef = DBPATHS.USERS_USER_ID;
-  const drinkingSessionsRef = DBPATHS.USER_DRINKING_SESSIONS_USER_ID;
-  const unconfirmedDaysRef = DBPATHS.USER_UNCONFIRMED_DAYS_USER_ID;
-  const dataVisibilityRef = DBPATHS.USER_DATA_VISIBILITY_USER_ID;
-  const sessionLocationsRef = DBPATHS.USER_SESSION_LOCATIONS_USER_ID;
-  const sessionPlaceholderRef = DBPATHS.USER_SESSION_PLACEHOLDER_USER_ID;
-  const friendsRef = DBPATHS.USERS_USER_ID_FRIENDS_FRIEND_ID;
-  const friendRequestsRef = DBPATHS.USERS_USER_ID_FRIEND_REQUESTS_REQUEST_ID;
-  const reasonForLeavingRef = DBPATHS.REASONS_FOR_LEAVING_REASON_ID;
-
-  const updates: Record<string, null | false | ReasonForLeaving> = {};
-  getNicknameKeys(userNickname).forEach(key => {
-    updates[nicknameRef.getRoute(key, userID)] = null;
-  });
-  updates[userStatusRef.getRoute(userID)] = null;
-  updates[userPreferencesRef.getRoute(userID)] = null;
-  updates[userRef.getRoute(userID)] = null;
-  updates[drinkingSessionsRef.getRoute(userID)] = null;
-  updates[unconfirmedDaysRef.getRoute(userID)] = null;
-  updates[dataVisibilityRef.getRoute(userID)] = null;
-  updates[sessionLocationsRef.getRoute(userID)] = null;
-  updates[sessionPlaceholderRef.getRoute(userID)] = null;
-
-  if (reasonForLeaving) {
-    const reasonID: ReasonForLeavingId = getReasonForLeavingID(userID);
-    updates[reasonForLeavingRef.getRoute(reasonID)] = reasonForLeaving;
-  }
-
-  // Data stored in other users' nodes
-  if (friends) {
-    Object.keys(friends).forEach(friendId => {
-      updates[friendsRef.getRoute(friendId, userID)] = null;
-    });
-  }
-  if (friendRequests) {
-    Object.keys(friendRequests).forEach(friendRequestId => {
-      updates[friendRequestsRef.getRoute(friendRequestId, userID)] = null;
-    });
-  }
-  await update(ref(db), updates);
+  // eslint-disable-next-line rulesdir/no-api-side-effects-method
+  return API.makeRequestWithSideEffects(
+    WRITE_COMMANDS.PROVISION_USER,
+    {profile: profileData, timezone: userData.timezone, preferences},
+    {optimisticData},
+  );
 }
 
 /**
@@ -524,7 +469,7 @@ async function signInWithOAuth(
       photo_url: user.photoURL ?? '',
       username_chosen: false,
     };
-    await pushNewUserInfo(db, user.uid, profileData);
+    await provisionUser(user.uid, profileData);
     await updateProfile(user, {displayName: name});
   }
   Session.clearSignInData();
@@ -765,8 +710,9 @@ async function signUp(
   });
 
   try {
-    // Realtime Database updates
-    await pushNewUserInfo(db, newUserID, newProfileData);
+    // Provision the user's backing data server-side (kiroku-api owns the atomic
+    // RTDB creation). Awaited so a failure can roll the Auth user back below.
+    await provisionUser(newUserID, newProfileData);
 
     // Update Firebase authentication
     await updateProfile(newUser, {displayName: derivedName});
@@ -778,17 +724,15 @@ async function signUp(
     // lose (its useEffect runs after this synchronous nav, then its own
     // lastTargetRef debounce blocks any retry).
   } catch (error) {
-    // Attempt to rollback the changes if the 'transaction' fails
-    await deleteUserData(
-      db,
-      newUserID,
-      newProfileData.display_name,
-      undefined,
-      undefined,
-    );
-
-    // Delete the user from Firebase authentication
-    await newUser.delete();
+    // Provisioning is atomic + 409-guarded server-side, so a failure leaves no
+    // partial RTDB graph to clean up — only the just-created Firebase Auth user
+    // needs rolling back, which frees the claimed email for a retry. The delete
+    // is best-effort; surface the canonical creation-failed error regardless.
+    await newUser.delete().catch(deleteError => {
+      Log.alert('[signUp] failed to roll back Firebase Auth user', {
+        error: deleteError,
+      });
+    });
     throw new Error('database/user-creation-failed');
   }
 }
@@ -868,12 +812,9 @@ export {
   subscribeToConfigEvents,
   changeDisplayName,
   changeUserName,
-  deleteUserData,
   fetchUserNicknames,
   getDefaultPreferences,
   getDefaultUserData,
-  getDefaultUserStatus,
-  pushNewUserInfo,
   reauthentificateUser,
   reauthenticateWithOAuth,
   sendUpdateEmailLink,

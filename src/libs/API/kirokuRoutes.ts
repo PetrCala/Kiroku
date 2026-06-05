@@ -40,6 +40,14 @@ const KIROKU_ROUTES: Record<string, KirokuRoute> = {
       to: Number(data.updateIDTo ?? 0),
     }),
   },
+  [WRITE_COMMANDS.PROVISION_USER]: {
+    method: 'post',
+    path: '/v1/provisioning',
+  },
+  [WRITE_COMMANDS.CLOSE_ACCOUNT]: {
+    method: 'post',
+    path: '/v1/account/close',
+  },
   [WRITE_COMMANDS.SEND_FRIEND_REQUEST]: {
     method: 'post',
     path: '/v1/friends/request',
