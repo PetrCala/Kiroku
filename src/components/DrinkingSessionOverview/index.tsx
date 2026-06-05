@@ -155,6 +155,7 @@ function DrinkingSessionOverview({
       {session?.ongoing ? (
         <Button
           danger
+          style={styles.ml2}
           onPress={() => onSessionButtonPress()}
           text={translate('dayOverviewScreen.ongoing')}
         />
