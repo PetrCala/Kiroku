@@ -57,7 +57,6 @@ import SupporterCoin from '@assets/images/supporter-coin.svg';
 import StrongShot from '@assets/images/strong-shot.svg';
 import ThreeDots from '@assets/images/three-dots.svg';
 import UnderMaintenance from '@assets/images/under-maintenance.png';
-import Undo from '@assets/images/undo.svg';
 import UserIcon from '@assets/images/user-icon.png';
 import Users from '@assets/images/users.svg';
 import WeakShot from '@assets/images/weak-shot.svg';
@@ -129,7 +128,6 @@ export {
   SupporterCoin,
   Close as ThinX,
   ThreeDots,
-  Undo,
   UnderMaintenance,
   UserIcon,
   Users,
