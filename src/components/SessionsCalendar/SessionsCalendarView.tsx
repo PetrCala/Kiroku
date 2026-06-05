@@ -212,6 +212,9 @@ function SessionsCalendarView({
               accessibilityLabel={translate(
                 'sessionsCalendar.jumpToCurrentMonth',
               )}
+              // Auto-pad the small pill out to the minimum touch target without
+              // growing its visual size.
+              shouldUseAutoHitSlop
               style={styles.sessionsCalendarHeaderRevert}>
               <Icon
                 src={KirokuIcons.RotateLeft}
@@ -224,29 +227,21 @@ function SessionsCalendarView({
         );
       }
       return (
-        // Symmetric layout: equal-width side slots keep the month label dead
-        // centered, so it never shifts when the revert control or the
-        // older-months spinner toggle in/out of the right slot.
+        // Mirrors the Statistics range navigator: a phantom left spacer matches
+        // the right slot so the month label stays centered and never shifts
+        // when the revert control or older-months spinner toggle in/out.
         <View style={styles.sessionsCalendarHeader}>
-          <View style={styles.sessionsCalendarHeaderSideSlot}>
-            {isHeaderTappable && (
-              <Icon
-                src={KirokuIcons.ArrowUpDown}
-                fill={theme.textSupporting}
-                width={14}
-                height={14}
-              />
-            )}
-          </View>
+          <View style={styles.sessionsCalendarHeaderSideSlot} />
           {isHeaderTappable ? (
             <PressableWithFeedback
               onPress={onHeaderPress}
               role={CONST.ROLE.BUTTON}
-              accessibilityLabel={formatted}>
+              accessibilityLabel={formatted}
+              style={styles.sessionsCalendarHeaderLabel}>
               {monthText}
             </PressableWithFeedback>
           ) : (
-            monthText
+            <View style={styles.sessionsCalendarHeaderLabel}>{monthText}</View>
           )}
           <View style={styles.sessionsCalendarHeaderSideSlot}>
             {rightSlotContent}
@@ -264,11 +259,11 @@ function SessionsCalendarView({
       revertOpacity,
       translate,
       styles.sessionsCalendarHeader,
+      styles.sessionsCalendarHeaderLabel,
       styles.sessionsCalendarHeaderMonthText,
       styles.sessionsCalendarHeaderSideSlot,
       styles.sessionsCalendarHeaderRevert,
       theme.spinner,
-      theme.textSupporting,
       theme.textReversed,
     ],
   );
