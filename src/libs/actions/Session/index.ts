@@ -35,7 +35,6 @@ import * as Subscriptions from '@userActions/Subscriptions';
 import Log from '@libs/Log';
 import Navigation from '@libs/Navigation/Navigation';
 import navigationRef from '@libs/Navigation/navigationRef';
-import * as MainQueue from '@libs/Network/MainQueue';
 // import * as NetworkStore from '@libs/Network/NetworkStore';
 // import NetworkConnection from '@libs/NetworkConnection';
 import * as Pusher from '@libs/Pusher/pusher';
@@ -669,7 +668,6 @@ function cleanupSession() {
   Pusher.disconnect();
   Timers.clearAll();
   // PriorityMode.resetHasReadRequiredDataFromStorage();
-  MainQueue.clear();
   // HttpUtils.cancelPendingRequests();
   PersistedRequests.clear();
   // NetworkConnection.clearReconnectionCallbacks();

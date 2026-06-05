@@ -101,10 +101,6 @@ function getAuthToken(): string | null | undefined {
   return authToken;
 }
 
-function isSupportRequest(command: string): boolean {
-  return [].some(cmd => cmd === command);
-}
-
 function isSupportAuthToken(): boolean {
   return authTokenType === CONST.AUTH_TOKEN_TYPES.SUPPORT;
 }
@@ -142,5 +138,4 @@ export {
   getCredentials,
   checkRequiredData,
   isSupportAuthToken,
-  isSupportRequest,
 };
