@@ -717,8 +717,6 @@
 "src/components/Tooltip/PopoverAnchorTooltip.tsx"	"react-hooks/refs"	7
 "src/components/UploadImage.tsx"	"@typescript-eslint/no-unnecessary-type-assertion"	2
 "src/components/createOnyxContext.tsx"	"@typescript-eslint/no-unnecessary-type-assertion"	1
-"src/context/global/ConfigContext.tsx"	"rulesdir/prefer-narrow-hook-dependencies"	1
-"src/context/global/DatabaseDataContext.tsx"	"rulesdir/prefer-narrow-hook-dependencies"	1
 "src/context/global/SplashScreenStateContext.tsx"	"rulesdir/context-provider-split-values"	1
 "src/context/global/UserConnectionContext.tsx"	"arrow-body-style"	1
 "src/hooks/useDebouncedState.ts"	"react-hooks/refs"	2
