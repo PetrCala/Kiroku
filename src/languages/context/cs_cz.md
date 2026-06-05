@@ -44,33 +44,36 @@ zde`, `Přidejte si je zde`, `Zkuste hledat zde`.
 
 ## Glossary (canonical terms)
 
-| English                   | Czech (canonical)                                 | Do NOT use     |
-| ------------------------- | ------------------------------------------------- | -------------- |
-| session                   | **relace**                                        | sezení         |
-| drinking session          | **alkoholová relace**                             | relace pití    |
-| live (session)            | **živá** (relace)                                 |                |
-| edit / past (session)     | **zpětná** (relace)                               |                |
-| unit / units              | **jednotka / jednotky / jednotek**                |                |
-| drink / drinks (beverage) | **drink / drinky** (gen sg drinku, gen pl drinků) | nápoj / nápoje |
-| beer                      | **pivo**                                          |                |
-| small beer                | **malé pivo**                                     |                |
-| wine                      | **víno**                                          |                |
-| weak shot                 | **malý panák**                                    |                |
-| strong shot               | **velký panák**                                   |                |
-| cocktail                  | **koktejl**                                       |                |
-| other (drink type)        | **ostatní**                                       |                |
-| statistics / stats        | **statistiky**                                    |                |
-| calendar                  | **kalendář**                                      |                |
-| profile                   | **profil**                                        |                |
-| friend / friends          | **přítel / přátelé**                              |                |
-| friend request            | **žádost o přátelství** (short: "žádost")         |                |
-| supporter (role)          | **podporovatel**                                  |                |
-| badge / badges            | **odznaky**                                       |                |
-| sober                     | **bez pití**                                      |                |
-| alcohol-free day(s)       | **dny bez alkoholu**                              |                |
-| quiet day(s)              | **klidné dny**                                    |                |
-| blackout                  | **výpadek paměti**                                |                |
-| streak (alcohol-free)     | **série** (dnů bez alkoholu)                      |                |
+| English                     | Czech (canonical)                                 | Do NOT use     |
+| --------------------------- | ------------------------------------------------- | -------------- |
+| session                     | **relace**                                        | sezení         |
+| drinking session            | **alkoholová relace**                             | relace pití    |
+| live (session)              | **živá** (relace)                                 |                |
+| edit / past (session)       | **zpětná** (relace)                               |                |
+| unit / units                | **jednotka / jednotky / jednotek**                |                |
+| drink / drinks (beverage)   | **drink / drinky** (gen sg drinku, gen pl drinků) | nápoj / nápoje |
+| beer                        | **pivo**                                          |                |
+| small beer                  | **malé pivo**                                     |                |
+| wine                        | **víno**                                          |                |
+| weak shot                   | **malý panák**                                    |                |
+| strong shot                 | **velký panák**                                   |                |
+| cocktail                    | **koktejl**                                       |                |
+| other (drink type)          | **ostatní**                                       |                |
+| statistics / stats          | **statistiky**                                    |                |
+| calendar                    | **kalendář**                                      |                |
+| profile                     | **profil**                                        |                |
+| friend / friends            | **přítel / přátelé**                              |                |
+| friend request              | **žádost o přátelství** (short: "žádost")         |                |
+| supporter (role)            | **podporovatel**                                  |                |
+| badge / badges              | **odznaky**                                       |                |
+| sober                       | **bez pití**                                      |                |
+| alcohol-free day(s)         | **dny bez alkoholu**                              |                |
+| quiet day(s)                | **klidné dny**                                    |                |
+| blackout                    | **výpadek paměti**                                |                |
+| streak (alcohol-free)       | **série** (dnů bez alkoholu)                      |                |
+| session intensity: light    | **mírná** (relace)                                | lehká          |
+| session intensity: moderate | **střední** (relace)                              |                |
+| session intensity: heavy    | **těžká** (relace)                                | silná, náročná |
 
 ## Do-not-translate (keep verbatim)
 

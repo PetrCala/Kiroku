@@ -340,7 +340,7 @@ export default {
     other: 'Ostatní',
   },
   units: {
-    light: 'Lehká',
+    light: 'Mírná',
     moderate: 'Střední',
   },
   timePeriods: {
@@ -586,7 +586,7 @@ export default {
   unitsToColorsScreen: {
     title: 'Jednotky na barvy',
     description:
-      'Nastavte maximální počet jednotek pro lehkou a střední relaci. Cokoli nad tím už je těžká relace.',
+      'Nastavte maximální počet jednotek pro mírnou a střední relaci. Cokoli nad tím už je těžká relace.',
   },
   colorPaletteScreen: {
     title: 'Barvy relací',
