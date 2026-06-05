@@ -1,4 +1,5 @@
-import {endOfToday} from 'date-fns';
+import {endOfDay} from 'date-fns';
+import {toZonedTime} from 'date-fns-tz';
 import React, {useState} from 'react';
 import {Alert, View} from 'react-native';
 import Button from '@components/Button';
@@ -16,6 +17,8 @@ import type SCREENS from '@src/SCREENS';
 import {useFirebase} from '@context/global/FirebaseContext';
 import * as DS from '@userActions/DrinkingSession';
 import * as DSUtils from '@libs/DrinkingSessionUtils';
+import useCurrentUserData from '@hooks/useCurrentUserData';
+import CONST from '@src/CONST';
 import type {TranslationPaths} from '@src/languages/types';
 import {useOnyx} from 'react-native-onyx';
 import type {Route} from '@src/ROUTES';
@@ -34,8 +37,16 @@ function SesssionDateScreen({route}: SessionDateScreenProps) {
   const {translate} = useLocalize();
   const styles = useThemeStyles();
   const session = DSUtils.getDrinkingSessionData(sessionId);
-  const [selectedDate, setSelectedDate] = useState<Date>(
-    session?.start_time ? new Date(session.start_time) : new Date(),
+  const userData = useCurrentUserData();
+  // Resolve the day in the session's own timezone (falling back to the user's
+  // selected tz) so the picker shows — and saves — the correct calendar day
+  // even when the device tz differs from the session/selected tz.
+  const sessionTimezone =
+    session?.timezone ??
+    userData?.timezone?.selected ??
+    CONST.DEFAULT_TIME_ZONE.selected;
+  const [selectedDate, setSelectedDate] = useState<Date>(() =>
+    toZonedTime(session?.start_time ?? new Date(), sessionTimezone),
   );
 
   const confirmTextKey: TranslationPaths = isBeingCreated
@@ -93,7 +104,7 @@ function SesssionDateScreen({route}: SessionDateScreenProps) {
         <Calendar
           mode="single"
           initialDate={selectedDate}
-          maxDate={endOfToday()}
+          maxDate={endOfDay(toZonedTime(new Date(), sessionTimezone))}
           onChangeSingle={setSelectedDate}
         />
       </View>
