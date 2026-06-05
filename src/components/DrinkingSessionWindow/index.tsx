@@ -48,6 +48,10 @@ function DrinkingSessionWindow({
   // const [dbSyncSuccessful, setDbSyncSuccessful] = useState(false);
   const [discardModalVisible, setDiscardModalVisible] =
     useState<boolean>(false);
+  // Set when the user confirms the discard. The actual delete + navigation run
+  // from the confirm modal's `onModalHide` (see `handleDiscardModalHide`) so
+  // they only fire once the modal has fully closed.
+  const discardConfirmedRef = useRef(false);
   const [shouldShowLeaveConfirmation, setShouldShowLeaveConfirmation] =
     useState(false);
   const sessionIsLive = session?.ongoing;
@@ -108,12 +112,25 @@ function DrinkingSessionWindow({
   };
 
   const handleConfirmDiscard = () => {
+    // Only close the modal here. The delete + navigation are deferred to
+    // `handleDiscardModalHide` (the modal's `onModalHide`): dispatching the pop
+    // while the confirm modal is still dismissing swallows it, stranding the
+    // user on the just-deleted session screen. The save flow has no confirm
+    // modal, which is why it redirects correctly today.
+    discardConfirmedRef.current = true;
+    setDiscardModalVisible(false);
+  };
+
+  const handleDiscardModalHide = () => {
+    if (!discardConfirmedRef.current) {
+      return;
+    }
+    discardConfirmedRef.current = false;
     (async () => {
       if (!user) {
         return;
       }
       try {
-        setDiscardModalVisible(false);
         await App.setLoadingText(
           translate('liveSessionScreen.discardingSession', {
             discardWord: sessionIsLive ? 'Discarding' : 'Deleting',
@@ -251,6 +268,7 @@ function DrinkingSessionWindow({
         title={translate('common.warning')}
         onConfirm={handleConfirmDiscard}
         onCancel={() => setDiscardModalVisible(false)}
+        onModalHide={handleDiscardModalHide}
         isVisible={discardModalVisible}
         prompt={translate(
           'liveSessionScreen.discardSessionWarning',
