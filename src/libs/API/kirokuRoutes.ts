@@ -85,6 +85,14 @@ const KIROKU_ROUTES: Record<string, KirokuRoute> = {
       fields: typeof data.fields === 'string' ? data.fields : 'profile,status',
     }),
   },
+  // A user's friends list (public, like the profile read). Backs ProfileScreen's
+  // friend / common-friend counts; merged into userDataList[uid].friends.
+  [READ_COMMANDS.OPEN_FRIEND_LIST]: {
+    method: 'get',
+    path: '/v1/users/:uid/friends',
+    toPath: data =>
+      `/v1/users/${encodeURIComponent(String(data.userID))}/friends`,
+  },
   [SIDE_EFFECT_REQUEST_COMMANDS.GET_MISSING_ONYX_MESSAGES]: {
     method: 'get',
     path: '/v1/updates',

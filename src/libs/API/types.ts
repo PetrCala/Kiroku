@@ -115,6 +115,7 @@ const READ_COMMANDS = {
   OPEN_FRIEND_PREFERENCES: 'OpenFriendPreferences',
   OPEN_FRIEND_STATUS: 'OpenFriendStatus',
   GET_USERS_BATCH: 'GetUsersBatch',
+  OPEN_FRIEND_LIST: 'OpenFriendList',
   //   OPEN_PLAID_BANK_LOGIN: 'OpenPlaidBankLogin',
   //   OPEN_PLAID_BANK_ACCOUNT_SELECTOR: 'OpenPlaidBankAccountSelector',
   //   GET_ROUTE: 'GetRoute',
@@ -138,6 +139,7 @@ type ReadCommandParameters = {
   [READ_COMMANDS.OPEN_FRIEND_PREFERENCES]: Parameters.OpenFriendPreferencesParams;
   [READ_COMMANDS.OPEN_FRIEND_STATUS]: Parameters.OpenFriendStatusParams;
   [READ_COMMANDS.GET_USERS_BATCH]: Parameters.GetUsersBatchParams;
+  [READ_COMMANDS.OPEN_FRIEND_LIST]: Parameters.OpenFriendListParams;
   //    ...
 };
 
