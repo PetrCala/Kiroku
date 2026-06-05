@@ -2,33 +2,38 @@
  * @jest-environment node
  */
 
-/* eslint-disable @typescript-eslint/naming-convention -- jest mock factory keys (__esModule, __path) are dictated by Node module shape */
-/* eslint-disable rulesdir/prefer-actions-set-data -- this test asserts that the Onboarding action calls Onyx.merge with the expected payload */
+/* eslint-disable @typescript-eslint/naming-convention -- jest mock factory keys (__esModule) are dictated by Node module shape */
 /* eslint-disable @typescript-eslint/unbound-method -- references to mocked methods are read-only assertions, not actual call sites */
 
-import {ref, set, update} from 'firebase/database';
-import type {Database} from 'firebase/database';
-import type {User} from 'firebase/auth';
+import type {OnyxUpdate} from 'react-native-onyx';
 import Onyx from 'react-native-onyx';
+import * as API from '@libs/API';
+import {WRITE_COMMANDS} from '@libs/API/types';
+import {getFirebaseAuth} from '@libs/Firebase/FirebaseApp';
 import * as UserActions from '@userActions/User';
-import Log from '@libs/Log';
 import * as Onboarding from '@libs/actions/Onboarding';
 import CONST from '@src/CONST';
-import DBPATHS from '@src/DBPATHS';
 import ONYXKEYS from '@src/ONYXKEYS';
 import ROUTES from '@src/ROUTES';
+import type {Database} from 'firebase/database';
+import type {User} from 'firebase/auth';
 
-jest.mock('firebase/database', () => ({
-  ref: jest.fn((_db: unknown, path?: string) => ({__path: path ?? '<root>'})),
-  set: jest.fn(() => Promise.resolve()),
-  update: jest.fn(() => Promise.resolve()),
-}));
+const TEST_UID = 'user-abc';
 
 jest.mock('react-native-onyx', () => ({
   __esModule: true,
   default: {
     merge: jest.fn(() => Promise.resolve()),
+    METHOD: {SET: 'set', MERGE: 'merge'},
   },
+}));
+
+jest.mock('@libs/API', () => ({
+  write: jest.fn(),
+}));
+
+jest.mock('@libs/Firebase/FirebaseApp', () => ({
+  getFirebaseAuth: jest.fn(() => ({currentUser: {uid: 'user-abc'}})),
 }));
 
 jest.mock('@userActions/User', () => ({
@@ -40,108 +45,126 @@ jest.mock('@libs/Navigation/Navigation', () => ({
   default: {navigate: jest.fn(), dismissModal: jest.fn()},
 }));
 
-jest.mock('@libs/Log', () => ({
-  __esModule: true,
-  default: {
-    info: jest.fn(),
-    warn: jest.fn(),
-  },
-}));
-
 jest.mock('@libs/Localize', () => ({
   translateLocal: (key: string) => key,
 }));
 
-const mockedRef = jest.mocked(ref);
-const mockedSet = jest.mocked(set);
-const mockedUpdate = jest.mocked(update);
-const mockedOnyx = jest.mocked(Onyx);
-const mockedMerge = mockedOnyx.merge;
+const mockedWrite = jest.mocked(API.write);
+const mockedMerge = jest.mocked(Onyx.merge);
 const mockedSetUsername = jest.mocked(UserActions.setUsername);
-const mockedLog = jest.mocked(Log);
-const mockedLogWarn = mockedLog.warn;
+const mockedGetFirebaseAuth = jest.mocked(getFirebaseAuth);
 
-const TEST_UID = 'user-abc';
 const TEST_USER = {uid: TEST_UID} as User;
 const TEST_DB = {} as Database;
 
-function onyxKeysCalled(): string[] {
-  return mockedMerge.mock.calls.map(call => call[0]);
+type WriteCall = [
+  string,
+  Record<string, unknown>,
+  {optimisticData?: OnyxUpdate[]},
+];
+
+/** The (command, params, onyxData) tuple from the first API.write call. */
+function firstWriteCall(): WriteCall {
+  return mockedWrite.mock.calls[0] as unknown as WriteCall;
+}
+
+/** Find the optimistic update targeting a given Onyx key. */
+function optimisticFor(
+  optimisticData: OnyxUpdate[] | undefined,
+  key: string,
+): OnyxUpdate | undefined {
+  return optimisticData?.find(update => update.key === key);
 }
 
 beforeEach(() => {
   jest.clearAllMocks();
+  mockedGetFirebaseAuth.mockReturnValue({
+    currentUser: {uid: TEST_UID},
+  } as ReturnType<typeof getFirebaseAuth>);
 });
 
 describe('acceptTerms', () => {
-  test('inside onboarding flow: writes three Firebase paths + mirrors Onyx', async () => {
+  test('inside onboarding flow: writes via kiroku-api with mirrored optimistic data', () => {
     const before = Date.now();
-    await Onboarding.acceptTerms(TEST_DB, TEST_USER, ROUTES.ONBOARDING_TERMS);
+    Onboarding.acceptTerms(ROUTES.ONBOARDING_TERMS);
     const after = Date.now();
 
-    expect(mockedUpdate).toHaveBeenCalledTimes(1);
-    const updatePayload = mockedUpdate.mock.calls[0][1] as Record<
-      string,
-      unknown
-    >;
-    expect(Object.keys(updatePayload)).toEqual(
-      expect.arrayContaining([
-        DBPATHS.USERS_USER_ID_AGREED_TO_TERMS_AT.getRoute(TEST_UID),
-        DBPATHS.USERS_USER_ID_AGREED_TO_TERMS_VERSION.getRoute(TEST_UID),
-        DBPATHS.USERS_USER_ID_ONBOARDING_LAST_VISITED_PATH.getRoute(TEST_UID),
-      ]),
+    expect(mockedWrite).toHaveBeenCalledTimes(1);
+    const [command, params, onyxData] = firstWriteCall();
+    expect(command).toBe(WRITE_COMMANDS.ACCEPT_TERMS);
+    // The client never sends a terms version — the server decides it.
+    expect(params).toEqual({onboardingPath: ROUTES.ONBOARDING_TERMS});
+
+    const userUpdate = optimisticFor(
+      onyxData.optimisticData,
+      ONYXKEYS.USER_DATA_LIST,
     );
-    expect(
-      updatePayload[
-        DBPATHS.USERS_USER_ID_AGREED_TO_TERMS_VERSION.getRoute(TEST_UID)
-      ],
-    ).toBe(CONST.CURRENT_TERMS_VERSION);
-    const writtenAt = updatePayload[
-      DBPATHS.USERS_USER_ID_AGREED_TO_TERMS_AT.getRoute(TEST_UID)
-    ] as number;
+    const userEntry = (
+      userUpdate?.value as Record<string, Record<string, unknown>>
+    )[TEST_UID];
+    expect(userEntry.agreed_to_terms_version).toBe(CONST.CURRENT_TERMS_VERSION);
+    const writtenAt = userEntry.agreed_to_terms_at as number;
     expect(writtenAt).toBeGreaterThanOrEqual(before);
     expect(writtenAt).toBeLessThanOrEqual(after);
+    expect(userEntry.onboarding).toEqual({
+      last_visited_path: ROUTES.ONBOARDING_TERMS,
+    });
 
-    expect(onyxKeysCalled()).toEqual(
-      expect.arrayContaining([
-        ONYXKEYS.USER_DATA_LIST,
-        ONYXKEYS.NVP_TERMS_ACCEPTED_VERSION,
-        ONYXKEYS.NVP_ONBOARDING,
-      ]),
+    const versionUpdate = optimisticFor(
+      onyxData.optimisticData,
+      ONYXKEYS.NVP_TERMS_ACCEPTED_VERSION,
     );
+    expect(versionUpdate?.onyxMethod).toBe(Onyx.METHOD.SET);
+    expect(versionUpdate?.value).toBe(CONST.CURRENT_TERMS_VERSION);
+
+    const onboardingUpdate = optimisticFor(
+      onyxData.optimisticData,
+      ONYXKEYS.NVP_ONBOARDING,
+    );
+    expect(onboardingUpdate?.value).toEqual({
+      last_visited_path: ROUTES.ONBOARDING_TERMS,
+    });
   });
 
-  test('standalone re-consent (no path): does not touch onboarding state', async () => {
-    await Onboarding.acceptTerms(TEST_DB, TEST_USER);
+  test('standalone re-consent (no path): does not touch onboarding state', () => {
+    Onboarding.acceptTerms();
 
-    const updatePayload = mockedUpdate.mock.calls[0][1] as Record<
-      string,
-      unknown
-    >;
+    const [command, params, onyxData] = firstWriteCall();
+    expect(command).toBe(WRITE_COMMANDS.ACCEPT_TERMS);
+    expect(params).toEqual({});
+
+    const userUpdate = optimisticFor(
+      onyxData.optimisticData,
+      ONYXKEYS.USER_DATA_LIST,
+    );
+    const userEntry = (
+      userUpdate?.value as Record<string, Record<string, unknown>>
+    )[TEST_UID];
+    expect('onboarding' in userEntry).toBe(false);
     expect(
-      DBPATHS.USERS_USER_ID_ONBOARDING_LAST_VISITED_PATH.getRoute(TEST_UID) in
-        updatePayload,
-    ).toBe(false);
-
-    expect(onyxKeysCalled()).not.toContain(ONYXKEYS.NVP_ONBOARDING);
-    expect(onyxKeysCalled()).toEqual(
-      expect.arrayContaining([
-        ONYXKEYS.USER_DATA_LIST,
+      optimisticFor(onyxData.optimisticData, ONYXKEYS.NVP_ONBOARDING),
+    ).toBeUndefined();
+    expect(
+      optimisticFor(
+        onyxData.optimisticData,
         ONYXKEYS.NVP_TERMS_ACCEPTED_VERSION,
-      ]),
-    );
+      ),
+    ).toBeDefined();
   });
 
-  test('rejects when user is null', async () => {
-    await expect(Onboarding.acceptTerms(TEST_DB, null)).rejects.toThrow(
-      'common.error.userNull',
-    );
-    expect(mockedUpdate).not.toHaveBeenCalled();
+  test('no-op when signed out', () => {
+    mockedGetFirebaseAuth.mockReturnValue({
+      currentUser: null,
+    } as ReturnType<typeof getFirebaseAuth>);
+
+    Onboarding.acceptTerms(ROUTES.ONBOARDING_TERMS);
+
+    expect(mockedWrite).not.toHaveBeenCalled();
   });
 });
 
 describe('setDisplayName', () => {
-  test('delegates to setUsername and writes last_visited_path', async () => {
+  test('delegates to setUsername (still Firebase) and writes last_visited_path via kiroku-api', async () => {
     await Onboarding.setDisplayName(TEST_DB, TEST_USER, 'old', 'new');
 
     expect(mockedSetUsername).toHaveBeenCalledWith(
@@ -151,83 +174,93 @@ describe('setDisplayName', () => {
       'new',
     );
 
-    const updatePayload = mockedUpdate.mock.calls[0][1] as Record<
-      string,
-      unknown
-    >;
-    expect(
-      updatePayload[
-        DBPATHS.USERS_USER_ID_ONBOARDING_LAST_VISITED_PATH.getRoute(TEST_UID)
-      ],
-    ).toBe(ROUTES.ONBOARDING_DISPLAY_NAME);
+    expect(mockedWrite).toHaveBeenCalledTimes(1);
+    const [command, params, onyxData] = firstWriteCall();
+    expect(command).toBe(WRITE_COMMANDS.SET_ONBOARDING_LAST_VISITED_PATH);
+    expect(params).toEqual({path: ROUTES.ONBOARDING_DISPLAY_NAME});
 
-    expect(onyxKeysCalled()).toEqual(
-      expect.arrayContaining([
-        ONYXKEYS.USER_DATA_LIST,
-        ONYXKEYS.NVP_ONBOARDING,
-      ]),
+    expect(
+      optimisticFor(onyxData.optimisticData, ONYXKEYS.NVP_ONBOARDING)?.value,
+    ).toEqual({last_visited_path: ROUTES.ONBOARDING_DISPLAY_NAME});
+    const userUpdate = optimisticFor(
+      onyxData.optimisticData,
+      ONYXKEYS.USER_DATA_LIST,
     );
+    expect(userUpdate?.value).toEqual({
+      [TEST_UID]: {
+        onboarding: {last_visited_path: ROUTES.ONBOARDING_DISPLAY_NAME},
+      },
+    });
   });
 
-  test('rejects when user is null', async () => {
+  test('rejects when user is null and never writes', async () => {
     await expect(
       Onboarding.setDisplayName(TEST_DB, null, 'old', 'new'),
     ).rejects.toThrow('common.error.userNull');
     expect(mockedSetUsername).not.toHaveBeenCalled();
+    expect(mockedWrite).not.toHaveBeenCalled();
   });
 });
 
 describe('completeOnboarding', () => {
-  test('merges Onyx before firing the Firebase set, and does not await the write', async () => {
+  test('applies the optimistic Onyx merge BEFORE firing the server write', async () => {
     const callOrder: string[] = [];
     mockedMerge.mockImplementation(() => {
       callOrder.push('onyx');
       return Promise.resolve();
     });
-    mockedSet.mockImplementation(() => {
-      callOrder.push('firebase');
-      return Promise.resolve();
+    mockedWrite.mockImplementation(() => {
+      callOrder.push('api');
     });
 
-    await Onboarding.completeOnboarding(TEST_DB, TEST_USER);
+    await Onboarding.completeOnboarding();
 
-    expect(callOrder[0]).toBe('onyx');
-    expect(callOrder).toContain('firebase');
+    // Both completion merges must precede the write so `shouldFireOnboarding`
+    // flips before the caller's dismissal pop (OnboardingGuard race).
+    expect(callOrder).toEqual(['onyx', 'onyx', 'api']);
 
-    const completedAtPath =
-      DBPATHS.USERS_USER_ID_ONBOARDING_COMPLETED_AT.getRoute(TEST_UID);
-    expect(mockedRef).toHaveBeenCalledWith(TEST_DB, completedAtPath);
-
-    expect(onyxKeysCalled()).toEqual(
+    const mergedKeys = mockedMerge.mock.calls.map(call => call[0]);
+    expect(mergedKeys).toEqual(
       expect.arrayContaining([
         ONYXKEYS.NVP_ONBOARDING,
         ONYXKEYS.USER_DATA_LIST,
       ]),
     );
+
+    const [command, params] = firstWriteCall();
+    expect(command).toBe(WRITE_COMMANDS.COMPLETE_ONBOARDING);
+    expect(params).toEqual({});
   });
 
-  test('swallows a rejecting Firebase write via Log.warn', async () => {
-    mockedSet.mockReturnValueOnce(Promise.reject(new Error('offline')));
+  test('no-op when signed out', async () => {
+    mockedGetFirebaseAuth.mockReturnValue({
+      currentUser: null,
+    } as ReturnType<typeof getFirebaseAuth>);
 
-    await expect(
-      Onboarding.completeOnboarding(TEST_DB, TEST_USER),
-    ).resolves.toBeUndefined();
+    await Onboarding.completeOnboarding();
 
-    await Promise.resolve();
-    await Promise.resolve();
-
-    expect(mockedLogWarn).toHaveBeenCalledTimes(1);
-    const [msg, payload] = mockedLogWarn.mock.calls[0];
-    expect(msg).toContain('[Onboarding]');
-    expect(payload).toBeDefined();
-    expect((payload as {error: unknown}).error).toBeInstanceOf(Error);
-  });
-
-  test('rejects when user is null', async () => {
-    await expect(Onboarding.completeOnboarding(TEST_DB, null)).rejects.toThrow(
-      'common.error.userNull',
-    );
     expect(mockedMerge).not.toHaveBeenCalled();
-    expect(mockedSet).not.toHaveBeenCalled();
+    expect(mockedWrite).not.toHaveBeenCalled();
+  });
+});
+
+describe('setLastVisitedPath', () => {
+  test('writes the path via kiroku-api with mirrored optimistic data', () => {
+    Onboarding.setLastVisitedPath(ROUTES.ONBOARDING_TERMS);
+
+    expect(mockedWrite).toHaveBeenCalledTimes(1);
+    const [command, params] = firstWriteCall();
+    expect(command).toBe(WRITE_COMMANDS.SET_ONBOARDING_LAST_VISITED_PATH);
+    expect(params).toEqual({path: ROUTES.ONBOARDING_TERMS});
+  });
+
+  test('no-op when signed out', () => {
+    mockedGetFirebaseAuth.mockReturnValue({
+      currentUser: null,
+    } as ReturnType<typeof getFirebaseAuth>);
+
+    Onboarding.setLastVisitedPath(ROUTES.ONBOARDING_TERMS);
+
+    expect(mockedWrite).not.toHaveBeenCalled();
   });
 });

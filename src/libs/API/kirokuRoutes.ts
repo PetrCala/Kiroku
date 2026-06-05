@@ -134,6 +134,18 @@ const KIROKU_ROUTES: Record<string, KirokuRoute> = {
     method: 'post',
     path: '/v1/status/sync',
   },
+  [WRITE_COMMANDS.ACCEPT_TERMS]: {
+    method: 'post',
+    path: '/v1/onboarding/accept-terms',
+  },
+  [WRITE_COMMANDS.COMPLETE_ONBOARDING]: {
+    method: 'post',
+    path: '/v1/onboarding/complete',
+  },
+  [WRITE_COMMANDS.SET_ONBOARDING_LAST_VISITED_PATH]: {
+    method: 'post',
+    path: '/v1/onboarding/last-visited-path',
+  },
 };
 
 /** Returns the kiroku-api route for a command, or undefined for legacy commands. */
