@@ -2,7 +2,7 @@
 import type {ReactNode} from 'react';
 import React, {createContext, useContext, useEffect, useMemo} from 'react';
 import {useOnyx} from 'react-native-onyx';
-import type {Config, UserStatus} from '@src/types/onyx';
+import type {Config} from '@src/types/onyx';
 import type {FetchDataKeys} from '@hooks/useFetchData/types';
 import useListenToData from '@hooks/useListenToData';
 import setCrashReportingCollectionEnabled from '@libs/setCrashReportingCollectionEnabled';
@@ -10,7 +10,6 @@ import ONYXKEYS from '@src/ONYXKEYS';
 import {useFirebase} from './FirebaseContext';
 
 type DatabaseDataContextType = {
-  userStatusData?: UserStatus;
   /** Global app configuration, including the terms re-consent signal. */
   config?: Config;
   /** Legacy windowed-listener flag. Always `false` now that the signed-in
@@ -43,7 +42,7 @@ function DatabaseDataProvider({children}: DatabaseDataProviderProps) {
   const user = auth.currentUser;
   const userID = user ? user.uid : '';
 
-  const dataTypes: FetchDataKeys = ['config', 'userStatusData'];
+  const dataTypes: FetchDataKeys = ['config'];
 
   const {data, isFetchingOlderMonths} = useListenToData(dataTypes, userID);
 
@@ -51,7 +50,6 @@ function DatabaseDataProvider({children}: DatabaseDataProviderProps) {
 
   const value = useMemo(
     () => ({
-      userStatusData: data.userStatusData,
       config: data.config,
       isFetchingOlderMonths,
     }),

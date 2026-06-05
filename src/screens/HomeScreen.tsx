@@ -10,7 +10,6 @@ import {
 } from '@libs/DataHandling';
 import {useUserConnection} from '@context/global/UserConnectionContext';
 import UserOffline from '@components/UserOfflineModal';
-import {synchronizeUserStatus} from '@userActions/User';
 import {useFirebase} from '@context/global/FirebaseContext';
 import ProfileImage from '@components/ProfileImage';
 import {SupporterBadgeForUser} from '@components/SupporterBadge';
@@ -33,7 +32,8 @@ import FullScreenLoadingIndicator from '@components/FullscreenLoadingIndicator';
 import * as DSUtils from '@libs/DrinkingSessionUtils';
 import * as DS from '@userActions/DrinkingSession';
 import * as App from '@userActions/App';
-import * as ErrorUtils from '@libs/ErrorUtils';
+import * as API from '@libs/API';
+import {WRITE_COMMANDS} from '@libs/API/types';
 import * as Session from '@userActions/Session';
 import Timing from '@userActions/Timing';
 import ScrollView from '@components/ScrollView';
@@ -46,7 +46,6 @@ import Text from '@components/Text';
 import BottomTabBar from '@libs/Navigation/AppNavigator/createCustomBottomTabNavigator/BottomTabBar';
 import {useOnyx} from 'react-native-onyx';
 import ONYXKEYS from '@src/ONYXKEYS';
-import ERRORS from '@src/ERRORS';
 import {isEmptyObject} from '@src/types/utils/EmptyObject';
 import Button from '@components/Button';
 import SessionsCalendarCompactSkeleton from '@components/SessionsCalendar/SessionsCalendarCompactSkeleton';
@@ -60,7 +59,7 @@ type HomeScreenProps = StackScreenProps<
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 function HomeScreen({route}: HomeScreenProps) {
   const styles = useThemeStyles();
-  const {auth, db, storage} = useFirebase();
+  const {auth, storage} = useFirebase();
   const {translate} = useLocalize();
   const user = auth.currentUser;
   const {isOnline} = useUserConnection();
@@ -150,17 +149,14 @@ function HomeScreen({route}: HomeScreenProps) {
 
   useFocusEffect(
     React.useCallback(() => {
-      // Update user status on home screen focus
+      // Presence heartbeat on home focus: the server recomputes user_status
+      // from the caller's own sessions, so no client-supplied data is sent.
       if (!user || !userData || !preferences) {
         return;
       }
 
-      try {
-        synchronizeUserStatus(db, user.uid, drinkingSessionData);
-      } catch (error) {
-        ErrorUtils.raiseAppError(ERRORS.USER.STATUS_UPDATE_FAILED, error);
-      }
-    }, [db, user, userData, preferences, drinkingSessionData]),
+      API.write(WRITE_COMMANDS.SYNC_USER_STATUS, {});
+    }, [user, userData, preferences]),
   );
 
   // Fire the "home is ready" side effects exactly once, when all the initial

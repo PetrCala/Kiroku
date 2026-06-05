@@ -2,7 +2,6 @@ import type {Database} from 'firebase/database';
 import {update, ref, get} from 'firebase/database';
 import type {
   AppSettings,
-  DrinkingSessionList,
   FriendRequestList,
   NicknameToId,
   OnyxUpdatesFromServer,
@@ -12,7 +11,6 @@ import type {
   ReasonForLeaving,
   ReasonForLeavingId,
   UserData,
-  UserStatus,
 } from '@src/types/onyx';
 import type {Timestamp, UserID, UserList} from '@src/types/onyx/OnyxCommon';
 import type {Auth, AuthCredential, User, UserCredential} from 'firebase/auth';
@@ -36,7 +34,6 @@ import {getOAuthCredential} from '@libs/OAuthCredential';
 import DBPATHS from '@src/DBPATHS';
 import {readDataOnce} from '@database/baseFunctions';
 import type {FirebaseUpdates} from '@database/updates';
-import {getLastStartedSessionId} from '@libs/DataHandling';
 import * as Localize from '@libs/Localize';
 import type {SelectedTimezone, Timezone} from '@src/types/onyx/UserData';
 import {validateAppVersion} from '@libs/Validation';
@@ -213,27 +210,6 @@ async function deleteUserData(
       updates[friendRequestsRef.getRoute(friendRequestId, userID)] = null;
     });
   }
-  await update(ref(db), updates);
-}
-
-async function synchronizeUserStatus(
-  db: Database,
-  userID: string,
-  drinkingSessions: DrinkingSessionList | undefined,
-): Promise<void> {
-  const latestSessionId = getLastStartedSessionId(drinkingSessions) ?? null;
-  const latestSession =
-    drinkingSessions && latestSessionId
-      ? drinkingSessions[latestSessionId]
-      : null;
-  const newUserStatus: UserStatus = {
-    last_online: new Date().getTime(),
-    latest_session: latestSession,
-    latest_session_id: latestSessionId,
-  };
-  const userStatusRef = DBPATHS.USER_STATUS_USER_ID;
-  const updates: Record<string, UserStatus> = {};
-  updates[userStatusRef.getRoute(userID)] = newUserStatus;
   await update(ref(db), updates);
 }
 
@@ -943,7 +919,6 @@ export {
   sendVerifyEmailLink,
   setAppUpdateDismissed,
   setUsername,
-  synchronizeUserStatus,
   updateAutomaticTimezone,
   updatePassword,
   userExistsInDatabase,

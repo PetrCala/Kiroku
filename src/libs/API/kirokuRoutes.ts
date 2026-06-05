@@ -120,6 +120,10 @@ const KIROKU_ROUTES: Record<string, KirokuRoute> = {
     method: 'post',
     path: '/v1/profile/photo',
   },
+  [WRITE_COMMANDS.SYNC_USER_STATUS]: {
+    method: 'post',
+    path: '/v1/status/sync',
+  },
 };
 
 /** Returns the kiroku-api route for a command, or undefined for legacy commands. */
