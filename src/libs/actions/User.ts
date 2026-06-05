@@ -924,7 +924,9 @@ function subscribeToConfigEvents() {
   PusherUtils.subscribeToPublicChannelEvent<Config>(
     CONST.PUSHER.CONFIG_CHANNEL,
     CONST.PUSHER.CONFIG_UPDATE_EVENT,
-    config => Onyx.set(ONYXKEYS.CONFIG, config),
+    config => {
+      Onyx.set(ONYXKEYS.CONFIG, config);
+    },
   );
 }
 
