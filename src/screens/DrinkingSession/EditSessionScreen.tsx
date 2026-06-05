@@ -1,4 +1,4 @@
-import React from 'react';
+import React, {useState} from 'react';
 import CONST from '@src/CONST';
 import type {StackScreenProps} from '@react-navigation/stack';
 import type {DrinkingSessionNavigatorParamList} from '@libs/Navigation/types';
@@ -24,6 +24,18 @@ function EditSessionScreen({route}: EditSessionScreenProps) {
   const {sessionId, backTo} = route.params;
   const {translate} = useLocalize();
   const [session] = useOnyx(ONYXKEYS.EDIT_SESSION_DATA);
+
+  // Saving or deleting clears EDIT_SESSION_DATA *before* the modal finishes
+  // popping. Hold the last loaded session so the outgoing screen keeps rendering
+  // its content during that teardown instead of flipping to the initial-load
+  // "Loading your session" indicator — which both shows the wrong text and, by
+  // swapping the whole screen tree mid-navigation, stops the pop from landing on
+  // the Day Overview. The genuine initial gap (buffer not yet populated) still
+  // shows the loader.
+  const [displaySession, setDisplaySession] = useState(session);
+  if (session && session !== displaySession) {
+    setDisplaySession(session);
+  }
 
   const onNavigateBack = (
     action: DeepValueOf<typeof CONST.NAVIGATION.SESSION_ACTION>,
@@ -63,7 +75,7 @@ function EditSessionScreen({route}: EditSessionScreenProps) {
     }
   };
 
-  if (!session) {
+  if (!displaySession) {
     return (
       <FullScreenLoadingIndicator
         loadingText={translate('liveSessionScreen.loading')}
@@ -82,7 +94,7 @@ function EditSessionScreen({route}: EditSessionScreenProps) {
       <DrinkingSessionWindow
         onNavigateBack={onNavigateBack}
         sessionId={sessionId}
-        session={session}
+        session={displaySession}
         onyxKey={ONYXKEYS.EDIT_SESSION_DATA}
         type={CONST.SESSION.TYPES.EDIT}
       />
