@@ -1,4 +1,5 @@
-import {useMemo} from 'react';
+import {useEffect, useMemo} from 'react';
+import {useIsFocused} from '@react-navigation/native';
 import {FlatList, View} from 'react-native';
 import {format} from 'date-fns';
 import Button from '@components/Button';
@@ -66,9 +67,30 @@ function DayDrillDownSheet({
     }));
   }, [date, drinkingSessionData]);
 
+  const isFocused = useIsFocused();
+  const hasSessions = sessions.length > 0;
+  // `undefined` means the cached sessions are still resolving; only a resolved
+  // (object or null) value with no sessions for this day counts as truly empty.
+  const isSessionDataReady = drinkingSessionData !== undefined;
+
+  // Clear the remembered date only when the user is back on the calendar
+  // (focused) and the day has genuinely no sessions left — never during the
+  // blurred edit round-trip or while the cache is mid-update. That keeps
+  // deleting one of several sessions from wrongly dismissing the sheet, while
+  // still dismissing it for a day whose last session was removed.
+  useEffect(() => {
+    if (isVisible && isFocused && isSessionDataReady && !hasSessions) {
+      onClose();
+    }
+  }, [isVisible, isFocused, isSessionDataReady, hasSessions, onClose]);
+
   return (
     <Modal
-      isVisible={isVisible}
+      // Hide while the host screen is blurred (the user tapped through to a
+      // session's summary/edit screen, which is presented over it in the RHP) so
+      // the sheet doesn't float over the pushed screen, and reappears with live
+      // data on return — unless the day has been emptied in the meantime.
+      isVisible={isVisible && isFocused && hasSessions}
       onClose={onClose}
       type={CONST.MODAL.MODAL_TYPE.BOTTOM_DOCKED}>
       <View style={[styles.pt3, styles.pb5, {minHeight: 240, maxHeight: 560}]}>
