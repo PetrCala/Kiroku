@@ -168,10 +168,18 @@ function StatsDrillDownSheet() {
             data={sessions}
             keyExtractor={item => String(item.sessionId)}
             renderItem={({item}) => (
+              // Read-only: the drill-down is an analytics surface, so tiles
+              // surface session detail but aren't tappable. Editing/deleting a
+              // session lives on the calendar/day-overview, whose back-navigation
+              // (popModalFlow) is built to reveal the Day Overview beneath the
+              // modal — not another RHP screen like Statistics. Letting users
+              // edit from here routed delete through that unsupported path and
+              // froze the Statistics screen on return.
               <DrinkingSessionOverview
                 sessionId={item.sessionId}
                 session={item.session}
                 isEditModeOn={false}
+                readOnly
               />
             )}
           />
