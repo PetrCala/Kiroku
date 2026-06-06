@@ -45,6 +45,7 @@ import type {UserSearchResults} from '@src/types/various/Search';
 import PusherUtils from '@libs/PusherUtils';
 import * as Pusher from '@libs/Pusher/pusher';
 import * as OnyxUpdates from '@userActions/OnyxUpdates';
+import {fetchUserProfiles} from '@userActions/Profile';
 import {PALETTES} from '@libs/SessionColorPalettes';
 import Log from '@libs/Log';
 import ERRORS from '@src/ERRORS';
@@ -386,13 +387,22 @@ function changeUserName(
 }
 
 /**
- * Fetches the Firebase nickname of an array of users. Returns these nicknames as a mapping object in the form of {[userId]: userNickname}.
+ * Resolves the display names of an array of users, returning them as a mapping
+ * object in the form `{[userId]: displayName}`.
  *
- * @param db The Realtime Database instance.
- * @param uid The user's UID.
- * @returns{Promise<string|null>} The nickname or null if not found.
+ * Reads through the batched kiroku-api endpoint
+ * (`GET /v1/users/batch?fields=profile`, via `Profile.fetchUserProfiles`)
+ * instead of the per-uid Firebase RTDB `users/$uid/profile` reads it used to
+ * fire. A user whose profile the server omits (404 / denied) maps to an empty
+ * string, preserving the previous reader's contract that every requested uid
+ * gets an entry.
  *
- * @example const userNickname = await fetchNicknameByUID(db, "userUIDHere");
+ * @param db Unused (retained for call-site compatibility); authority is the
+ *   caller's Firebase ID token, attached by the API layer.
+ * @param userIds The users whose display names to resolve.
+ * @returns A promise resolving to the nickname-by-id mapping.
+ *
+ * @example const nicknames = await fetchUserNicknames(db, ["userUIDHere"]);
  */
 async function fetchUserNicknames(
   db: Database,
@@ -401,22 +411,11 @@ async function fetchUserNicknames(
   if (isEmptyObject(userIds)) {
     return {};
   }
-  const urls = userIds.map(userId =>
-    DBPATHS.USERS_USER_ID_PROFILE.getRoute(userId),
-  );
 
-  const fetchPromises = urls.map(url =>
-    readDataOnce<Profile>(db, url).then(response => response),
-  );
+  const profiles = await fetchUserProfiles(db, userIds);
 
-  const results = await Promise.all(fetchPromises);
-
-  if (!results) {
-    return {};
-  }
-
-  return userIds.reduce((acc, key, index) => {
-    acc[key] = results[index]?.display_name ?? '';
+  return userIds.reduce((acc, userId) => {
+    acc[userId] = profiles[userId]?.display_name ?? '';
     return acc;
   }, {} as NicknameToId);
 }
