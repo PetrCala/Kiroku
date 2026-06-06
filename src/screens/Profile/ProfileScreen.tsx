@@ -8,7 +8,7 @@ import React, {useCallback, useEffect, useMemo, useState} from 'react';
 import {useOnyx} from 'react-native-onyx';
 import ONYXKEYS from '@src/ONYXKEYS';
 import * as App from '@userActions/App';
-import {readDataOnce} from '@database/baseFunctions';
+import * as Profile from '@userActions/Profile';
 import {
   calculateThisMonthUnits,
   dateToDateData,
@@ -22,12 +22,10 @@ import {getCommonFriendsCount} from '@libs/FriendUtils';
 import * as DSUtils from '@libs/DrinkingSessionUtils';
 import * as KirokuIcons from '@components/Icon/KirokuIcons';
 import type {DrinkingSessionArray} from '@src/types/onyx';
-import type {UserList} from '@src/types/onyx/OnyxCommon';
 import type {StackScreenProps} from '@react-navigation/stack';
 import type {ProfileNavigatorParamList} from '@libs/Navigation/types';
 import type SCREENS from '@src/SCREENS';
 import Navigation from '@libs/Navigation/Navigation';
-import DBPATHS from '@src/DBPATHS';
 import ROUTES from '@src/ROUTES';
 import useFriendProfile from '@hooks/useFriendProfile';
 import useFriendPreferences from '@hooks/useFriendPreferences';
@@ -51,7 +49,7 @@ type ProfileScreenProps = StackScreenProps<
 >;
 
 function ProfileScreen({route}: ProfileScreenProps) {
-  const {auth, db} = useFirebase();
+  const {auth} = useFirebase();
   const {userID} = route.params;
   const user = auth.currentUser;
   // Friend data now comes from the kiroku-api (privacy-enforced) instead of
@@ -75,7 +73,7 @@ function ProfileScreen({route}: ProfileScreenProps) {
   // indexing on first render, which otherwise blocks the push slide-in.
   const {isReady: didScreenTransitionEnd, onEntryTransitionEnd} =
     useReadyAfterScreenTransition();
-  const [selfFriends, setSelfFriends] = useState<UserList | null | undefined>();
+  const [userDataList] = useOnyx(ONYXKEYS.USER_DATA_LIST);
   const [friendCount, setFriendCount] = useState(0);
   const [commonFriendCount, setCommonFriendCount] = useState(0);
   const [localVisibleDateData, setLocalVisibleDateData] = useState(
@@ -107,6 +105,11 @@ function ProfileScreen({route}: ProfileScreenProps) {
     useState(false);
   const profileData = userData?.profile;
   const friends = userData?.friends;
+  // The common-friends count compares the viewed user's friends against the
+  // viewer's OWN. On your own profile they're the same list; otherwise read the
+  // viewer's own friends back from Onyx (hydrated below via `openFriendList`).
+  const selfFriends =
+    user && user.uid !== userID ? userDataList?.[user.uid]?.friends : friends;
 
   const statsData: StatData = [
     {
@@ -145,23 +148,14 @@ function ProfileScreen({route}: ProfileScreenProps) {
     Navigation.navigate(screenRoute);
   };
 
-  // Track own friends
+  // Hydrate the viewer's own friends (for the common-friends count) when viewing
+  // someone else's profile, via the kiroku-api instead of a direct Firebase read.
   useEffect(() => {
-    const getOwnFriends = async () => {
-      if (!user) {
-        return;
-      }
-      let ownFriends: UserList | null | undefined = friends;
-      if (user?.uid !== userID) {
-        ownFriends = await readDataOnce<UserList>(
-          db,
-          DBPATHS.USERS_USER_ID_FRIENDS.getRoute(user.uid),
-        );
-      }
-      setSelfFriends(ownFriends);
-    };
-    getOwnFriends();
-  }, [db, friends, user, userID]);
+    if (!user || user.uid === userID) {
+      return;
+    }
+    Profile.openFriendList(user.uid);
+  }, [user, userID]);
 
   // Monitor friends count
   useEffect(() => {

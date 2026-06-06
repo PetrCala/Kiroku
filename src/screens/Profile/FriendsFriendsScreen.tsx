@@ -4,8 +4,8 @@ import type {
   ProfileList,
   FriendRequestList,
 } from '@src/types/onyx';
-import type {UserList} from '@src/types/onyx/OnyxCommon';
 import {useCallback, useEffect, useState} from 'react';
+import {useOnyx} from 'react-native-onyx';
 import {useFirebase} from '@context/global/FirebaseContext';
 import {isEmptyArray} from '@src/types/utils/EmptyObject';
 import {searchArrayByText, getNicknameMapping} from '@libs/Search';
@@ -27,8 +27,7 @@ import type SCREENS from '@src/SCREENS';
 import useCurrentUserData from '@hooks/useCurrentUserData';
 import Navigation from '@libs/Navigation/Navigation';
 import ROUTES from '@src/ROUTES';
-import DBPATHS from '@src/DBPATHS';
-import {readDataOnce} from '@database/baseFunctions';
+import ONYXKEYS from '@src/ONYXKEYS';
 import ScreenWrapper from '@components/ScreenWrapper';
 import HeaderWithBackButton from '@components/HeaderWithBackButton';
 import useLocalize from '@hooks/useLocalize';
@@ -51,10 +50,11 @@ function FriendsFriendsScreen({route}: FriendsFriendsScreenProps) {
   const userData = useCurrentUserData();
   const user = auth.currentUser;
   const {translate} = useLocalize();
+  const [userDataList] = useOnyx(ONYXKEYS.USER_DATA_LIST);
+  // The target user's friends, read via the kiroku-api into
+  // `userDataList[userID].friends` (replacing the direct Firebase read).
+  const friends = userDataList?.[userID]?.friends;
   const [searching, setSearching] = useState<boolean>(false);
-  const [friends, setFriends] = useState<UserList | null | undefined>(
-    undefined,
-  );
   const [displayedFriends, setDisplayedFriends] = useState<UserSearchResults>(
     [],
   );
@@ -153,15 +153,13 @@ function FriendsFriendsScreen({route}: FriendsFriendsScreenProps) {
   const fetchData = useCallback(async () => {
     try {
       setIsLoading(true);
-      const userFriends = await readDataOnce<UserList>(
-        db,
-        DBPATHS.USERS_USER_ID_FRIENDS.getRoute(userID),
-      );
-      setFriends(userFriends);
+      // Read the target user's friends via the kiroku-api (merged into
+      // `userDataList[userID].friends`), replacing the direct Firebase read.
+      await Profile.openFriendList(userID);
     } finally {
       setIsLoading(false);
     }
-  }, [db, userID]);
+  }, [userID]);
 
   useEffect(() => {
     fetchData();
