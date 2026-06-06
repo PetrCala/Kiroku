@@ -128,6 +128,9 @@ function DayOverviewScreen({route}: DayOverviewScreenProps) {
 
   // The day the user is currently looking at — opens the add-session picker on
   // the viewed month. Seeded with the focused day, updated as the user scrolls.
+  // Also drives the list's restore target (see `initialDay` below): because it
+  // lives on this screen (which stays mounted across the edit round-trip), it
+  // outlives the list subtree, so the list lands back where the user was.
   const [visibleDay, setVisibleDay] = useState<DateString | undefined>(date);
 
   // dayList mode ignores `visibleDate`/`onDateChange`, but the shared
@@ -208,7 +211,17 @@ function DayOverviewScreen({route}: DayOverviewScreenProps) {
               preferences={preferences}
               isFetchingOlderMonths={isFetchingOlderMonths}
               mode="dayList"
-              initialDay={date}
+              // Restore to where the user last was, not the route's `date`.
+              // Saving a session sets a global "Saving…" loading text, which
+              // momentarily swaps this screen's tree for the full-screen loader
+              // (see the `loadingText` guard above) and so remounts the list.
+              // The remounted list re-applies its initial centering — on `date`
+              // (often a recent day, i.e. the bottom of the oldest→newest list)
+              // that reads as "jumped to the bottom". `visibleDay` tracks the
+              // user's scroll position and survives the remount, so centering on
+              // it lands them back where they left off. On first mount it equals
+              // `date`, preserving the open-on-the-tapped-day behavior.
+              initialDay={visibleDay ?? date}
               onInitialScrollReady={onInitialScrollReady}
               onVisibleDayChange={setVisibleDay}
               isReadOnly={!isSelf}
