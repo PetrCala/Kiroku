@@ -345,6 +345,9 @@ const CONST = {
     UNDEFINED: 'undefined',
   },
   HTTP_STATUS: {
+    // The resource already exists — e.g. provisioning an already-provisioned
+    // user. Expected/benign for idempotent retries, not a service failure.
+    CONFLICT: 409,
     // When Cloudflare throttles
     TOO_MANY_REQUESTS: 429,
     INTERNAL_SERVER_ERROR: 500,

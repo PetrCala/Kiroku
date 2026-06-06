@@ -1,5 +1,4 @@
 import type {Database} from 'firebase/database';
-import {ref, get} from 'firebase/database';
 import type {
   AppSettings,
   Config,
@@ -38,6 +37,7 @@ import Onyx from 'react-native-onyx';
 import ONYXKEYS from '@src/ONYXKEYS';
 import CONST from '@src/CONST';
 import {getFirebaseAuth} from '@libs/Firebase/FirebaseApp';
+import HttpsError from '@libs/Errors/HttpsError';
 import * as API from '@libs/API';
 import {READ_COMMANDS, WRITE_COMMANDS} from '@libs/API/types';
 import type Response from '@src/types/onyx/Response';
@@ -94,23 +94,6 @@ const getDefaultUserData = (profileData: Profile): UserData => {
 };
 
 /**
- * Check if a user exists in the realtime database.
- *
- * @param db - The database object against which to validate this conditio
- * @param userID - User ID of the user to check.
- * @returns - Returns true if the user exists, false otherwise.
- */
-async function userExistsInDatabase(
-  db: Database,
-  userID: string,
-): Promise<boolean> {
-  const profilePath = DBPATHS.USERS_USER_ID_PROFILE.getRoute(userID);
-  const dbRef = ref(db, profilePath);
-  const snapshot = await get(dbRef);
-  return snapshot.exists();
-}
-
-/**
  * Provision a brand-new user's backing data via kiroku-api. Replaces the former
  * direct RTDB write (`pushNewUserInfo`): the server owns the atomic creation of
  * `users/$uid`, `user_status/$uid`, `user_preferences/$uid`, and the
@@ -126,10 +109,24 @@ async function userExistsInDatabase(
  *
  * @param userID The new user's Firebase uid — used only for the optimistic update
  * @param profileData Profile data of the user to create
+ * @param options.applyOptimisticData Whether to optimistically write the default
+ *   user data/preferences/theme into Onyx before the request. `true` (default)
+ *   for the email/password signup flow, where the caller KNOWS the account is
+ *   brand-new. The OAuth sign-in path passes `false`: there, provisioning is
+ *   SPECULATIVE — it is attempted on every sign-in and a returning account is
+ *   expected to come back `409`. Applying the optimistic defaults in that case
+ *   would transiently overwrite a returning user's real `username_chosen` /
+ *   preferences / theme (and, with their real account data not yet loaded, could
+ *   mis-route them into onboarding) with no way to undo it: the `409` surfaces as
+ *   a thrown HTTP rejection that never reaches `SaveResponseInOnyx`, so neither
+ *   `onyxData` nor `failureData` is applied. A brand-new OAuth user is
+ *   unaffected — the server's `200` response carries the same `onyxData`, applied
+ *   when this promise resolves (before the sign-in overlay drops).
  */
 function provisionUser(
   userID: string,
   profileData: Profile,
+  {applyOptimisticData = true}: {applyOptimisticData?: boolean} = {},
 ): Promise<void | Response> {
   const userData = getDefaultUserData(profileData);
   const preferences = getDefaultPreferences();
@@ -155,7 +152,7 @@ function provisionUser(
   return API.makeRequestWithSideEffects(
     WRITE_COMMANDS.PROVISION_USER,
     {profile: profileData, timezone: userData.timezone, preferences},
-    {optimisticData},
+    applyOptimisticData ? {optimisticData} : {},
   );
 }
 
@@ -463,32 +460,50 @@ function setUsername(user: User | null, newUsername: string): void {
 
 /**
  * Sign in (or sign up) using a Firebase OAuth credential from Apple or Google.
- * If the user does not yet exist in the Realtime Database, creates their profile.
+ *
+ * There is no longer a client-side existence pre-check (the last direct RTDB
+ * read in this module): provisioning is attempted unconditionally and the server
+ * is the authority. `provisionUser` creates a brand-new account; a returning
+ * account is refused with `409` (the route is 409-guarded so a replay can never
+ * clobber an established record), which we treat as "already provisioned" and
+ * swallow. Any other failure propagates so the caller can surface it.
  *
  * @param auth The Firebase authentication object
- * @param db The Firebase Realtime Database object
  * @param credential The OAuth credential (OAuthProvider or GoogleAuthProvider)
  * @param displayName Optional display name captured from the OAuth provider response
  */
 async function signInWithOAuth(
   auth: Auth,
-  db: Database,
   credential: AuthCredential,
   displayName?: string | null,
 ): Promise<void> {
   const userCredential = await signInWithCredential(auth, credential);
   const {user} = userCredential;
-  const exists = await userExistsInDatabase(db, user.uid);
-  if (!exists) {
-    const name =
-      displayName ?? user.displayName ?? user.email?.split('@').at(0) ?? 'User';
-    const profileData: Profile = {
-      display_name: name,
-      photo_url: user.photoURL ?? '',
-      username_chosen: false,
-    };
-    await provisionUser(user.uid, profileData);
+  const name =
+    displayName ?? user.displayName ?? user.email?.split('@').at(0) ?? 'User';
+  const profileData: Profile = {
+    display_name: name,
+    photo_url: user.photoURL ?? '',
+    username_chosen: false,
+  };
+  try {
+    // Speculative: optimistic Onyx defaults are intentionally NOT applied (see
+    // `provisionUser`) because a returning user reaches this on every sign-in
+    // and the defaults would briefly overwrite their real data with no rollback.
+    await provisionUser(user.uid, profileData, {applyOptimisticData: false});
+    // Brand-new account only — a `409` jumps to the catch and skips this, since a
+    // returning user already has their Firebase Auth display name.
     await updateProfile(user, {displayName: name});
+  } catch (error) {
+    // `409 Conflict` = the account already exists (returning user). That is the
+    // expected replay outcome — proceed to sign-in. Everything else is a real
+    // provisioning failure and must propagate.
+    if (
+      !(error instanceof HttpsError) ||
+      error.status !== String(CONST.HTTP_STATUS.CONFLICT)
+    ) {
+      throw error;
+    }
   }
   Session.clearSignInData();
   // Post-auth routing is owned by OnboardingGuard. Navigating here would
@@ -845,7 +860,6 @@ export {
   setUsername,
   syncUserStatus,
   updatePassword,
-  userExistsInDatabase,
   logIn,
   signInWithOAuth,
   stashPendingOAuthCredential,

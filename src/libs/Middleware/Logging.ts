@@ -183,6 +183,16 @@ const Logging: Middleware = (response, request) => {
           false,
           logParams,
         );
+      } else if (error.status === CONST.HTTP_STATUS.CONFLICT.toString()) {
+        // A 409 means the resource already exists — e.g. re-provisioning an
+        // already-provisioned account on every returning OAuth sign-in. Expected
+        // and benign for idempotent retries, so log at info level rather than
+        // raising an unknown-error alert.
+        Log.info(
+          '[Network] API request error: resource already exists (409)',
+          false,
+          logParams,
+        );
       } else {
         // If we get any error that is not known log an alert so we can learn more about it and document it here.
         Log.alert(
