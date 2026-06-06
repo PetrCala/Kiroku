@@ -90,6 +90,9 @@ Brand names, platform names, and any string that must stay in English (e.g.
 - Time format (12h vs 24h).
 - Date format.
 - Punctuation specifics (quotes, ellipsis, …).
+- **Em-dashes (`—`)**: avoid them in running copy; they read as artificial in
+  prose. Prefer two sentences, a comma, or parentheses. The English source is
+  kept dash-free, so keep translations dash-free too.
 
 ## Known inconsistencies to fix (audit backlog)
 

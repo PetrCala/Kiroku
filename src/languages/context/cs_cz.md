@@ -117,6 +117,9 @@ helper only takes two arguments (singular + one plural).
   shared across locales — leave as-is unless the product asks for Czech
   `D. M. YYYY`.
 - **Ellipsis**: use the single `…` character, not three dots.
+- **Em-dashes (`—`)**: avoid them in running copy; they read as artificial in
+  prose. Split into two sentences, or use a comma or parentheses instead. The
+  English source is kept dash-free, so translations should be too.
 
 ## Known inconsistencies to fix (audit backlog)
 
