@@ -25,7 +25,6 @@ import type {
   SessionWindowIdParams,
   StatsAfDaysParams,
   StatsDrillDownTitleParams,
-  StatsQuietDaysParams,
   SupporterCancelledStatusParams,
   SupporterPriceParams,
   SupporterPurchaseCtaParams,
@@ -756,16 +755,16 @@ export default {
       pricePerYear: ({price}: SupporterPriceParams) => `${price} / rok`,
       pricePerMonth: ({price}: SupporterPriceParams) => `${price} / měsíc`,
       startSupportingCta: ({price}: SupporterPriceParams) =>
-        `Podpořit — ${price}`,
+        `Podpořit za ${price}`,
       loading: 'Načítám detaily předplatného…',
       thanksTitle: 'Jste Kiroku Supporter',
       thanksSubtitle:
-        'Děkujeme za podporu — odznak podporovatele je nyní viditelný na vašem profilu.',
+        'Děkujeme za podporu. Odznak podporovatele je nyní viditelný na vašem profilu.',
       unavailableTitle: 'Předplatné není dostupné',
       unavailableSubtitle:
         'Nepodařilo se nám načíst předplatné podporovatele. Zkontrolujte připojení a zkuste to znovu.',
       purchaseCta: ({price}: SupporterPurchaseCtaParams) =>
-        `Stát se podporovatelem — ${price} / měsíc`,
+        `Stát se podporovatelem za ${price} / měsíc`,
       purchaseError: ({message}: SupporterPurchaseErrorParams) =>
         `Nákup se nezdařil: ${message}. Zkuste to prosím znovu.`,
       restoreError: ({message}: SupporterPurchaseErrorParams) =>
@@ -784,7 +783,7 @@ export default {
       status: {
         active: 'Aktivní',
         cancelled: ({date}: SupporterCancelledStatusParams) =>
-          `Zrušeno — aktivní do ${date}`,
+          `Zrušeno, aktivní do ${date}`,
         gracePeriod: 'Problém s platbou',
         expired: 'Vypršelo',
       },
@@ -793,7 +792,7 @@ export default {
       manageInAppStore: 'Spravovat v App Store',
       manageInGooglePlay: 'Spravovat v Google Play',
       restorePurchases: 'Obnovit nákupy',
-      restoreSuccess: 'Nákupy obnoveny — váš status podporovatele je aktivní.',
+      restoreSuccess: 'Nákupy obnoveny. Váš status podporovatele je aktivní.',
       restoreError: ({message}: SupporterPurchaseErrorParams) =>
         `Obnovení se nezdařilo: ${message}. Zkuste to prosím znovu.`,
       restoreEmpty:
@@ -896,7 +895,8 @@ export default {
     skipVerificationDevOnly: 'Přeskočit ověření (pouze pro vývoj)',
     changeEmail: {
       title: 'Použít jiný e-mail',
-      prompt: 'Zadejte novou adresu a heslo — ověřovací odkaz vám pošleme tam.',
+      prompt:
+        'Zadejte novou adresu a heslo. Ověřovací odkaz vám pošleme na ni.',
       newEmailLabel: 'Nová e-mailová adresa',
       passwordLabel: 'Vaše heslo',
       submit: 'Odeslat ověřovací odkaz',
@@ -999,8 +999,8 @@ export default {
           bandCaption:
             'Stínovaný pás je tam, kde se odehrála většina vašich posledních 8 týdnů.',
           chip: {
-            down: 'Trend dolů — vaše týdenní jednotky postupně klesají.',
-            up: 'Trend nahoru — vaše týdenní jednotky postupně rostou.',
+            down: 'Vaše týdenní jednotky postupně klesají.',
+            up: 'Vaše týdenní jednotky postupně rostou.',
             none: 'Vaše týdny se proměňují jako obvykle.',
           },
           a11yLabel: 'Posledních 8 týdnů týdenních jednotek, vyhlazeno',
@@ -1010,11 +1010,11 @@ export default {
             title: 'Zatím není co zobrazit',
             body: 'Až zaznamenáte relaci, objeví se zde týdenní trendy a měsíční přehled.',
           },
-          noDataInWindow: ({quietDays}: StatsQuietDaysParams) =>
-            `${quietDays} klidných dnů a počítáme dál — vaše trendy se vyjasní, jak budete přidávat data.`,
+          noDataInRange:
+            'Žádné relace v tomto období. Každý uplynulý den byl bez alkoholu.',
         },
         sparseFooter:
-          'Zatím jen pár týdnů historie — vaše trendy se vyjasní, jak budete přidávat data.',
+          'Zatím jen pár týdnů historie. Vaše trendy se vyjasní, jak budete přidávat data.',
       },
       trends: {
         label: 'Trendy',
@@ -1028,7 +1028,7 @@ export default {
             trendingUp: 'Vaše týdenní jednotky mají vzestupný trend.',
             neutral: 'Vaše týdny se mění obvyklým způsobem.',
             notEnoughData:
-              'Pokračujte v zaznamenávání — trend se ukáže, až bude víc dat.',
+              'Pokračujte v zaznamenávání. Trend se ukáže, až bude víc dat.',
           },
         },
         cumulativeAf: {
@@ -1045,7 +1045,7 @@ export default {
       },
       patterns: {
         label: 'Vzorce',
-        placeholder: 'Kdy a jak — hodina dne a den v týdnu — bude tady.',
+        placeholder: 'Kdy a jak (hodina dne a den v týdnu) uvidíte tady.',
       },
       breakdown: {
         label: 'Rozpis',
@@ -1062,7 +1062,7 @@ export default {
         multiples: {
           title: 'Týdenní trend podle druhu',
           subtitle: 'Malý graf pro každý druh s daty v tomto období.',
-          empty: 'Zatím žádné trendy podle druhu — zkus širší období.',
+          empty: 'Zatím žádné trendy podle druhu. Zkus širší období.',
           tileSubtitle: ({units}: BreakdownTileSubtitleParams) =>
             `${units} jednotek za období`,
           a11yTile: ({label}: BreakdownDrinkLabelParams) =>
@@ -1122,9 +1122,9 @@ export default {
         month: ({label}: StatsDrillDownTitleParams) =>
           `Relace v měsíci ${label}`,
         hour: ({label}: StatsDrillDownTitleParams) => `Relace kolem ${label}`,
-        dow: ({label}: StatsDrillDownTitleParams) => `Relace — ${label}`,
+        dow: ({label}: StatsDrillDownTitleParams) => `Relace: ${label}`,
         dowHour: ({label}: StatsDrillDownTitleParams) => label,
-        drinkType: ({label}: StatsDrillDownTitleParams) => `Relace — ${label}`,
+        drinkType: ({label}: StatsDrillDownTitleParams) => `Relace: ${label}`,
         isoWeekDrinkType: ({label}: StatsDrillDownTitleParams) => label,
         sessionDrinkCountBin: ({label}: StatsDrillDownTitleParams) =>
           `Relace s ${label}`,
@@ -1307,7 +1307,7 @@ export default {
     title: 'Testovací nástroje',
     intro: 'Vývojářský panel pro úpravy za běhu a ladění.',
     placeholderNotice:
-      'Toto je zástupný panel. Skutečné přepínače — feature flagy, přepsání prostředí, vynucené stavy sítě — sem postupně přibudou.',
+      'Toto je zástupný panel. Skutečné přepínače (feature flagy, přepsání prostředí, vynucené stavy sítě) sem postupně přibudou.',
     environmentLabel: 'Prostředí',
     howToOpen:
       'Otevřete přes ⌘D → Open Test Preferences nebo čtyřprstovým ťuknutím kdekoli v aplikaci.',
@@ -1390,7 +1390,7 @@ export default {
   },
   pickUsernameScreen: {
     heading: 'Zvolte si uživatelské jméno',
-    explainer: 'Vyberte si uživatelské jméno — pod tímto vás uvidí ostatní.',
+    explainer: 'Vyberte si uživatelské jméno. Pod ním vás uvidí ostatní.',
     saving: 'Ukládám…',
     error: {
       generic:
@@ -1431,7 +1431,7 @@ export default {
   connectedAccounts: {
     title: 'Propojené účty',
     subtitle:
-      'Vyberte si, jak se chcete přihlašovat. Můžete propojit více způsobů — všechny vás přihlásí ke stejnému účtu.',
+      'Vyberte si, jak se chcete přihlašovat. Můžete propojit více způsobů. Všechny vás přihlásí ke stejnému účtu.',
     providers: {
       password: 'E-mail a heslo',
       apple: 'Apple',
@@ -1485,7 +1485,7 @@ export default {
     appleSubmit: 'Propojit účet Apple',
     googleSubmit: 'Propojit účet Google',
     resetEmailSent: ({email}: ForgotPasswordSuccessParams) =>
-      `Odkaz pro reset hesla byl odeslán na adresu ${email}. Zkontrolujte si schránku — a složku spamu, pokud ho nevidíte.`,
+      `Odkaz pro reset hesla byl odeslán na adresu ${email}. Zkontrolujte si schránku i složku spamu, pokud ho nevidíte.`,
   },
   passwordScreen: {
     title: 'Změnit heslo',
@@ -1622,7 +1622,7 @@ export default {
       lastProvider: {
         title: 'Nelze odpojit',
         message:
-          'Nelze odpojit poslední způsob přihlášení — ztratili byste přístup k účtu. Nejprve přidejte jiný způsob.',
+          'Nelze odpojit poslední způsob přihlášení, jinak byste ztratili přístup k účtu. Nejprve přidejte jiný způsob.',
       },
     },
     database: {

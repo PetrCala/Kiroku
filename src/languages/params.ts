@@ -55,10 +55,6 @@ type StatsAfDaysParams = {
   total: number;
 };
 
-type StatsQuietDaysParams = {
-  quietDays: number;
-};
-
 type StatsThresholdParams = {
   threshold: number;
 };
@@ -141,7 +137,6 @@ export type {
   SessionWindowIdParams,
   StatsAfDaysParams,
   StatsDrillDownTitleParams,
-  StatsQuietDaysParams,
   StatsThresholdParams,
   SupporterCancelledStatusParams,
   SupporterPriceParams,
