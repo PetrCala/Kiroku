@@ -1097,6 +1097,9 @@ export default {
         },
       },
     },
+    legend: {
+      drinkTypeA11y: 'Drink type legend',
+    },
     charts: {
       weeklyBars: {
         title: 'Last 8 weeks',

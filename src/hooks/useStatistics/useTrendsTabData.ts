@@ -1,5 +1,5 @@
 import {useMemo} from 'react';
-import {useChartTheme} from '@components/Charts/BaseChart';
+import {DRINK_KEY_COLORS} from '@libs/Statistics/drinkKeyMeta';
 import {ewma, mannKendall} from '@libs/Statistics/stats';
 import {
   buildAfYtdSeries,
@@ -63,7 +63,6 @@ const ALL_DRINK_KEYS: readonly DrinkKey[] = Object.values(CONST.DRINKS.KEYS);
 function useTrendsTabData(): TrendsTabData {
   const {events, isLoading} = useDrinkEvents();
   const {range, comparison, drinkTypeFilter} = useStatsContext();
-  const theme = useChartTheme();
 
   const comparisonRange = useMemo(
     () => shiftRange(range, comparison),
@@ -173,15 +172,13 @@ function useTrendsTabData(): TrendsTabData {
       byKey[key] = weeks.map(w => w.byKey[key] ?? 0);
     }
 
-    // Per-key palette: walk trackedKeys in ALL_DRINK_KEYS order, zipping
-    // against `theme.drinkTypeRamp` positionally so colors stay stable when
-    // the user toggles drink-type chips.
+    // Per-key palette from the shared drink-type colors — a keyed lookup (not
+    // a positional zip), so each drink keeps its own color regardless of which
+    // chips are toggled and it matches the Breakdown donut exactly.
     const palette: Partial<Record<DrinkKey, string>> = {};
-    ALL_DRINK_KEYS.forEach((key, i) => {
-      if (trackedKeys.includes(key)) {
-        palette[key] = theme.drinkTypeRamp[i] ?? theme.primaryFill;
-      }
-    });
+    for (const key of trackedKeys) {
+      palette[key] = DRINK_KEY_COLORS[key];
+    }
 
     let comparisonTotal: number[] | undefined;
     if (comparisonRange) {
@@ -218,15 +215,7 @@ function useTrendsTabData(): TrendsTabData {
       palette,
       comparisonTotal,
     };
-  }, [
-    events,
-    range.start,
-    range.end,
-    drinkTypeFilter,
-    comparisonRange,
-    theme.drinkTypeRamp,
-    theme.primaryFill,
-  ]);
+  }, [events, range.start, range.end, drinkTypeFilter, comparisonRange]);
 
   return {hero, afYtd, stack, isLoading};
 }

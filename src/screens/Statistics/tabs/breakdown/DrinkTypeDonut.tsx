@@ -8,23 +8,16 @@ import Text from '@components/Text';
 import useLocalize from '@hooks/useLocalize';
 import useTheme from '@hooks/useTheme';
 import useThemeStyles from '@hooks/useThemeStyles';
+import {
+  DRINK_KEY_COLORS,
+  DRINK_KEY_LABEL,
+  computeDrinkShares,
+} from '@libs/Statistics/drinkKeyMeta';
 import type {DrinkKey} from '@src/types/onyx/Drinks';
-import type {TranslationPaths} from '@src/languages/types';
-import {DRINK_KEY_COLORS, DRINK_KEY_ORDER} from './drinkKeyColors';
 
 const DEFAULT_SIZE = 220;
 const INNER_RADIUS_RATIO = 0.6;
 const SELECTED_LIFT_PX = 4;
-
-const DRINK_LABEL_KEY: Readonly<Record<DrinkKey, TranslationPaths>> = {
-  small_beer: 'drinks.smallBeer',
-  beer: 'drinks.beer',
-  wine: 'drinks.wine',
-  weak_shot: 'drinks.weakShot',
-  strong_shot: 'drinks.strongShot',
-  cocktail: 'drinks.cocktail',
-  other: 'drinks.other',
-};
 
 type Slice = {
   key: DrinkKey;
@@ -49,25 +42,12 @@ function buildSlices(
   unitsByDrinkKey: ReadonlyMap<DrinkKey, number>,
   drinkTypeFilter: ReadonlySet<DrinkKey>,
 ): {slices: Slice[]; total: number} {
-  const filter = drinkTypeFilter.size === 0 ? null : drinkTypeFilter;
-  let total = 0;
-  const filtered: Array<{key: DrinkKey; units: number}> = [];
-  for (const key of DRINK_KEY_ORDER) {
-    if (filter && !filter.has(key)) {
-      continue;
-    }
-    const units = unitsByDrinkKey.get(key) ?? 0;
-    if (units > 0) {
-      filtered.push({key, units});
-      total += units;
-    }
-  }
+  const {entries, total} = computeDrinkShares(unitsByDrinkKey, drinkTypeFilter);
   if (total === 0) {
     return {slices: [], total: 0};
   }
   let cursor = -Math.PI / 2; // start at 12 o'clock
-  const slices = filtered.map(({key, units}) => {
-    const share = units / total;
+  const slices = entries.map(({key, units, share}) => {
     const startAngle = cursor;
     const endAngle = cursor + share * Math.PI * 2;
     cursor = endAngle;
@@ -304,7 +284,7 @@ function DrinkTypeDonut({
           />
           <Text style={[styles.textLabelSupporting]}>
             {translate('statistics.tabs.breakdown.donut.sliceCaption', {
-              label: translate(DRINK_LABEL_KEY[selected.key]),
+              label: translate(DRINK_KEY_LABEL[selected.key]),
               units: Math.round(selected.units * 10) / 10,
               share: Math.round(selected.share * 100),
             })}

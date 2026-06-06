@@ -1085,6 +1085,9 @@ export default {
         },
       },
     },
+    legend: {
+      drinkTypeA11y: 'Legenda druhů drinků',
+    },
     charts: {
       weeklyBars: {
         title: 'Posledních 8 týdnů',

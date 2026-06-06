@@ -165,5 +165,29 @@ const sessionPaletteColors = {
   },
 };
 
-export {sessionPaletteColors};
+/**
+ * Drink-type categorical palette for Statistics (Breakdown donut + per-type
+ * multiples, Trends "drink mix over time"). One vivid, real-drink-evocative
+ * color per drink type so the seven categories stay distinguishable at a
+ * glance. Theme-independent on purpose — these are domain colors, not theme
+ * tokens, so they read identically in light and dark (surrounding text/frame
+ * contrast adapts around them).
+ *
+ * This intentionally departs from the yellow→orange "never red, never black"
+ * rule in `contributingGuides/STATISTICS.md §3`, which governs *intensity /
+ * severity* encodings (heatmap, high-day coloring), not this *categorical*
+ * drink palette. Keys are snake_case to match the API drink keys; the typed
+ * `DrinkKey` mapping is assembled in `@libs/Statistics/drinkKeyMeta`.
+ */
+const drinkTypeColors = {
+  small_beer: '#FFD23F', // lager gold
+  beer: '#F59E0B', // amber
+  wine: '#B0233A', // wine red
+  weak_shot: '#34D399', // mint (light spirit)
+  strong_shot: '#7C4A2D', // whiskey brown
+  cocktail: '#EC4899', // pink
+  other: '#818CF8', // indigo
+};
+
+export {sessionPaletteColors, drinkTypeColors};
 export default colors;

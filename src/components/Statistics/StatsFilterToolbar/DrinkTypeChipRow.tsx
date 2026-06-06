@@ -5,22 +5,13 @@ import ScrollView from '@components/ScrollView';
 import Text from '@components/Text';
 import useLocalize from '@hooks/useLocalize';
 import useTheme from '@hooks/useTheme';
-import CONST from '@src/CONST';
+import {DRINK_KEY_LABEL, DRINK_KEY_ORDER} from '@libs/Statistics/drinkKeyMeta';
 import type {DrinkKey} from '@src/types/onyx/Drinks';
-import type {TranslationPaths} from '@src/languages/types';
 
-const DRINK_LABELS: ReadonlyArray<{
-  key: DrinkKey;
-  labelKey: TranslationPaths;
-}> = [
-  {key: CONST.DRINKS.KEYS.SMALL_BEER, labelKey: 'drinks.smallBeer'},
-  {key: CONST.DRINKS.KEYS.BEER, labelKey: 'drinks.beer'},
-  {key: CONST.DRINKS.KEYS.WINE, labelKey: 'drinks.wine'},
-  {key: CONST.DRINKS.KEYS.WEAK_SHOT, labelKey: 'drinks.weakShot'},
-  {key: CONST.DRINKS.KEYS.STRONG_SHOT, labelKey: 'drinks.strongShot'},
-  {key: CONST.DRINKS.KEYS.COCKTAIL, labelKey: 'drinks.cocktail'},
-  {key: CONST.DRINKS.KEYS.OTHER, labelKey: 'drinks.other'},
-];
+const DRINK_LABELS = DRINK_KEY_ORDER.map(key => ({
+  key,
+  labelKey: DRINK_KEY_LABEL[key],
+}));
 
 const styles = StyleSheet.create({
   content: {
