@@ -148,7 +148,16 @@ function DayOverviewScreen({route}: DayOverviewScreenProps) {
   if (!isOnline) {
     return <UserOffline />;
   }
-  if (!date || !!loadingText) {
+  // Show the global loading overlay only before the list has first rendered.
+  // Once the list is up (`isScrollReady`), a transient loadingText from a child
+  // edit/delete flow (the "Saving…"/"Deleting…" set in `DrinkingSessionWindow`)
+  // must NOT swap the tree for the full-screen loader: that unmounts and then
+  // remounts the heavy session list, which loses its scroll position and forces
+  // a visible from-scratch re-render — the synchronous `useLazyMarkedDates`
+  // re-index plus a FlashList remount — on return. Keeping the list mounted lets
+  // the edited/deleted session update in place via FlashList's normal data diff,
+  // with the scroll position preserved exactly. See #1015 / #1024.
+  if (!date || (!!loadingText && !isScrollReady)) {
     return <FullScreenLoadingIndicator loadingText={loadingText} />;
   }
 
