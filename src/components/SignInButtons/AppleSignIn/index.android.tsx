@@ -67,7 +67,7 @@ function AppleSignIn({
   onPress = () => {},
   onError = () => {},
 }: AppleSignInProps) {
-  const {auth, db} = useFirebase();
+  const {auth} = useFirebase();
   const {translate} = useLocalize();
 
   const handleSignIn = async () => {
@@ -92,7 +92,7 @@ function AppleSignIn({
       await App.setLoadingText(translate('signUpScreen.signingYouIn'));
       loadingShown = true;
       try {
-        await User.signInWithOAuth(auth, db, credential, displayName);
+        await User.signInWithOAuth(auth, credential, displayName);
       } catch (firebaseError: unknown) {
         const fe = firebaseError as {code?: string};
         if (
