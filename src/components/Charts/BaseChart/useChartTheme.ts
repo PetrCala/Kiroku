@@ -36,19 +36,6 @@ function useChartTheme(): ChartTheme {
         warning,
         add,
       ],
-      // Seven stops along the yellow → orange spectrum, keyed positionally
-      // to `CONST.DRINKS.KEYS` order at the call site. Walks from a low-
-      // alpha warning yellow up to the warmer `add` orange — no red, no
-      // black, per STATISTICS_V2.md §3.
-      drinkTypeRamp: [
-        `${warning}55`,
-        `${warning}88`,
-        `${warning}BB`,
-        warning,
-        `${add}CC`,
-        `${add}EE`,
-        add,
-      ],
     }),
     [textSupporting, border, borderLighter, appColor, warning, add],
   );

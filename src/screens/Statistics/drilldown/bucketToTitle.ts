@@ -1,20 +1,9 @@
 import {format, parseISO} from 'date-fns';
 import type useLocalize from '@hooks/useLocalize';
-import type {DrinkKey} from '@src/types/onyx/Drinks';
-import type {TranslationPaths} from '@src/languages/types';
+import {DRINK_KEY_LABEL} from '@libs/Statistics/drinkKeyMeta';
 import type {BucketDescriptor} from './types';
 
 type Translate = ReturnType<typeof useLocalize>['translate'];
-
-const DRINK_LABEL_KEY: Readonly<Record<DrinkKey, TranslationPaths>> = {
-  small_beer: 'drinks.smallBeer',
-  beer: 'drinks.beer',
-  wine: 'drinks.wine',
-  weak_shot: 'drinks.weakShot',
-  strong_shot: 'drinks.strongShot',
-  cocktail: 'drinks.cocktail',
-  other: 'drinks.other',
-};
 
 function formatHour(hour: number): string {
   return `${hour}:00`;
@@ -99,11 +88,11 @@ function bucketToTitle(bucket: BucketDescriptor, translate: Translate): string {
       });
     case 'drinkType':
       return translate('statistics.drilldown.title.drinkType', {
-        label: translate(DRINK_LABEL_KEY[bucket.drinkKey]),
+        label: translate(DRINK_KEY_LABEL[bucket.drinkKey]),
       });
     case 'isoWeekDrinkType':
       return translate('statistics.drilldown.title.isoWeekDrinkType', {
-        label: `${translate(DRINK_LABEL_KEY[bucket.drinkKey])} — ${bucket.isoWeek}`,
+        label: `${translate(DRINK_KEY_LABEL[bucket.drinkKey])} — ${bucket.isoWeek}`,
       });
     case 'sessionDrinkCountBin':
       return translate('statistics.drilldown.title.sessionDrinkCountBin', {

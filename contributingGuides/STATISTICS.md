@@ -62,7 +62,7 @@ Drinking is a sensitive domain. Research on alcohol-tracking apps (PMC, Tandfonl
 - **Weekly default**, not daily. Single bad days disappear into trends. Daily granularity exists only in calendar heatmap form, where one cell is one of many.
 - **Self-vs-past-self only in v1.** No external "good/bad" thresholds, no clinical guidelines, no friends. Comparison is to the user's own rolling baseline.
 - **Band of normal, not target line.** Whoop-style: a translucent grey band of the user's 21-day rolling range; today plotted inside or outside it. Zero judgment.
-- **No red colors for high days.** Use the existing `units_to_colors` palette (yellow/orange) — neutral, already in `Preferences`.
+- **No red colors for high days.** Use the existing `units_to_colors` palette (yellow/orange) — neutral, already in `Preferences`. This governs _intensity/severity_ encodings (calendar heatmap, high-day coloring). It does **not** apply to the _categorical_ drink-type palette (Breakdown donut/multiples, Trends "drink mix over time"), which uses a vivid per-drink palette — including red (wine) and brown (strong shot) — so the seven types stay distinguishable. The hex values live in `src/styles/theme/colors.ts` (`drinkTypeColors`); they are keyed by `DrinkKey` — the single source of truth the charts consume — in `src/libs/Statistics/drinkKeyMeta.ts`.
 - **No streak-breaking visuals.** Streaks that visibly snap are shame engines. If we surface streaks, they're additive (alcohol-free days, mindful weeks).
 - **Empty / sparse data shows reassuring copy**, not "no data."
 

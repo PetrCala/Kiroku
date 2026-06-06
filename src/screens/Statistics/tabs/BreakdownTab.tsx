@@ -15,9 +15,11 @@ import {
   dateRange,
   sumUnits,
 } from '@libs/Statistics';
+import {computeDrinkShares} from '@libs/Statistics/drinkKeyMeta';
 import type {DrinkKey} from '@src/types/onyx/Drinks';
 import {useStatsDrillDown} from '@src/screens/Statistics/drilldown/DrillDownContext';
 import DrinkTypeDonut from './breakdown/DrinkTypeDonut';
+import DrinkTypeLegend from './breakdown/DrinkTypeLegend';
 import PerTypeWeeklyMultiples from './breakdown/PerTypeWeeklyMultiples';
 import TypeConcentrationSentence from './breakdown/TypeConcentrationSentence';
 
@@ -78,6 +80,14 @@ function BreakdownTab() {
     comparisonFilter,
   );
 
+  // One shared legend for the donut card. In Compare mode it keys off the
+  // current period (the donut the user reads first); the previous donut still
+  // colors correctly from the same shared palette.
+  const breakdownLegendEntries = useMemo(
+    () => computeDrinkShares(currentUnitsByDrinkKey, drinkTypeFilter).entries,
+    [currentUnitsByDrinkKey, drinkTypeFilter],
+  );
+
   return (
     <View style={styles.flex1}>
       <StatsFilterToolbar />
@@ -125,6 +135,14 @@ function BreakdownTab() {
               />
             </View>
           )}
+          {breakdownLegendEntries.length > 0 ? (
+            <View style={[styles.mt3, styles.alignItemsCenter]}>
+              <DrinkTypeLegend
+                variant="breakdown"
+                entries={breakdownLegendEntries}
+              />
+            </View>
+          ) : null}
         </ChartCard>
 
         <ChartCard

@@ -43,12 +43,6 @@ type ChartTheme = {
   comparisonStroke: string;
   /** Five-stop intensity ramp for the heatmap, indices 0..4. */
   intensityRamp: [string, string, string, string, string];
-  /**
-   * Seven-stop yellow→orange ramp keyed to the canonical DrinkKey order
-   * (`small_beer`, `beer`, `wine`, `cocktail`, `strong_shot`, `weak_shot`,
-   * `other`). No red, no black — see STATISTICS_V2.md §3.
-   */
-  drinkTypeRamp: [string, string, string, string, string, string, string];
 };
 
 /**

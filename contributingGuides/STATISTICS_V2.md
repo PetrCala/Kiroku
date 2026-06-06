@@ -351,7 +351,7 @@ These don't block scaffolding; they get answered in the relevant sub-issue's pla
 
 ## 14. References
 
-- `contributingGuides/STATISTICS.md` — the original design doc. §3 (tone), §4 (library), §5 (data principles), §10 (`feat/graphs` autopsy) remain in force.
+- `contributingGuides/STATISTICS.md` — the original design doc. §3 (tone), §4 (library), §5 (data principles), §10 (`feat/graphs` autopsy) remain in force. Note: §3's "no red / yellow-orange only" rule covers _intensity/severity_ encodings; the _categorical_ drink-type palette is exempt and uses a vivid per-drink palette so the seven types stay distinguishable, with matching legends on the Breakdown and Trends charts. Its hex values live in `src/styles/theme/colors.ts` (`drinkTypeColors`), keyed by `DrinkKey` in `src/libs/Statistics/drinkKeyMeta.ts`.
 - `mockups/DIRECTION_REVIEW.md` — the audit of PR #519's v1 surface that prompted this rewrite. Especially §3 (alcohol-free days bug), §5 (missing footer + band caption), §6 (polarity prop).
 - `mockups/A_current_pr/`, `mockups/B_hero_metric/`, `mockups/C_calendar_first/` — visual mockups; C is the closest analog to the Overview tab's intended feel.
 - PR [#519](https://github.com/PetrCala/Kiroku/pull/519) — the foundation PR being retargeted.

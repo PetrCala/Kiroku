@@ -1,4 +1,4 @@
-import React from 'react';
+import React, {useMemo} from 'react';
 import {StyleSheet, View} from 'react-native';
 import {ChartCard} from '@components/Charts/ChartCard';
 import {CumulativeLine} from '@components/Charts/CumulativeLine';
@@ -10,8 +10,10 @@ import Text from '@components/Text';
 import useLocalize from '@hooks/useLocalize';
 import useTrendsTabData from '@hooks/useStatistics/useTrendsTabData';
 import useThemeStyles from '@hooks/useThemeStyles';
+import {DRINK_KEY_ORDER} from '@libs/Statistics/drinkKeyMeta';
 import type {TranslationPaths} from '@src/languages/types';
 import {useStatsDrillDown} from '@src/screens/Statistics/drilldown/DrillDownContext';
+import DrinkTypeLegend from './breakdown/DrinkTypeLegend';
 
 const styles = StyleSheet.create({
   container: {
@@ -41,6 +43,15 @@ function TrendsTab() {
   const heroCaption = translate(CAPTION_KEYS[hero.captionKey]);
   const comparisonLegend = translate(
     'statistics.tabs.trends.comparison.legend',
+  );
+
+  // Legend lists only the drink types actually stacked, in canonical order.
+  const trendsLegendEntries = useMemo(
+    () =>
+      DRINK_KEY_ORDER.filter(key => stack.trackedKeys.includes(key)).map(
+        key => ({key}),
+      ),
+    [stack.trackedKeys],
   );
 
   return (
@@ -101,10 +112,18 @@ function TrendsTab() {
         <ChartCard
           title={translate('statistics.tabs.trends.drinkTypeStack.title')}
           footer={
-            stack.comparisonTotal ? (
-              <Text style={themeStyles.textMicroSupporting}>
-                {comparisonLegend}
-              </Text>
+            trendsLegendEntries.length > 0 || stack.comparisonTotal ? (
+              <View style={{rowGap: 8}}>
+                <DrinkTypeLegend
+                  variant="trends"
+                  entries={trendsLegendEntries}
+                />
+                {stack.comparisonTotal ? (
+                  <Text style={themeStyles.textMicroSupporting}>
+                    {comparisonLegend}
+                  </Text>
+                ) : null}
+              </View>
             ) : undefined
           }>
           <StackedArea

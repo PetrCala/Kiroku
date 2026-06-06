@@ -8,20 +8,13 @@ import useResponsiveLayout from '@hooks/useResponsiveLayout';
 import useThemeStyles from '@hooks/useThemeStyles';
 import {COMPOSITE_KEY_SEP} from '@libs/Statistics';
 import type {ChartDatum} from '@libs/Statistics';
-import type {TranslationPaths} from '@src/languages/types';
+import {
+  DRINK_KEY_COLORS,
+  DRINK_KEY_LABEL,
+  DRINK_KEY_ORDER,
+} from '@libs/Statistics/drinkKeyMeta';
 import type {DrinkKey} from '@src/types/onyx/Drinks';
-import {DRINK_KEY_COLORS, DRINK_KEY_ORDER} from './drinkKeyColors';
 import MiniLineChart from './MiniLineChart';
-
-const DRINK_LABEL_KEY: Readonly<Record<DrinkKey, TranslationPaths>> = {
-  small_beer: 'drinks.smallBeer',
-  beer: 'drinks.beer',
-  wine: 'drinks.wine',
-  weak_shot: 'drinks.weakShot',
-  strong_shot: 'drinks.strongShot',
-  cocktail: 'drinks.cocktail',
-  other: 'drinks.other',
-};
 
 type PerTypeWeeklyMultiplesProps = {
   unitsByDrinkKeyAndWeek: ReadonlyMap<string, number>;
@@ -200,7 +193,7 @@ function PerTypeWeeklyMultiples({
               paddingVertical: 4,
             }}>
             <MiniLineChart
-              title={translate(DRINK_LABEL_KEY[key])}
+              title={translate(DRINK_KEY_LABEL[key])}
               caption={translate(
                 'statistics.tabs.breakdown.multiples.tileSubtitle',
                 {units: Math.round(total * 10) / 10},
@@ -209,7 +202,7 @@ function PerTypeWeeklyMultiples({
               comparison={comparison}
               accessibilityLabel={translate(
                 'statistics.tabs.breakdown.multiples.a11yTile',
-                {label: translate(DRINK_LABEL_KEY[key])},
+                {label: translate(DRINK_KEY_LABEL[key])},
               )}
               strokeColor={DRINK_KEY_COLORS[key]}
             />
