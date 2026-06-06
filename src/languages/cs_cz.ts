@@ -1033,7 +1033,7 @@ export default {
         },
         cumulativeAf: {
           title: 'Dny bez alkoholu letos',
-          emptyLabel: 'Každý letošní klidný den se počítá.',
+          emptyLabel: 'Každý letošní den bez alkoholu se počítá.',
         },
         drinkTypeStack: {
           title: 'Mix drinků v čase',
@@ -1054,7 +1054,7 @@ export default {
           subtitle: 'Složení za aktuální období.',
           centerUnits: ({count}: BreakdownCenterUnitsParams) => `${count}`,
           centerCaption: 'jednotek',
-          empty: 'Klidné období — zatím není co rozdělit.',
+          empty: 'Zatím není co rozdělit.',
           sliceCaption: ({label, units, share}: BreakdownSliceCaptionParams) =>
             `${label}: ${units} jednotek (${share} %)`,
           a11y: 'Koláč složení podle druhu drinku',
@@ -1094,21 +1094,21 @@ export default {
       },
       hourOfDay: {
         title: 'Hodina dne',
-        empty: 'Klidné období — zatím není co zobrazit.',
+        empty: 'Zatím není co zobrazit.',
       },
       dowHour: {
         title: 'Den v týdnu × hodina',
-        empty: 'Klidné období — zatím není co zobrazit.',
+        empty: 'Zatím není co zobrazit.',
       },
       drinksPerSession: {
         title: 'Drinků na relaci',
-        empty: 'Klidné období — žádné relace k započtení.',
+        empty: 'Žádné relace k započtení.',
         p75Copy: ({value}: {value: number}) =>
           `75 % vašich relací má ${value} drinků nebo méně.`,
       },
       sessionDuration: {
         title: 'Délka relace',
-        empty: 'Klidné období — žádné relace k změření.',
+        empty: 'Žádné relace k změření.',
         p75Copy: ({value}: {value: string}) =>
           `75 % vašich relací je kratších než ${value}.`,
       },
