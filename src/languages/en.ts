@@ -751,16 +751,16 @@ export default {
       pricePerYear: ({price}: SupporterPriceParams) => `${price} / year`,
       pricePerMonth: ({price}: SupporterPriceParams) => `${price} / month`,
       startSupportingCta: ({price}: SupporterPriceParams) =>
-        `Start Supporting — ${price}`,
+        `Start supporting for ${price}`,
       loading: 'Loading subscription details...',
       thanksTitle: "You're a Kiroku Supporter",
       thanksSubtitle:
-        'Thanks for backing the app — your supporter badge is live on your profile.',
+        'Thanks for backing the app. Your supporter badge is live on your profile.',
       unavailableTitle: 'Subscription unavailable',
       unavailableSubtitle:
         "We couldn't load the supporter subscription right now. Check your connection and try again.",
       purchaseCta: ({price}: SupporterPurchaseCtaParams) =>
-        `Become a supporter — ${price} / month`,
+        `Become a supporter for ${price} / month`,
       purchaseError: ({message}: SupporterPurchaseErrorParams) =>
         `Purchase failed: ${message}. Please try again.`,
       restoreError: ({message}: SupporterPurchaseErrorParams) =>
@@ -779,7 +779,7 @@ export default {
       status: {
         active: 'Active',
         cancelled: ({date}: SupporterCancelledStatusParams) =>
-          `Cancelled — active until ${date}`,
+          `Cancelled, active until ${date}`,
         gracePeriod: 'Payment issue',
         expired: 'Expired',
       },
@@ -788,7 +788,7 @@ export default {
       manageInAppStore: 'Manage in App Store',
       manageInGooglePlay: 'Manage in Google Play',
       restorePurchases: 'Restore purchases',
-      restoreSuccess: 'Purchases restored — your supporter status is active.',
+      restoreSuccess: 'Purchases restored. Your supporter status is active.',
       restoreError: ({message}: SupporterPurchaseErrorParams) =>
         `Restore failed: ${message}. Please try again.`,
       restoreEmpty:
@@ -892,7 +892,7 @@ export default {
     changeEmail: {
       title: 'Use a different email',
       prompt:
-        "Enter a new address and your password — we'll send the verification link there instead.",
+        "Enter a new address and your password. We'll send the verification link there instead.",
       newEmailLabel: 'New email address',
       passwordLabel: 'Your password',
       submit: 'Send verification link',
@@ -1020,10 +1020,10 @@ export default {
             body: 'When you log a session, your period scorecard will show up here.',
           },
           noDataInRange:
-            'No sessions in this period — every elapsed day was alcohol-free.',
+            'No sessions in this period. Every elapsed day was alcohol-free.',
         },
         sparseFooter:
-          'Only a little history so far — these numbers will sharpen as you log more.',
+          'Only a little history so far. These numbers will sharpen as you log more.',
       },
       trends: {
         label: 'Trends',
@@ -1037,7 +1037,7 @@ export default {
             trendingUp: 'Your weekly units are trending up.',
             neutral: 'Your weeks vary as usual.',
             notEnoughData:
-              'Keep logging — your trend will surface as data builds.',
+              'Keep logging. Your trend will surface as data builds.',
           },
         },
         cumulativeAf: {
@@ -1055,7 +1055,7 @@ export default {
       patterns: {
         label: 'Patterns',
         placeholder:
-          'Your when-and-how — hour of day and day of week — will live here.',
+          'Your when-and-how (hour of day and day of week) will live here.',
       },
       breakdown: {
         label: 'Breakdown',
@@ -1074,7 +1074,7 @@ export default {
         multiples: {
           title: 'Weekly trend by type',
           subtitle: 'One mini chart per drink type with data in this range.',
-          empty: 'No per-type trends yet — try a wider range.',
+          empty: 'No per-type trends yet. Try a wider range.',
           tileSubtitle: ({units}: BreakdownTileSubtitleParams) =>
             `${units} units this range`,
           a11yTile: ({label}: BreakdownDrinkLabelParams) =>
@@ -1320,7 +1320,7 @@ export default {
     title: 'Test Tools',
     intro: 'Developer-only panel for runtime tweaks and debugging.',
     placeholderNotice:
-      'This is a placeholder. Real toggles — feature flags, environment overrides, forced network states — will land here over time.',
+      'This is a placeholder. Real toggles (feature flags, environment overrides, forced network states) will land here over time.',
     environmentLabel: 'Environment',
     howToOpen:
       'Open via ⌘D → Open Test Preferences, or a four-finger tap anywhere in the app.',
@@ -1399,7 +1399,7 @@ export default {
   },
   pickUsernameScreen: {
     heading: 'Choose a username',
-    explainer: 'Pick a username — this is how others will see you.',
+    explainer: 'Pick a username. This is how others will see you.',
     saving: 'Saving...',
     error: {
       generic: 'Could not save your username. Please try again.',
@@ -1439,7 +1439,7 @@ export default {
   connectedAccounts: {
     title: 'Connected accounts',
     subtitle:
-      'Choose how you want to sign in. You can connect more than one — any of them will sign you into the same account.',
+      'Choose how you want to sign in. You can connect more than one. Any of them will sign you into the same account.',
     providers: {
       password: 'Email & password',
       apple: 'Apple',
@@ -1492,7 +1492,7 @@ export default {
     appleSubmit: 'Connect Apple account',
     googleSubmit: 'Connect Google account',
     resetEmailSent: ({email}: ForgotPasswordSuccessParams) =>
-      `We sent a reset link to ${email}. Check your inbox — and your spam folder if you don't see it.`,
+      `We sent a reset link to ${email}. Check your inbox, and your spam folder if you don't see it.`,
   },
   passwordScreen: {
     title: 'Change your password',
@@ -1636,7 +1636,7 @@ export default {
       lastProvider: {
         title: "Can't Remove",
         message:
-          "You can't disconnect your last sign-in method — you'd be locked out. Connect another method first.",
+          "You can't disconnect your last sign-in method, or you'd be locked out. Connect another method first.",
       },
     },
     database: {
