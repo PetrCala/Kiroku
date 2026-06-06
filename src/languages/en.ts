@@ -1042,7 +1042,7 @@ export default {
         },
         cumulativeAf: {
           title: 'Alcohol-free days this year',
-          emptyLabel: 'Every quiet day this year adds up.',
+          emptyLabel: 'Every alcohol-free day this year adds up.',
         },
         drinkTypeStack: {
           title: 'Drink mix over time',
@@ -1064,7 +1064,7 @@ export default {
           subtitle: 'Composition over the current range.',
           centerUnits: ({count}: BreakdownCenterUnitsParams) => `${count}`,
           centerCaption: 'units',
-          empty: 'A quiet range — nothing to break down yet.',
+          empty: 'Nothing to break down yet.',
           sliceCaption: ({label, units, share}: BreakdownSliceCaptionParams) =>
             `${label}: ${units} units (${share}%)`,
           a11y: 'Drink-type composition donut',
@@ -1106,21 +1106,21 @@ export default {
       },
       hourOfDay: {
         title: 'Hour of day',
-        empty: 'A quiet range — nothing to plot here.',
+        empty: 'Nothing to plot here.',
       },
       dowHour: {
         title: 'Day of week × hour',
-        empty: 'A quiet range — nothing to plot here.',
+        empty: 'Nothing to plot here.',
       },
       drinksPerSession: {
         title: 'Drinks per session',
-        empty: 'A quiet range — no sessions to count.',
+        empty: 'No sessions to count.',
         p75Copy: ({value}: {value: number}) =>
           `75% of your sessions are ${value} drinks or fewer.`,
       },
       sessionDuration: {
         title: 'Session length',
-        empty: 'A quiet range — no sessions to measure.',
+        empty: 'No sessions to measure.',
         p75Copy: ({value}: {value: string}) =>
           `75% of your sessions are ${value} or shorter.`,
       },
