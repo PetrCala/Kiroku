@@ -24,6 +24,7 @@ const colors: Record<string, Color> = {
   // Dark Mode Theme Colors
   // productDark100: '#010409', // black
   productDark100: '#0D1117', // appBG
+  productDark150: '#11161D', // soft card (between appBG and card)
   productDark200: '#151B23', // card
   productDark300: '#212830', // search
   productDark350: '#262D36', // skeleton base
@@ -36,6 +37,7 @@ const colors: Record<string, Color> = {
 
   // Light Mode Theme Colors
   productLight100: '#FFFFFF', // appBG
+  productLight150: '#FAFBFC', // soft card (between appBG and card)
   productLight200: '#F6F8FA', // card
   productLight300: '#F6F8FA', // search // TODO
   productLight350: '#E5E9ED', // skeleton base

@@ -31,6 +31,13 @@ type KpiCardDelta = {
   label: string;
 };
 
+/**
+ * Card fill. `fill` (default) is the standard highlighted card used on the
+ * Statistics screen. `soft` keeps the same card shape but uses a lighter,
+ * lower-contrast background — used by the home screen's softer treatment.
+ */
+type KpiCardSurface = 'fill' | 'soft';
+
 type KpiCardProps = {
   label: string;
   value: string | number;
@@ -56,6 +63,8 @@ type KpiCardProps = {
   headerRight?: ReactNode;
   /** Optional chart rendered below the value/delta (and any sparkline). */
   chart?: ReactNode;
+  /** Card fill treatment. Defaults to the standard filled card. */
+  surface?: KpiCardSurface;
 };
 
 const ARROW: Record<KpiCardDelta['direction'], string> = {
@@ -86,6 +95,7 @@ function KpiCard({
   isLoading,
   headerRight,
   chart,
+  surface = 'fill',
 }: KpiCardProps) {
   const styles = useThemeStyles();
   const theme = useTheme();
@@ -128,7 +138,8 @@ function KpiCard({
       style={[
         styles.p3,
         {
-          backgroundColor: theme.highlightBG,
+          backgroundColor:
+            surface === 'soft' ? theme.cardSoftBG : theme.highlightBG,
           borderRadius: 12,
           minHeight: 96,
         },
@@ -209,4 +220,10 @@ function KpiCard({
 }
 
 export default KpiCard;
-export type {KpiCardProps, KpiCardTone, KpiCardPolarity, KpiCardDelta};
+export type {
+  KpiCardProps,
+  KpiCardTone,
+  KpiCardPolarity,
+  KpiCardDelta,
+  KpiCardSurface,
+};
