@@ -2,6 +2,7 @@ import type {
   ChannelAuthorizerGenerator,
   ChannelAuthorizationCallback,
 } from 'pusher-js/with-encryption';
+import {KIROKU_DIRECT_PATHS} from '@libs/API/kirokuRoutes';
 import * as ApiUtils from '@libs/ApiUtils';
 import {getFirebaseAuth} from '@libs/Firebase/FirebaseApp';
 
@@ -19,7 +20,10 @@ const kirokuPusherAuthorizer: ChannelAuthorizerGenerator = channel => ({
   authorize(socketId, callback) {
     const user = getFirebaseAuth().currentUser;
     if (!user) {
-      callback(new Error('Cannot authorize Pusher: no authenticated user'), null);
+      callback(
+        new Error('Cannot authorize Pusher: no authenticated user'),
+        null,
+      );
       return;
     }
 
@@ -27,20 +31,25 @@ const kirokuPusherAuthorizer: ChannelAuthorizerGenerator = channel => ({
       .getIdToken()
       .then(token => {
         const body = `socket_id=${encodeURIComponent(socketId)}&channel_name=${encodeURIComponent(channel.name)}`;
-        return fetch(`${ApiUtils.getKirokuApiRoot()}/v1/pusher/auth`, {
-          method: 'post',
-          headers: {
-            Authorization: `Bearer ${token}`,
-            // eslint-disable-next-line @typescript-eslint/naming-convention -- HTTP header name
-            'Content-Type': 'application/x-www-form-urlencoded',
+        return fetch(
+          `${ApiUtils.getKirokuApiRoot()}${KIROKU_DIRECT_PATHS.PUSHER_AUTH}`,
+          {
+            method: 'post',
+            headers: {
+              Authorization: `Bearer ${token}`,
+              // eslint-disable-next-line @typescript-eslint/naming-convention -- HTTP header name
+              'Content-Type': 'application/x-www-form-urlencoded',
+            },
+            body,
           },
-          body,
-        });
+        );
       })
       .then(response => {
         if (!response.ok) {
           callback(
-            new Error(`Pusher channel authorization failed (${response.status})`),
+            new Error(
+              `Pusher channel authorization failed (${response.status})`,
+            ),
             null,
           );
           return;

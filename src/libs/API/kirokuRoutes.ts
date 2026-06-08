@@ -236,10 +236,32 @@ const KIROKU_ROUTES: Record<string, KirokuRoute> = {
   },
 };
 
+/**
+ * kiroku-api paths that are reached by a plain `fetch` instead of the
+ * `API.write/read` pipeline. Each of these genuinely cannot use the pipeline
+ * (see the per-entry note), but their path strings still belong here so this
+ * file remains the single source of truth for every `/v1/...` path the client
+ * knows about. Always combine with `ApiUtils.getKirokuApiRoot()` for the root.
+ */
+const KIROKU_DIRECT_PATHS = {
+  /**
+   * Public, unauthenticated signup gate. Runs BEFORE a Firebase Auth account
+   * (and therefore any ID token) exists, so it cannot go through the
+   * authenticated `API.read` pipeline. See `actions/User.signUp`.
+   */
+  MIN_VERSION: '/v1/app/min-version',
+  /**
+   * Pusher channel authorization. pusher-js's authorizer signature cannot
+   * attach our `Authorization: Bearer <ID token>` header, which this endpoint
+   * requires, so it is called directly. See `Pusher/kirokuAuthorizer`.
+   */
+  PUSHER_AUTH: '/v1/pusher/auth',
+} as const;
+
 /** Returns the kiroku-api route for a command, or undefined for legacy commands. */
 function getKirokuRoute(command: string): KirokuRoute | undefined {
   return KIROKU_ROUTES[command];
 }
 
-export {getKirokuRoute};
+export {getKirokuRoute, KIROKU_DIRECT_PATHS};
 export type {KirokuRoute};

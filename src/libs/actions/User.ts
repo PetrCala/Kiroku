@@ -36,6 +36,7 @@ import CONST from '@src/CONST';
 import {getFirebaseAuth} from '@libs/Firebase/FirebaseApp';
 import HttpsError from '@libs/Errors/HttpsError';
 import * as API from '@libs/API';
+import {KIROKU_DIRECT_PATHS} from '@libs/API/kirokuRoutes';
 import {READ_COMMANDS, WRITE_COMMANDS} from '@libs/API/types';
 import type Response from '@src/types/onyx/Response';
 import type {UserSearchResults} from '@src/types/various/Search';
@@ -670,7 +671,7 @@ async function signUp(
   let minUserCreationVersion: string | null = null;
   try {
     const response = await fetch(
-      `${ApiUtils.getKirokuApiRoot()}/v1/app/min-version`,
+      `${ApiUtils.getKirokuApiRoot()}${KIROKU_DIRECT_PATHS.MIN_VERSION}`,
     );
     if (!response.ok) {
       throw new Error('database/data-fetch-failed');
