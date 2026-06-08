@@ -45,6 +45,7 @@
  *   --p12 <path>        renew: bring-your-own .p12 (skips cert creation; for App-Manager-only keys)
  *   --p12-password <p>  password for --p12 (or, for check --deep, $IOS_CERTIFICATE_PASSWORD)
  *   --cert-type <t>     override the certificateType (default: detected, usually IOS_DISTRIBUTION)
+ *   --revoke-cert <id>  renew: revoke this exact distribution cert first to free a cap slot (never automatic)
  *   --bundle-wwdr       renew: bundle the Apple WWDR G6 intermediate into the P12
  *   --profile-suffix <s> renew: append to profile names + write to scratch paths (end-to-end test; does NOT touch ios/*.gpg)
  *   --bundle-id <id>    app bundle id (default: org.reactjs.native.example.alcohol-tracker)
@@ -106,6 +107,7 @@ const OPTS = {
   passphrase: flag('passphrase', process.env.LARGE_SECRET_PASSPHRASE),
   days: Number(flag('days', 21)),
   certType: flag('cert-type'),
+  revokeCert: flag('revoke-cert'),
   p12: flag('p12'),
   p12Password: flag('p12-password', process.env.IOS_CERTIFICATE_PASSWORD),
   profileSuffix: flag('profile-suffix', ''),
@@ -197,9 +199,15 @@ async function apiList(p) {
 
 // ---- shell helpers --------------------------------------------------------
 function run(bin, args, opts = {}) {
+  const encoding = opts.encoding ?? 'utf8';
+  let {input} = opts;
+  // With a string `input` and encoding:'buffer', execFileSync would try
+  // Buffer.from(input, 'buffer') → "Unknown encoding: buffer". Hand it a Buffer.
+  if (encoding === 'buffer' && typeof input === 'string')
+    input = Buffer.from(input);
   return execFileSync(bin, args, {
-    encoding: opts.encoding ?? 'utf8',
-    input: opts.input,
+    encoding,
+    input,
     env: opts.env ? {...process.env, ...opts.env} : process.env,
     stdio: opts.stdio ?? ['pipe', 'pipe', 'pipe'],
     maxBuffer: 64 * 1024 * 1024,
@@ -382,17 +390,32 @@ function x509(input) {
   const c = new crypto.X509Certificate(input);
   return {notAfter: c.validTo, serial: c.serialNumber, subject: c.subject};
 }
-// Decode a .mobileprovision (CMS) → its embedded plist via macOS security+plutil.
+// Decode a .mobileprovision (CMS) → its embedded plist via macOS security, then
+// pull fields with `plutil -extract` (not `-convert json`, which rejects the
+// plist's <date>/<data> nodes).
 function readProfile(mpPath) {
   const xml = run('security', ['cms', '-D', '-i', mpPath]);
   const pl = tmpFile('profile.plist');
   fs.writeFileSync(pl, xml);
-  const json = run('plutil', ['-convert', 'json', '-o', '-', pl]);
-  const p = JSON.parse(json);
-  const certs = (p.DeveloperCertificates || []).map(b =>
-    x509(Buffer.from(b, 'base64')),
-  );
-  return {name: p.Name, uuid: p.UUID, expirationDate: p.ExpirationDate, certs};
+  const extract = key => {
+    try {
+      return run('plutil', ['-extract', key, 'raw', '-o', '-', pl]).trim();
+    } catch {
+      return null;
+    }
+  };
+  const certs = [];
+  for (let i = 0; ; i++) {
+    const b64 = extract(`DeveloperCertificates.${i}`);
+    if (!b64) break;
+    certs.push(x509(Buffer.from(b64, 'base64')));
+  }
+  return {
+    name: extract('Name'),
+    uuid: extract('UUID'),
+    expirationDate: extract('ExpirationDate'),
+    certs,
+  };
 }
 
 // ===========================================================================
@@ -514,6 +537,23 @@ async function ensureCertificate(bundleHint) {
     STATE.byoP12 = {path: path.resolve(OPTS.p12), password: OPTS.p12Password};
     saveState();
     return;
+  }
+
+  // Free a cap slot by revoking the exact cert the operator named. Guarded:
+  // only ever revokes that one id (validated as a current distribution cert),
+  // never picks a valid cert to revoke on its own.
+  if (OPTS.revokeCert && !STATE.revokedForSlot) {
+    const target = (await listDistributionCerts()).find(
+      c => c.id === OPTS.revokeCert,
+    );
+    if (!target)
+      throw new Error(
+        `--revoke-cert ${OPTS.revokeCert} is not a current distribution certificate.`,
+      );
+    await api('DELETE', `/v1/certificates/${OPTS.revokeCert}`);
+    STATE.revokedForSlot = OPTS.revokeCert;
+    saveState();
+    L(`Revoked cert ${OPTS.revokeCert} to free a cap slot.`);
   }
 
   const certType = OPTS.certType || STATE.certType;
@@ -724,21 +764,24 @@ async function cmdRenew() {
   const bundleResId = await resolveBundleResourceId();
   const deviceIds = await listEnabledDeviceIds();
   const certs = await listDistributionCerts();
-  const detectedType =
-    OPTS.certType ||
-    (certs[0] && certs[0].attributes.certificateType) ||
-    'IOS_DISTRIBUTION';
+  // Default to Apple Distribution (DISTRIBUTION) — the modern type Xcode expects
+  // (the project pins CODE_SIGN_IDENTITY = "Apple Distribution: …"). Don't copy
+  // whatever legacy iOS-Distribution cert happens to linger on the account.
+  // Override with --cert-type.
+  const certType = OPTS.certType || 'DISTRIBUTION';
   const existingProfiles = await listManagedProfiles();
 
   L('Plan:');
   L(`  bundleId resource: ${bundleResId} (${OPTS.bundleId})`);
   L(`  enabled devices:   ${deviceIds.length}`);
   L(
-    `  cert type:         ${detectedType}${OPTS.certType ? ' (forced)' : ' (detected)'}`,
+    `  cert type:         ${certType}${OPTS.certType ? ' (forced)' : ' (default Apple Distribution)'}`,
   );
   L(
     `  existing dist certs: ${certs.map(c => `${c.id}[${daysUntil(c.attributes.expirationDate)}d]`).join(', ') || 'none'}`,
   );
+  if (OPTS.revokeCert)
+    L(`  revoke first:      ${OPTS.revokeCert} (to free a cap slot)`);
   if (OPTS.p12) L(`  cert source:       BYO --p12 ${OPTS.p12}`);
   else L('  cert source:       mint a new Apple Distribution cert via ASC API');
   for (const want of PROFILES) {
@@ -788,7 +831,7 @@ async function cmdRenew() {
   ensureGitReady();
 
   loadState();
-  STATE.certType = detectedType;
+  STATE.certType = certType;
   saveState();
 
   await ensureCertificate(OPTS.bundleId);
