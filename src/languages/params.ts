@@ -50,11 +50,6 @@ type SessionWindowIdParams = {
   sessionId: DrinkingSessionId;
 };
 
-type StatsAfDaysParams = {
-  value: number;
-  total: number;
-};
-
 type StatsThresholdParams = {
   threshold: number;
 };
@@ -135,7 +130,6 @@ export type {
   SessionConfirmTimezoneChangeParams,
   SessionStartTimeParams,
   SessionWindowIdParams,
-  StatsAfDaysParams,
   StatsDrillDownTitleParams,
   StatsThresholdParams,
   SupporterCancelledStatusParams,
