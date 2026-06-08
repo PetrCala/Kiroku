@@ -1,7 +1,7 @@
 import {useMemo} from 'react';
 import {View} from 'react-native';
-import {DashPathEffect, Rect} from '@shopify/react-native-skia';
-import {BaseChart, Line, useChartFont} from '@components/Charts/BaseChart';
+import {DashPathEffect} from '@shopify/react-native-skia';
+import {Bar, BaseChart, Line, useChartFont} from '@components/Charts/BaseChart';
 import {
   formatWeekTick,
   roundTick,
@@ -19,8 +19,6 @@ type TrendLineProps = {
   ewma?: number[];
   /** Comparison-period units, parallel-indexed; omit to hide. */
   comparison?: number[];
-  /** P25 / P75 band; null when the underlying series is too short. */
-  band?: {p25: number; p75: number} | null;
   accessibilityLabel: string;
   emptyLabel?: string;
   height?: number;
@@ -42,10 +40,10 @@ const COMPARISON_DASH: number[] = [4, 4];
 
 /**
  * Hero chart for the Trends tab. Composes:
- *   1. translucent P25–P75 "band of normal" stripe (Skia <Rect>),
- *   2. solid weekly-units line in the brand color,
- *   3. thinner EWMA line above (hidden when < 4 weeks),
- *   4. dashed muted-color comparison line (hidden when not requested).
+ *   1. faint weekly-units bars — the raw "what happened each week",
+ *   2. a deeper-amber EWMA trend line on top — the prominent story line
+ *      (hidden when < 4 weeks of data, leaving just the bars),
+ *   3. a dashed muted-color comparison line (hidden when not requested).
  *
  * Every yKey present on `data` rows must be a real number; callers zero-fill
  * missing series upstream (in `useTrendsTabData`) so the underlying chart
@@ -58,7 +56,6 @@ function TrendLine({
   units,
   ewma,
   comparison,
-  band,
   accessibilityLabel,
   emptyLabel,
   height,
@@ -95,9 +92,8 @@ function TrendLine({
       if (showEwma && row.ewma > max) max = row.ewma;
       if (showComparison && row.cmp > max) max = row.cmp;
     }
-    if (band && band.p75 > max) max = band.p75;
     return max;
-  }, [data, band, showEwma, showComparison]);
+  }, [data, showEwma, showComparison]);
 
   const xTicks = useMemo(() => tickIndices(weeks.length), [weeks.length]);
   const yTicks = useMemo(() => valueTicks(maxY), [maxY]);
@@ -119,57 +115,31 @@ function TrendLine({
         formatYLabel: roundTick,
       }}
       loading={isLoading}>
-      {({points, chartBounds, theme}) => {
-        const top = chartBounds.top;
-        const bottom = chartBounds.bottom;
-        const yFor = (value: number) =>
-          top + (1 - value / maxY) * (bottom - top);
-
-        let bandRect = null;
-        if (band) {
-          const bandTopY = yFor(band.p75);
-          const bandBottomY = yFor(band.p25);
-          const bandHeight = Math.max(0, bandBottomY - bandTopY);
-          if (bandHeight > 0) {
-            bandRect = (
-              <Rect
-                x={chartBounds.left}
-                y={bandTopY}
-                width={chartBounds.right - chartBounds.left}
-                height={bandHeight}
-                color={theme.bandFill}
-              />
-            );
-          }
-        }
-
-        return (
-          <>
-            {bandRect}
+      {({points, chartBounds, theme}) => (
+        <>
+          <Bar
+            points={points.y}
+            chartBounds={chartBounds}
+            color={theme.barFill}
+            roundedCorners={{topLeft: 3, topRight: 3}}
+          />
+          {showComparison ? (
             <Line
-              points={points.y}
-              color={theme.primaryStroke}
-              strokeWidth={2}
+              points={points.cmp}
+              color={theme.comparisonStroke}
+              strokeWidth={1.5}>
+              <DashPathEffect intervals={COMPARISON_DASH} />
+            </Line>
+          ) : null}
+          {showEwma ? (
+            <Line
+              points={points.ewma}
+              color={theme.trendStroke}
+              strokeWidth={2.6}
             />
-            {showEwma ? (
-              <Line
-                points={points.ewma}
-                color={theme.primaryStroke}
-                strokeWidth={1.5}
-                opacity={0.6}
-              />
-            ) : null}
-            {showComparison ? (
-              <Line
-                points={points.cmp}
-                color={theme.comparisonStroke}
-                strokeWidth={1.5}>
-                <DashPathEffect intervals={COMPARISON_DASH} />
-              </Line>
-            ) : null}
-          </>
-        );
-      }}
+          ) : null}
+        </>
+      )}
     </BaseChart>
   );
 

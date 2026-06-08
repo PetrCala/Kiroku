@@ -3,7 +3,7 @@ import {StyleSheet, View} from 'react-native';
 import {ChartCard} from '@components/Charts/ChartCard';
 import {CumulativeLine} from '@components/Charts/CumulativeLine';
 import {StackedArea} from '@components/Charts/StackedArea';
-import {TrendLine} from '@components/Charts/TrendLine';
+import {TrendLine, WeeklyTrendLegend} from '@components/Charts/TrendLine';
 import ScrollView from '@components/ScrollView';
 import StatsFilterToolbar from '@components/Statistics/StatsFilterToolbar';
 import Text from '@components/Text';
@@ -37,9 +37,8 @@ function TrendsTab() {
   const {openDrillDown} = useStatsDrillDown();
 
   const heroComparisonShown = !!hero.comparison;
-  const heroSubtitle = hero.band
-    ? translate('statistics.tabs.trends.weeklyTrend.bandCaption')
-    : undefined;
+  // The trend line only draws once EWMA exists (≥4 weeks); the legend mirrors it.
+  const heroShowTrend = !!hero.ewma && hero.ewma.length === hero.weeks.length;
   const heroCaption = translate(CAPTION_KEYS[hero.captionKey]);
   const comparisonLegend = translate(
     'statistics.tabs.trends.comparison.legend',
@@ -62,20 +61,20 @@ function TrendsTab() {
         contentContainerStyle={styles.container}>
         <ChartCard
           title={translate('statistics.tabs.trends.weeklyTrend.title')}
-          subtitle={heroSubtitle}
           footer={
-            <Text style={themeStyles.textMicroSupporting}>
-              {heroComparisonShown
-                ? `${heroCaption} · ${comparisonLegend}`
-                : heroCaption}
-            </Text>
+            <View style={{rowGap: 8}}>
+              <WeeklyTrendLegend
+                showTrend={heroShowTrend}
+                showComparison={heroComparisonShown}
+              />
+              <Text style={themeStyles.textMicroSupporting}>{heroCaption}</Text>
+            </View>
           }>
           <TrendLine
             weeks={hero.weeks}
             units={hero.units}
             ewma={hero.ewma}
             comparison={hero.comparison}
-            band={hero.band}
             emptyLabel={translate(
               'statistics.tabs.trends.weeklyTrend.emptyLabel',
             )}
