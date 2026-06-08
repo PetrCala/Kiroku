@@ -1,10 +1,13 @@
 /* eslint-disable @typescript-eslint/naming-convention -- jest mock factory keys (__esModule) are dictated by Node module shape */
 import {renderHook} from '@testing-library/react-native';
+import {useOnyx} from 'react-native-onyx';
+import type * as RNOnyx from 'react-native-onyx';
 import {useConfig} from '@context/global/ConfigContext';
 import {useFirebase} from '@context/global/FirebaseContext';
 import useCurrentUserData from '@hooks/useCurrentUserData';
 import useOnboardingFlow from '@hooks/useOnboardingFlow';
 import CONFIG from '@src/CONFIG';
+import ONYXKEYS from '@src/ONYXKEYS';
 import ROUTES from '@src/ROUTES';
 import type {Config, UserData} from '@src/types/onyx';
 
@@ -21,9 +24,18 @@ jest.mock('@hooks/useCurrentUserData', () => ({
   default: jest.fn(),
 }));
 
+jest.mock('react-native-onyx', () => {
+  const actual = jest.requireActual<typeof RNOnyx>('react-native-onyx');
+  return {
+    ...actual,
+    useOnyx: jest.fn(),
+  };
+});
+
 const mockedUseFirebase = jest.mocked(useFirebase);
 const mockedUseConfig = jest.mocked(useConfig);
 const mockedUseCurrentUserData = jest.mocked(useCurrentUserData);
+const mockedUseOnyx = jest.mocked(useOnyx);
 
 const TEST_UID = 'user-123';
 
@@ -31,6 +43,17 @@ function setAuth(uid: string | undefined): void {
   mockedUseFirebase.mockReturnValue({
     auth: uid ? {currentUser: {uid}} : {currentUser: null},
   } as unknown as ReturnType<typeof useFirebase>);
+}
+
+// `IS_LOADING_APP` is `true` while the OpenApp bootstrap is in flight and
+// `false` once it settles; the readiness gate requires the explicit `false`.
+function setIsLoadingApp(value: boolean | undefined): void {
+  mockedUseOnyx.mockImplementation(((key: string) => {
+    if (key === ONYXKEYS.IS_LOADING_APP) {
+      return [value, {status: 'loaded'}];
+    }
+    return [undefined, {status: 'loaded'}];
+  }) as unknown as typeof useOnyx);
 }
 
 // `userData` comes from `useCurrentUserData` (Onyx), which returns {} (not
@@ -55,6 +78,7 @@ describe('useOnboardingFlow', () => {
   beforeEach(() => {
     jest.clearAllMocks();
     (CONFIG as {SKIP_ONBOARDING: boolean}).SKIP_ONBOARDING = false;
+    setIsLoadingApp(false);
     setUserData(undefined);
   });
 
@@ -75,6 +99,70 @@ describe('useOnboardingFlow', () => {
     const {result} = renderHook(() => useOnboardingFlow());
 
     expect(result.current.isReady).toBe(false);
+    expect(result.current.shouldFireOnboarding).toBe(false);
+  });
+
+  test('authenticated + OpenApp still in flight (isLoadingApp true) → not ready, no fire', () => {
+    setAuth(TEST_UID);
+    setIsLoadingApp(true);
+    // Even a complete, already-onboarded record must not be acted on until the
+    // bootstrap settles — the record may still be mid-assembly.
+    setUserData(
+      makeUserData({
+        agreed_to_terms_at: 1_700_000_000_000,
+        onboarding: {completed_at: 1_700_000_000_000},
+        profile: {
+          display_name: 'name',
+          photo_url: '',
+          username_chosen: true,
+        },
+      }),
+    );
+
+    const {result} = renderHook(() => useOnboardingFlow());
+
+    expect(result.current.isReady).toBe(false);
+    expect(result.current.shouldFireOnboarding).toBe(false);
+  });
+
+  test('established user, no completed_at, username chosen, terms current → no fire (undefined onboarding = completed)', () => {
+    setAuth(TEST_UID);
+    setUserData(
+      makeUserData({
+        agreed_to_terms_at: 1_700_000_000_000,
+        // No `onboarding` node at all — a returning account that predates the
+        // completed_at stamp.
+        profile: {
+          display_name: 'name',
+          photo_url: '',
+          username_chosen: true,
+        },
+      }),
+    );
+
+    const {result} = renderHook(() => useOnboardingFlow());
+
+    expect(result.current.isReady).toBe(true);
+    expect(result.current.shouldFireOnboarding).toBe(false);
+  });
+
+  test('returning record missing onboarding AND terms but username chosen → no fire (re-prompt regression guard)', () => {
+    setAuth(TEST_UID);
+    setUserData(
+      makeUserData({
+        // Neither completed_at, nor agreed_to_terms_at — the exact shape that
+        // used to fall through both selectors and re-fire onboarding.
+        profile: {
+          display_name: 'name',
+          photo_url: '',
+          username_chosen: true,
+        },
+      }),
+    );
+
+    const {result} = renderHook(() => useOnboardingFlow());
+
+    expect(result.current.isReady).toBe(true);
     expect(result.current.shouldFireOnboarding).toBe(false);
   });
 

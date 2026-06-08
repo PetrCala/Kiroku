@@ -3,24 +3,32 @@ import type {Config, UserData} from '@src/types/onyx';
 /**
  * Returns whether the user has completed the onboarding flow.
  *
- * `completed_at` is the sole source of truth. Brand-new accounts — whose
- * Firebase record has no `onboarding` node yet — return `false` here. The
- * legacy grandfathering policy lives in `isLegacyGrandfatheredUser` so this
- * selector stays small and unambiguous.
+ * Treats an absent/undefined `onboarding` node as **completed**, so a returning
+ * user is never re-prompted while their record lacks the stamp — whether
+ * because the account predates the `completed_at` field (legacy) or because the
+ * record is still hydrating from `app/open` (`USER_DATA_LIST` is assembled
+ * incrementally, so a not-yet-loaded node looks the same as a missing one).
+ *
+ * The single "still onboarding" signal is an account explicitly pending the
+ * username step (`username_chosen === false`, written at signup). That check is
+ * robust to partial hydration: a not-yet-loaded `username_chosen` is
+ * `undefined`, never `false`, so a partial record never reads as "needs
+ * onboarding". A node that is present but carries no `completed_at` (e.g. only
+ * `last_visited_path`) is an in-progress flow → `false`.
  */
 function hasCompletedOnboarding(userData: UserData | undefined): boolean {
   if (!userData) {
+    return false;
+  }
+  if (userData.profile?.username_chosen === false) {
     return false;
   }
   const onboarding = userData.onboarding as
     | UserData['onboarding']
     | []
     | undefined;
-  if (!onboarding) {
-    return false;
-  }
-  if (Array.isArray(onboarding)) {
-    return false;
+  if (!onboarding || Array.isArray(onboarding)) {
+    return true;
   }
   return onboarding.completed_at !== undefined;
 }

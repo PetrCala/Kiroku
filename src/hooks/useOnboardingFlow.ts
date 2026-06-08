@@ -1,4 +1,5 @@
 import {useMemo} from 'react';
+import {useOnyx} from 'react-native-onyx';
 import {useConfig} from '@context/global/ConfigContext';
 import {useFirebase} from '@context/global/FirebaseContext';
 import useCurrentUserData from '@hooks/useCurrentUserData';
@@ -10,6 +11,7 @@ import {
 } from '@libs/OnboardingSelectors';
 import {isEmptyObject} from '@src/types/utils/EmptyObject';
 import CONFIG from '@src/CONFIG';
+import ONYXKEYS from '@src/ONYXKEYS';
 import ROUTES from '@src/ROUTES';
 import type {Route} from '@src/ROUTES';
 
@@ -34,6 +36,7 @@ function useOnboardingFlow(): OnboardingFlowState {
   const {auth} = useFirebase();
   const userID = auth?.currentUser?.uid;
   const {config} = useConfig();
+  const [isLoadingApp] = useOnyx(ONYXKEYS.IS_LOADING_APP);
   // `useCurrentUserData` returns {} (truthy) while loading / after the Onyx
   // record is wiped on account close; the readiness gate and selectors below
   // expect `undefined` to mean "not loaded yet", so map empty → undefined.
@@ -43,15 +46,17 @@ function useOnboardingFlow(): OnboardingFlowState {
   return useMemo<OnboardingFlowState>(() => {
     const skipOnboarding = CONFIG.SKIP_ONBOARDING;
     const isAuthenticated = !!userID;
-    // Treat both `undefined` (listener not yet emitted) and `null` (RTDB node
-    // missing — either pre-write during signup or post-delete during account
-    // closure) as "not enough info, defer." Without this, account deletion
-    // briefly flashes the T&C screen: account closure wipes the RTDB node
-    // before `signOut` runs, the listener emits `null`, and the onboarding
-    // selectors interpret that as "needs onboarding" while the user is still
-    // authenticated.
+    // Defer the decision until the OpenApp bootstrap has fully completed
+    // (`IS_LOADING_APP` flips to `false` in its finallyData) AND the user's
+    // record is present. `USER_DATA_LIST` is assembled incrementally — the
+    // app/open snapshot, Pusher deltas, and optimistic writes each land
+    // separately — so "the record is non-empty" does NOT imply "fully loaded".
+    // A partial record observed mid-bootstrap would otherwise be read as "needs
+    // onboarding" (and the one-way OnboardingGuard would then strand the user).
+    // Gating on the explicit bootstrap-complete signal restores the
+    // all-or-nothing guarantee the old Firebase listener gave implicitly.
     const isReady =
-      !isAuthenticated || (userData !== undefined && userData !== null);
+      !isAuthenticated || (isLoadingApp === false && userData !== undefined);
 
     if (skipOnboarding || !isAuthenticated || !isReady) {
       return {
@@ -92,7 +97,7 @@ function useOnboardingFlow(): OnboardingFlowState {
       lastVisitedPath: getOnboardingLastVisitedPath(userData),
       skipOnboarding,
     };
-  }, [userID, userData, config]);
+  }, [userID, userData, config, isLoadingApp]);
 }
 
 export default useOnboardingFlow;

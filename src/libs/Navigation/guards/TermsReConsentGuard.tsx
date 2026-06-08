@@ -1,4 +1,5 @@
 import React, {useCallback, useMemo} from 'react';
+import {useOnyx} from 'react-native-onyx';
 import Modal from '@components/Modal';
 import SafeAreaConsumer from '@components/SafeAreaConsumer';
 import TermsScreenContent from '@components/TermsScreenContent';
@@ -13,6 +14,7 @@ import {
 } from '@libs/OnboardingSelectors';
 import {isEmptyObject} from '@src/types/utils/EmptyObject';
 import CONST from '@src/CONST';
+import ONYXKEYS from '@src/ONYXKEYS';
 import {View} from 'react-native';
 
 /**
@@ -29,19 +31,25 @@ function TermsReConsentGuard() {
   // expect `undefined` to mean "not loaded yet", so map empty → undefined.
   const currentUserData = useCurrentUserData();
   const userData = isEmptyObject(currentUserData) ? undefined : currentUserData;
+  const [isLoadingApp] = useOnyx(ONYXKEYS.IS_LOADING_APP);
 
   const shouldPrompt = useMemo(() => {
     if (!auth?.currentUser) {
       return false;
     }
-    if (userData === undefined) {
+    // Defer until the OpenApp bootstrap completes and the record is present.
+    // `USER_DATA_LIST` hydrates incrementally, so a partial record (e.g. a
+    // profile-only batch merge that lacks `agreed_to_terms_at`) would otherwise
+    // flash this modal at a returning user before their real terms-acceptance
+    // has loaded.
+    if (isLoadingApp !== false || userData === undefined) {
       return false;
     }
     if (!hasCompletedOnboarding(userData)) {
       return false;
     }
     return !hasAcceptedCurrentTerms(userData, config);
-  }, [auth?.currentUser, userData, config]);
+  }, [auth?.currentUser, isLoadingApp, userData, config]);
 
   const handleAccept = useCallback(() => {
     Onboarding.acceptTerms();
