@@ -36,10 +36,10 @@ const DRINK_PALETTES: Record<
   },
 };
 
-// Single switch point for the drink-type palette. Flip to `'trueToGlass'` to
-// swap the whole app over. A future centralized design-toggle system (akin to
-// feature flags) could drive this selection.
-const ACTIVE_DRINK_PALETTE: keyof typeof DRINK_PALETTES = 'vivid';
+// Single switch point for the drink-type palette. Flip to `'vivid'` to swap the
+// whole app over. A future centralized design-toggle system (akin to feature
+// flags) could drive this selection.
+const ACTIVE_DRINK_PALETTE: keyof typeof DRINK_PALETTES = 'trueToGlass';
 
 /**
  * One color per `DrinkKey` — the single source of truth for drink-type color
