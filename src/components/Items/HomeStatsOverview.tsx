@@ -1,8 +1,6 @@
 import {View} from 'react-native';
 import type {DateData} from 'react-native-calendars';
 import {PeriodBarList} from '@components/Charts/PeriodBarList';
-import {KpiCard, KpiCardGroup} from '@components/Charts/KpiCard';
-import type {KpiCardProps} from '@components/Charts/KpiCard';
 import Icon from '@components/Icon';
 import * as KirokuIcons from '@components/Icon/KirokuIcons';
 import {PressableWithFeedback} from '@components/Pressable';
@@ -14,11 +12,81 @@ import useThemeStyles from '@hooks/useThemeStyles';
 import Navigation from '@navigation/Navigation';
 import ROUTES from '@src/ROUTES';
 
-type DeltaShape = NonNullable<KpiCardProps['delta']>;
+type Polarity = 'lower-is-supportive' | 'higher-is-supportive';
+type Direction = 'up' | 'down' | 'flat';
+
+const ARROW: Record<Direction, string> = {up: '▲', down: '▼', flat: '–'};
 
 function formatUnits(value: number): string {
   // 1 decimal for partial units, else integer — matches the Statistics tabs.
   return Number.isInteger(value) ? String(value) : value.toFixed(1);
+}
+
+function directionOf(current: number, previous: number): Direction {
+  const diff = Number((current - previous).toFixed(1));
+  if (diff > 0) {
+    return 'up';
+  }
+  if (diff < 0) {
+    return 'down';
+  }
+  return 'flat';
+}
+
+type MetricColumnProps = {
+  label: string;
+  /** Formatted current value. */
+  value: string;
+  /** Optional unit suffix, e.g. "/29" for alcohol-free days. */
+  unit?: string;
+  /** Formatted previous value (shown after the trend arrow). */
+  previous: string;
+  direction: Direction;
+  deltaColor: string;
+  accentColor: string;
+};
+
+/** One stat in the consolidated home tile: label, current value, arrow + previous. */
+function MetricColumn({
+  label,
+  value,
+  unit,
+  previous,
+  direction,
+  deltaColor,
+  accentColor,
+}: MetricColumnProps) {
+  const styles = useThemeStyles();
+  return (
+    <View style={styles.flex1}>
+      <Text style={styles.textLabelSupporting} numberOfLines={1}>
+        {label}
+      </Text>
+      <View style={[styles.flexRow, styles.alignItemsBaseline, styles.mt1]}>
+        <Text
+          style={[
+            styles.textHeadline,
+            {color: accentColor, fontSize: 24, lineHeight: 28},
+          ]}
+          numberOfLines={1}>
+          {value}
+        </Text>
+        {unit ? (
+          <Text style={[styles.textMicroSupporting, styles.ml1]}>{unit}</Text>
+        ) : null}
+      </View>
+      <Text
+        style={[
+          styles.textMicro,
+          styles.textStrong,
+          styles.mt1,
+          {color: deltaColor},
+        ]}
+        numberOfLines={1}>
+        {ARROW[direction]} {previous}
+      </Text>
+    </View>
+  );
 }
 
 type HomeStatsOverviewProps = {
@@ -26,9 +94,10 @@ type HomeStatsOverviewProps = {
 };
 
 /**
- * Home-screen stats block: a "Units" hero (with a per-week bar chart and a
- * quiet shortcut to the Statistics screen) over a supporting pair of
- * sessions and alcohol-free days. Every tile carries a "vs last month" delta.
+ * Home-screen stats: a single soft card with three columns (Units, Sessions,
+ * Alcohol-free), each showing the current value and the previous month's value
+ * after a trend arrow, plus a per-week bar chart and a quiet arrow shortcut to
+ * the Statistics screen.
  */
 function HomeStatsOverview({visibleDate}: HomeStatsOverviewProps) {
   const styles = useThemeStyles();
@@ -37,89 +106,83 @@ function HomeStatsOverview({visibleDate}: HomeStatsOverviewProps) {
   const {isLoading, current, previous, subPeriods, liveExtraUnits} =
     useHomeStats(visibleDate);
 
-  const vsLastMonth = translate('homeScreen.stats.vsLastMonth');
-  const makeDelta = (cur: number, prev: number): DeltaShape => {
-    const diff = Number((cur - prev).toFixed(1));
-    let direction: DeltaShape['direction'] = 'flat';
-    if (diff > 0) {
-      direction = 'up';
-    } else if (diff < 0) {
-      direction = 'down';
+  const deltaColorFor = (direction: Direction, polarity: Polarity): string => {
+    if (direction === 'flat') {
+      return theme.textSupporting;
     }
-    return {value: diff, direction, label: vsLastMonth};
+    const supportive: Direction =
+      polarity === 'higher-is-supportive' ? 'up' : 'down';
+    return direction === supportive ? theme.success : theme.warning;
   };
 
-  const statisticsLink = (
-    <PressableWithFeedback
-      accessibilityLabel={translate('homeScreen.stats.viewStatistics')}
-      accessibilityRole="button"
-      onPress={() => Navigation.navigate(ROUTES.STATISTICS)}
-      style={[styles.flexRow, styles.alignItemsCenter]}>
-      <Text style={[styles.textMicroSupporting, styles.mr1]}>
-        {translate('homeScreen.stats.statistics')}
-      </Text>
-      <Icon
-        src={KirokuIcons.ArrowRight}
-        width={12}
-        height={12}
-        fill={theme.icon}
-      />
-    </PressableWithFeedback>
-  );
-
-  const supportingCards: KpiCardProps[] = [
-    {
-      label: translate('homeScreen.stats.sessions'),
-      value: current.sessions,
-      delta: makeDelta(current.sessions, previous.sessions),
-      polarity: 'lower-is-supportive',
-      surface: 'soft',
-    },
-    {
-      label: translate('homeScreen.stats.alcoholFree'),
-      value: current.afDays,
-      unit: `/${current.elapsedDays}`,
-      delta: makeDelta(current.afDays, previous.afDays),
-      tone: 'celebratory',
-      polarity: 'higher-is-supportive',
-      surface: 'soft',
-    },
-  ];
-
-  // Overlay the live session's units on the cached month total; PeriodBarList
-  // adds the same overlay to the latest week's bar so the two agree.
-  const totalUnits = current.totalUnits + liveExtraUnits;
+  // The hero Units value folds in the live session's units (see useHomeStats).
+  const unitsCurrent = current.totalUnits + liveExtraUnits;
+  const unitsDir = directionOf(unitsCurrent, previous.totalUnits);
+  const sessionsDir = directionOf(current.sessions, previous.sessions);
+  const afDir = directionOf(current.afDays, previous.afDays);
 
   return (
     <View style={styles.mt2}>
-      <View style={styles.mb2}>
-        <KpiCard
-          label={translate('homeScreen.stats.units')}
-          value={formatUnits(totalUnits)}
-          delta={makeDelta(totalUnits, previous.totalUnits)}
-          polarity="lower-is-supportive"
-          surface="soft"
-          headerRight={statisticsLink}
-          chart={
-            <View>
-              <Text style={[styles.textMicroSupporting, styles.mb1]}>
-                {translate('homeScreen.stats.unitsByWeek')}
-              </Text>
-              <PeriodBarList
-                points={subPeriods}
-                granularity="week"
-                liveExtraUnits={liveExtraUnits}
-                accessibilityLabel={translate(
-                  'homeScreen.stats.unitsPerWeekA11y',
-                )}
-                isLoading={isLoading}
-              />
-            </View>
-          }
-          isLoading={isLoading}
-        />
+      <View
+        style={[
+          styles.p3,
+          {backgroundColor: theme.cardSoftBG, borderRadius: 12},
+        ]}>
+        <View style={[styles.flexRow, styles.justifyContentEnd]}>
+          <PressableWithFeedback
+            accessibilityLabel={translate('homeScreen.stats.viewStatistics')}
+            accessibilityRole="button"
+            onPress={() => Navigation.navigate(ROUTES.STATISTICS)}>
+            <Icon
+              src={KirokuIcons.ArrowRight}
+              width={16}
+              height={16}
+              fill={theme.icon}
+            />
+          </PressableWithFeedback>
+        </View>
+
+        <View style={[styles.flexRow, styles.mt1]}>
+          <MetricColumn
+            label={translate('homeScreen.stats.units')}
+            value={formatUnits(unitsCurrent)}
+            previous={formatUnits(previous.totalUnits)}
+            direction={unitsDir}
+            deltaColor={deltaColorFor(unitsDir, 'lower-is-supportive')}
+            accentColor={theme.text}
+          />
+          <MetricColumn
+            label={translate('homeScreen.stats.sessions')}
+            value={String(current.sessions)}
+            previous={String(previous.sessions)}
+            direction={sessionsDir}
+            deltaColor={deltaColorFor(sessionsDir, 'lower-is-supportive')}
+            accentColor={theme.text}
+          />
+          <MetricColumn
+            label={translate('homeScreen.stats.alcoholFree')}
+            value={String(current.afDays)}
+            unit={`/${current.elapsedDays}`}
+            previous={String(previous.afDays)}
+            direction={afDir}
+            deltaColor={deltaColorFor(afDir, 'higher-is-supportive')}
+            accentColor={theme.successHover}
+          />
+        </View>
+
+        <View style={styles.mt3}>
+          <Text style={[styles.textMicroSupporting, styles.mb1]}>
+            {translate('homeScreen.stats.unitsByWeek')}
+          </Text>
+          <PeriodBarList
+            points={subPeriods}
+            granularity="week"
+            liveExtraUnits={liveExtraUnits}
+            accessibilityLabel={translate('homeScreen.stats.unitsPerWeekA11y')}
+            isLoading={isLoading}
+          />
+        </View>
       </View>
-      <KpiCardGroup cards={supportingCards} isLoading={isLoading} />
     </View>
   );
 }
