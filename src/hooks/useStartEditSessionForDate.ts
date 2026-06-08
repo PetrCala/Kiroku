@@ -1,5 +1,4 @@
 import {useCallback} from 'react';
-import type {Database} from 'firebase/database';
 import type {User} from 'firebase/auth';
 import {useFirebase} from '@context/global/FirebaseContext';
 import * as App from '@userActions/App';
@@ -14,7 +13,6 @@ import useLocalize from './useLocalize';
 // the compiler, and that would regress the compilation of any component that
 // inlines it.
 async function startEditSessionForDate(
-  db: Database,
   user: User | null,
   date: Date,
   timezone: SelectedTimezone | undefined,
@@ -22,7 +20,7 @@ async function startEditSessionForDate(
 ) {
   try {
     await App.setLoadingText(loadingText);
-    const newSession = await DS.getNewSessionToEdit(db, user, date, timezone);
+    const newSession = await DS.getNewSessionToEdit(user, date, timezone);
     await DS.navigateToEditSessionScreen(newSession?.id);
   } catch (error) {
     ErrorUtils.raiseAppError(ERRORS.DATABASE.USER_CREATION_FAILED, error);
@@ -38,7 +36,7 @@ async function startEditSessionForDate(
  * calendar day long-press shortcut.
  */
 function useStartEditSessionForDate(): (date: Date) => void {
-  const {auth, db} = useFirebase();
+  const {auth} = useFirebase();
   const userData = useCurrentUserData();
   const {translate} = useLocalize();
   const selectedTimezone = userData?.timezone?.selected;
@@ -48,14 +46,13 @@ function useStartEditSessionForDate(): (date: Date) => void {
       // startEditSessionForDate handles its own errors; the .catch is a no-op
       // to satisfy no-floating-promises.
       startEditSessionForDate(
-        db,
         auth.currentUser,
         date,
         selectedTimezone,
         translate('liveSessionScreen.loading'),
       ).catch(() => {});
     },
-    [db, auth, selectedTimezone, translate],
+    [auth, selectedTimezone, translate],
   );
 }
 
