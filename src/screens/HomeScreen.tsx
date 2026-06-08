@@ -241,7 +241,7 @@ function HomeScreen({route}: HomeScreenProps) {
         ) : (
           <HomeHeaderSkeleton />
         )}
-        <ScrollView contentContainerStyle={styles.ph2}>
+        <ScrollView contentContainerStyle={styles.ph4}>
           {renderBanner()}
           {renderMainContent()}
         </ScrollView>
