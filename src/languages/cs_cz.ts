@@ -23,8 +23,8 @@ import type {
   SessionConfirmTimezoneChangeParams,
   SessionStartTimeParams,
   SessionWindowIdParams,
-  StatsAfDaysParams,
   StatsDrillDownTitleParams,
+  StatsThresholdParams,
   SupporterCancelledStatusParams,
   SupporterPriceParams,
   SupporterPurchaseCtaParams,
@@ -974,47 +974,61 @@ export default {
       overview: {
         label: 'Přehled',
         hero: {
-          afDays: {
-            label: 'Dny bez alkoholu tento měsíc',
-            a11yLabel: ({value, total}: StatsAfDaysParams) =>
-              `${value} z ${total} dnů bez alkoholu tento měsíc`,
-          },
+          label: 'Jednotky za období',
+          unit: 'jednotek',
+        },
+        delta: {
+          vsPrevious: 'vs předchozí',
+        },
+        sections: {
+          highlights: 'Hlavní body',
+          load: 'Zátěž',
+          risk: 'Riziko',
         },
         kpi: {
-          sessionsThisWeek: {
-            label: 'Relace tento týden',
-            delta: 'vs minulý týden',
+          afDays: {label: 'Dny bez alkoholu'},
+          dryStreak: {label: 'Nejdelší série bez alkoholu', unit: 'dní'},
+          sessions: {label: 'Relace'},
+          heaviestDay: {label: 'Nejtěžší den', unit: 'jednotek'},
+          avgPerDrinkingDay: {label: 'Průměr / den pití', unit: 'jednotek'},
+          monthlyAvg: {label: 'Průměr / měsíc', unit: 'jednotek'},
+          daysOverYellow: {
+            label: ({threshold}: StatsThresholdParams) =>
+              `Dny nad ${threshold}`,
           },
-          quietDaysThisWeek: {
-            label: 'Klidné dny tento týden',
-            delta: 'vs minulý týden',
+          daysOverOrange: {
+            label: ({threshold}: StatsThresholdParams) =>
+              `Dny nad ${threshold}`,
           },
-          unitsThisWeek: {
-            label: 'Jednotky tento týden',
-            delta: 'vs minulý týden',
+          pctOver: {
+            label: ({threshold}: StatsThresholdParams) =>
+              `% dní nad ${threshold}`,
           },
         },
-        trend: {
-          title: '8týdenní trend',
-          bandCaption:
-            'Stínovaný pás je tam, kde se odehrála většina vašich posledních 8 týdnů.',
-          chip: {
-            down: 'Vaše týdenní jednotky postupně klesají.',
-            up: 'Vaše týdenní jednotky postupně rostou.',
-            none: 'Vaše týdny se proměňují jako obvykle.',
+        texture: {
+          series: {
+            title: 'Jednotky podle období',
+            a11y: 'Jednotky za dílčí období',
           },
-          a11yLabel: 'Posledních 8 týdnů týdenních jednotek, vyhlazeno',
+          distribution: {
+            title: 'Dny podle intenzity',
+            a11y: 'Rozložení dní podle intenzity pití',
+            af: 'Bez alk.',
+            light: 'Mírná',
+            moderate: 'Střední',
+            heavy: 'Těžká',
+          },
         },
         empty: {
           neverLogged: {
-            title: 'Zatím není co zobrazit',
-            body: 'Až zaznamenáte relaci, objeví se zde týdenní trendy a měsíční přehled.',
+            title: 'Zatím není co zaznamenat',
+            body: 'Až zaznamenáte relaci, objeví se zde váš přehled za období.',
           },
           noDataInRange:
             'Žádné relace v tomto období. Každý uplynulý den byl bez alkoholu.',
         },
         sparseFooter:
-          'Zatím jen pár týdnů historie. Vaše trendy se vyjasní, jak budete přidávat data.',
+          'Zatím jen málo historie. Tato čísla se zpřesní, jak budete přidávat další záznamy.',
       },
       trends: {
         label: 'Trendy',
@@ -1060,11 +1074,13 @@ export default {
           sliceCaption: ({label, units, share}: BreakdownSliceCaptionParams) =>
             `${label}: ${units} jednotek (${share} %)`,
           a11y: 'Koláč složení podle druhu drinku',
+          current: 'Aktuální',
+          previous: 'Předchozí',
         },
         multiples: {
           title: 'Týdenní trend podle druhu',
           subtitle: 'Malý graf pro každý druh s daty v tomto období.',
-          empty: 'Zatím žádné trendy podle druhu. Zkus širší období.',
+          empty: 'Zatím žádné trendy podle druhu. Zkuste širší období.',
           tileSubtitle: ({units}: BreakdownTileSubtitleParams) =>
             `${units} jednotek za období`,
           a11yTile: ({label}: BreakdownDrinkLabelParams) =>
