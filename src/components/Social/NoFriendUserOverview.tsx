@@ -2,7 +2,6 @@ import {View} from 'react-native';
 import type {Profile} from '@src/types/onyx';
 import useThemeStyles from '@hooks/useThemeStyles';
 import Text from '@components/Text';
-import {useFirebase} from '@src/context/global/FirebaseContext';
 import ProfileImage from '@components/ProfileImage';
 import {SupporterBadgeForUser} from '@components/SupporterBadge';
 
@@ -17,7 +16,6 @@ function NoFriendUserOverview({
   profileData,
   RightSideComponent,
 }: NoFriendUserOverviewProps) {
-  const {storage} = useFirebase();
   const styles = useThemeStyles();
 
   if (!profileData) {
@@ -29,9 +27,7 @@ function NoFriendUserOverview({
       <View key={`${userID}profile`} style={styles.userOverviewLeftContent}>
         <ProfileImage
           key={`${userID}-profile-icon`}
-          storage={storage}
-          downloadPath={profileData.photo_url}
-          userID={userID}
+          photoUrl={profileData.photo_url}
           style={styles.avatarLarge}
         />
         <Text

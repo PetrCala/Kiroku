@@ -11,7 +11,6 @@ import DateUtils from '@libs/DateUtils';
 import type {Timezone} from '@src/types/onyx/UserData';
 import Text from '@components/Text';
 import Icon from '@components/Icon';
-import {useFirebase} from '@src/context/global/FirebaseContext';
 import useTheme from '@hooks/useTheme';
 import useLocalize from '@hooks/useLocalize';
 
@@ -28,7 +27,6 @@ function UserOverview({
   userStatusData,
   timezone,
 }: UserOverviewProps) {
-  const {storage} = useFirebase();
   const styles = useThemeStyles();
   const theme = useTheme();
   const {translate} = useLocalize();
@@ -70,9 +68,7 @@ function UserOverview({
         style={styles.userOverviewLeftContent}>
         <ProfileImage
           key={`${userID}-profile-icon`}
-          storage={storage}
-          userID={userID}
-          downloadPath={profileData.photo_url}
+          photoUrl={profileData.photo_url}
           style={styles.avatarLarge}
         />
         <Text

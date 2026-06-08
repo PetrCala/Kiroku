@@ -228,9 +228,20 @@ const KIROKU_ROUTES: Record<string, KirokuRoute> = {
     method: 'post',
     path: '/v1/profile/name',
   },
-  [WRITE_COMMANDS.UPDATE_PROFILE_PHOTO]: {
+  // Mint a presigned bucket PUT URL for a direct-to-storage image upload
+  // (avatar now; session images later). Returns `{uploadUrl, objectPath}`.
+  // See Kiroku #1059.
+  [READ_COMMANDS.GET_IMAGE_UPLOAD_URL]: {
     method: 'post',
-    path: '/v1/profile/photo',
+    path: '/v1/images/upload-url',
+  },
+  // Validate + moderate the uploaded object, then apply its access policy and
+  // persist it. For `kind: 'avatar'`: public-read + a `profile.photo_url` merge
+  // in the response's onyxData. Supersedes the old client-trusted
+  // `UPDATE_PROFILE_PHOTO` (`/v1/profile/photo`), closing that integrity gap.
+  [WRITE_COMMANDS.FINALIZE_IMAGE]: {
+    method: 'post',
+    path: '/v1/images/finalize',
   },
   [WRITE_COMMANDS.SYNC_USER_STATUS]: {
     method: 'post',

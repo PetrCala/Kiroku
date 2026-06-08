@@ -1,26 +1,5 @@
-import type {FirebaseStorage} from 'firebase/storage';
 import type {Auth} from 'firebase/auth';
 import CONFIG from '@src/CONFIG';
-
-/**
- * Checks if the Firebase Storage instance is connected to an emulator.
- *
- * @param storage The Firebase Storage instance.
- * @returns True if connected to the emulator, false otherwise.
- * @example
- * const storage = getStorage();
- * const connectedToStorageEmulator = isConnectedToStorageEmulator(storage);
- * console.log('Connected to Storage Emulator:', connectedToStorageEmulator);
- */
-function isConnectedToStorageEmulator(storage: FirebaseStorage): boolean {
-  const storageConfig = storage.app.options.storageBucket;
-  if (!storageConfig) {
-    return false;
-  }
-  return storageConfig.includes(
-    `${CONFIG.EMULATORS.HOST}:${CONFIG.EMULATORS.STORAGE_BUCKET_PORT}`,
-  );
-}
 
 /**
  * Checks if the Firebase Authentication instance is connected to an emulator.
@@ -42,4 +21,7 @@ function isConnectedToAuthEmulator(auth: Auth): boolean {
   );
 }
 
-export {isConnectedToAuthEmulator, isConnectedToStorageEmulator};
+export {
+  // eslint-disable-next-line import/prefer-default-export
+  isConnectedToAuthEmulator,
+};

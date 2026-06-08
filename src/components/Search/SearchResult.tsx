@@ -1,6 +1,5 @@
 import React from 'react';
 import {View} from 'react-native';
-import type {FirebaseStorage} from 'firebase/storage';
 import ProfileImage from '@components/ProfileImage';
 import {SupporterBadgeForUser} from '@components/SupporterBadge';
 import type {FriendRequestStatus, Profile} from '@src/types/onyx';
@@ -12,7 +11,6 @@ import SendFriendRequestButton from './SendFriendRequestButton';
 type SearchResultProps = {
   userID: string;
   userDisplayData: Profile;
-  storage: FirebaseStorage;
   userFrom: string;
   requestStatus: FriendRequestStatus | undefined;
   alreadyAFriend: boolean;
@@ -22,7 +20,6 @@ type SearchResultProps = {
 function SearchResult({
   userID,
   userDisplayData,
-  storage,
   userFrom,
   requestStatus,
   alreadyAFriend,
@@ -35,9 +32,7 @@ function SearchResult({
       <View style={styles.userOverviewLeftContent}>
         <ProfileImage
           key={`${userID}-profile-icon`}
-          storage={storage}
-          userID={userID}
-          downloadPath={userDisplayData?.photo_url}
+          photoUrl={userDisplayData?.photo_url}
           style={styles.avatarLarge}
         />
         <Text style={[styles.headerText, styles.ml3, styles.flexShrink1]}>

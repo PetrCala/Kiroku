@@ -37,7 +37,11 @@ export type {default as SubmitFeedbackParams} from './SubmitFeedbackParams';
 export type {default as ReportBugParams} from './ReportBugParams';
 export type {default as RemoveFeedbackParams} from './RemoveFeedbackParams';
 export type {default as RemoveBugParams} from './RemoveBugParams';
-export type {default as UpdateProfilePhotoParams} from './UpdateProfilePhotoParams';
+export type {
+  default as GetImageUploadURLParams,
+  ImageUploadKind,
+} from './GetImageUploadURLParams';
+export type {default as FinalizeImageParams} from './FinalizeImageParams';
 export type {default as SyncUserStatusParams} from './SyncUserStatusParams';
 export type {default as AcceptTermsParams} from './AcceptTermsParams';
 export type {default as SetOnboardingLastVisitedPathParams} from './SetOnboardingLastVisitedPathParams';

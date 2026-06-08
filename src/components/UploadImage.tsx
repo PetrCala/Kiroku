@@ -7,31 +7,25 @@ import type {ImagePickerAsset} from 'expo-image-picker';
 import * as ImageManipulator from 'expo-image-manipulator';
 import checkPermission from '@libs/Permissions/checkPermission';
 import requestPermission from '@libs/Permissions/requestPermission';
-import * as Profile from '@userActions/Profile';
 import * as ErrorUtils from '@libs/ErrorUtils';
-import {useFirebase} from '@src/context/global/FirebaseContext';
-import uploadImageToFirebase from '@src/storage/storageUpload';
+import {uploadImage} from '@userActions/Image';
 import ERRORS from '@src/ERRORS';
 import useThemeStyles from '@hooks/useThemeStyles';
 import UploadImagePopup from './Popups/UploadImagePopup';
 import Button from './Button';
 
 type UploadImageComponentProps = {
-  pathToUpload: string;
   src: IconAsset;
   isProfilePicture: boolean;
   containerStyles?: StyleProp<ViewStyle>;
 };
 
 function UploadImageComponent({
-  pathToUpload,
   src,
   isProfilePicture = false,
   containerStyles,
 }: UploadImageComponentProps) {
-  const {auth, storage} = useFirebase();
   const styles = useThemeStyles();
-  const user = auth.currentUser;
   const [imageSource, setImageSource] = useState<string | null>(null);
   const [uploadModalVisible, setUploadModalVisible] = useState(false);
   const [uploadProgress, setUploadProgress] = useState<string | null>(null);
@@ -165,16 +159,11 @@ function UploadImageComponent({
       try {
         setUploadModalVisible(true);
         setUploadOngoing(true);
-        await uploadImageToFirebase(
-          storage,
-          sourceURI,
-          pathToUpload,
-          setUploadProgress,
-          setSuccess,
-        ); // Wait for the promise to resolve
-        if (isProfilePicture) {
-          await Profile.updateProfileInfo(pathToUpload, user, auth, storage);
-        }
+        // Upload through the kiroku-api image pipeline (XHR PUT drives the
+        // progress bar). The avatar's `profile.photo_url` is persisted
+        // server-side in the finalize step (its onyxData updates Onyx), so the
+        // client no longer derives or sends the URL.
+        await uploadImage('avatar', sourceURI, setUploadProgress);
       } catch (error) {
         setImageSource(null);
         ErrorUtils.raiseAppError(ERRORS.IMAGE_UPLOAD.UPLOAD_FAILED, error);
@@ -185,7 +174,7 @@ function UploadImageComponent({
     };
 
     handleUpload(imageSource);
-  }, [auth, isProfilePicture, storage, user, pathToUpload, imageSource]);
+  }, [imageSource]);
 
   return (
     <View

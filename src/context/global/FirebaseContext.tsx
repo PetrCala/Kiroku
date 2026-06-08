@@ -2,26 +2,20 @@ import type {ReactNode} from 'react';
 import {createContext, useContext, useMemo} from 'react';
 import type {Auth} from 'firebase/auth';
 import {connectAuthEmulator} from 'firebase/auth';
-import type {FirebaseStorage} from 'firebase/storage';
-import {getStorage, connectStorageEmulator} from 'firebase/storage';
-import {
-  isConnectedToAuthEmulator,
-  isConnectedToStorageEmulator,
-} from '@src/libs/Firebase/FirebaseUtils';
-import {FirebaseApp, getFirebaseAuth} from '@libs/Firebase/FirebaseApp';
+import {isConnectedToAuthEmulator} from '@src/libs/Firebase/FirebaseUtils';
+import {getFirebaseAuth} from '@libs/Firebase/FirebaseApp';
 import FirebaseConfig from '@libs/Firebase/FirebaseConfig';
 import CONFIG from '@src/CONFIG';
 
 type FirebaseContextProps = {
   auth: Auth;
-  storage: FirebaseStorage;
 };
 
 const FirebaseContext = createContext<FirebaseContextProps | null>(null);
 
 /** Fetch the FirebaseContext. If the context does not exist, throw an error.
  *
- * @example { auth, storage } = useFirebase();
+ * @example { auth } = useFirebase();
  */
 const useFirebase = (): FirebaseContextProps => {
   const context = useContext(FirebaseContext);
@@ -45,7 +39,6 @@ function FirebaseProvider({children}: FirebaseProviderProps) {
     // This is called in useMemo which runs after component mounts, ensuring React Native
     // bridge is fully initialized. Direct import would execute at module load time and crash.
     const auth = getFirebaseAuth();
-    const storage = getStorage(FirebaseApp);
 
     // Check if emulators should be used
     if (CONFIG.IS_USING_EMULATORS) {
@@ -56,24 +49,12 @@ function FirebaseProvider({children}: FirebaseProviderProps) {
       if (!FirebaseConfig.authDomain) {
         throw new Error('Auth URL not defined in FirebaseConfig');
       }
-      if (!FirebaseConfig.storageBucket) {
-        throw new Error('Storage bucket not defined in FirebaseConfig');
-      }
 
       if (!isConnectedToAuthEmulator(auth)) {
         connectAuthEmulator(auth, CONFIG.EMULATORS.AUTH_URL);
       }
-
-      // Safety check to connect to emulators only if they are not already running
-      if (!isConnectedToStorageEmulator(storage)) {
-        connectStorageEmulator(
-          storage,
-          CONFIG.EMULATORS.HOST,
-          CONFIG.EMULATORS.STORAGE_BUCKET_PORT,
-        );
-      }
     }
-    return {auth, storage};
+    return {auth};
   }, []);
 
   return (

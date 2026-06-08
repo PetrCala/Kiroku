@@ -26,7 +26,7 @@ import FlatList from '@components/FlatList';
 import ERRORS from '@src/ERRORS';
 
 function FriendSearchScreen() {
-  const {auth, storage} = useFirebase();
+  const {auth} = useFirebase();
   const styles = useThemeStyles();
   const userData = useCurrentUserData();
   const user = auth.currentUser;
@@ -123,13 +123,12 @@ function FriendSearchScreen() {
       <SearchResult
         userID={userID}
         userDisplayData={displayData[userID]}
-        storage={storage}
         userFrom={user?.uid ?? ''}
         requestStatus={requestStatuses[userID]}
         alreadyAFriend={friends ? friends[userID] : false}
       />
     ),
-    [displayData, storage, user?.uid, requestStatuses, friends],
+    [displayData, user?.uid, requestStatuses, friends],
   );
 
   if (!user) {

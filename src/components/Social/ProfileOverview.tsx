@@ -15,7 +15,7 @@ type ProfileOverviewProps = {
 };
 
 function ProfileOverview({userID, profileData}: ProfileOverviewProps) {
-  const {auth, storage} = useFirebase();
+  const {auth} = useFirebase();
   const styles = useThemeStyles();
   const user = auth.currentUser;
   const {windowWidth} = useWindowDimensions();
@@ -24,15 +24,12 @@ function ProfileOverview({userID, profileData}: ProfileOverviewProps) {
     <View style={[styles.flexColumn, styles.alignItemsCenter, styles.p1]}>
       <ProfileImage
         key={`${userID}-profile-image`}
-        storage={storage}
-        userID={userID}
-        downloadPath={profileData.photo_url}
+        photoUrl={profileData.photo_url}
         style={styles.avatarXLarge}
         enlargable
       />
       {user?.uid === userID && (
         <UploadImageComponent
-          pathToUpload={`users/${userID}/profile/profile_image.jpg`}
           src={KirokuIcons.Camera}
           isProfilePicture
           containerStyles={styles.editProfileImageContainer(windowWidth)}
