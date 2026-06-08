@@ -19,6 +19,7 @@ import type {
   ForceUpdateTextParams,
   ForgotPasswordSuccessParams,
   FriendRequestsCountParams,
+  LastSessionSummaryParams,
   OnboardingStepCounterParams,
   SessionConfirmTimezoneChangeParams,
   SessionStartTimeParams,
@@ -1263,9 +1264,21 @@ export default {
     welcomeToKiroku: 'Welcome to Kiroku!',
     startNewSessionByClickingPlus:
       'Start a new session by clicking the plus button at the bottom of your screen',
-    currentlyInSession: 'You are currently in a session!',
-    currentlyInSessionButton:
-      'A button indicating you are currently in session',
+    banners: {
+      inSession: {
+        label: 'In session',
+        body: 'Tap to return to your session',
+        resume: 'Resume',
+        a11y: 'You are in a session. Tap to return to it.',
+      },
+      lastSession: {
+        label: 'Last session',
+        summary: ({when, units}: LastSessionSummaryParams) =>
+          `${when} · ${units} units`,
+        a11y: ({when, units}: LastSessionSummaryParams) =>
+          `View your last session, ${when}, ${units} units`,
+      },
+    },
     stats: {
       units: 'Units',
       sessions: 'Sessions',

@@ -33,6 +33,11 @@ type FriendRequestsCountParams = {
   requestsCount: number;
 };
 
+type LastSessionSummaryParams = {
+  when: string;
+  units: string;
+};
+
 type OnboardingStepCounterParams = {
   currentStep: number;
   totalSteps: number;
@@ -130,6 +135,7 @@ export type {
   ForceUpdateTextParams,
   ForgotPasswordSuccessParams,
   FriendRequestsCountParams,
+  LastSessionSummaryParams,
   OnboardingStepCounterParams,
   SessionConfirmTimezoneChangeParams,
   SessionStartTimeParams,
