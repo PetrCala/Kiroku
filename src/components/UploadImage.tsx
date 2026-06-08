@@ -1,6 +1,6 @@
 import React, {useEffect, useState} from 'react';
 import type {StyleProp, ViewStyle} from 'react-native';
-import {View} from 'react-native';
+import {Alert, View} from 'react-native';
 import type IconAsset from '@src/types/utils/IconAsset';
 import * as ImagePicker from 'expo-image-picker';
 import type {ImagePickerAsset} from 'expo-image-picker';
@@ -13,6 +13,8 @@ import {useFirebase} from '@src/context/global/FirebaseContext';
 import uploadImageToFirebase from '@src/storage/storageUpload';
 import ERRORS from '@src/ERRORS';
 import useThemeStyles from '@hooks/useThemeStyles';
+import useLocalize from '@hooks/useLocalize';
+import useNetwork from '@hooks/useNetwork';
 import UploadImagePopup from './Popups/UploadImagePopup';
 import Button from './Button';
 
@@ -31,6 +33,8 @@ function UploadImageComponent({
 }: UploadImageComponentProps) {
   const {auth, storage} = useFirebase();
   const styles = useThemeStyles();
+  const {translate} = useLocalize();
+  const {isOffline} = useNetwork();
   const user = auth.currentUser;
   const [imageSource, setImageSource] = useState<string | null>(null);
   const [uploadModalVisible, setUploadModalVisible] = useState(false);
@@ -140,6 +144,16 @@ function UploadImageComponent({
   };
 
   const handleChooseImagePress = async () => {
+    // The image upload goes straight to Firebase Storage, which the offline
+    // request queue can't defer or replay. Guard up front rather than letting
+    // the user pick an image and watch the upload fail.
+    if (isOffline) {
+      Alert.alert(
+        translate('common.youAppearToBeOffline'),
+        translate('common.thisFeatureRequiresInternet'),
+      );
+      return;
+    }
     try {
       // Check for permissions
       const permissionAllowed = await checkPermission('read_photos');
