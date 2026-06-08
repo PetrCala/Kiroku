@@ -1,5 +1,6 @@
 import {useMemo} from 'react';
 import useTheme from '@hooks/useTheme';
+import colors from '@styles/theme/colors';
 import type {ChartTheme} from './types';
 
 /**
@@ -25,6 +26,12 @@ function useChartTheme(): ChartTheme {
       primaryStroke: appColor,
       // ~20% alpha suffix on the theme accent for the band-of-normal stripe.
       bandFill: `${appColor}33`,
+      // Faint accent fill (~33% alpha) for "raw weekly units" bars — context
+      // the prominent trend line reads above.
+      barFill: `${appColor}55`,
+      // A deeper amber for the weekly trend line so it pops above the faint
+      // bars. Brand-family (yellow→amber), never red — per design doc §3.
+      trendStroke: colors.yellow600,
       // Muted ~67% alpha on the supporting text color for dashed
       // "vs previous period" overlays — visible but never competes with
       // the primary series.

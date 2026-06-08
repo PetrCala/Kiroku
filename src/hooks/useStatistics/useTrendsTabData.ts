@@ -5,7 +5,6 @@ import {
   buildAfYtdSeries,
   buildWeeklyStackedSeries,
   buildWeeklyUnits,
-  percentileBand,
   shiftRange,
 } from '@libs/Statistics/trends';
 import type {AfYtdPoint} from '@libs/Statistics/trends';
@@ -21,7 +20,6 @@ type Hero = {
   units: number[];
   ewma?: number[];
   comparison?: number[];
-  band: {p25: number; p75: number} | null;
   captionKey: CaptionKey;
 };
 
@@ -77,7 +75,6 @@ function useTrendsTabData(): TrendsTabData {
 
     const ewmaSeries =
       units.length >= MIN_EWMA_N ? ewma(units, 0.3) : undefined;
-    const band = percentileBand(units);
 
     const comparisonUnits = comparisonRange
       ? buildWeeklyUnits(
@@ -119,7 +116,6 @@ function useTrendsTabData(): TrendsTabData {
       units,
       ewma: ewmaSeries,
       comparison: comparisonAligned,
-      band,
       captionKey,
     };
   }, [events, range.start, range.end, comparisonRange]);

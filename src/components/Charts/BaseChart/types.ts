@@ -39,6 +39,10 @@ type ChartTheme = {
   primaryStroke: string;
   /** Translucent fill for the "band of normal" overlay. */
   bandFill: string;
+  /** Faint accent fill for raw "weekly units" bars. */
+  barFill: string;
+  /** Deeper-amber stroke for the prominent weekly trend line. */
+  trendStroke: string;
   /** Stroke color for muted comparison ("vs previous period") lines. */
   comparisonStroke: string;
   /** Five-stop intensity ramp for the heatmap, indices 0..4. */

@@ -1030,8 +1030,10 @@ export default {
         weeklyTrend: {
           title: 'Weekly units',
           emptyLabel: 'Your trend will show as data builds.',
-          bandCaption:
-            'The shaded band is where most of your recent weeks landed.',
+          legend: {
+            thisPeriod: 'This period',
+            trend: 'Trend',
+          },
           captions: {
             trendingDown: 'Your weekly units are trending down.',
             trendingUp: 'Your weekly units are trending up.',

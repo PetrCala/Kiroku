@@ -194,7 +194,7 @@ Each tab ships with at least one **hero chart** so no tab feels empty on day one
 
 ### 6.2 Trends — "How is this changing?"
 
-- **Hero**: weekly units line + EWMA overlay + band-of-normal
+- **Hero**: weekly units as faint bars + a prominent EWMA trend line (deeper amber), with an on-chart legend. (The percentile band-of-normal was dropped from this chart in favor of per-week bars; `percentileBand` remains as a utility.)
 - Cumulative alcohol-free days YTD (only-up line, psychologically additive)
 - Weekly drink-type stacked area
 - "vs previous period" toggle adds a dashed second series to each

@@ -1021,8 +1021,10 @@ export default {
         weeklyTrend: {
           title: 'Týdenní jednotky',
           emptyLabel: 'Váš trend se ukáže, jak budou přibývat data.',
-          bandCaption:
-            'Stínované pásmo ukazuje, kde se pohybovala většina posledních týdnů.',
+          legend: {
+            thisPeriod: 'Toto období',
+            trend: 'Trend',
+          },
           captions: {
             trendingDown: 'Vaše týdenní jednotky mají sestupný trend.',
             trendingUp: 'Vaše týdenní jednotky mají vzestupný trend.',
