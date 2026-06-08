@@ -242,17 +242,17 @@ function requireOpenssl3() {
 }
 const openssl = (args, opts) => run(OPENSSL3 || 'openssl', args, opts);
 
-let _tmpDir;
+let tmpRoot;
 function tmpDir() {
-  if (!_tmpDir)
-    _tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'kiroku-signing-'));
-  return _tmpDir;
+  if (!tmpRoot)
+    tmpRoot = fs.mkdtempSync(path.join(os.tmpdir(), 'kiroku-signing-'));
+  return tmpRoot;
 }
 function tmpFile(name) {
   return path.join(tmpDir(), name);
 }
 function cleanupTmp() {
-  if (_tmpDir) fs.rmSync(_tmpDir, {recursive: true, force: true});
+  if (tmpRoot) fs.rmSync(tmpRoot, {recursive: true, force: true});
 }
 
 // ---- gpg ------------------------------------------------------------------
@@ -311,17 +311,22 @@ function gpgEncryptOverwrite(plainPath) {
 }
 
 // ---- scratch state --------------------------------------------------------
-function readState() {
+// Module-level so the renew helpers mutate one shared object (avoids threading
+// + reassigning a `state` parameter through every step).
+let STATE = {};
+function loadState() {
   try {
-    return JSON.parse(fs.readFileSync(STATE_FILE, 'utf8'));
+    STATE = JSON.parse(fs.readFileSync(STATE_FILE, 'utf8'));
   } catch {
-    return {};
+    STATE = {};
   }
+  return STATE;
 }
-function writeState(s) {
-  fs.writeFileSync(STATE_FILE, JSON.stringify(s, null, 2), {mode: 0o600});
+function saveState() {
+  fs.writeFileSync(STATE_FILE, JSON.stringify(STATE, null, 2), {mode: 0o600});
 }
 function clearState() {
+  STATE = {};
   fs.rmSync(STATE_FILE, {force: true});
 }
 
@@ -395,12 +400,17 @@ function readProfile(mpPath) {
 // ===========================================================================
 async function cmdCheck() {
   let bad = false;
-  const flagDays = (label, date, state) => {
+  const classify = date => {
     const d = daysUntil(date);
-    const mark = d < 0 ? '✗ EXPIRED' : d <= OPTS.days ? `⚠ ${d}d` : `✓ ${d}d`;
-    if (d < 0 || d <= OPTS.days) bad = true;
+    if (d < 0) return {tag: '✗ EXPIRED', expiring: true};
+    if (d <= OPTS.days) return {tag: `⚠ ${d}d`, expiring: true};
+    return {tag: `✓ ${d}d`, expiring: false};
+  };
+  const flagDays = (label, date, extra) => {
+    const {tag, expiring} = classify(date);
+    if (expiring) bad = true;
     L(
-      `  ${label}: ${mark} (until ${new Date(date).toISOString().slice(0, 10)}${state ? `, ${state}` : ''})`,
+      `  ${label}: ${tag} (until ${new Date(date).toISOString().slice(0, 10)}${extra ? `, ${extra}` : ''})`,
     );
   };
 
@@ -484,29 +494,29 @@ function ensureGitReady() {
     );
 }
 
-async function ensureCertificate(state, bundleHint) {
+async function ensureCertificate(bundleHint) {
   // Resume: reuse an in-flight cert from a previous interrupted run.
-  if (state.newCert && state.privateKeyPem && state.certPem) {
+  if (STATE.newCert && STATE.privateKeyPem && STATE.certPem) {
     const still = await api(
       'GET',
-      `/v1/certificates/${state.newCert.id}`,
+      `/v1/certificates/${STATE.newCert.id}`,
     ).catch(() => null);
     if (still) {
       L(
-        `Resuming with in-flight cert ${state.newCert.id} from a previous run.`,
+        `Resuming with in-flight cert ${STATE.newCert.id} from a previous run.`,
       );
-      return state;
+      return;
     }
   }
   // BYO-cert: an externally created P12 (covers an App-Manager-only API key).
   if (OPTS.p12) {
     if (!OPTS.p12Password) throw new Error('--p12 requires --p12-password.');
-    state.byoP12 = {path: path.resolve(OPTS.p12), password: OPTS.p12Password};
-    writeState(state);
-    return state;
+    STATE.byoP12 = {path: path.resolve(OPTS.p12), password: OPTS.p12Password};
+    saveState();
+    return;
   }
 
-  const certType = OPTS.certType || state.certType;
+  const certType = OPTS.certType || STATE.certType;
   const keyPath = tmpFile('signing.key');
   const csrPath = tmpFile('signing.csr');
   openssl([
@@ -522,8 +532,8 @@ async function ensureCertificate(state, bundleHint) {
     '-subj',
     `/CN=Kiroku ${certType}/O=${bundleHint}`,
   ]);
-  state.privateKeyPem = fs.readFileSync(keyPath, 'utf8');
-  writeState(state); // persist the key BEFORE the cert exists, so a retry can resume
+  STATE.privateKeyPem = fs.readFileSync(keyPath, 'utf8');
+  saveState(); // persist the key BEFORE the cert exists, so a retry can resume
   const csrContent = fs.readFileSync(csrPath, 'utf8');
 
   let created;
@@ -562,34 +572,33 @@ async function ensureCertificate(state, bundleHint) {
       });
     } else throw e;
   }
-  state.newCert = {
+  STATE.newCert = {
     id: created.data.id,
     type: created.data.attributes.certificateType,
     serial: created.data.attributes.serialNumber,
     expirationDate: created.data.attributes.expirationDate,
   };
-  state.certPem = run(OPENSSL3 || 'openssl', ['x509', '-inform', 'DER'], {
+  STATE.certPem = run(OPENSSL3 || 'openssl', ['x509', '-inform', 'DER'], {
     input: Buffer.from(created.data.attributes.certificateContent, 'base64'),
   });
-  writeState(state);
+  saveState();
   L(
-    `Created cert ${state.newCert.id} (${state.newCert.type}), expires ${state.newCert.expirationDate}.`,
+    `Created cert ${STATE.newCert.id} (${STATE.newCert.type}), expires ${STATE.newCert.expirationDate}.`,
   );
-  return state;
 }
 
-function buildAndVerifyP12(state) {
-  if (state.byoP12) return state.byoP12; // already a usable P12
+function buildAndVerifyP12() {
+  if (STATE.byoP12) return STATE.byoP12; // already a usable P12
   requireOpenssl3();
   const keyPath = tmpFile('signing.key');
   const certPath = tmpFile('cert.pem');
   const p12Path = tmpFile(P12_FILE);
-  fs.writeFileSync(keyPath, state.privateKeyPem);
-  fs.writeFileSync(certPath, state.certPem);
+  fs.writeFileSync(keyPath, STATE.privateKeyPem);
+  fs.writeFileSync(certPath, STATE.certPem);
   const password =
-    state.p12Password || crypto.randomBytes(24).toString('base64url');
-  state.p12Password = password;
-  writeState(state);
+    STATE.p12Password || crypto.randomBytes(24).toString('base64url');
+  STATE.p12Password = password;
+  saveState();
 
   // `-legacy` → RC2/3DES + SHA-1 MAC, the only PKCS#12 format macOS `security
   // import` accepts. See resolveOpenssl3() for why this is safe.
@@ -602,7 +611,7 @@ function buildAndVerifyP12(state) {
     '-in',
     certPath,
     '-name',
-    `Apple Distribution: Kiroku (${state.newCert?.type || 'cert'})`,
+    `Apple Distribution: Kiroku (${STATE.newCert?.type || 'cert'})`,
     '-passout',
     'env:P12PW',
     '-out',
@@ -639,22 +648,22 @@ function buildAndVerifyP12(state) {
   return {path: p12Path, password};
 }
 
-async function ensureProfiles(state, ctx) {
-  state.profiles = state.profiles || {};
-  state.oldProfiles = state.oldProfiles || {};
+async function ensureProfiles(ctx) {
+  STATE.profiles = STATE.profiles || {};
+  STATE.oldProfiles = STATE.oldProfiles || {};
   const existing = await listManagedProfiles();
   for (const want of PROFILES) {
     const fullName = want.name + OPTS.profileSuffix;
-    if (state.profiles[fullName]) {
+    if (STATE.profiles[fullName]) {
       L(
-        `Profile ${fullName} already created this run (${state.profiles[fullName].id}).`,
+        `Profile ${fullName} already created this run (${STATE.profiles[fullName].id}).`,
       );
       continue;
     }
     const old = existing.find(p => p.attributes.name === fullName);
     if (old) {
-      state.oldProfiles[fullName] = old.id; // retained for finalize
-      writeState(state);
+      STATE.oldProfiles[fullName] = old.id; // retained for finalize
+      saveState();
     }
     const relationships = {
       bundleId: {data: {type: 'bundleIds', id: ctx.bundleResId}},
@@ -681,7 +690,7 @@ async function ensureProfiles(state, ctx) {
           /name.*taken|already exists/i.test(JSON.stringify(e.body || '')))
       ) {
         await api('DELETE', `/v1/profiles/${old.id}`);
-        delete state.oldProfiles[fullName];
+        delete STATE.oldProfiles[fullName];
         res = await api('POST', '/v1/profiles', {
           data: {
             type: 'profiles',
@@ -698,13 +707,12 @@ async function ensureProfiles(state, ctx) {
       outPath,
       Buffer.from(res.data.attributes.profileContent, 'base64'),
     );
-    state.profiles[fullName] = {id: res.data.id, file: outPath};
-    writeState(state);
+    STATE.profiles[fullName] = {id: res.data.id, file: outPath};
+    saveState();
     L(
       `Created profile ${fullName} (${res.data.id}) → ${path.relative(ROOT, outPath)}`,
     );
   }
-  return state;
 }
 
 async function cmdRenew() {
@@ -737,7 +745,7 @@ async function cmdRenew() {
     const fullName = want.name + OPTS.profileSuffix;
     const old = existingProfiles.find(p => p.attributes.name === fullName);
     L(
-      `  profile ${fullName} (${want.type}${want.devices ? `, +${deviceIds.length} devices` : ''}): ${old ? `replace ${old.id}` : 'create'} → ${OPTS.profileSuffix ? '<scratch>' : 'ios/' + want.file}`,
+      `  profile ${fullName} (${want.type}${want.devices ? `, +${deviceIds.length} devices` : ''}): ${old ? `replace ${old.id}` : 'create'} → ${OPTS.profileSuffix ? '<scratch>' : `ios/${want.file}`}`,
     );
   }
   if (!OPTS.profileSuffix)
@@ -767,11 +775,8 @@ async function cmdRenew() {
       throw new Error(
         'Scratch mode needs an existing valid distribution cert to reference.',
       );
-    await ensureProfiles(readState(), {
-      bundleResId,
-      certId: validCert.id,
-      deviceIds,
-    });
+    loadState();
+    await ensureProfiles({bundleResId, certId: validCert.id, deviceIds});
     clearState();
     L(
       `\nScratch run complete. Test profiles created (suffix "${OPTS.profileSuffix}") against cert ${validCert.id}; delete them manually. Nothing committed.`,
@@ -782,32 +787,28 @@ async function cmdRenew() {
   // Guard before any local mutation.
   ensureGitReady();
 
-  let state = readState();
-  state.certType = detectedType;
-  writeState(state);
+  loadState();
+  STATE.certType = detectedType;
+  saveState();
 
-  state = await ensureCertificate(state, OPTS.bundleId);
-  const p12 = buildAndVerifyP12(state);
+  await ensureCertificate(OPTS.bundleId);
+  const p12 = buildAndVerifyP12();
   // For a BYO P12 the cert lives on the account already: reference the newest
   // valid distribution cert for the profile relationship.
-  const effCertId = state.byoP12
+  const effCertId = STATE.byoP12
     ? (certs.filter(c => daysUntil(c.attributes.expirationDate) >= 0)[0] || {})
         .id
-    : state.newCert.id;
+    : STATE.newCert.id;
   if (!effCertId)
     throw new Error(
       'No valid distribution cert id available for the profile relationship.',
     );
-  state = await ensureProfiles(state, {
-    bundleResId,
-    certId: effCertId,
-    deviceIds,
-  });
+  await ensureProfiles({bundleResId, certId: effCertId, deviceIds});
 
   // Step 6 — re-encrypt the committed assets (overwrite the .gpg).
   fs.copyFileSync(p12.path, path.join(IOS_DIR, P12_FILE));
-  state.p12PasswordForFinalize = p12.password;
-  writeState(state);
+  STATE.p12PasswordForFinalize = p12.password;
+  saveState();
   for (const f of [
     P12_FILE,
     'Kiroku.mobileprovision',
@@ -842,7 +843,7 @@ async function cmdRenew() {
   const prBody = [
     'Regenerates the expired iOS Apple Distribution certificate and the `Kiroku` / `Kiroku_AdHoc` provisioning profiles via the App Store Connect API, and re-encrypts the committed `ios/*.gpg`.',
     '',
-    `New cert: \`${state.newCert ? state.newCert.id : 'BYO'}\`.`,
+    `New cert: \`${STATE.newCert ? STATE.newCert.id : 'BYO'}\`.`,
     '',
     '⚠️ After merge, run `node scripts/ios-signing.mjs finalize --yes` to rotate the `IOS_CERTIFICATE_PASSWORD` secret to the new P12 password and revoke the old expired cert.',
   ].join('\n');
@@ -866,7 +867,7 @@ async function cmdRenew() {
   L('\n──────── renew complete ────────');
   L(`PR:        ${prUrl}`);
   L(`Branch:    ${branch}`);
-  if (state.newCert) L(`New cert:  ${state.newCert.id}`);
+  if (STATE.newCert) L(`New cert:  ${STATE.newCert.id}`);
   L(
     `Old certs/profiles retained for finalize; new P12 password saved to ${path.relative(ROOT, STATE_FILE)} (gitignored, never printed).`,
   );
@@ -877,13 +878,13 @@ async function cmdRenew() {
 // finalize (post-merge, irreversible)
 // ===========================================================================
 async function cmdFinalize() {
-  const state = readState();
-  if (!state.p12PasswordForFinalize && !state.byoP12)
+  loadState();
+  if (!STATE.p12PasswordForFinalize && !STATE.byoP12)
     throw new Error(
       `No renew state found at ${path.relative(ROOT, STATE_FILE)} — nothing to finalize.`,
     );
   const password =
-    state.p12PasswordForFinalize || (state.byoP12 && state.byoP12.password);
+    STATE.p12PasswordForFinalize || (STATE.byoP12 && STATE.byoP12.password);
 
   L(
     OPTS.yes
@@ -895,11 +896,11 @@ async function cmdFinalize() {
     `  - gh secret set IOS_CERTIFICATE_PASSWORD --repo ${OPTS.repo}  (to the new P12 password)`,
   );
   const expiredOld = [];
-  if (state.newCert) {
+  if (STATE.newCert) {
     const all = await listDistributionCerts();
     for (const c of all) {
       if (
-        c.id !== state.newCert.id &&
+        c.id !== STATE.newCert.id &&
         daysUntil(c.attributes.expirationDate) < 0
       )
         expiredOld.push(c.id);
@@ -908,7 +909,7 @@ async function cmdFinalize() {
       `  - revoke expired old dist certs: ${expiredOld.join(', ') || '(none)'}`,
     );
   }
-  const oldProfiles = Object.values(state.oldProfiles || {});
+  const oldProfiles = Object.values(STATE.oldProfiles || {});
   L(`  - delete old profiles: ${oldProfiles.join(', ') || '(none)'}`);
 
   if (!OPTS.yes) return;
