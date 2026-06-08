@@ -71,8 +71,9 @@ jest.mock('firebase/database', () => ({
   ref: jest.fn(),
   update: jest.fn(),
 }));
-jest.mock('@database/baseFunctions', () => ({
-  generateDatabaseKey: jest.fn(() => 'generated-id'),
+jest.mock('@libs/generatePushID', () => ({
+  __esModule: true,
+  default: jest.fn(() => 'generated-id'),
 }));
 jest.mock('@libs/Navigation/Navigation', () => ({
   __esModule: true,
