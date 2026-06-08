@@ -261,23 +261,30 @@ function getFirebaseIdToken(): Promise<string | undefined> {
 
 /**
  * Send a request to the kiroku-api REST surface: resolve `{method, path}` from
- * the route map, attach the caller's Firebase ID token as a Bearer header, and
- * send a JSON body (non-GET) or a query string (GET). Returns the same
- * `{jsonCode, onyxData}` envelope the legacy path returns.
+ * the route map, attach the caller's Firebase ID token as a Bearer header
+ * (required unless the route is `requiresAuth: false`), and send a JSON body
+ * (non-GET) or a query string (GET). Returns the same `{jsonCode, onyxData}`
+ * envelope the legacy path returns.
  */
 async function kirokuXhr(
   data: Record<string, unknown>,
   route: KirokuRoute,
 ): Promise<Response> {
+  const requiresAuth = route.requiresAuth !== false;
   const token = await getFirebaseIdToken();
-  if (!token) {
+  if (!token && requiresAuth) {
     throw new HttpsError({
       message: CONST.ERROR.FAILED_TO_FETCH,
       title: 'Not authenticated',
     });
   }
 
-  const headers: Record<string, string> = {Authorization: `Bearer ${token}`};
+  // Public routes (`requiresAuth: false`) still get a Bearer header when a user
+  // happens to be signed in, but do not require one.
+  const headers: Record<string, string> = {};
+  if (token) {
+    headers.Authorization = `Bearer ${token}`;
+  }
   let url = `${ApiUtils.getKirokuApiRoot()}${route.toPath?.(data) ?? route.path}`;
   let body: string | null = null;
 

@@ -24,12 +24,26 @@ type KirokuRoute = {
    * derived from request data. Overrides `path` when present.
    */
   toPath?: (data: Record<string, unknown>) => string;
+  /**
+   * When `false`, this is a public route: `kirokuXhr` does not require a Firebase
+   * ID token and skips the `Bearer` header when none is available (it still
+   * attaches one opportunistically if the caller happens to be signed in).
+   * Omitted/`true` means the route is authenticated, like every other route.
+   */
+  requiresAuth?: boolean;
 };
 
 const KIROKU_ROUTES: Record<string, KirokuRoute> = {
   [WRITE_COMMANDS.OPEN_APP]: {
     method: 'get',
     path: '/v1/app/open',
+  },
+  // Public signup gate: queried BEFORE a Firebase account/ID token exists, so it
+  // must run without authentication. See `actions/User.signUp`.
+  [SIDE_EFFECT_REQUEST_COMMANDS.GET_MIN_VERSION]: {
+    method: 'get',
+    path: '/v1/app/min-version',
+    requiresAuth: false,
   },
   // Reconnect re-hydrates full state + the lastUpdateID baseline, same as open.
   [WRITE_COMMANDS.RECONNECT_APP]: {
@@ -238,22 +252,22 @@ const KIROKU_ROUTES: Record<string, KirokuRoute> = {
 
 /**
  * kiroku-api paths that are reached by a plain `fetch` instead of the
- * `API.write/read` pipeline. Each of these genuinely cannot use the pipeline
- * (see the per-entry note), but their path strings still belong here so this
+ * `API.write/read` pipeline, but whose path strings still belong here so this
  * file remains the single source of truth for every `/v1/...` path the client
  * knows about. Always combine with `ApiUtils.getKirokuApiRoot()` for the root.
+ *
+ * Unlike public routes (which now live in `KIROKU_ROUTES` with
+ * `requiresAuth: false`), the entry below genuinely cannot be dispatched through
+ * the pipeline at all.
  */
 const KIROKU_DIRECT_PATHS = {
   /**
-   * Public, unauthenticated signup gate. Runs BEFORE a Firebase Auth account
-   * (and therefore any ID token) exists, so it cannot go through the
-   * authenticated `API.read` pipeline. See `actions/User.signUp`.
-   */
-  MIN_VERSION: '/v1/app/min-version',
-  /**
-   * Pusher channel authorization. pusher-js's authorizer signature cannot
-   * attach our `Authorization: Bearer <ID token>` header, which this endpoint
-   * requires, so it is called directly. See `Pusher/kirokuAuthorizer`.
+   * Pusher channel authorization. pusher-js drives this call through its own
+   * authorizer callback (not our `API.*` layer) and expects a Pusher `{auth}`
+   * payload back rather than an Onyx response envelope, so it can never be a
+   * pipeline command. It is also authenticated: the fetch attaches an
+   * `Authorization: Bearer <ID token>` header manually. See
+   * `Pusher/kirokuAuthorizer`.
    */
   PUSHER_AUTH: '/v1/pusher/auth',
 } as const;
