@@ -1,6 +1,4 @@
-import type {Database} from 'firebase/database';
 import type {
-  AppSettings,
   Config,
   NicknameToId,
   OnyxUpdatesFromServer,
@@ -27,8 +25,7 @@ import {
   verifyBeforeUpdateEmail,
 } from 'firebase/auth';
 import {getOAuthCredential} from '@libs/OAuthCredential';
-import DBPATHS from '@src/DBPATHS';
-import {readDataOnce} from '@database/baseFunctions';
+import * as ApiUtils from '@libs/ApiUtils';
 import * as Localize from '@libs/Localize';
 import type {SelectedTimezone, Timezone} from '@src/types/onyx/UserData';
 import {validateAppVersion} from '@libs/Validation';
@@ -394,22 +391,17 @@ function changeUserName(
  * string, preserving the previous reader's contract that every requested uid
  * gets an entry.
  *
- * @param db Unused (retained for call-site compatibility); authority is the
- *   caller's Firebase ID token, attached by the API layer.
  * @param userIds The users whose display names to resolve.
  * @returns A promise resolving to the nickname-by-id mapping.
  *
- * @example const nicknames = await fetchUserNicknames(db, ["userUIDHere"]);
+ * @example const nicknames = await fetchUserNicknames(["userUIDHere"]);
  */
-async function fetchUserNicknames(
-  db: Database,
-  userIds: UserID[],
-): Promise<NicknameToId> {
+async function fetchUserNicknames(userIds: UserID[]): Promise<NicknameToId> {
   if (isEmptyObject(userIds)) {
     return {};
   }
 
-  const profiles = await fetchUserProfiles(db, userIds);
+  const profiles = await fetchUserProfiles(userIds);
 
   return userIds.reduce((acc, userId) => {
     acc[userId] = profiles[userId]?.display_name ?? '';
@@ -662,27 +654,44 @@ async function logIn(
  * placeholder display_name is derived from the email and `username_chosen` is
  * set to `false` to gate the rest of the app behind that screen.
  *
- * @param db The Firebase database object
  * @param auth The Firebase authentication object
  * @param email The new user's email
  * @param password The new user's password
  */
 async function signUp(
-  db: Database,
   auth: Auth,
   email: string,
   password: string,
 ): Promise<void> {
-  const appSettings = await readDataOnce<AppSettings>(
-    db,
-    DBPATHS.CONFIG_APP_SETTINGS,
-  );
-
-  if (!appSettings) {
+  // Gate signup on the minimum account-creation version. This runs BEFORE the
+  // Firebase Auth account (and therefore any ID token) exists, so it cannot use
+  // the authenticated `API.read` pipeline — hit the PUBLIC, unauthenticated
+  // `GET /v1/app/min-version` directly with a plain fetch.
+  let minUserCreationVersion: string | null = null;
+  try {
+    const response = await fetch(
+      `${ApiUtils.getKirokuApiRoot()}/v1/app/min-version`,
+    );
+    if (!response.ok) {
+      throw new Error('database/data-fetch-failed');
+    }
+    const data = (await response.json()) as {
+      min_user_creation_possible_version?: string | null;
+    };
+    minUserCreationVersion = data?.min_user_creation_possible_version ?? null;
+  } catch {
+    // Network failure or a non-OK response. Reuse the existing gate error key
+    // so the AuthScreen copy still maps.
     throw new Error('database/data-fetch-failed');
   }
 
-  if (!validateAppVersion(appSettings).success) {
+  // A `null` gate means "no minimum" — the server returns null when the node is
+  // absent, which it treats as "no restriction". Only enforce the version check
+  // when the server returns an actual minimum version.
+  if (
+    minUserCreationVersion &&
+    !validateAppVersion({min_supported_version: minUserCreationVersion}).success
+  ) {
     throw new Error('database/outdated-app-version');
   }
 

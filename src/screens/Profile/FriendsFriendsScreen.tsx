@@ -46,7 +46,7 @@ type FriendsFriendsScreenProps = StackScreenProps<
 function FriendsFriendsScreen({route}: FriendsFriendsScreenProps) {
   const styles = useThemeStyles();
   const {userID} = route.params;
-  const {auth, db, storage} = useFirebase();
+  const {auth, storage} = useFirebase();
   const userData = useCurrentUserData();
   const user = auth.currentUser;
   const {translate} = useLocalize();
@@ -117,13 +117,11 @@ function FriendsFriendsScreen({route}: FriendsFriendsScreenProps) {
 
   const updateDisplayData = useCallback(
     async (searchResultData: UserSearchResults): Promise<void> => {
-      const newDisplayData: ProfileList = await Profile.fetchUserProfiles(
-        db,
-        searchResultData,
-      );
+      const newDisplayData: ProfileList =
+        await Profile.fetchUserProfiles(searchResultData);
       setDisplayData(newDisplayData);
     },
-    [db],
+    [],
   );
 
   useEffect(() => {

@@ -9,7 +9,6 @@ import useLocalize from '@hooks/useLocalize';
 import useThemeStyles from '@hooks/useThemeStyles';
 import Navigation from '@libs/Navigation/Navigation';
 import type {Bug, NicknameToId} from '@src/types/onyx';
-import {useFirebase} from '@context/global/FirebaseContext';
 import {getBugList, removeBug} from '@libs/actions/Feedback';
 import * as KirokuIcons from '@components/Icon/KirokuIcons';
 import DateUtils from '@libs/DateUtils';
@@ -23,7 +22,6 @@ import ONYXKEYS from '@src/ONYXKEYS';
 
 function SeeBugsScreen() {
   const {translate} = useLocalize();
-  const {db} = useFirebase();
   const styles = useThemeStyles();
   const theme = useTheme();
   // Render from Onyx so a slow response still lands after the screen unmounts
@@ -56,7 +54,7 @@ function SeeBugsScreen() {
 
       try {
         const userIds = Object.values(bugList).map(bug => bug.user_id);
-        newNicknames = (await fetchUserNicknames(db, userIds)) ?? {};
+        newNicknames = (await fetchUserNicknames(userIds)) ?? {};
       } catch (error) {
         console.error('Error fetching user nicknames:', error);
       }
@@ -65,7 +63,7 @@ function SeeBugsScreen() {
     };
 
     fetchNicknames();
-  }, [bugList, db]);
+  }, [bugList]);
 
   const deleteBug = (bugKey: string, bug: Bug) => {
     removeBug(bugKey, bug);

@@ -1,7 +1,5 @@
 import {Keyboard, View} from 'react-native';
 import {useEffect, useCallback} from 'react';
-import type {Database} from 'firebase/database';
-import {useFirebase} from '@src/context/global/FirebaseContext';
 import * as KirokuIcons from '@components/Icon/KirokuIcons';
 import Button from '@components/Button';
 import useThemeStyles from '@hooks/useThemeStyles';
@@ -11,7 +9,7 @@ import useDebouncedState from '@hooks/useDebouncedState';
 
 type SearchWindowProps = {
   windowText: string;
-  onSearch: (searchText: string, database?: Database) => Promise<void> | void;
+  onSearch: (searchText: string) => Promise<void> | void;
   onResetSearch: () => void;
   searchOnTextChange?: boolean;
 };
@@ -23,19 +21,18 @@ function SearchWindow({
   searchOnTextChange,
 }: SearchWindowProps) {
   const styles = useThemeStyles();
-  const {db} = useFirebase();
   const {translate} = useLocalize();
   const [searchText, debouncedSearchText, setSearchText] =
     useDebouncedState<string>('');
 
   const handleDoSearch = useCallback(
     (text: string) => {
-      onSearch(text, db);
+      onSearch(text);
       if (!searchOnTextChange) {
         Keyboard.dismiss();
       }
     },
-    [db, onSearch, searchOnTextChange],
+    [onSearch, searchOnTextChange],
   );
 
   const handleResetSearch = () => {

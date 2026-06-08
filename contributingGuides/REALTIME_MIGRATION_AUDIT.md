@@ -12,6 +12,18 @@ This PR performs the audit **plus the safe dead-code cleanup only**. It does **n
 perform any of the remaining feature cutovers (category C) — those are listed as
 follow-ups.
 
+> **Update (2026-06-08, epic [#809](https://github.com/PetrCala/Kiroku/issues/809)):**
+> All four category-C read gaps (C1–C4) have since landed. The C4 pre-auth signup version
+> gate is now cut over — `signUp` reads the minimum account-creation version from the
+> PUBLIC, unauthenticated `GET /v1/app/min-version` endpoint via a plain `fetch`, replacing
+> the last `readDataOnce<AppSettings>`. With it, **zero** RTDB reads remain in the client:
+> `readDataOnce` and `src/database/baseFunctions.ts` are deleted, and the vestigial
+> `Database`-typed `db` params (`Profile.fetchUserProfiles`/`fetchUsersData`,
+> `User.fetchUserNicknames`, `SearchWindow`, and the friend screens) are removed.
+> `FirebaseContext.tsx` is now the **only** `firebase/database` importer in `src/` — the
+> client read/write migration is 100% complete. The inventory and gap tables below are the
+> pre-cutover (2026-06-05) snapshot, kept for historical reference.
+
 ---
 
 ## 1. Verdict

@@ -1,4 +1,3 @@
-import type {Database} from 'firebase/database';
 import type {FirebaseStorage} from 'firebase/storage';
 import {ref as StorageRef, getDownloadURL} from 'firebase/storage';
 import type {Auth, User} from 'firebase/auth';
@@ -121,16 +120,11 @@ async function fetchUsersBatch<T>(
  * omitted rather than throwing, so one deleted account can't blank the whole
  * list.
  *
- * @param db Unused (retained for call-site compatibility); authority is the
- *   caller's Firebase ID token, attached by the API layer.
  * @param userIDs An array of user IDs.
  * @returns A promise that resolves to a list of user profiles.
  */
-async function fetchUserProfiles(
-  db: Database,
-  userIDs: UserID[],
-): Promise<ProfileList> {
-  if (!db || !userIDs?.length) {
+async function fetchUserProfiles(userIDs: UserID[]): Promise<ProfileList> {
+  if (!userIDs?.length) {
     return {};
   }
   return fetchUsersBatch<Profile>(userIDs, 'profile', patch => patch?.profile);
@@ -163,16 +157,13 @@ async function setSupporterFlagInList(
  * readers behaved. Callers that need only one field keep using
  * `fetchUserProfiles`.
  *
- * @param db Unused (retained for call-site compatibility); authority is the
- *   caller's Firebase ID token, attached by the API layer.
  * @param userIDs An array of user IDs.
  * @returns A promise resolving to the profile + status lists keyed by user ID.
  */
 async function fetchUsersData(
-  db: Database,
   userIDs: UserID[],
 ): Promise<{profiles: ProfileList; statuses: UserStatusList}> {
-  if (!db || !userIDs?.length) {
+  if (!userIDs?.length) {
     return {profiles: {}, statuses: {}};
   }
   const patches = await fetchUsersBatch<Partial<UserData>>(

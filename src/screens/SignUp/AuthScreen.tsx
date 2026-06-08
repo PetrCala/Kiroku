@@ -49,7 +49,7 @@ type AuthScreenProps = StackScreenProps<
 
 function AuthScreen({route}: AuthScreenProps) {
   const {isOnline} = useUserConnection();
-  const {db, auth} = useFirebase();
+  const {auth} = useFirebase();
   const {translate} = useLocalize();
   const styles = useThemeStyles();
   const StyleUtils = useStyleUtils();
@@ -78,7 +78,7 @@ function AuthScreen({route}: AuthScreenProps) {
       const emailTrim = values.email.trim();
       try {
         if (isSignUp) {
-          await User.signUp(db, auth, emailTrim, values.password);
+          await User.signUp(auth, emailTrim, values.password);
         } else {
           await User.logIn(auth, emailTrim, values.password);
         }
