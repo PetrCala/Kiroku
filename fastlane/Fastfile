@@ -264,10 +264,37 @@ platform :ios do
         }
     )
 
-    upload_to_testflight(
-        api_key_path: "./ios/ios-fastlane-json-key.json",
-        distribute_external: false,
-    )
+    # App Store Connect's TestFlight ingestion (altool / the "ContentDelivery"
+    # pipeline) intermittently returns a transient HTTP 500 on the final
+    # "CHANGE UPLOAD STATE TO COMPLETE (ASSET_UPLOAD)" call *after* the binary
+    # has already been delivered ("UPLOAD SUCCEEDED with no errors"), failing
+    # the whole deploy even though the build is on its way into processing.
+    # Retry to ride out the flake. The upload is effectively idempotent: if an
+    # earlier attempt's binary did register, a later attempt reports it as a
+    # duplicate, which we treat as success.
+    testflight_upload_attempts = 0
+    max_testflight_upload_attempts = 3
+    begin
+      testflight_upload_attempts += 1
+      upload_to_testflight(
+          api_key_path: "./ios/ios-fastlane-json-key.json",
+          distribute_external: false,
+      )
+    rescue => e
+      message = e.message.to_s
+
+      if message.match?(/already been used|already exists|already been uploaded|redundant binary/i)
+        UI.important("Build already present on App Store Connect; treating the TestFlight upload as successful (#{message.strip})")
+      elsif testflight_upload_attempts < max_testflight_upload_attempts &&
+            message.match?(/status code 5\d\d|internal server error|CHANGE UPLOAD STATE TO COMPLETE|Could not download\/upload|Error uploading ipa|timed out|connection reset/i)
+        UI.error("TestFlight upload attempt #{testflight_upload_attempts}/#{max_testflight_upload_attempts} failed: #{message.strip}")
+        UI.important("Retrying in 30s after a transient App Store Connect error...")
+        sleep(30)
+        retry
+      else
+        raise
+      end
+    end
 
     begin
       upload_symbols_to_crashlytics(
