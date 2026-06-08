@@ -15,6 +15,8 @@ type ThemeColors = {
   appBG: Color;
   splashBG: Color;
   highlightBG: Color;
+  /** A softer card fill, a touch closer to `appBG` than `highlightBG`. */
+  cardSoftBG: Color;
   calendarRangeBG: Color;
   darkBG: Color;
   appColor: Color;

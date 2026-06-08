@@ -45,6 +45,7 @@ function KpiCardGroup({cards, isLoading}: KpiCardGroupProps): ReactElement {
             polarity={card.polarity}
             onPress={card.onPress}
             accessibilityLabel={card.accessibilityLabel}
+            surface={card.surface}
             isLoading={isLoading}
           />
         </View>

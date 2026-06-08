@@ -53,7 +53,7 @@ function HomeBanner({
         styles.flexRow,
         styles.alignItemsCenter,
         styles.justifyContentBetween,
-        {backgroundColor: theme.highlightBG, borderRadius: 12},
+        {backgroundColor: theme.cardSoftBG, borderRadius: 12},
       ]}>
       <View
         style={[styles.flexRow, styles.alignItemsCenter, styles.flexShrink1]}>

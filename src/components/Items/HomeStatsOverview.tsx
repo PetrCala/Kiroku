@@ -73,6 +73,7 @@ function HomeStatsOverview({visibleDate}: HomeStatsOverviewProps) {
       value: current.sessions,
       delta: makeDelta(current.sessions, previous.sessions),
       polarity: 'lower-is-supportive',
+      surface: 'soft',
     },
     {
       label: translate('homeScreen.stats.alcoholFree'),
@@ -81,6 +82,7 @@ function HomeStatsOverview({visibleDate}: HomeStatsOverviewProps) {
       delta: makeDelta(current.afDays, previous.afDays),
       tone: 'celebratory',
       polarity: 'higher-is-supportive',
+      surface: 'soft',
     },
   ];
 
@@ -96,6 +98,7 @@ function HomeStatsOverview({visibleDate}: HomeStatsOverviewProps) {
           value={formatUnits(totalUnits)}
           delta={makeDelta(totalUnits, previous.totalUnits)}
           polarity="lower-is-supportive"
+          surface="soft"
           headerRight={statisticsLink}
           chart={
             <View>

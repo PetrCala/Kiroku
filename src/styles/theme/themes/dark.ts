@@ -8,6 +8,7 @@ const darkTheme = {
   appBG: colors.productDark100,
   splashBG: colors.yellowStrong,
   highlightBG: colors.productDark200,
+  cardSoftBG: colors.productDark150,
   calendarRangeBG: `${colors.yellowStrong}33`,
   darkBG: colors.productLight900,
   appColor: colors.yellowStrong,
