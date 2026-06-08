@@ -49,11 +49,10 @@ function HomeBanner({
       onPress={onPress}
       style={[
         styles.mv2,
-        styles.p4,
+        styles.pv3,
         styles.flexRow,
         styles.alignItemsCenter,
         styles.justifyContentBetween,
-        {backgroundColor: theme.highlightBG, borderRadius: 12},
       ]}>
       <View
         style={[styles.flexRow, styles.alignItemsCenter, styles.flexShrink1]}>

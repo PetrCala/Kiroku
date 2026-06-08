@@ -31,6 +31,14 @@ type KpiCardDelta = {
   label: string;
 };
 
+/**
+ * Card surface. `fill` (default) is the standard highlighted card used on the
+ * Statistics screen. `plain` drops the card chrome (background, radius,
+ * min-height, side padding) so the content sits flat on the page background —
+ * used by the home screen's minimal treatment.
+ */
+type KpiCardSurface = 'fill' | 'plain';
+
 type KpiCardProps = {
   label: string;
   value: string | number;
@@ -56,6 +64,8 @@ type KpiCardProps = {
   headerRight?: ReactNode;
   /** Optional chart rendered below the value/delta (and any sparkline). */
   chart?: ReactNode;
+  /** Card surface treatment. Defaults to the filled card. */
+  surface?: KpiCardSurface;
 };
 
 const ARROW: Record<KpiCardDelta['direction'], string> = {
@@ -86,6 +96,7 @@ function KpiCard({
   isLoading,
   headerRight,
   chart,
+  surface = 'fill',
 }: KpiCardProps) {
   const styles = useThemeStyles();
   const theme = useTheme();
@@ -125,14 +136,18 @@ function KpiCard({
 
   const body = (
     <View
-      style={[
-        styles.p3,
-        {
-          backgroundColor: theme.highlightBG,
-          borderRadius: 12,
-          minHeight: 96,
-        },
-      ]}>
+      style={
+        surface === 'plain'
+          ? [styles.pv3]
+          : [
+              styles.p3,
+              {
+                backgroundColor: theme.highlightBG,
+                borderRadius: 12,
+                minHeight: 96,
+              },
+            ]
+      }>
       {headerRight ? (
         <View
           style={[
@@ -209,4 +224,10 @@ function KpiCard({
 }
 
 export default KpiCard;
-export type {KpiCardProps, KpiCardTone, KpiCardPolarity, KpiCardDelta};
+export type {
+  KpiCardProps,
+  KpiCardTone,
+  KpiCardPolarity,
+  KpiCardDelta,
+  KpiCardSurface,
+};
