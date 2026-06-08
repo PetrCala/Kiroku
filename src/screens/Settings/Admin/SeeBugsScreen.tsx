@@ -1,12 +1,14 @@
 import {useEffect, useState} from 'react';
+import {useOnyx} from 'react-native-onyx';
 import HeaderWithBackButton from '@components/HeaderWithBackButton';
 import ScreenWrapper from '@components/ScreenWrapper';
 import ScrollView from '@components/ScrollView';
 import Section from '@components/Section';
+import FullScreenLoadingIndicator from '@components/FullscreenLoadingIndicator';
 import useLocalize from '@hooks/useLocalize';
 import useThemeStyles from '@hooks/useThemeStyles';
 import Navigation from '@libs/Navigation/Navigation';
-import type {BugList, NicknameToId} from '@src/types/onyx';
+import type {NicknameToId} from '@src/types/onyx';
 import {useFirebase} from '@context/global/FirebaseContext';
 import {getBugList, removeBug} from '@libs/actions/Feedback';
 import * as KirokuIcons from '@components/Icon/KirokuIcons';
@@ -17,26 +19,26 @@ import useTheme from '@hooks/useTheme';
 import {fetchUserNicknames} from '@libs/actions/User';
 import type {Timestamp} from '@src/types/onyx/OnyxCommon';
 import CONST from '@src/CONST';
+import ONYXKEYS from '@src/ONYXKEYS';
 
 function SeeBugsScreen() {
   const {translate} = useLocalize();
   const {db} = useFirebase();
   const styles = useThemeStyles();
   const theme = useTheme();
+  // Render from Onyx so a slow response still lands after the screen unmounts
+  // and a re-visit shows the cached list instantly. The fetch below refreshes it.
+  const [bugList] = useOnyx(ONYXKEYS.BUG_LIST);
   const [nicknames, setNicknames] = useState<NicknameToId>({});
-  const [bugList, setBugList] = useState<BugList>({});
+  const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
     let isMounted = true;
-    getBugList()
-      .then(data => {
-        if (isMounted) {
-          setBugList(data);
-        }
-      })
-      .catch(error => {
-        console.error('Error fetching bugs:', error);
-      });
+    getBugList().finally(() => {
+      if (isMounted) {
+        setIsLoading(false);
+      }
+    });
 
     return () => {
       isMounted = false;
@@ -63,7 +65,7 @@ function SeeBugsScreen() {
     };
 
     fetchNicknames();
-  }, [bugList, db, nicknames]);
+  }, [bugList, db]);
 
   const deleteBug = (bugKey: string) => {
     removeBug(bugKey);
@@ -92,32 +94,37 @@ function SeeBugsScreen() {
     return `${localizedTime} - ${nicknames[userId]}`;
   };
 
+  const bugEntries = Object.entries(bugList ?? {});
+
   return (
     <ScreenWrapper testID={SeeBugsScreen.displayName}>
       <HeaderWithBackButton
         title={translate('adminScreen.bugReports')}
         onBackButtonPress={() => Navigation.goBack()}
       />
-      <ScrollView contentContainerStyle={[styles.w100]}>
-        <Section
-          title=""
-          containerStyles={styles.ph0}
-          childrenStyles={styles.pt3}>
-          {Object.entries(bugList).map(([id, bug]) => (
-            <MenuItem
-              // eslint-disable-next-line react/no-array-index-key
-              key={`${id}`}
-              title={getVerboseBugsHeading(bug.user_id, bug.submit_time)}
-              description={bug.text}
-              numberOfLinesDescription={20}
-              style={styles.borderTopRounded}
-              rightComponent={removeBugButton(id)}
-              shouldShowRightComponent
-              disabled
-            />
-          ))}
-        </Section>
-      </ScrollView>
+      {isLoading && bugEntries.length === 0 ? (
+        <FullScreenLoadingIndicator />
+      ) : (
+        <ScrollView contentContainerStyle={[styles.w100]}>
+          <Section
+            title=""
+            containerStyles={styles.ph0}
+            childrenStyles={styles.pt3}>
+            {bugEntries.map(([id, bug]) => (
+              <MenuItem
+                key={`${id}`}
+                title={getVerboseBugsHeading(bug.user_id, bug.submit_time)}
+                description={bug.text}
+                numberOfLinesDescription={20}
+                style={styles.borderTopRounded}
+                rightComponent={removeBugButton(id)}
+                shouldShowRightComponent
+                disabled
+              />
+            ))}
+          </Section>
+        </ScrollView>
+      )}
     </ScreenWrapper>
   );
 }
