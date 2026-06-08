@@ -140,6 +140,15 @@ function OverviewTab() {
         : undefined,
       polarity: 'lower-is-supportive',
     },
+    {
+      label: translate('statistics.tabs.overview.kpi.monthlyAvg.label'),
+      value: formatUnits(current.monthlyAvgUnits),
+      unit: translate('statistics.tabs.overview.kpi.monthlyAvg.unit'),
+      delta: previous
+        ? makeDelta(current.monthlyAvgUnits, previous.monthlyAvgUnits)
+        : undefined,
+      polarity: 'lower-is-supportive',
+    },
   ];
 
   const pctOver =
