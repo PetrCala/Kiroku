@@ -221,6 +221,45 @@ function buildKirokuBody(
 }
 
 /**
+ * Resolve the caller's Firebase ID token for the `Bearer` header, bounded by a
+ * timeout. `getIdToken()` returns the cached token instantly while it is valid,
+ * but at/near expiry it triggers a network refresh that has no built-in timeout
+ * — so it can stall indefinitely across a connectivity transition. Awaiting it
+ * unbounded freezes EVERY kiroku-api request for as long as the refresh is stuck
+ * (observed ~3 minutes, until the network recovered), surfacing as "hung" reads.
+ * We race the token fetch against `ID_TOKEN_TIMEOUT_MS` and, on timeout, throw
+ * the standard retryable `FAILED_TO_FETCH` network error so the request fails
+ * fast (and is retried once connectivity/refresh settles) instead of blocking.
+ *
+ * Returns `undefined` only when there is no signed-in user, matching the old
+ * `currentUser?.getIdToken()` behaviour the caller already guards against.
+ */
+function getFirebaseIdToken(): Promise<string | undefined> {
+  const currentUser = getFirebaseAuth().currentUser;
+  if (!currentUser) {
+    return Promise.resolve(undefined);
+  }
+
+  let timeoutId: ReturnType<typeof setTimeout> | undefined;
+  const timeout = new Promise<never>((_resolve, reject) => {
+    timeoutId = setTimeout(() => {
+      reject(
+        new HttpsError({
+          message: CONST.ERROR.FAILED_TO_FETCH,
+          title: 'Firebase ID token refresh timed out',
+        }),
+      );
+    }, CONST.NETWORK.ID_TOKEN_TIMEOUT_MS);
+  });
+
+  return Promise.race([currentUser.getIdToken(), timeout]).finally(() => {
+    if (timeoutId !== undefined) {
+      clearTimeout(timeoutId);
+    }
+  });
+}
+
+/**
  * Send a request to the kiroku-api REST surface: resolve `{method, path}` from
  * the route map, attach the caller's Firebase ID token as a Bearer header, and
  * send a JSON body (non-GET) or a query string (GET). Returns the same
@@ -230,7 +269,7 @@ async function kirokuXhr(
   data: Record<string, unknown>,
   route: KirokuRoute,
 ): Promise<Response> {
-  const token = await getFirebaseAuth().currentUser?.getIdToken();
+  const token = await getFirebaseIdToken();
   if (!token) {
     throw new HttpsError({
       message: CONST.ERROR.FAILED_TO_FETCH,

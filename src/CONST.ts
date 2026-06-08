@@ -778,6 +778,12 @@ const CONST = {
     MAX_PENDING_TIME_MS: 10 * 1000,
     RECHECK_INTERVAL_MS: 60 * 1000,
     MAX_REQUEST_RETRIES: 10,
+    // Upper bound on how long a kiroku-api request will wait for the Firebase ID
+    // token before failing fast. `getIdToken()` is instant while the cached
+    // token is valid, but a near-expiry refresh has no built-in timeout and can
+    // stall across a connectivity transition, freezing every request until it
+    // settles. See `HttpUtils.getFirebaseIdToken`.
+    ID_TOKEN_TIMEOUT_MS: 15 * 1000,
     NETWORK_STATUS: {
       ONLINE: 'online',
       OFFLINE: 'offline',
