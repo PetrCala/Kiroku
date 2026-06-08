@@ -20,6 +20,7 @@ import Navigation from '@libs/Navigation/Navigation';
 import ScreenWrapper from '@components/ScreenWrapper';
 import HeaderWithBackButton from '@components/HeaderWithBackButton';
 import useLocalize from '@hooks/useLocalize';
+import useNetwork from '@hooks/useNetwork';
 import FlexibleLoadingIndicator from '@components/FlexibleLoadingIndicator';
 import useThemeStyles from '@hooks/useThemeStyles';
 import FlatList from '@components/FlatList';
@@ -31,6 +32,7 @@ function FriendSearchScreen() {
   const userData = useCurrentUserData();
   const user = auth.currentUser;
   const {translate} = useLocalize();
+  const {isOffline} = useNetwork();
   const [searchResultData, setSearchResultData] = useState<UserSearchResults>(
     [],
   );
@@ -80,6 +82,13 @@ function FriendSearchScreen() {
 
   const dbSearch = useCallback(
     async (searchText: string): Promise<void> => {
+      // User search is a live server read that can't be queued; offline it would
+      // hang on a spinner or fail. Short-circuit and let the render show the
+      // offline notice instead.
+      if (isOffline) {
+        resetSearch();
+        return;
+      }
       // An empty/whitespace query (e.g. on mount or after clearing) should
       // clear the screen rather than render the "no users found" message.
       if (!searchText.trim()) {
@@ -102,7 +111,7 @@ function FriendSearchScreen() {
         setSearching(false);
       }
     },
-    [updateRequestStatuses, resetSearch],
+    [isOffline, updateRequestStatuses, resetSearch],
   );
 
   useMemo(() => {
@@ -135,6 +144,38 @@ function FriendSearchScreen() {
     return;
   }
 
+  const renderSearchResults = () => {
+    // User search needs a live server read, so offline we show a notice rather
+    // than a perpetual spinner or an error.
+    if (isOffline) {
+      return (
+        <Text style={[styles.noResultsText, styles.pt4]}>
+          {translate('common.thisFeatureRequiresInternet')}
+        </Text>
+      );
+    }
+    if (searching) {
+      return <FlexibleLoadingIndicator style={styles.pt4} />;
+    }
+    return (
+      <FlatList
+        style={[styles.w100, styles.flex1]}
+        contentContainerStyle={[styles.pt1]}
+        keyboardShouldPersistTaps="always"
+        data={searchResultData}
+        renderItem={renderItem}
+        keyExtractor={userID => `${userID}-container`}
+        ListEmptyComponent={
+          noUsersFound ? (
+            <Text style={styles.noResultsText}>
+              {translate('friendSearchScreen.noUsersFound')}
+            </Text>
+          ) : undefined
+        }
+      />
+    );
+  };
+
   return (
     <ScreenWrapper testID={FriendSearchScreen.displayName}>
       <HeaderWithBackButton
@@ -148,25 +189,7 @@ function FriendSearchScreen() {
         onResetSearch={resetSearch}
         searchOnTextChange
       />
-      {searching ? (
-        <FlexibleLoadingIndicator style={styles.pt4} />
-      ) : (
-        <FlatList
-          style={[styles.w100, styles.flex1]}
-          contentContainerStyle={[styles.pt1]}
-          keyboardShouldPersistTaps="always"
-          data={searchResultData}
-          renderItem={renderItem}
-          keyExtractor={userID => `${userID}-container`}
-          ListEmptyComponent={
-            noUsersFound ? (
-              <Text style={styles.noResultsText}>
-                {translate('friendSearchScreen.noUsersFound')}
-              </Text>
-            ) : undefined
-          }
-        />
-      )}
+      {renderSearchResults()}
     </ScreenWrapper>
   );
 }
