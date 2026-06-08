@@ -192,7 +192,6 @@ function FriendRequestItem({
 }
 
 function FriendRequestScreen() {
-  const {db} = useFirebase();
   const userData = useCurrentUserData();
   const theme = useTheme();
   const styles = useThemeStyles();
@@ -233,9 +232,6 @@ function FriendRequestScreen() {
   // already fetching — replacing the old "re-fetch every request on any change"
   // path. One batched call, deduped against Onyx + the in-flight set.
   useEffect(() => {
-    if (!db) {
-      return;
-    }
     const missingIDs = objKeys(friendRequests).filter(
       id => !userDataList?.[id]?.profile && !inFlightRef.current.has(id),
     );
@@ -247,11 +243,11 @@ function FriendRequestScreen() {
       return;
     }
     missingIDs.forEach(id => inFlightRef.current.add(id));
-    Profile.fetchUserProfiles(db, missingIDs).finally(() => {
+    Profile.fetchUserProfiles(missingIDs).finally(() => {
       missingIDs.forEach(id => inFlightRef.current.delete(id));
       setHasResolvedInitial(true);
     });
-  }, [friendRequests, userDataList, db]);
+  }, [friendRequests, userDataList]);
 
   // Cold-load gate only: show the spinner just for the first load of a request
   // set with nothing cached yet — never blank the list out on a later refresh.

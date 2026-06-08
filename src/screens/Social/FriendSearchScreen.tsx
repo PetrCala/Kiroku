@@ -26,7 +26,7 @@ import FlatList from '@components/FlatList';
 import ERRORS from '@src/ERRORS';
 
 function FriendSearchScreen() {
-  const {auth, db, storage} = useFirebase();
+  const {auth, storage} = useFirebase();
   const styles = useThemeStyles();
   const userData = useCurrentUserData();
   const user = auth.currentUser;
@@ -90,10 +90,8 @@ function FriendSearchScreen() {
         setSearching(true);
         const newData: UserSearchResults =
           await searchDatabaseForUsers(searchText);
-        const newDisplayData: ProfileList = await Profile.fetchUserProfiles(
-          db,
-          newData,
-        );
+        const newDisplayData: ProfileList =
+          await Profile.fetchUserProfiles(newData);
         updateRequestStatuses(newData);
         setDisplayData(newDisplayData);
         setNoUsersFound(isEmptyArray(newData));
@@ -104,7 +102,7 @@ function FriendSearchScreen() {
         setSearching(false);
       }
     },
-    [db, updateRequestStatuses, resetSearch],
+    [updateRequestStatuses, resetSearch],
   );
 
   useMemo(() => {

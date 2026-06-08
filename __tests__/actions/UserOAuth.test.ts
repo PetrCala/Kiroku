@@ -36,7 +36,6 @@ jest.mock('@libs/Firebase/FirebaseApp', () => ({
 // User.ts pulls native-only modules (apple-auth via OAuthCredential) that jest
 // can't transform; stub them so importing the action under test doesn't load them.
 jest.mock('@libs/OAuthCredential', () => ({getOAuthCredential: jest.fn()}));
-jest.mock('@database/baseFunctions', () => ({readDataOnce: jest.fn()}));
 jest.mock('@userActions/Session', () => ({clearSignInData: jest.fn()}));
 
 // Log schedules a periodic flush timer at import that fires after teardown.

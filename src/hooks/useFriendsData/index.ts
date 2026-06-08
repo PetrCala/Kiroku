@@ -1,7 +1,6 @@
 import {useFocusEffect} from '@react-navigation/native';
 import React, {useRef, useState} from 'react';
 import {useOnyx} from 'react-native-onyx';
-import {useFirebase} from '@context/global/FirebaseContext';
 import * as Profile from '@userActions/Profile';
 import ONYXKEYS from '@src/ONYXKEYS';
 import type {ProfileList, UserStatusList} from '@src/types/onyx';
@@ -40,7 +39,6 @@ type UseFriendsDataReturn = {
  *   render.
  */
 function useFriendsData(friendIDs: UserArray): UseFriendsDataReturn {
-  const {db} = useFirebase();
   const [userDataList] = useOnyx(ONYXKEYS.USER_DATA_LIST);
   const [hasResolvedInitial, setHasResolvedInitial] = useState<boolean>(false);
 
@@ -71,7 +69,7 @@ function useFriendsData(friendIDs: UserArray): UseFriendsDataReturn {
 
   useFocusEffect(
     React.useCallback(() => {
-      if (!db || friendIDs.length === 0) {
+      if (friendIDs.length === 0) {
         // Nothing to fetch yet. Don't touch the cold gate here — `isLoading`
         // already returns false for an empty set, and resolving it now would
         // poison the gate for the transient `friends=[]` render that precedes
@@ -79,12 +77,12 @@ function useFriendsData(friendIDs: UserArray): UseFriendsDataReturn {
         return;
       }
       const token = ++currentTokenRef.current;
-      Profile.fetchUsersData(db, friendIDs).finally(() => {
+      Profile.fetchUsersData(friendIDs).finally(() => {
         if (token === currentTokenRef.current) {
           setHasResolvedInitial(true);
         }
       });
-    }, [db, friendIDs]),
+    }, [friendIDs]),
   );
 
   return {profileList, userStatusList, isLoading};
