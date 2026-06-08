@@ -58,9 +58,13 @@ function DisplayNameScreen({route}: DisplayNameScreenProps) {
   ) => {
     const errors: FormInputErrors<typeof ONYXKEYS.FORMS.DISPLAY_NAME_FORM> = {};
 
+    // Compare against the optimistic Onyx profile name (what Home and this
+    // form's default value read) rather than the Firebase Auth profile. The
+    // Auth display-name sync is best-effort and fails silently offline, so it
+    // can lag behind Onyx and wrongly reject reverting to a previous name.
     const errorKey = ValidationUtils.validateUsername(
       values.displayName,
-      auth.currentUser?.displayName,
+      profileData?.display_name,
     );
 
     if (errorKey) {
