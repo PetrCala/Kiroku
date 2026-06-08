@@ -8,7 +8,7 @@ import FullScreenLoadingIndicator from '@components/FullscreenLoadingIndicator';
 import useLocalize from '@hooks/useLocalize';
 import useThemeStyles from '@hooks/useThemeStyles';
 import Navigation from '@libs/Navigation/Navigation';
-import type {NicknameToId} from '@src/types/onyx';
+import type {Feedback, NicknameToId} from '@src/types/onyx';
 import {useFirebase} from '@context/global/FirebaseContext';
 import {getFeedbackList, removeFeedback} from '@libs/actions/Feedback';
 import * as KirokuIcons from '@components/Icon/KirokuIcons';
@@ -69,17 +69,17 @@ function SeeFeedbackScreen() {
     fetchNicknames();
   }, [feedbackList, db]);
 
-  const deleteFeedback = (feedbackKey: string) => {
-    removeFeedback(feedbackKey);
+  const deleteFeedback = (feedbackKey: string, feedback: Feedback) => {
+    removeFeedback(feedbackKey, feedback);
   };
 
-  const removeFeedbackButton = (id: string) => {
+  const removeFeedbackButton = (id: string, feedback: Feedback) => {
     return (
       <Button
         icon={KirokuIcons.ThinX}
         iconFill={theme.textError}
         style={styles.bgTransparent}
-        onPress={() => deleteFeedback(id)}
+        onPress={() => deleteFeedback(id, feedback)}
       />
     );
   };
@@ -122,7 +122,7 @@ function SeeFeedbackScreen() {
                 description={feedback.text}
                 numberOfLinesDescription={20}
                 style={styles.borderTopRounded}
-                rightComponent={removeFeedbackButton(id)}
+                rightComponent={removeFeedbackButton(id, feedback)}
                 shouldShowRightComponent
                 disabled
               />
