@@ -101,6 +101,31 @@ const colors: Record<string, Color> = {
   orange700: '#F57C00',
   orange800: '#EF6C00',
   orange900: '#E65100',
+
+  // Drink-type categorical palette — Statistics (Breakdown donut + per-type
+  // multiples, Trends "drink mix over time"). The drink→color mapping and a
+  // one-line palette switch live in `@libs/Statistics/drinkKeyMeta`. These
+  // intentionally include red / green / brown: that's the *categorical* drink
+  // palette, exempt from the §3 yellow→orange "intensity/severity" tone rule.
+  // Single stops (not full 100–900 scales); standard Tailwind names where the
+  // hex is an exact stop, descriptive names otherwise.
+  //
+  // "Vivid & distinct" (active palette):
+  gold: '#FFD23F',
+  amber500: '#F59E0B',
+  burgundy: '#B0233A',
+  emerald400: '#34D399',
+  chestnut: '#7C4A2D',
+  magenta: '#EC4899',
+  indigo400: '#818CF8',
+  // "True to glass" (naturalistic alternative palette):
+  straw: '#F3D250',
+  ochre: '#E09F1E',
+  maroon: '#8C2F39',
+  sage: '#BFD9D6',
+  cocoa: '#7A4A2B',
+  coral: '#E0566E',
+  mauve: '#6E6A86',
 };
 
 /**
@@ -165,29 +190,5 @@ const sessionPaletteColors = {
   },
 };
 
-/**
- * Drink-type categorical palette for Statistics (Breakdown donut + per-type
- * multiples, Trends "drink mix over time"). One vivid, real-drink-evocative
- * color per drink type so the seven categories stay distinguishable at a
- * glance. Theme-independent on purpose — these are domain colors, not theme
- * tokens, so they read identically in light and dark (surrounding text/frame
- * contrast adapts around them).
- *
- * This intentionally departs from the yellow→orange "never red, never black"
- * rule in `contributingGuides/STATISTICS.md §3`, which governs *intensity /
- * severity* encodings (heatmap, high-day coloring), not this *categorical*
- * drink palette. Keys are snake_case to match the API drink keys; the typed
- * `DrinkKey` mapping is assembled in `@libs/Statistics/drinkKeyMeta`.
- */
-const drinkTypeColors = {
-  small_beer: '#FFD23F', // lager gold
-  beer: '#F59E0B', // amber
-  wine: '#B0233A', // wine red
-  weak_shot: '#34D399', // mint (light spirit)
-  strong_shot: '#7C4A2D', // whiskey brown
-  cocktail: '#EC4899', // pink
-  other: '#818CF8', // indigo
-};
-
-export {sessionPaletteColors, drinkTypeColors};
+export {sessionPaletteColors};
 export default colors;

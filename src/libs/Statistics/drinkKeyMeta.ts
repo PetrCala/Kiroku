@@ -1,25 +1,53 @@
-import {drinkTypeColors} from '@styles/theme/colors';
+import colors from '@styles/theme/colors';
 import CONST from '@src/CONST';
 import type {DrinkKey} from '@src/types/onyx/Drinks';
 import type {TranslationPaths} from '@src/languages/types';
 
 /**
+ * The drink-type categorical palettes. Each maps every `DrinkKey` to a named
+ * color token from `@styles/theme/colors` (the sanctioned home for color
+ * literals). `vivid` is the active palette; `trueToGlass` is a naturalistic
+ * alternative kept ready for a future switch. Theme-independent on purpose —
+ * these are domain colors, identical in light and dark.
+ */
+const DRINK_PALETTES: Record<
+  'vivid' | 'trueToGlass',
+  Readonly<Record<DrinkKey, string>>
+> = {
+  // "Vivid & distinct" — bright, maximally distinguishable.
+  vivid: {
+    [CONST.DRINKS.KEYS.SMALL_BEER]: colors.gold,
+    [CONST.DRINKS.KEYS.BEER]: colors.amber500,
+    [CONST.DRINKS.KEYS.WINE]: colors.burgundy,
+    [CONST.DRINKS.KEYS.WEAK_SHOT]: colors.emerald400,
+    [CONST.DRINKS.KEYS.STRONG_SHOT]: colors.chestnut,
+    [CONST.DRINKS.KEYS.COCKTAIL]: colors.magenta,
+    [CONST.DRINKS.KEYS.OTHER]: colors.indigo400,
+  },
+  // "True to glass" — naturalistic, each hue closer to the real drink.
+  trueToGlass: {
+    [CONST.DRINKS.KEYS.SMALL_BEER]: colors.straw,
+    [CONST.DRINKS.KEYS.BEER]: colors.ochre,
+    [CONST.DRINKS.KEYS.WINE]: colors.maroon,
+    [CONST.DRINKS.KEYS.WEAK_SHOT]: colors.sage,
+    [CONST.DRINKS.KEYS.STRONG_SHOT]: colors.cocoa,
+    [CONST.DRINKS.KEYS.COCKTAIL]: colors.coral,
+    [CONST.DRINKS.KEYS.OTHER]: colors.mauve,
+  },
+};
+
+// Single switch point for the drink-type palette. Flip to `'trueToGlass'` to
+// swap the whole app over. A future centralized design-toggle system (akin to
+// feature flags) could drive this selection.
+const ACTIVE_DRINK_PALETTE: keyof typeof DRINK_PALETTES = 'vivid';
+
+/**
  * One color per `DrinkKey` — the single source of truth for drink-type color
  * across Statistics (Breakdown donut + per-type multiples, Trends "drink mix
- * over time" stack, and their legends). The hex values live in
- * `@styles/theme/colors` as `drinkTypeColors` (the sanctioned home for color
- * literals); this map keys them by the typed `DrinkKey` enum so the charts get
- * a complete, type-checked record.
+ * over time" stack, and their legends), resolved from the active palette.
  */
-const DRINK_KEY_COLORS: Readonly<Record<DrinkKey, string>> = {
-  [CONST.DRINKS.KEYS.SMALL_BEER]: drinkTypeColors.small_beer,
-  [CONST.DRINKS.KEYS.BEER]: drinkTypeColors.beer,
-  [CONST.DRINKS.KEYS.WINE]: drinkTypeColors.wine,
-  [CONST.DRINKS.KEYS.WEAK_SHOT]: drinkTypeColors.weak_shot,
-  [CONST.DRINKS.KEYS.STRONG_SHOT]: drinkTypeColors.strong_shot,
-  [CONST.DRINKS.KEYS.COCKTAIL]: drinkTypeColors.cocktail,
-  [CONST.DRINKS.KEYS.OTHER]: drinkTypeColors.other,
-};
+const DRINK_KEY_COLORS: Readonly<Record<DrinkKey, string>> =
+  DRINK_PALETTES[ACTIVE_DRINK_PALETTE];
 
 const DRINK_KEY_ORDER: readonly DrinkKey[] = [
   CONST.DRINKS.KEYS.SMALL_BEER,
