@@ -336,7 +336,6 @@ const CONST = {
   // burst, short enough to feel responsive.
   SESSIONS_CALENDAR_PERSIST_DEBOUNCE_MS: 150,
 
-  FIREBASE_STORAGE_URL: 'https://firebasestorage.googleapis.com',
   FRIEND_REQUEST_STATUS: {
     SELF: 'self',
     SENT: 'sent',
@@ -587,7 +586,6 @@ const CONST = {
     META: 'CMD',
     SHIFT: 'Shift',
   },
-  LOCAL_IMAGE_PREFIX: 'file://',
   LOCALES: {
     EN: 'en',
     CS_CZ: 'cs_cz',
@@ -815,7 +813,12 @@ const CONST = {
     ERROR: 'error',
     INFO: 'info',
   },
-  NO_IMAGE: 'NO_IMAGE', // Used for the profile avatar when there is no image
+  // Image kinds for the kiroku-api image pipeline (`/v1/images/*`, Kiroku #1059).
+  // `avatar` is public-read; `session` (future) stays private.
+  IMAGE_UPLOAD_KIND: {
+    AVATAR: 'avatar',
+    SESSION: 'session',
+  },
   ONYX_UPDATE_TYPES: {
     HTTPS: 'https',
     PUSHER: 'pusher',

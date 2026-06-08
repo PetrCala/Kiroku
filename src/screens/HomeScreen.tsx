@@ -50,7 +50,7 @@ type HomeScreenProps = StackScreenProps<
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 function HomeScreen({route}: HomeScreenProps) {
   const styles = useThemeStyles();
-  const {auth, storage} = useFirebase();
+  const {auth} = useFirebase();
   const {translate} = useLocalize();
   const user = auth.currentUser;
   const {isOnline} = useUserConnection();
@@ -227,12 +227,8 @@ function HomeScreen({route}: HomeScreenProps) {
                 Navigation.navigate(ROUTES.PROFILE.getRoute(user.uid))
               }>
               <ProfileImage
-                storage={storage}
-                userID={user.uid}
-                downloadPath={userData?.profile?.photo_url}
+                photoUrl={userData?.profile?.photo_url}
                 style={styles.avatarMedium}
-                // refreshTrigger={refreshCounter}
-                refreshTrigger={0}
               />
               <Text style={[styles.headerText, styles.textLarge, styles.ml3]}>
                 {userData?.profile?.display_name ?? ''}

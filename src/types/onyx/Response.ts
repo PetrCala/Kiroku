@@ -87,6 +87,12 @@ type Response = {
 
   /** Friend prefix-search matches (`GET /v1/users/search`): userID → display name */
   searchResults?: NicknameToId;
+
+  /** Presigned bucket PUT URL minted by `POST /v1/images/upload-url`. */
+  uploadUrl?: string;
+
+  /** Deterministic storage object path paired with `uploadUrl`, echoed to `finalize`. */
+  objectPath?: string;
 };
 
 export default Response;

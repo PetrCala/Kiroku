@@ -1,4 +1,4 @@
-import React, {useEffect, useState} from 'react';
+import React, {useState} from 'react';
 import type {
   ImageSourcePropType,
   ImageStyle,
@@ -7,11 +7,7 @@ import type {
 } from 'react-native';
 import {StyleSheet, View} from 'react-native';
 import {Image} from 'expo-image';
-import type {FirebaseStorage} from 'firebase/storage';
-import getProfilePictureURL from '@src/storage/storageProfile';
 import CONST from '@src/CONST';
-import * as ErrorUtils from '@libs/ErrorUtils';
-import ERRORS from '@src/ERRORS';
 import useTheme from '@hooks/useTheme';
 import useThemeStyles from '@hooks/useThemeStyles';
 import * as KirokuIcons from './Icon/KirokuIcons';
@@ -19,33 +15,26 @@ import FlexibleLoadingIndicator from './FlexibleLoadingIndicator';
 import EnlargableImage from './Buttons/EnlargableImage';
 
 type ProfileImageProps = {
-  storage: FirebaseStorage;
-  userID: string;
-  downloadPath: string | null | undefined;
+  /**
+   * The user's profile photo URL (`profile.photo_url`), or empty/undefined when
+   * there is no photo. New avatars store a public bucket URL (set server-side by
+   * the image-pipeline finalize step); legacy avatars store a token-based
+   * Firebase download URL. Both load as-is.
+   */
+  photoUrl: string | null | undefined;
   style: StyleProp<ImageStyle>;
-  refreshTrigger?: number; // Likely a number, used to force a refresh
   enlargable?: boolean;
 };
 
 type AvatarImageProps = {
-  /** The resolved image URI, or `null` once we know there is no image to show. */
-  uri: string | null;
-  /** Whether the download URL is still being resolved. */
-  isResolving: boolean;
-  /** Whether the user is expected to have a photo (derived from `downloadPath`). */
-  expectsPhoto: boolean;
+  /** The image URI to render, or empty/`null`/`undefined` when there is no photo. */
+  uri: string | null | undefined;
   /** Tint applied to the fallback icon (undefined when a real photo is shown). */
   tintColor: string | undefined;
   style: StyleProp<ImageStyle>;
 };
 
-function AvatarImage({
-  uri,
-  isResolving,
-  expectsPhoto,
-  tintColor,
-  style,
-}: AvatarImageProps) {
+function AvatarImage({uri, tintColor, style}: AvatarImageProps) {
   const theme = useTheme();
   const styles = useThemeStyles();
   const [isLoaded, setIsLoaded] = useState(false);
@@ -58,12 +47,9 @@ function AvatarImage({
     setIsLoaded(false);
   }
 
-  // We are loading when the user has a photo that has neither resolved to "no
-  // image" nor finished rendering yet. The opaque spinner overlay below covers
-  // the fallback icon while loading, so the user sees the spinner (not the "no
-  // photo" silhouette) until the real image is ready.
-  const resolvedEmpty = !isResolving && !uri;
-  const isLoading = expectsPhoto && !resolvedEmpty && !isLoaded;
+  // Show the spinner while a real photo is still loading. The opaque overlay
+  // below covers the fallback icon until the image is ready.
+  const isLoading = !!uri && !isLoaded;
 
   return (
     <View style={[style as StyleProp<ViewStyle>, {overflow: 'hidden'}]}>
@@ -95,82 +81,21 @@ function AvatarImage({
   );
 }
 
-function ProfileImage({
-  storage,
-  userID,
-  downloadPath,
-  style,
-  refreshTrigger,
-  enlargable,
-}: ProfileImageProps) {
+function ProfileImage({photoUrl, style, enlargable}: ProfileImageProps) {
   const theme = useTheme();
-  // `undefined` while the download URL is being resolved, then `string | null`.
-  const [imageUrl, setImageUrl] = useState<string | null | undefined>(
-    undefined,
-  );
-
-  // Resolve the Firebase Storage download URL once per source change. Image
-  // caching is delegated to expo-image's `cachePolicy`, so no custom layer is
-  // needed here.
-  useEffect(() => {
-    let isActive = true;
-
-    const resolveImageUrl = async () => {
-      // A locally-stored file (e.g. a freshly picked image) is used directly.
-      if (downloadPath?.startsWith(CONST.LOCAL_IMAGE_PREFIX)) {
-        if (isActive) {
-          setImageUrl(downloadPath);
-        }
-        return;
-      }
-
-      // A Firebase Storage path must be resolved to a download URL.
-      if (downloadPath?.includes(CONST.FIREBASE_STORAGE_URL)) {
-        try {
-          const url = await getProfilePictureURL(storage, userID, downloadPath);
-          if (isActive) {
-            setImageUrl(url && url !== CONST.NO_IMAGE ? url : null);
-          }
-        } catch (error) {
-          ErrorUtils.raiseAppError(ERRORS.IMAGE_UPLOAD.FETCH_FAILED, error);
-          if (isActive) {
-            setImageUrl(null);
-          }
-        }
-        return;
-      }
-
-      if (isActive) {
-        setImageUrl(null);
-      }
-    };
-
-    resolveImageUrl();
-
-    return () => {
-      isActive = false;
-    };
-  }, [storage, userID, downloadPath, refreshTrigger]);
-
-  const expectsPhoto =
-    !!downloadPath &&
-    (downloadPath.startsWith(CONST.LOCAL_IMAGE_PREFIX) ||
-      downloadPath.includes(CONST.FIREBASE_STORAGE_URL));
-  const iconTint = imageUrl ? undefined : theme.icon;
+  // Render the stored profile photo URL directly (an empty/missing value falls
+  // back to the placeholder icon via the truthy checks below). Image caching is
+  // delegated to expo-image's `cachePolicy`, so no client-side resolution layer
+  // is needed.
+  const iconTint = photoUrl ? undefined : theme.icon;
 
   const avatar = (
-    <AvatarImage
-      uri={imageUrl ?? null}
-      isResolving={imageUrl === undefined}
-      expectsPhoto={expectsPhoto}
-      tintColor={iconTint}
-      style={style}
-    />
+    <AvatarImage uri={photoUrl} tintColor={iconTint} style={style} />
   );
 
   if (enlargable) {
-    const imageSource: ImageSourcePropType = imageUrl
-      ? {uri: imageUrl}
+    const imageSource: ImageSourcePropType = photoUrl
+      ? {uri: photoUrl}
       : KirokuIcons.UserIcon;
     return (
       <EnlargableImage

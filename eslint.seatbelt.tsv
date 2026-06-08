@@ -815,7 +815,6 @@
 "src/screens/Social/FriendRequestScreen.tsx"	"@typescript-eslint/switch-exhaustiveness-check"	1
 "src/screens/Social/FriendRequestScreen.tsx"	"react-hooks/set-state-in-effect"	2
 "src/screens/Social/FriendSearchScreen.tsx"	"react-hooks/set-state-in-render"	2
-"src/storage/storageUpload.ts"	"@typescript-eslint/switch-exhaustiveness-check"	1
 "src/styles/utils/generators/ModalStyleUtils.ts"	"@typescript-eslint/switch-exhaustiveness-check"	1
 "src/styles/utils/generators/ReportActionContextMenuStyleUtils.ts"	"@typescript-eslint/no-unnecessary-type-assertion"	1
 "src/styles/utils/index.ts"	"@typescript-eslint/switch-exhaustiveness-check"	4

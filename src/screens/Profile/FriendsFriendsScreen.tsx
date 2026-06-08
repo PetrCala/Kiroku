@@ -46,7 +46,7 @@ type FriendsFriendsScreenProps = StackScreenProps<
 function FriendsFriendsScreen({route}: FriendsFriendsScreenProps) {
   const styles = useThemeStyles();
   const {userID} = route.params;
-  const {auth, storage} = useFirebase();
+  const {auth} = useFirebase();
   const userData = useCurrentUserData();
   const user = auth.currentUser;
   const {translate} = useLocalize();
@@ -97,7 +97,6 @@ function FriendsFriendsScreen({route}: FriendsFriendsScreenProps) {
           key={`${id}-container`}
           userID={id}
           userDisplayData={displayData[id]}
-          storage={storage}
           userFrom={currentUserId}
           requestStatus={requestStatuses[id]}
           alreadyAFriend={userData?.friends ? userData?.friends[id] : false}

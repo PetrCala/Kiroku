@@ -1,11 +1,6 @@
-import type {FirebaseStorage} from 'firebase/storage';
-import {ref as StorageRef, getDownloadURL} from 'firebase/storage';
-import type {Auth, User} from 'firebase/auth';
-import {updateProfile} from 'firebase/auth';
 import Onyx from 'react-native-onyx';
-import type {OnyxUpdate} from 'react-native-onyx';
 import * as API from '@libs/API';
-import {READ_COMMANDS, WRITE_COMMANDS} from '@libs/API/types';
+import {READ_COMMANDS} from '@libs/API/types';
 import type {
   GetUsersBatchParams,
   OpenFriendListParams,
@@ -187,48 +182,6 @@ async function fetchUsersData(
 }
 
 /**
- * Persist a user's new profile photo URL via kiroku-api. The optimistic Onyx
- * update mirrors the server's `onyxData`. Should be called after the picture
- * has been uploaded to storage.
- *
- * @param userID User UID.
- * @param photoURL The download URL of the uploaded profile picture.
- */
-function setProfilePictureURL(userID: string, photoURL: string): void {
-  const optimisticData: OnyxUpdate[] = [
-    {
-      onyxMethod: Onyx.METHOD.MERGE,
-      key: ONYXKEYS.USER_DATA_LIST,
-      value: {[userID]: {profile: {photo_url: photoURL}}},
-    },
-  ];
-  API.write(WRITE_COMMANDS.UPDATE_PROFILE_PHOTO, {photoURL}, {optimisticData});
-}
-
-/**
- * Updates the profile information of a user.
- *
- * @param pathToUpload - The path to the file to upload.
- * @param user - The user object.
- * @param auth - The authentication object.
- * @param storage - The Firebase storage object.
- * @returns A promise that resolves when the profile information is updated.
- */
-async function updateProfileInfo(
-  pathToUpload: string,
-  user: User | null,
-  auth: Auth,
-  storage: FirebaseStorage,
-): Promise<void> {
-  if (!user || !auth.currentUser) {
-    return;
-  }
-  const downloadURL = await getDownloadURL(StorageRef(storage, pathToUpload));
-  setProfilePictureURL(user.uid, downloadURL);
-  await updateProfile(auth.currentUser, {photoURL: downloadURL});
-}
-
-/**
  * Read a single user's public profile (profile + public_data + public
  * is_supporter) via `GET /v1/users/:uid/profile`. The response merges those into
  * `userDataList[userID]`; this returns the promise so a caller can await the
@@ -267,7 +220,5 @@ export {
   fetchUsersData,
   openPublicProfile,
   openFriendList,
-  setProfilePictureURL,
   setSupporterFlagInList,
-  updateProfileInfo,
 };
