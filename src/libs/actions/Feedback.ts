@@ -1,6 +1,8 @@
+import Onyx from 'react-native-onyx';
 import * as API from '@libs/API';
 import {SIDE_EFFECT_REQUEST_COMMANDS, WRITE_COMMANDS} from '@libs/API/types';
 import type {BugList, FeedbackList} from '@src/types/onyx';
+import ONYXKEYS from '@src/ONYXKEYS';
 
 /**
  * Feedback + bug-report writes and admin reads, cut over from direct Firebase
@@ -15,9 +17,12 @@ import type {BugList, FeedbackList} from '@src/types/onyx';
  *
  * The admin reads (`getFeedbackList` / `getBugList`) back the SeeFeedbackScreen /
  * SeeBugsScreen lists. The GET routes return the whole collection as plain JSON
- * (not an `onyxData` envelope), so `makeRequestWithSideEffects` resolves with the
- * list itself and the screens load it into local component state rather than
- * Onyx. Part of the #809 realtime cutover.
+ * (not an `onyxData` envelope), so these actions take the resolved list and
+ * `Onyx.set` it under `FEEDBACK_LIST` / `BUG_LIST`; the screens render from Onyx
+ * via `useOnyx`. Storing it in Onyx (rather than transient component state) means
+ * a slow response still lands safely after the screen has unmounted, and a
+ * re-visit renders the cached list instantly while a fresh fetch refreshes it.
+ * Part of the #809 realtime cutover.
  */
 
 function submitFeedback(text: string) {
@@ -36,20 +41,26 @@ function removeBug(bugId: string) {
   API.write(WRITE_COMMANDS.REMOVE_BUG, {bugId});
 }
 
-function getFeedbackList(): Promise<FeedbackList> {
+function getFeedbackList(): Promise<void> {
   // eslint-disable-next-line rulesdir/no-api-side-effects-method
   return API.makeRequestWithSideEffects(
     SIDE_EFFECT_REQUEST_COMMANDS.GET_FEEDBACK_LIST,
     {},
-  ).then(response => (response as unknown as FeedbackList | undefined) ?? {});
+  ).then(response => {
+    const list = (response as unknown as FeedbackList | undefined) ?? {};
+    return Onyx.set(ONYXKEYS.FEEDBACK_LIST, list);
+  });
 }
 
-function getBugList(): Promise<BugList> {
+function getBugList(): Promise<void> {
   // eslint-disable-next-line rulesdir/no-api-side-effects-method
   return API.makeRequestWithSideEffects(
     SIDE_EFFECT_REQUEST_COMMANDS.GET_BUG_LIST,
     {},
-  ).then(response => (response as unknown as BugList | undefined) ?? {});
+  ).then(response => {
+    const list = (response as unknown as BugList | undefined) ?? {};
+    return Onyx.set(ONYXKEYS.BUG_LIST, list);
+  });
 }
 
 export {

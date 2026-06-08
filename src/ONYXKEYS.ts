@@ -182,6 +182,12 @@ const ONYXKEYS = {
   /** Indicates whether we should store logs or not */
   SHOULD_STORE_LOGS: 'shouldStoreLogs',
 
+  /** Admin-only: the full feedback collection, fetched on demand by SeeFeedbackScreen */
+  FEEDBACK_LIST: 'feedbackList',
+
+  /** Admin-only: the full bug-report collection, fetched on demand by SeeBugsScreen */
+  BUG_LIST: 'bugList',
+
   //   /** Collection Keys */
   COLLECTION: {
     DOWNLOAD: 'download_',
@@ -318,6 +324,8 @@ type OnyxValuesMapping = {
   [ONYXKEYS.LOGS]: OnyxTypes.CapturedLogs;
   [ONYXKEYS.STATISTICS_FILTERS]: OnyxTypes.StatisticsFilters;
   [ONYXKEYS.SHOULD_STORE_LOGS]: boolean;
+  [ONYXKEYS.FEEDBACK_LIST]: OnyxTypes.FeedbackList;
+  [ONYXKEYS.BUG_LIST]: OnyxTypes.BugList;
 };
 
 type OnyxValues = OnyxValuesMapping &
