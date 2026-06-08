@@ -1,5 +1,5 @@
 import type {Database} from 'firebase/database';
-import {get, ref, child, push} from 'firebase/database';
+import {get, ref} from 'firebase/database';
 
 /** Read data once from the realtime database using get(). Return the data if it exists.
  *
@@ -22,21 +22,9 @@ async function readDataOnce<T>(
   return null;
 }
 
-/**
- * Generates a database key based on the provided reference string.
- *
- * NOTE: This is the last RTDB-handle dependency on the write path. It performs
- * NO network call — `push()` derives a chronologically-sortable unique key
- * locally from the SDK's pushId algorithm. It could be replaced by a UUID
- * (e.g. `expo-crypto` randomUUID) to fully sever the `db` handle from session
- * creation; see contributingGuides/REALTIME_MIGRATION_AUDIT.md.
- *
- * @param db The database object.
- * @param refString The reference string used to generate the key.
- * @returns The generated database key, or null if the key cannot be generated.
- */
-function generateDatabaseKey(db: Database, refString: string): string | null {
-  return push(child(ref(db), refString)).key;
-}
-
-export {generateDatabaseKey, readDataOnce};
+// `readDataOnce` is the sole remaining export now that `generateDatabaseKey` has been
+// severed (key minting moved to `@libs/generatePushID`). Keep it a named export — its
+// call sites and the rest of this shrinking RTDB shim use named imports — rather than
+// flipping to a default purely to satisfy this single-export preference.
+// eslint-disable-next-line import/prefer-default-export
+export {readDataOnce};

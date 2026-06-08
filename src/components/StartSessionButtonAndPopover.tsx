@@ -62,7 +62,7 @@ function StartSessionButtonAndPopover(
   ref: ForwardedRef<StartSessionButtonAndPopoverRef>,
 ) {
   const styles = useThemeStyles();
-  const {auth, db} = useFirebase();
+  const {auth} = useFirebase();
   const {translate} = useLocalize();
   const user = auth.currentUser;
   const userData = useCurrentUserData();
@@ -79,11 +79,7 @@ function StartSessionButtonAndPopover(
     try {
       await App.setLoadingText(translate('liveSessionScreen.loading'));
       if (!ongoingSessionData?.ongoing) {
-        await DS.startLiveDrinkingSession(
-          db,
-          user,
-          userData?.timezone?.selected,
-        );
+        await DS.startLiveDrinkingSession(user, userData?.timezone?.selected);
       }
       DS.navigateToOngoingSessionScreen();
     } catch (error) {
@@ -96,7 +92,6 @@ function StartSessionButtonAndPopover(
       await App.setLoadingText(translate('common.loading'));
       await DS.setIsCreatingNewSession(true);
       const newSession = await DS.getNewSessionToEdit(
-        db,
         auth.currentUser,
         new Date(),
         userData?.timezone?.selected,

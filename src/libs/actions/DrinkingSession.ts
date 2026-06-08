@@ -1,4 +1,3 @@
-import type {Database} from 'firebase/database';
 import type {
   DrinkingSession,
   DrinkingSessionId,
@@ -13,7 +12,7 @@ import * as DSUtils from '@libs/DrinkingSessionUtils';
 import type {UserID} from '@src/types/onyx/OnyxCommon';
 import type {User} from 'firebase/auth';
 import CONST from '@src/CONST';
-import {generateDatabaseKey} from '@database/baseFunctions';
+import generatePushID from '@libs/generatePushID';
 import Onyx from 'react-native-onyx';
 import type {OnyxUpdate} from 'react-native-onyx';
 import * as API from '@libs/API';
@@ -30,7 +29,6 @@ import {differenceInCalendarDays} from 'date-fns';
 import {toZonedTime} from 'date-fns-tz';
 import type {SelectedTimezone} from '@src/types/onyx/UserData';
 import type {ValueOf} from 'type-fest';
-import DBPATHS from '@src/DBPATHS';
 import {Alert, InteractionManager} from 'react-native';
 
 let ongoingSessionData: DrinkingSession | undefined;
@@ -305,12 +303,10 @@ async function syncLocalLiveSessionData(
  *
  * Assume that if a session is ongoing, it is a live session and its data is stored in the local database.
  *
- * @param db Firebase Database object
  * @param user User object
  * @returnsPromise newSessionId Id of the newly started session.
  *  */
 async function startLiveDrinkingSession(
-  db: Database,
   user: User | null,
   timezone: SelectedTimezone | undefined,
 ): Promise<void> {
@@ -318,15 +314,7 @@ async function startLiveDrinkingSession(
     throw new Error('Failed to start a live session: User is null');
   }
 
-  const newSessionId = generateDatabaseKey(
-    db,
-    DBPATHS.USER_DRINKING_SESSIONS_USER_ID.getRoute(user.uid),
-  );
-  if (!newSessionId) {
-    throw new Error(
-      "Failed to start a live session: Couldn't generate a new session ID",
-    );
-  }
+  const newSessionId = generatePushID();
 
   // The user is not in an active session
   const newSessionData: DrinkingSession = DSUtils.getEmptySession({
@@ -647,25 +635,14 @@ async function updateSessionDate(
 }
 
 /** Generate a new key for a drinking session */
-function generateDrinkingSessionId(
-  db: Database,
-  user: User | null,
-): DrinkingSessionId {
+function generateDrinkingSessionId(user: User | null): DrinkingSessionId {
   if (!user) {
     throw new Error(Localize.translateLocal('common.error.userNull'));
   }
-  const newKey = generateDatabaseKey(
-    db,
-    DBPATHS.USER_DRINKING_SESSIONS_USER_ID.getRoute(user.uid),
-  );
-  if (!newKey) {
-    throw new Error(Localize.translateLocal('common.error.sessionIdCreation'));
-  }
-  return newKey;
+  return generatePushID();
 }
 
 async function getNewSessionToEdit(
-  db: Database,
   user: User | null,
   currentDate: Date,
   timezone: SelectedTimezone | undefined,
@@ -674,7 +651,7 @@ async function getNewSessionToEdit(
   if (!user) {
     throw new Error('User is null when trying to create a new session');
   }
-  const newSessionId = generateDrinkingSessionId(db, user);
+  const newSessionId = generateDrinkingSessionId(user);
   const timestamp = currentDate.getTime();
   const newSession: DrinkingSession = DSUtils.getEmptySession({
     id: newSessionId,

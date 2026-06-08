@@ -22,17 +22,19 @@ friend preferences, and user search are migrated to kiroku-api. What remains tou
 `firebase/database` at **runtime** is:
 
 - **1 legitimate, permanent keep** — the `db` handle provider (`FirebaseContext`).
-- **1 legitimate-for-now keep** — `generateDatabaseKey` (local push-id generation, no
-  network), the last RTDB-handle dependency on the write path. Severable via UUID.
+- **1 keep, now SEVERED** — `generateDatabaseKey` was the last RTDB-handle dependency on
+  the write path. A follow-up on this branch replaced it with `src/libs/generatePushID.ts`,
+  a local Firebase-push-ID-shaped generator (identical 20-char format, no `db` handle), so
+  session-key minting no longer touches `firebase/database`.
 - **4 real read gaps** (category C) — all cross-user/pre-auth `get()`-style reads:
   cross-user friends list, admin nickname resolution, OAuth user-exists pre-check, and
   the pre-auth signup version gate. **3 of the 4 already have a server endpoint** and
   are quick client cutovers; only the pre-auth version gate needs a new unauthenticated
   endpoint.
 
-After this PR's dead-code removal, the only remaining `firebase/database` **value
-imports** in `src/` are in exactly three files: `FirebaseContext.tsx` (handle),
-`baseFunctions.ts` (`readDataOnce` + `generateDatabaseKey`), and `User.ts`
+After this PR's dead-code removal (and the `generatePushID` follow-up on this branch), the
+only remaining `firebase/database` **value imports** in `src/` are in exactly three files:
+`FirebaseContext.tsx` (handle), `baseFunctions.ts` (`readDataOnce`), and `User.ts`
 (`ref`/`get` for the OAuth user-exists check).
 
 ---
@@ -41,21 +43,21 @@ imports** in `src/` are in exactly three files: `FirebaseContext.tsx` (handle),
 
 `firebase/database` imports across `src/` and their classification:
 
-| File                                           | Symbol(s)                                                    | What it does                                                                                                            | Class                         |
-| ---------------------------------------------- | ------------------------------------------------------------ | ----------------------------------------------------------------------------------------------------------------------- | ----------------------------- |
-| `src/context/global/FirebaseContext.tsx`       | `getDatabase`, `connectDatabaseEmulator` (+ `type Database`) | Constructs the singleton `db` handle exposed via `useFirebase()`; wires the emulator in test mode                       | **A — keep**                  |
-| `src/database/baseFunctions.ts`                | `push`, `child`, `ref` (+ `type Database`)                   | `generateDatabaseKey` — local push-id key generation, **no network call**                                               | **A — keep (severable)**      |
-| `src/database/baseFunctions.ts`                | `get`, `ref`                                                 | `readDataOnce<T>` — one-shot read; still called by the 4 category-C gaps below                                          | **A — keep until C done**     |
-| `src/libs/actions/User.ts`                     | `ref`, `get` (+ `type Database`)                             | `userExistsInDatabase` — reads `users/$uid/profile` to test existence (OAuth path)                                      | **C — needs-migration**       |
-| `src/libs/actions/User.ts`                     | `readDataOnce<Profile>`                                      | `fetchUserNicknames` — cross-user display-name resolution for admin screens                                             | **C — needs-migration**       |
-| `src/libs/actions/User.ts`                     | `readDataOnce<AppSettings>`                                  | `signUp` pre-auth app-version gate (reads `config/app_settings`)                                                        | **C — needs-migration**       |
-| `src/screens/Profile/ProfileScreen.tsx`        | `readDataOnce<UserList>`                                     | Reads the **viewer's own** friends list when viewing another user (common-friends count)                                | **C — needs-migration**       |
-| `src/screens/Profile/FriendsFriendsScreen.tsx` | `readDataOnce<UserList>`                                     | Reads **another user's** friends list                                                                                   | **C — needs-migration**       |
-| `src/components/Social/SearchWindow.tsx`       | `type Database` only                                         | Types an optional `database?` arg plumbed to the `onSearch` callback (search already migrated)                          | **D — type-only**             |
-| `src/hooks/useStartEditSessionForDate.ts`      | `type Database` only                                         | Types `db` passed to `DS.getNewSessionToEdit` → flows to `generateDatabaseKey`                                          | **D — type-only**             |
-| `src/libs/actions/DrinkingSession.ts`          | `type Database` only                                         | Types `db` consumed by `generateDatabaseKey` (category A)                                                               | **D — type-only**             |
-| `src/libs/actions/Profile.ts`                  | `type Database` only                                         | Types `db` in `fetchUserProfiles`/`fetchUserStatuses`; param documented "Unused (retained for call-site compatibility)" | **D — type-only (vestigial)** |
-| `src/screens/Social/FriendRequestScreen.tsx`   | `type Database` only                                         | Types `database` plumbed into `Profile.fetchUserProfiles` (which ignores it)                                            | **D — type-only (vestigial)** |
+| File                                           | Symbol(s)                                                    | What it does                                                                                                             | Class                         |
+| ---------------------------------------------- | ------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------ | ----------------------------- |
+| `src/context/global/FirebaseContext.tsx`       | `getDatabase`, `connectDatabaseEmulator` (+ `type Database`) | Constructs the singleton `db` handle exposed via `useFirebase()`; wires the emulator in test mode                        | **A — keep**                  |
+| `src/database/baseFunctions.ts`                | ~~`push`, `child`, `ref`~~ (removed)                         | `generateDatabaseKey` **removed**; key minting moved to local `src/libs/generatePushID.ts` (no `db` handle, same format) | **A — severed**               |
+| `src/database/baseFunctions.ts`                | `get`, `ref`                                                 | `readDataOnce<T>` — one-shot read; still called by the 4 category-C gaps below                                           | **A — keep until C done**     |
+| `src/libs/actions/User.ts`                     | `ref`, `get` (+ `type Database`)                             | `userExistsInDatabase` — reads `users/$uid/profile` to test existence (OAuth path)                                       | **C — needs-migration**       |
+| `src/libs/actions/User.ts`                     | `readDataOnce<Profile>`                                      | `fetchUserNicknames` — cross-user display-name resolution for admin screens                                              | **C — needs-migration**       |
+| `src/libs/actions/User.ts`                     | `readDataOnce<AppSettings>`                                  | `signUp` pre-auth app-version gate (reads `config/app_settings`)                                                         | **C — needs-migration**       |
+| `src/screens/Profile/ProfileScreen.tsx`        | `readDataOnce<UserList>`                                     | Reads the **viewer's own** friends list when viewing another user (common-friends count)                                 | **C — needs-migration**       |
+| `src/screens/Profile/FriendsFriendsScreen.tsx` | `readDataOnce<UserList>`                                     | Reads **another user's** friends list                                                                                    | **C — needs-migration**       |
+| `src/components/Social/SearchWindow.tsx`       | `type Database` only                                         | Types an optional `database?` arg plumbed to the `onSearch` callback (search already migrated)                           | **D — type-only**             |
+| `src/hooks/useStartEditSessionForDate.ts`      | ~~`type Database`~~ (removed)                                | `db` param + type removed by the A.2 severing                                                                            | **D — resolved**              |
+| `src/libs/actions/DrinkingSession.ts`          | ~~`type Database`~~ (removed)                                | `db` params + `generateDatabaseKey` call removed by the A.2 severing                                                     | **D — resolved**              |
+| `src/libs/actions/Profile.ts`                  | `type Database` only                                         | Types `db` in `fetchUserProfiles`/`fetchUserStatuses`; param documented "Unused (retained for call-site compatibility)"  | **D — type-only (vestigial)** |
+| `src/screens/Social/FriendRequestScreen.tsx`   | `type Database` only                                         | Types `database` plumbed into `Profile.fetchUserProfiles` (which ignores it)                                             | **D — type-only (vestigial)** |
 
 **RTDB write/query/listener APIs (`set`, `update`, `remove`, `onValue`, `onChild*`,
 `off`, `runTransaction`, `orderByChild`, `query`, `startAt`, `limitToFirst`, …):**
@@ -69,17 +71,20 @@ two dead listener helpers removed below; the rest were already migrated.)
 ### A — Legitimate keep
 
 1. **`FirebaseContext.tsx` (`getDatabase`)** — the `db` handle provider. Permanent as
-   long as anything (even `generateDatabaseKey`) needs a handle, and Firebase Auth +
-   Storage are still provided from the same context.
-2. **`generateDatabaseKey` (`baseFunctions.ts`)** — used by `DrinkingSession.ts`
-   (`generateDrinkingSessionId`, `getNewSessionToEdit`). `push(child(ref(db)))` derives a
-   chronologically-sortable unique key **locally** from the SDK pushId algorithm — no
-   network I/O. **Recommendation (do not implement here):** replace with a UUID
-   (`expo-crypto` `randomUUID()`, already a dependency, or a Firebase-pushId-shaped
-   local generator) to fully sever the `db` handle from the write path. This is the
-   single remaining write-path dependency on the RTDB handle; severing it would let
-   `DrinkingSession.ts` and `useStartEditSessionForDate.ts` drop their `Database` type
-   imports too. Low risk, but a behavior-adjacent change (key format) — worth its own PR.
+   long as anything (e.g. `readDataOnce` for the category-C reads) needs a handle, and
+   Firebase Auth + Storage are still provided from the same context.
+2. **`generateDatabaseKey` (`baseFunctions.ts`) — SEVERED (follow-up on this branch).**
+   It was the single remaining write-path dependency on the RTDB handle:
+   `push(child(ref(db)))` derived a chronologically-sortable unique key **locally** from
+   the SDK pushId algorithm (no network I/O), but still needed the `db` handle. It is now
+   replaced by `src/libs/generatePushID.ts`, a faithful local port of Firebase's
+   `generatePushID` (secure RNG via `expo-crypto` `getRandomBytes`). The keys are
+   **format-identical** to Firebase push IDs — 20 chars, same 64-char sort-preserving
+   alphabet, timestamp-prefixed — so they stay co-sortable with every existing session
+   key. A UUID was explicitly **not** used (wrong length/charset, not time-sortable).
+   `generateDatabaseKey` is deleted, and `DrinkingSession.ts` /
+   `useStartEditSessionForDate.ts` have dropped their `Database` type imports and `db`
+   params. The session write path no longer touches `firebase/database`.
 
 ### B — Dead code (removed in this PR)
 
@@ -99,8 +104,8 @@ the repo (src + tests + config). See the PR body for the exact grep evidence.
 | `src/libs/FriendUtils.ts: fetchUserFriends`                                                                     | **Orphan** — exported but imported nowhere. The live cross-user friend reads are in `ProfileScreen`/`FriendsFriendsScreen`, which call `readDataOnce` directly. (This corrects the original audit premise that `FriendUtils` held a _live_ gap.) |
 | `eslint.seatbelt.tsv` entry for `src/hooks/useFetchData/index.ts`                                               | Stale grandfathered-violation row for a now-deleted file                                                                                                                                                                                         |
 
-`readDataOnce` and `generateDatabaseKey` are **retained** in `baseFunctions.ts` — both
-still have live consumers.
+`readDataOnce` is **retained** in `baseFunctions.ts` (it still has live consumers — the
+category-C reads below). `generateDatabaseKey` has been **removed** (severed — see A.2).
 
 ### C — Needs-migration (real gaps — REPORT only, not migrated here)
 
@@ -116,16 +121,16 @@ Cross-referenced against `kiroku-api/src/routes/`:
 ### D — Type-only imports (cosmetic, intentionally left)
 
 `import type {Database}` annotations that only type a `db`/`database` parameter. None
-perform RTDB I/O. Most flow into either `generateDatabaseKey` (category A) or a function
-whose `db` arg is already vestigial (`Profile.fetchUserProfiles`/`fetchUserStatuses`
+perform RTDB I/O. The two that flowed into `generateDatabaseKey` (`DrinkingSession.ts`,
+`useStartEditSessionForDate.ts`) are **gone** with the A.2 severing; the rest type a
+function whose `db` arg is already vestigial (`Profile.fetchUserProfiles`/`fetchUserStatuses`
 document it as "Unused (retained for call-site compatibility)").
 
-These are left untouched to avoid churn. They become trivially removable once:
-
-- C1–C4 land (removes the `Database`-typed plumbing through `User.ts`, the profile
-  screens, and `FriendRequestScreen`/`SearchWindow`), and
-- `generateDatabaseKey` is converted to a UUID (removes it from `DrinkingSession.ts` and
-  `useStartEditSessionForDate.ts`).
+The remaining ones are left untouched to avoid churn. They become trivially removable once
+C1–C4 land (removing the `Database`-typed plumbing through `User.ts`, the profile screens,
+and `FriendRequestScreen`/`SearchWindow`). The `generateDatabaseKey` → local
+`generatePushID` severing has already removed the `Database` imports from
+`DrinkingSession.ts` and `useStartEditSessionForDate.ts`.
 
 At that point `FirebaseContext.tsx` would be the **only** `firebase/database` importer in
 `src/`, and the RTDB migration would be 100% complete on the client read/write paths.
@@ -147,5 +152,6 @@ Ordered by effort/value:
    kiroku-api endpoint; coordinate with the kiroku-api repo. Lowest urgency — the gate is
    a soft "is your app new enough to create an account" check.
 
-Severing `generateDatabaseKey` (UUID) is an independent, optional cleanup that closes out
-the write-path handle dependency.
+Severing `generateDatabaseKey` (done on this branch via a local `generatePushID` port —
+**not** a UUID, so the Firebase push-ID key format is preserved) closed out the write-path
+handle dependency.
