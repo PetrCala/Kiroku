@@ -31,23 +31,43 @@ function makeConfig(overrides: Partial<Config> = {}): Config {
 
 describe('OnboardingSelectors', () => {
   describe('hasCompletedOnboarding', () => {
-    test('returns false for undefined userData (brand-new account)', () => {
+    test('returns false for undefined userData', () => {
       expect(hasCompletedOnboarding(undefined)).toBe(false);
     });
 
-    test('returns false when onboarding node is missing', () => {
-      expect(hasCompletedOnboarding(makeUserData())).toBe(false);
+    test('returns true when onboarding node is missing (undefined → completed)', () => {
+      // A returning/legacy account whose record predates the stamp, or whose
+      // record has not finished hydrating, must not be re-prompted.
+      expect(hasCompletedOnboarding(makeUserData())).toBe(true);
     });
 
-    test('returns false for empty object onboarding', () => {
+    test('returns true for empty array onboarding (RTDB serialization → absent)', () => {
+      const userData = makeUserData({
+        onboarding: [] as unknown as UserData['onboarding'],
+      });
+      expect(hasCompletedOnboarding(userData)).toBe(true);
+    });
+
+    test('returns false when username_chosen is false (mid-signup), even with no onboarding node', () => {
+      const userData = makeUserData({
+        profile: {
+          display_name: 'placeholder',
+          photo_url: '',
+          username_chosen: false,
+        },
+      });
+      expect(hasCompletedOnboarding(userData)).toBe(false);
+    });
+
+    test('returns false for empty object onboarding (in progress, no stamp)', () => {
       expect(hasCompletedOnboarding(makeUserData({onboarding: {}}))).toBe(
         false,
       );
     });
 
-    test('returns false for empty array onboarding (RTDB serialization)', () => {
+    test('returns false when only last_visited_path is set (in progress)', () => {
       const userData = makeUserData({
-        onboarding: [] as unknown as UserData['onboarding'],
+        onboarding: {last_visited_path: '/onboarding/terms'},
       });
       expect(hasCompletedOnboarding(userData)).toBe(false);
     });
@@ -57,13 +77,6 @@ describe('OnboardingSelectors', () => {
         onboarding: {completed_at: 1_700_000_000_000},
       });
       expect(hasCompletedOnboarding(userData)).toBe(true);
-    });
-
-    test('returns false when only last_visited_path is set (in progress)', () => {
-      const userData = makeUserData({
-        onboarding: {last_visited_path: '/onboarding/terms'},
-      });
-      expect(hasCompletedOnboarding(userData)).toBe(false);
     });
   });
 
