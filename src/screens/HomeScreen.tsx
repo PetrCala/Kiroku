@@ -211,7 +211,10 @@ function HomeScreen({route}: HomeScreenProps) {
   // calendar renders even when the user has no sessions yet — empty days
   // are still a valid view of their history.
   const isPreferencesReady = !!preferences;
-  const isUserDataReady = !!userData;
+  // Require `profile` (not just `userData`): a failed/incomplete ProvisionUser
+  // can leave `userData` truthy while `profile` is still undefined. Gating the
+  // header on the profile keeps it from rendering against profile-less data.
+  const isUserDataReady = !!userData?.profile;
   const isSessionsReady = drinkingSessionData !== undefined;
   const showSkeletonContent = !isPreferencesReady || !isSessionsReady;
 
@@ -255,7 +258,7 @@ function HomeScreen({route}: HomeScreenProps) {
               <ProfileImage
                 storage={storage}
                 userID={user.uid}
-                downloadPath={userData.profile.photo_url}
+                downloadPath={userData?.profile?.photo_url}
                 style={styles.avatarMedium}
                 // refreshTrigger={refreshCounter}
                 refreshTrigger={0}
