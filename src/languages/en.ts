@@ -1031,7 +1031,7 @@ export default {
           title: 'Weekly units',
           emptyLabel: 'Your trend will show as data builds.',
           legend: {
-            thisPeriod: 'This period',
+            perWeek: 'Per week',
             trend: 'Trend',
           },
           captions: {

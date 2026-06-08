@@ -43,7 +43,7 @@ function WeeklyTrendLegend({
           }}
         />
         <Text style={[styles.textMicroSupporting]}>
-          {translate('statistics.tabs.trends.weeklyTrend.legend.thisPeriod')}
+          {translate('statistics.tabs.trends.weeklyTrend.legend.perWeek')}
         </Text>
       </View>
 
