@@ -19,6 +19,7 @@ import type {
   ForceUpdateTextParams,
   ForgotPasswordSuccessParams,
   FriendRequestsCountParams,
+  LastSessionSummaryParams,
   OnboardingStepCounterParams,
   SessionConfirmTimezoneChangeParams,
   SessionStartTimeParams,
@@ -1266,9 +1267,21 @@ export default {
     welcomeToKiroku: 'Vítejte v Kiroku!',
     startNewSessionByClickingPlus:
       'Spusťte novou relaci kliknutím na tlačítko plus v dolní části obrazovky',
-    currentlyInSession: 'Právě se nacházíte v relaci!',
-    currentlyInSessionButton:
-      'Tlačítko, které informuje, že se právě nacházíte v relaci',
+    banners: {
+      inSession: {
+        label: 'Probíhá relace',
+        body: 'Klepnutím se vrátíte do relace',
+        resume: 'Pokračovat',
+        a11y: 'Probíhá relace. Klepnutím se do ní vrátíte.',
+      },
+      lastSession: {
+        label: 'Poslední relace',
+        summary: ({when, units}: LastSessionSummaryParams) =>
+          `${when} · ${units} jednotek`,
+        a11y: ({when, units}: LastSessionSummaryParams) =>
+          `Zobrazit poslední relaci, ${when}, ${units} jednotek`,
+      },
+    },
     stats: {
       units: 'Jednotky',
       sessions: 'Relace',

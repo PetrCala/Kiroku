@@ -215,6 +215,30 @@ function getOngoingSessionId(
 }
 
 /**
+ * Returns the most recent COMPLETED session (latest `start_time`), excluding
+ * any ongoing/in-progress session. `undefined` when there are none.
+ */
+function getLastSession(
+  drinkingSessions: DrinkingSessionList | null | undefined,
+): DrinkingSession | undefined {
+  if (isEmptyObject(drinkingSessions)) {
+    return undefined;
+  }
+
+  let latest: DrinkingSession | undefined;
+  Object.values(drinkingSessions).forEach(session => {
+    if (!session || session.ongoing) {
+      return;
+    }
+    if (!latest || session.start_time > latest.start_time) {
+      latest = session;
+    }
+  });
+
+  return latest;
+}
+
+/**
  * Calculates the total units of a Drinks object based on a DrinksToUnits mapping.
  *
  * @param drinks - The Drinks object containing drink counts.
@@ -888,6 +912,7 @@ export {
   getEarliestSessionStartTime,
   getEmptySession,
   getIconForSession,
+  getLastSession,
   getOngoingSessionId,
   getSessionAddDrinksOptions,
   getSessionRemoveDrinksOptions,

@@ -608,12 +608,6 @@ const styles = (theme: ThemeColors) =>
       textAlign: 'center',
     },
 
-    buttonHugeText: {
-      fontSize: variables.fontSizeXLarge,
-      ...FontUtils.fontFamily.platform.EXP_NEUE_BOLD,
-      textAlign: 'center',
-    },
-
     buttonDefaultBG: {
       backgroundColor: theme.buttonDefaultBG,
     },
@@ -1288,14 +1282,6 @@ const styles = (theme: ThemeColors) =>
       flexDirection: 'row',
       alignItems: 'center',
       justifyContent: 'space-between',
-    },
-
-    messageBanner: {
-      color: theme.danger,
-      alignItems: 'center',
-      borderRadius: 8,
-      ...spacing.p4,
-      ...spacing.m2,
     },
 
     nativeOverlayStyles: (current: OverlayStylesParams) =>

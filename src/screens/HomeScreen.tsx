@@ -18,7 +18,7 @@ import type {BottomTabNavigatorParamList} from '@libs/Navigation/types';
 import type SCREENS from '@src/SCREENS';
 import HomeStatsOverview from '@components/Items/HomeStatsOverview';
 import ScreenWrapper from '@components/ScreenWrapper';
-import MessageBanner from '@components/Info/MessageBanner';
+import HomeBanner from '@components/Info/HomeBanner';
 import useThemeStyles from '@hooks/useThemeStyles';
 import getPlatform from '@libs/getPlatform';
 import FullScreenLoadingIndicator from '@components/FullscreenLoadingIndicator';
@@ -32,6 +32,7 @@ import useLocalize from '@hooks/useLocalize';
 import useCurrentUserData from '@hooks/useCurrentUserData';
 import useCurrentUserDrinkingSessions from '@hooks/useCurrentUserDrinkingSessions';
 import useCurrentUserPreferences from '@hooks/useCurrentUserPreferences';
+import useLastSession from '@hooks/useLastSession';
 import Text from '@components/Text';
 import BottomTabBar from '@libs/Navigation/AppNavigator/createCustomBottomTabNavigator/BottomTabBar';
 import {useOnyx} from 'react-native-onyx';
@@ -68,6 +69,9 @@ function HomeScreen({route}: HomeScreenProps) {
     dateToDateData(new Date()),
   );
   const hasMarkedReadyRef = useRef(false);
+  // Most recent completed session, for the "last session" banner (null when
+  // there's no history — a brand-new user shows no banner).
+  const lastSession = useLastSession();
 
   // The calendar's visible month: the last-viewed day from an enlarged calendar
   // / day-overview scroll when present, otherwise the locally-navigated month.
@@ -168,6 +172,46 @@ function HomeScreen({route}: HomeScreenProps) {
     );
   };
 
+  // The banner keeps a constant footprint whether or not a session is live, so
+  // the calendar below never shifts. A brand-new user (no completed session and
+  // not in one) shows no banner.
+  const renderBanner = () => {
+    if (ongoingSessionData?.ongoing) {
+      return (
+        <HomeBanner
+          tone="active"
+          label={translate('homeScreen.banners.inSession.label')}
+          detail={translate('homeScreen.banners.inSession.body')}
+          actionLabel={translate('homeScreen.banners.inSession.resume')}
+          accessibilityLabel={translate('homeScreen.banners.inSession.a11y')}
+          onPress={() => DS.navigateToOngoingSessionScreen()}
+        />
+      );
+    }
+    if (lastSession) {
+      return (
+        <HomeBanner
+          tone="neutral"
+          label={translate('homeScreen.banners.lastSession.label')}
+          detail={translate('homeScreen.banners.lastSession.summary', {
+            when: lastSession.when,
+            units: lastSession.units,
+          })}
+          accessibilityLabel={translate('homeScreen.banners.lastSession.a11y', {
+            when: lastSession.when,
+            units: lastSession.units,
+          })}
+          onPress={() =>
+            Navigation.navigate(
+              ROUTES.DAY_OVERVIEW.getRoute(user.uid, lastSession.dateString),
+            )
+          }
+        />
+      );
+    }
+    return null;
+  };
+
   return (
     <>
       <ScreenWrapper
@@ -202,13 +246,7 @@ function HomeScreen({route}: HomeScreenProps) {
           <HomeHeaderSkeleton />
         )}
         <ScrollView contentContainerStyle={styles.ph2}>
-          {!!ongoingSessionData?.ongoing && (
-            <MessageBanner
-              danger
-              text={translate('homeScreen.currentlyInSession')}
-              onPress={() => DS.navigateToOngoingSessionScreen()}
-            />
-          )}
+          {renderBanner()}
           {renderMainContent()}
         </ScrollView>
         <BottomTabBar />
