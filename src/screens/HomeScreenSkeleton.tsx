@@ -27,8 +27,8 @@ function StatOverviewSkeleton() {
   const styles = useThemeStyles();
   return (
     <View style={styles.mt2}>
-      {/* Hero card (KpiCard + BarColumns). */}
-      <Skeleton height={190} radius={12} style={styles.mb2} />
+      {/* Hero card (KpiCard + "Units by week" caption + horizontal bars). */}
+      <Skeleton height={210} radius={12} style={styles.mb2} />
       {/* Supporting pair (sessions + alcohol-free). */}
       <View style={styles.flexRow}>
         <Skeleton height={96} radius={12} style={[styles.flex1, styles.mr1]} />

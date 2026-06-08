@@ -33,6 +33,7 @@ import type {
   UnitCountParams,
   UpdateEmailSentEmailParams,
   VerifyEmailScreenEmailParmas,
+  WeekOfParams,
 } from './params';
 
 export default {
@@ -970,6 +971,9 @@ export default {
   },
   statistics: {
     title: 'Statistiky',
+    period: {
+      weekOf: ({date}: WeekOfParams) => `Týden od ${date}`,
+    },
     tabs: {
       overview: {
         label: 'Přehled',
@@ -1272,6 +1276,7 @@ export default {
       statistics: 'Statistiky',
       viewStatistics: 'Zobrazit statistiky',
       vsLastMonth: 'vs minulý měsíc',
+      unitsByWeek: 'Jednotky podle týdne',
       unitsPerWeekA11y: 'Zkonzumované jednotky za týden v tomto měsíci',
     },
   },

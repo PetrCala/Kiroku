@@ -1,6 +1,6 @@
 import {View} from 'react-native';
 import type {DateData} from 'react-native-calendars';
-import {BarColumns} from '@components/Charts/BarColumns';
+import {PeriodBarList} from '@components/Charts/PeriodBarList';
 import {KpiCard, KpiCardGroup} from '@components/Charts/KpiCard';
 import type {KpiCardProps} from '@components/Charts/KpiCard';
 import Icon from '@components/Icon';
@@ -84,16 +84,9 @@ function HomeStatsOverview({visibleDate}: HomeStatsOverviewProps) {
     },
   ];
 
-  // Overlay the live session's units on the cached month total and the latest
-  // week's bar so the hero number and the chart agree.
+  // Overlay the live session's units on the cached month total; PeriodBarList
+  // adds the same overlay to the latest week's bar so the two agree.
   const totalUnits = current.totalUnits + liveExtraUnits;
-  const barItems = subPeriods.map((point, index) => ({
-    label: point.label,
-    value:
-      index === subPeriods.length - 1
-        ? point.units + liveExtraUnits
-        : point.units,
-  }));
 
   return (
     <View style={styles.mt2}>
@@ -105,13 +98,20 @@ function HomeStatsOverview({visibleDate}: HomeStatsOverviewProps) {
           polarity="lower-is-supportive"
           headerRight={statisticsLink}
           chart={
-            <BarColumns
-              items={barItems}
-              accessibilityLabel={translate(
-                'homeScreen.stats.unitsPerWeekA11y',
-              )}
-              isLoading={isLoading}
-            />
+            <View>
+              <Text style={[styles.textMicroSupporting, styles.mb1]}>
+                {translate('homeScreen.stats.unitsByWeek')}
+              </Text>
+              <PeriodBarList
+                points={subPeriods}
+                granularity="week"
+                liveExtraUnits={liveExtraUnits}
+                accessibilityLabel={translate(
+                  'homeScreen.stats.unitsPerWeekA11y',
+                )}
+                isLoading={isLoading}
+              />
+            </View>
           }
           isLoading={isLoading}
         />

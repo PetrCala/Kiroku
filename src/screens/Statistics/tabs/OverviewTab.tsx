@@ -1,11 +1,11 @@
 import React from 'react';
 import {View} from 'react-native';
-import {BarList} from '@components/Charts/BarList';
 import {ChartCard} from '@components/Charts/ChartCard';
 import {DistributionBar} from '@components/Charts/DistributionBar';
 import type {DistributionSegment} from '@components/Charts/DistributionBar';
 import {KpiCard, KpiCardGroup} from '@components/Charts/KpiCard';
 import type {KpiCardProps} from '@components/Charts/KpiCard';
+import {PeriodBarList} from '@components/Charts/PeriodBarList';
 import ScrollView from '@components/ScrollView';
 import StatsFilterToolbar from '@components/Statistics/StatsFilterToolbar';
 import Text from '@components/Text';
@@ -41,6 +41,7 @@ function OverviewTab() {
     current,
     previous,
     subPeriods,
+    granularity,
   } = useOverviewTabData();
 
   // Skip the never-logged copy while loading — the tiles render skeletons.
@@ -256,11 +257,9 @@ function OverviewTab() {
 
         <ChartCard
           title={translate('statistics.tabs.overview.texture.series.title')}>
-          <BarList
-            items={subPeriods.map(point => ({
-              label: point.label,
-              value: point.units,
-            }))}
+          <PeriodBarList
+            points={subPeriods}
+            granularity={granularity}
             accessibilityLabel={translate(
               'statistics.tabs.overview.texture.series.a11y',
             )}

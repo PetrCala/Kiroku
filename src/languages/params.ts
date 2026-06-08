@@ -58,6 +58,10 @@ type StatsDrillDownTitleParams = {
   label: string;
 };
 
+type WeekOfParams = {
+  date: string;
+};
+
 type UnitCountParams = {
   unitCount: number;
 };
@@ -132,6 +136,7 @@ export type {
   SessionWindowIdParams,
   StatsDrillDownTitleParams,
   StatsThresholdParams,
+  WeekOfParams,
   SupporterCancelledStatusParams,
   SupporterPriceParams,
   SupporterPurchaseCtaParams,
