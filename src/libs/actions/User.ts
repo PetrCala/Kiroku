@@ -25,7 +25,6 @@ import {
   verifyBeforeUpdateEmail,
 } from 'firebase/auth';
 import {getOAuthCredential} from '@libs/OAuthCredential';
-import * as ApiUtils from '@libs/ApiUtils';
 import * as Localize from '@libs/Localize';
 import type {SelectedTimezone, Timezone} from '@src/types/onyx/UserData';
 import {validateAppVersion} from '@libs/Validation';
@@ -36,8 +35,11 @@ import CONST from '@src/CONST';
 import {getFirebaseAuth} from '@libs/Firebase/FirebaseApp';
 import HttpsError from '@libs/Errors/HttpsError';
 import * as API from '@libs/API';
-import {KIROKU_DIRECT_PATHS} from '@libs/API/kirokuRoutes';
-import {READ_COMMANDS, WRITE_COMMANDS} from '@libs/API/types';
+import {
+  READ_COMMANDS,
+  SIDE_EFFECT_REQUEST_COMMANDS,
+  WRITE_COMMANDS,
+} from '@libs/API/types';
 import type Response from '@src/types/onyx/Response';
 import type {UserSearchResults} from '@src/types/various/Search';
 import PusherUtils from '@libs/PusherUtils';
@@ -665,20 +667,21 @@ async function signUp(
   password: string,
 ): Promise<void> {
   // Gate signup on the minimum account-creation version. This runs BEFORE the
-  // Firebase Auth account (and therefore any ID token) exists, so it cannot use
-  // the authenticated `API.read` pipeline — hit the PUBLIC, unauthenticated
-  // `GET /v1/app/min-version` directly with a plain fetch.
+  // Firebase Auth account (and therefore any ID token) exists, so it goes out as
+  // a PUBLIC, unauthenticated request: `GetMinVersion` is registered in
+  // `kirokuRoutes` with `requiresAuth: false`, so the pipeline sends it without
+  // a Bearer header. `makeRequestWithSideEffects` returns the body so we can
+  // read the gate synchronously before creating the account.
   let minUserCreationVersion: string | null = null;
   try {
-    const response = await fetch(
-      `${ApiUtils.getKirokuApiRoot()}${KIROKU_DIRECT_PATHS.MIN_VERSION}`,
+    // eslint-disable-next-line rulesdir/no-api-side-effects-method
+    const response = await API.makeRequestWithSideEffects(
+      SIDE_EFFECT_REQUEST_COMMANDS.GET_MIN_VERSION,
+      {},
     );
-    if (!response.ok) {
-      throw new Error('database/data-fetch-failed');
-    }
-    const data = (await response.json()) as {
-      min_user_creation_possible_version?: string | null;
-    };
+    const data = response as unknown as
+      | {min_user_creation_possible_version?: string | null}
+      | undefined;
     minUserCreationVersion = data?.min_user_creation_possible_version ?? null;
   } catch {
     // Network failure or a non-OK response. Reuse the existing gate error key

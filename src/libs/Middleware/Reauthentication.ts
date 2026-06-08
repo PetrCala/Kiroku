@@ -1,3 +1,4 @@
+import {getKirokuRoute} from '@libs/API/kirokuRoutes';
 import {getFirebaseAuth} from '@libs/Firebase/FirebaseApp';
 import Log from '@libs/Log';
 import * as NetworkStore from '@libs/Network/NetworkStore';
@@ -57,6 +58,13 @@ const Reauthentication: Middleware = (
   response.then(data => {
     if (!data) {
       Log.hmmm('[Reauthentication] Undefined data in response');
+      return data;
+    }
+
+    // Public routes have no token to refresh; reauthenticating one would reject
+    // (no signed-in user) and surface as a spurious "Failed to reauthenticate".
+    // The server won't return 407 for these, but guard defensively regardless.
+    if (getKirokuRoute(request.command)?.requiresAuth === false) {
       return data;
     }
 

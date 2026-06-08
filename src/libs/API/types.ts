@@ -153,6 +153,7 @@ const SIDE_EFFECT_REQUEST_COMMANDS = {
   RECONNECT_APP: 'ReconnectApp',
   GET_FEEDBACK_LIST: 'GetFeedbackList',
   GET_BUG_LIST: 'GetBugList',
+  GET_MIN_VERSION: 'GetMinVersion',
 } as const;
 
 type SideEffectRequestCommand = ValueOf<typeof SIDE_EFFECT_REQUEST_COMMANDS>;
@@ -165,6 +166,7 @@ type SideEffectRequestCommandParameters = {
   [SIDE_EFFECT_REQUEST_COMMANDS.RECONNECT_APP]: Parameters.ReconnectAppParams;
   [SIDE_EFFECT_REQUEST_COMMANDS.GET_FEEDBACK_LIST]: EmptyObject;
   [SIDE_EFFECT_REQUEST_COMMANDS.GET_BUG_LIST]: EmptyObject;
+  [SIDE_EFFECT_REQUEST_COMMANDS.GET_MIN_VERSION]: EmptyObject;
 };
 
 type ApiRequestCommandParameters = WriteCommandParameters &
