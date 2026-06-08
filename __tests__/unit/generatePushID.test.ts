@@ -73,15 +73,25 @@ describe('generatePushID', () => {
   });
 
   it('keeps strict ordering for keys minted in the same millisecond', () => {
-    // No timer advance → identical Date.now() → exercises the monotonic-increment
-    // path (random suffix incremented, not re-rolled).
-    const a = generatePushID();
-    const b = generatePushID();
-    const c = generatePushID();
-    expect(a < b).toBe(true);
-    expect(b < c).toBe(true);
-    // Same-millisecond keys share the 8-char timestamp prefix.
-    expect(b.slice(0, 8)).toBe(a.slice(0, 8));
-    expect(c.slice(0, 8)).toBe(a.slice(0, 8));
+    // Pin Date.now() directly rather than leaning on jest.setSystemTime: the global
+    // setup (jest/setupAfterEnv.ts) calls jest.useRealTimers(), which defeats the
+    // file's fake clock, so Date.now() would otherwise return real wall-clock time.
+    // Three synchronous calls could then straddle a millisecond boundary on a loaded
+    // CI runner, flipping the timestamp prefix and failing the prefix assertions.
+    // Freezing Date.now() guarantees an identical millisecond and exercises the
+    // monotonic-increment path (random suffix incremented, not re-rolled).
+    const nowSpy = jest.spyOn(Date, 'now').mockReturnValue(START_MS);
+    try {
+      const a = generatePushID();
+      const b = generatePushID();
+      const c = generatePushID();
+      expect(a < b).toBe(true);
+      expect(b < c).toBe(true);
+      // Same-millisecond keys share the 8-char timestamp prefix.
+      expect(b.slice(0, 8)).toBe(a.slice(0, 8));
+      expect(c.slice(0, 8)).toBe(a.slice(0, 8));
+    } finally {
+      nowSpy.mockRestore();
+    }
   });
 });
