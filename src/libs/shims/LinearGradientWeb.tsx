@@ -64,7 +64,7 @@ function LinearGradient({
       // eslint-disable-next-line react/jsx-props-no-spreading
       {...rest}
       // `backgroundImage` is a web-only style; react-native-web forwards it to the DOM node.
-      style={[style, gradientStyle as ViewProps['style']]}>
+      style={[style, gradientStyle]}>
       {children}
     </View>
   );

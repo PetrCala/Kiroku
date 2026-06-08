@@ -32,6 +32,10 @@ type ExecSyncOptions = Omit<
 
 function execSync(command: string, options?: ExecSyncOptions) {
   const optionsWithEncoding: ExecSyncOptionsWithStringEncoding = {
+    // Raise the output buffer well above Node's 1 MB default so large command output
+    // (e.g. a `git diff` that includes a big package-lock.json change) doesn't throw
+    // ENOBUFS. Listed before the spread so callers can still override it.
+    maxBuffer: 1024 * 1024 * 100,
     ...options,
     encoding: 'utf8',
     cwd: process.cwd(),
