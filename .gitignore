@@ -31,6 +31,8 @@ ios-fastlane-json-key.json
 ios/tmp.xcconfig
 **/*.mobileprovision
 **/*.p12
+# Transient scratch state for scripts/ios-signing.mjs (holds in-flight private key + new P12 password)
+ios/.signing-renew-state.json
 
 # Android/IntelliJ
 #
