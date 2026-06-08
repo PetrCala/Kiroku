@@ -1,6 +1,5 @@
 import {View} from 'react-native';
 import type {DateData} from 'react-native-calendars';
-import {PeriodBarList} from '@components/Charts/PeriodBarList';
 import Icon from '@components/Icon';
 import * as KirokuIcons from '@components/Icon/KirokuIcons';
 import {PressableWithFeedback} from '@components/Pressable';
@@ -103,8 +102,7 @@ function HomeStatsOverview({visibleDate}: HomeStatsOverviewProps) {
   const styles = useThemeStyles();
   const theme = useTheme();
   const {translate} = useLocalize();
-  const {isLoading, current, previous, subPeriods, liveExtraUnits} =
-    useHomeStats(visibleDate);
+  const {current, previous, liveExtraUnits} = useHomeStats(visibleDate);
 
   const deltaColorFor = (direction: Direction, polarity: Polarity): string => {
     if (direction === 'flat') {
@@ -167,19 +165,6 @@ function HomeStatsOverview({visibleDate}: HomeStatsOverviewProps) {
             direction={afDir}
             deltaColor={deltaColorFor(afDir, 'higher-is-supportive')}
             accentColor={theme.successHover}
-          />
-        </View>
-
-        <View style={styles.mt3}>
-          <Text style={[styles.textMicroSupporting, styles.mb1]}>
-            {translate('homeScreen.stats.unitsByWeek')}
-          </Text>
-          <PeriodBarList
-            points={subPeriods}
-            granularity="week"
-            liveExtraUnits={liveExtraUnits}
-            accessibilityLabel={translate('homeScreen.stats.unitsPerWeekA11y')}
-            isLoading={isLoading}
           />
         </View>
       </View>
