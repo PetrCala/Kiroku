@@ -10,8 +10,8 @@ import {Image} from 'expo-image';
 import type {FirebaseStorage} from 'firebase/storage';
 import getProfilePictureURL from '@src/storage/storageProfile';
 import CONST from '@src/CONST';
-import * as ErrorUtils from '@libs/ErrorUtils';
-import ERRORS from '@src/ERRORS';
+import Log from '@libs/Log';
+import useNetwork from '@hooks/useNetwork';
 import useTheme from '@hooks/useTheme';
 import useThemeStyles from '@hooks/useThemeStyles';
 import * as KirokuIcons from './Icon/KirokuIcons';
@@ -109,6 +109,12 @@ function ProfileImage({
     undefined,
   );
 
+  // Bumped on reconnect to re-resolve avatars that failed to download while
+  // offline, mirroring `Avatar`'s `useNetwork` retry. We keep the current
+  // placeholder visible during the retry instead of flashing a spinner.
+  const [reconnectTrigger, setReconnectTrigger] = useState(0);
+  useNetwork({onReconnect: () => setReconnectTrigger(prev => prev + 1)});
+
   // Resolve the Firebase Storage download URL once per source change. Image
   // caching is delegated to expo-image's `cachePolicy`, so no custom layer is
   // needed here.
@@ -132,7 +138,11 @@ function ProfileImage({
             setImageUrl(url && url !== CONST.NO_IMAGE ? url : null);
           }
         } catch (error) {
-          ErrorUtils.raiseAppError(ERRORS.IMAGE_UPLOAD.FETCH_FAILED, error);
+          // A background avatar download can fail for benign reasons (offline,
+          // flaky network). Degrade silently to the placeholder instead of
+          // raising a blocking, stackable app-error alert; the `useNetwork`
+          // retry above re-resolves the real avatar once back online.
+          Log.warn('Failed to resolve profile picture URL', {error});
           if (isActive) {
             setImageUrl(null);
           }
@@ -150,7 +160,7 @@ function ProfileImage({
     return () => {
       isActive = false;
     };
-  }, [storage, userID, downloadPath, refreshTrigger]);
+  }, [storage, userID, downloadPath, refreshTrigger, reconnectTrigger]);
 
   const expectsPhoto =
     !!downloadPath &&
