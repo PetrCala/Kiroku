@@ -9,6 +9,7 @@ import Navigation from '@libs/Navigation/Navigation';
 import {PressableWithFeedback} from '@components/Pressable';
 import useCurrentUserData from '@hooks/useCurrentUserData';
 import ScreenWrapper from '@components/ScreenWrapper';
+import OfflineIndicator from '@components/OfflineIndicator';
 import HeaderWithBackButton from '@components/HeaderWithBackButton';
 import useLocalize from '@hooks/useLocalize';
 import useTheme from '@hooks/useTheme';
@@ -137,7 +138,9 @@ function SocialScreen(_: SocialScreenProps) {
   ];
 
   return (
-    <ScreenWrapper testID={SocialScreen.displayName}>
+    <ScreenWrapper
+      testID={SocialScreen.displayName}
+      shouldShowOfflineIndicator={false}>
       <HeaderWithBackButton
         title={translate('socialScreen.title')}
         onBackButtonPress={Navigation.goBack}
@@ -149,6 +152,7 @@ function SocialScreen(_: SocialScreenProps) {
         onSwipeBeyondStart={() => Navigation.goBack()}
         renderScene={renderScene}
       />
+      <OfflineIndicator />
       <View style={styles.bottomTabBarContainer}>
         {footerButtons.map(button => (
           <SocialFooterButton
