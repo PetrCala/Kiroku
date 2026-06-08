@@ -130,6 +130,10 @@ Key GitHub Actions workflows:
 - `claude-review.yml`: Automated PR review — **intentionally disabled** (manual `workflow_dispatch` only; do not switch to `pull_request`)
 - `translation-review.yml`: AI review of translation quality — manual `workflow_dispatch` only (the always-on translation gate is the `TranslationContext` unit test)
 
+### iOS Code Signing
+
+The Apple Distribution certificate and provisioning profiles (GPG-encrypted in `ios/`) expire ~yearly and break the deploy. To renew, use the `ios-signing` skill — or run `node scripts/ios-signing.mjs check --deep`, then `renew --yes`, merge the PR, and `finalize --yes`. See [`.claude/skills/ios-signing`](.claude/skills/ios-signing/SKILL.md).
+
 ## Related Repositories
 
 ### kiroku-api

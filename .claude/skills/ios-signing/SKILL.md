@@ -64,11 +64,23 @@ secret rotation + revocation, after the matching P12 is merged.
 
 ## Gotchas (hard-won)
 
-- **OpenSSL 3.x is mandatory for the P12.** The default macOS `openssl` is
-  LibreSSL, whose legacy P12 cipher can trip `security import` (the exact call
-  fastlane's `import_certificate` runs in CI). The tool resolves
-  `/opt/homebrew/opt/openssl@3/bin/openssl` (or `OPENSSL3_BIN`) and verifies the
-  P12 locally with `security import` before committing.
+- **Mint Apple Distribution, not iOS Distribution.** The project pins
+  `CODE_SIGN_IDENTITY = "Apple Distribution: …"`, so the cert must be type
+  `DISTRIBUTION` (the tool's default). Don't infer the type from whatever certs
+  already exist — the account can carry stale **iOS Distribution**
+  (`IOS_DISTRIBUTION`) certs that are the wrong type. `--cert-type` overrides.
+- **The P12 must use the legacy format.** macOS `security import` (the exact call
+  fastlane's `import_certificate` runs in CI) only accepts a `-legacy` PKCS#12
+  (RC2/3DES + SHA-1 MAC); modern PBES2/AES-256 P12s are rejected with "MAC
+  verification failed". Safe here — the P12 is GPG-AES256-encrypted at rest.
+  `-legacy` needs real **OpenSSL 3.x** (`/opt/homebrew/opt/openssl@3/bin/openssl`
+  or `OPENSSL3_BIN`); the default macOS `openssl` is LibreSSL and rejects the
+  flag. The tool verifies the P12 with `security import` into a throwaway
+  keychain before committing.
+- **Credentials.** Both `renew` and `finalize` need the GPG passphrase
+  (`LARGE_SECRET_PASSPHRASE`) and the ASC key. Run from the main repo (the
+  gitignored plaintext key `ios/ios-fastlane-json-key.json` lives there); from a
+  worktree pass `--key <main-repo path>` (the plaintext key isn't checked out).
 - **The API key may need the Admin role.** Creating certificates via the ASC API
   requires the key to be **Admin**, not just App Manager. If `renew --yes` stops
   with a 403, either elevate the key in ASC → Users and Access → Integrations, or
@@ -80,9 +92,11 @@ secret rotation + revocation, after the matching P12 is merged.
   the in-flight private key + new P12 password so `finalize` can apply them and a
   re-run can resume instead of minting a duplicate cert. It's cleared on
   `finalize`. Don't commit it; don't print it.
-- **Old cert is revoked only if expired.** The tool never auto-revokes a _valid_
-  distribution cert — if the 2-cert cap blocks creation and no expired slot
-  exists, it stops and asks.
+- **Cert cap is per type; revoke only when you must.** Apple's distribution-cert
+  cap is per certificate type, so stale iOS-Distribution certs don't block
+  minting an Apple-Distribution one. If the target type _is_ at its cap, free a
+  slot with `--revoke-cert <id>` (revokes one explicitly named cert — never an
+  automatic pick). `finalize` only ever revokes already-expired certs.
 
 ## Out of scope
 
