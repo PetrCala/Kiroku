@@ -8,7 +8,7 @@ import FullScreenLoadingIndicator from '@components/FullscreenLoadingIndicator';
 import useLocalize from '@hooks/useLocalize';
 import useThemeStyles from '@hooks/useThemeStyles';
 import Navigation from '@libs/Navigation/Navigation';
-import type {NicknameToId} from '@src/types/onyx';
+import type {Bug, NicknameToId} from '@src/types/onyx';
 import {useFirebase} from '@context/global/FirebaseContext';
 import {getBugList, removeBug} from '@libs/actions/Feedback';
 import * as KirokuIcons from '@components/Icon/KirokuIcons';
@@ -67,17 +67,17 @@ function SeeBugsScreen() {
     fetchNicknames();
   }, [bugList, db]);
 
-  const deleteBug = (bugKey: string) => {
-    removeBug(bugKey);
+  const deleteBug = (bugKey: string, bug: Bug) => {
+    removeBug(bugKey, bug);
   };
 
-  const removeBugButton = (id: string) => {
+  const removeBugButton = (id: string, bug: Bug) => {
     return (
       <Button
         icon={KirokuIcons.ThinX}
         iconFill={theme.textError}
         style={styles.bgTransparent}
-        onPress={() => deleteBug(id)}
+        onPress={() => deleteBug(id, bug)}
       />
     );
   };
@@ -117,7 +117,7 @@ function SeeBugsScreen() {
                 description={bug.text}
                 numberOfLinesDescription={20}
                 style={styles.borderTopRounded}
-                rightComponent={removeBugButton(id)}
+                rightComponent={removeBugButton(id, bug)}
                 shouldShowRightComponent
                 disabled
               />

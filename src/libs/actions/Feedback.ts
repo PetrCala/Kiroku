@@ -1,7 +1,8 @@
 import Onyx from 'react-native-onyx';
+import type {OnyxUpdate} from 'react-native-onyx';
 import * as API from '@libs/API';
 import {SIDE_EFFECT_REQUEST_COMMANDS, WRITE_COMMANDS} from '@libs/API/types';
-import type {BugList, FeedbackList} from '@src/types/onyx';
+import type {Bug, BugList, Feedback, FeedbackList} from '@src/types/onyx';
 import ONYXKEYS from '@src/ONYXKEYS';
 
 /**
@@ -12,8 +13,12 @@ import ONYXKEYS from '@src/ONYXKEYS';
  * admin-only and fetched on demand, so the write routes' `onyxData` is empty —
  * there is nothing to optimistically write.
  *
- * The admin removes are also empty-`onyxData` writes; authority is the caller's
- * admin claim, enforced server-side.
+ * The admin removes (`removeFeedback` / `removeBug`) optimistically drop the
+ * item from `FEEDBACK_LIST` / `BUG_LIST` so the row disappears immediately, and
+ * restore it via `failureData` if the server rejects the delete (otherwise only
+ * the next fetch would undo the optimistic removal). The caller passes the item
+ * it is deleting — already in hand from the rendered list — so the restore needs
+ * no separate read. Authority is the caller's admin claim, enforced server-side.
  *
  * The admin reads (`getFeedbackList` / `getBugList`) back the SeeFeedbackScreen /
  * SeeBugsScreen lists. The GET routes return the whole collection as plain JSON
@@ -33,12 +38,44 @@ function reportABug(text: string) {
   API.write(WRITE_COMMANDS.REPORT_BUG, {text});
 }
 
-function removeFeedback(feedbackId: string) {
-  API.write(WRITE_COMMANDS.REMOVE_FEEDBACK, {feedbackId});
+function removeFeedback(feedbackId: string, feedback: Feedback) {
+  const optimisticData: OnyxUpdate[] = [
+    {
+      onyxMethod: Onyx.METHOD.MERGE,
+      key: ONYXKEYS.FEEDBACK_LIST,
+      value: {[feedbackId]: null},
+    },
+  ];
+  const failureData: OnyxUpdate[] = [
+    {
+      onyxMethod: Onyx.METHOD.MERGE,
+      key: ONYXKEYS.FEEDBACK_LIST,
+      value: {[feedbackId]: feedback},
+    },
+  ];
+  API.write(
+    WRITE_COMMANDS.REMOVE_FEEDBACK,
+    {feedbackId},
+    {optimisticData, failureData},
+  );
 }
 
-function removeBug(bugId: string) {
-  API.write(WRITE_COMMANDS.REMOVE_BUG, {bugId});
+function removeBug(bugId: string, bug: Bug) {
+  const optimisticData: OnyxUpdate[] = [
+    {
+      onyxMethod: Onyx.METHOD.MERGE,
+      key: ONYXKEYS.BUG_LIST,
+      value: {[bugId]: null},
+    },
+  ];
+  const failureData: OnyxUpdate[] = [
+    {
+      onyxMethod: Onyx.METHOD.MERGE,
+      key: ONYXKEYS.BUG_LIST,
+      value: {[bugId]: bug},
+    },
+  ];
+  API.write(WRITE_COMMANDS.REMOVE_BUG, {bugId}, {optimisticData, failureData});
 }
 
 function getFeedbackList(): Promise<void> {
