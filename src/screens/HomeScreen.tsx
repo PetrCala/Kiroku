@@ -206,12 +206,6 @@ function HomeScreen({route}: HomeScreenProps) {
     return <UserOffline />;
   }
 
-  // Active operations (e.g. saving a session) still take a full-screen overlay
-  // so they don't compete with the home UI for attention.
-  if (loadingText) {
-    return <FullScreenLoadingIndicator loadingText={loadingText} />;
-  }
-
   // Render the shell + skeletons immediately. Real components swap in for
   // their skeletons as each piece of data resolves from Firebase. The
   // calendar renders even when the user has no sessions yet — empty days
@@ -245,49 +239,60 @@ function HomeScreen({route}: HomeScreenProps) {
   };
 
   return (
-    <ScreenWrapper
-      testID={HomeScreen.displayName}
-      includePaddingTop={false}
-      includeSafeAreaPaddingBottom={getPlatform() !== CONST.PLATFORM.IOS}>
-      {/* // TODO rewrite this into the HeaderWithBackButton component */}
-      {isUserDataReady ? (
-        <View style={[styles.headerBar, styles.borderBottom, styles.ph2]}>
-          <Button
-            style={[styles.flexRow, styles.bgTransparent]}
-            onPress={() =>
-              Navigation.navigate(ROUTES.PROFILE.getRoute(user.uid))
-            }>
-            <ProfileImage
-              storage={storage}
-              userID={user.uid}
-              downloadPath={userData.profile.photo_url}
-              style={styles.avatarMedium}
-              // refreshTrigger={refreshCounter}
-              refreshTrigger={0}
-            />
-            <Text style={[styles.headerText, styles.textLarge, styles.ml3]}>
-              {userData?.profile?.display_name ?? ''}
-            </Text>
-            <View style={styles.ml1}>
-              <SupporterBadgeForUser userID={user.uid} size="medium" />
-            </View>
-          </Button>
-        </View>
-      ) : (
-        <HomeHeaderSkeleton />
-      )}
-      <ScrollView contentContainerStyle={styles.ph2}>
-        {!!ongoingSessionData?.ongoing && (
-          <MessageBanner
-            danger
-            text={translate('homeScreen.currentlyInSession')}
-            onPress={() => DS.navigateToOngoingSessionScreen()}
-          />
+    <>
+      <ScreenWrapper
+        testID={HomeScreen.displayName}
+        includePaddingTop={false}
+        includeSafeAreaPaddingBottom={getPlatform() !== CONST.PLATFORM.IOS}>
+        {/* // TODO rewrite this into the HeaderWithBackButton component */}
+        {isUserDataReady ? (
+          <View style={[styles.headerBar, styles.borderBottom, styles.ph2]}>
+            <Button
+              style={[styles.flexRow, styles.bgTransparent]}
+              onPress={() =>
+                Navigation.navigate(ROUTES.PROFILE.getRoute(user.uid))
+              }>
+              <ProfileImage
+                storage={storage}
+                userID={user.uid}
+                downloadPath={userData.profile.photo_url}
+                style={styles.avatarMedium}
+                // refreshTrigger={refreshCounter}
+                refreshTrigger={0}
+              />
+              <Text style={[styles.headerText, styles.textLarge, styles.ml3]}>
+                {userData?.profile?.display_name ?? ''}
+              </Text>
+              <View style={styles.ml1}>
+                <SupporterBadgeForUser userID={user.uid} size="medium" />
+              </View>
+            </Button>
+          </View>
+        ) : (
+          <HomeHeaderSkeleton />
         )}
-        {renderMainContent()}
-      </ScrollView>
-      <BottomTabBar />
-    </ScreenWrapper>
+        <ScrollView contentContainerStyle={styles.ph2}>
+          {!!ongoingSessionData?.ongoing && (
+            <MessageBanner
+              danger
+              text={translate('homeScreen.currentlyInSession')}
+              onPress={() => DS.navigateToOngoingSessionScreen()}
+            />
+          )}
+          {renderMainContent()}
+        </ScrollView>
+        <BottomTabBar />
+      </ScreenWrapper>
+      {/* Active operations (e.g. saving a session) take a full-screen overlay so
+          they don't compete with the home UI for attention. Rendered as an
+          overlay layer (not an early-return) so the heavy compact calendar stays
+          mounted underneath: a transient loadingText must not tear it down and
+          force a from-scratch re-render (the synchronous useLazyMarkedDates
+          re-index) when it clears. */}
+      {!!loadingText && (
+        <FullScreenLoadingIndicator loadingText={loadingText} />
+      )}
+    </>
   );
 }
 
