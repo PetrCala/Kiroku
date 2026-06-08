@@ -1022,7 +1022,7 @@ export default {
           title: 'Týdenní jednotky',
           emptyLabel: 'Váš trend se ukáže, jak budou přibývat data.',
           legend: {
-            thisPeriod: 'Toto období',
+            perWeek: 'Za týden',
             trend: 'Trend',
           },
           captions: {
