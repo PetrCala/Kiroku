@@ -258,7 +258,6 @@ function DrinkingSessionWindow({
         )}
         confirmText={translate('common.yes')}
         cancelText={translate('common.no')}
-        shouldDisableConfirmButtonWhenOffline
         shouldShowCancelButton
       />
       <ConfirmModal
