@@ -13,7 +13,7 @@ type NoSessionsInfoProps = {
   buttonText?: string;
 };
 
-/** A View that informs the users that they have no friends */
+/** A View shown on the home screen when the user has no drinking sessions yet */
 function NoSessionsInfo({message, buttonText}: NoSessionsInfoProps) {
   const styles = useThemeStyles();
   const StyleUtils = useStyleUtils();
