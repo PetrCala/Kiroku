@@ -2,8 +2,6 @@ import type {FirebaseStorage} from 'firebase/storage';
 import type {Auth} from 'firebase/auth';
 import CONFIG from '@src/CONFIG';
 
-/* eslint-disable @typescript-eslint/dot-notation */
-
 /**
  * Checks if the Firebase Storage instance is connected to an emulator.
  *
@@ -44,34 +42,4 @@ function isConnectedToAuthEmulator(auth: Auth): boolean {
   );
 }
 
-/**
- * Safely checks if the provided Firebase database instance is using an emulator.
- * @param database - A Firebase Database instance (or unknown).
- * @returns True if using emulator; otherwise, false.
- */
-function isConnectedToDatabaseEmulator(database: unknown): boolean {
-  if (typeof database !== 'object' || database === null) {
-    return false;
-  }
-
-  const repoInternal = (database as Record<string, unknown>)['_repoInternal'];
-  if (typeof repoInternal !== 'object' || repoInternal === null) {
-    return false;
-  }
-
-  const repoInfo = (repoInternal as Record<string, unknown>)['repoInfo_'];
-  if (typeof repoInfo !== 'object' || repoInfo === null) {
-    return false;
-  }
-
-  const isUsingEmulator = (repoInfo as Record<string, unknown>)[
-    'isUsingEmulator'
-  ];
-  return typeof isUsingEmulator === 'boolean' ? isUsingEmulator : false;
-}
-
-export {
-  isConnectedToAuthEmulator,
-  isConnectedToDatabaseEmulator,
-  isConnectedToStorageEmulator,
-};
+export {isConnectedToAuthEmulator, isConnectedToStorageEmulator};

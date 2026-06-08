@@ -17,10 +17,10 @@ function NoFriendUserOverview({
   profileData,
   RightSideComponent,
 }: NoFriendUserOverviewProps) {
-  const {db, storage} = useFirebase();
+  const {storage} = useFirebase();
   const styles = useThemeStyles();
 
-  if (!db || !profileData) {
+  if (!profileData) {
     return;
   }
 
