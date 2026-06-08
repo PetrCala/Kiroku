@@ -475,21 +475,12 @@ async function cmdCheck() {
 // renew
 // ===========================================================================
 function ensureGitReady() {
+  // Only require a clean tree. Running from master is fine — renew always cuts
+  // its own automation/* branch (below) and never commits to or pushes master.
   const dirty = run('git', ['-C', ROOT, 'status', '--porcelain']).trim();
   if (dirty)
     throw new Error(
       `Working tree is not clean — commit/stash first:\n${dirty}`,
-    );
-  const branch = run('git', [
-    '-C',
-    ROOT,
-    'rev-parse',
-    '--abbrev-ref',
-    'HEAD',
-  ]).trim();
-  if (branch === 'master')
-    throw new Error(
-      'Refusing to run on master — checkout/create a feature branch first.',
     );
 }
 
