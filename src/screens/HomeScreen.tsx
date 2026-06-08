@@ -40,6 +40,7 @@ import ONYXKEYS from '@src/ONYXKEYS';
 import {isEmptyObject} from '@src/types/utils/EmptyObject';
 import Button from '@components/Button';
 import SessionsCalendarCompactSkeleton from '@components/SessionsCalendar/SessionsCalendarCompactSkeleton';
+import NoSessionsInfo from '@components/NoSessionsInfo';
 import {HomeHeaderSkeleton, StatOverviewSkeleton} from './HomeScreenSkeleton';
 
 type HomeScreenProps = StackScreenProps<
@@ -138,9 +139,9 @@ function HomeScreen({route}: HomeScreenProps) {
   }
 
   // Render the shell + skeletons immediately. Real components swap in for
-  // their skeletons as each piece of data resolves from Firebase. The
-  // calendar renders even when the user has no sessions yet — empty days
-  // are still a valid view of their history.
+  // their skeletons as each piece of data resolves from Firebase. A
+  // brand-new user with no sessions gets a welcome/empty state instead of
+  // the calendar + stats.
   const isPreferencesReady = !!preferences;
   // Require `profile` (not just `userData`): a failed/incomplete ProvisionUser
   // can leave `userData` truthy while `profile` is still undefined. Gating the
@@ -148,6 +149,9 @@ function HomeScreen({route}: HomeScreenProps) {
   const isUserDataReady = !!userData?.profile;
   const isSessionsReady = drinkingSessionData !== undefined;
   const showSkeletonContent = !isPreferencesReady || !isSessionsReady;
+  // `useCurrentUserDrinkingSessions` returns {} (truthy) for a user with no
+  // sessions, so check emptiness rather than truthiness.
+  const hasSessions = isSessionsReady && !isEmptyObject(drinkingSessionData);
 
   const renderMainContent = () => {
     if (showSkeletonContent) {
@@ -157,6 +161,9 @@ function HomeScreen({route}: HomeScreenProps) {
           <StatOverviewSkeleton />
         </>
       );
+    }
+    if (!hasSessions) {
+      return <NoSessionsInfo />;
     }
     return (
       <>
