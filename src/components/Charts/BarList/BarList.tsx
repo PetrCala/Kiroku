@@ -15,11 +15,14 @@ type BarListProps = {
   formatValue?: (value: number) => string;
   /** Bar fill color. Defaults to the theme accent. */
   barColor?: string;
+  /** Width of the leading label column. Widen it for longer labels. */
+  labelWidth?: number;
   isLoading?: boolean;
 };
 
 const ROW_HEIGHT = 22;
 const TRACK_HEIGHT = 8;
+const DEFAULT_LABEL_WIDTH = 36;
 
 function defaultFormat(value: number): string {
   return Number.isInteger(value) ? String(value) : value.toFixed(1);
@@ -36,6 +39,7 @@ function BarList({
   accessibilityLabel,
   formatValue = defaultFormat,
   barColor,
+  labelWidth = DEFAULT_LABEL_WIDTH,
   isLoading,
 }: BarListProps) {
   const styles = useThemeStyles();
@@ -66,7 +70,7 @@ function BarList({
               {height: ROW_HEIGHT},
             ]}>
             <Text
-              style={[styles.textMicroSupporting, {width: 36}]}
+              style={[styles.textMicroSupporting, {width: labelWidth}]}
               numberOfLines={1}>
               {item.label}
             </Text>

@@ -57,8 +57,9 @@ function labelFor(granularity: Granularity, key: string): string {
     case 'day':
       return format(parseISO(key), 'EEE');
     case 'week':
-      // `RRRR-'W'II` → `W22`.
-      return key.slice(5);
+      // `RRRR-'W'II` → the ISO week's Monday, e.g. `May 5`. Callers that want
+      // a "Week of …" framing add the prefix at render time (it's localized).
+      return format(parseISO(`${key}-1`), 'MMM d');
     case 'month':
       return format(parseISO(`${key}-01`), 'MMM');
     case 'year':

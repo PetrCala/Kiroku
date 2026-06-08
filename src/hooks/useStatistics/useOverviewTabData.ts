@@ -1,8 +1,9 @@
 import {useMemo} from 'react';
 import useCurrentUserPreferences from '@hooks/useCurrentUserPreferences';
 import useStatsContext from '@hooks/useStatsContext';
-import {buildOverviewModel} from '@libs/Statistics/overview';
+import {buildOverviewModel, pickGranularity} from '@libs/Statistics/overview';
 import type {
+  Granularity,
   PeriodSummary,
   SubPeriodPoint,
   Thresholds,
@@ -33,6 +34,8 @@ type OverviewTabData = {
    * so the two visuals always agree on granularity.
    */
   subPeriods: SubPeriodPoint[];
+  /** Sub-period bucket size for the selected range (drives label framing). */
+  granularity: Granularity;
 };
 
 /**
@@ -60,6 +63,7 @@ function useOverviewTabData(): OverviewTabData {
     () => buildOverviewModel(events, range, comparisonRange, now, thresholds),
     [events, range, comparisonRange, now, thresholds],
   );
+  const granularity = useMemo(() => pickGranularity(range), [range]);
 
   const hasEverLogged = selectHasEverLogged(events);
   const weeksWithData = useMemo(() => {
@@ -82,6 +86,7 @@ function useOverviewTabData(): OverviewTabData {
     current,
     previous,
     subPeriods,
+    granularity,
   };
 }
 

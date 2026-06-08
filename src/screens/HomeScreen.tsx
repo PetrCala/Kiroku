@@ -149,14 +149,13 @@ function HomeScreen({route}: HomeScreenProps) {
     if (showSkeletonContent) {
       return (
         <>
-          <StatOverviewSkeleton />
           <SessionsCalendarCompactSkeleton />
+          <StatOverviewSkeleton />
         </>
       );
     }
     return (
       <>
-        <HomeStatsOverview visibleDate={visibleDate} />
         <SessionsCalendar
           userID={user.uid}
           visibleDate={visibleDate}
@@ -164,6 +163,7 @@ function HomeScreen({route}: HomeScreenProps) {
           drinkingSessionData={drinkingSessionData}
           preferences={preferences}
         />
+        <HomeStatsOverview visibleDate={visibleDate} />
       </>
     );
   };

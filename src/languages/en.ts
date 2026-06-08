@@ -33,6 +33,7 @@ import type {
   UnitCountParams,
   UpdateEmailSentEmailParams,
   VerifyEmailScreenEmailParmas,
+  WeekOfParams,
 } from './params';
 
 export default {
@@ -966,6 +967,9 @@ export default {
   },
   statistics: {
     title: 'Statistics',
+    period: {
+      weekOf: ({date}: WeekOfParams) => `Week of ${date}`,
+    },
     tabs: {
       overview: {
         label: 'Overview',
@@ -1269,6 +1273,7 @@ export default {
       statistics: 'Statistics',
       viewStatistics: 'View statistics',
       vsLastMonth: 'vs last month',
+      unitsByWeek: 'Units by week',
       unitsPerWeekA11y: 'Units consumed per week this month',
     },
   },
