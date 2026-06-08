@@ -6,6 +6,13 @@ import collectWindowAggregates from './windowAggregates';
 type Thresholds = {yellow: number; orange: number};
 
 /**
+ * Average Gregorian month length (365.25 / 12). Normalizes the range's unit
+ * rate into a per-month projection, so short windows extrapolate up to a month
+ * and long windows collapse to a true units-per-month average.
+ */
+const AVG_DAYS_PER_MONTH = 365.25 / 12;
+
+/**
  * Count of elapsed days falling in each severity band. Sums to
  * `elapsedDays`. `green` is the alcohol-free count by definition.
  */
@@ -42,6 +49,13 @@ type PeriodSummary = {
   heaviestDay: number;
   /** totalUnits / drinkingDays, or 0 when there were no drinking days. */
   avgUnitsPerDrinkingDay: number;
+  /**
+   * Units per month, projected from the range's rate
+   * (`totalUnits / elapsedDays * AVG_DAYS_PER_MONTH`), or 0 for an empty
+   * window. Short ranges extrapolate up; long ranges read as the real
+   * monthly average.
+   */
+  monthlyAvgUnits: number;
   /** Days with units strictly over the yellow threshold (orange + red bands). */
   daysOverYellow: number;
   /** Days with units strictly over the orange threshold (red band). */
@@ -58,6 +72,7 @@ const EMPTY_SUMMARY: PeriodSummary = {
   longestDryStreak: 0,
   heaviestDay: 0,
   avgUnitsPerDrinkingDay: 0,
+  monthlyAvgUnits: 0,
   daysOverYellow: 0,
   daysOverOrange: 0,
   distribution: {green: 0, yellow: 0, orange: 0, red: 0},
@@ -116,6 +131,10 @@ function summarizePeriod(
     longestDryStreak,
     heaviestDay,
     avgUnitsPerDrinkingDay: drinkingDays > 0 ? totalUnits / drinkingDays : 0,
+    monthlyAvgUnits:
+      dayKeys.length > 0
+        ? (totalUnits / dayKeys.length) * AVG_DAYS_PER_MONTH
+        : 0,
     daysOverYellow: distribution.orange + distribution.red,
     daysOverOrange: distribution.red,
     distribution,

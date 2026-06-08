@@ -987,6 +987,7 @@ export default {
           sessions: {label: 'Sessions'},
           heaviestDay: {label: 'Heaviest day', unit: 'units'},
           avgPerDrinkingDay: {label: 'Avg / drinking day', unit: 'units'},
+          monthlyAvg: {label: 'Avg / month', unit: 'units'},
           daysOverYellow: {
             label: ({threshold}: StatsThresholdParams) =>
               `Days over ${threshold}`,

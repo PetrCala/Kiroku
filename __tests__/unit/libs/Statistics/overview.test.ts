@@ -66,6 +66,7 @@ describe('buildPeriodSummary', () => {
     expect(s.totalUnits).toBe(0);
     expect(s.drinkingDays).toBe(0);
     expect(s.avgUnitsPerDrinkingDay).toBe(0);
+    expect(s.monthlyAvgUnits).toBe(0);
     expect(s.sessions).toBe(0);
   });
 
@@ -106,6 +107,35 @@ describe('buildPeriodSummary', () => {
     expect(s.longestDryStreak).toBe(14);
     expect(s.drinkingDays).toBe(2);
     expect(s.afDays).toBe(29);
+  });
+
+  it('projects a full month to ~30.44 units/month at that rate', () => {
+    // 31 units across a fully-elapsed 31-day month → ~AVG_DAYS_PER_MONTH.
+    const s = buildPeriodSummary(
+      [event('2026-01-02', 31)],
+      JAN_START,
+      JAN_END,
+      AFTER_JAN,
+      THRESHOLDS,
+    );
+    expect(s.elapsedDays).toBe(31);
+    expect(s.totalUnits).toBe(31);
+    expect(s.monthlyAvgUnits).toBeCloseTo(365.25 / 12); // (31 / 31) * 30.44
+  });
+
+  it('interpolates a short window up to a monthly projection', () => {
+    // 7 units over a 7-day elapsed window → ~30, not the raw weekly 7.
+    const now = new Date(2026, 0, 7, 23, 59, 59);
+    const s = buildPeriodSummary(
+      [event('2026-01-03', 7)],
+      JAN_START,
+      JAN_END,
+      now,
+      THRESHOLDS,
+    );
+    expect(s.elapsedDays).toBe(7);
+    expect(s.totalUnits).toBe(7);
+    expect(s.monthlyAvgUnits).toBeCloseTo(365.25 / 12); // (7 / 7) * 30.44
   });
 
   it('clamps elapsed days and totals to `now` for a partial period', () => {
