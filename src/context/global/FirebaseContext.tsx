@@ -2,13 +2,10 @@ import type {ReactNode} from 'react';
 import {createContext, useContext, useMemo} from 'react';
 import type {Auth} from 'firebase/auth';
 import {connectAuthEmulator} from 'firebase/auth';
-import type {Database} from 'firebase/database';
-import {connectDatabaseEmulator, getDatabase} from 'firebase/database';
 import type {FirebaseStorage} from 'firebase/storage';
 import {getStorage, connectStorageEmulator} from 'firebase/storage';
 import {
   isConnectedToAuthEmulator,
-  isConnectedToDatabaseEmulator,
   isConnectedToStorageEmulator,
 } from '@src/libs/Firebase/FirebaseUtils';
 import {FirebaseApp, getFirebaseAuth} from '@libs/Firebase/FirebaseApp';
@@ -17,7 +14,6 @@ import CONFIG from '@src/CONFIG';
 
 type FirebaseContextProps = {
   auth: Auth;
-  db: Database;
   storage: FirebaseStorage;
 };
 
@@ -25,7 +21,7 @@ const FirebaseContext = createContext<FirebaseContextProps | null>(null);
 
 /** Fetch the FirebaseContext. If the context does not exist, throw an error.
  *
- * @example { db, storage } = useFirebase();
+ * @example { auth, storage } = useFirebase();
  */
 const useFirebase = (): FirebaseContextProps => {
   const context = useContext(FirebaseContext);
@@ -49,7 +45,6 @@ function FirebaseProvider({children}: FirebaseProviderProps) {
     // This is called in useMemo which runs after component mounts, ensuring React Native
     // bridge is fully initialized. Direct import would execute at module load time and crash.
     const auth = getFirebaseAuth();
-    const db = getDatabase(FirebaseApp);
     const storage = getStorage(FirebaseApp);
 
     // Check if emulators should be used
@@ -61,9 +56,6 @@ function FirebaseProvider({children}: FirebaseProviderProps) {
       if (!FirebaseConfig.authDomain) {
         throw new Error('Auth URL not defined in FirebaseConfig');
       }
-      if (!FirebaseConfig.databaseURL) {
-        throw new Error('Database URL not defined in FirebaseConfig');
-      }
       if (!FirebaseConfig.storageBucket) {
         throw new Error('Storage bucket not defined in FirebaseConfig');
       }
@@ -73,14 +65,6 @@ function FirebaseProvider({children}: FirebaseProviderProps) {
       }
 
       // Safety check to connect to emulators only if they are not already running
-      if (!isConnectedToDatabaseEmulator(db)) {
-        connectDatabaseEmulator(
-          db,
-          CONFIG.EMULATORS.HOST,
-          CONFIG.EMULATORS.DATABASE_PORT,
-        );
-      }
-
       if (!isConnectedToStorageEmulator(storage)) {
         connectStorageEmulator(
           storage,
@@ -89,7 +73,7 @@ function FirebaseProvider({children}: FirebaseProviderProps) {
         );
       }
     }
-    return {auth, db, storage};
+    return {auth, storage};
   }, []);
 
   return (

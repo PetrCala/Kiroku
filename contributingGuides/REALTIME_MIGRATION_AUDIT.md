@@ -24,14 +24,46 @@ follow-ups.
 > client read/write migration is 100% complete. The inventory and gap tables below are the
 > pre-cutover (2026-06-05) snapshot, kept for historical reference.
 
+> **Update (2026-06-08, epic [#810](https://github.com/PetrCala/Kiroku/issues/810)): the
+> client is now 100% off Firebase RTDB.**
+> With every reader and writer gone, the last vestigial `db` plumbing has been removed and
+> the RTDB handle torn out of `FirebaseContext`. `getDatabase` / `connectDatabaseEmulator`
+> (and the database-emulator branch, `databaseURL` guard, and `type Database`) are deleted;
+> `FirebaseContextProps` no longer carries `db`. The two remaining `db` consumers were
+> resolved without a handle: `UserConnectionContext`'s emulator-online fallback now keys off
+> `CONFIG.IS_USING_EMULATORS` (behavior-equivalent — the DB emulator was only ever connected
+> when that flag is set), and `NoFriendUserOverview`'s always-true `!db` guard was dropped.
+> The now-orphaned `isConnectedToDatabaseEmulator` helper and the dead
+> `jest.mock('firebase/database')` in `DrinkingSession.test.ts` were removed too.
+> **`git grep "firebase/database" src` now returns zero matches** — the client has no
+> Firebase Realtime Database dependency at all. Auth + Storage are untouched and still
+> provided from `FirebaseContext`.
+>
+> **Important — this is a _client_-side migration, not an RTDB decommission.** Firebase RTDB
+> **remains** kiroku-api's server-side datastore, written via the Firebase Admin SDK (which
+> bypasses security rules). The goal was to stop the app from talking to RTDB directly and
+> route every write/read through kiroku-api, so the client gets a unified offline queue
+> (Onyx optimistic data + queued requests replayed on reconnect). Storage writes are slated
+> to move behind the API the same way later.
+>
+> The only remaining RTDB-related work is **backend/infra under
+> [#810](https://github.com/PetrCala/Kiroku/issues/810)**: now that no client touches RTDB
+> directly, lock the RTDB security rules to **deny-all client access** (the Admin SDK used by
+> kiroku-api is unaffected). `FirebaseConfig.databaseURL`, the `DATABASE_PORT` emulator
+> config, and the `DATABASE_URL` env are now unused by the client and can be retired — a
+> small build/env follow-up, intentionally not ripped out here.
+
 ---
 
 ## 1. Verdict
 
-**The RTDB migration is ~90% complete.** All writes, all change-listeners
+**The client RTDB migration is now 100% complete** (revised 2026-06-08 — see the dated
+updates above; `firebase/database` refs in `src/` are now zero). _The original 2026-06-05
+verdict read "~90% complete"; the remainder of this section describes that pre-cutover
+snapshot and is kept for historical reference._ All writes, all change-listeners
 (`onValue`/`onChild*`), all current-user reads, friend sessions/profiles/statuses,
-friend preferences, and user search are migrated to kiroku-api. What remains touching
-`firebase/database` at **runtime** is:
+friend preferences, and user search are migrated to kiroku-api. What remained touching
+`firebase/database` at **runtime** (as of 2026-06-05) was:
 
 - **1 legitimate, permanent keep** — the `db` handle provider (`FirebaseContext`).
 - **1 keep, now SEVERED** — `generateDatabaseKey` was the last RTDB-handle dependency on

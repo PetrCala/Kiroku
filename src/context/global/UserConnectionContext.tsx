@@ -1,8 +1,7 @@
 import type {ReactNode} from 'react';
 import {createContext, useContext, useEffect, useMemo, useState} from 'react';
 import NetInfo from '@react-native-community/netinfo';
-import {isConnectedToDatabaseEmulator} from '@libs/Firebase/FirebaseUtils';
-import {useFirebase} from './FirebaseContext';
+import CONFIG from '@src/CONFIG';
 
 type UserConnectionContextProps = {
   isOnline: boolean | undefined;
@@ -36,7 +35,6 @@ type UserConnectionProviderProps = {
  * and provide this information through a context provider.
  */
 function UserConnectionProvider({children}: UserConnectionProviderProps) {
-  const {db} = useFirebase();
   const [isOnline, setIsOnline] = useState<boolean | undefined>(true);
 
   useEffect(() => {
@@ -47,16 +45,17 @@ function UserConnectionProvider({children}: UserConnectionProviderProps) {
 
     // Check the initial network status
     NetInfo.fetch().then(state => {
-      const isUsingEmulators = isConnectedToDatabaseEmulator(db);
       const isConnected = state.isConnected as boolean | undefined;
-      setIsOnline(isConnected ?? isUsingEmulators);
+      // When running against the local emulator suite NetInfo may report an
+      // unknown status; treat that as online so dev builds aren't stuck offline.
+      setIsOnline(isConnected ?? CONFIG.IS_USING_EMULATORS);
     });
 
     // Unsubscribe to clean up the subscription
     return () => {
       unsubscribe();
     };
-  }, [db]);
+  }, []);
 
   const value = useMemo(() => {
     return {isOnline};

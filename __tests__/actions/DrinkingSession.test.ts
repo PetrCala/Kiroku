@@ -63,14 +63,6 @@ jest.mock('react-native', () => ({
   },
 }));
 
-jest.mock('firebase/database', () => ({
-  get: jest.fn(),
-  limitToFirst: jest.fn(),
-  orderByChild: jest.fn(),
-  query: jest.fn(),
-  ref: jest.fn(),
-  update: jest.fn(),
-}));
 jest.mock('@libs/generatePushID', () => ({
   __esModule: true,
   default: jest.fn(() => 'generated-id'),
