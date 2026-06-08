@@ -205,6 +205,11 @@ export default defineConfig([
     languageOptions: {
       parser: tsParser,
       parserOptions: {
+        // Type-aware linting: every ESLint run (even a single-file
+        // `lint-changed`) builds the FULL TypeScript program from this
+        // tsconfig, so each invocation costs ~a `tsc` run in memory. That is
+        // why scripts/lint.sh adapts `--concurrency` and the Node heap ceiling
+        // to total RAM -- see the RESOURCE POLICY note there before tuning.
         project: path.resolve(dirname, './tsconfig.json'),
         tsconfigRootDir: dirname,
       },
