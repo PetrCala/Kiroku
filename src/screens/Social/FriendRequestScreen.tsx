@@ -5,7 +5,6 @@ import type {
   ProfileList,
 } from '@src/types/onyx';
 import {useEffect, useRef, useState} from 'react';
-import * as KirokuIcons from '@components/Icon/KirokuIcons';
 import * as ErrorUtils from '@libs/ErrorUtils';
 import {useFirebase} from '@context/global/FirebaseContext';
 import * as Friends from '@userActions/Friends';
@@ -16,20 +15,15 @@ import GrayHeader from '@components/Header/GrayHeader';
 import {objKeys} from '@libs/DataHandling';
 import CONST from '@src/CONST';
 import useCurrentUserData from '@hooks/useCurrentUserData';
-import Navigation from '@libs/Navigation/Navigation';
-import ROUTES from '@src/ROUTES';
 import NoFriendInfo from '@components/Social/NoFriendInfo';
 import {isEmptyArray, isEmptyObject} from '@src/types/utils/EmptyObject';
 import FlexibleLoadingIndicator from '@components/FlexibleLoadingIndicator';
-import Icon from '@components/Icon';
-import useTheme from '@hooks/useTheme';
 import ScrollView from '@components/ScrollView';
 import Button from '@components/Button';
 import useLocalize from '@hooks/useLocalize';
 import useThemeStyles from '@hooks/useThemeStyles';
 import {useOnyx} from 'react-native-onyx';
 import ONYXKEYS from '@src/ONYXKEYS';
-import {PressableWithFeedback} from '@components/Pressable';
 import type {UserID} from '@src/types/onyx/OnyxCommon';
 import ERRORS from '@src/ERRORS';
 
@@ -197,7 +191,6 @@ function FriendRequestItem({
 
 function FriendRequestScreen() {
   const userData = useCurrentUserData();
-  const theme = useTheme();
   const styles = useThemeStyles();
   const {translate} = useLocalize();
   const [loadingText] = useOnyx(ONYXKEYS.APP_LOADING_TEXT);
@@ -334,17 +327,6 @@ function FriendRequestScreen() {
           </View>
         )}
       </ScrollView>
-      <PressableWithFeedback
-        accessibilityLabel="search-screen-button"
-        style={styles.goToSearchScreenButton}
-        onPress={() => Navigation.navigate(ROUTES.SOCIAL_FRIEND_SEARCH)}>
-        <Icon
-          src={KirokuIcons.Search}
-          width={28}
-          height={28}
-          fill={theme.textLight}
-        />
-      </PressableWithFeedback>
     </View>
   );
 }
