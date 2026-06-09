@@ -53,6 +53,7 @@
     "frame-screenshots": "node scripts/frame-app-store-screenshots.mjs",
     "sync-brand-colors": "node scripts/sync-brand-colors.mjs",
     "web": "tsx ./node_modules/.bin/webpack-cli serve --config config/webpack/webpack.dev.ts --env file=.env.development",
+    "web:framed": "echo '▶ Device simulator: http://localhost:8082/simulator.html' && npm run web",
     "build-web": "tsx ./node_modules/.bin/webpack-cli --config config/webpack/webpack.common.ts --env file=.env.production",
     "web-server": "http-server ./dist -c-1 --port 8080"
   },
