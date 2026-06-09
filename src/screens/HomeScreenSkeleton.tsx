@@ -21,7 +21,7 @@ function HomeHeaderSkeleton() {
 /**
  * Placeholder for the home stats block: a tall "Units" hero card (label +
  * value + delta + per-week bar chart) over a pair of supporting cards.
- * Heights mirror HomeStatsOverview so the swap-in doesn't jolt the layout.
+ * Heights mirror MonthlyOverviewCard so the swap-in doesn't jolt the layout.
  */
 function StatOverviewSkeleton() {
   const styles = useThemeStyles();
