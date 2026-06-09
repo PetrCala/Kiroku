@@ -1,5 +1,12 @@
-import React, {useCallback, useMemo, useState} from 'react';
-import {StyleSheet, View} from 'react-native';
+import React, {
+  Suspense,
+  lazy,
+  useCallback,
+  useEffect,
+  useMemo,
+  useState,
+} from 'react';
+import {InteractionManager, StyleSheet, View} from 'react-native';
 import {SceneMap, TabView} from 'react-native-tab-view';
 import type {
   NavigationState,
@@ -10,6 +17,7 @@ import {getReceivedRequestsCount} from '@libs/FriendUtils';
 import ScreenWrapper from '@components/ScreenWrapper';
 import OfflineIndicator from '@components/OfflineIndicator';
 import HeaderWithBackButton from '@components/HeaderWithBackButton';
+import FlexibleLoadingIndicator from '@components/FlexibleLoadingIndicator';
 import Text from '@components/Text';
 import TopTabBar, {TOP_TAB_COMMON_OPTIONS} from '@components/TopTabBar';
 import type {TopTabRoute} from '@components/TopTabBar';
@@ -19,18 +27,21 @@ import useLocalize from '@hooks/useLocalize';
 import useTheme from '@hooks/useTheme';
 import useWindowDimensions from '@hooks/useWindowDimensions';
 import FriendListScreen from './FriendListScreen';
-import FriendRequestScreen from './FriendRequestScreen';
 
-// The Friend List / Friend Requests tabs render at the TOP of the screen via
-// `react-native-tab-view`, mirroring the Statistics layout (shared `TopTabBar`).
-// Each scene owns its own data via `useCurrentUserData`, so SceneMap can render
-// them directly.
-const renderScene = SceneMap({
-  friendList: FriendListScreen,
-  friendRequests: FriendRequestScreen,
-});
+// Friend List is the default tab, so it stays statically imported and paints on
+// mount. Friend Requests is lazily imported — and prefetched once Friend List is
+// interactive (see the effect in SocialScreen) — so its module evaluation and
+// mount-time effects/fetch stay off the tab-switch frame. This mirrors the
+// Statistics screen's treatment of its non-default tabs.
+const loadFriendRequestScreen = () => import('./FriendRequestScreen');
+const FriendRequestScreen = lazy(loadFriendRequestScreen);
 
 const localStyles = StyleSheet.create({
+  placeholder: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
   badge: {
     minWidth: 18,
     height: 18,
@@ -45,6 +56,37 @@ const localStyles = StyleSheet.create({
     fontWeight: '700',
     textAlign: 'center',
   },
+});
+
+// Shown while the lazily imported Friend Requests tab resolves and mounts on its
+// first activation; also the TabView placeholder for the not-yet-rendered tab.
+function TabLazyPlaceholder(): React.ReactNode {
+  return (
+    <View style={localStyles.placeholder}>
+      <FlexibleLoadingIndicator />
+    </View>
+  );
+}
+
+function renderLazyPlaceholder(): React.ReactNode {
+  return <TabLazyPlaceholder />;
+}
+
+function FriendRequestScene() {
+  return (
+    <Suspense fallback={<TabLazyPlaceholder />}>
+      <FriendRequestScreen />
+    </Suspense>
+  );
+}
+
+// The Friend List / Friend Requests tabs render at the TOP of the screen via
+// `react-native-tab-view`, mirroring the Statistics layout (shared `TopTabBar`).
+// Friend List is statically imported (default tab); Friend Requests is lazy +
+// Suspense so it stays off the tab-switch frame until first activated.
+const renderScene = SceneMap({
+  friendList: FriendListScreen,
+  friendRequests: FriendRequestScene,
 });
 
 function FriendRequestsBadge({count}: {count: number}) {
@@ -62,6 +104,19 @@ function SocialScreen() {
   const {windowWidth} = useWindowDimensions();
   const bottomTabBarHeight = useBottomTabBarHeight();
   const [index, setIndex] = useState(0);
+
+  // Warm the lazily imported Friend Requests module in the background once the
+  // Friend List tab is interactive, so first tap of the Requests tab renders it
+  // without the dynamic-import stall. Errors are swallowed — the real lazy
+  // render surfaces them on tap as usual.
+  useEffect(() => {
+    const handle = InteractionManager.runAfterInteractions(() => {
+      loadFriendRequestScreen().catch(() => undefined);
+    });
+    return () => {
+      handle.cancel?.();
+    };
+  }, []);
 
   const routes = useMemo<TopTabRoute[]>(
     () => [
@@ -124,6 +179,8 @@ function SocialScreen() {
         renderScene={renderScene}
         renderTabBar={renderTabBar}
         initialLayout={{width: windowWidth}}
+        lazy
+        renderLazyPlaceholder={renderLazyPlaceholder}
         commonOptions={commonOptions}
         options={sceneOptions}
       />
