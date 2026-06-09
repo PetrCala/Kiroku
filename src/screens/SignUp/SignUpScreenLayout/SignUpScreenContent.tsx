@@ -56,7 +56,7 @@ function SignUpScreenContent({
               <KirokuLogo />
             </View>
             <View style={[styles.signUpScreenWelcomeTextContainer]}>
-              {welcomeHeader && (
+              {!!welcomeHeader && (
                 <Text
                   style={[
                     styles.loginHeroHeader,
@@ -73,7 +73,7 @@ function SignUpScreenContent({
                   {welcomeHeader}
                 </Text>
               )}
-              {welcomeText && (
+              {!!welcomeText && (
                 <Text
                   style={[
                     styles.loginHeroBody,
