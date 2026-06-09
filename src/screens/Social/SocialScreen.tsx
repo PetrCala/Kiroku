@@ -2,10 +2,6 @@ import React, {useState} from 'react';
 import {Dimensions, StyleSheet, View} from 'react-native';
 import * as KirokuIcons from '@components/Icon/KirokuIcons';
 import {getReceivedRequestsCount} from '@libs/FriendUtils';
-import type {StackScreenProps} from '@react-navigation/stack';
-import type SCREENS from '@src/SCREENS';
-import type {SocialNavigatorParamList} from '@libs/Navigation/types';
-import Navigation from '@libs/Navigation/Navigation';
 import {PressableWithFeedback} from '@components/Pressable';
 import useCurrentUserData from '@hooks/useCurrentUserData';
 import ScreenWrapper from '@components/ScreenWrapper';
@@ -76,18 +72,12 @@ function SocialFooterButton({
   );
 }
 
-type SocialScreenProps = StackScreenProps<
-  SocialNavigatorParamList,
-  typeof SCREENS.SOCIAL.ROOT
->;
-
 type RouteType = {
   key: string;
   title: string;
 };
 
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
-function SocialScreen(_: SocialScreenProps) {
+function SocialScreen() {
   const userData = useCurrentUserData();
   const {translate} = useLocalize();
   const styles = useThemeStyles();
@@ -143,13 +133,12 @@ function SocialScreen(_: SocialScreenProps) {
       shouldShowOfflineIndicator={false}>
       <HeaderWithBackButton
         title={translate('socialScreen.title')}
-        onBackButtonPress={Navigation.goBack}
+        shouldShowBackButton={false}
       />
       <SwipeablePager
         routes={routes}
         index={index}
         onIndexChange={setIndex}
-        onSwipeBeyondStart={() => Navigation.goBack()}
         renderScene={renderScene}
       />
       <OfflineIndicator />

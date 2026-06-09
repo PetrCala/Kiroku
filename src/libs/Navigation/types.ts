@@ -104,8 +104,9 @@ type DrinkingSessionNavigatorParamList = {
   };
 };
 
+// The Settings root is a bottom tab (see BottomTabNavigatorParamList); only the
+// drill-down sub-screens remain in the Right-Hand-Panel modal stack.
 type SettingsNavigatorParamList = {
-  [SCREENS.SETTINGS.ROOT]: undefined;
   [SCREENS.SETTINGS.ACCOUNT.ROOT]: undefined;
   [SCREENS.SETTINGS.ACCOUNT.USER_NAME]: undefined;
   [SCREENS.SETTINGS.ACCOUNT.DISPLAY_NAME]: undefined;
@@ -155,17 +156,12 @@ type SessionsCalendarNavigatorParamList = {
   };
 };
 
+// The Social root is a bottom tab (see BottomTabNavigatorParamList); only the
+// drill-down sub-screens remain in the Right-Hand-Panel modal stack.
 type SocialNavigatorParamList = {
-  [SCREENS.SOCIAL.ROOT]: {
-    screen: DeepValueOf<typeof SCREENS.SOCIAL>;
-  };
   [SCREENS.SOCIAL.FRIEND_LIST]: undefined;
   [SCREENS.SOCIAL.FRIEND_REQUESTS]: undefined;
   [SCREENS.SOCIAL.FRIEND_SEARCH]: undefined;
-};
-
-type StatisticsNavigatorParamList = {
-  [SCREENS.STATISTICS.ROOT]: undefined;
 };
 
 type RightModalNavigatorParamList = {
@@ -177,8 +173,6 @@ type RightModalNavigatorParamList = {
   [SCREENS.RIGHT_MODAL.SOCIAL]: NavigatorScreenParams<SocialNavigatorParamList>;
   [SCREENS.RIGHT_MODAL
     .SETTINGS]: NavigatorScreenParams<SettingsNavigatorParamList>;
-  [SCREENS.RIGHT_MODAL
-    .STATISTICS]: NavigatorScreenParams<StatisticsNavigatorParamList>;
 };
 
 type LeftModalNavigatorParamList = {
@@ -198,8 +192,11 @@ type OnboardingModalNavigatorParamList = {
 
 type BottomTabNavigatorParamList = {
   [SCREENS.HOME]: undefined;
-  // [SCREENS.ALL_SETTINGS]: undefined;
-  // [SCREENS.WORKSPACE.INITIAL]: undefined;
+  [SCREENS.SOCIAL.ROOT]:
+    | {screen: DeepValueOf<typeof SCREENS.SOCIAL>}
+    | undefined;
+  [SCREENS.STATISTICS.ROOT]: undefined;
+  [SCREENS.SETTINGS.ROOT]: undefined;
 };
 
 type SharedScreensParamList = {
@@ -281,5 +278,4 @@ export type {
   StackNavigationAction,
   State,
   StateOrRoute,
-  StatisticsNavigatorParamList,
 };

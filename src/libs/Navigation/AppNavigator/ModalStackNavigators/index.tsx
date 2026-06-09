@@ -13,7 +13,6 @@ import type {
   SessionsCalendarNavigatorParamList,
   SettingsNavigatorParamList,
   SocialNavigatorParamList,
-  StatisticsNavigatorParamList,
 } from '@navigation/types';
 import type ReactComponentModule from '@src/types/utils/ReactComponentModule';
 import useModalScreenOptions from './useModalScreenOptions';
@@ -120,10 +119,10 @@ const DrinkingSessionModalStackNavigator =
         .default,
   });
 
+// The Settings root lives in the bottom tab navigator; this RHP stack holds
+// only the drill-down sub-screens reached from the Settings tab.
 const SettingsModalStackNavigator =
   createModalStackNavigator<SettingsNavigatorParamList>({
-    [SCREENS.SETTINGS.ROOT]: () =>
-      require<ReactComponentModule>('@screens/Settings/SettingsScreen').default,
     [SCREENS.SETTINGS.ACCOUNT.ROOT]: () =>
       require<ReactComponentModule>('@screens/Settings/Account/AccountScreen')
         .default,
@@ -233,17 +232,10 @@ const SessionsCalendarModalStackNavigator =
     },
   });
 
+// The Social root lives in the bottom tab navigator; this RHP stack holds only
+// the drill-down sub-screens reached from the Friends tab.
 const SocialModalStackNavigator =
   createModalStackNavigator<SocialNavigatorParamList>({
-    [SCREENS.SOCIAL.ROOT]: {
-      getComponent: () =>
-        // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
-        require('@screens/Social/SocialScreen').default as React.ComponentType,
-      // The screen embeds a SwipeablePager that owns horizontal gestures and
-      // dispatches Navigation.goBack() when the user swipes right past the
-      // first tab, so the stack's own swipe-back must stay out of the way.
-      options: {gestureEnabled: false},
-    },
     [SCREENS.SOCIAL.FRIEND_LIST]: () =>
       require<ReactComponentModule>('@screens/Social/FriendListScreen').default,
     [SCREENS.SOCIAL.FRIEND_REQUESTS]: () =>
@@ -254,20 +246,6 @@ const SocialModalStackNavigator =
         .default,
   });
 
-const StatisticsModalStackNavigator =
-  createModalStackNavigator<StatisticsNavigatorParamList>({
-    [SCREENS.STATISTICS.ROOT]: {
-      getComponent: () =>
-        require<ReactComponentModule>('@screens/Statistics/StatisticsScreen')
-          .default,
-      // The screen wraps its tabs in a swipe-back gesture that dispatches
-      // Navigation.goBack() when the user swipes right on the first tab, so
-      // the stack's own swipe-back must stay out of the way (matching Social
-      // and SessionsCalendar).
-      options: {gestureEnabled: false},
-    },
-  });
-
 export {
   BadgesModalStackNavigator,
   DayOverviewModalStackNavigator,
@@ -276,5 +254,4 @@ export {
   SessionsCalendarModalStackNavigator,
   SettingsModalStackNavigator,
   SocialModalStackNavigator,
-  StatisticsModalStackNavigator,
 };

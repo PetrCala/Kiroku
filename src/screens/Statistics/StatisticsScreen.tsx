@@ -1,44 +1,47 @@
 import React, {useEffect, useState} from 'react';
 import type {ComponentType} from 'react';
+import {InteractionManager} from 'react-native';
 import HeaderWithBackButton from '@components/HeaderWithBackButton';
 import ScreenWrapper from '@components/ScreenWrapper';
 import StatsContextProvider from '@components/StatsContextProvider';
 import useLocalize from '@hooks/useLocalize';
-import useReadyAfterScreenTransition from '@hooks/useReadyAfterScreenTransition';
-import Navigation from '@libs/Navigation/Navigation';
 import DrillDownProvider from './drilldown/DrillDownContext';
 import StatisticsScreenSkeleton from './StatisticsScreenSkeleton';
 import type {StatisticsTabsProps} from './StatisticsTabs';
 import StatsDrillDownSheet from './StatsDrillDownSheet';
 
 /**
- * The chart-tab tree (StatisticsTabs → 4 tabs → Skia/Victory imports) plus the
- * `StatsContextProvider` compute are the dominant cost of entering this screen
- * — heavy enough to block the JS thread for 1–3 s on mount, with React
- * Navigation unable to paint a single frame of the slide in the meantime.
+ * As a bottom tab, this screen has no entry slide to protect, but the chart-tab
+ * tree (StatisticsTabs → 4 tabs → Skia/Victory imports) plus the
+ * `StatsContextProvider` compute is still heavy enough to block the JS thread
+ * for 1–3 s on first mount.
  *
- * Gate the whole heavy subtree on the screen's entry-transition end so the
- * slide plays first against a layout-faithful skeleton, then mount the
- * providers and the dynamically imported tabs once the bundle has parsed.
- * `runAfterInteractions` is unsuitable here: its handle resolves before the
- * slide finishes (see `useReadyAfterScreenTransition`).
+ * Gate the heavy subtree on `InteractionManager.runAfterInteractions` so the
+ * layout-faithful skeleton paints first, then mount the providers and the
+ * dynamically-imported tabs. The tab is lazily mounted on first visit and then
+ * stays mounted (frozen while blurred), so this cost is paid once.
  *
  * `useDrinkEvents` / `useAggregate` further defer the *data* compute, so the
  * skeleton stays visible until the aggregates are ready.
  */
 function StatisticsScreen() {
   const {translate} = useLocalize();
-  const {isReady: didScreenTransitionEnd, onEntryTransitionEnd} =
-    useReadyAfterScreenTransition();
+  const [isReady, setIsReady] = useState(false);
   const [Tabs, setTabs] = useState<ComponentType<StatisticsTabsProps> | null>(
     null,
   );
 
-  // Only kick off the chart-bundle import once the slide has finished, so its
-  // parse and the subsequent heavy mount never compete with the transition for
-  // the JS thread.
   useEffect(() => {
-    if (!didScreenTransitionEnd) {
+    const handle = InteractionManager.runAfterInteractions(() =>
+      setIsReady(true),
+    );
+    return () => handle.cancel();
+  }, []);
+
+  // Only kick off the chart-bundle import once the screen has settled, so its
+  // parse and the subsequent heavy mount never compete with the first paint.
+  useEffect(() => {
+    if (!isReady) {
       return undefined;
     }
     let cancelled = false;
@@ -56,20 +59,18 @@ function StatisticsScreen() {
     return () => {
       cancelled = true;
     };
-  }, [didScreenTransitionEnd]);
+  }, [isReady]);
 
   return (
-    <ScreenWrapper
-      testID={StatisticsScreen.displayName}
-      onEntryTransitionEnd={onEntryTransitionEnd}>
+    <ScreenWrapper testID={StatisticsScreen.displayName}>
       <HeaderWithBackButton
         title={translate('statistics.title')}
-        onBackButtonPress={Navigation.goBack}
+        shouldShowBackButton={false}
       />
       {Tabs ? (
         <StatsContextProvider>
           <DrillDownProvider>
-            <Tabs onSwipeBack={Navigation.goBack} />
+            <Tabs />
             <StatsDrillDownSheet />
           </DrillDownProvider>
         </StatsContextProvider>

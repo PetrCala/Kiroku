@@ -3,6 +3,11 @@ import SCREENS from '@src/SCREENS';
 
 const TAB_TO_CENTRAL_PANE_MAPPING: Record<BottomTabName, CentralPaneName[]> = {
   [SCREENS.HOME]: [SCREENS.HOME],
+  // Friends / Statistics / Settings are self-contained tab roots — Kiroku has no
+  // central-pane screens behind them, so they map to no central pane.
+  [SCREENS.SOCIAL.ROOT]: [],
+  [SCREENS.STATISTICS.ROOT]: [],
+  [SCREENS.SETTINGS.ROOT]: [],
   //   [SCREENS.SEARCH.BOTTOM_TAB]: [SCREENS.SEARCH.CENTRAL_PANE],
   //   [SCREENS.SETTINGS.ROOT]: [
   //     SCREENS.SETTINGS.PROFILE.ROOT,
