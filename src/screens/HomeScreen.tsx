@@ -175,10 +175,12 @@ function HomeScreen({route}: HomeScreenProps) {
           preferences={preferences}
         />
         {/* Home stats display toggles — flip these to show/hide sections:
+         *   showTitle           — the "Monthly overview" heading
          *   showWeeklyUnits     — the per-week units bar chart
          *   showMonthComparison — the trend arrow + previous-month value */}
         <MonthlyOverviewCard
           visibleDate={visibleDate}
+          showTitle
           showWeeklyUnits={false}
           showMonthComparison
         />
