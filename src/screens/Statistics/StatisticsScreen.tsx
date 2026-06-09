@@ -64,6 +64,7 @@ function StatisticsScreen() {
   return (
     <ScreenWrapper
       testID={StatisticsScreen.displayName}
+      includeSafeAreaPaddingBottom={false}
       shouldShowOfflineIndicator={false}>
       <HeaderWithBackButton
         title={translate('statistics.title')}

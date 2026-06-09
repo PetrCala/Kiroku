@@ -168,6 +168,7 @@ function SocialScreen() {
   return (
     <ScreenWrapper
       testID={SocialScreen.displayName}
+      includeSafeAreaPaddingBottom={false}
       shouldShowOfflineIndicator={false}>
       <HeaderWithBackButton
         title={translate('socialScreen.title')}
