@@ -8,6 +8,7 @@ import getPlatform from '@libs/getPlatform';
 import CONST from '@src/CONST';
 import Button from './Button';
 import FormAlertWrapper from './FormAlertWrapper';
+import OfflineIndicator from './OfflineIndicator';
 
 type FormAlertWithSubmitButtonProps = {
   /** Error message to display above button */
@@ -49,6 +50,9 @@ type FormAlertWithSubmitButtonProps = {
   /** Whether to show the alert text */
   isAlertVisible?: boolean;
 
+  /** Whether to show the offline indicator directly above the submit button */
+  shouldShowOfflineIndicator?: boolean;
+
   /** React ref being forwarded to the submit button */
   buttonRef?: Ref<View>;
 
@@ -84,6 +88,7 @@ function FormAlertWithSubmitButton({
   useSmallerSubmitButtonSize = false,
   errorMessageStyle,
   enterKeyEventListenerPriority = 0,
+  shouldShowOfflineIndicator = true,
 }: FormAlertWithSubmitButtonProps) {
   const styles = useThemeStyles();
   const style = [!footerContent ? {} : styles.mb3, buttonStyles];
@@ -109,6 +114,13 @@ function FormAlertWithSubmitButton({
       errorMessageStyle={errorMessageStyle}>
       {(isOffline: boolean | undefined) => (
         <View>
+          {/* Render the offline indicator directly above the submit button so the
+              reading order is "you're offline" then the disabled button. It lives
+              inside this bottom-anchored container, so it stays flush above the
+              button. OfflineIndicator self-hides while online. */}
+          {shouldShowOfflineIndicator && (
+            <OfflineIndicator style={[styles.ph0, styles.mb2]} />
+          )}
           {isOffline && !enabledWhenOffline ? (
             <Button
               success

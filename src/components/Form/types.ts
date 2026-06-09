@@ -153,6 +153,9 @@ type FormProps<TFormID extends OnyxFormKey = OnyxFormKey> = {
   /** Controls the submit button's visibility */
   isSubmitButtonVisible?: boolean;
 
+  /** Whether to show the offline indicator directly above the submit button */
+  shouldShowOfflineIndicator?: boolean;
+
   /** Callback to submit the form */
   onSubmit: (values: FormOnyxValues<TFormID>) => void;
 

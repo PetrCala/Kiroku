@@ -50,6 +50,7 @@ function LiveSessionScreen({route}: LiveSessionScreenProps) {
   return (
     <ScreenWrapper
       testID={LiveSessionScreen.displayName}
+      shouldShowOfflineIndicator={false}
       // Clear the "loading" overlay that Home shows while the session is created
       // only once the modal has finished sliding over Home. Clearing it earlier
       // (e.g. on focus) uncovers Home mid-transition and flashes its content.

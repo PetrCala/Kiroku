@@ -86,6 +86,7 @@ function EditSessionScreen({route}: EditSessionScreenProps) {
   return (
     <ScreenWrapper
       testID={EditSessionScreen.displayName}
+      shouldShowOfflineIndicator={false}
       // Match LiveSessionScreen: clear the open-time loading overlay only after the
       // modal transition completes, so Home never flashes mid-slide.
       onEntryTransitionEnd={() => {
