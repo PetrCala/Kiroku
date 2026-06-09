@@ -14,6 +14,14 @@ let authToken: string | null | undefined;
 let authTokenType: ValueOf<typeof CONST.AUTH_TOKEN_TYPES> | null;
 let currentUserEmail: string | null = null;
 let offline = false;
+// Whether we've ever received an authoritative connectivity signal. A fresh
+// launch starts in the default (online) state, so an offline->online edge never
+// fires on boot — and `NetworkConnection.subscribeToNetInfo`, which would
+// otherwise kick the initial queue flush, is intentionally disabled (the NetInfo
+// bridge is the sole NETWORK-key writer). Tracking this lets us treat the first
+// online signal as a reconnection so writes persisted during a prior offline
+// session replay after an app reload.
+let hasConfirmedConnectivity = false;
 let authenticating = false;
 
 // Allow code that is outside of the network listen for when a reconnection happens so that it can execute any side-effects (like flushing the sequential network queue)
@@ -80,12 +88,18 @@ Onyx.connect({
       return;
     }
 
-    // Client becomes online emit connectivity resumed event
-    if (offline && !network.isOffline) {
+    const isNowOffline = !!network.shouldForceOffline || !!network.isOffline;
+
+    // Emit the connectivity-resumed event (which flushes the sequential queue)
+    // both on a normal offline->online transition and on the first authoritative
+    // online signal after launch. The latter is what replays writes persisted
+    // during a prior offline session once the app is reloaded back online.
+    if (!isNowOffline && (offline || !hasConfirmedConnectivity)) {
       triggerReconnectCallback();
     }
 
-    offline = !!network.shouldForceOffline || !!network.isOffline;
+    hasConfirmedConnectivity = true;
+    offline = isNowOffline;
   },
 });
 
