@@ -977,6 +977,9 @@ export default {
     commonFriendsLabel: ({hasCommonFriends}: CommonFriendsLabelParams) =>
       `${hasCommonFriends ? 'Common friends:' : 'Friends:'}`,
     profileImage: 'Profile Image',
+    offlineUnavailableTitle: "Couldn't load this profile",
+    offlineUnavailableMessage:
+      "We couldn't load this profile while offline. Reconnect to view it.",
   },
   statistics: {
     title: 'Statistics',
