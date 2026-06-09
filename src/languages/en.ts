@@ -850,6 +850,9 @@ export default {
     newSessionExplained: 'Start a session (Floating action)',
     sessionFrom: ({startTime}: SessionStartTimeParams) =>
       `A session from ${startTime}`,
+    unavailableTitle: 'Sessions not loaded',
+    unavailableMessage:
+      'We could not load your sessions. Reconnect to the internet, then try again.',
   },
   userNameScreen: {
     headerTitle: 'User name',

@@ -10,13 +10,14 @@ import React, {
   useRef,
   useState,
 } from 'react';
-import {View} from 'react-native';
+import {Alert, View} from 'react-native';
 import {useOnyx} from 'react-native-onyx';
 import * as DSUtils from '@libs/DrinkingSessionUtils';
 import * as DS from '@userActions/DrinkingSession';
 import * as ErrorUtils from '@libs/ErrorUtils';
 import * as App from '@userActions/App';
 import useCurrentUserData from '@hooks/useCurrentUserData';
+import useCurrentUserDrinkingSessions from '@hooks/useCurrentUserDrinkingSessions';
 import useLocalize from '@hooks/useLocalize';
 import usePrevious from '@hooks/usePrevious';
 import useResponsiveLayout from '@hooks/useResponsiveLayout';
@@ -66,8 +67,25 @@ function StartSessionButtonAndPopover(
   const {translate} = useLocalize();
   const user = auth.currentUser;
   const userData = useCurrentUserData();
+  const drinkingSessionData = useCurrentUserDrinkingSessions();
   const [ongoingSessionData] = useOnyx(ONYXKEYS.ONGOING_SESSION_DATA);
   const [startSession] = useOnyx(ONYXKEYS.START_SESSION_GLOBAL_CREATE);
+  // The user's session snapshot is `undefined` until `app/open` delivers it (or
+  // a warm cache hydrates from disk). Creating a session before then would write
+  // onto a never-loaded base: the home "couldn't load" notice flips into a
+  // misleading one-session calendar, and the server snapshot discards the local
+  // session on reconnect. Gate new-session creation until the snapshot resolves.
+  // `{}` (resolved-empty, e.g. a brand-new user) is allowed; only `undefined` is
+  // blocked. This is the snapshot itself, NOT `IS_LOADING_APP`, so an
+  // offline-with-warm-cache user can still log sessions.
+  const isSessionDataLoaded = drinkingSessionData !== undefined;
+
+  const showSessionsUnavailableAlert = (): void => {
+    Alert.alert(
+      translate('startSession.unavailableTitle'),
+      translate('startSession.unavailableMessage'),
+    );
+  };
   const [isCreateMenuActive, setIsCreateMenuActive] = useState(false);
   const fabRef = useRef<HTMLDivElement>(null);
   const {windowHeight} = useWindowDimensions();
@@ -77,8 +95,15 @@ function StartSessionButtonAndPopover(
 
   const startLiveDrinkingSession = async (): Promise<void> => {
     try {
+      const isStartingNewSession = !ongoingSessionData?.ongoing;
+      // Resuming an already-ongoing session is always allowed; only starting a
+      // brand-new one requires the snapshot to have loaded.
+      if (isStartingNewSession && !isSessionDataLoaded) {
+        showSessionsUnavailableAlert();
+        return;
+      }
       await App.setLoadingText(translate('liveSessionScreen.loading'));
-      if (!ongoingSessionData?.ongoing) {
+      if (isStartingNewSession) {
         await DS.startLiveDrinkingSession(user, userData?.timezone?.selected);
       }
       DS.navigateToOngoingSessionScreen();
@@ -88,6 +113,10 @@ function StartSessionButtonAndPopover(
   };
 
   const createEditDrinkingSession = async (): Promise<void> => {
+    if (!isSessionDataLoaded) {
+      showSessionsUnavailableAlert();
+      return;
+    }
     try {
       await App.setLoadingText(translate('common.loading'));
       await DS.setIsCreatingNewSession(true);
