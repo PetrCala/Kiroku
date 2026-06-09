@@ -981,6 +981,9 @@ export default {
     commonFriendsLabel: ({hasCommonFriends}: CommonFriendsLabelParams) =>
       `${hasCommonFriends ? 'Společní přátelé:' : 'Přátelé:'}`,
     profileImage: 'Profilový obrázek',
+    offlineUnavailableTitle: 'Profil se nepodařilo načíst',
+    offlineUnavailableMessage:
+      'Tento profil se nepodařilo načíst v režimu offline. Pro zobrazení se znovu připojte.',
   },
   statistics: {
     title: 'Statistiky',
