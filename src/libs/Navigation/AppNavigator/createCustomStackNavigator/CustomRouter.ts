@@ -170,8 +170,13 @@ function CustomRouter(options: ResponsiveStackNavigatorRouterOptions) {
       partialState: StackNavigationState<RootStackParamList>,
       {routeNames, routeParamList, routeGetIdList}: RouterConfigOptions,
     ): StackNavigationState<ParamListBase> {
-      compareAndAdaptState(partialState);
-      const state = stackRouter.getRehydratedState(partialState, {
+      // `partialState` is frozen by React Navigation in dev, but
+      // `compareAndAdaptState` reassigns its top-level `routes`/`index`/`stale`
+      // fields when adapting a deep link on wide (web) layouts. Adapt a shallow
+      // copy so those reassignments don't throw on the read-only original.
+      const adaptableState = {...partialState};
+      compareAndAdaptState(adaptableState);
+      const state = stackRouter.getRehydratedState(adaptableState, {
         routeNames,
         routeParamList,
         routeGetIdList,
