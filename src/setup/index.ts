@@ -5,6 +5,7 @@ import * as Subscriptions from '@userActions/Subscriptions';
 import CONST from '@src/CONST';
 import ONYXKEYS from '@src/ONYXKEYS';
 import intlPolyfill from '@libs/IntlPolyfill';
+import {initFirebaseAuth} from '@libs/Firebase/FirebaseApp';
 import StartupMetrics from '@libs/StartupMetrics';
 import initializeLastVisitedPath from './initializeLastVisitedPath';
 import platformSetup from './platformSetup';
@@ -73,6 +74,14 @@ export default function () {
 
   // Perform any other platform-specific setup
   platformSetup();
+
+  // Initialize Firebase Auth once, here, where native modules are proven ready
+  // (platformSetup() above already touches @react-native-firebase). Doing it at
+  // this single, post-bridge point - instead of racing on whichever module hits
+  // getFirebaseAuth() first - guarantees auth is created with persistence
+  // (AsyncStorage on native, IndexedDB on web) so the session survives a cold
+  // start. Resolves by platform extension, so no platform branching is needed.
+  initFirebaseAuth();
 
   // Capture native cold-start marks (process spawn → first content visible)
   // and log them in the same `Timing:` format as Timing.ts so Grafana picks
