@@ -4,7 +4,7 @@ import SessionsCalendar from '@components/SessionsCalendar';
 import type {DateData} from 'react-native-calendars';
 import {dateToDateData, dateStringToDate} from '@libs/DataHandling';
 import OfflineIndicator from '@components/OfflineIndicator';
-import {syncUserStatus} from '@userActions/User';
+import {syncUserStatus, getDefaultPreferences} from '@userActions/User';
 import {useFirebase} from '@context/global/FirebaseContext';
 import ProfileImage from '@components/ProfileImage';
 import {SupporterBadgeForUser} from '@components/SupporterBadge';
@@ -68,6 +68,21 @@ function HomeScreen({route}: HomeScreenProps) {
     dateToDateData(new Date()),
   );
   const hasMarkedReadyRef = useRef(false);
+  // Deterministic backstop for the readiness gates below. They wait on Onyx
+  // values normally hydrated by `app/open`; offline (especially a cold start
+  // with no persisted snapshot for this user) one of those can never resolve,
+  // which would otherwise leave the skeletons up forever. After a bounded
+  // window we stop waiting and render real content (or the empty state) with
+  // whatever we have. Mounted once — the home tab stays mounted for the
+  // session, and once flipped we never want to drop back to a skeleton.
+  const [readyTimedOut, setReadyTimedOut] = useState(false);
+  useEffect(() => {
+    const timeoutId = setTimeout(
+      () => setReadyTimedOut(true),
+      CONST.HOME_CONTENT_READY_TIMEOUT_MS,
+    );
+    return () => clearTimeout(timeoutId);
+  }, []);
   // Most recent completed session, for the "last session" banner (null when
   // there's no history — a brand-new user shows no banner).
   const lastSession = useLastSession();
@@ -84,6 +99,15 @@ function HomeScreen({route}: HomeScreenProps) {
         ? dateToDateData(dateStringToDate(lastViewedCalendarDate))
         : localVisibleDate,
     [lastViewedCalendarDate, localVisibleDate],
+  );
+
+  // Preferences to render against. When the fallback fires before preferences
+  // hydrate (offline), fall back to defaults rather than blocking the
+  // calendar/stats on a value that won't arrive. Memoized so the default
+  // object keeps a stable reference across renders.
+  const effectivePreferences = useMemo(
+    () => preferences ?? getDefaultPreferences(),
+    [preferences],
   );
 
   // Manual month navigation overrides the synced value.
@@ -136,15 +160,18 @@ function HomeScreen({route}: HomeScreenProps) {
   // their skeletons as each piece of data resolves from Firebase. A
   // brand-new user with no sessions gets a welcome/empty state instead of
   // the calendar + stats.
-  const isPreferencesReady = !!preferences;
+  // `readyTimedOut` forces the gates open so the offline fallback can paint
+  // even if a value never hydrates (see the timeout effect above).
+  const isPreferencesReady = !!preferences || readyTimedOut;
   // Require `profile` (not just `userData`): a failed/incomplete ProvisionUser
   // can leave `userData` truthy while `profile` is still undefined. Gating the
   // header on the profile keeps it from rendering against profile-less data.
   const isUserDataReady = !!userData?.profile;
-  const isSessionsReady = drinkingSessionData !== undefined;
+  const isSessionsReady = drinkingSessionData !== undefined || readyTimedOut;
   const showSkeletonContent = !isPreferencesReady || !isSessionsReady;
   // `useCurrentUserDrinkingSessions` returns {} (truthy) for a user with no
-  // sessions, so check emptiness rather than truthiness.
+  // sessions, so check emptiness rather than truthiness. A fallback-forced
+  // ready state with still-undefined sessions is treated as "no sessions".
   const hasSessions = isSessionsReady && !isEmptyObject(drinkingSessionData);
 
   const renderMainContent = () => {
@@ -166,7 +193,7 @@ function HomeScreen({route}: HomeScreenProps) {
           visibleDate={visibleDate}
           onDateChange={onDateChange}
           drinkingSessionData={drinkingSessionData}
-          preferences={preferences}
+          preferences={effectivePreferences}
         />
         <HomeStatsOverview visibleDate={visibleDate} />
       </>

@@ -736,6 +736,17 @@ const CONST = {
   // a warm listener (typically <500 ms) and shorter than the safety net.
   BOOT_SPLASH_AUTH_DATA_TIMEOUT_MS: 3 * 1000,
 
+  // Deterministic backstop for HomeScreen's readiness gates. The home content
+  // is gated on Onyx values (preferences, the cached drinking sessions) that
+  // are normally hydrated by `app/open`. Offline — and especially on a cold
+  // start with no persisted snapshot for this user — one of those can stay
+  // `undefined` indefinitely, which would otherwise leave the calendar/stats
+  // skeletons up forever. Past this point HomeScreen stops waiting and renders
+  // real content (or the empty state) with whatever it has, defaulting
+  // preferences. Longer than the splash gate above so the common warm-cache
+  // path resolves on its own first and this only fires as a true fallback.
+  HOME_CONTENT_READY_TIMEOUT_MS: 5 * 1000,
+
   KEYBOARD_TYPE: {
     VISIBLE_PASSWORD: 'visible-password',
     ASCII_CAPABLE: 'ascii-capable',

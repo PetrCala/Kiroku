@@ -17,16 +17,29 @@ const EMPTY_SESSIONS: DrinkingSessionList = {};
  * object so consumers treat it as ready-but-empty (matching the old windowed
  * listener, which seeded `{}`), and `undefined` only while the cache is still
  * resolving.
+ *
+ * "Resolving" is keyed on Onyx's hydration `status`, NOT on the value being
+ * `undefined`. The two are not the same: once the key has finished loading from
+ * disk it can legitimately hold no entry for this user (a brand-new account; a
+ * post-sign-out reset, which writes `null`; or an offline cold start where
+ * `app/open` never reached the network). All of those are "loaded, no sessions"
+ * — surfacing them as `undefined` would read as "still loading" and leave the
+ * home skeletons spinning forever offline, since no network fetch can ever
+ * arrive to flip the gate. Only `status === 'loading'` means undefined.
  */
 function useCurrentUserDrinkingSessions(): DrinkingSessionList | undefined {
   const {auth} = useFirebase();
   const userID = auth?.currentUser?.uid;
-  const [cachedByUser] = useOnyx(ONYXKEYS.CACHED_DRINKING_SESSIONS);
+  const [cachedByUser, {status}] = useOnyx(ONYXKEYS.CACHED_DRINKING_SESSIONS);
   if (!userID) {
     return undefined;
   }
   const cached = cachedByUser?.[userID];
-  return cached === null ? EMPTY_SESSIONS : cached;
+  if (cached) {
+    return cached;
+  }
+  // Hydration finished but there's no entry for this user → ready-but-empty.
+  return status === 'loaded' ? EMPTY_SESSIONS : undefined;
 }
 
 export default useCurrentUserDrinkingSessions;
