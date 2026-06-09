@@ -1283,6 +1283,11 @@ export default {
     welcomeToKiroku: 'Vítejte v Kiroku!',
     startNewSessionByClickingPlus:
       'Spusťte novou relaci kliknutím na tlačítko plus v dolní části obrazovky',
+    offlineNoData: {
+      title: 'Jste offline',
+      message:
+        'Nepodařilo se nám načíst vaše relace. Připojte se a zobrazí se tady.',
+    },
     banners: {
       inSession: {
         label: 'Probíhá relace',
