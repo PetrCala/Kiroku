@@ -83,7 +83,10 @@ const getCommonConfiguration = ({
     mode: isDevelopment ? 'development' : 'production',
     devtool: 'source-map',
     entry: {
-      main: './index.js',
+      // Web-specific entry: it initializes the CanvasKit WASM that
+      // `@shopify/react-native-skia` needs before booting `index.js`. Native
+      // (metro) keeps using `index.js` directly.
+      main: './index.web.js',
     },
     output: {
       // Use simple filenames in development to prevent memory leaks from contenthash changes

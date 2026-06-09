@@ -1,4 +1,5 @@
 import {createBottomTabNavigator} from '@react-navigation/bottom-tabs';
+import type {BottomTabBarProps} from '@react-navigation/bottom-tabs';
 import {useNavigationState} from '@react-navigation/native';
 import React from 'react';
 import useLocalize from '@hooks/useLocalize';
@@ -23,6 +24,15 @@ import ActiveCentralPaneRouteContext from './ActiveRouteContext';
  */
 const Tab = createBottomTabNavigator();
 
+// `@react-navigation/bottom-tabs` invokes the `tabBar` prop as a plain function
+// inside a `SafeAreaInsetsContext.Consumer` render prop, so passing the bar
+// component directly would run its hooks outside a component fiber ("Invalid
+// hook call"). Render it as a real element instead, via a stable reference.
+function renderTabBar(props: BottomTabBarProps) {
+  // eslint-disable-next-line react/jsx-props-no-spreading
+  return <BottomTabBar {...props} />;
+}
+
 function BottomTabNavigator() {
   const {translate} = useLocalize();
   const theme = useTheme();
@@ -41,7 +51,7 @@ function BottomTabNavigator() {
           // screen through during the swap.
           sceneStyle: {backgroundColor: theme.appBG},
         }}
-        tabBar={BottomTabBar}>
+        tabBar={renderTabBar}>
         {BOTTOM_TAB_CONFIG.map(tab => (
           <Tab.Screen
             key={tab.name}
