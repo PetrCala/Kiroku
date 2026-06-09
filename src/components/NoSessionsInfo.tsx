@@ -9,12 +9,16 @@ type NoSessionsInfoProps = {
   /** The message to display to the user */
   message?: string;
 
-  /** The text to display on the button */
-  buttonText?: string;
+  /** The heading to display above the message */
+  title?: string;
 };
 
-/** A View shown on the home screen when the user has no drinking sessions yet */
-function NoSessionsInfo({message, buttonText}: NoSessionsInfoProps) {
+/**
+ * A centered hero View shown on the home screen for the no-content states:
+ * the default welcome ("no sessions yet"), or, with `title`/`message` overrides,
+ * the offline "can't load your sessions" notice.
+ */
+function NoSessionsInfo({message, title}: NoSessionsInfoProps) {
   const styles = useThemeStyles();
   const StyleUtils = useStyleUtils();
   const {translate} = useLocalize();
@@ -27,7 +31,7 @@ function NoSessionsInfo({message, buttonText}: NoSessionsInfoProps) {
           styles.loginHeroHeader,
           StyleUtils.getFontSizeStyle(variables.fontSizeSignInHeroXSmall),
         ]}>
-        {buttonText ?? translate('homeScreen.welcomeToKiroku')}
+        {title ?? translate('homeScreen.welcomeToKiroku')}
       </Text>
       <Text style={styles.textHomeScreenNoSessions}>
         {message ?? translate('homeScreen.startNewSessionByClickingPlus')}

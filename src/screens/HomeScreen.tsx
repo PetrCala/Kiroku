@@ -43,7 +43,9 @@ import {isEmptyObject} from '@src/types/utils/EmptyObject';
 import Button from '@components/Button';
 import SessionsCalendarCompactSkeleton from '@components/SessionsCalendar/SessionsCalendarCompactSkeleton';
 import NoSessionsInfo from '@components/NoSessionsInfo';
+import useNetwork from '@hooks/useNetwork';
 import HomeHeaderSkeleton from './HomeScreenSkeleton';
+import getHomeContentState from './getHomeContentState';
 
 type HomeScreenProps = StackScreenProps<
   BottomTabNavigatorParamList,
@@ -67,6 +69,7 @@ function HomeScreen({route}: HomeScreenProps) {
   const userData = isEmptyObject(currentUserData) ? undefined : currentUserData;
   const preferences = useCurrentUserPreferences();
   const drinkingSessionData = useCurrentUserDrinkingSessions();
+  const {isOffline} = useNetwork();
   const [localVisibleDate, setLocalVisibleDate] = useState<DateData>(
     dateToDateData(new Date()),
   );
@@ -138,22 +141,25 @@ function HomeScreen({route}: HomeScreenProps) {
   }
 
   // Render the shell + skeletons immediately. Real components swap in for
-  // their skeletons as each piece of data resolves from Firebase. A
-  // brand-new user with no sessions gets a welcome/empty state instead of
-  // the calendar + stats.
-  const isPreferencesReady = !!preferences;
+  // their skeletons as each piece of data resolves. A brand-new user with no
+  // sessions gets a welcome/empty state instead of the calendar + stats.
   // Require `profile` (not just `userData`): a failed/incomplete ProvisionUser
   // can leave `userData` truthy while `profile` is still undefined. Gating the
   // header on the profile keeps it from rendering against profile-less data.
   const isUserDataReady = !!userData?.profile;
-  const isSessionsReady = drinkingSessionData !== undefined;
-  const showSkeletonContent = !isPreferencesReady || !isSessionsReady;
-  // `useCurrentUserDrinkingSessions` returns {} (truthy) for a user with no
-  // sessions, so check emptiness rather than truthiness.
-  const hasSessions = isSessionsReady && !isEmptyObject(drinkingSessionData);
+  // `preferences` / `drinkingSessionData` are undefined only until `app/open`
+  // delivers the snapshot (or a warm cache hydrates). While they're unresolved
+  // we show skeletons online, or an offline "can't load" notice when offline
+  // with nothing cached — never a false "no sessions" welcome. Once resolved,
+  // emptiness is authoritative (`app/open` always seeds the user's entry).
+  const contentState = getHomeContentState(
+    preferences,
+    drinkingSessionData,
+    isOffline,
+  );
 
   const renderMainContent = () => {
-    if (showSkeletonContent) {
+    if (contentState === 'loading') {
       return (
         <>
           <HomeBannerSkeleton />
@@ -162,8 +168,21 @@ function HomeScreen({route}: HomeScreenProps) {
         </>
       );
     }
-    if (!hasSessions) {
+    if (contentState === 'offlineUnavailable') {
+      return (
+        <NoSessionsInfo
+          title={translate('homeScreen.offlineNoData.title')}
+          message={translate('homeScreen.offlineNoData.message')}
+        />
+      );
+    }
+    if (contentState === 'empty') {
       return <NoSessionsInfo />;
+    }
+    // contentState === 'data' — both values are resolved; the guard re-narrows
+    // them for the type system (and is a harmless defensive fallback).
+    if (!preferences || drinkingSessionData === undefined) {
+      return null;
     }
     return (
       <>

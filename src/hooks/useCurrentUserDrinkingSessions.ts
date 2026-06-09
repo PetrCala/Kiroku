@@ -13,10 +13,17 @@ const EMPTY_SESSIONS: DrinkingSessionList = {};
  * session-write `onyxData` + Pusher / `/v1/updates` (kiroku-api), not a Firebase
  * listener.
  *
- * The cache stores `null` for "loaded, no sessions"; we surface that as an empty
- * object so consumers treat it as ready-but-empty (matching the old windowed
- * listener, which seeded `{}`), and `undefined` only while the cache is still
- * resolving.
+ * The entry is `undefined` precisely until `app/open` delivers it: kiroku-api
+ * *always* seeds `CACHED_DRINKING_SESSIONS = {[uid]: sessions ?? {}}` on open, so
+ * after open the entry is always present — real data, or `{}` for a user with no
+ * sessions. We surface a `null` entry as an empty object (consumers treat that as
+ * ready-but-empty), and `undefined` while the snapshot is still resolving.
+ *
+ * Note `undefined` does NOT distinguish "loading" from "loaded, but offline with
+ * no cached entry" (after sign-out, which sets the key to `null`, `app/open` can
+ * never run to seed it). That distinction needs the network state and so is made
+ * by the consumer (see `HomeScreen`'s `getHomeContentState`), not here — the hook
+ * reports only the raw cache truth.
  */
 function useCurrentUserDrinkingSessions(): DrinkingSessionList | undefined {
   const {auth} = useFirebase();
