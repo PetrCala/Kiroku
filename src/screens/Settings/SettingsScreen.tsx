@@ -211,11 +211,6 @@ function SettingsScreen() {
           icon: KirokuIcons.Exit,
           action: onSignOut,
         },
-        {
-          translationKey: 'settingsScreen.deleteAccount',
-          icon: KirokuIcons.Delete,
-          routeName: ROUTES.SETTINGS_DELETE,
-        },
         ...(userIsAdmin
           ? [
               {

@@ -93,6 +93,7 @@ const SCREENS = {
     SUBSCRIPTION_TERMS: 'Settings_SubscriptionTerms',
     REPORT_BUG: 'Settings_ReportBug',
     FEEDBACK: 'Settings_Feedback',
+    MANAGE_ACCOUNT: 'Settings_ManageAccount',
     DELETE: 'Settings_Delete',
   },
 

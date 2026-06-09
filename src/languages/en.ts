@@ -590,6 +590,13 @@ export default {
       success: 'Your location history has been cleared.',
       error: "We couldn't clear your location history. Please try again.",
     },
+    accountSection: {
+      title: 'Account',
+    },
+    manageAccount: {
+      label: 'Manage account',
+      description: 'Account options, including deleting your account.',
+    },
     error: {
       save: "We couldn't save your privacy preferences. Please try again.",
     },
@@ -947,6 +954,16 @@ export default {
     sent: 'Feedback sent!',
     sending: 'Sending feedback...',
     error: 'There was an error sending your feedback. Please try again.',
+  },
+  manageAccountScreen: {
+    title: 'Manage account',
+    dangerZone: {
+      title: 'Danger zone',
+      subtitle: 'These actions are permanent and cannot be undone.',
+    },
+    deleteAccount: {
+      title: 'Delete account',
+    },
   },
   deleteAccountScreen: {
     deleteAccount: 'Delete account',
