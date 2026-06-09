@@ -12,7 +12,7 @@ module.exports = {
     '^.+\\.svg?$': 'jest-transformer-svg',
   },
   transformIgnorePatterns: [
-    'node_modules/(?!(react-native|@react-native|expo-modules-core|react-native-gesture-handler|react-native-reanimated|react-native-worklets|react-native-nitro-sqlite|react-native-nitro-modules))',
+    'node_modules/(?!(react-native|@react-native|@react-navigation|expo-modules-core|react-native-gesture-handler|react-native-reanimated|react-native-worklets|react-native-nitro-sqlite|react-native-nitro-modules))',
   ],
   testPathIgnorePatterns: ['<rootDir>/node_modules', '<rootDir>/.claude/'],
   watchPathIgnorePatterns: ['<rootDir>/.claude/'],
