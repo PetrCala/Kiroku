@@ -135,6 +135,7 @@ type SettingsNavigatorParamList = {
   [SCREENS.SETTINGS.REPORT_BUG]: undefined;
   [SCREENS.SETTINGS.FEEDBACK]: undefined;
   [SCREENS.SETTINGS.ABOUT]: undefined;
+  [SCREENS.SETTINGS.MANAGE_ACCOUNT]: undefined;
   [SCREENS.SETTINGS.DELETE]: undefined;
 };
 

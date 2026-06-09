@@ -14,6 +14,10 @@ import Switch from '@components/Switch';
 import Text from '@components/Text';
 import Button from '@components/Button';
 import ConfirmModal from '@components/ConfirmModal';
+import MenuItem from '@components/MenuItem';
+import * as KirokuIcons from '@components/Icon/KirokuIcons';
+import CONST from '@src/CONST';
+import ROUTES from '@src/ROUTES';
 import * as Preferences from '@userActions/Preferences';
 import * as Privacy from '@userActions/Privacy';
 import * as SessionLocations from '@userActions/SessionLocations';
@@ -269,6 +273,21 @@ function PrivacyScreen() {
               />
             </View>
           </View>
+        </Section>
+        <Section
+          title={translate('privacyScreen.accountSection.title')}
+          titleStyles={styles.generalSectionTitle}
+          isCentralPane
+          childrenStyles={styles.pt3}>
+          <MenuItem
+            title={translate('privacyScreen.manageAccount.label')}
+            description={translate('privacyScreen.manageAccount.description')}
+            icon={KirokuIcons.Profile}
+            iconType={CONST.ICON_TYPE_ICON}
+            wrapperStyle={styles.sectionMenuItemTopDescription}
+            shouldShowRightIcon
+            onPress={() => Navigation.navigate(ROUTES.SETTINGS_MANAGE_ACCOUNT)}
+          />
         </Section>
         <ConfirmModal
           danger

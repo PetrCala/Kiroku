@@ -124,6 +124,7 @@ const ROUTES = {
   SETTINGS_SUBSCRIPTION_TERMS: 'settings/subscription-terms',
   SETTINGS_REPORT_BUG: 'settings/report-bug',
   SETTINGS_FEEDBACK: 'settings/feedback',
+  SETTINGS_MANAGE_ACCOUNT: 'settings/manage-account',
   SETTINGS_DELETE: 'settings/delete',
   SETTINGS_ADMIN: 'settings/admin',
   SETTINGS_ADMIN_FEEDBACK: 'settings/admin/feedback',

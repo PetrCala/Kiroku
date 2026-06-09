@@ -204,6 +204,9 @@ const SettingsModalStackNavigator =
       require<ReactComponentModule>('@screens/Settings/FeedbackScreen').default,
     [SCREENS.SETTINGS.ABOUT]: () =>
       require<ReactComponentModule>('@screens/Settings/AboutScreen').default,
+    [SCREENS.SETTINGS.MANAGE_ACCOUNT]: () =>
+      require<ReactComponentModule>('@screens/Settings/Account/ManageAccountScreen')
+        .default,
     [SCREENS.SETTINGS.DELETE]: () =>
       require<ReactComponentModule>('@screens/Settings/DeleteAccountScreen')
         .default,

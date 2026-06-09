@@ -595,6 +595,13 @@ export default {
       success: 'Vaše historie polohy byla vymazána.',
       error: 'Nepodařilo se vymazat historii polohy. Zkuste to prosím znovu.',
     },
+    accountSection: {
+      title: 'Účet',
+    },
+    manageAccount: {
+      label: 'Správa účtu',
+      description: 'Možnosti účtu, včetně smazání vašeho účtu.',
+    },
     error: {
       save: 'Nepodařilo se uložit nastavení soukromí. Zkuste to prosím znovu.',
     },
@@ -952,6 +959,16 @@ export default {
     sent: 'Zpětná vazba odeslána!',
     sending: 'Odesílám zpětnou vazbu…',
     error: 'Došlo k chybě při odesílání zpětné vazby. Zkuste to prosím znovu.',
+  },
+  manageAccountScreen: {
+    title: 'Správa účtu',
+    dangerZone: {
+      title: 'Nebezpečná zóna',
+      subtitle: 'Tyto akce jsou trvalé a nelze je vrátit zpět.',
+    },
+    deleteAccount: {
+      title: 'Smazat účet',
+    },
   },
   deleteAccountScreen: {
     deleteAccount: 'Smazat účet',

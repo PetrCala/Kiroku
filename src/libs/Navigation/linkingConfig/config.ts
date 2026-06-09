@@ -182,6 +182,10 @@ const config: LinkingOptions<RootStackParamList>['config'] = {
             [SCREENS.SETTINGS.REPORT_BUG]: ROUTES.SETTINGS_REPORT_BUG,
             [SCREENS.SETTINGS.FEEDBACK]: ROUTES.SETTINGS_FEEDBACK,
             [SCREENS.SETTINGS.ABOUT]: ROUTES.SETTINGS_ABOUT,
+            [SCREENS.SETTINGS.MANAGE_ACCOUNT]: {
+              path: ROUTES.SETTINGS_MANAGE_ACCOUNT,
+              exact: true,
+            },
             [SCREENS.SETTINGS.DELETE]: {
               path: ROUTES.SETTINGS_DELETE,
               exact: true,
