@@ -5,6 +5,7 @@ import FullscreenLoadingIndicator from '@components/FullscreenLoadingIndicator';
 import HeaderWithBackButton from '@components/HeaderWithBackButton';
 import ScreenWrapper from '@components/ScreenWrapper';
 import useLocalize from '@hooks/useLocalize';
+import useNetwork from '@hooks/useNetwork';
 import useThemeStyles from '@hooks/useThemeStyles';
 import Navigation from '@libs/Navigation/Navigation';
 import * as ValidationUtils from '@libs/ValidationUtils';
@@ -26,6 +27,7 @@ function ForgotPasswordScreen() {
   const styles = useThemeStyles();
   const {translate} = useLocalize();
   const {auth} = useFirebase();
+  const {isOffline} = useNetwork();
   const [serverErrorMessage, setServerErrorMessage] = React.useState('');
   const [successMessage, setSuccessMessage] = React.useState('');
   const [isLoading, setIsLoading] = React.useState(false);
@@ -34,6 +36,11 @@ function ForgotPasswordScreen() {
     values: FormOnyxValues<typeof ONYXKEYS.FORMS.FORGOT_PASSWORD_FORM>,
   ) => {
     (async () => {
+      // Sending the reset email needs the network; bail when offline. The
+      // disabled submit button and OfflineIndicator already explain why.
+      if (isOffline) {
+        return;
+      }
       setIsLoading(true);
       setSuccessMessage('');
 
@@ -99,7 +106,7 @@ function ForgotPasswordScreen() {
           validate={validate}
           onSubmit={onSubmit}
           submitButtonText={translate('forgotPasswordScreen.submit')}
-          isSubmitDisabled={!!successMessage}
+          isSubmitDisabled={!!successMessage || isOffline}
           style={[styles.flexGrow1, styles.mh5]}>
           <View style={[styles.flexGrow1]}>
             <Text>{translate('forgotPasswordScreen.prompt')}</Text>
