@@ -28,7 +28,8 @@ import ScreenWrapper from '@components/ScreenWrapper';
 import HeaderWithBackButton from '@components/HeaderWithBackButton';
 import useLocalize from '@hooks/useLocalize';
 import useReadyAfterScreenTransition from '@hooks/useReadyAfterScreenTransition';
-import FullScreenLoadingIndicator from '@components/FullscreenLoadingIndicator';
+import FlexibleLoadingIndicator from '@components/FlexibleLoadingIndicator';
+import OfflineIndicator from '@components/OfflineIndicator';
 import useThemeStyles from '@hooks/useThemeStyles';
 import Button from '@components/Button';
 import ManageFriendPopover from '@components/ManageFriendPopover';
@@ -152,25 +153,75 @@ function ProfileScreen({route}: ProfileScreenProps) {
     setCommonFriendCount(newCommonFriendCount);
   }, [friends, selfFriends]);
 
+  const header = (
+    <HeaderWithBackButton
+      title={
+        user?.uid === userID
+          ? translate('profileScreen.title')
+          : translate('profileScreen.titleNotSelf')
+      }
+      onBackButtonPress={Navigation.goBack}
+    />
+  );
+
+  // A cross-user profile read can't be queued while offline, so a friend whose
+  // data isn't already cached resolves with nothing. Keep the screen chrome
+  // (header + offline indicator) and show a graceful loading/empty state rather
+  // than the blank dark screen an early `return` produced.
   if (isLoading) {
-    return <FullScreenLoadingIndicator />;
+    return (
+      <ScreenWrapper
+        testID={ProfileScreen.displayName}
+        onEntryTransitionEnd={onEntryTransitionEnd}>
+        {header}
+        <View
+          style={[
+            styles.flex1,
+            styles.justifyContentCenter,
+            styles.alignItemsCenter,
+          ]}>
+          <FlexibleLoadingIndicator />
+        </View>
+        <OfflineIndicator />
+      </ScreenWrapper>
+    );
   }
   if (!profileData || !preferences || !userData) {
-    return;
+    return (
+      <ScreenWrapper
+        testID={ProfileScreen.displayName}
+        onEntryTransitionEnd={onEntryTransitionEnd}>
+        {header}
+        <View
+          style={[
+            styles.flex1,
+            styles.justifyContentCenter,
+            styles.alignItemsCenter,
+            styles.ph5,
+          ]}>
+          <Text style={[styles.textHeadlineH1, styles.textAlignCenter]}>
+            {translate('profileScreen.offlineUnavailableTitle')}
+          </Text>
+          <Text
+            style={[
+              styles.textNormal,
+              styles.textSupporting,
+              styles.textAlignCenter,
+              styles.mt2,
+            ]}>
+            {translate('profileScreen.offlineUnavailableMessage')}
+          </Text>
+        </View>
+        <OfflineIndicator />
+      </ScreenWrapper>
+    );
   }
 
   return (
     <ScreenWrapper
       testID={ProfileScreen.displayName}
       onEntryTransitionEnd={onEntryTransitionEnd}>
-      <HeaderWithBackButton
-        title={
-          user?.uid === userID
-            ? translate('profileScreen.title')
-            : translate('profileScreen.titleNotSelf')
-        }
-        onBackButtonPress={Navigation.goBack}
-      />
+      {header}
       <ScrollView
         style={[styles.flexGrow1, styles.mnw100]}
         showsVerticalScrollIndicator={false}>
@@ -236,6 +287,7 @@ function ProfileScreen({route}: ProfileScreenProps) {
         onClose={() => setManageFriendModalVisible(false)}
         friendId={userID}
       />
+      <OfflineIndicator />
     </ScreenWrapper>
   );
 }
