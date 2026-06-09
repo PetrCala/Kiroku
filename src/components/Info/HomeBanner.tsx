@@ -50,7 +50,7 @@ function HomeBanner({
       onPress={onPress}
       style={[
         styles.mt2,
-        styles.p4,
+        styles.p3,
         styles.flexRow,
         styles.alignItemsCenter,
         styles.justifyContentBetween,
@@ -75,7 +75,9 @@ function HomeBanner({
           <Text
             style={[
               styles.textLabelSupporting,
-              isActive && [styles.textStrong, {color: theme.danger}],
+              styles.textStrong,
+              styles.mb1,
+              isActive && {color: theme.danger},
             ]}
             numberOfLines={1}>
             {label}
@@ -105,7 +107,7 @@ function HomeBannerSkeleton() {
   const styles = useThemeStyles();
   return (
     <View style={styles.mt2}>
-      <Skeleton height={68} radius={12} />
+      <Skeleton height={64} radius={12} />
     </View>
   );
 }
