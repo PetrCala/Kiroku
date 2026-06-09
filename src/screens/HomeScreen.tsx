@@ -16,9 +16,11 @@ import type {StackScreenProps} from '@react-navigation/stack';
 import {useFocusEffect} from '@react-navigation/native';
 import type {BottomTabNavigatorParamList} from '@libs/Navigation/types';
 import type SCREENS from '@src/SCREENS';
-import MonthlyOverviewCard from '@components/Items/MonthlyOverviewCard';
+import MonthlyOverviewCard, {
+  MonthlyOverviewCardSkeleton,
+} from '@components/Items/MonthlyOverviewCard';
 import ScreenWrapper from '@components/ScreenWrapper';
-import HomeBanner from '@components/Info/HomeBanner';
+import HomeBanner, {HomeBannerSkeleton} from '@components/Info/HomeBanner';
 import useThemeStyles from '@hooks/useThemeStyles';
 import getPlatform from '@libs/getPlatform';
 import FullScreenLoadingIndicator from '@components/FullscreenLoadingIndicator';
@@ -42,7 +44,7 @@ import {isEmptyObject} from '@src/types/utils/EmptyObject';
 import Button from '@components/Button';
 import SessionsCalendarCompactSkeleton from '@components/SessionsCalendar/SessionsCalendarCompactSkeleton';
 import NoSessionsInfo from '@components/NoSessionsInfo';
-import {HomeHeaderSkeleton, StatOverviewSkeleton} from './HomeScreenSkeleton';
+import HomeHeaderSkeleton from './HomeScreenSkeleton';
 
 type HomeScreenProps = StackScreenProps<
   BottomTabNavigatorParamList,
@@ -160,7 +162,8 @@ function HomeScreen({route}: HomeScreenProps) {
     if (showSkeletonContent) {
       return (
         <>
-          <StatOverviewSkeleton />
+          <HomeBannerSkeleton />
+          <MonthlyOverviewCardSkeleton />
           <SessionsCalendarCompactSkeleton />
         </>
       );

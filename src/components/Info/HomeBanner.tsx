@@ -2,6 +2,7 @@ import {View} from 'react-native';
 import Icon from '@components/Icon';
 import * as KirokuIcons from '@components/Icon/KirokuIcons';
 import {PressableWithFeedback} from '@components/Pressable';
+import Skeleton from '@components/Skeleton';
 import Text from '@components/Text';
 import useTheme from '@hooks/useTheme';
 import useThemeStyles from '@hooks/useThemeStyles';
@@ -99,5 +100,16 @@ function HomeBanner({
   );
 }
 
+/** Placeholder that mirrors HomeBanner's footprint (margin + height). */
+function HomeBannerSkeleton() {
+  const styles = useThemeStyles();
+  return (
+    <View style={styles.mt2}>
+      <Skeleton height={68} radius={12} />
+    </View>
+  );
+}
+
 export default HomeBanner;
+export {HomeBannerSkeleton};
 export type {HomeBannerProps, HomeBannerTone};

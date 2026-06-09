@@ -1,7 +1,9 @@
 import {View} from 'react-native';
 import type {DateData} from 'react-native-calendars';
 import {useFirebase} from '@context/global/FirebaseContext';
-import MonthlyOverviewCard from '@components/Items/MonthlyOverviewCard';
+import MonthlyOverviewCard, {
+  MonthlyOverviewCardSkeleton,
+} from '@components/Items/MonthlyOverviewCard';
 import ProfileOverview from '@components/Social/ProfileOverview';
 import React, {useCallback, useEffect, useMemo, useState} from 'react';
 import {useOnyx} from 'react-native-onyx';
@@ -197,11 +199,15 @@ function ProfileScreen({route}: ProfileScreenProps) {
           />
         </View>
         <View style={styles.ph2}>
-          <MonthlyOverviewCard
-            stats={profileStats}
-            showWeeklyUnits={false}
-            showMonthComparison
-          />
+          {didScreenTransitionEnd ? (
+            <MonthlyOverviewCard
+              stats={profileStats}
+              showWeeklyUnits={false}
+              showMonthComparison
+            />
+          ) : (
+            <MonthlyOverviewCardSkeleton />
+          )}
           {didScreenTransitionEnd ? (
             <SessionsCalendar
               userID={userID}

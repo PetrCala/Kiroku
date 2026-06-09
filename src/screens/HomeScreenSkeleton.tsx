@@ -18,18 +18,4 @@ function HomeHeaderSkeleton() {
   );
 }
 
-/**
- * Placeholder for the consolidated "This month" overview card (title row +
- * three stat columns). Height + margin mirror MonthlyOverviewCard so the
- * swap-in doesn't jolt the layout.
- */
-function StatOverviewSkeleton() {
-  const styles = useThemeStyles();
-  return (
-    <View style={styles.mv2}>
-      <Skeleton height={110} radius={12} />
-    </View>
-  );
-}
-
-export {HomeHeaderSkeleton, StatOverviewSkeleton};
+export default HomeHeaderSkeleton;
