@@ -1279,6 +1279,11 @@ export default {
     welcomeToKiroku: 'Welcome to Kiroku!',
     startNewSessionByClickingPlus:
       'Start a new session by clicking the plus button at the bottom of your screen',
+    offlineNoData: {
+      title: "You're offline",
+      message:
+        "We couldn't load your sessions. Reconnect and they'll show up here.",
+    },
     banners: {
       inSession: {
         label: 'In session',
