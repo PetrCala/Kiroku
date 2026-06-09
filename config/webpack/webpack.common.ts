@@ -120,6 +120,8 @@ const getCommonConfiguration = ({
           {from: 'web/apple-touch-icon.png'},
           {from: 'web/og-preview-image.png'},
           {from: 'web/manifest.json'},
+          // Opt-in device-simulator host page (embeds the app at `/` in a phone bezel iframe).
+          {from: 'web/simulator.html'},
           {from: 'assets/css', to: 'css'},
           {from: 'assets/fonts/web', to: 'fonts'},
 

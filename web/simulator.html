@@ -1,0 +1,170 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>Kiroku — Simulator</title>
+    <meta name="robots" content="noindex, nofollow" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <style>
+      :root {
+        color-scheme: dark;
+      }
+      html,
+      body {
+        margin: 0;
+        height: 100%;
+      }
+      body {
+        background: radial-gradient(circle at 50% 30%, #2a2a2e 0%, #0d0d0f 75%);
+        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto,
+          sans-serif;
+        overflow: hidden;
+      }
+
+      /* Device picker — opt-in, unobtrusive overlay */
+      .toolbar {
+        position: fixed;
+        top: 12px;
+        left: 50%;
+        transform: translateX(-50%);
+        z-index: 10;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        padding: 6px 10px;
+        border-radius: 999px;
+        background: rgba(255, 255, 255, 0.08);
+        color: #d8d8da;
+        font-size: 12px;
+        opacity: 0.45;
+        transition: opacity 150ms ease;
+      }
+      .toolbar:hover {
+        opacity: 1;
+      }
+      .toolbar select {
+        background: #1c1c1e;
+        color: #fff;
+        border: 1px solid rgba(255, 255, 255, 0.15);
+        border-radius: 8px;
+        padding: 3px 6px;
+        font-size: 12px;
+      }
+
+      /* Phone bezel, visually scaled to fit the viewport (layout size is unchanged,
+         so the app inside the iframe always sees the true device dimensions). */
+      .device {
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        transform-origin: center center;
+        padding: 14px;
+        background: #0a0a0a;
+        border-radius: 54px;
+        box-shadow:
+          0 0 0 2px #2c2c2e,
+          0 30px 70px rgba(0, 0, 0, 0.55);
+      }
+      .screen {
+        position: relative;
+        overflow: hidden;
+        border-radius: 42px;
+        background: #fff;
+      }
+      .screen iframe {
+        display: block;
+        width: 100%;
+        height: 100%;
+        border: 0;
+        background: #fff;
+      }
+      /* Notch */
+      .notch {
+        position: absolute;
+        top: 0;
+        left: 50%;
+        transform: translateX(-50%);
+        width: 42%;
+        height: 26px;
+        background: #0a0a0a;
+        border-bottom-left-radius: 18px;
+        border-bottom-right-radius: 18px;
+        z-index: 2;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="toolbar">
+      <span>Device</span>
+      <select id="device-select" aria-label="Device preset">
+        <option value="iphone15">iPhone 15 (393×852)</option>
+        <option value="pixel7">Pixel 7 (412×915)</option>
+        <option value="iphoneSE">iPhone SE (375×667)</option>
+      </select>
+    </div>
+
+    <div class="device" id="device">
+      <div class="notch"></div>
+      <div class="screen" id="screen">
+        <iframe
+          src="/"
+          title="Kiroku"
+          allow="clipboard-read; clipboard-write"></iframe>
+      </div>
+    </div>
+
+    <script>
+      (function () {
+        // [width, height] in CSS px — this is exactly what the app's
+        // useWindowDimensions / isSmallScreenWidth will read inside the iframe.
+        var PRESETS = {
+          iphone15: [393, 852],
+          pixel7: [412, 915],
+          iphoneSE: [375, 667],
+        };
+
+        var params = new URLSearchParams(window.location.search);
+        var device = params.get('device') || 'iphone15';
+        var size = PRESETS[device] || PRESETS.iphone15;
+        var w = parseInt(params.get('w'), 10) || size[0];
+        var h = parseInt(params.get('h'), 10) || size[1];
+
+        var deviceEl = document.getElementById('device');
+        var screenEl = document.getElementById('screen');
+        var selectEl = document.getElementById('device-select');
+
+        screenEl.style.width = w + 'px';
+        screenEl.style.height = h + 'px';
+        if (PRESETS[device]) {
+          selectEl.value = device;
+        }
+
+        selectEl.addEventListener('change', function () {
+          params.set('device', selectEl.value);
+          params.delete('w');
+          params.delete('h');
+          window.location.search = params.toString();
+        });
+
+        // Shrink (never enlarge) the bezel so it fits on smaller laptop screens.
+        // A CSS transform is visual only, so the iframe still lays out at w×h.
+        function fit() {
+          var margin = 48;
+          var availW = window.innerWidth - margin;
+          var availH = window.innerHeight - margin;
+          var scale = Math.min(
+            1,
+            availW / deviceEl.offsetWidth,
+            availH / deviceEl.offsetHeight,
+          );
+          deviceEl.style.transform =
+            'translate(-50%, -50%) scale(' + scale + ')';
+        }
+
+        window.addEventListener('resize', fit);
+        fit();
+      })();
+    </script>
+  </body>
+</html>
