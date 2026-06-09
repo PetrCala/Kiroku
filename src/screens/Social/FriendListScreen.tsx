@@ -1,4 +1,5 @@
 import {View} from 'react-native';
+import {useOnyx} from 'react-native-onyx';
 import SearchWindow from '@components/Social/SearchWindow';
 import type {UserIDToNicknameMapping} from '@src/types/various/Search';
 import React, {useCallback, useEffect, useMemo, useState} from 'react';
@@ -13,12 +14,16 @@ import useFriendsData from '@hooks/useFriendsData';
 import NoFriendInfo from '@components/Social/NoFriendInfo';
 import useLocalize from '@hooks/useLocalize';
 import useThemeStyles from '@hooks/useThemeStyles';
+import useNetwork from '@hooks/useNetwork';
+import ONYXKEYS from '@src/ONYXKEYS';
 import ERRORS from '@src/ERRORS';
 
 function FriendListScreen() {
   const userData = useCurrentUserData();
   const {translate} = useLocalize();
   const styles = useThemeStyles();
+  const {isOffline} = useNetwork();
+  const [isLoadingApp] = useOnyx(ONYXKEYS.IS_LOADING_APP);
   const [friends, setFriends] = useState<UserArray>([]);
   const [friendsToDisplay, setFriendsToDisplay] = useState<UserArray>([]);
   const [userHasFriends, setUserHasFriends] = useState<boolean>(false);
@@ -28,6 +33,17 @@ function FriendListScreen() {
     isLoading: isLoadingFriends,
   } = useFriendsData(friends);
   const [isSearching, setIsSearching] = useState<boolean>(false);
+
+  // `friends` is empty until app/open delivers the friend list (or a warm cache
+  // hydrates). `IS_LOADING_APP === false` marks that bootstrap as settled, but it
+  // only flips in app/open's finallyData, which is deferred while offline, so it
+  // stays `true` offline. Online with nothing yet: keep the list loading so the
+  // first-boot "no friends" flash never shows. Offline with nothing cached:
+  // bootstrap can't settle, so show an offline notice rather than spinning
+  // forever or falsely claiming the user has no friends.
+  const isBootstrapPending = isLoadingApp !== false && friends.length === 0;
+  const isInitialFriendsLoad = isBootstrapPending && !isOffline;
+  const isFriendsUnavailableOffline = isBootstrapPending && isOffline;
 
   const localSearch = useCallback(
     (searchText: string): void => {
@@ -57,6 +73,13 @@ function FriendListScreen() {
   };
 
   const emptyListComponent = useMemo(() => {
+    if (isFriendsUnavailableOffline) {
+      return (
+        <Text style={styles.noResultsText}>
+          {translate('friendListScreen.offlineNoData')}
+        </Text>
+      );
+    }
     if (!userHasFriends) {
       return <NoFriendInfo />;
     }
@@ -65,7 +88,12 @@ function FriendListScreen() {
         {`${translate('userList.noFriendsFound')}\n\n${translate('userList.tryModifyingSearch')}`}
       </Text>
     );
-  }, [userHasFriends, styles.noResultsText, translate]);
+  }, [
+    isFriendsUnavailableOffline,
+    userHasFriends,
+    styles.noResultsText,
+    translate,
+  ]);
 
   useEffect(() => {
     const friendsArray = objKeys(userData?.friends);
@@ -90,7 +118,7 @@ function FriendListScreen() {
         emptyListComponent={emptyListComponent}
         userSubset={friendsToDisplay}
         orderUsers
-        isLoading={isLoadingFriends || isSearching}
+        isLoading={isLoadingFriends || isSearching || isInitialFriendsLoad}
       />
     </View>
   );
