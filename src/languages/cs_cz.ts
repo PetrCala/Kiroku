@@ -855,6 +855,9 @@ export default {
     newSessionExplained: 'Spustit relaci (plovoucí tlačítko)',
     sessionFrom: ({startTime}: SessionStartTimeParams) =>
       `Relace od ${startTime}`,
+    unavailableTitle: 'Relace se nenačetly',
+    unavailableMessage:
+      'Nepodařilo se načíst vaše relace. Připojte se k internetu a zkuste to znovu.',
   },
   userNameScreen: {
     headerTitle: 'Uživatelské jméno',
