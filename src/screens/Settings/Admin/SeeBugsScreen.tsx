@@ -6,6 +6,7 @@ import ScrollView from '@components/ScrollView';
 import Section from '@components/Section';
 import FullScreenLoadingIndicator from '@components/FullscreenLoadingIndicator';
 import useLocalize from '@hooks/useLocalize';
+import useNetwork from '@hooks/useNetwork';
 import useThemeStyles from '@hooks/useThemeStyles';
 import Navigation from '@libs/Navigation/Navigation';
 import type {Bug, NicknameToId} from '@src/types/onyx';
@@ -42,6 +43,18 @@ function SeeBugsScreen() {
       isMounted = false;
     };
   }, []);
+
+  // Re-issue the read when connectivity resumes. `getBugList` goes through
+  // `makeRequestWithSideEffects`, which DISCARDS a read while offline instead of
+  // queueing it (unlike `API.write`), and the mount effect above runs once (`[]`)
+  // so it never re-runs on reconnect — without this an offline mount leaves the
+  // list empty after going back online. No loading toggle: the read carries no
+  // optimistic data and refreshes the `BUG_LIST` Onyx key in place.
+  useNetwork({
+    onReconnect: () => {
+      getBugList();
+    },
+  });
 
   useEffect(() => {
     const fetchNicknames = async () => {

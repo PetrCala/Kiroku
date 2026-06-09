@@ -1,6 +1,7 @@
 import {useFocusEffect} from '@react-navigation/native';
 import React, {useRef, useState} from 'react';
 import {useOnyx} from 'react-native-onyx';
+import useNetwork from '@hooks/useNetwork';
 import * as Profile from '@userActions/Profile';
 import ONYXKEYS from '@src/ONYXKEYS';
 import type {ProfileList, UserStatusList} from '@src/types/onyx';
@@ -84,6 +85,26 @@ function useFriendsData(friendIDs: UserArray): UseFriendsDataReturn {
       });
     }, [friendIDs]),
   );
+
+  // Re-issue the batched read when connectivity resumes. `fetchUsersData` goes
+  // through `makeRequestWithSideEffects`, which DISCARDS a read while offline
+  // instead of queueing it (unlike `API.write`). `useFocusEffect` only recovers
+  // a tab switch, so a stay-on-screen reconnect would leave the list stale —
+  // mirror the focus-effect body here (same latest-wins token) so going back
+  // online refreshes `USER_DATA_LIST` in place without a tab switch.
+  useNetwork({
+    onReconnect: () => {
+      if (friendIDs.length === 0) {
+        return;
+      }
+      const token = ++currentTokenRef.current;
+      Profile.fetchUsersData(friendIDs).finally(() => {
+        if (token === currentTokenRef.current) {
+          setHasResolvedInitial(true);
+        }
+      });
+    },
+  });
 
   return {profileList, userStatusList, isLoading};
 }
