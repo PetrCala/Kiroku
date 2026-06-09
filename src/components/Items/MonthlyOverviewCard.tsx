@@ -96,6 +96,10 @@ function MetricColumn({
 
 type MonthlyOverviewCardProps = {
   visibleDate: DateData;
+  /** Show the card's title row text. The arrow shortcut stays either way. */
+  showTitle?: boolean;
+  /** Title text; defaults to the localized "Monthly overview". */
+  title?: string;
   /** Show the per-week units bar chart beneath the columns. */
   showWeeklyUnits?: boolean;
   /** Show the month-over-month comparison (trend arrow + previous value). */
@@ -112,6 +116,8 @@ type MonthlyOverviewCardProps = {
  */
 function MonthlyOverviewCard({
   visibleDate,
+  showTitle = true,
+  title,
   showWeeklyUnits = true,
   showMonthComparison = true,
 }: MonthlyOverviewCardProps) {
@@ -146,14 +152,16 @@ function MonthlyOverviewCard({
         <View
           style={[
             styles.flexRow,
-            styles.justifyContentBetween,
             styles.alignItemsCenter,
+            showTitle ? styles.justifyContentBetween : styles.justifyContentEnd,
           ]}>
-          <Text
-            style={[styles.textLabelSupporting, styles.textStrong]}
-            numberOfLines={1}>
-            {translate('homeScreen.stats.monthlyOverview')}
-          </Text>
+          {showTitle ? (
+            <Text
+              style={[styles.textLabelSupporting, styles.textStrong]}
+              numberOfLines={1}>
+              {title ?? translate('homeScreen.stats.monthlyOverview')}
+            </Text>
+          ) : null}
           <PressableWithFeedback
             accessibilityLabel={translate('homeScreen.stats.viewStatistics')}
             accessibilityRole="button"
