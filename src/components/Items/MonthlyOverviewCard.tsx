@@ -59,6 +59,7 @@ function MetricColumn({
   showComparison,
 }: MetricColumnProps) {
   const styles = useThemeStyles();
+  const {translate} = useLocalize();
   return (
     <View style={styles.flex1}>
       <Text style={styles.textLabelSupporting} numberOfLines={1}>
@@ -86,7 +87,9 @@ function MetricColumn({
             {color: deltaColor},
           ]}
           numberOfLines={1}>
-          {ARROW[direction]} {previous}
+          {direction === 'flat'
+            ? translate('homeScreen.stats.noChange')
+            : `${ARROW[direction]} ${previous}`}
         </Text>
       ) : null}
     </View>
@@ -110,9 +113,9 @@ type MonthlyOverviewCardProps = {
  * Reusable "This month" stats card: three columns (Units, Sessions,
  * Alcohol-free) for a month. Each column shows the current value and, when
  * `showMonthComparison` is on, a trend arrow + the previous month's value. An
- * optional per-week bar chart sits below when `showWeeklyUnits` is on, and a
- * quiet arrow shortcut opens the Statistics screen. Presentational — the caller
- * supplies `stats` (home or profile), so it works for self and other users.
+ * optional per-week bar chart sits below when `showWeeklyUnits` is on. The
+ * whole card is tappable and opens the Statistics screen. Presentational — the
+ * caller supplies `stats` (home or profile), so it works for self and others.
  */
 function MonthlyOverviewCard({
   stats,
@@ -142,39 +145,27 @@ function MonthlyOverviewCard({
   const afDir = directionOf(current.afDays, previous.afDays);
 
   return (
-    <View style={styles.mv2}>
-      <View
-        style={[
-          styles.p3,
-          {backgroundColor: theme.cardSoftBG, borderRadius: 12},
-        ]}>
-        <View
-          style={[
-            styles.flexRow,
-            styles.alignItemsCenter,
-            showTitle ? styles.justifyContentBetween : styles.justifyContentEnd,
-          ]}>
-          {showTitle ? (
-            <Text
-              style={[styles.textLabelSupporting, styles.textStrong]}
-              numberOfLines={1}>
-              {title ?? translate('homeScreen.stats.thisMonth')}
-            </Text>
-          ) : null}
-          <PressableWithFeedback
-            accessibilityLabel={translate('homeScreen.stats.viewStatistics')}
-            accessibilityRole="button"
-            onPress={() => Navigation.navigate(ROUTES.STATISTICS)}>
-            <Icon
-              src={KirokuIcons.ArrowRight}
-              width={16}
-              height={16}
-              fill={theme.icon}
-            />
-          </PressableWithFeedback>
-        </View>
+    <PressableWithFeedback
+      accessibilityLabel={translate('homeScreen.stats.viewStatistics')}
+      accessibilityRole="button"
+      onPress={() => Navigation.navigate(ROUTES.STATISTICS)}
+      style={[
+        styles.mv2,
+        styles.p3,
+        styles.flexRow,
+        styles.alignItemsCenter,
+        {backgroundColor: theme.cardSoftBG, borderRadius: 12},
+      ]}>
+      <View style={styles.flex1}>
+        {showTitle ? (
+          <Text
+            style={[styles.textLabelSupporting, styles.textStrong, styles.mb1]}
+            numberOfLines={1}>
+            {title ?? translate('homeScreen.stats.thisMonth')}
+          </Text>
+        ) : null}
 
-        <View style={[styles.flexRow, styles.mt1]}>
+        <View style={styles.flexRow}>
           <MetricColumn
             label={translate('homeScreen.stats.units')}
             value={formatUnits(unitsCurrent)}
@@ -222,7 +213,16 @@ function MonthlyOverviewCard({
           </View>
         ) : null}
       </View>
-    </View>
+
+      <View style={styles.ml2}>
+        <Icon
+          src={KirokuIcons.ArrowRight}
+          width={16}
+          height={16}
+          fill={theme.icon}
+        />
+      </View>
+    </PressableWithFeedback>
   );
 }
 

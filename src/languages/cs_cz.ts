@@ -1290,6 +1290,7 @@ export default {
     },
     stats: {
       thisMonth: 'Tento měsíc',
+      noChange: 'Beze změny',
       units: 'Jednotky',
       sessions: 'Relace',
       alcoholFree: 'Bez alkoholu',
