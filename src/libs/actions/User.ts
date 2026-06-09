@@ -121,17 +121,23 @@ const getDefaultUserData = (profileData: Profile): UserData => {
  *   mis-route them into onboarding) with no way to undo it: the `409` surfaces as
  *   a thrown HTTP rejection that never reaches `SaveResponseInOnyx`, so neither
  *   `onyxData` nor `failureData` is applied. A brand-new OAuth user is
- *   unaffected — the server's `200` response carries the same `onyxData`, applied
- *   when this promise resolves (before the sign-in overlay drops).
+ *   unaffected: `signInWithOAuth` writes the same defaults imperatively on the
+ *   `200` success path (see `getNewUserOnyxData`), so the post-auth redirect
+ *   does not depend on the server echoing `onyxData`.
  */
-function provisionUser(
+/**
+ * The Onyx writes that seed a brand-new account's default user data,
+ * preferences, and theme. Shared by `provisionUser`'s optimistic update (the
+ * email/password path) and `signInWithOAuth`'s success path, which applies
+ * them imperatively once the server confirms the account is genuinely new.
+ */
+function getNewUserOnyxData(
   userID: string,
   profileData: Profile,
-  {applyOptimisticData = true}: {applyOptimisticData?: boolean} = {},
-): Promise<void | Response> {
+): OnyxUpdate[] {
   const userData = getDefaultUserData(profileData);
   const preferences = getDefaultPreferences();
-  const optimisticData: OnyxUpdate[] = [
+  return [
     {
       onyxMethod: Onyx.METHOD.MERGE,
       key: ONYXKEYS.USER_DATA_LIST,
@@ -148,12 +154,23 @@ function provisionUser(
       value: preferences.theme ?? CONST.THEME.SYSTEM,
     },
   ];
+}
+
+function provisionUser(
+  userID: string,
+  profileData: Profile,
+  {applyOptimisticData = true}: {applyOptimisticData?: boolean} = {},
+): Promise<void | Response> {
+  const userData = getDefaultUserData(profileData);
+  const preferences = getDefaultPreferences();
 
   // eslint-disable-next-line rulesdir/no-api-side-effects-method
   return API.makeRequestWithSideEffects(
     WRITE_COMMANDS.PROVISION_USER,
     {profile: profileData, timezone: userData.timezone, preferences},
-    applyOptimisticData ? {optimisticData} : {},
+    applyOptimisticData
+      ? {optimisticData: getNewUserOnyxData(userID, profileData)}
+      : {},
   );
 }
 
@@ -485,8 +502,20 @@ async function signInWithOAuth(
     // `provisionUser`) because a returning user reaches this on every sign-in
     // and the defaults would briefly overwrite their real data with no rollback.
     await provisionUser(user.uid, profileData, {applyOptimisticData: false});
-    // Brand-new account only — a `409` jumps to the catch and skips this, since a
-    // returning user already has their Firebase Auth display name.
+    // Brand-new account only — a `409` jumps to the catch and skips everything
+    // below, since a returning user already has their data and display name.
+    //
+    // Seed the default user data into Onyx now that the `200` has confirmed a
+    // genuinely new account. Without a local write the post-auth OnboardingGuard
+    // has no `userData` to gate on (its readiness check is
+    // `isLoadingApp === false && userData !== undefined`) and depends entirely on
+    // the server echoing `onyxData` winning a race against `openApp` — on native
+    // that race is routinely lost, leaving the new account stranded on the auth
+    // screen instead of being redirected into onboarding. This mirrors the
+    // synchronous optimistic write the email/password signup already does, making
+    // the OAuth redirect deterministic. The returning-user path must never reach
+    // here (it would clobber their real prefs/theme); the 409 catch guarantees it.
+    await Onyx.update(getNewUserOnyxData(user.uid, profileData));
     await updateProfile(user, {displayName: name});
   } catch (error) {
     // `409 Conflict` = the account already exists (returning user). That is the

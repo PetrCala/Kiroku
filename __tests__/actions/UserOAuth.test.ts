@@ -8,9 +8,11 @@
 
 import {signInWithCredential, updateProfile} from 'firebase/auth';
 import type {Auth, AuthCredential} from 'firebase/auth';
+import Onyx from 'react-native-onyx';
 import * as API from '@libs/API';
 import {WRITE_COMMANDS} from '@libs/API/types';
 import HttpsError from '@libs/Errors/HttpsError';
+import ONYXKEYS from '@src/ONYXKEYS';
 import * as Session from '@userActions/Session';
 import * as UserActions from '@userActions/User';
 
@@ -101,6 +103,7 @@ const mockedSignIn = jest.mocked(signInWithCredential);
 const mockedUpdateProfile = jest.mocked(updateProfile);
 const mockedProvision = jest.mocked(API.makeRequestWithSideEffects);
 const mockedClearSignInData = jest.mocked(Session.clearSignInData);
+const mockedOnyxUpdate = jest.mocked(Onyx.update);
 
 const fakeAuth = {} as Auth;
 const fakeCredential = {} as AuthCredential;
@@ -144,6 +147,29 @@ describe('signInWithOAuth', () => {
     expect(mockedClearSignInData).toHaveBeenCalledTimes(1);
   });
 
+  it('seeds the default user data into Onyx for a brand-new account so the redirect is deterministic', async () => {
+    mockedProvision.mockResolvedValue(undefined);
+
+    await UserActions.signInWithOAuth(fakeAuth, fakeCredential, 'Jane Doe');
+
+    // The OnboardingGuard gates on `userData !== undefined`; without this local
+    // write a brand-new OAuth account is stranded on the auth screen on native.
+    expect(mockedOnyxUpdate).toHaveBeenCalledTimes(1);
+    const updates = mockedOnyxUpdate.mock.calls[0][0];
+    const userDataUpdate = updates.find(
+      update => update.key === ONYXKEYS.USER_DATA_LIST,
+    );
+    expect(userDataUpdate?.value).toEqual({
+      'oauth-uid': expect.objectContaining({
+        profile: {
+          display_name: 'Jane Doe',
+          photo_url: '',
+          username_chosen: false,
+        },
+      }),
+    });
+  });
+
   it('swallows a 409 (returning account) and does not re-set the display name', async () => {
     mockedProvision.mockRejectedValue(
       new HttpsError({message: 'Conflict', status: '409'}),
@@ -156,6 +182,8 @@ describe('signInWithOAuth', () => {
     expect(mockedProvision).toHaveBeenCalledTimes(1);
     // A returning user already has their Firebase Auth profile — must not be touched.
     expect(mockedUpdateProfile).not.toHaveBeenCalled();
+    // Their real Onyx data must NOT be clobbered with brand-new defaults.
+    expect(mockedOnyxUpdate).not.toHaveBeenCalled();
     // Sign-in still proceeds.
     expect(mockedClearSignInData).toHaveBeenCalledTimes(1);
   });
