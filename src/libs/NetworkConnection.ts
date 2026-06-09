@@ -74,7 +74,7 @@ function setOfflineStatus(isCurrentlyOffline: boolean, reason = ''): void {
 // useNetwork / NetworkStore). Writing here would re-introduce a double-writer
 // race: on "Go back online" the old NetInfo.fetch() path frequently observed
 // `isInternetReachable === null` on-device, treated null as unreachable, and
-// re-asserted `isOffline: true` — leaving the offline indicator stuck until a
+// re-asserted `isOffline: true`, leaving the offline indicator stuck until a
 // full app reload.
 let shouldForceOffline = false;
 Onyx.connect({

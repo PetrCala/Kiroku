@@ -27,11 +27,10 @@ export default function useNetwork({
   // directions and mirrors NetworkStore.isOffline() (`shouldForceOffline ||
   // isOffline`). When the real network status is still UNKNOWN we don't treat it
   // as offline.
+  const isNetworkStatusUnknown =
+    networkStatus === CONST.NETWORK.NETWORK_STATUS.UNKNOWN;
   const isOfflineEffective =
-    shouldForceOffline ||
-    (networkStatus === CONST.NETWORK.NETWORK_STATUS.UNKNOWN
-      ? false
-      : isOffline);
+    shouldForceOffline || (!isNetworkStatusUnknown && isOffline);
 
   const prevOfflineStatusRef = useRef(isOfflineEffective);
   useEffect(() => {
