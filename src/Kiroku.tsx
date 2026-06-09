@@ -34,6 +34,7 @@ import UpdateAppModal from './components/UpdateAppModal';
 import ForceUpdateModal from './components/Modals/ForceUpdateModal';
 import VerifyEmailModal from './components/VerifyEmailModal';
 import FullScreenLoadingIndicator from './components/FullscreenLoadingIndicator';
+import useNativeAppearanceSync from './hooks/useNativeAppearanceSync';
 import colors from './styles/theme/colors';
 import CONST from './CONST';
 
@@ -76,6 +77,12 @@ function Kiroku() {
   const [preferredTheme, preferredThemeMetadata] = useOnyx(
     ONYXKEYS.PREFERRED_THEME,
   );
+
+  // Keep the native interface style in sync with the chosen theme so native,
+  // system-drawn surfaces (most visibly the iOS Liquid Glass tab bar's moving
+  // selection capsule) don't render their light variant over the dark theme.
+  useNativeAppearanceSync();
+
   const {config} = useConfig();
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [authenticationChecked, setAuthenticationChecked] = useState(false);

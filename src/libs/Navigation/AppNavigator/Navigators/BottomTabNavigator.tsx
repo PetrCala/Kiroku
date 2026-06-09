@@ -48,6 +48,12 @@ function BottomTabNavigator() {
         initialRouteName={SCREENS.HOME}
         tabBarActiveTintColor={theme.appColor}
         tabBarInactiveTintColor={theme.icon}
+        // Android Material tab bar only: theme the active-indicator "pill" and
+        // touch ripple. Otherwise they fall back to Material's default light
+        // `colorSecondaryContainer`, which shows as a bright hue behind the
+        // selected tab in the dark theme. Both are no-ops on iOS.
+        activeIndicatorColor={theme.activeComponentBG}
+        rippleColor={theme.hoverComponentBG}
         // On iOS 26, let the system render its native Liquid Glass tab bar: it
         // gives the items the roomier, vertically-centered spacing of modern iOS
         // (the legacy opaque appearance looked vertically squashed). On older iOS
