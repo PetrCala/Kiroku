@@ -174,7 +174,14 @@ function HomeScreen({route}: HomeScreenProps) {
           drinkingSessionData={drinkingSessionData}
           preferences={preferences}
         />
-        <HomeStatsOverview visibleDate={visibleDate} />
+        {/* Home stats display toggles — flip these to show/hide sections:
+         *   showWeeklyUnits     — the per-week units bar chart
+         *   showMonthComparison — the trend arrow + previous-month value */}
+        <HomeStatsOverview
+          visibleDate={visibleDate}
+          showWeeklyUnits={false}
+          showMonthComparison
+        />
       </>
     );
   };

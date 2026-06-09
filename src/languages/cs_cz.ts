@@ -1283,6 +1283,7 @@ export default {
       },
     },
     stats: {
+      monthlyOverview: 'Měsíční přehled',
       units: 'Jednotky',
       sessions: 'Relace',
       alcoholFree: 'Bez alkoholu',
