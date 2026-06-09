@@ -1290,6 +1290,7 @@ export default {
     },
     stats: {
       thisMonth: 'This month',
+      noChange: 'No change',
       units: 'Units',
       sessions: 'Sessions',
       alcoholFree: 'Alcohol-free',
