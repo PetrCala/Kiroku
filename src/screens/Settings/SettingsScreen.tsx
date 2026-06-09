@@ -376,7 +376,7 @@ function SettingsScreen() {
           onCancel={() => toggleSignoutConfirmModal(false)}
         />
       </ScrollView>
-      <OfflineIndicator style={{marginBottom: bottomTabBarHeight}} />
+      <OfflineIndicator style={{marginBottom: bottomTabBarHeight + 16}} />
     </ScreenWrapper>
   );
 }

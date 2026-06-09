@@ -316,7 +316,7 @@ function HomeScreen({route}: HomeScreenProps) {
           {renderBanner()}
           {renderMainContent()}
         </ScrollView>
-        <OfflineIndicator style={{marginBottom: bottomTabBarHeight}} />
+        <OfflineIndicator style={{marginBottom: bottomTabBarHeight + 16}} />
         {/* Start-session FAB, floating bottom-right above the bottom tab bar.
             Home-only so the session modal's back-nav assumption (Home sits
             underneath the modal) stays intact. The bottom offset clears the

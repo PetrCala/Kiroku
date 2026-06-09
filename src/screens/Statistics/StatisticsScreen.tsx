@@ -79,7 +79,7 @@ function StatisticsScreen() {
       ) : (
         <StatisticsScreenSkeleton />
       )}
-      <OfflineIndicator style={{marginBottom: bottomTabBarHeight}} />
+      <OfflineIndicator style={{marginBottom: bottomTabBarHeight + 16}} />
     </ScreenWrapper>
   );
 }

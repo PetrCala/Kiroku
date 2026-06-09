@@ -127,7 +127,7 @@ function SocialScreen() {
         commonOptions={commonOptions}
         options={sceneOptions}
       />
-      <OfflineIndicator style={{marginBottom: bottomTabBarHeight}} />
+      <OfflineIndicator style={{marginBottom: bottomTabBarHeight + 16}} />
     </ScreenWrapper>
   );
 }
