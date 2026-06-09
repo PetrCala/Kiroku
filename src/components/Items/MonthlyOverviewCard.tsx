@@ -1,15 +1,14 @@
 import {View} from 'react-native';
-import type {DateData} from 'react-native-calendars';
 import {PeriodBarList} from '@components/Charts/PeriodBarList';
 import Icon from '@components/Icon';
 import * as KirokuIcons from '@components/Icon/KirokuIcons';
 import {PressableWithFeedback} from '@components/Pressable';
 import Text from '@components/Text';
-import useHomeStats from '@hooks/useHomeStats';
 import useLocalize from '@hooks/useLocalize';
 import useTheme from '@hooks/useTheme';
 import useThemeStyles from '@hooks/useThemeStyles';
 import Navigation from '@navigation/Navigation';
+import type {MonthlyStats} from '@libs/Statistics/overview';
 import ROUTES from '@src/ROUTES';
 
 type Polarity = 'lower-is-supportive' | 'higher-is-supportive';
@@ -95,10 +94,11 @@ function MetricColumn({
 }
 
 type MonthlyOverviewCardProps = {
-  visibleDate: DateData;
+  /** Month stats from `useHomeStats` (self) or `useUserMonthlyStats` (profile). */
+  stats: MonthlyStats;
   /** Show the card's title row text. The arrow shortcut stays either way. */
   showTitle?: boolean;
-  /** Title text; defaults to the localized "Monthly overview". */
+  /** Title text; defaults to the localized "This month". */
   title?: string;
   /** Show the per-week units bar chart beneath the columns. */
   showWeeklyUnits?: boolean;
@@ -107,15 +107,15 @@ type MonthlyOverviewCardProps = {
 };
 
 /**
- * Reusable "Monthly overview" stats card: three columns (Units, Sessions,
- * Alcohol-free) for the visible month. Each column shows the current value and,
- * when `showMonthComparison` is on, a trend arrow + the previous month's value.
- * An optional per-week bar chart sits below when `showWeeklyUnits` is on, and a
- * quiet arrow shortcut opens the Statistics screen. Used on the home screen and
- * intended for the profile screens (self + other users).
+ * Reusable "This month" stats card: three columns (Units, Sessions,
+ * Alcohol-free) for a month. Each column shows the current value and, when
+ * `showMonthComparison` is on, a trend arrow + the previous month's value. An
+ * optional per-week bar chart sits below when `showWeeklyUnits` is on, and a
+ * quiet arrow shortcut opens the Statistics screen. Presentational — the caller
+ * supplies `stats` (home or profile), so it works for self and other users.
  */
 function MonthlyOverviewCard({
-  visibleDate,
+  stats,
   showTitle = true,
   title,
   showWeeklyUnits = true,
@@ -124,8 +124,7 @@ function MonthlyOverviewCard({
   const styles = useThemeStyles();
   const theme = useTheme();
   const {translate} = useLocalize();
-  const {isLoading, current, previous, subPeriods, liveExtraUnits} =
-    useHomeStats(visibleDate);
+  const {isLoading, current, previous, subPeriods, liveExtraUnits} = stats;
 
   const deltaColorFor = (direction: Direction, polarity: Polarity): string => {
     if (direction === 'flat') {

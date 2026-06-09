@@ -128,4 +128,5 @@ function useDrinkEvents(userIds?: UserID[]): UseDrinkEventsResult {
 }
 
 export default useDrinkEvents;
+export {resolveWeekStart};
 export type {UseDrinkEventsResult};
