@@ -315,6 +315,16 @@ export default defineConfig([
       'react/require-default-props': 'off',
       'react/prop-types': 'off',
       'react/jsx-no-constructed-context-values': 'error',
+      // Guard against rendering a falsy non-boolean (e.g. '' or 0) as a bare
+      // text node via `{value && <JSX/>}`. On react-native-web an empty string
+      // or 0 renders as a real text node, which throws "Unexpected text node
+      // ... cannot be a child of a <View>". `coerce` keeps the existing
+      // `{!!value && <JSX/>}` style valid; `ternary` also permits
+      // `{value ? <JSX/> : null}`.
+      'react/jsx-no-leaked-render': [
+        'error',
+        {validStrategies: ['ternary', 'coerce']},
+      ],
       'react-native-a11y/has-valid-accessibility-descriptors': [
         'error',
         {
