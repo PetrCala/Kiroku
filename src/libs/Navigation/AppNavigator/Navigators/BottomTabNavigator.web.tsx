@@ -34,7 +34,7 @@ function BottomTabNavigator() {
       <Tab.Navigator
         initialRouteName={SCREENS.HOME}
         screenOptions={{headerShown: false}}
-        tabBar={props => <BottomTabBar {...props} />}>
+        tabBar={BottomTabBar}>
         {BOTTOM_TAB_CONFIG.map(tab => (
           <Tab.Screen
             key={tab.name}
