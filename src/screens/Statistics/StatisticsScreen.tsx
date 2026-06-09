@@ -7,7 +7,6 @@ import StatsContextProvider from '@components/StatsContextProvider';
 import useLocalize from '@hooks/useLocalize';
 import DrillDownProvider from './drilldown/DrillDownContext';
 import StatisticsScreenSkeleton from './StatisticsScreenSkeleton';
-import type {StatisticsTabsProps} from './StatisticsTabs';
 import StatsDrillDownSheet from './StatsDrillDownSheet';
 
 /**
@@ -27,9 +26,7 @@ import StatsDrillDownSheet from './StatsDrillDownSheet';
 function StatisticsScreen() {
   const {translate} = useLocalize();
   const [isReady, setIsReady] = useState(false);
-  const [Tabs, setTabs] = useState<ComponentType<StatisticsTabsProps> | null>(
-    null,
-  );
+  const [Tabs, setTabs] = useState<ComponentType | null>(null);
 
   useEffect(() => {
     const handle = InteractionManager.runAfterInteractions(() =>

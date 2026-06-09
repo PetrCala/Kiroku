@@ -1099,13 +1099,12 @@ const styles = (theme: ThemeColors) =>
       justifyContent: 'center',
     },
 
-    // Anchors the start-session FAB to the bottom-right of a screen, floating
-    // above the screen content (and above the bottom tab bar, which the native
-    // navigator renders below the screen's view area).
+    // Anchors the start-session FAB to the bottom-right of a screen. The
+    // `bottom` offset is applied by the caller (= bottom tab bar height + a
+    // margin) so the FAB floats clearly above the native tab bar.
     floatingActionButtonContainer: {
       position: 'absolute',
       right: 20,
-      bottom: 20,
     },
 
     highlightBG: {

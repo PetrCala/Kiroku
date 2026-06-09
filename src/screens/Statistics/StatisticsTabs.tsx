@@ -8,7 +8,7 @@ import React, {
   useState,
 } from 'react';
 import {InteractionManager, StyleSheet, View} from 'react-native';
-import {SceneMap, TabBar, TabView} from 'react-native-tab-view';
+import {SceneMap, TabView} from 'react-native-tab-view';
 import type {
   NavigationState,
   SceneRendererProps,
@@ -16,8 +16,8 @@ import type {
 } from 'react-native-tab-view';
 import {ChartSkeleton} from '@components/Charts/ChartSkeleton';
 import {StatsFilterToolbarSkeleton} from '@components/Statistics/StatsFilterToolbar';
-import SwipeBackGestureDetector from '@components/SwipeBackGestureDetector';
-import Text from '@components/Text';
+import TopTabBar, {TOP_TAB_COMMON_OPTIONS} from '@components/TopTabBar';
+import useBottomTabBarHeight from '@hooks/useBottomTabBarHeight';
 import useLocalize from '@hooks/useLocalize';
 import useTheme from '@hooks/useTheme';
 import useWindowDimensions from '@hooks/useWindowDimensions';
@@ -84,31 +84,8 @@ function BreakdownScene() {
   );
 }
 
-// Carries the screen's back handler down to the overview scene without
-// threading a prop through SceneMap (which only passes route props).
-const OverviewSwipeBackContext = React.createContext<(() => void) | undefined>(
-  undefined,
-);
-
-// The overview tab is the only one with no horizontal filter-chip row, so it
-// is safe to own horizontal swipes. Wrapping the gesture *here* — inside the
-// pager scene, directly around the content — is what makes the rightward
-// swipe-back fire: a gesture placed around the whole TabView is an ancestor of
-// the native pager-view, which owns same-axis touches and starves it. As a
-// descendant wrapping the content (the same shape friends uses) the gesture is
-// the nearest handler and wins. Leftward swipes fall through to the pager, so
-// swiping to the next tab still works, and the other tabs are untouched.
-function OverviewScene() {
-  const onSwipeBack = React.useContext(OverviewSwipeBackContext);
-  return (
-    <SwipeBackGestureDetector onSwipeBack={onSwipeBack}>
-      <OverviewTab />
-    </SwipeBackGestureDetector>
-  );
-}
-
 const renderScene = SceneMap({
-  overview: OverviewScene,
+  overview: OverviewTab,
   trends: TrendsScene,
   patterns: PatternsScene,
   breakdown: BreakdownScene,
@@ -117,19 +94,6 @@ const renderScene = SceneMap({
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-  },
-  tabBar: {
-    elevation: 0,
-    shadowOpacity: 0,
-    borderBottomWidth: StyleSheet.hairlineWidth,
-  },
-  tabBarIndicator: {
-    height: 2,
-  },
-  tabBarLabel: {
-    fontSize: 14,
-    fontWeight: '600',
-    textAlign: 'center',
   },
   lazyPlaceholder: {
     flex: 1,
@@ -142,16 +106,6 @@ const styles = StyleSheet.create({
     height: 16,
   },
 });
-
-function renderTabLabel({
-  route,
-  color,
-}: {
-  route: TabRoute;
-  color: string;
-}): React.ReactNode {
-  return <Text style={[styles.tabBarLabel, {color}]}>{route.title}</Text>;
-}
 
 // First mount of an inactive tab: paint a generic tab-shell skeleton so the
 // user sees structure for the 200–400ms it takes the tab's actual render +
@@ -177,21 +131,11 @@ function renderLazyPlaceholder(): React.ReactNode {
   return <TabLazyPlaceholder />;
 }
 
-const COMMON_OPTIONS: TabDescriptor<TabRoute> = {
-  label: renderTabLabel,
-};
-
-type StatisticsTabsProps = {
-  /** Mapped to a navigation back. Wired to the swipe-back gesture that wraps
-   *  the overview (left-most) scene only, so the other tabs keep the pager's
-   *  swipe and their horizontal filter-chip scroll. */
-  onSwipeBack?: () => void;
-};
-
-function StatisticsTabs({onSwipeBack}: StatisticsTabsProps) {
+function StatisticsTabs() {
   const {translate} = useLocalize();
   const theme = useTheme();
   const {windowWidth} = useWindowDimensions();
+  const bottomTabBarHeight = useBottomTabBarHeight();
   const [index, setIndex] = useState(0);
 
   // Warm the lazy tab chart bundles in the background once Overview has
@@ -227,55 +171,35 @@ function StatisticsTabs({onSwipeBack}: StatisticsTabsProps) {
         navigationState: NavigationState<TabRoute>;
         options: Record<string, TabDescriptor<TabRoute>> | undefined;
       },
-    ) => (
-      <TabBar
-        layout={tabBarProps.layout}
-        position={tabBarProps.position}
-        jumpTo={tabBarProps.jumpTo}
-        navigationState={tabBarProps.navigationState}
-        options={tabBarProps.options}
-        scrollEnabled={false}
-        style={[
-          styles.tabBar,
-          {backgroundColor: theme.appBG, borderBottomColor: theme.border},
-        ]}
-        indicatorStyle={[
-          styles.tabBarIndicator,
-          {backgroundColor: theme.success},
-        ]}
-        activeColor={theme.text}
-        inactiveColor={theme.textSupporting}
-        pressColor={theme.hoverComponentBG}
-      />
-    ),
-    [
-      theme.appBG,
-      theme.border,
-      theme.hoverComponentBG,
-      theme.success,
-      theme.text,
-      theme.textSupporting,
-    ],
+    ) => <TopTabBar tabBarProps={tabBarProps} />,
+    [],
+  );
+
+  // Inset every scene above the native bottom tab bar (which overlays the
+  // scene) on top of the shared label options.
+  const commonOptions = useMemo<TabDescriptor<TabRoute>>(
+    () => ({
+      ...TOP_TAB_COMMON_OPTIONS,
+      sceneStyle: {paddingBottom: bottomTabBarHeight},
+    }),
+    [bottomTabBarHeight],
   );
 
   return (
-    <OverviewSwipeBackContext.Provider value={onSwipeBack}>
-      <TabView
-        style={[styles.container, {backgroundColor: theme.appBG}]}
-        navigationState={{index, routes}}
-        onIndexChange={setIndex}
-        renderScene={renderScene}
-        renderTabBar={renderTabBar}
-        initialLayout={{width: windowWidth}}
-        lazy
-        renderLazyPlaceholder={renderLazyPlaceholder}
-        commonOptions={COMMON_OPTIONS}
-      />
-    </OverviewSwipeBackContext.Provider>
+    <TabView
+      style={[styles.container, {backgroundColor: theme.appBG}]}
+      navigationState={{index, routes}}
+      onIndexChange={setIndex}
+      renderScene={renderScene}
+      renderTabBar={renderTabBar}
+      initialLayout={{width: windowWidth}}
+      lazy
+      renderLazyPlaceholder={renderLazyPlaceholder}
+      commonOptions={commonOptions}
+    />
   );
 }
 
 StatisticsTabs.displayName = 'StatisticsTabs';
 
 export default StatisticsTabs;
-export type {StatisticsTabsProps};
