@@ -2,6 +2,7 @@ import {createBottomTabNavigator} from '@react-navigation/bottom-tabs';
 import {useNavigationState} from '@react-navigation/native';
 import React from 'react';
 import useLocalize from '@hooks/useLocalize';
+import useTheme from '@hooks/useTheme';
 import BottomTabBar from '@navigation/AppNavigator/createCustomBottomTabNavigator/BottomTabBar';
 import getTopmostCentralPaneRoute from '@navigation/getTopmostCentralPaneRoute';
 import type {
@@ -24,6 +25,7 @@ const Tab = createBottomTabNavigator();
 
 function BottomTabNavigator() {
   const {translate} = useLocalize();
+  const theme = useTheme();
   const activeRoute = useNavigationState<
     RootStackParamList,
     NavigationPartialRoute<CentralPaneName> | undefined
@@ -33,7 +35,12 @@ function BottomTabNavigator() {
     <ActiveCentralPaneRouteContext.Provider value={activeRoute}>
       <Tab.Navigator
         initialRouteName={SCREENS.HOME}
-        screenOptions={{headerShown: false}}
+        screenOptions={{
+          headerShown: false,
+          // Opaque scene background so switching tabs never shows the previous
+          // screen through during the swap.
+          sceneStyle: {backgroundColor: theme.appBG},
+        }}
         tabBar={BottomTabBar}>
         {BOTTOM_TAB_CONFIG.map(tab => (
           <Tab.Screen

@@ -40,7 +40,12 @@ function BottomTabNavigator() {
       <Tab.Navigator
         initialRouteName={SCREENS.HOME}
         tabBarActiveTintColor={theme.appColor}
-        tabBarInactiveTintColor={theme.icon}>
+        tabBarInactiveTintColor={theme.icon}
+        // Match the app theme: an opaque, dark bar instead of the bright
+        // translucent system default (which flashed white on tab change).
+        tabBarStyle={{backgroundColor: theme.appBG}}
+        translucent={false}
+        scrollEdgeAppearance="opaque">
         {BOTTOM_TAB_CONFIG.map(tab => {
           const options: NativeBottomTabNavigationOptions = {
             tabBarLabel: translate(tab.labelKey),
@@ -49,6 +54,9 @@ function BottomTabNavigator() {
                 ? {sfSymbol: tab.sfSymbol}
                 : tab.androidIcon,
             freezeOnBlur: true,
+            // Opaque scene background so the previous tab never shows through
+            // during a switch — the swap reads as instant.
+            sceneStyle: {backgroundColor: theme.appBG},
           };
           return (
             <Tab.Screen

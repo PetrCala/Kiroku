@@ -48,6 +48,7 @@ import Button from '@components/Button';
 import SessionsCalendarCompactSkeleton from '@components/SessionsCalendar/SessionsCalendarCompactSkeleton';
 import NoSessionsInfo from '@components/NoSessionsInfo';
 import useNetwork from '@hooks/useNetwork';
+import useBottomTabBarHeight from '@hooks/useBottomTabBarHeight';
 import HomeHeaderSkeleton from './HomeScreenSkeleton';
 import getHomeContentState from './getHomeContentState';
 
@@ -62,6 +63,9 @@ function HomeScreen({route}: HomeScreenProps) {
   const theme = useTheme();
   const {auth} = useFirebase();
   const {translate} = useLocalize();
+  // Inset for the native tab bar, which overlays the scene: scroll content and
+  // the FAB both clear it by this much (plus a small margin).
+  const bottomTabBarHeight = useBottomTabBarHeight();
   const user = auth.currentUser;
   const [loadingText] = useOnyx(ONYXKEYS.APP_LOADING_TEXT);
   const [ongoingSessionData] = useOnyx(ONYXKEYS.ONGOING_SESSION_DATA);
@@ -260,7 +264,6 @@ function HomeScreen({route}: HomeScreenProps) {
     <>
       <ScreenWrapper
         testID={HomeScreen.displayName}
-        includePaddingTop={false}
         shouldShowOfflineIndicator={false}
         includeSafeAreaPaddingBottom={getPlatform() !== CONST.PLATFORM.IOS}>
         {/* // TODO rewrite this into the HeaderWithBackButton component */}
@@ -305,15 +308,24 @@ function HomeScreen({route}: HomeScreenProps) {
         ) : (
           <HomeHeaderSkeleton />
         )}
-        <ScrollView contentContainerStyle={styles.ph4}>
+        <ScrollView
+          contentContainerStyle={[
+            styles.ph4,
+            {paddingBottom: bottomTabBarHeight + 16},
+          ]}>
           {renderBanner()}
           {renderMainContent()}
         </ScrollView>
         <OfflineIndicator />
         {/* Start-session FAB, floating bottom-right above the bottom tab bar.
             Home-only so the session modal's back-nav assumption (Home sits
-            underneath the modal) stays intact. */}
-        <View style={styles.floatingActionButtonContainer}>
+            underneath the modal) stays intact. The bottom offset clears the
+            native tab bar so the FAB doesn't merge with the rightmost tab. */}
+        <View
+          style={[
+            styles.floatingActionButtonContainer,
+            {bottom: bottomTabBarHeight + 16},
+          ]}>
           <StartSessionButtonAndPopover />
         </View>
       </ScreenWrapper>

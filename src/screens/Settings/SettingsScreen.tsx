@@ -28,6 +28,7 @@ import useLocalize from '@hooks/useLocalize';
 import useSingleExecution from '@hooks/useSingleExecution';
 import useThemeStyles from '@hooks/useThemeStyles';
 import useWaitForNavigation from '@hooks/useWaitForNavigation';
+import useBottomTabBarHeight from '@hooks/useBottomTabBarHeight';
 import Navigation from '@libs/Navigation/Navigation';
 import SupporterUtils from '@libs/SupporterUtils';
 import CONST from '@src/CONST';
@@ -66,6 +67,7 @@ type Menu = {
 function SettingsScreen() {
   const {auth} = useFirebase();
   const styles = useThemeStyles();
+  const bottomTabBarHeight = useBottomTabBarHeight();
   const userData = useCurrentUserData();
   const {isExecuting, singleExecution} = useSingleExecution();
   const waitForNavigate = useWaitForNavigation();
@@ -354,7 +356,10 @@ function SettingsScreen() {
         ref={scrollViewRef}
         onScroll={onScroll}
         scrollEventThrottle={16}
-        contentContainerStyle={[styles.w100]}>
+        contentContainerStyle={[
+          styles.w100,
+          {paddingBottom: bottomTabBarHeight},
+        ]}>
         {accountMenuItems}
         {generalMenuItems}
         {authenticationMenuItems}
