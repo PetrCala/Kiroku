@@ -19,21 +19,15 @@ function HomeHeaderSkeleton() {
 }
 
 /**
- * Placeholder for the home stats block: a tall "Units" hero card (label +
- * value + delta + per-week bar chart) over a pair of supporting cards.
- * Heights mirror MonthlyOverviewCard so the swap-in doesn't jolt the layout.
+ * Placeholder for the consolidated "This month" overview card (title row +
+ * three stat columns). Height + margin mirror MonthlyOverviewCard so the
+ * swap-in doesn't jolt the layout.
  */
 function StatOverviewSkeleton() {
   const styles = useThemeStyles();
   return (
-    <View style={styles.mt2}>
-      {/* Hero card (KpiCard + "Units by week" caption + horizontal bars). */}
-      <Skeleton height={210} radius={12} style={styles.mb2} />
-      {/* Supporting pair (sessions + alcohol-free). */}
-      <View style={styles.flexRow}>
-        <Skeleton height={96} radius={12} style={[styles.flex1, styles.mr1]} />
-        <Skeleton height={96} radius={12} style={[styles.flex1, styles.ml1]} />
-      </View>
+    <View style={styles.mv2}>
+      <Skeleton height={110} radius={12} />
     </View>
   );
 }

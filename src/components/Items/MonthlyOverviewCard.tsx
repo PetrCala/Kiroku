@@ -143,7 +143,7 @@ function MonthlyOverviewCard({
   const afDir = directionOf(current.afDays, previous.afDays);
 
   return (
-    <View style={styles.mt2}>
+    <View style={styles.mv2}>
       <View
         style={[
           styles.p3,
@@ -159,7 +159,7 @@ function MonthlyOverviewCard({
             <Text
               style={[styles.textLabelSupporting, styles.textStrong]}
               numberOfLines={1}>
-              {title ?? translate('homeScreen.stats.monthlyOverview')}
+              {title ?? translate('homeScreen.stats.thisMonth')}
             </Text>
           ) : null}
           <PressableWithFeedback

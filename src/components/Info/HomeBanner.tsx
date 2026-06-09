@@ -48,7 +48,7 @@ function HomeBanner({
       accessibilityRole="button"
       onPress={onPress}
       style={[
-        styles.mv2,
+        styles.mt2,
         styles.p4,
         styles.flexRow,
         styles.alignItemsCenter,

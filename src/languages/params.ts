@@ -43,6 +43,10 @@ type OnboardingStepCounterParams = {
   totalSteps: number;
 };
 
+type RelativeTimeAgoParams = {
+  count: number;
+};
+
 type SessionConfirmTimezoneChangeParams = {
   newTimezone: string;
 };
@@ -137,6 +141,7 @@ export type {
   FriendRequestsCountParams,
   LastSessionSummaryParams,
   OnboardingStepCounterParams,
+  RelativeTimeAgoParams,
   SessionConfirmTimezoneChangeParams,
   SessionStartTimeParams,
   SessionWindowIdParams,
