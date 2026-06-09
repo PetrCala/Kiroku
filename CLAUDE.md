@@ -250,6 +250,8 @@ npm run android
 npm run web
 ```
 
+> **Web build first-run:** `npm run web` (and `build-web`) call the `tsx` bin by name, so they need the web devDependencies installed (`tsx`, `webpack`, `webpack-dev-server`, `@svgr/webpack`, and friends). After checking out a branch that adds or bumps them, run `npm install` before `npm run web`; a stale `node_modules` fails with `sh: tsx: command not found` (exit 127). The dev server then serves on http://localhost:8082 (`/simulator.html` is the opt-in device frame).
+
 ## Architecture Decisions
 
 ### React Native New Architecture
