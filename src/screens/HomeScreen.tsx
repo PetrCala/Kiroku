@@ -32,6 +32,7 @@ import useLocalize from '@hooks/useLocalize';
 import useCurrentUserData from '@hooks/useCurrentUserData';
 import useCurrentUserDrinkingSessions from '@hooks/useCurrentUserDrinkingSessions';
 import useCurrentUserPreferences from '@hooks/useCurrentUserPreferences';
+import useHomeStats from '@hooks/useHomeStats';
 import useLastSession from '@hooks/useLastSession';
 import Text from '@components/Text';
 import BottomTabBar from '@libs/Navigation/AppNavigator/createCustomBottomTabNavigator/BottomTabBar';
@@ -93,6 +94,8 @@ function HomeScreen({route}: HomeScreenProps) {
     setLocalVisibleDate(nextDate);
     App.clearLastViewedCalendarDate();
   }, []);
+
+  const monthlyStats = useHomeStats(visibleDate);
 
   useEffect(() => {
     // Update the ongoing session local data
@@ -176,7 +179,7 @@ function HomeScreen({route}: HomeScreenProps) {
          *   showWeeklyUnits     — the per-week units bar chart
          *   showMonthComparison — the trend arrow + previous-month value */}
         <MonthlyOverviewCard
-          visibleDate={visibleDate}
+          stats={monthlyStats}
           showTitle
           showWeeklyUnits={false}
           showMonthComparison

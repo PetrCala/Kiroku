@@ -1,27 +1,18 @@
 import {View} from 'react-native';
 import type {DateData} from 'react-native-calendars';
 import {useFirebase} from '@context/global/FirebaseContext';
-import type {StatData} from '@components/Items/StatOverview';
-import StatOverview from '@components/Items/StatOverview';
+import MonthlyOverviewCard from '@components/Items/MonthlyOverviewCard';
 import ProfileOverview from '@components/Social/ProfileOverview';
 import React, {useCallback, useEffect, useMemo, useState} from 'react';
 import {useOnyx} from 'react-native-onyx';
 import ONYXKEYS from '@src/ONYXKEYS';
 import * as App from '@userActions/App';
 import * as Profile from '@userActions/Profile';
-import {
-  calculateThisMonthUnits,
-  dateToDateData,
-  dateStringToDate,
-  objKeys,
-  timestampToDate,
-} from '@libs/DataHandling';
+import {dateToDateData, dateStringToDate, objKeys} from '@libs/DataHandling';
 import SessionsCalendar from '@components/SessionsCalendar';
 import SessionsCalendarCompactSkeleton from '@components/SessionsCalendar/SessionsCalendarCompactSkeleton';
 import {getCommonFriendsCount} from '@libs/FriendUtils';
-import * as DSUtils from '@libs/DrinkingSessionUtils';
 import * as KirokuIcons from '@components/Icon/KirokuIcons';
-import type {DrinkingSessionArray} from '@src/types/onyx';
 import type {StackScreenProps} from '@react-navigation/stack';
 import type {ProfileNavigatorParamList} from '@libs/Navigation/types';
 import type SCREENS from '@src/SCREENS';
@@ -30,6 +21,7 @@ import ROUTES from '@src/ROUTES';
 import useFriendProfile from '@hooks/useFriendProfile';
 import useFriendPreferences from '@hooks/useFriendPreferences';
 import useDrinkingSessionsFetch from '@hooks/useDrinkingSessionsFetch';
+import useUserMonthlyStats from '@hooks/useUserMonthlyStats';
 import ScreenWrapper from '@components/ScreenWrapper';
 import HeaderWithBackButton from '@components/HeaderWithBackButton';
 import useLocalize from '@hooks/useLocalize';
@@ -37,7 +29,6 @@ import useReadyAfterScreenTransition from '@hooks/useReadyAfterScreenTransition'
 import FullScreenLoadingIndicator from '@components/FullscreenLoadingIndicator';
 import useThemeStyles from '@hooks/useThemeStyles';
 import Button from '@components/Button';
-import {roundToTwoDecimalPlaces} from '@libs/NumberUtils';
 import ManageFriendPopover from '@components/ManageFriendPopover';
 import ScrollView from '@components/ScrollView';
 import Text from '@components/Text';
@@ -99,8 +90,14 @@ function ProfileScreen({route}: ProfileScreenProps) {
     setLocalVisibleDateData(date);
     App.clearLastViewedCalendarDate();
   }, []);
-  const [drinkingSessionsCount, setDrinkingSessionsCount] = useState(0);
-  const [unitsConsumed, setUnitsConsumed] = useState(0);
+  const profileStats = useUserMonthlyStats({
+    userID,
+    visibleDate: visibleDateData,
+    drinkingSessionData,
+    preferences,
+    timezone: userData?.timezone?.selected,
+    isLoading: isSessionsLoading || isPrefsLoading,
+  });
   const [manageFriendModalVisible, setManageFriendModalVisible] =
     useState(false);
   const profileData = userData?.profile;
@@ -110,21 +107,6 @@ function ProfileScreen({route}: ProfileScreenProps) {
   // viewer's own friends back from Onyx (hydrated below via `openFriendList`).
   const selfFriends =
     user && user.uid !== userID ? userDataList?.[user.uid]?.friends : friends;
-
-  const statsData: StatData = [
-    {
-      header: translate('profileScreen.drinkingSessions', {
-        sessionsCount: drinkingSessionsCount,
-      }),
-      content: String(drinkingSessionsCount),
-    },
-    {
-      header: translate('profileScreen.unitsConsumed', {
-        unitCount: unitsConsumed,
-      }),
-      content: String(roundToTwoDecimalPlaces(unitsConsumed)),
-    },
-  ];
 
   const friendCountLabel = useMemo((): string => {
     return `${translate('profileScreen.commonFriendsLabel', {
@@ -167,29 +149,6 @@ function ProfileScreen({route}: ProfileScreenProps) {
     setFriendCount(newFriendCount);
     setCommonFriendCount(newCommonFriendCount);
   }, [friends, selfFriends]);
-
-  // Monitor stats
-  useEffect(() => {
-    if (!drinkingSessionData || !preferences) {
-      return;
-    }
-    const drinkingSessionArray: DrinkingSessionArray =
-      Object.values(drinkingSessionData);
-
-    const thisMonthUnits = calculateThisMonthUnits(
-      visibleDateData,
-      drinkingSessionArray,
-      preferences.drinks_to_units,
-    );
-    const thisMonthSessionCount = DSUtils.getSingleMonthDrinkingSessions(
-      timestampToDate(visibleDateData.timestamp),
-      drinkingSessionArray,
-      false,
-    ).length; // Replace this in the future
-
-    setDrinkingSessionsCount(thisMonthSessionCount);
-    setUnitsConsumed(thisMonthUnits);
-  }, [drinkingSessionData, preferences, visibleDateData]);
 
   if (isLoading) {
     return <FullScreenLoadingIndicator />;
@@ -238,7 +197,11 @@ function ProfileScreen({route}: ProfileScreenProps) {
           />
         </View>
         <View style={styles.ph2}>
-          <StatOverview statsData={statsData} />
+          <MonthlyOverviewCard
+            stats={profileStats}
+            showWeeklyUnits={false}
+            showMonthComparison
+          />
           {didScreenTransitionEnd ? (
             <SessionsCalendar
               userID={userID}
