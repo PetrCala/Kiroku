@@ -1,4 +1,5 @@
 import type {ListRenderItemInfo} from 'react-native';
+import {View} from 'react-native';
 import React, {useCallback, useMemo, useState} from 'react';
 import type {
   FriendRequestList,
@@ -148,10 +149,15 @@ function FriendSearchScreen() {
     // User search needs a live server read, so offline we show a notice rather
     // than a perpetual spinner or an error.
     if (isOffline) {
+      // Fill the available space so the ScreenWrapper's trailing offline
+      // indicator stays docked at the bottom instead of sitting right below
+      // this notice.
       return (
-        <Text style={[styles.noResultsText, styles.pt4]}>
-          {translate('common.thisFeatureRequiresInternet')}
-        </Text>
+        <View style={styles.flex1}>
+          <Text style={[styles.noResultsText, styles.pt4]}>
+            {translate('common.thisFeatureRequiresInternet')}
+          </Text>
+        </View>
       );
     }
     if (searching) {
