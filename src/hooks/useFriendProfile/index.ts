@@ -4,6 +4,7 @@ import type UserData from '@src/types/onyx/UserData';
 import type {UserID} from '@src/types/onyx/OnyxCommon';
 import {useEffect, useState} from 'react';
 import {useOnyx} from 'react-native-onyx';
+import useNetwork from '@hooks/useNetwork';
 
 type UseFriendProfileReturn = {
   /** The viewed user's public data (profile, public_data, is_supporter, friends),
@@ -47,6 +48,23 @@ function useFriendProfile(userID: UserID): UseFriendProfileReturn {
       isActive = false;
     };
   }, [userID]);
+
+  // Re-issue the reads when connectivity resumes. `openPublicProfile` /
+  // `openFriendList` go through `makeRequestWithSideEffects`, which DISCARDS a
+  // read while offline instead of queueing it (unlike `API.write`), so an
+  // offline mount leaves the profile screen stuck on its empty "go online"
+  // state — the `useEffect` above is keyed on `userID` and never re-runs on
+  // reconnect. The reads carry no optimistic data, so this refreshes
+  // `userDataList[userID]` in place without flashing a loader over cached data.
+  useNetwork({
+    onReconnect: () => {
+      if (!userID) {
+        return;
+      }
+      Profile.openPublicProfile(userID);
+      Profile.openFriendList(userID);
+    },
+  });
 
   const isLoading = !!userID && loadedUserID !== userID;
 

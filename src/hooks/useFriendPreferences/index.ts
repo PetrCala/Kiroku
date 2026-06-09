@@ -4,6 +4,7 @@ import type {Preferences as PreferencesType} from '@src/types/onyx';
 import type {UserID} from '@src/types/onyx/OnyxCommon';
 import {useEffect, useState} from 'react';
 import {useOnyx} from 'react-native-onyx';
+import useNetwork from '@hooks/useNetwork';
 
 type UseFriendPreferencesReturn = {
   /** The friend's rendering preferences, or `undefined` until loaded / when the
@@ -46,6 +47,20 @@ function useFriendPreferences(userID: UserID): UseFriendPreferencesReturn {
       isActive = false;
     };
   }, [userID]);
+
+  // Re-issue the read when connectivity resumes. `openFriendPreferences` goes
+  // through `makeRequestWithSideEffects`, which DISCARDS a read while offline
+  // instead of queueing it (unlike `API.write`), and the effect above is keyed
+  // on `userID` so it never re-runs on reconnect — without this the profile
+  // calendar's units/colors stay missing after going back online.
+  useNetwork({
+    onReconnect: () => {
+      if (!userID) {
+        return;
+      }
+      Preferences.openFriendPreferences(userID);
+    },
+  });
 
   const isLoading = !!userID && loadedUserID !== userID;
 
