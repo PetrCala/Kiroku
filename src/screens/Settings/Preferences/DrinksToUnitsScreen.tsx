@@ -1,5 +1,5 @@
 import React, {useCallback, useMemo, useRef, useState} from 'react';
-import {Alert, View} from 'react-native';
+import {Alert} from 'react-native';
 import {getDefaultPreferences} from '@userActions/User';
 import type {DrinksToUnits} from '@src/types/onyx';
 import useCurrentUserPreferences from '@hooks/useCurrentUserPreferences';
@@ -10,6 +10,7 @@ import HeaderWithBackButton from '@components/HeaderWithBackButton';
 import useLocalize from '@hooks/useLocalize';
 import useDiscardChangesGuard from '@hooks/useDiscardChangesGuard';
 import FullScreenLoadingIndicator from '@components/FullscreenLoadingIndicator';
+import BottomActionBar from '@components/BottomActionBar';
 import Button from '@components/Button';
 import useThemeStyles from '@hooks/useThemeStyles';
 import ScrollView from '@components/ScrollView';
@@ -178,7 +179,9 @@ function DrinksToUnitsScreen() {
   }
 
   return (
-    <ScreenWrapper testID={DrinksToUnitsScreen.displayName}>
+    <ScreenWrapper
+      shouldShowOfflineIndicator={false}
+      testID={DrinksToUnitsScreen.displayName}>
       <HeaderWithBackButton
         title={translate('drinksToUnitsScreen.title')}
         shouldShowBackButton
@@ -196,7 +199,7 @@ function DrinksToUnitsScreen() {
           {drinksToUnitsMenuItems}
         </Section>
       </ScrollView>
-      <View style={[styles.bottomTabBarContainer, styles.p5]}>
+      <BottomActionBar containerStyle={styles.p5}>
         <Button
           large
           success
@@ -204,7 +207,7 @@ function DrinksToUnitsScreen() {
           onPress={handleSaveValues}
           style={styles.bottomTabButton}
         />
-      </View>
+      </BottomActionBar>
       <NumericSlider
         visible={sliderConfig.visible}
         value={sliderConfig.value}

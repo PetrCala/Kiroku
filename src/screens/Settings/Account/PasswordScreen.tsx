@@ -108,6 +108,7 @@ function PasswordScreen({route}: PasswordScreenProps) {
   return (
     <ScreenWrapper
       includeSafeAreaPaddingBottom={false}
+      shouldShowOfflineIndicator={false}
       testID={PasswordScreen.displayName}>
       <HeaderWithBackButton
         title={translate('passwordScreen.title')}
