@@ -22,6 +22,7 @@ import ScreenWrapper from '@components/ScreenWrapper';
 import HomeBanner, {HomeBannerSkeleton} from '@components/Info/HomeBanner';
 import useThemeStyles from '@hooks/useThemeStyles';
 import getPlatform from '@libs/getPlatform';
+import * as FeatureFlags from '@libs/FeatureFlags';
 import FullScreenLoadingIndicator from '@components/FullscreenLoadingIndicator';
 import * as DSUtils from '@libs/DrinkingSessionUtils';
 import * as DS from '@userActions/DrinkingSession';
@@ -292,17 +293,19 @@ function HomeScreen({route}: HomeScreenProps) {
                   <SupporterBadgeForUser userID={user.uid} size="medium" />
                 </View>
               </Button>
-              <PressableWithFeedback
-                accessibilityLabel={translate('bottomTabBar.badges')}
-                role={CONST.ROLE.BUTTON}
-                onPress={() => Navigation.navigate(ROUTES.BADGES)}>
-                <Icon
-                  src={KirokuIcons.Star}
-                  fill={theme.icon}
-                  width={24}
-                  height={24}
-                />
-              </PressableWithFeedback>
+              {FeatureFlags.isEnabled('BADGES') && (
+                <PressableWithFeedback
+                  accessibilityLabel={translate('bottomTabBar.badges')}
+                  role={CONST.ROLE.BUTTON}
+                  onPress={() => Navigation.navigate(ROUTES.BADGES)}>
+                  <Icon
+                    src={KirokuIcons.Star}
+                    fill={theme.icon}
+                    width={24}
+                    height={24}
+                  />
+                </PressableWithFeedback>
+              )}
             </View>
           </View>
         ) : (

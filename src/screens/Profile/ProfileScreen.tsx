@@ -14,6 +14,7 @@ import {dateToDateData, dateStringToDate, objKeys} from '@libs/DataHandling';
 import SessionsCalendar from '@components/SessionsCalendar';
 import SessionsCalendarCompactSkeleton from '@components/SessionsCalendar/SessionsCalendarCompactSkeleton';
 import {getCommonFriendsCount} from '@libs/FriendUtils';
+import * as FeatureFlags from '@libs/FeatureFlags';
 import * as KirokuIcons from '@components/Icon/KirokuIcons';
 import type {StackScreenProps} from '@react-navigation/stack';
 import type {ProfileNavigatorParamList} from '@libs/Navigation/types';
@@ -225,12 +226,14 @@ function ProfileScreen({route}: ProfileScreenProps) {
         showsVerticalScrollIndicator={false}>
         {user?.uid === userID && (
           <>
-            <Button
-              icon={KirokuIcons.Star}
-              iconFill={StyleUtils.getIconFillColor()}
-              style={[styles.profileBadgesIndicator, styles.bgTransparent]}
-              onPress={() => Navigation.navigate(ROUTES.BADGES)}
-            />
+            {FeatureFlags.isEnabled('BADGES') && (
+              <Button
+                icon={KirokuIcons.Star}
+                iconFill={StyleUtils.getIconFillColor()}
+                style={[styles.profileBadgesIndicator, styles.bgTransparent]}
+                onPress={() => Navigation.navigate(ROUTES.BADGES)}
+              />
+            )}
             <Button
               icon={KirokuIcons.Gear}
               iconFill={StyleUtils.getIconFillColor()}

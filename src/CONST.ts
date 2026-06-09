@@ -113,6 +113,7 @@ const CONST = {
   // `@libs/FeatureFlags` — never read this object directly at call sites so the
   // backing source can later swap to Onyx/remote-config without churn.
   FEATURES: {
+    BADGES: false,
     FULLSCREEN_CALENDAR: true,
   },
   APP_UPDATE: {
