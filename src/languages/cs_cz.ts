@@ -511,6 +511,11 @@ export default {
   friendListScreen: {
     searchYourFriendList: 'Prohledat seznam přátel',
     userList: 'List vašich přátel',
+    offlineNoData: {
+      title: 'Jste offline',
+      message:
+        'Nepodařilo se nám načíst vaše přátele. Připojte se a zobrazí se tady.',
+    },
   },
   friendAction: {
     error: {

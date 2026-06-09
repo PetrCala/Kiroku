@@ -509,6 +509,11 @@ export default {
   friendListScreen: {
     searchYourFriendList: 'Search your friend list',
     userList: 'The list of your friends',
+    offlineNoData: {
+      title: "You're offline",
+      message:
+        "We couldn't load your friends. Reconnect and they'll show up here.",
+    },
   },
   friendAction: {
     error: {

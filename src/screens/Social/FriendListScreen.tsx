@@ -11,15 +11,18 @@ import Text from '@components/Text';
 import * as ErrorUtils from '@libs/ErrorUtils';
 import UserListComponent from '@components/Social/UserListComponent';
 import useFriendsData from '@hooks/useFriendsData';
+import useNetwork from '@hooks/useNetwork';
 import NoFriendInfo from '@components/Social/NoFriendInfo';
 import useLocalize from '@hooks/useLocalize';
 import useThemeStyles from '@hooks/useThemeStyles';
 import ONYXKEYS from '@src/ONYXKEYS';
 import ERRORS from '@src/ERRORS';
+import getFriendListContentState from './getFriendListContentState';
 
 function FriendListScreen() {
   const userData = useCurrentUserData();
   const [isLoadingApp] = useOnyx(ONYXKEYS.IS_LOADING_APP);
+  const {isOffline} = useNetwork();
   const {translate} = useLocalize();
   const styles = useThemeStyles();
   const [friends, setFriends] = useState<UserArray>([]);
@@ -59,7 +62,38 @@ function FriendListScreen() {
     setFriendsToDisplay(friends);
   };
 
+  // On a cold boot `userData.friends` is briefly undefined until the `app/open`
+  // bootstrap hydrates the friend list, and `objKeys(undefined)` collapses to
+  // `[]`. Without this, the empty state would render before the list arrives.
+  // `contentState` disambiguates an empty list: still loading (online) vs.
+  // can't-load-yet (offline, nothing cached) vs. genuinely empty (bootstrap
+  // done). This mirrors HomeScreen's `getHomeContentState`. `isLoadingApp` is
+  // the same bootstrap-complete signal the onboarding/terms guards gate on.
+  const contentState = getFriendListContentState(
+    friends.length,
+    isLoadingApp,
+    isOffline,
+  );
+
   const emptyListComponent = useMemo(() => {
+    if (contentState === 'offlineUnavailable') {
+      return (
+        <View style={[styles.fullScreenCenteredContent, styles.ph5]}>
+          <Text style={[styles.textHeadlineH1, styles.textAlignCenter]}>
+            {translate('friendListScreen.offlineNoData.title')}
+          </Text>
+          <Text
+            style={[
+              styles.textNormal,
+              styles.textSupporting,
+              styles.textAlignCenter,
+              styles.mt2,
+            ]}>
+            {translate('friendListScreen.offlineNoData.message')}
+          </Text>
+        </View>
+      );
+    }
     if (!userHasFriends) {
       return <NoFriendInfo />;
     }
@@ -68,7 +102,19 @@ function FriendListScreen() {
         {`${translate('userList.noFriendsFound')}\n\n${translate('userList.tryModifyingSearch')}`}
       </Text>
     );
-  }, [userHasFriends, styles.noResultsText, translate]);
+  }, [
+    contentState,
+    userHasFriends,
+    styles.fullScreenCenteredContent,
+    styles.ph5,
+    styles.textHeadlineH1,
+    styles.textAlignCenter,
+    styles.textNormal,
+    styles.textSupporting,
+    styles.mt2,
+    styles.noResultsText,
+    translate,
+  ]);
 
   useEffect(() => {
     const friendsArray = objKeys(userData?.friends);
@@ -76,16 +122,6 @@ function FriendListScreen() {
     setFriendsToDisplay(friendsArray);
     setUserHasFriends(friendsArray.length > 0);
   }, [userData]);
-
-  // On a cold boot `userData.friends` is briefly undefined until the `app/open`
-  // bootstrap hydrates the friend list. Without this gate, `objKeys(undefined)`
-  // collapses to `[]` and the "no friends" empty state flashes before the list
-  // arrives (it then self-corrects, and a reload paints instantly from the
-  // persisted Onyx cache, so the flash is first-launch-only). Keep the list in
-  // its loading state until the bootstrap completes (`isLoadingApp === false`,
-  // the same bootstrap-complete signal the onboarding/terms guards gate on) or
-  // we already have friends to show.
-  const isInitialFriendsLoad = isLoadingApp !== false && friends.length === 0;
 
   return (
     <View style={styles.flex1}>
@@ -103,7 +139,9 @@ function FriendListScreen() {
         emptyListComponent={emptyListComponent}
         userSubset={friendsToDisplay}
         orderUsers
-        isLoading={isLoadingFriends || isSearching || isInitialFriendsLoad}
+        isLoading={
+          isLoadingFriends || isSearching || contentState === 'loading'
+        }
       />
     </View>
   );
