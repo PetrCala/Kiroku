@@ -16,7 +16,7 @@ import type {EdgeInsets} from 'react-native-safe-area-context';
 import useEnvironment from '@hooks/useEnvironment';
 import useInitialDimensions from '@hooks/useInitialWindowDimensions';
 import useKeyboardState from '@hooks/useKeyboardState';
-// import useNetwork from '@hooks/useNetwork';
+import useNetwork from '@hooks/useNetwork';
 import useTackInputFocus from '@hooks/useTackInputFocus';
 import useThemeStyles from '@hooks/useThemeStyles';
 import useWindowDimensions from '@hooks/useWindowDimensions';
@@ -159,7 +159,7 @@ function ScreenWrapper(
   const styles = useThemeStyles();
   const keyboardState = useKeyboardState();
   const {isDevelopment} = useEnvironment();
-  // const {isOffline} = useNetwork();
+  const {isOffline} = useNetwork();
   const [didScreenTransitionEnd, setDidScreenTransitionEnd] = useState(false);
   const maxHeight = shouldEnableMaxHeight ? windowHeight : undefined;
   const minHeight =
@@ -266,8 +266,10 @@ function ScreenWrapper(
         }
 
         // We always need the safe area padding bottom if we're showing the offline indicator since it is bottom-docked.
-        // if (includeSafeAreaPaddingBottom || (isOffline && shouldShowOfflineIndicator)) {
-        if (includeSafeAreaPaddingBottom) {
+        if (
+          includeSafeAreaPaddingBottom ||
+          (isOffline && shouldShowOfflineIndicator)
+        ) {
           paddingStyle.paddingBottom = paddingBottom;
         }
 
