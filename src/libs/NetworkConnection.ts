@@ -64,7 +64,18 @@ function setOfflineStatus(isCurrentlyOffline: boolean, reason = ''): void {
   isOffline = isCurrentlyOffline;
 }
 
-// Update the offline status in response to changes in shouldForceOffline
+// Mirror the `shouldForceOffline` flag (driven by the dev-menu "Force
+// offline"/"Go back online" toggles) so the NetInfo subscription guard below
+// can honor it if `subscribeToNetInfo()` is ever re-enabled.
+//
+// We deliberately do NOT write `isOffline`/`networkStatus` from this listener.
+// UserConnectionProvider is the single writer of the NETWORK key's connectivity
+// fields, and the offline UI reads `shouldForceOffline` directly (see
+// useNetwork / NetworkStore). Writing here would re-introduce a double-writer
+// race: on "Go back online" the old NetInfo.fetch() path frequently observed
+// `isInternetReachable === null` on-device, treated null as unreachable, and
+// re-asserted `isOffline: true` — leaving the offline indicator stuck until a
+// full app reload.
 let shouldForceOffline = false;
 Onyx.connect({
   key: ONYXKEYS.NETWORK,
@@ -72,35 +83,7 @@ Onyx.connect({
     if (!network) {
       return;
     }
-    const currentShouldForceOffline = !!network.shouldForceOffline;
-    if (currentShouldForceOffline === shouldForceOffline) {
-      return;
-    }
-    shouldForceOffline = currentShouldForceOffline;
-    if (shouldForceOffline) {
-      setOfflineStatus(
-        true,
-        'shouldForceOffline was detected in the Onyx data',
-      );
-      Log.info(
-        `[NetworkStatus] Setting "offlineStatus" to "true" because user is under force offline`,
-      );
-    } else {
-      // If we are no longer forcing offline fetch the NetInfo to set isOffline appropriately
-      NetInfo.fetch().then(state => {
-        const isInternetUnreachable =
-          (state.isInternetReachable ?? false) === false;
-        setOfflineStatus(
-          isInternetUnreachable || !isServerUp,
-          'NetInfo checked if the internet is reachable',
-        );
-        Log.info(
-          `[NetworkStatus] The force-offline mode was turned off. Getting the device network status from NetInfo. Network state: ${JSON.stringify(
-            state,
-          )}. Setting the offline status to: ${isInternetUnreachable}.`,
-        );
-      });
-    }
+    shouldForceOffline = !!network.shouldForceOffline;
   },
 });
 

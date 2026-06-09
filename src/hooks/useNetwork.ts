@@ -14,31 +14,40 @@ export default function useNetwork({
   const callback = useRef(onReconnect);
   callback.current = onReconnect;
 
-  const {isOffline, networkStatus} = useContext(NetworkContext) ?? {
-    ...CONST.DEFAULT_NETWORK_DATA,
-    networkStatus: CONST.NETWORK.NETWORK_STATUS.UNKNOWN,
-  };
-  const prevOfflineStatusRef = useRef(isOffline);
+  const network = useContext(NetworkContext);
+  const networkStatus =
+    network?.networkStatus ?? CONST.NETWORK.NETWORK_STATUS.UNKNOWN;
+  const isOffline = network?.isOffline ?? CONST.DEFAULT_NETWORK_DATA.isOffline;
+  const shouldForceOffline = network?.shouldForceOffline ?? false;
+
+  // The dev-menu "Force offline"/"Go back online" toggles only flip the
+  // `shouldForceOffline` flag, so the offline UI has to honor it symmetrically.
+  // Reading it here (instead of relying on a side-channel that writes
+  // `isOffline`) keeps the indicator in lock-step with the toggle in both
+  // directions and mirrors NetworkStore.isOffline() (`shouldForceOffline ||
+  // isOffline`). When the real network status is still UNKNOWN we don't treat it
+  // as offline.
+  const isOfflineEffective =
+    shouldForceOffline ||
+    (networkStatus === CONST.NETWORK.NETWORK_STATUS.UNKNOWN
+      ? false
+      : isOffline);
+
+  const prevOfflineStatusRef = useRef(isOfflineEffective);
   useEffect(() => {
     // If we were offline before and now we are not offline then we just reconnected
-    const didReconnect = prevOfflineStatusRef.current && !isOffline;
+    const didReconnect = prevOfflineStatusRef.current && !isOfflineEffective;
     if (!didReconnect) {
       return;
     }
 
     callback.current();
-  }, [isOffline]);
+  }, [isOfflineEffective]);
 
   useEffect(() => {
     // Used to store previous prop values to compare on next render
-    prevOfflineStatusRef.current = isOffline;
-  }, [isOffline]);
+    prevOfflineStatusRef.current = isOfflineEffective;
+  }, [isOfflineEffective]);
 
-  // If the network status is undefined, we don't treat it as offline. Otherwise, we utilize the isOffline prop.
-  return {
-    isOffline:
-      networkStatus === CONST.NETWORK.NETWORK_STATUS.UNKNOWN
-        ? false
-        : isOffline,
-  };
+  return {isOffline: isOfflineEffective};
 }
