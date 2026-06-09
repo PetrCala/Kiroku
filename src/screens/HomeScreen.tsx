@@ -157,8 +157,8 @@ function HomeScreen({route}: HomeScreenProps) {
     if (showSkeletonContent) {
       return (
         <>
-          <SessionsCalendarCompactSkeleton />
           <StatOverviewSkeleton />
+          <SessionsCalendarCompactSkeleton />
         </>
       );
     }
@@ -167,13 +167,10 @@ function HomeScreen({route}: HomeScreenProps) {
     }
     return (
       <>
-        <SessionsCalendar
-          userID={user.uid}
-          visibleDate={visibleDate}
-          onDateChange={onDateChange}
-          drinkingSessionData={drinkingSessionData}
-          preferences={preferences}
-        />
+        {/* The overview sits above the calendar so its position stays fixed as
+         *  the user pages months — the calendar's row count (5 vs 6 weeks)
+         *  varies, and keeping it last confines that height change to the
+         *  bottom of the scroll. */}
         {/* Home stats display toggles — flip these to show/hide sections:
          *   showTitle           — the "Monthly overview" heading
          *   showWeeklyUnits     — the per-week units bar chart
@@ -183,6 +180,13 @@ function HomeScreen({route}: HomeScreenProps) {
           showTitle
           showWeeklyUnits={false}
           showMonthComparison
+        />
+        <SessionsCalendar
+          userID={user.uid}
+          visibleDate={visibleDate}
+          onDateChange={onDateChange}
+          drinkingSessionData={drinkingSessionData}
+          preferences={preferences}
         />
       </>
     );
