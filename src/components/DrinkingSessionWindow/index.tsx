@@ -13,6 +13,7 @@ import useCurrentUserPreferences from '@hooks/useCurrentUserPreferences';
 import useLocalize from '@hooks/useLocalize';
 import HeaderWithBackButton from '@components/HeaderWithBackButton';
 import useThemeStyles from '@hooks/useThemeStyles';
+import BottomActionBar from '@components/BottomActionBar';
 import Button from '@components/Button';
 import ConfirmModal from '@components/ConfirmModal';
 import * as ErrorUtils from '@libs/ErrorUtils';
@@ -228,7 +229,7 @@ function DrinkingSessionWindow({
         />
         <FillerView />
       </ScrollView>
-      <View style={[styles.bottomTabBarContainer, styles.gap2]}>
+      <BottomActionBar containerStyle={styles.gap2}>
         <Button
           large
           text={translate('liveSessionScreen.discardSession', {
@@ -245,7 +246,7 @@ function DrinkingSessionWindow({
           style={styles.buttonLargeSuccess}
           onPress={() => saveSession(user)}
         />
-      </View>
+      </BottomActionBar>
       <ConfirmModal
         danger
         title={translate('common.warning')}

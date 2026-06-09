@@ -183,6 +183,7 @@ function AuthScreen({route}: AuthScreenProps) {
           submitFlexEnabled={false}
           isSubmitDisabled={!isOnline}
           isSubmitButtonVisible={!isLoading}
+          shouldShowOfflineIndicator={false}
           shouldUseScrollView={false}>
           <InputWrapper
             InputComponent={TextInput}

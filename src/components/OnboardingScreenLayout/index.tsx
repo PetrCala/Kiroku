@@ -28,6 +28,9 @@ type OnboardingScreenLayoutProps = {
   /** testID forwarded to the ScreenWrapper for test discovery */
   testID: string;
 
+  /** Whether the ScreenWrapper renders its bottom-docked offline indicator */
+  shouldShowOfflineIndicator?: boolean;
+
   /** Screen body */
   children: React.ReactNode;
 };
@@ -37,6 +40,7 @@ function OnboardingScreenLayout({
   totalSteps,
   isFirstScreen = false,
   testID,
+  shouldShowOfflineIndicator = true,
   children,
 }: OnboardingScreenLayoutProps) {
   const styles = useThemeStyles();
@@ -83,7 +87,9 @@ function OnboardingScreenLayout({
   }
 
   return (
-    <ScreenWrapper testID={testID}>
+    <ScreenWrapper
+      testID={testID}
+      shouldShowOfflineIndicator={shouldShowOfflineIndicator}>
       <View
         style={[
           styles.flexRow,
