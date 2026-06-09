@@ -16,7 +16,7 @@ import type {StackScreenProps} from '@react-navigation/stack';
 import {useFocusEffect} from '@react-navigation/native';
 import type {BottomTabNavigatorParamList} from '@libs/Navigation/types';
 import type SCREENS from '@src/SCREENS';
-import HomeStatsOverview from '@components/Items/HomeStatsOverview';
+import MonthlyOverviewCard from '@components/Items/MonthlyOverviewCard';
 import ScreenWrapper from '@components/ScreenWrapper';
 import HomeBanner from '@components/Info/HomeBanner';
 import useThemeStyles from '@hooks/useThemeStyles';
@@ -177,7 +177,7 @@ function HomeScreen({route}: HomeScreenProps) {
         {/* Home stats display toggles — flip these to show/hide sections:
          *   showWeeklyUnits     — the per-week units bar chart
          *   showMonthComparison — the trend arrow + previous-month value */}
-        <HomeStatsOverview
+        <MonthlyOverviewCard
           visibleDate={visibleDate}
           showWeeklyUnits={false}
           showMonthComparison

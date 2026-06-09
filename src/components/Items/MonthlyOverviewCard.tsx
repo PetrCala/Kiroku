@@ -94,7 +94,7 @@ function MetricColumn({
   );
 }
 
-type HomeStatsOverviewProps = {
+type MonthlyOverviewCardProps = {
   visibleDate: DateData;
   /** Show the per-week units bar chart beneath the columns. */
   showWeeklyUnits?: boolean;
@@ -103,17 +103,18 @@ type HomeStatsOverviewProps = {
 };
 
 /**
- * Home-screen stats: a single "Monthly overview" card with three columns
- * (Units, Sessions, Alcohol-free). Each column shows the current value and,
+ * Reusable "Monthly overview" stats card: three columns (Units, Sessions,
+ * Alcohol-free) for the visible month. Each column shows the current value and,
  * when `showMonthComparison` is on, a trend arrow + the previous month's value.
  * An optional per-week bar chart sits below when `showWeeklyUnits` is on, and a
- * quiet arrow shortcut opens the Statistics screen.
+ * quiet arrow shortcut opens the Statistics screen. Used on the home screen and
+ * intended for the profile screens (self + other users).
  */
-function HomeStatsOverview({
+function MonthlyOverviewCard({
   visibleDate,
   showWeeklyUnits = true,
   showMonthComparison = true,
-}: HomeStatsOverviewProps) {
+}: MonthlyOverviewCardProps) {
   const styles = useThemeStyles();
   const theme = useTheme();
   const {translate} = useLocalize();
@@ -218,7 +219,7 @@ function HomeStatsOverview({
   );
 }
 
-HomeStatsOverview.displayName = 'HomeStatsOverview';
+MonthlyOverviewCard.displayName = 'MonthlyOverviewCard';
 
-export default HomeStatsOverview;
-export type {HomeStatsOverviewProps};
+export default MonthlyOverviewCard;
+export type {MonthlyOverviewCardProps};
