@@ -29,7 +29,6 @@ import HeaderWithBackButton from '@components/HeaderWithBackButton';
 import useLocalize from '@hooks/useLocalize';
 import useReadyAfterScreenTransition from '@hooks/useReadyAfterScreenTransition';
 import FlexibleLoadingIndicator from '@components/FlexibleLoadingIndicator';
-import OfflineIndicator from '@components/OfflineIndicator';
 import useThemeStyles from '@hooks/useThemeStyles';
 import Button from '@components/Button';
 import ManageFriendPopover from '@components/ManageFriendPopover';
@@ -166,8 +165,9 @@ function ProfileScreen({route}: ProfileScreenProps) {
 
   // A cross-user profile read can't be queued while offline, so a friend whose
   // data isn't already cached resolves with nothing. Keep the screen chrome
-  // (header + offline indicator) and show a graceful loading/empty state rather
-  // than the blank dark screen an early `return` produced.
+  // (ScreenWrapper renders its own OfflineIndicator) and show a graceful
+  // loading/empty state rather than the blank dark screen an early `return`
+  // produced.
   if (isLoading) {
     return (
       <ScreenWrapper
@@ -182,7 +182,6 @@ function ProfileScreen({route}: ProfileScreenProps) {
           ]}>
           <FlexibleLoadingIndicator />
         </View>
-        <OfflineIndicator />
       </ScreenWrapper>
     );
   }
@@ -212,7 +211,6 @@ function ProfileScreen({route}: ProfileScreenProps) {
             {translate('profileScreen.offlineUnavailableMessage')}
           </Text>
         </View>
-        <OfflineIndicator />
       </ScreenWrapper>
     );
   }
@@ -287,7 +285,6 @@ function ProfileScreen({route}: ProfileScreenProps) {
         onClose={() => setManageFriendModalVisible(false)}
         friendId={userID}
       />
-      <OfflineIndicator />
     </ScreenWrapper>
   );
 }
