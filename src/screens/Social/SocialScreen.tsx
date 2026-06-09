@@ -194,29 +194,31 @@ function SocialScreen() {
         options={sceneOptions}
       />
       <OfflineIndicator style={{marginBottom: bottomTabBarHeight}} />
-      {/* Friend-search FAB. Rendered at the ScreenWrapper level (a sibling of
-          the TabView/OfflineIndicator), exactly like the Home start-session
-          FAB, so it's anchored to the screen and isn't shifted upward by the
-          offline indicator's reserved bottom margin the way an in-scene button
-          would be. Reuses the Home FAB's container + circle styles so the two
-          line up. */}
-      <View
-        style={[
-          styles.floatingActionButtonContainer,
-          {bottom: bottomTabBarHeight + 16},
-        ]}>
-        <PressableWithFeedback
-          accessibilityLabel="search-screen-button"
-          style={styles.floatingActionButton}
-          onPress={() => Navigation.navigate(ROUTES.SOCIAL_FRIEND_SEARCH)}>
-          <Icon
-            src={KirokuIcons.Search}
-            width={28}
-            height={28}
-            fill={theme.textLight}
-          />
-        </PressableWithFeedback>
-      </View>
+      {/* Friend-search FAB, only on the Friend Requests tab. Rendered at the
+          ScreenWrapper level (a sibling of the TabView/OfflineIndicator),
+          exactly like the Home start-session FAB, so it's anchored to the
+          screen and isn't shifted upward by the offline indicator's reserved
+          bottom margin the way an in-scene button would be. Reuses the Home
+          FAB's container + circle styles so the two line up. */}
+      {routes[index]?.key === 'friendRequests' && (
+        <View
+          style={[
+            styles.floatingActionButtonContainer,
+            {bottom: bottomTabBarHeight + 16},
+          ]}>
+          <PressableWithFeedback
+            accessibilityLabel="search-screen-button"
+            style={styles.floatingActionButton}
+            onPress={() => Navigation.navigate(ROUTES.SOCIAL_FRIEND_SEARCH)}>
+            <Icon
+              src={KirokuIcons.Search}
+              width={28}
+              height={28}
+              fill={theme.textLight}
+            />
+          </PressableWithFeedback>
+        </View>
+      )}
     </ScreenWrapper>
   );
 }
