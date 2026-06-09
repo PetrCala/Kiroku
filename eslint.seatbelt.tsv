@@ -799,7 +799,7 @@
 "src/screens/HomeScreen.tsx"	"rulesdir/no-use-state-initializer-functions"	2
 "src/screens/Profile/FriendsFriendsScreen.tsx"	"react-hooks/set-state-in-effect"	2
 "src/screens/Profile/ProfileScreen.tsx"	"arrow-body-style"	2
-"src/screens/Profile/ProfileScreen.tsx"	"react-hooks/set-state-in-effect"	2
+"src/screens/Profile/ProfileScreen.tsx"	"react-hooks/set-state-in-effect"	1
 "src/screens/Profile/ProfileScreen.tsx"	"rulesdir/no-use-state-initializer-functions"	2
 "src/screens/Settings/AboutScreen.tsx"	"react-hooks/refs"	1
 "src/screens/Settings/AboutScreen.tsx"	"rulesdir/prefer-narrow-hook-dependencies"	1
