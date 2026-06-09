@@ -1,5 +1,6 @@
 import {View} from 'react-native';
 import type {DateData} from 'react-native-calendars';
+import {PeriodBarList} from '@components/Charts/PeriodBarList';
 import Icon from '@components/Icon';
 import * as KirokuIcons from '@components/Icon/KirokuIcons';
 import {PressableWithFeedback} from '@components/Pressable';
@@ -43,6 +44,8 @@ type MetricColumnProps = {
   direction: Direction;
   deltaColor: string;
   accentColor: string;
+  /** When false, the trend arrow + previous value row is hidden. */
+  showComparison: boolean;
 };
 
 /** One stat in the consolidated home tile: label, current value, arrow + previous. */
@@ -54,6 +57,7 @@ function MetricColumn({
   direction,
   deltaColor,
   accentColor,
+  showComparison,
 }: MetricColumnProps) {
   const styles = useThemeStyles();
   return (
@@ -74,35 +78,47 @@ function MetricColumn({
           <Text style={[styles.textMicroSupporting, styles.ml1]}>{unit}</Text>
         ) : null}
       </View>
-      <Text
-        style={[
-          styles.textMicro,
-          styles.textStrong,
-          styles.mt1,
-          {color: deltaColor},
-        ]}
-        numberOfLines={1}>
-        {ARROW[direction]} {previous}
-      </Text>
+      {showComparison ? (
+        <Text
+          style={[
+            styles.textMicro,
+            styles.textStrong,
+            styles.mt1,
+            {color: deltaColor},
+          ]}
+          numberOfLines={1}>
+          {ARROW[direction]} {previous}
+        </Text>
+      ) : null}
     </View>
   );
 }
 
 type HomeStatsOverviewProps = {
   visibleDate: DateData;
+  /** Show the per-week units bar chart beneath the columns. */
+  showWeeklyUnits?: boolean;
+  /** Show the month-over-month comparison (trend arrow + previous value). */
+  showMonthComparison?: boolean;
 };
 
 /**
- * Home-screen stats: a single soft card with three columns (Units, Sessions,
- * Alcohol-free), each showing the current value and the previous month's value
- * after a trend arrow, plus a per-week bar chart and a quiet arrow shortcut to
- * the Statistics screen.
+ * Home-screen stats: a single "Monthly overview" card with three columns
+ * (Units, Sessions, Alcohol-free). Each column shows the current value and,
+ * when `showMonthComparison` is on, a trend arrow + the previous month's value.
+ * An optional per-week bar chart sits below when `showWeeklyUnits` is on, and a
+ * quiet arrow shortcut opens the Statistics screen.
  */
-function HomeStatsOverview({visibleDate}: HomeStatsOverviewProps) {
+function HomeStatsOverview({
+  visibleDate,
+  showWeeklyUnits = true,
+  showMonthComparison = true,
+}: HomeStatsOverviewProps) {
   const styles = useThemeStyles();
   const theme = useTheme();
   const {translate} = useLocalize();
-  const {current, previous, liveExtraUnits} = useHomeStats(visibleDate);
+  const {isLoading, current, previous, subPeriods, liveExtraUnits} =
+    useHomeStats(visibleDate);
 
   const deltaColorFor = (direction: Direction, polarity: Polarity): string => {
     if (direction === 'flat') {
@@ -126,7 +142,17 @@ function HomeStatsOverview({visibleDate}: HomeStatsOverviewProps) {
           styles.p3,
           {backgroundColor: theme.cardSoftBG, borderRadius: 12},
         ]}>
-        <View style={[styles.flexRow, styles.justifyContentEnd]}>
+        <View
+          style={[
+            styles.flexRow,
+            styles.justifyContentBetween,
+            styles.alignItemsCenter,
+          ]}>
+          <Text
+            style={[styles.textLabelSupporting, styles.textStrong]}
+            numberOfLines={1}>
+            {translate('homeScreen.stats.monthlyOverview')}
+          </Text>
           <PressableWithFeedback
             accessibilityLabel={translate('homeScreen.stats.viewStatistics')}
             accessibilityRole="button"
@@ -148,6 +174,7 @@ function HomeStatsOverview({visibleDate}: HomeStatsOverviewProps) {
             direction={unitsDir}
             deltaColor={deltaColorFor(unitsDir, 'lower-is-supportive')}
             accentColor={theme.text}
+            showComparison={showMonthComparison}
           />
           <MetricColumn
             label={translate('homeScreen.stats.sessions')}
@@ -156,6 +183,7 @@ function HomeStatsOverview({visibleDate}: HomeStatsOverviewProps) {
             direction={sessionsDir}
             deltaColor={deltaColorFor(sessionsDir, 'lower-is-supportive')}
             accentColor={theme.text}
+            showComparison={showMonthComparison}
           />
           <MetricColumn
             label={translate('homeScreen.stats.alcoholFree')}
@@ -165,8 +193,26 @@ function HomeStatsOverview({visibleDate}: HomeStatsOverviewProps) {
             direction={afDir}
             deltaColor={deltaColorFor(afDir, 'higher-is-supportive')}
             accentColor={theme.successHover}
+            showComparison={showMonthComparison}
           />
         </View>
+
+        {showWeeklyUnits ? (
+          <View style={styles.mt3}>
+            <Text style={[styles.textMicroSupporting, styles.mb1]}>
+              {translate('homeScreen.stats.unitsByWeek')}
+            </Text>
+            <PeriodBarList
+              points={subPeriods}
+              granularity="week"
+              liveExtraUnits={liveExtraUnits}
+              accessibilityLabel={translate(
+                'homeScreen.stats.unitsPerWeekA11y',
+              )}
+              isLoading={isLoading}
+            />
+          </View>
+        ) : null}
       </View>
     </View>
   );
