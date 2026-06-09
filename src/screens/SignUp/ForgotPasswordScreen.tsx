@@ -89,6 +89,7 @@ function ForgotPasswordScreen() {
   return (
     <ScreenWrapper
       includeSafeAreaPaddingBottom={false}
+      shouldShowOfflineIndicator={false}
       testID={ForgotPasswordScreen.displayName}>
       <HeaderWithBackButton
         title={translate('forgotPasswordScreen.title')}

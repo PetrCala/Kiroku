@@ -112,6 +112,7 @@ function DeleteAccountScreen({route}: DeleteAccountScreenProps) {
   return (
     <ScreenWrapper
       includeSafeAreaPaddingBottom={false}
+      shouldShowOfflineIndicator={false}
       testID={DeleteAccountScreen.displayName}>
       <HeaderWithBackButton
         title={translate('deleteAccountScreen.deleteAccount')}

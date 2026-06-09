@@ -49,6 +49,7 @@ function ReportBugScreen({route}: ReportBugScreenProps) {
   return (
     <ScreenWrapper
       includeSafeAreaPaddingBottom={false}
+      shouldShowOfflineIndicator={false}
       testID={ReportBugScreen.displayName}>
       <HeaderWithBackButton
         title={translate('reportBugScreen.title')}

@@ -60,6 +60,7 @@ function SesssionNoteScreen({route}: SessionNoteScreenProps) {
   return (
     <ScreenWrapper
       includeSafeAreaPaddingBottom={false}
+      shouldShowOfflineIndicator={false}
       testID={SesssionNoteScreen.displayName}>
       <HeaderWithBackButton
         title={translate('sessionNoteScreen.title')}

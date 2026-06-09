@@ -2,6 +2,7 @@ import {endOfDay} from 'date-fns';
 import {toZonedTime} from 'date-fns-tz';
 import React, {useMemo, useState} from 'react';
 import {Alert, View} from 'react-native';
+import BottomActionBar from '@components/BottomActionBar';
 import Button from '@components/Button';
 import Calendar from '@components/DateSelectorModal/Calendar';
 import HeaderWithBackButton from '@components/HeaderWithBackButton';
@@ -98,6 +99,7 @@ function SesssionDateScreen({route}: SessionDateScreenProps) {
   return (
     <ScreenWrapper
       includeSafeAreaPaddingBottom={false}
+      shouldShowOfflineIndicator={false}
       testID={SesssionDateScreen.displayName}>
       <HeaderWithBackButton
         title={translate('sessionDateScreen.title')}
@@ -114,7 +116,7 @@ function SesssionDateScreen({route}: SessionDateScreenProps) {
           onChangeSingle={setSelectedDate}
         />
       </View>
-      <View style={[styles.bottomTabBarContainer, styles.ph5]}>
+      <BottomActionBar containerStyle={styles.ph5}>
         <Button
           large
           success
@@ -122,7 +124,7 @@ function SesssionDateScreen({route}: SessionDateScreenProps) {
           onPress={onConfirm}
           style={styles.bottomTabButton}
         />
-      </View>
+      </BottomActionBar>
     </ScreenWrapper>
   );
 }

@@ -130,6 +130,7 @@ function UserNameScreen({route}: UserNameScreenProps) {
   return (
     <ScreenWrapper
       includeSafeAreaPaddingBottom={false}
+      shouldShowOfflineIndicator={false}
       shouldEnableMaxHeight
       testID={UserNameScreen.userName}>
       <HeaderWithBackButton

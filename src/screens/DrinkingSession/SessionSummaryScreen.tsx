@@ -23,6 +23,7 @@ import DateUtils from '@libs/DateUtils';
 import Navigation from '@libs/Navigation/Navigation';
 import ScreenWrapper from '@components/ScreenWrapper';
 import HeaderWithBackButton from '@components/HeaderWithBackButton';
+import BottomActionBar from '@components/BottomActionBar';
 import Button from '@components/Button';
 import useThemeStyles from '@hooks/useThemeStyles';
 import useStyleUtils from '@hooks/useStyleUtils';
@@ -315,7 +316,9 @@ function SessionSummaryScreen({route}: SessionSummaryScreenProps) {
   }, [sessionId, drinkingSessionData]);
 
   return (
-    <ScreenWrapper testID={SessionSummaryScreen.displayName}>
+    <ScreenWrapper
+      shouldShowOfflineIndicator={false}
+      testID={SessionSummaryScreen.displayName}>
       <HeaderWithBackButton
         onBackButtonPress={onBackPress}
         customRightButton={
@@ -340,7 +343,7 @@ function SessionSummaryScreen({route}: SessionSummaryScreenProps) {
           {otherMenuItems}
         </MenuItemGroup>
       </ScrollView>
-      <View style={[styles.bottomTabBarContainer, styles.ph5]}>
+      <BottomActionBar containerStyle={styles.ph5}>
         <Button
           large
           text={translate('common.confirm')}
@@ -348,7 +351,7 @@ function SessionSummaryScreen({route}: SessionSummaryScreenProps) {
           style={styles.bottomTabButton}
           success
         />
-      </View>
+      </BottomActionBar>
     </ScreenWrapper>
   );
 }

@@ -103,6 +103,7 @@ function EmailScreen({route}: EmailScreenProps) {
   return (
     <ScreenWrapper
       includeSafeAreaPaddingBottom={false}
+      shouldShowOfflineIndicator={false}
       testID={EmailScreen.displayName}>
       <HeaderWithBackButton
         title={translate('emailScreen.title')}

@@ -77,6 +77,7 @@ function DisplayNameScreen({route}: DisplayNameScreenProps) {
   return (
     <ScreenWrapper
       includeSafeAreaPaddingBottom={false}
+      shouldShowOfflineIndicator={false}
       shouldEnableMaxHeight
       testID={DisplayNameScreen.displayName}>
       <HeaderWithBackButton

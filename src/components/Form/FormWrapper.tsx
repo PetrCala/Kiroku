@@ -11,6 +11,7 @@ import {Keyboard} from 'react-native';
 import {useOnyx} from 'react-native-onyx';
 import FormAlertWithSubmitButton from '@components/FormAlertWithSubmitButton';
 import FormElement from '@components/FormElement';
+import OfflineIndicator from '@components/OfflineIndicator';
 import SafeAreaConsumer from '@components/SafeAreaConsumer';
 import type {SafeAreaChildrenProps} from '@components/SafeAreaConsumer/types';
 import ScrollView from '@components/ScrollView';
@@ -135,33 +136,45 @@ function FormWrapper({
           style={[style, paddingBottomStyle]}>
           {children}
           {isSubmitButtonVisible && (
-            <FormAlertWithSubmitButton
-              buttonText={submitButtonText}
-              isDisabled={isSubmitDisabled}
-              isAlertVisible={
-                ((!isEmptyObject(errors) ||
-                  !isEmptyObject(formState?.errorFields)) &&
-                  !shouldHideFixErrorsAlert) ||
-                !!errorMessage
-              }
-              isLoading={!!formState?.isLoading}
-              message={
-                isEmptyObject(formState?.errorFields) ? errorMessage : undefined
-              }
-              onSubmit={onSubmit}
-              footerContent={footerContent}
-              onFixTheErrorsLinkPressed={onFixTheErrorsLinkPressed}
-              containerStyles={[
-                styles.mh0,
-                styles.mt5,
-                submitFlexEnabled ? styles.flex1 : {},
-                submitButtonStyles,
-              ]}
-              enabledWhenOffline={enabledWhenOffline}
-              isSubmitActionDangerous={isSubmitActionDangerous}
-              disablePressOnEnter={disablePressOnEnter}
-              enterKeyEventListenerPriority={1}
-            />
+            <>
+              {/*
+               * Render the offline indicator directly above the submit button so
+               * the reading order is "you're offline" then the disabled button.
+               * OfflineIndicator self-hides while online, so this adds no gap when
+               * connected. The hosting screen passes shouldShowOfflineIndicator=
+               * {false} to ScreenWrapper to avoid a duplicate below the button.
+               */}
+              <OfflineIndicator style={[styles.mt2, styles.ph0]} />
+              <FormAlertWithSubmitButton
+                buttonText={submitButtonText}
+                isDisabled={isSubmitDisabled}
+                isAlertVisible={
+                  ((!isEmptyObject(errors) ||
+                    !isEmptyObject(formState?.errorFields)) &&
+                    !shouldHideFixErrorsAlert) ||
+                  !!errorMessage
+                }
+                isLoading={!!formState?.isLoading}
+                message={
+                  isEmptyObject(formState?.errorFields)
+                    ? errorMessage
+                    : undefined
+                }
+                onSubmit={onSubmit}
+                footerContent={footerContent}
+                onFixTheErrorsLinkPressed={onFixTheErrorsLinkPressed}
+                containerStyles={[
+                  styles.mh0,
+                  styles.mt5,
+                  submitFlexEnabled ? styles.flex1 : {},
+                  submitButtonStyles,
+                ]}
+                enabledWhenOffline={enabledWhenOffline}
+                isSubmitActionDangerous={isSubmitActionDangerous}
+                disablePressOnEnter={disablePressOnEnter}
+                enterKeyEventListenerPriority={1}
+              />
+            </>
           )}
         </FormElement>
       );
@@ -171,7 +184,9 @@ function FormWrapper({
       style,
       styles.pb5,
       styles.mh0,
+      styles.mt2,
       styles.mt5,
+      styles.ph0,
       styles.flex1,
       children,
       isSubmitButtonVisible,

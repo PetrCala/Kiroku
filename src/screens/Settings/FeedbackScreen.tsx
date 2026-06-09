@@ -49,6 +49,7 @@ function FeedbackScreen({route}: FeedbackScreenProps) {
   return (
     <ScreenWrapper
       includeSafeAreaPaddingBottom={false}
+      shouldShowOfflineIndicator={false}
       testID={FeedbackScreen.displayName}>
       <HeaderWithBackButton
         title={translate('feedbackScreen.title')}
