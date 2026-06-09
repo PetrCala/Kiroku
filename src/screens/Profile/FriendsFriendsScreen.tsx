@@ -25,6 +25,7 @@ import type {StackScreenProps} from '@react-navigation/stack';
 import type {ProfileNavigatorParamList} from '@libs/Navigation/types';
 import type SCREENS from '@src/SCREENS';
 import useCurrentUserData from '@hooks/useCurrentUserData';
+import useNetwork from '@hooks/useNetwork';
 import Navigation from '@libs/Navigation/Navigation';
 import ROUTES from '@src/ROUTES';
 import ONYXKEYS from '@src/ONYXKEYS';
@@ -161,6 +162,20 @@ function FriendsFriendsScreen({route}: FriendsFriendsScreenProps) {
   useEffect(() => {
     fetchData();
   }, [fetchData]);
+
+  // Re-issue the friends read when connectivity resumes. `openFriendList` goes
+  // through `makeRequestWithSideEffects`, which DISCARDS a read while offline
+  // instead of queueing it (unlike `API.write`), and the mount effect above is
+  // keyed on `fetchData`/`userID` so it never re-runs on reconnect — without
+  // this an offline mount leaves the screen stuck on its empty state. Call the
+  // read directly (not `fetchData`, which toggles `isLoading`): it carries no
+  // optimistic data and refreshes `userDataList[userID].friends` in place, which
+  // cascades through the `initialSearch` effect to repaint the list.
+  useNetwork({
+    onReconnect: () => {
+      Profile.openFriendList(userID);
+    },
+  });
 
   useEffect(() => {
     const initialSearch = async (): Promise<void> => {

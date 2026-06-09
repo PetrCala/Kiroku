@@ -4,7 +4,7 @@ import type {
   FriendRequestStatus,
   ProfileList,
 } from '@src/types/onyx';
-import {useEffect, useRef, useState} from 'react';
+import {useCallback, useEffect, useRef, useState} from 'react';
 import * as ErrorUtils from '@libs/ErrorUtils';
 import {useFirebase} from '@context/global/FirebaseContext';
 import * as Friends from '@userActions/Friends';
@@ -15,6 +15,7 @@ import GrayHeader from '@components/Header/GrayHeader';
 import {objKeys} from '@libs/DataHandling';
 import CONST from '@src/CONST';
 import useCurrentUserData from '@hooks/useCurrentUserData';
+import useNetwork from '@hooks/useNetwork';
 import NoFriendInfo from '@components/Social/NoFriendInfo';
 import {isEmptyArray, isEmptyObject} from '@src/types/utils/EmptyObject';
 import FlexibleLoadingIndicator from '@components/FlexibleLoadingIndicator';
@@ -228,7 +229,7 @@ function FriendRequestScreen() {
   // Fetch only the request profiles we don't already have cached and aren't
   // already fetching — replacing the old "re-fetch every request on any change"
   // path. One batched call, deduped against Onyx + the in-flight set.
-  useEffect(() => {
+  const fetchMissingProfiles = useCallback(() => {
     const missingIDs = objKeys(friendRequests).filter(
       id => !userDataList?.[id]?.profile && !inFlightRef.current.has(id),
     );
@@ -245,6 +246,21 @@ function FriendRequestScreen() {
       setHasResolvedInitial(true);
     });
   }, [friendRequests, userDataList]);
+
+  useEffect(() => {
+    fetchMissingProfiles();
+  }, [fetchMissingProfiles]);
+
+  // Re-issue the missing-profile read when connectivity resumes.
+  // `fetchUserProfiles` goes through `makeRequestWithSideEffects`, which DISCARDS
+  // a read while offline instead of queueing it (unlike `API.write`), and the
+  // effect above is keyed on data identity (`friendRequests`/`userDataList`) so
+  // it never re-runs on reconnect — without this an offline mount leaves the
+  // request profiles missing after going back online. The shared dedupe (Onyx +
+  // in-flight set) means the reconnect call only fetches what's still missing.
+  useNetwork({
+    onReconnect: () => fetchMissingProfiles(),
+  });
 
   // Cold-load gate only: show the spinner just for the first load of a request
   // set with nothing cached yet — never blank the list out on a later refresh.

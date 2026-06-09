@@ -1,6 +1,6 @@
 import type {ListRenderItemInfo} from 'react-native';
 import {View} from 'react-native';
-import React, {useCallback, useMemo, useState} from 'react';
+import React, {useCallback, useMemo, useRef, useState} from 'react';
 import type {
   FriendRequestList,
   FriendRequestStatus,
@@ -47,6 +47,10 @@ function FriendSearchScreen() {
   >({});
   const [noUsersFound, setNoUsersFound] = useState(false);
   const [displayData, setDisplayData] = useState<ProfileList>({});
+  // The last query the search box emitted. `SearchWindow` owns the text (it only
+  // re-calls `onSearch` when the debounced text changes), so we track it here to
+  // be able to replay it when connectivity resumes.
+  const lastSearchTextRef = useRef('');
 
   /** Having a list of users returned by the search,
    * determine the request status for each and update
@@ -83,6 +87,7 @@ function FriendSearchScreen() {
 
   const dbSearch = useCallback(
     async (searchText: string): Promise<void> => {
+      lastSearchTextRef.current = searchText;
       // User search is a live server read that can't be queued; offline it would
       // hang on a spinner or fail. Short-circuit and let the render show the
       // offline notice instead.
@@ -114,6 +119,23 @@ function FriendSearchScreen() {
     },
     [isOffline, updateRequestStatuses, resetSearch],
   );
+
+  // Replay the pending query when connectivity resumes. The offline branch of
+  // `dbSearch` short-circuits (search is a live, unqueueable read) and renders
+  // the offline notice, but nothing re-runs the query once back online — the
+  // notice clears and the result list is left blank with the typed query still
+  // in the box. Re-issue the last query the search box emitted on the
+  // offline->online edge so reconnecting recovers the results in place. (Kept as
+  // its own `useNetwork` call because the one above must read `isOffline` before
+  // `dbSearch` is defined, and this handler must call `dbSearch`.)
+  useNetwork({
+    onReconnect: () => {
+      if (!lastSearchTextRef.current.trim()) {
+        return;
+      }
+      dbSearch(lastSearchTextRef.current);
+    },
+  });
 
   useMemo(() => {
     if (!userData) {
