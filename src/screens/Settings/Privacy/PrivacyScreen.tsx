@@ -15,8 +15,6 @@ import Text from '@components/Text';
 import Button from '@components/Button';
 import ConfirmModal from '@components/ConfirmModal';
 import MenuItem from '@components/MenuItem';
-import * as KirokuIcons from '@components/Icon/KirokuIcons';
-import CONST from '@src/CONST';
 import ROUTES from '@src/ROUTES';
 import * as Preferences from '@userActions/Preferences';
 import * as Privacy from '@userActions/Privacy';
@@ -282,8 +280,6 @@ function PrivacyScreen() {
           <MenuItem
             title={translate('privacyScreen.manageAccount.label')}
             description={translate('privacyScreen.manageAccount.description')}
-            icon={KirokuIcons.Profile}
-            iconType={CONST.ICON_TYPE_ICON}
             wrapperStyle={styles.sectionMenuItemTopDescription}
             shouldShowRightIcon
             onPress={() => Navigation.navigate(ROUTES.SETTINGS_MANAGE_ACCOUNT)}
