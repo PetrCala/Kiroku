@@ -6,6 +6,7 @@ import type {UserID} from '@src/types/onyx/OnyxCommon';
 import {startOfMonth, subMonths} from 'date-fns';
 import {useEffect, useRef, useState} from 'react';
 import {useOnyx} from 'react-native-onyx';
+import useNetwork from '@hooks/useNetwork';
 
 type UseDrinkingSessionsFetchReturn = {
   /** Last-good snapshot of the windowed session list. Stays populated across
@@ -109,6 +110,26 @@ function useDrinkingSessionsFetch(
 
     DrinkingSession.openFriendDrinkingSessions(userID, from).finally(finalize);
   }, [userID, sessionsMonthsBack, monthsLoadedMeta.status]);
+
+  // Re-issue the windowed read when connectivity resumes.
+  // `openFriendDrinkingSessions` goes through `makeRequestWithSideEffects`,
+  // which DISCARDS a read while offline instead of queueing it (unlike
+  // `API.write`), and the effect above only re-runs when `userID` /
+  // `sessionsMonthsBack` change — so an offline mount leaves the calendar empty
+  // even after going back online. Re-fetch the SAME window (no token/loading
+  // bookkeeping needed: the carry-no-optimistic-data read just refreshes
+  // `cachedDrinkingSessions[userID]` in place when it lands).
+  useNetwork({
+    onReconnect: () => {
+      if (!userID || monthsLoadedMeta.status !== 'loaded') {
+        return;
+      }
+      const from = startOfMonth(
+        subMonths(new Date(), sessionsMonthsBack),
+      ).getTime();
+      DrinkingSession.openFriendDrinkingSessions(userID, from);
+    },
+  });
 
   return {data, isLoading, isFetchingOlderMonths};
 }
