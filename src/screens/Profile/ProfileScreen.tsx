@@ -45,6 +45,7 @@ function ProfileScreen({route}: ProfileScreenProps) {
   const {auth} = useFirebase();
   const {userID} = route.params;
   const user = auth.currentUser;
+  const isSelf = user?.uid === userID;
   // Friend data now comes from the kiroku-api (privacy-enforced) instead of
   // direct Firebase reads: profile + friends via `useFriendProfile`, rendering
   // preferences via `useFriendPreferences`, and the windowed sessions via
@@ -261,6 +262,8 @@ function ProfileScreen({route}: ProfileScreenProps) {
               stats={profileStats}
               showWeeklyUnits={false}
               showMonthComparison
+              interactive={isSelf}
+              showArrow={isSelf}
             />
           ) : (
             <MonthlyOverviewCardSkeleton />
