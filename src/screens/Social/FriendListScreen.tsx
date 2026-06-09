@@ -1,4 +1,5 @@
 import {View} from 'react-native';
+import {useOnyx} from 'react-native-onyx';
 import SearchWindow from '@components/Social/SearchWindow';
 import type {UserIDToNicknameMapping} from '@src/types/various/Search';
 import React, {useCallback, useEffect, useMemo, useState} from 'react';
@@ -13,10 +14,12 @@ import useFriendsData from '@hooks/useFriendsData';
 import NoFriendInfo from '@components/Social/NoFriendInfo';
 import useLocalize from '@hooks/useLocalize';
 import useThemeStyles from '@hooks/useThemeStyles';
+import ONYXKEYS from '@src/ONYXKEYS';
 import ERRORS from '@src/ERRORS';
 
 function FriendListScreen() {
   const userData = useCurrentUserData();
+  const [isLoadingApp] = useOnyx(ONYXKEYS.IS_LOADING_APP);
   const {translate} = useLocalize();
   const styles = useThemeStyles();
   const [friends, setFriends] = useState<UserArray>([]);
@@ -74,6 +77,16 @@ function FriendListScreen() {
     setUserHasFriends(friendsArray.length > 0);
   }, [userData]);
 
+  // On a cold boot `userData.friends` is briefly undefined until the `app/open`
+  // bootstrap hydrates the friend list. Without this gate, `objKeys(undefined)`
+  // collapses to `[]` and the "no friends" empty state flashes before the list
+  // arrives (it then self-corrects, and a reload paints instantly from the
+  // persisted Onyx cache, so the flash is first-launch-only). Keep the list in
+  // its loading state until the bootstrap completes (`isLoadingApp === false`,
+  // the same bootstrap-complete signal the onboarding/terms guards gate on) or
+  // we already have friends to show.
+  const isInitialFriendsLoad = isLoadingApp !== false && friends.length === 0;
+
   return (
     <View style={styles.flex1}>
       <SearchWindow
@@ -90,7 +103,7 @@ function FriendListScreen() {
         emptyListComponent={emptyListComponent}
         userSubset={friendsToDisplay}
         orderUsers
-        isLoading={isLoadingFriends || isSearching}
+        isLoading={isLoadingFriends || isSearching || isInitialFriendsLoad}
       />
     </View>
   );
