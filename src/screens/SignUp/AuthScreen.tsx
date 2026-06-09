@@ -181,6 +181,7 @@ function AuthScreen({route}: AuthScreenProps) {
           submitButtonText={submitButtonText}
           submitButtonStyles={styles.pb5}
           submitFlexEnabled={false}
+          isSubmitDisabled={!isOnline}
           isSubmitButtonVisible={!isLoading}
           shouldUseScrollView={false}>
           <InputWrapper

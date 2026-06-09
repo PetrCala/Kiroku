@@ -1,7 +1,7 @@
 import React from 'react';
 import {StyleSheet, View} from 'react-native';
 import FormElement from '@components/FormElement';
-// import OfflineIndicator from '@components/OfflineIndicator';
+import OfflineIndicator from '@components/OfflineIndicator';
 import Text from '@components/Text';
 import useResponsiveLayout from '@hooks/useResponsiveLayout';
 import useStyleUtils from '@hooks/useStyleUtils';
@@ -86,16 +86,20 @@ function SignUpScreenContent({
               )}
             </View>
           </FormElement>
-          {/* <View
+          {/* Surfaces the offline state within the sign-up safe area (these
+          screens opt out of the ScreenWrapper default because of the custom
+          layout). Renders nothing while online. */}
+          <View
             style={[
-              styles.mb8,
               styles.signUpScreenWelcomeTextContainer,
-              styles.alignSelfCenter,
+              shouldUseNarrowLayout
+                ? styles.alignItemsCenter
+                : styles.alignSelfStart,
             ]}>
             <OfflineIndicator
               style={[styles.m0, styles.pl0, styles.alignItemsStart]}
             />
-          </View> */}
+          </View>
         </View>
         <View
           pointerEvents="box-none"
