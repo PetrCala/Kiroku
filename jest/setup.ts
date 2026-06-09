@@ -28,6 +28,16 @@ jest.mock('firebase/auth', () => ({
 
 jest.mock('@react-native-async-storage/async-storage', () => ({}));
 
+// FirebaseApp.native (transitively imported by many modules via getFirebaseAuth)
+// imports the modular crashlytics surface, which would otherwise pull in the real
+// native @react-native-firebase/app and crash under jest.
+jest.mock('@react-native-firebase/crashlytics', () => ({
+  getCrashlytics: jest.fn(() => ({})),
+  log: jest.fn(),
+  recordError: jest.fn(),
+  setCrashlyticsCollectionEnabled: jest.fn(),
+}));
+
 // Mock react-native-onyx storage layer because the SQLite storage layer doesn't work in jest.
 // Mocking this file in __mocks__ does not work because jest doesn't support mocking files that are not directly used in the testing project,
 // and we only want to mock the storage layer, not the whole Onyx module.

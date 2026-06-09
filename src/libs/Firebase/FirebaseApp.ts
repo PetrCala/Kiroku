@@ -26,27 +26,22 @@ const FirebaseApp: FirebaseAppProps =
   currentApps.length === 0 ? initializeApp(FirebaseConfig) : getApp();
 
 /**
- * Lazy auth instance - initialized on first access to keep the export surface
- * identical to the native module (`getFirebaseAuth`).
+ * Single auth instance for the page. Assigned only on a SUCCESSFUL
+ * `initializeAuth`/`getAuth` call, so a thrown attempt leaves it `null` and the
+ * next call retries rather than caching a broken instance.
  */
 let firebaseAuth: Auth | null = null;
 
 /**
- * Get Firebase Auth instance with lazy initialization.
+ * Initialize Firebase Auth for web. Idempotent: returns the existing instance if
+ * already created. Mirrors the native `initFirebaseAuth` export surface so the
+ * shared `setup()` can call it without platform branching.
  *
- * On web the session is persisted via IndexedDB so it survives a full page
- * reload, falling back to localStorage when IndexedDB is unavailable (e.g.
- * private browsing or older browsers). Memory persistence is the last resort so
- * the app never crashes during auth init.
- *
- * @returns Firebase Auth instance
- *
- * @example
- * // Via FirebaseContext (recommended):
- * const {auth} = useFirebase();
+ * The session is persisted via IndexedDB so it survives a full page reload,
+ * falling back to localStorage when IndexedDB is unavailable (e.g. private
+ * browsing). Memory persistence is the last resort so auth init never crashes.
  */
-function getFirebaseAuth(): Auth {
-  // Return existing instance if already initialized
+function initFirebaseAuth(): Auth {
   if (firebaseAuth) {
     return firebaseAuth;
   }
@@ -58,32 +53,43 @@ function getFirebaseAuth(): Auth {
       persistence: [indexedDBLocalPersistence, browserLocalPersistence],
     });
     Log.info('[Firebase] Auth initialized with browser persistence');
+    return firebaseAuth;
   } catch (error) {
     // Fallback to memory persistence if both browser persistence layers fail.
     Log.warn(
       '[Firebase] Browser persistence unavailable, using memory persistence. Error:',
       {error},
     );
-
-    try {
-      firebaseAuth = initializeAuth(FirebaseApp, {
-        persistence: inMemoryPersistence,
-      });
-      Log.info(
-        '[Firebase] Auth initialized with memory persistence (fallback)',
-      );
-    } catch (fallbackError) {
-      // If even memory persistence fails, try getAuth as last resort
-      Log.alert(
-        '[Firebase] Failed to initialize auth with persistence, using getAuth:',
-        {fallbackError},
-      );
-      firebaseAuth = getAuth(FirebaseApp);
-    }
   }
 
-  return firebaseAuth;
+  try {
+    firebaseAuth = initializeAuth(FirebaseApp, {
+      persistence: inMemoryPersistence,
+    });
+    Log.info('[Firebase] Auth initialized with memory persistence (fallback)');
+    return firebaseAuth;
+  } catch (fallbackError) {
+    // If even memory persistence fails, try getAuth as last resort.
+    Log.alert(
+      '[Firebase] Failed to initialize auth with persistence, using getAuth:',
+      {fallbackError},
+    );
+    firebaseAuth = getAuth(FirebaseApp);
+    return firebaseAuth;
+  }
 }
 
-export {FirebaseApp, getFirebaseAuth};
+/**
+ * Get the Firebase Auth instance, initializing on demand for any caller that
+ * runs before `setup()`.
+ *
+ * @example
+ * // Via FirebaseContext (recommended):
+ * const {auth} = useFirebase();
+ */
+function getFirebaseAuth(): Auth {
+  return firebaseAuth ?? initFirebaseAuth();
+}
+
+export {FirebaseApp, getFirebaseAuth, initFirebaseAuth};
 export type {FirebaseAppProps};
