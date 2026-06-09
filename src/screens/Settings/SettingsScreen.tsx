@@ -348,7 +348,7 @@ function SettingsScreen() {
       testID={SettingsScreen.displayName}>
       <HeaderWithBackButton
         title={translate('settingsScreen.title')}
-        onBackButtonPress={Navigation.goBack}
+        shouldShowBackButton={false}
       />
       <ScrollView
         ref={scrollViewRef}

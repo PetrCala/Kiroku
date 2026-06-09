@@ -224,12 +224,20 @@ function ProfileScreen({route}: ProfileScreenProps) {
         style={[styles.flexGrow1, styles.mnw100]}
         showsVerticalScrollIndicator={false}>
         {user?.uid === userID && (
-          <Button
-            icon={KirokuIcons.Gear}
-            iconFill={StyleUtils.getIconFillColor()}
-            style={[styles.editProfileIndicator, styles.bgTransparent]}
-            onPress={() => Navigation.navigate(ROUTES.SETTINGS_ACCOUNT)}
-          />
+          <>
+            <Button
+              icon={KirokuIcons.Star}
+              iconFill={StyleUtils.getIconFillColor()}
+              style={[styles.profileBadgesIndicator, styles.bgTransparent]}
+              onPress={() => Navigation.navigate(ROUTES.BADGES)}
+            />
+            <Button
+              icon={KirokuIcons.Gear}
+              iconFill={StyleUtils.getIconFillColor()}
+              style={[styles.editProfileIndicator, styles.bgTransparent]}
+              onPress={() => Navigation.navigate(ROUTES.SETTINGS_ACCOUNT)}
+            />
+          </>
         )}
         <ProfileOverview
           userID={userID}

@@ -23,10 +23,12 @@ function getTopmostBottomTabRoute(
     return undefined;
   }
 
+  // The bottom tab navigator is a TabRouter: its routes are in fixed tab order
+  // and the active tab is `state.index` (not the last route, as it would be for
+  // a stack). Fall back to the last route if `index` is absent.
+  const tabState = bottomTabNavigatorRoute.state;
   const topmostBottomTabRoute =
-    bottomTabNavigatorRoute.state.routes[
-      bottomTabNavigatorRoute.state.routes.length - 1
-    ];
+    tabState.routes[tabState.index ?? tabState.routes.length - 1];
 
   if (!topmostBottomTabRoute) {
     throw new Error('BottomTabNavigator route have no routes.');

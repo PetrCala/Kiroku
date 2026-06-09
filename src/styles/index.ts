@@ -1099,6 +1099,15 @@ const styles = (theme: ThemeColors) =>
       justifyContent: 'center',
     },
 
+    // Anchors the start-session FAB to the bottom-right of a screen, floating
+    // above the screen content (and above the bottom tab bar, which the native
+    // navigator renders below the screen's view area).
+    floatingActionButtonContainer: {
+      position: 'absolute',
+      right: 20,
+      bottom: 20,
+    },
+
     highlightBG: {
       backgroundColor: theme.highlightBG,
     },
@@ -2260,6 +2269,18 @@ const styles = (theme: ThemeColors) =>
       height: variables.successIndicatorSize,
       borderRadius: variables.successIndicatorSize,
       right: 8,
+      top: 0,
+      zIndex: 10,
+    },
+
+    // Badges shortcut on the (own) profile, sitting just left of the edit-profile
+    // gear in the top-right corner.
+    profileBadgesIndicator: {
+      position: 'absolute',
+      width: variables.successIndicatorSize,
+      height: variables.successIndicatorSize,
+      borderRadius: variables.successIndicatorSize,
+      right: 8 + variables.successIndicatorSize + 8,
       top: 0,
       zIndex: 10,
     },

@@ -39,8 +39,10 @@ function getActionForBottomTabNavigator(
     return;
   }
 
+  // The bottom tab navigator is backed by a TabRouter, so switching tabs is a
+  // NAVIGATE (jump-to) — not a stack PUSH, which a TabRouter does not handle.
   return {
-    type: CONST.NAVIGATION.ACTION_TYPE.PUSH,
+    type: CONST.NAVIGATION.ACTION_TYPE.NAVIGATE,
     payload: {
       name: screen,
       params: payloadParams,

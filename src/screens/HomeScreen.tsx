@@ -36,7 +36,11 @@ import useCurrentUserPreferences from '@hooks/useCurrentUserPreferences';
 import useHomeStats from '@hooks/useHomeStats';
 import useLastSession from '@hooks/useLastSession';
 import Text from '@components/Text';
-import BottomTabBar from '@libs/Navigation/AppNavigator/createCustomBottomTabNavigator/BottomTabBar';
+import Icon from '@components/Icon';
+import * as KirokuIcons from '@components/Icon/KirokuIcons';
+import {PressableWithFeedback} from '@components/Pressable';
+import useTheme from '@hooks/useTheme';
+import StartSessionButtonAndPopover from '@components/StartSessionButtonAndPopover';
 import {useOnyx} from 'react-native-onyx';
 import ONYXKEYS from '@src/ONYXKEYS';
 import {isEmptyObject} from '@src/types/utils/EmptyObject';
@@ -55,6 +59,7 @@ type HomeScreenProps = StackScreenProps<
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 function HomeScreen({route}: HomeScreenProps) {
   const styles = useThemeStyles();
+  const theme = useTheme();
   const {auth} = useFirebase();
   const {translate} = useLocalize();
   const user = auth.currentUser;
@@ -261,22 +266,41 @@ function HomeScreen({route}: HomeScreenProps) {
         {/* // TODO rewrite this into the HeaderWithBackButton component */}
         {isUserDataReady ? (
           <View style={[styles.headerBar, styles.borderBottom, styles.ph2]}>
-            <Button
-              style={[styles.flexRow, styles.bgTransparent]}
-              onPress={() =>
-                Navigation.navigate(ROUTES.PROFILE.getRoute(user.uid))
-              }>
-              <ProfileImage
-                photoUrl={userData?.profile?.photo_url}
-                style={styles.avatarMedium}
-              />
-              <Text style={[styles.headerText, styles.textLarge, styles.ml3]}>
-                {userData?.profile?.display_name ?? ''}
-              </Text>
-              <View style={styles.ml1}>
-                <SupporterBadgeForUser userID={user.uid} size="medium" />
-              </View>
-            </Button>
+            <View
+              style={[
+                styles.flexRow,
+                styles.alignItemsCenter,
+                styles.justifyContentBetween,
+                styles.w100,
+              ]}>
+              <Button
+                style={[styles.flexRow, styles.bgTransparent]}
+                onPress={() =>
+                  Navigation.navigate(ROUTES.PROFILE.getRoute(user.uid))
+                }>
+                <ProfileImage
+                  photoUrl={userData?.profile?.photo_url}
+                  style={styles.avatarMedium}
+                />
+                <Text style={[styles.headerText, styles.textLarge, styles.ml3]}>
+                  {userData?.profile?.display_name ?? ''}
+                </Text>
+                <View style={styles.ml1}>
+                  <SupporterBadgeForUser userID={user.uid} size="medium" />
+                </View>
+              </Button>
+              <PressableWithFeedback
+                accessibilityLabel={translate('bottomTabBar.badges')}
+                role={CONST.ROLE.BUTTON}
+                onPress={() => Navigation.navigate(ROUTES.BADGES)}>
+                <Icon
+                  src={KirokuIcons.Star}
+                  fill={theme.icon}
+                  width={24}
+                  height={24}
+                />
+              </PressableWithFeedback>
+            </View>
           </View>
         ) : (
           <HomeHeaderSkeleton />
@@ -286,7 +310,12 @@ function HomeScreen({route}: HomeScreenProps) {
           {renderMainContent()}
         </ScrollView>
         <OfflineIndicator />
-        <BottomTabBar />
+        {/* Start-session FAB, floating bottom-right above the bottom tab bar.
+            Home-only so the session modal's back-nav assumption (Home sits
+            underneath the modal) stays intact. */}
+        <View style={styles.floatingActionButtonContainer}>
+          <StartSessionButtonAndPopover />
+        </View>
       </ScreenWrapper>
       {/* Active operations (e.g. saving a session) take a full-screen overlay so
           they don't compete with the home UI for attention. Rendered as an

@@ -23,11 +23,12 @@ const config: LinkingOptions<RootStackParamList>['config'] = {
       initialRouteName: SCREENS.HOME,
       screens: {
         [SCREENS.HOME]: ROUTES.HOME,
-        // [SCREENS.ALL_SETTINGS]: ROUTES.ALL_SETTINGS,
-        // [SCREENS.WORKSPACE.INITIAL]: {
-        //   path: ROUTES.WORKSPACE_INITIAL.route,
-        //   exact: true,
-        // },
+        [SCREENS.SOCIAL.ROOT]: ROUTES.SOCIAL,
+        [SCREENS.STATISTICS.ROOT]: ROUTES.STATISTICS,
+        [SCREENS.SETTINGS.ROOT]: {
+          path: ROUTES.SETTINGS,
+          exact: true,
+        },
       },
     },
 
@@ -91,10 +92,6 @@ const config: LinkingOptions<RootStackParamList>['config'] = {
         },
         [SCREENS.RIGHT_MODAL.SETTINGS]: {
           screens: {
-            [SCREENS.SETTINGS.ROOT]: {
-              path: ROUTES.SETTINGS,
-              exact: true,
-            },
             [SCREENS.SETTINGS.ACCOUNT.ROOT]: {
               path: ROUTES.SETTINGS_ACCOUNT,
               exact: true,
@@ -203,15 +200,9 @@ const config: LinkingOptions<RootStackParamList>['config'] = {
         },
         [SCREENS.RIGHT_MODAL.SOCIAL]: {
           screens: {
-            [SCREENS.SOCIAL.ROOT]: ROUTES.SOCIAL,
             [SCREENS.SOCIAL.FRIEND_LIST]: ROUTES.SOCIAL_FRIEND_LIST,
             [SCREENS.SOCIAL.FRIEND_REQUESTS]: ROUTES.SOCIAL_FRIEND_REQUESTS,
             [SCREENS.SOCIAL.FRIEND_SEARCH]: ROUTES.SOCIAL_FRIEND_SEARCH,
-          },
-        },
-        [SCREENS.RIGHT_MODAL.STATISTICS]: {
-          screens: {
-            [SCREENS.STATISTICS.ROOT]: ROUTES.STATISTICS,
           },
         },
       },

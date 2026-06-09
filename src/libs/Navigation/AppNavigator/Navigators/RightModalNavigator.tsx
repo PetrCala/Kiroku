@@ -76,10 +76,6 @@ function RightModalNavigator({navigation}: RightModalNavigatorProps) {
           name={SCREENS.RIGHT_MODAL.SOCIAL}
           component={ModalStackNavigators.SocialModalStackNavigator}
         />
-        <Stack.Screen
-          name={SCREENS.RIGHT_MODAL.STATISTICS}
-          component={ModalStackNavigators.StatisticsModalStackNavigator}
-        />
       </Stack.Navigator>
     </>
   );
