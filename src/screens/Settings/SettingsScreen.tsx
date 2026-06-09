@@ -19,6 +19,7 @@ import ConfirmModal from '@components/ConfirmModal';
 import * as KirokuIcons from '@components/Icon/KirokuIcons';
 import * as Session from '@userActions/Session';
 import MenuItem from '@components/MenuItem';
+import OfflineIndicator from '@components/OfflineIndicator';
 import ScreenWrapper from '@components/ScreenWrapper';
 import {ScrollOffsetContext} from '@components/ScrollOffsetContextProvider';
 import ScrollView from '@components/ScrollView';
@@ -347,6 +348,7 @@ function SettingsScreen() {
       style={[styles.w100, styles.pb0]}
       includePaddingTop
       includeSafeAreaPaddingBottom={false}
+      shouldShowOfflineIndicator={false}
       testID={SettingsScreen.displayName}>
       <HeaderWithBackButton
         title={translate('settingsScreen.title')}
@@ -374,6 +376,7 @@ function SettingsScreen() {
           onCancel={() => toggleSignoutConfirmModal(false)}
         />
       </ScrollView>
+      <OfflineIndicator style={{marginBottom: bottomTabBarHeight}} />
     </ScreenWrapper>
   );
 }

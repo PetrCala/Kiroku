@@ -2,8 +2,10 @@ import React, {useEffect, useState} from 'react';
 import type {ComponentType} from 'react';
 import {InteractionManager} from 'react-native';
 import HeaderWithBackButton from '@components/HeaderWithBackButton';
+import OfflineIndicator from '@components/OfflineIndicator';
 import ScreenWrapper from '@components/ScreenWrapper';
 import StatsContextProvider from '@components/StatsContextProvider';
+import useBottomTabBarHeight from '@hooks/useBottomTabBarHeight';
 import useLocalize from '@hooks/useLocalize';
 import DrillDownProvider from './drilldown/DrillDownContext';
 import StatisticsScreenSkeleton from './StatisticsScreenSkeleton';
@@ -25,6 +27,7 @@ import StatsDrillDownSheet from './StatsDrillDownSheet';
  */
 function StatisticsScreen() {
   const {translate} = useLocalize();
+  const bottomTabBarHeight = useBottomTabBarHeight();
   const [isReady, setIsReady] = useState(false);
   const [Tabs, setTabs] = useState<ComponentType | null>(null);
 
@@ -59,7 +62,9 @@ function StatisticsScreen() {
   }, [isReady]);
 
   return (
-    <ScreenWrapper testID={StatisticsScreen.displayName}>
+    <ScreenWrapper
+      testID={StatisticsScreen.displayName}
+      shouldShowOfflineIndicator={false}>
       <HeaderWithBackButton
         title={translate('statistics.title')}
         shouldShowBackButton={false}
@@ -74,6 +79,7 @@ function StatisticsScreen() {
       ) : (
         <StatisticsScreenSkeleton />
       )}
+      <OfflineIndicator style={{marginBottom: bottomTabBarHeight}} />
     </ScreenWrapper>
   );
 }
