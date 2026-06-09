@@ -1814,6 +1814,10 @@ const styles = (theme: ThemeColors) =>
       flexDirection: 'row',
       height: variables.searchWindowHeight,
       ...spacing.gap2,
+      // Gap above the search bar so it isn't flush against the top tab bar /
+      // header. `marginTop` (not `paddingTop`) because the container has a fixed
+      // height — padding would shrink the input instead of adding space above.
+      ...spacing.mt3,
       ...spacing.ph2,
       ...spacing.pb2,
     },
