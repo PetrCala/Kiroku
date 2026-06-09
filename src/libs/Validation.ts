@@ -1,9 +1,9 @@
 // TODO move these to ValidationUtils.ts
 import semver from 'semver';
 import type {AppSettings} from '@src/types/onyx';
-import {version as _version} from '../../package.json';
+import pkg from '../../package.json';
 
-const version: string = _version;
+const version: string = pkg.version;
 
 type ValidationResult = {
   success: boolean;

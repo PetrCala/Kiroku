@@ -19,7 +19,7 @@ import CONST from '@src/CONST';
 import type {TranslationPaths} from '@src/languages/types';
 import ROUTES from '@src/ROUTES';
 import type IconAsset from '@src/types/utils/IconAsset';
-import {version as _version} from '../../../package.json';
+import pkg from '../../../package.json';
 
 function getFlavor(): string {
   const bundleId = DeviceInfo.getBundleId();
@@ -119,8 +119,8 @@ function AboutScreen() {
           style={[styles.textNormal, styles.textVersion, styles.alignSelfEnd]}>
           {translate('settingsScreen.aboutScreen.versionLetter')}
           {Environment.isInternalTestBuild()
-            ? `${_version} PR:${CONST.PULL_REQUEST_NUMBER}${getFlavor()}`
-            : `${_version}${getFlavor()}`}
+            ? `${pkg.version} PR:${CONST.PULL_REQUEST_NUMBER}${getFlavor()}`
+            : `${pkg.version}${getFlavor()}`}
         </Text>
       </View>
     ),
