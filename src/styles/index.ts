@@ -1836,23 +1836,6 @@ const styles = (theme: ThemeColors) =>
       fontWeight: FontUtils.fontWeight.bold,
     },
 
-    // Mirrors the Home start-session FAB (`floatingActionButton` +
-    // `floatingActionButtonContainer`) so the two line up: same 52px size and
-    // same 16px clearance above the native tab bar. The Social scene is already
-    // inset by `bottomTabBarHeight` (see SocialScreen's `sceneStyle`), so the
-    // `bottom` here is just the margin, not the full bar height like Home.
-    goToSearchScreenButton: {
-      position: 'absolute',
-      bottom: 16,
-      right: variables.goToSearchButtonOffset,
-      width: variables.componentSizeLarge,
-      height: variables.componentSizeLarge,
-      borderRadius: variables.componentSizeLarge / 2,
-      alignItems: 'center',
-      justifyContent: 'center',
-      backgroundColor: theme.appColor,
-    },
-
     secondAvatar: {
       position: 'absolute',
       right: -18,

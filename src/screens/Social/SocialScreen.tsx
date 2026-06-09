@@ -14,10 +14,15 @@ import type {
   TabDescriptor,
 } from 'react-native-tab-view';
 import {getReceivedRequestsCount} from '@libs/FriendUtils';
+import Navigation from '@libs/Navigation/Navigation';
+import ROUTES from '@src/ROUTES';
 import ScreenWrapper from '@components/ScreenWrapper';
 import OfflineIndicator from '@components/OfflineIndicator';
 import HeaderWithBackButton from '@components/HeaderWithBackButton';
 import FlexibleLoadingIndicator from '@components/FlexibleLoadingIndicator';
+import Icon from '@components/Icon';
+import * as KirokuIcons from '@components/Icon/KirokuIcons';
+import {PressableWithFeedback} from '@components/Pressable';
 import Text from '@components/Text';
 import TopTabBar, {TOP_TAB_COMMON_OPTIONS} from '@components/TopTabBar';
 import type {TopTabRoute} from '@components/TopTabBar';
@@ -25,6 +30,7 @@ import useBottomTabBarHeight from '@hooks/useBottomTabBarHeight';
 import useCurrentUserData from '@hooks/useCurrentUserData';
 import useLocalize from '@hooks/useLocalize';
 import useTheme from '@hooks/useTheme';
+import useThemeStyles from '@hooks/useThemeStyles';
 import useWindowDimensions from '@hooks/useWindowDimensions';
 import FriendListScreen from './FriendListScreen';
 
@@ -100,6 +106,8 @@ function FriendRequestsBadge({count}: {count: number}) {
 
 function SocialScreen() {
   const userData = useCurrentUserData();
+  const theme = useTheme();
+  const styles = useThemeStyles();
   const {translate} = useLocalize();
   const {windowWidth} = useWindowDimensions();
   const bottomTabBarHeight = useBottomTabBarHeight();
@@ -186,6 +194,29 @@ function SocialScreen() {
         options={sceneOptions}
       />
       <OfflineIndicator style={{marginBottom: bottomTabBarHeight}} />
+      {/* Friend-search FAB. Rendered at the ScreenWrapper level (a sibling of
+          the TabView/OfflineIndicator), exactly like the Home start-session
+          FAB, so it's anchored to the screen and isn't shifted upward by the
+          offline indicator's reserved bottom margin the way an in-scene button
+          would be. Reuses the Home FAB's container + circle styles so the two
+          line up. */}
+      <View
+        style={[
+          styles.floatingActionButtonContainer,
+          {bottom: bottomTabBarHeight + 16},
+        ]}>
+        <PressableWithFeedback
+          accessibilityLabel="search-screen-button"
+          style={styles.floatingActionButton}
+          onPress={() => Navigation.navigate(ROUTES.SOCIAL_FRIEND_SEARCH)}>
+          <Icon
+            src={KirokuIcons.Search}
+            width={28}
+            height={28}
+            fill={theme.textLight}
+          />
+        </PressableWithFeedback>
+      </View>
     </ScreenWrapper>
   );
 }
