@@ -7,6 +7,7 @@ import React, {
   useState,
 } from 'react';
 import {InteractionManager, StyleSheet, View} from 'react-native';
+import Animated, {useAnimatedStyle, withTiming} from 'react-native-reanimated';
 import {SceneMap, TabView} from 'react-native-tab-view';
 import type {
   NavigationState,
@@ -173,6 +174,15 @@ function SocialScreen() {
     [bottomTabBarHeight],
   );
 
+  // The friend-search FAB belongs to the Friend Requests tab only. Keep it
+  // mounted and cross-fade its opacity on tab change (rather than mount/unmount)
+  // so it eases in/out instead of popping. `withTiming` inside the worklet
+  // animates whenever the captured `isFriendRequestsTab` flips.
+  const isFriendRequestsTab = routes[index]?.key === 'friendRequests';
+  const fabAnimatedStyle = useAnimatedStyle(() => ({
+    opacity: withTiming(isFriendRequestsTab ? 1 : 0, {duration: 200}),
+  }));
+
   return (
     <ScreenWrapper
       testID={SocialScreen.displayName}
@@ -199,26 +209,28 @@ function SocialScreen() {
           exactly like the Home start-session FAB, so it's anchored to the
           screen and isn't shifted upward by the offline indicator's reserved
           bottom margin the way an in-scene button would be. Reuses the Home
-          FAB's container + circle styles so the two line up. */}
-      {routes[index]?.key === 'friendRequests' && (
-        <View
-          style={[
-            styles.floatingActionButtonContainer,
-            {bottom: bottomTabBarHeight + 16},
-          ]}>
-          <PressableWithFeedback
-            accessibilityLabel="search-screen-button"
-            style={styles.floatingActionButton}
-            onPress={() => Navigation.navigate(ROUTES.SOCIAL_FRIEND_SEARCH)}>
-            <Icon
-              src={KirokuIcons.Search}
-              width={28}
-              height={28}
-              fill={theme.textLight}
-            />
-          </PressableWithFeedback>
-        </View>
-      )}
+          FAB's container + circle styles so the two line up. Kept mounted and
+          cross-faded via opacity; `pointerEvents` is dropped while hidden so it
+          can't be tapped on the Friend List tab. */}
+      <Animated.View
+        pointerEvents={isFriendRequestsTab ? 'auto' : 'none'}
+        style={[
+          styles.floatingActionButtonContainer,
+          {bottom: bottomTabBarHeight + 16},
+          fabAnimatedStyle,
+        ]}>
+        <PressableWithFeedback
+          accessibilityLabel="search-screen-button"
+          style={styles.floatingActionButton}
+          onPress={() => Navigation.navigate(ROUTES.SOCIAL_FRIEND_SEARCH)}>
+          <Icon
+            src={KirokuIcons.Search}
+            width={28}
+            height={28}
+            fill={theme.textLight}
+          />
+        </PressableWithFeedback>
+      </Animated.View>
     </ScreenWrapper>
   );
 }
