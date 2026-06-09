@@ -3,6 +3,7 @@ import {PeriodBarList} from '@components/Charts/PeriodBarList';
 import Icon from '@components/Icon';
 import * as KirokuIcons from '@components/Icon/KirokuIcons';
 import {PressableWithFeedback} from '@components/Pressable';
+import Skeleton from '@components/Skeleton';
 import Text from '@components/Text';
 import useLocalize from '@hooks/useLocalize';
 import useTheme from '@hooks/useTheme';
@@ -228,5 +229,20 @@ function MonthlyOverviewCard({
 
 MonthlyOverviewCard.displayName = 'MonthlyOverviewCard';
 
+/**
+ * Placeholder that mirrors MonthlyOverviewCard's footprint (margin + height for
+ * the title + three columns, no weekly chart). Shared by the home and profile
+ * skeletons so the swap-in doesn't jolt the layout.
+ */
+function MonthlyOverviewCardSkeleton() {
+  const styles = useThemeStyles();
+  return (
+    <View style={styles.mv2}>
+      <Skeleton height={110} radius={12} />
+    </View>
+  );
+}
+
 export default MonthlyOverviewCard;
+export {MonthlyOverviewCardSkeleton};
 export type {MonthlyOverviewCardProps};
