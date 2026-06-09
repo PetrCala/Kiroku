@@ -21,6 +21,7 @@ import type {
   FriendRequestsCountParams,
   LastSessionSummaryParams,
   OnboardingStepCounterParams,
+  RelativeTimeAgoParams,
   SessionConfirmTimezoneChangeParams,
   SessionStartTimeParams,
   SessionWindowIdParams,
@@ -1277,10 +1278,18 @@ export default {
           `${when} · ${units} units`,
         a11y: ({when, units}: LastSessionSummaryParams) =>
           `View your last session, ${when}, ${units} units`,
+        today: 'Today',
+        yesterday: 'Yesterday',
+        daysAgo: ({count}: RelativeTimeAgoParams) =>
+          `${count} ${Str.pluralize('day', 'days', count)} ago`,
+        monthsAgo: ({count}: RelativeTimeAgoParams) =>
+          `${count} ${Str.pluralize('month', 'months', count)} ago`,
+        yearsAgo: ({count}: RelativeTimeAgoParams) =>
+          `${count} ${Str.pluralize('year', 'years', count)} ago`,
       },
     },
     stats: {
-      monthlyOverview: 'Monthly overview',
+      thisMonth: 'This month',
       units: 'Units',
       sessions: 'Sessions',
       alcoholFree: 'Alcohol-free',

@@ -1,13 +1,18 @@
 import {useMemo} from 'react';
-import {formatDistanceToNow} from 'date-fns';
+import {
+  differenceInCalendarDays,
+  differenceInCalendarMonths,
+  differenceInCalendarYears,
+} from 'date-fns';
 import useCurrentUserDrinkingSessions from '@hooks/useCurrentUserDrinkingSessions';
 import useCurrentUserPreferences from '@hooks/useCurrentUserPreferences';
+import useLocalize from '@hooks/useLocalize';
 import {timestampToDateString} from '@libs/DataHandling';
 import * as DSUtils from '@libs/DrinkingSessionUtils';
 import type {DateString} from '@src/types/onyx/OnyxCommon';
 
 type LastSessionView = {
-  /** Relative time of the session start, e.g. "3 days ago". */
+  /** Day-granularity relative time, e.g. "Today", "Yesterday", "3 days ago". */
   when: string;
   /** Formatted total units, e.g. "4.5". */
   units: string;
@@ -25,11 +30,13 @@ function formatUnits(value: number): string {
  * session" banner. `null` when there is no completed session (brand-new user,
  * or only an ongoing session) — the caller renders no banner in that case.
  *
- * Relative time is English, matching the app's existing `datetimeToRelative`.
+ * Relative time is rounded to whole days (Today / Yesterday / N days ago) and
+ * then months / years — it never shows hours.
  */
 function useLastSession(): LastSessionView | null {
   const drinkingSessionData = useCurrentUserDrinkingSessions();
   const preferences = useCurrentUserPreferences();
+  const {translate} = useLocalize();
   const drinksToUnits = preferences?.drinks_to_units;
 
   return useMemo(() => {
@@ -37,16 +44,38 @@ function useLastSession(): LastSessionView | null {
     if (!session) {
       return null;
     }
+
+    const date = new Date(session.start_time);
+    const now = new Date();
+    const days = differenceInCalendarDays(now, date);
+    const months = differenceInCalendarMonths(now, date);
+    const years = differenceInCalendarYears(now, date);
+
+    let when: string;
+    if (years >= 1) {
+      when = translate('homeScreen.banners.lastSession.yearsAgo', {
+        count: years,
+      });
+    } else if (months >= 1) {
+      when = translate('homeScreen.banners.lastSession.monthsAgo', {
+        count: months,
+      });
+    } else if (days >= 2) {
+      when = translate('homeScreen.banners.lastSession.daysAgo', {count: days});
+    } else if (days === 1) {
+      when = translate('homeScreen.banners.lastSession.yesterday');
+    } else {
+      when = translate('homeScreen.banners.lastSession.today');
+    }
+
     return {
-      when: formatDistanceToNow(new Date(session.start_time), {
-        addSuffix: true,
-      }),
+      when,
       units: formatUnits(
         DSUtils.calculateTotalUnits(session.drinks, drinksToUnits),
       ),
       dateString: timestampToDateString(session.start_time),
     };
-  }, [drinkingSessionData, drinksToUnits]);
+  }, [drinkingSessionData, drinksToUnits, translate]);
 }
 
 export default useLastSession;

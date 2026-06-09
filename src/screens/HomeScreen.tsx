@@ -172,7 +172,7 @@ function HomeScreen({route}: HomeScreenProps) {
          *  varies, and keeping it last confines that height change to the
          *  bottom of the scroll. */}
         {/* Home stats display toggles — flip these to show/hide sections:
-         *   showTitle           — the "Monthly overview" heading
+         *   showTitle           — the "This month" heading
          *   showWeeklyUnits     — the per-week units bar chart
          *   showMonthComparison — the trend arrow + previous-month value */}
         <MonthlyOverviewCard
