@@ -1099,19 +1099,6 @@ const styles = (theme: ThemeColors) =>
       justifyContent: 'center',
     },
 
-    // iOS 26 Liquid Glass variant of the FAB. The glass effect supplies the
-    // background, so unlike `floatingActionButton` there is no fill color — the
-    // tint comes from the `GlassView` `tintColor` prop. `overflow: 'hidden'`
-    // keeps the glass clipped to the circle.
-    floatingActionButtonGlass: {
-      height: variables.componentSizeLarge,
-      width: variables.componentSizeLarge,
-      borderRadius: 999,
-      alignItems: 'center',
-      justifyContent: 'center',
-      overflow: 'hidden',
-    },
-
     // Anchors the start-session FAB to the bottom-right of a screen. The
     // `bottom` offset is applied by the caller (= bottom tab bar height + a
     // margin) so the FAB floats clearly above the native tab bar.
