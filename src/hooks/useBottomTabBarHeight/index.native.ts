@@ -11,9 +11,15 @@ import variables from '@src/styles/variables';
  * Reads the context directly (rather than the library's `useBottomTabBarHeight`,
  * which throws without a provider) so it degrades gracefully to the static bar
  * height if ever rendered outside the tab navigator.
+ *
+ * `||` (not `??`): the library seeds the context with `0` and only reports the
+ * real height once the native bar measures itself a frame or two after mount.
+ * Treating that `0` as unmeasured (and falling back to the static height) keeps
+ * tab-bar insets correct from the first frame, so the Home FAB never starts out
+ * behind the bar and then pops above it once the measurement lands.
  */
 function useBottomTabBarHeight(): number {
-  return useContext(BottomTabBarHeightContext) ?? variables.bottomTabHeight;
+  return useContext(BottomTabBarHeightContext) || variables.bottomTabHeight;
 }
 
 export default useBottomTabBarHeight;
