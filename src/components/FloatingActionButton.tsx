@@ -1,3 +1,4 @@
+import {GlassView, isLiquidGlassAvailable} from 'expo-glass-effect';
 import type {ForwardedRef} from 'react';
 import React, {forwardRef, useEffect, useRef} from 'react';
 // eslint-disable-next-line no-restricted-imports
@@ -14,6 +15,10 @@ import useTheme from '@hooks/useTheme';
 import useThemeStyles from '@hooks/useThemeStyles';
 import variables from '@styles/variables';
 import {PressableWithoutFeedback} from './Pressable';
+
+// iOS 26 renders true Liquid Glass; older iOS, Android and web fall back to the
+// solid circle below. The value is fixed for the session, so evaluate it once.
+const SUPPORTS_LIQUID_GLASS = isLiquidGlassAvailable();
 
 type FloatingActionButtonProps = {
   /* Callback to fire on request to toggle the FloatingActionButton */
@@ -48,7 +53,13 @@ function FloatingActionButton(
     });
   }, [isActive, sharedValue]);
 
-  const animatedStyle = useAnimatedStyle(() => {
+  // Rotation only — the glass circle stays put while the "+" spins into "×".
+  const rotationStyle = useAnimatedStyle(() => ({
+    transform: [{rotate: `${sharedValue.value * 135}deg`}],
+  }));
+
+  // Solid fallback additionally animates its own background fill.
+  const solidStyle = useAnimatedStyle(() => {
     const backgroundColor = interpolateColor(
       sharedValue.value,
       [0, 1],
@@ -69,6 +80,19 @@ function FloatingActionButton(
     fabPressable.current?.blur();
     onPress(event);
   };
+
+  const plusIcon = (
+    <Svg
+      width={variables.iconSizeNormal}
+      height={variables.iconSizeNormal}
+      viewBox="0 0 20 20">
+      <Path
+        fill={textLight}
+        d="M12,3c0-1.1-0.9-2-2-2C8.9,1,8,1.9,8,3v5H3c-1.1,0-2,0.9-2,2c0,1.1,0.9,2,2,2h5v5c0,1.1,0.9,2,2,2c1.1,0,2-0.9,2-2v-5h5c1.1,0,2-0.9,2-2c0-1.1-0.9-2-2-2h-5V3z"
+      />
+    </Svg>
+  );
+
   return (
     <PressableWithoutFeedback
       ref={el => {
@@ -83,17 +107,19 @@ function FloatingActionButton(
       onLongPress={() => {}}
       role={role}
       shouldUseHapticsOnLongPress={false}>
-      <Animated.View style={[styles.floatingActionButton, animatedStyle]}>
-        <Svg
-          width={variables.iconSizeNormal}
-          height={variables.iconSizeNormal}
-          viewBox="0 0 20 20">
-          <Path
-            fill={textLight}
-            d="M12,3c0-1.1-0.9-2-2-2C8.9,1,8,1.9,8,3v5H3c-1.1,0-2,0.9-2,2c0,1.1,0.9,2,2,2h5v5c0,1.1,0.9,2,2,2c1.1,0,2-0.9,2-2v-5h5c1.1,0,2-0.9,2-2c0-1.1-0.9-2-2-2h-5V3z"
-          />
-        </Svg>
-      </Animated.View>
+      {SUPPORTS_LIQUID_GLASS ? (
+        <GlassView
+          style={styles.floatingActionButtonGlass}
+          glassEffectStyle="regular"
+          isInteractive
+          tintColor={isActive ? buttonDefaultBG : appColor}>
+          <Animated.View style={rotationStyle}>{plusIcon}</Animated.View>
+        </GlassView>
+      ) : (
+        <Animated.View style={[styles.floatingActionButton, solidStyle]}>
+          {plusIcon}
+        </Animated.View>
+      )}
     </PressableWithoutFeedback>
   );
 }

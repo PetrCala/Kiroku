@@ -1,10 +1,13 @@
 import {createNativeBottomTabNavigator} from '@bottom-tabs/react-navigation';
 import type {NativeBottomTabNavigationOptions} from '@bottom-tabs/react-navigation';
 import {useNavigationState} from '@react-navigation/native';
+import {isLiquidGlassAvailable} from 'expo-glass-effect';
 import React from 'react';
 import {Platform} from 'react-native';
 import useLocalize from '@hooks/useLocalize';
 import useTheme from '@hooks/useTheme';
+import FontUtils from '@styles/utils/FontUtils';
+import variables from '@styles/variables';
 import getTopmostCentralPaneRoute from '@navigation/getTopmostCentralPaneRoute';
 import type {
   CentralPaneName,
@@ -27,6 +30,10 @@ import ActiveCentralPaneRouteContext from './ActiveRouteContext';
  */
 const Tab = createNativeBottomTabNavigator();
 
+// iOS 26 ships a native Liquid Glass tab bar; older iOS and Android do not. The
+// value is fixed for the session, so it's evaluated once at module load.
+const SUPPORTS_LIQUID_GLASS = isLiquidGlassAvailable();
+
 function BottomTabNavigator() {
   const theme = useTheme();
   const {translate} = useLocalize();
@@ -41,11 +48,21 @@ function BottomTabNavigator() {
         initialRouteName={SCREENS.HOME}
         tabBarActiveTintColor={theme.appColor}
         tabBarInactiveTintColor={theme.icon}
-        // Match the app theme: an opaque, dark bar instead of the bright
-        // translucent system default (which flashed white on tab change).
+        // On iOS 26, let the system render its native Liquid Glass tab bar: it
+        // gives the items the roomier, vertically-centered spacing of modern iOS
+        // (the legacy opaque appearance looked vertically squashed). On older iOS
+        // we keep the opaque dark bar that matches the app theme and avoided the
+        // bright translucent default that flashed white on tab change.
+        // `backgroundColor` themes the Android bar and is a no-op on iOS 26,
+        // where the glass bar adapts to the content behind it.
         tabBarStyle={{backgroundColor: theme.appBG}}
-        translucent={false}
-        scrollEdgeAppearance="opaque">
+        translucent={SUPPORTS_LIQUID_GLASS}
+        scrollEdgeAppearance={SUPPORTS_LIQUID_GLASS ? 'default' : 'opaque'}
+        // Match the rest of the app's typography on the native labels.
+        tabLabelStyle={{
+          fontFamily: FontUtils.fontFamily.platform.EXP_NEUE.fontFamily,
+          fontSize: variables.fontSizeSmall,
+        }}>
         {BOTTOM_TAB_CONFIG.map(tab => {
           const options: NativeBottomTabNavigationOptions = {
             tabBarLabel: translate(tab.labelKey),
