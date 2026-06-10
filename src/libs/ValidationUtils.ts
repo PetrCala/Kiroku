@@ -27,6 +27,7 @@ import type {TranslationPaths} from '@src/languages/types';
 import DateUtils from './DateUtils';
 import type {MaybePhraseKey} from './Localize';
 import * as Localize from './Localize';
+import ProfanityFilter from './ProfanityFilter';
 import StringUtils from './StringUtils';
 import {URL_REGEX_WITH_REQUIRED_PROTOCOL} from './common/Url';
 
@@ -220,10 +221,16 @@ function getAgeRequirementError(
 }
 
 /**
- * Checks that the provided name doesn't contain any commas or semicolons
+ * Checks that the provided name doesn't contain any commas or semicolons, and
+ * doesn't contain objectionable language. The profanity check is a soft,
+ * client-side guard for immediate inline feedback; the server is authoritative.
  */
 function isValidDisplayName(name: string): boolean {
-  return !name.includes(',') && !name.includes(';');
+  return (
+    !name.includes(',') &&
+    !name.includes(';') &&
+    !ProfanityFilter.containsProfanity(name)
+  );
 }
 
 /**
@@ -295,6 +302,12 @@ function validateUsername(
 ): TranslationPaths | null {
   if (username.length === 0) {
     return 'username.error.usernameRequired';
+  }
+  // Check profanity before the generic character check so the dedicated
+  // message wins over the broader "invalid character" one (isValidDisplayName
+  // also rejects profanity, but only as a boolean without a tailored message).
+  if (ProfanityFilter.containsProfanity(username)) {
+    return 'personalDetails.error.containsProfanity';
   }
   if (!isValidDisplayName(username)) {
     return 'personalDetails.error.hasInvalidCharacter';
