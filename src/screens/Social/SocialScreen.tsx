@@ -6,8 +6,7 @@ import React, {
   useMemo,
   useState,
 } from 'react';
-import {InteractionManager, StyleSheet, View} from 'react-native';
-import Animated, {useAnimatedStyle, withTiming} from 'react-native-reanimated';
+import {Animated, InteractionManager, StyleSheet, View} from 'react-native';
 import {SceneMap, TabView} from 'react-native-tab-view';
 import type {
   NavigationState,
@@ -21,6 +20,7 @@ import ScreenWrapper from '@components/ScreenWrapper';
 import OfflineIndicator from '@components/OfflineIndicator';
 import HeaderWithBackButton from '@components/HeaderWithBackButton';
 import FlexibleLoadingIndicator from '@components/FlexibleLoadingIndicator';
+import FloatingActionSurface from '@components/FloatingActionSurface';
 import Icon from '@components/Icon';
 import * as KirokuIcons from '@components/Icon/KirokuIcons';
 import {PressableWithFeedback} from '@components/Pressable';
@@ -105,6 +105,31 @@ function FriendRequestsBadge({count}: {count: number}) {
   );
 }
 
+type PagerPositionCaptureProps = {
+  /* The pager's continuous swipe-progress value (tab index space) */
+  position: Animated.AnimatedInterpolation<number>;
+
+  /* Called with the position value on mount and whenever its identity changes */
+  onPositionChange: (position: Animated.AnimatedInterpolation<number>) => void;
+};
+
+/**
+ * Surfaces the TabView pager's `position` animated value (only exposed via
+ * `renderTabBar` props) to the parent screen. Effect-based on purpose: the web
+ * pager (PanResponderAdapter) recreates `position` on layout changes, so a
+ * capture-once ref would go stale, and capturing during render would set
+ * parent state mid-render.
+ */
+function PagerPositionCapture({
+  position,
+  onPositionChange,
+}: PagerPositionCaptureProps) {
+  useEffect(() => {
+    onPositionChange(position);
+  }, [position, onPositionChange]);
+  return null;
+}
+
 function SocialScreen() {
   const userData = useCurrentUserData();
   const theme = useTheme();
@@ -113,6 +138,8 @@ function SocialScreen() {
   const {windowWidth} = useWindowDimensions();
   const bottomTabBarHeight = useBottomTabBarHeight();
   const [index, setIndex] = useState(0);
+  const [pagerPosition, setPagerPosition] =
+    useState<Animated.AnimatedInterpolation<number> | null>(null);
 
   // Warm the lazily imported Friend Requests module in the background once the
   // Friend List tab is interactive, so first tap of the Requests tab renders it
@@ -160,7 +187,15 @@ function SocialScreen() {
         navigationState: NavigationState<TopTabRoute>;
         options: Record<string, TabDescriptor<TopTabRoute>> | undefined;
       },
-    ) => <TopTabBar tabBarProps={tabBarProps} />,
+    ) => (
+      <>
+        <PagerPositionCapture
+          position={tabBarProps.position}
+          onPositionChange={setPagerPosition}
+        />
+        <TopTabBar tabBarProps={tabBarProps} />
+      </>
+    ),
     [],
   );
 
@@ -174,14 +209,23 @@ function SocialScreen() {
     [bottomTabBarHeight],
   );
 
-  // The friend-search FAB belongs to the Friend Requests tab only. Keep it
-  // mounted and cross-fade its opacity on tab change (rather than mount/unmount)
-  // so it eases in/out instead of popping. `withTiming` inside the worklet
-  // animates whenever the captured `isFriendRequestsTab` flips.
+  // The friend-search FAB belongs to the Friend Requests tab only. Its opacity
+  // tracks the pager's continuous swipe progress (0 = Friend List, 1 = Friend
+  // Requests) instead of the settled index, so it starts dimming the instant a
+  // swipe back toward Friend List begins and starts appearing during the swipe
+  // (or tab-tap slide) toward Friend Requests — not only after the transition
+  // settles. The static fallback only covers the first render, before the tab
+  // bar has surfaced the position value (initial tab is Friend List → hidden).
   const isFriendRequestsTab = routes[index]?.key === 'friendRequests';
-  const fabAnimatedStyle = useAnimatedStyle(() => ({
-    opacity: withTiming(isFriendRequestsTab ? 1 : 0, {duration: 200}),
-  }));
+  const fabOpacity = useMemo(
+    () =>
+      pagerPosition?.interpolate({
+        inputRange: [0, 1],
+        outputRange: [0, 1],
+        extrapolate: 'clamp',
+      }) ?? (isFriendRequestsTab ? 1 : 0),
+    [pagerPosition, isFriendRequestsTab],
+  );
 
   return (
     <ScreenWrapper
@@ -208,27 +252,28 @@ function SocialScreen() {
           ScreenWrapper level (a sibling of the TabView/OfflineIndicator),
           exactly like the Home start-session FAB, so it's anchored to the
           screen and isn't shifted upward by the offline indicator's reserved
-          bottom margin the way an in-scene button would be. Reuses the Home
-          FAB's container + circle styles so the two line up. Kept mounted and
-          cross-faded via opacity; `pointerEvents` is dropped while hidden so it
-          can't be tapped on the Friend List tab. */}
+          bottom margin the way an in-scene button would be. Kept mounted with
+          its opacity bound to the pager's swipe progress (see `fabOpacity`);
+          `pointerEvents` stays gated on the settled index so a half-faded
+          button can't be tapped mid-swipe or from the Friend List tab. */}
       <Animated.View
         pointerEvents={isFriendRequestsTab ? 'auto' : 'none'}
         style={[
           styles.floatingActionButtonContainer,
           {bottom: bottomTabBarHeight + 16},
-          fabAnimatedStyle,
+          {opacity: fabOpacity},
         ]}>
         <PressableWithFeedback
           accessibilityLabel="search-screen-button"
-          style={styles.floatingActionButton}
           onPress={() => Navigation.navigate(ROUTES.SOCIAL_FRIEND_SEARCH)}>
-          <Icon
-            src={KirokuIcons.Search}
-            width={28}
-            height={28}
-            fill={theme.textLight}
-          />
+          <FloatingActionSurface>
+            <Icon
+              src={KirokuIcons.Search}
+              width={28}
+              height={28}
+              fill={theme.textLight}
+            />
+          </FloatingActionSurface>
         </PressableWithFeedback>
       </Animated.View>
     </ScreenWrapper>
