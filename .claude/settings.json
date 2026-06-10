@@ -22,5 +22,6 @@
     },
     "enabledPlugins": {
         "react-native-best-practices@callstack-agent-skills": true
-    }
+    },
+    "skillListingMaxDescChars": 512
 }
