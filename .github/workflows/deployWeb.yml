@@ -1,0 +1,156 @@
+name: Deploy web
+
+# Deploys the react-native-web SPA to Firebase Hosting.
+#
+# - push to `production` -> build-web        -> live deploy to the prod project
+#                                                (hosting target `app` =
+#                                                 kiroku-app-prod / app.kiroku.cz)
+# - push to `staging`    -> build-web-dev     -> live deploy to the dev project
+#                                                (hosting target `app` =
+#                                                 kiroku-app-dev)
+# - PR labeled `Ready To Build - Web`         -> build-web-dev -> preview channel
+#   (or manual dispatch with a PR number)        `pr-<number>` on the dev site,
+#                                                URL commented on the PR
+#
+# Auth: a single Google service-account JSON in the FIREBASE_SERVICE_ACCOUNT
+# secret, granted Firebase Hosting Admin on BOTH Firebase projects
+# (alcohol-tracker-db and dev-alcohol-tracker-db). The firebase CLI reads it via
+# GOOGLE_APPLICATION_CREDENTIALS.
+on:
+  push:
+    branches: [staging, production]
+  pull_request:
+    types: [labeled]
+  workflow_dispatch:
+    inputs:
+      PULL_REQUEST_NUMBER:
+        description: Pull request number to build a preview channel for
+        required: true
+
+permissions:
+  contents: read
+  pull-requests: write
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  deployLive:
+    name: Build and deploy web (live)
+    if: ${{ github.event_name == 'push' }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+
+      - name: Resolve deploy target
+        id: target
+        run: |
+          if [[ "$GITHUB_REF_NAME" == "production" ]]; then
+            {
+              echo "PROJECT=prod"
+              echo "BUILD_SCRIPT=build-web"
+            } >> "$GITHUB_OUTPUT"
+          else
+            {
+              echo "PROJECT=dev"
+              echo "BUILD_SCRIPT=build-web-dev"
+            } >> "$GITHUB_OUTPUT"
+          fi
+
+      # build-web reads .env.production; build-web-dev reads .env.development.
+      # Stage the matching file from secrets (the dev/staging site is fed the
+      # staging env so it points at the staging API roots).
+      - name: Stage .env.production from secret
+        if: ${{ github.ref_name == 'production' }}
+        run: echo "${{ secrets.PRODUCTION_ENV_FILE }}" > .env.production
+
+      - name: Stage .env.development from staging secret
+        if: ${{ github.ref_name == 'staging' }}
+        run: echo "${{ secrets.STAGING_ENV_FILE }}" > .env.development
+
+      - name: Setup Node
+        uses: ./.github/actions/composite/setupNode
+
+      - name: Build web
+        run: npm run ${{ steps.target.outputs.BUILD_SCRIPT }}
+
+      - name: Authenticate to Firebase
+        env:
+          FIREBASE_SERVICE_ACCOUNT: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
+        run: printf '%s' "$FIREBASE_SERVICE_ACCOUNT" > "$RUNNER_TEMP/firebase-sa.json"
+
+      - name: Deploy to Firebase Hosting (live)
+        env:
+          GOOGLE_APPLICATION_CREDENTIALS: ${{ runner.temp }}/firebase-sa.json
+        run: |
+          npx --yes firebase-tools@13 deploy \
+            --only hosting:app \
+            --project ${{ steps.target.outputs.PROJECT }} \
+            --non-interactive \
+            --message "Deploy ${{ github.sha }} (${{ github.ref_name }})"
+
+  deployPreview:
+    name: Build and deploy web preview channel
+    if: ${{ github.event_name == 'workflow_dispatch' || (github.event_name == 'pull_request' && github.event.label.name == 'Ready To Build - Web') }}
+    runs-on: ubuntu-latest
+    env:
+      PULL_REQUEST_NUMBER: ${{ github.event.number || github.event.inputs.PULL_REQUEST_NUMBER }}
+    steps:
+      - name: Resolve PR head ref
+        id: ref
+        if: ${{ github.event_name == 'workflow_dispatch' }}
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        run: |
+          set -e
+          HEAD_SHA="$(gh pr view "$PULL_REQUEST_NUMBER" --repo "$GITHUB_REPOSITORY" --json headRefOid --jq '.headRefOid')"
+          echo "REF=$HEAD_SHA" >> "$GITHUB_OUTPUT"
+
+      - name: Checkout
+        uses: actions/checkout@v5
+        with:
+          ref: ${{ github.event.pull_request.head.sha || steps.ref.outputs.REF }}
+
+      # Previews are built with the dev/staging config so they exercise the
+      # staging API, and are hosted as a channel on the dev site.
+      - name: Stage .env.development from staging secret
+        run: echo "${{ secrets.STAGING_ENV_FILE }}" > .env.development
+
+      - name: Setup Node
+        uses: ./.github/actions/composite/setupNode
+
+      - name: Build web
+        run: npm run build-web-dev
+
+      - name: Authenticate to Firebase
+        env:
+          FIREBASE_SERVICE_ACCOUNT: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
+        run: printf '%s' "$FIREBASE_SERVICE_ACCOUNT" > "$RUNNER_TEMP/firebase-sa.json"
+
+      - name: Deploy preview channel
+        id: preview
+        env:
+          GOOGLE_APPLICATION_CREDENTIALS: ${{ runner.temp }}/firebase-sa.json
+        run: |
+          set -e
+          npx --yes firebase-tools@13 hosting:channel:deploy "pr-${PULL_REQUEST_NUMBER}" \
+            --only app \
+            --project dev \
+            --expires 7d \
+            --json > channel.json
+          URL="$(jq -r '.result | to_entries[0].value.url' channel.json)"
+          echo "URL=$URL" >> "$GITHUB_OUTPUT"
+
+      - name: Comment preview URL on the PR
+        uses: actions-ecosystem/action-create-comment@cd098164398331c50e7dfdd0dfa1b564a1873fac
+        with:
+          github_token: ${{ github.token }}
+          number: ${{ env.PULL_REQUEST_NUMBER }}
+          body: |
+            :globe_with_meridians: **Web preview deployed** for this PR.
+
+            ${{ steps.preview.outputs.URL }}
+
+            _This is a dev build on a temporary Firebase Hosting channel (expires in 7 days). Re-apply the `Ready To Build - Web` label to refresh it._
