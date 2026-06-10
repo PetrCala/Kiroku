@@ -40,6 +40,15 @@ type AnimatedKirokuLogoSvgProps = {
    * false never restarts.
    */
   shouldStart: boolean;
+
+  /**
+   * True only while the boot splash is handing its logo off into this slot. The
+   * mark renders already-settled (progress 1) instead of playing the assembly
+   * entrance — the splash flight stands in for it. Latched per mount: once a
+   * handoff settles this mount it never plays the entrance, even after the flag
+   * clears. Defaults to false, so every non-handoff appearance plays normally.
+   */
+  isHandoff?: boolean;
 };
 
 const styles = StyleSheet.create({
@@ -62,6 +71,7 @@ function AnimatedKirokuLogoSvg({
   liquidColor,
   environment,
   shouldStart,
+  isHandoff = false,
 }: AnimatedKirokuLogoSvgProps) {
   const reduceMotion = useReducedMotion();
   const isFocused = useIsFocused();
@@ -79,29 +89,43 @@ function AnimatedKirokuLogoSvg({
   // never plays over the entrance. Set from the timing's completion callback.
   const [hasSettled, setHasSettled] = useState(false);
 
+  // One latched timeline so `progress` keeps a single mutation site (two would
+  // regress react-compiler). It settles one of two ways, then never re-arms:
+  //   • Handoff (isHandoff): jump straight to the settled mark — zero duration,
+  //     no wave — underneath the flying splash logo, so the entrance never
+  //     plays. When the splash later releases `shouldStart` the latch is
+  //     already set and this stays put.
+  //   • Entrance (shouldStart, no reduced motion): run the full assembly.
   useEffect(() => {
-    if (shouldStart && !reduceMotion && !hasStarted.current) {
+    const shouldHandoff = isHandoff;
+    const shouldPlayEntrance = shouldStart && !reduceMotion;
+    if (!hasStarted.current && (shouldHandoff || shouldPlayEntrance)) {
       hasStarted.current = true;
       // eslint-disable-next-line react-compiler/react-compiler
       progress.value = withTiming(
         1,
-        {duration: TOTAL_DURATION_MS, easing: Easing.linear},
+        {
+          duration: shouldHandoff ? 0 : TOTAL_DURATION_MS,
+          easing: Easing.linear,
+        },
         () => {
           cancelAnimation(wavePhase);
           runOnJS(setHasSettled)(true);
         },
       );
-      // eslint-disable-next-line react-compiler/react-compiler
-      wavePhase.value = withRepeat(
-        withTiming(1, {duration: WAVE_PERIOD_MS, easing: Easing.linear}),
-        -1,
-      );
+      if (!shouldHandoff) {
+        // eslint-disable-next-line react-compiler/react-compiler
+        wavePhase.value = withRepeat(
+          withTiming(1, {duration: WAVE_PERIOD_MS, easing: Easing.linear}),
+          -1,
+        );
+      }
     }
     return () => {
       cancelAnimation(progress);
       cancelAnimation(wavePhase);
     };
-  }, [shouldStart, reduceMotion, progress, wavePhase]);
+  }, [shouldStart, reduceMotion, isHandoff, progress, wavePhase]);
 
   // Ambient shimmer loop. Runs only after the entrance settles and only while
   // the screen is focused: navigating InitialScreen → AuthScreen pushes over
