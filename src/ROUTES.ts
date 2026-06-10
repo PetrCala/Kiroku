@@ -139,6 +139,10 @@ const ROUTES = {
     route: 'profile/:userID/friends',
     getRoute: (userID: UserID) => `profile/${userID}/friends` as const,
   },
+  PROFILE_REPORT_USER: {
+    route: 'profile/:userID/report',
+    getRoute: (userID: UserID) => `profile/${userID}/report` as const,
+  },
 
   SESSIONS_CALENDAR_FULLSCREEN: {
     route: 'sessions-calendar/:userID',

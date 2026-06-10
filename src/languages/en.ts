@@ -986,6 +986,23 @@ export default {
     sending: 'Sending feedback...',
     error: 'There was an error sending your feedback. Please try again.',
   },
+  reportUserScreen: {
+    title: 'Report',
+    prompt:
+      'Why are you reporting this user? Your report is private and goes to our moderation team.',
+    reasons: {
+      inappropriateName: 'Inappropriate name',
+      inappropriatePhoto: 'Inappropriate profile photo',
+      harassment: 'Harassment or bullying',
+      other: 'Something else',
+    },
+    descriptionLabel: 'Add details (optional)',
+    alsoBlock: 'Also block this user',
+    submit: 'Submit report',
+    successTitle: 'Report received',
+    successMessage:
+      'Thanks for letting us know. Our moderation team will review this user.',
+  },
   manageAccountScreen: {
     title: 'Manage account',
     dangerZone: {
@@ -1023,6 +1040,7 @@ export default {
     unitsConsumed: ({unitCount}: UnitCountParams) =>
       `${Str.pluralize('Unit', 'Units', unitCount)} Consumed`,
     manageFriend: 'Manage Friend',
+    report: 'Report',
     unfriendPrompt: 'Do you really want to unfriend this user?',
     unfriend: 'Unfriend',
     blockUser: 'Block user',
@@ -1834,6 +1852,11 @@ export default {
         title: 'Could Not Block User',
         message:
           'There was an issue trying to block this user. Please try again.',
+      },
+      couldNotReportUser: {
+        title: 'Could Not Report User',
+        message:
+          'There was an issue trying to report this user. Please try again.',
       },
       couldNotUnfriend: {
         title: 'Could Not Unfriend',

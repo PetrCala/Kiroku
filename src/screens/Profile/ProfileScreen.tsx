@@ -35,6 +35,7 @@ import FlexibleLoadingIndicator from '@components/FlexibleLoadingIndicator';
 import useThemeStyles from '@hooks/useThemeStyles';
 import Button from '@components/Button';
 import ManageFriendPopover from '@components/ManageFriendPopover';
+import type {PopoverMenuItem} from '@components/PopoverMenu';
 import ScrollView from '@components/ScrollView';
 import Text from '@components/Text';
 import useStyleUtils from '@hooks/useStyleUtils';
@@ -174,6 +175,21 @@ function ProfileScreen({route}: ProfileScreenProps) {
     setCommonFriendCount(newCommonFriendCount);
   }, [friends, selfFriends, myBlocked]);
 
+  // Reporting is reachable from ANY viewable profile (friend, friend-of-friend,
+  // search result), so it lives in the profile header overflow rather than the
+  // friend-only Manage popover. Hidden on your own profile and on a user you've
+  // already blocked (their profile resolves to the empty state). See #765.
+  const reportMenuItems: PopoverMenuItem[] = [
+    {
+      text: translate('profileScreen.report'),
+      icon: KirokuIcons.Info,
+      onSelected: () =>
+        Navigation.navigate(ROUTES.PROFILE_REPORT_USER.getRoute(userID)),
+    },
+  ];
+
+  const canReportUser = !isSelf && !isViewingBlockedUser;
+
   const header = (
     <HeaderWithBackButton
       title={
@@ -182,6 +198,8 @@ function ProfileScreen({route}: ProfileScreenProps) {
           : translate('profileScreen.titleNotSelf')
       }
       onBackButtonPress={Navigation.goBack}
+      shouldShowThreeDotsButton={canReportUser}
+      threeDotsMenuItems={reportMenuItems}
     />
   );
 

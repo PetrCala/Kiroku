@@ -5,6 +5,7 @@ export type {default as AcceptFriendRequestParams} from './AcceptFriendRequestPa
 export type {default as DeleteFriendRequestParams} from './DeleteFriendRequestParams';
 export type {default as UnfriendParams} from './UnfriendParams';
 export type {default as BlockUserParams} from './BlockUserParams';
+export type {default as ReportUserParams} from './ReportUserParams';
 export type {default as UnblockUserParams} from './UnblockUserParams';
 export type {default as UpdateSessionParams} from './UpdateSessionParams';
 export type {default as DeleteSessionParams} from './DeleteSessionParams';

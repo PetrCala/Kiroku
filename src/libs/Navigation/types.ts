@@ -147,6 +147,9 @@ type ProfileNavigatorParamList = {
   [SCREENS.PROFILE.FRIENDS_FRIENDS]: {
     userID: string;
   };
+  [SCREENS.PROFILE.REPORT_USER]: {
+    userID: string;
+  };
 };
 
 type SessionsCalendarNavigatorParamList = {

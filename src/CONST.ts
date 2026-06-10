@@ -805,6 +805,17 @@ const CONST = {
   } as const,
 
   MICROSECONDS_PER_MS: 1000,
+  REPORT: {
+    // Why the user is reporting another user. These values are the wire contract
+    // shared with kiroku-api (the server stores them verbatim for admin review),
+    // so they must not be renamed without a coordinated backend change.
+    REASON: {
+      INAPPROPRIATE_NAME: 'inappropriate_name',
+      INAPPROPRIATE_PHOTO: 'inappropriate_photo',
+      HARASSMENT: 'harassment',
+      OTHER: 'other',
+    },
+  },
   RED_BRICK_ROAD_PENDING_ACTION: {
     ADD: 'add',
     DELETE: 'delete',
