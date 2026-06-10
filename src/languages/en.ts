@@ -521,6 +521,7 @@ export default {
       couldNotRemoveRequest:
         'Could not remove the friend request. Please try again.',
       couldNotUnfriend: 'Could not remove this friend. Please try again.',
+      couldNotBlockUser: 'Could not block this user. Please try again.',
     },
   },
   notFoundScreen: {
@@ -994,6 +995,10 @@ export default {
     manageFriend: 'Manage Friend',
     unfriendPrompt: 'Do you really want to unfriend this user?',
     unfriend: 'Unfriend',
+    blockUser: 'Block user',
+    blockUserTitle: 'Block this user?',
+    blockUserPrompt:
+      'Blocking removes your friendship and hides each of you from the other. They will not be able to find you or send you a friend request. You can unblock them later.',
     hideDataFromFriend: 'Hide my data from this friend',
     showDataToFriend: 'Show my data to this friend',
     commonFriendsLabel: ({hasCommonFriends}: CommonFriendsLabelParams) =>
@@ -1794,6 +1799,11 @@ export default {
       bugSubmissionFailed: {
         title: 'Bug Submission Failed',
         message: 'There was an issue submitting the bug. Please try again.',
+      },
+      couldNotBlockUser: {
+        title: 'Could Not Block User',
+        message:
+          'There was an issue trying to block this user. Please try again.',
       },
       couldNotUnfriend: {
         title: 'Could Not Unfriend',
