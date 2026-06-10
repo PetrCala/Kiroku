@@ -9,6 +9,8 @@ import * as Friends from '@userActions/Friends';
 import type {TranslationPaths} from '@src/languages/types';
 import ERRORS from '@src/ERRORS';
 import useLocalize from '@hooks/useLocalize';
+import useCurrentUserData from '@hooks/useCurrentUserData';
+import {isBlocked} from '@libs/BlockUtils';
 import type SendFriendRequestButtonProps from './types';
 
 function SendFriendRequestButton({
@@ -20,6 +22,12 @@ function SendFriendRequestButton({
   const [isLoading, setIsLoading] = React.useState<boolean>(false);
   const {translate} = useLocalize();
   const styles = useThemeStyles();
+  const userData = useCurrentUserData();
+  // Discovery filter (#759): if the signed-in user has blocked this user, never
+  // offer the send/accept-request action. The server rejects the write either
+  // way; this keeps the UI from offering it. Blocked users are normally filtered
+  // out of the lists upstream, so this is a defensive fallback.
+  const isUserBlocked = isBlocked(userData?.blocked, userTo);
 
   const handleSendRequestPress = () => {
     (async (): Promise<void> => {
@@ -72,6 +80,9 @@ function SendFriendRequestButton({
   const renderContents = () => {
     if (userFrom === userTo) {
       return renderText('searchResult.self');
+    }
+    if (isUserBlocked) {
+      return renderText('searchResult.blocked');
     }
     if (alreadyAFriend) {
       return renderText('searchResult.friend');

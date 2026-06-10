@@ -111,6 +111,18 @@ type UserData = {
   /** A list of friends of this user */
   friends?: UserList;
 
+  /**
+   * The signed-in user's OWN outbound block list: a map of uids this user has
+   * blocked (`{[uid]: true}`). Server-authoritative — written by the kiroku-api
+   * BlockUser/UnblockUser handlers and hydrated into Onyx the same way `friends`
+   * is: via the whole `users/{uid}` node on `app/open` plus Pusher + `/v1/updates`.
+   * Only ever populated for the signed-in user's own `USER_DATA_LIST` entry; a
+   * user can NOT see who has blocked *them* (that list stays owner-private
+   * server-side). The UI uses it to filter blocked users out of discovery and
+   * consumption surfaces, as defense-in-depth on top of the server's block gate.
+   */
+  blocked?: UserList;
+
   /** User's private data */
   private_data?: UserPrivateData;
 

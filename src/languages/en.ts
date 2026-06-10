@@ -467,6 +467,7 @@ export default {
     sent: 'Awaiting a response',
     accept: 'Accept friend request',
     add: 'Send a request',
+    blocked: 'Blocked',
   },
   socialScreen: {
     title: 'Friends',

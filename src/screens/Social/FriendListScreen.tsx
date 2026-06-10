@@ -5,6 +5,7 @@ import type {UserIDToNicknameMapping} from '@src/types/various/Search';
 import React, {useCallback, useEffect, useMemo, useState} from 'react';
 import {objKeys} from '@libs/DataHandling';
 import {getNicknameMapping, searchArrayByText} from '@libs/Search';
+import {filterBlockedUsers} from '@libs/BlockUtils';
 import useCurrentUserData from '@hooks/useCurrentUserData';
 import type {UserArray} from '@src/types/onyx/OnyxCommon';
 import Text from '@components/Text';
@@ -96,7 +97,13 @@ function FriendListScreen() {
   ]);
 
   useEffect(() => {
-    const friendsArray = objKeys(userData?.friends);
+    // Consumption filter (#760): a block severs the friendship server-side, so
+    // a blocked user normally won't be in `friends` at all. Filter on the
+    // signed-in user's own block list anyway to cover any cached/edge case.
+    const friendsArray = filterBlockedUsers(
+      objKeys(userData?.friends),
+      userData?.blocked,
+    );
     setFriends(friendsArray);
     setFriendsToDisplay(friendsArray);
     setUserHasFriends(friendsArray.length > 0);
