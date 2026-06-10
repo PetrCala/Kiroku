@@ -1121,6 +1121,17 @@ const styles = (theme: ThemeColors) =>
       backgroundColor: theme.buttonDefaultBG,
     },
 
+    // Opaque brand fill laid behind a glass FAB's content. `glassEffectStyle`
+    // "regular" only tints translucently, so a glass FAB reads as the brand
+    // color over a dark backdrop (the bottom tab bar) but washes out over light
+    // screen content. For a FAB that floats over arbitrary content (the social
+    // search button) this fill emulates Apple's more opaque `.glassProminent`
+    // look, keeping the glass rim and adaptive shadow while guaranteeing the
+    // brand-color background everywhere.
+    floatingActionButtonGlassTint: {
+      backgroundColor: theme.appColor,
+    },
+
     // Anchors the start-session FAB to the bottom-right of a screen. The
     // `bottom` offset is applied by the caller (= bottom tab bar height + a
     // margin) so the FAB floats clearly above the native tab bar.
