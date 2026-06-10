@@ -8,9 +8,11 @@ import Animated, {
 } from 'react-native-reanimated';
 import Svg, {Path} from 'react-native-svg';
 import {
+  CROSSFADE_EASING,
+  CROSSFADE_START_FRACTION,
   getShapeWindow,
+  GHOST_OPACITY,
   SHAPE_OPACITY_EASING,
-  SHAPE_TARGET_OPACITY,
   SHAPE_TRANSLATE_DISTANCE,
   SHAPE_TRANSLATE_EASING,
 } from './animationTimings';
@@ -41,18 +43,29 @@ function AnimatedLogoShape({d, index, fill, progress}: AnimatedLogoShapeProps) {
   const [windowStart, windowEnd] = getShapeWindow(index);
 
   const animatedStyle = useAnimatedStyle(() => {
-    const local = interpolate(
+    const entrance = interpolate(
       progress.value,
       [windowStart, windowEnd],
       [0, 1],
       Extrapolation.CLAMP,
     );
+    // Entrance fades the shape in to its faint ghost state; the crossfade at
+    // the end of the timeline solidifies it to full opacity as the liquid
+    // drains away.
+    const crossfade = interpolate(
+      progress.value,
+      [CROSSFADE_START_FRACTION, 1],
+      [0, 1],
+      Extrapolation.CLAMP,
+    );
     return {
-      opacity: SHAPE_OPACITY_EASING(local) * SHAPE_TARGET_OPACITY,
+      opacity:
+        SHAPE_OPACITY_EASING(entrance) * GHOST_OPACITY +
+        (1 - GHOST_OPACITY) * CROSSFADE_EASING(crossfade),
       transform: [
         {
           translateY:
-            (1 - SHAPE_TRANSLATE_EASING(local)) * SHAPE_TRANSLATE_DISTANCE,
+            (1 - SHAPE_TRANSLATE_EASING(entrance)) * SHAPE_TRANSLATE_DISTANCE,
         },
       ],
     };

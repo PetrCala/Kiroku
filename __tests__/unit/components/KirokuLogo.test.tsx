@@ -3,6 +3,7 @@ import {render} from '@testing-library/react-native';
 import React from 'react';
 import AnimatedKirokuLogoSvg from '@components/KirokuLogo/AnimatedKirokuLogoSvg';
 import KirokuLogoSvg from '@components/KirokuLogo/KirokuLogoSvg';
+import buildWavePathD from '@components/KirokuLogo/liquidWave';
 import {LOGO_SHAPES} from '@components/KirokuLogo/logoShapes';
 import CONST from '@src/CONST';
 
@@ -28,11 +29,15 @@ jest.mock('react-native-reanimated', () => {
       createAnimatedComponent: (c: unknown) => c,
     },
     View: PassthroughView,
-    // useAnimatedStyle invokes its worklet immediately and returns the style.
+    // useAnimatedStyle/useAnimatedProps invoke their worklet immediately and
+    // return the result.
     useAnimatedStyle: (factory: () => unknown) => factory(),
+    useAnimatedProps: (factory: () => unknown) => factory(),
     useSharedValue: (initial: unknown) => ({value: initial}),
-    // withTiming resolves to the target value, mirroring the official mock.
+    // withTiming/withRepeat resolve to the target value, mirroring the
+    // official mock.
     withTiming: (toValue: unknown) => toValue,
+    withRepeat: (toValue: unknown) => toValue,
     cancelAnimation: () => {},
     useReducedMotion: () => false,
     interpolate: (
@@ -47,8 +52,11 @@ jest.mock('react-native-reanimated', () => {
     Easing: {
       linear: (t: number) => t,
       quad: (t: number) => t * t,
+      cubic: (t: number) => t * t * t,
+      ease: (t: number) => t,
       back: () => (t: number) => t,
       out: (fn: (t: number) => number) => (t: number) => 1 - fn(1 - t),
+      inOut: (fn: (t: number) => number) => (t: number) => fn(t),
     },
   };
 });
@@ -88,6 +96,34 @@ describe('logoShapes', () => {
   });
 });
 
+describe('buildWavePathD', () => {
+  it('builds a closed path whose surface stays within one amplitude of the level', () => {
+    const surfaceY = 500;
+    const d = buildWavePathD(surfaceY, 0.3);
+    expect(d.startsWith('M')).toBe(true);
+    expect(d.endsWith('Z')).toBe(true);
+    const ys = Array.from(
+      d.matchAll(/[ML]-?\d+(?:\.\d+)? (-?\d+(?:\.\d+)?)/g),
+      m => Number(m[1]),
+    );
+    // Surface samples hug the level; the two closing points sit below the
+    // 1024-unit canvas.
+    const surface = ys.filter(y => y < 1024);
+    const closing = ys.filter(y => y >= 1024);
+    expect(surface.length).toBeGreaterThan(15);
+    expect(closing).toHaveLength(2);
+    surface.forEach(y => {
+      expect(Math.abs(y - surfaceY)).toBeLessThanOrEqual(14);
+    });
+  });
+
+  it('shifts the surface as the phase advances', () => {
+    expect(buildWavePathD(500, 0)).not.toEqual(buildWavePathD(500, 0.25));
+    // Phase is periodic: a full cycle reproduces the same surface.
+    expect(buildWavePathD(500, 0)).toEqual(buildWavePathD(500, 1));
+  });
+});
+
 describe('KirokuLogoSvg', () => {
   it('renders exactly the six logo shapes on production (no badge)', () => {
     const {toJSON} = render(
@@ -113,17 +149,22 @@ describe('AnimatedKirokuLogoSvg', () => {
     const {toJSON} = render(
       <AnimatedKirokuLogoSvg
         fill="#000000"
+        liquidColor="#F5C400"
         environment={CONST.ENVIRONMENT.PROD}
         shouldStart
       />,
     );
-    expect(collectProp(toJSON() as RenderedNode, 'd')).toEqual(EXPECTED_SHAPES);
+    // The liquid's clip path repeats the silhouette, so the tree holds the
+    // six shapes at least once each rather than exactly once.
+    const ds = collectProp(toJSON() as RenderedNode, 'd');
+    EXPECTED_SHAPES.forEach(d => expect(ds).toContain(d));
   });
 
   it('renders while armed (shouldStart false) without throwing', () => {
     const {toJSON} = render(
       <AnimatedKirokuLogoSvg
         fill="#000000"
+        liquidColor="#F5C400"
         environment={CONST.ENVIRONMENT.DEV}
         shouldStart={false}
       />,

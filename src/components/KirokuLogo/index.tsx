@@ -53,6 +53,7 @@ function KirokuLogo({style, shouldPlayAnimation}: KirokuLogoProps) {
       ) : (
         <AnimatedKirokuLogoSvg
           fill={theme.appLogo}
+          liquidColor={theme.success}
           environment={environment}
           shouldStart={shouldPlayAnimation}
         />
