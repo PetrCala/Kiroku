@@ -469,6 +469,7 @@ export default {
     sent: 'Žádost odeslána',
     accept: 'Přijmout',
     add: 'Poslat žádost',
+    blocked: 'Zablokováno',
   },
   socialScreen: {
     title: 'Přátelé',
@@ -524,6 +525,8 @@ export default {
         'Nepodařilo se odstranit žádost o přátelství. Zkuste to prosím znovu.',
       couldNotUnfriend:
         'Nepodařilo se odebrat tohoto přítele. Zkuste to prosím znovu.',
+      couldNotBlockUser:
+        'Nepodařilo se zablokovat tohoto uživatele. Zkuste to prosím znovu.',
     },
   },
   notFoundScreen: {
@@ -595,6 +598,13 @@ export default {
       success: 'Vaše historie polohy byla vymazána.',
       error: 'Nepodařilo se vymazat historii polohy. Zkuste to prosím znovu.',
     },
+    blockingSection: {
+      title: 'Blokování',
+    },
+    blockedUsers: {
+      label: 'Zablokovaní uživatelé',
+      description: 'Zobrazte a spravujte lidi, které jste zablokovali.',
+    },
     accountSection: {
       title: 'Účet',
     },
@@ -604,6 +614,18 @@ export default {
     },
     error: {
       save: 'Nepodařilo se uložit nastavení soukromí. Zkuste to prosím znovu.',
+    },
+  },
+  blockedUsersScreen: {
+    title: 'Zablokovaní uživatelé',
+    unblockNote:
+      'Odblokování nepřidá daného člověka zpět mezi přátele. Abyste byli znovu přáteli, musí jeden z vás poslat novou žádost o přátelství.',
+    unblock: 'Odblokovat',
+    unknownUser: 'Zablokovaný uživatel',
+    emptyList: {
+      title: 'Zatím jste nikoho nezablokovali',
+      subtitle:
+        'Když někoho zablokujete, objeví se zde, abyste ho mohli později odblokovat.',
     },
   },
   unitsToColorsScreen: {
@@ -999,6 +1021,10 @@ export default {
     manageFriend: 'Spravovat přítele',
     unfriendPrompt: 'Opravdu chcete tohoto uživatele odebrat z přátel?',
     unfriend: 'Odebrat z přátel',
+    blockUser: 'Zablokovat uživatele',
+    blockUserTitle: 'Zablokovat tohoto uživatele?',
+    blockUserPrompt:
+      'Zablokování zruší vaše přátelství a skryje vás navzájem. Daný uživatel vás nenajde ani vám nepošle žádost o přátelství. Později ho můžete odblokovat.',
     hideDataFromFriend: 'Skrýt má data před tímto přítelem',
     showDataToFriend: 'Zobrazit má data tomuto příteli',
     commonFriendsLabel: ({hasCommonFriends}: CommonFriendsLabelParams) =>
@@ -1794,6 +1820,11 @@ export default {
         title: 'Nepodařilo se odeslat hlášení chyby',
         message:
           'Při odesílání chyby došlo k problému. Zkuste to prosím znovu.',
+      },
+      couldNotBlockUser: {
+        title: 'Nepodařilo se zablokovat uživatele',
+        message:
+          'Při blokování tohoto uživatele došlo k problému. Zkuste to prosím znovu.',
       },
       couldNotUnfriend: {
         title: 'Nepodařilo se odebrat z přátel',
