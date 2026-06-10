@@ -8,14 +8,23 @@ import useTheme from '@hooks/useTheme';
 import useThemeStyles from '@hooks/useThemeStyles';
 import variables from '@styles/variables';
 import CONST from '@src/CONST';
+import AnimatedKirokuLogoSvg from './AnimatedKirokuLogoSvg';
 import KirokuLogoSvg from './KirokuLogoSvg';
 
 type KirokuLogoProps = {
   /** Additional styles to add to the component */
   style?: StyleProp<ViewStyle>;
+
+  /**
+   * Controls the animated entrance. `undefined` (default) renders the plain
+   * static logo. `false` mounts the animated variant armed at progress 0
+   * (invisible) so it can start the moment the prop flips to `true` — used by
+   * InitialScreen to wait out the boot splash. Latched once per mount.
+   */
+  shouldPlayAnimation?: boolean;
 };
 
-function KirokuLogo({style}: KirokuLogoProps) {
+function KirokuLogo({style, shouldPlayAnimation}: KirokuLogoProps) {
   const styles = useThemeStyles();
   const theme = useTheme();
   const StyleUtils = useStyleUtils();
@@ -39,7 +48,15 @@ function KirokuLogo({style}: KirokuLogoProps) {
           : {},
         style,
       ]}>
-      <KirokuLogoSvg fill={theme.appLogo} environment={environment} />
+      {shouldPlayAnimation === undefined ? (
+        <KirokuLogoSvg fill={theme.appLogo} environment={environment} />
+      ) : (
+        <AnimatedKirokuLogoSvg
+          fill={theme.appLogo}
+          environment={environment}
+          shouldStart={shouldPlayAnimation}
+        />
+      )}
     </View>
   );
 }

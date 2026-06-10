@@ -12,7 +12,7 @@ import type {SignUpScreenLayoutProps} from './types';
 
 type SignUpScreenContentProps = Pick<
   SignUpScreenLayoutProps,
-  'welcomeText' | 'welcomeHeader'
+  'welcomeText' | 'welcomeHeader' | 'shouldPlayLogoAnimation'
 > & {
   /** The children to show inside the layout */
   children?: React.ReactNode;
@@ -21,6 +21,7 @@ type SignUpScreenContentProps = Pick<
 function SignUpScreenContent({
   welcomeHeader,
   welcomeText,
+  shouldPlayLogoAnimation,
   children,
 }: SignUpScreenContentProps) {
   const {shouldUseNarrowLayout} = useResponsiveLayout();
@@ -53,7 +54,7 @@ function SignUpScreenContent({
                   ? styles.alignItemsCenter
                   : styles.alignSelfStart,
               ]}>
-              <KirokuLogo />
+              <KirokuLogo shouldPlayAnimation={shouldPlayLogoAnimation} />
             </View>
             <View style={[styles.signUpScreenWelcomeTextContainer]}>
               {!!welcomeHeader && (

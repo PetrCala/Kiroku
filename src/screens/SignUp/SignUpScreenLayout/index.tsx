@@ -29,6 +29,7 @@ function SignUpScreenLayout(
     welcomeHeader = '',
     welcomeText = '',
     // navigateFocus = () => {},
+    shouldPlayLogoAnimation,
     children,
   }: SignUpScreenLayoutProps,
   ref: ForwardedRef<SignUpScreenLayoutRef>,
@@ -98,7 +99,8 @@ function SignUpScreenLayout(
             contentContainerStyle={[styles.flex1]}>
             <SignUpScreenContent
               welcomeHeader={welcomeHeader}
-              welcomeText={welcomeText}>
+              welcomeText={welcomeText}
+              shouldPlayLogoAnimation={shouldPlayLogoAnimation}>
               {children}
             </SignUpScreenContent>
           </ScrollView>
@@ -118,7 +120,8 @@ function SignUpScreenLayout(
             ]}>
             <SignUpScreenContent
               welcomeHeader={welcomeHeader}
-              welcomeText={welcomeText}>
+              welcomeText={welcomeText}
+              shouldPlayLogoAnimation={shouldPlayLogoAnimation}>
               {children}
             </SignUpScreenContent>
           </View>

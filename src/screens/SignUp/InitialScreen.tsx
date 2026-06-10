@@ -16,6 +16,7 @@ import useStyleUtils from '@hooks/useStyleUtils';
 import useStyledSafeAreaInsets from '@hooks/useStyledSafeAreaInsets';
 import useResponsiveLayout from '@hooks/useResponsiveLayout';
 import useLocalize from '@hooks/useLocalize';
+import {useSplashScreenStateContext} from '@context/global/SplashScreenStateContext';
 import {useOnyx} from 'react-native-onyx';
 import ONYXKEYS from '@src/ONYXKEYS';
 import Button from '@components/Button';
@@ -39,6 +40,7 @@ function InitialScreen() {
   const {isInNarrowPaneModal} = useResponsiveLayout();
   const safeAreaInsets = useStyledSafeAreaInsets();
   const currentScreenLayoutRef = useRef<InitialScreenLayoutRef>(null);
+  const {splashScreenState} = useSplashScreenStateContext();
 
   const welcomeHeader = translate('login.hero.header');
   const logInActionText = translate('common.logInHere');
@@ -95,7 +97,13 @@ function InitialScreen() {
         welcomeHeader={welcomeHeader}
         welcomeText=""
         ref={currentScreenLayoutRef}
-        navigateFocus={navigateFocus}>
+        navigateFocus={navigateFocus}
+        // Arm the logo entrance while the boot splash still covers the
+        // screen and start it only once the splash is gone — otherwise the
+        // animation would finish unseen behind the splash on cold boot.
+        shouldPlayLogoAnimation={
+          splashScreenState === CONST.BOOT_SPLASH_STATE.HIDDEN
+        }>
         <Button
           large
           success
