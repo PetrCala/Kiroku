@@ -171,6 +171,9 @@ const SettingsModalStackNavigator =
     [SCREENS.SETTINGS.PRIVACY.ROOT]: () =>
       require<ReactComponentModule>('@screens/Settings/Privacy/PrivacyScreen')
         .default,
+    [SCREENS.SETTINGS.PRIVACY.BLOCKED_USERS]: () =>
+      require<ReactComponentModule>('@screens/Settings/Privacy/BlockedUsersScreen')
+        .default,
     [SCREENS.SETTINGS.ADMIN.ROOT]: () =>
       require<ReactComponentModule>('@screens/Settings/Admin/AdminScreen')
         .default,

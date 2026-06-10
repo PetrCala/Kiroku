@@ -77,6 +77,7 @@ const SCREENS = {
 
     PRIVACY: {
       ROOT: 'Settings_Privacy',
+      BLOCKED_USERS: 'Settings_Privacy_BlockedUsers',
     },
 
     ADMIN: {
