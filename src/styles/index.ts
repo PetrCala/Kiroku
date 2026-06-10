@@ -1094,9 +1094,31 @@ const styles = (theme: ThemeColors) =>
       backgroundColor: theme.appColor,
       height: variables.componentSizeLarge,
       width: variables.componentSizeLarge,
-      borderRadius: 999,
+      borderRadius: variables.componentSizeLarge / 2,
       alignItems: 'center',
       justifyContent: 'center',
+      // Apple-style soft drop shadow (the pre-iOS-26 tinted-button look). A
+      // `boxShadow` string is the established pattern here (see boxShadowNone)
+      // and renders on iOS, Android, and web under RN 0.81.
+      boxShadow: '0 4px 12px rgba(0, 0, 0, 0.25)',
+    },
+
+    // Liquid Glass variant of the FAB (iOS 26+). No backgroundColor (the glass
+    // tintColor supplies the brand yellow) and no manual shadow — Liquid Glass
+    // draws its own adaptive shadow, so stacking one would double the depth cue.
+    floatingActionButtonGlass: {
+      height: variables.componentSizeLarge,
+      width: variables.componentSizeLarge,
+      borderRadius: variables.componentSizeLarge / 2,
+      alignItems: 'center',
+      justifyContent: 'center',
+      overflow: 'hidden',
+    },
+
+    // Fades in over the glass to signal the "close" (X) state; mirrors the
+    // fallback button's appColor -> buttonDefaultBG interpolation.
+    floatingActionButtonGlassOverlay: {
+      backgroundColor: theme.buttonDefaultBG,
     },
 
     // Anchors the start-session FAB to the bottom-right of a screen. The
