@@ -99,6 +99,11 @@ type ConfirmModalProps = {
 
   /** How to re-focus after the modal is dismissed */
   restoreFocusType?: BaseModalProps['restoreFocusType'];
+
+  /** Render the dialog surface as an iOS 26 liquid-glass material (no-op without
+   *  Liquid Glass support). Defaults on so confirm dialogs are uniformly glass;
+   *  pass `false` to force the opaque surface for a specific dialog. */
+  shouldUseGlassBackground?: boolean;
 };
 
 function ConfirmModal({
@@ -131,6 +136,7 @@ function ConfirmModal({
   shouldReverseStackedButtons,
   shouldEnableNewFocusManagement,
   restoreFocusType,
+  shouldUseGlassBackground = true,
 }: ConfirmModalProps) {
   const {shouldUseNarrowLayout} = useResponsiveLayout();
   const styles = useThemeStyles();
@@ -149,7 +155,8 @@ function ConfirmModal({
       }
       innerContainerStyle={image ? styles.pt0 : {}}
       shouldEnableNewFocusManagement={shouldEnableNewFocusManagement}
-      restoreFocusType={restoreFocusType}>
+      restoreFocusType={restoreFocusType}
+      shouldUseGlassBackground={shouldUseGlassBackground}>
       <ConfirmContent
         title={title}
         /* Disable onConfirm function if the modal is being dismissed, otherwise the confirmation

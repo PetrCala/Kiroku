@@ -229,7 +229,7 @@ function DrinkingSessionWindow({
         />
         <FillerView />
       </ScrollView>
-      <BottomActionBar containerStyle={styles.gap2}>
+      <BottomActionBar containerStyle={styles.gap2} shouldUseGlassBackground>
         <Button
           large
           text={translate('liveSessionScreen.discardSession', {
