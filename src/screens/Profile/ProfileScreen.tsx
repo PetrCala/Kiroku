@@ -14,6 +14,7 @@ import {dateToDateData, dateStringToDate, objKeys} from '@libs/DataHandling';
 import SessionsCalendar from '@components/SessionsCalendar';
 import SessionsCalendarCompactSkeleton from '@components/SessionsCalendar/SessionsCalendarCompactSkeleton';
 import {getCommonFriendsCount} from '@libs/FriendUtils';
+import {isBlocked} from '@libs/BlockUtils';
 import * as FeatureFlags from '@libs/FeatureFlags';
 import * as KirokuIcons from '@components/Icon/KirokuIcons';
 import type {StackScreenProps} from '@react-navigation/stack';
@@ -111,6 +112,12 @@ function ProfileScreen({route}: ProfileScreenProps) {
   // viewer's own friends back from Onyx (hydrated below via `openFriendList`).
   const selfFriends =
     user && user.uid !== userID ? userDataList?.[user.uid]?.friends : friends;
+  // The signed-in user's own outbound block list. Used to (a) exclude blocked
+  // users from the common-friends count and (b) hard-gate the profile of a user
+  // we've blocked into the empty state even if a stale cache still holds their
+  // data (the server denies block-gated reads, but a cached entry may linger).
+  const myBlocked = user ? userDataList?.[user.uid]?.blocked : undefined;
+  const isViewingBlockedUser = !isSelf && isBlocked(myBlocked, userID);
 
   const friendCountLabel = useMemo((): string => {
     return `${translate('profileScreen.commonFriendsLabel', {
@@ -149,10 +156,11 @@ function ProfileScreen({route}: ProfileScreenProps) {
     const newCommonFriendCount = getCommonFriendsCount(
       objKeys(selfFriends),
       objKeys(friends),
+      myBlocked,
     );
     setFriendCount(newFriendCount);
     setCommonFriendCount(newCommonFriendCount);
-  }, [friends, selfFriends]);
+  }, [friends, selfFriends, myBlocked]);
 
   const header = (
     <HeaderWithBackButton
@@ -170,7 +178,11 @@ function ProfileScreen({route}: ProfileScreenProps) {
   // (ScreenWrapper renders its own OfflineIndicator) and show a graceful
   // loading/empty state rather than the blank dark screen an early `return`
   // produced.
-  if (isLoading) {
+  //
+  // Consumption filter (#760): when the signed-in user has blocked this user,
+  // skip the loading state entirely and fall straight through to the empty
+  // state below, so a stale cache can never flash their sessions/profile.
+  if (isLoading && !isViewingBlockedUser) {
     return (
       <ScreenWrapper
         testID={ProfileScreen.displayName}
@@ -187,7 +199,10 @@ function ProfileScreen({route}: ProfileScreenProps) {
       </ScreenWrapper>
     );
   }
-  if (!profileData || !preferences || !userData) {
+  // A blocked/blocking user resolves with no profile (we blocked them, or they
+  // blocked us and the server denied/evicted the read), so this is a clean empty
+  // state with no sessions and no common-friends count — never a surfaced error.
+  if (!profileData || !preferences || !userData || isViewingBlockedUser) {
     return (
       <ScreenWrapper
         testID={ProfileScreen.displayName}

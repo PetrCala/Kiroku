@@ -14,6 +14,7 @@ import SearchResult from '@components/Search/SearchResult';
 import SearchWindow from '@components/Social/SearchWindow';
 import GrayHeader from '@components/Header/GrayHeader';
 import {getCommonFriends, getCommonFriendsCount} from '@libs/FriendUtils';
+import {filterBlockedUsers} from '@libs/BlockUtils';
 import type {
   UserIDToNicknameMapping,
   UserSearchResults,
@@ -55,6 +56,16 @@ function FriendsFriendsScreen({route}: FriendsFriendsScreenProps) {
   // The target user's friends, read via the kiroku-api into
   // `userDataList[userID].friends` (replacing the direct Firebase read).
   const friends = userDataList?.[userID]?.friends;
+  // Consumption filter (#760): exclude anyone the signed-in user has blocked
+  // from the viewed user's friend list, so a user I blocked never appears in
+  // their "common"/"other" friends (counts or rows). `blocked` is my own
+  // outbound block list; `friends` here is someone else's list, which the server
+  // does not filter against my blocks. The effects below recompute this from the
+  // stable `friends`/`blocked` Onyx refs to keep their dependency arrays
+  // referentially stable; this render-scoped copy serves the synchronous render
+  // paths (search handlers + the empty-state check).
+  const blocked = userData?.blocked;
+  const visibleFriendIds = filterBlockedUsers(objKeys(friends), blocked);
   const [searching, setSearching] = useState<boolean>(false);
   const [displayedFriends, setDisplayedFriends] = useState<UserSearchResults>(
     [],
@@ -75,7 +86,7 @@ function FriendsFriendsScreen({route}: FriendsFriendsScreenProps) {
         'display_name',
       );
       const relevantResults = searchArrayByText(
-        objKeys(friends),
+        visibleFriendIds,
         searchText,
         searchMapping,
       );
@@ -180,30 +191,32 @@ function FriendsFriendsScreen({route}: FriendsFriendsScreenProps) {
   useEffect(() => {
     const initialSearch = async (): Promise<void> => {
       setSearching(true);
-      const friendIds = objKeys(friends);
+      const friendIds = filterBlockedUsers(objKeys(friends), blocked);
       await updateHooksBasedOnSearchResults(friendIds);
       setDisplayedFriends(friendIds);
       setSearching(false);
     };
     initialSearch();
-  }, [friends, updateHooksBasedOnSearchResults]);
+  }, [friends, blocked, updateHooksBasedOnSearchResults]);
 
   // Monitor friend groups
   useEffect(() => {
     let newCommonFriends: string[] = [];
     let newOtherFriends: string[] = [];
     if (friends) {
+      const friendIds = filterBlockedUsers(objKeys(friends), blocked);
       newCommonFriends = getCommonFriends(
-        objKeys(friends),
+        friendIds,
         objKeys(userData?.friends),
+        blocked,
       );
-      newOtherFriends = objKeys(friends).filter(
+      newOtherFriends = friendIds.filter(
         friend => !newCommonFriends.includes(friend),
       );
     }
     setCommonFriends(newCommonFriends);
     setOtherFriends(newOtherFriends);
-  }, [userData?.friends, friends]);
+  }, [userData?.friends, friends, blocked]);
 
   useEffect(() => {
     let newNoUsersFound = true;
@@ -215,8 +228,7 @@ function FriendsFriendsScreen({route}: FriendsFriendsScreenProps) {
 
   const resetSearch = (): void => {
     // Reset all values displayed on screen
-    const friendIds = objKeys(friends);
-    setDisplayedFriends(friendIds);
+    setDisplayedFriends(visibleFriendIds);
     setSearching(false);
     setNoUsersFound(false);
   };
@@ -259,7 +271,7 @@ function FriendsFriendsScreen({route}: FriendsFriendsScreenProps) {
               ) : (
                 noUsersFound && (
                   <Text style={styles.noResultsText}>
-                    {objKeys(friends).length > 0
+                    {visibleFriendIds.length > 0
                       ? `${translate('friendsFriendsScreen.noFriendsFound')}\n\n${translate(
                           'friendsFriendsScreen.trySearching',
                         )}`

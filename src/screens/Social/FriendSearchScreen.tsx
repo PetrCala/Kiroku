@@ -25,6 +25,7 @@ import useNetwork from '@hooks/useNetwork';
 import FlexibleLoadingIndicator from '@components/FlexibleLoadingIndicator';
 import useThemeStyles from '@hooks/useThemeStyles';
 import FlatList from '@components/FlatList';
+import {filterBlockedUsers} from '@libs/BlockUtils';
 import ERRORS from '@src/ERRORS';
 
 function FriendSearchScreen() {
@@ -185,16 +186,24 @@ function FriendSearchScreen() {
     if (searching) {
       return <FlexibleLoadingIndicator style={styles.pt4} />;
     }
+    // Discovery filter (#759): never surface a user the signed-in user has
+    // blocked. The server already excludes blocked users from search, so this is
+    // defense-in-depth for any cached/edge-case result. When a search returns
+    // only blocked users the list is empty, so fall through to "no users found".
+    const visibleSearchResults = filterBlockedUsers(
+      searchResultData,
+      userData?.blocked,
+    );
     return (
       <FlatList
         style={[styles.w100, styles.flex1]}
         contentContainerStyle={[styles.pt1]}
         keyboardShouldPersistTaps="always"
-        data={searchResultData}
+        data={visibleSearchResults}
         renderItem={renderItem}
         keyExtractor={userID => `${userID}-container`}
         ListEmptyComponent={
-          noUsersFound ? (
+          noUsersFound || !isEmptyArray(searchResultData) ? (
             <Text style={styles.noResultsText}>
               {translate('friendSearchScreen.noUsersFound')}
             </Text>

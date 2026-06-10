@@ -108,7 +108,14 @@ function useDrinkingSessionsFetch(
       setIsFetchingOlderMonths(false);
     };
 
-    DrinkingSession.openFriendDrinkingSessions(userID, from).finally(finalize);
+    // A block-gated / privacy-denied read rejects with a non-2xx (it bypasses
+    // SaveResponseInOnyx, so failureData never runs). Swallow it: the calendar
+    // should resolve to a clean empty state (the server evicts the cached key on
+    // deny — #786), never throw an unhandled rejection. `finalize` still clears
+    // the loading flags either way.
+    DrinkingSession.openFriendDrinkingSessions(userID, from)
+      .catch(() => undefined)
+      .finally(finalize);
   }, [userID, sessionsMonthsBack, monthsLoadedMeta.status]);
 
   // Re-issue the windowed read when connectivity resumes.
@@ -127,7 +134,10 @@ function useDrinkingSessionsFetch(
       const from = startOfMonth(
         subMonths(new Date(), sessionsMonthsBack),
       ).getTime();
-      DrinkingSession.openFriendDrinkingSessions(userID, from);
+      // Swallow a block-gated / privacy-denied rejection here too (see above).
+      DrinkingSession.openFriendDrinkingSessions(userID, from).catch(
+        () => undefined,
+      );
     },
   });
 

@@ -1,17 +1,23 @@
 import type {FriendRequestList, FriendRequestStatus} from '@src/types/onyx';
-import type {UserArray} from '@src/types/onyx/OnyxCommon';
+import type {UserArray, UserList} from '@src/types/onyx/OnyxCommon';
 import CONST from '@src/CONST';
 import {isEmptyArray} from '@src/types/utils/EmptyObject';
+import {filterBlockedUsers} from '@libs/BlockUtils';
 
 /**
  * Returns an array of common friends between two users.
  * @param user1Friends - The friends data of user 1.
  * @param user2Friends - The friends data of user 2.
+ * @param blockedList - The signed-in user's outbound block list. When provided,
+ *   any user the signed-in user has blocked is excluded from the result, so a
+ *   blocked user is never surfaced even if a cached friend list still references
+ *   them (defense-in-depth; the server already severs blocked friendships).
  * @returns An array of common friends.
  */
 function getCommonFriends(
   user1FriendIds: UserArray,
   user2FriendIds: UserArray,
+  blockedList?: UserList,
 ): UserArray {
   let commonFriends: UserArray = [];
   if (isEmptyArray(user1FriendIds) && isEmptyArray(user2FriendIds)) {
@@ -20,20 +26,23 @@ function getCommonFriends(
   commonFriends = user2FriendIds.filter(friendId =>
     user1FriendIds.includes(friendId),
   );
-  return commonFriends;
+  return filterBlockedUsers(commonFriends, blockedList);
 }
 
 /**
  * Calculates the number of common friends between two users.
  * @param user1Friends - The friends of user 1.
  * @param user2Friends - The friends of user 2.
+ * @param blockedList - The signed-in user's outbound block list; blocked users
+ *   are excluded from the count (see {@link getCommonFriends}).
  * @returns The number of common friends.
  */
 function getCommonFriendsCount(
   user1FriendIds: UserArray,
   user2FriendIds: UserArray,
+  blockedList?: UserList,
 ): number {
-  return getCommonFriends(user1FriendIds, user2FriendIds).length;
+  return getCommonFriends(user1FriendIds, user2FriendIds, blockedList).length;
 }
 
 /**
