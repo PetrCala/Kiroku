@@ -94,6 +94,7 @@ bun.lockb
 
 # Firebase
 **/database.rules.test.json
+.firebase/
 
 # Bundle artifact
 *.jsbundle

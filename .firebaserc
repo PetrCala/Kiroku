@@ -3,5 +3,12 @@
     "default": "alcohol-tracker-db",
     "dev": "dev-alcohol-tracker-db",
     "prod": "alcohol-tracker-db"
+  },
+  "targets": {
+    "alcohol-tracker-db": {
+      "hosting": {
+        "app": ["kiroku-app-prod"]
+      }
+    }
   }
 }
