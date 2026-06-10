@@ -1547,12 +1547,13 @@ const styles = (theme: ThemeColors) =>
         flex: 1,
       }) satisfies ViewStyle,
 
-    RHPNavigatorContainerNavigatorContainerStyles: (
-      isSmallScreenWidth: boolean,
-    ) =>
+    RHPNavigatorContainer: (shouldUseNarrowLayout: boolean) =>
       ({
-        marginLeft: isSmallScreenWidth ? 0 : variables.sideBarWidth,
-        flex: 1,
+        position: 'absolute',
+        right: 0,
+        height: '100%',
+        width: shouldUseNarrowLayout ? '100%' : variables.sideBarWidth,
+        overflow: 'hidden',
       }) satisfies ViewStyle,
 
     onboardingNavigatorOuterView: {
