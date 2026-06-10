@@ -579,6 +579,14 @@ export default {
       description:
         'Odesílejte hlášení o pádech, abychom mohli rychleji opravovat chyby.',
     },
+    communicationsSection: {
+      title: 'Komunikace',
+    },
+    emailMarketing: {
+      label: 'Novinky o aplikaci e-mailem',
+      description:
+        'Občas vám e-mailem pošleme novinky a tipy k aplikaci Kiroku. Kdykoli to můžete vypnout.',
+    },
     locationSection: {
       title: 'Poloha',
     },

@@ -574,6 +574,14 @@ export default {
       label: 'Send crash reports',
       description: 'Send crash reports so we can fix bugs faster.',
     },
+    communicationsSection: {
+      title: 'Communications',
+    },
+    emailMarketing: {
+      label: 'Product news by email',
+      description:
+        'Get occasional news and tips about Kiroku by email. You can turn this off at any time.',
+    },
     locationSection: {
       title: 'Location',
     },

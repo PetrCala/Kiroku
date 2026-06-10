@@ -77,6 +77,12 @@ type Preferences = {
    *  shown at live-session start. Gates that prompt so it appears at most once
    *  per account; undefined means it has not been shown yet. */
   location_prompt_seen?: boolean;
+
+  /** Whether the user has opted in to marketing emails (product news and
+   *  tips). Strictly opt-in (GDPR consent basis): undefined/false means no
+   *  consent and no marketing email may be sent. The server timestamps
+   *  consent changes for accountability. */
+  email_marketing_consent?: boolean;
 };
 
 /** A collection of preferences of multiple users */
