@@ -332,6 +332,7 @@ function StartSessionButtonAndPopover(
           ...staticSessionTypeMenuItems,
         ]}
         withoutOverlay
+        shouldUseGlassBackground
         anchorRef={fabRef}
       />
       <FloatingActionButton

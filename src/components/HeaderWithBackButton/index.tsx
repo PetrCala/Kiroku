@@ -1,3 +1,4 @@
+import {GlassView, isLiquidGlassAvailable} from 'expo-glass-effect';
 import React, {useMemo} from 'react';
 import {Keyboard, StyleSheet, View} from 'react-native';
 import Avatar from '@components/Avatar';
@@ -19,6 +20,10 @@ import Navigation from '@libs/Navigation/Navigation';
 import variables from '@styles/variables';
 import CONST from '@src/CONST';
 import type HeaderWithBackButtonProps from './types';
+
+// iOS 26 ships native Liquid Glass; older iOS and Android do not. The value is
+// fixed for the session, so it's evaluated once at module load.
+const SUPPORTS_LIQUID_GLASS = isLiquidGlassAvailable();
 
 function HeaderWithBackButton({
   icon,
@@ -55,6 +60,7 @@ function HeaderWithBackButton({
   shouldNavigateToTopMostReport = false, // eslint-disable-line @typescript-eslint/no-unused-vars
   progressBarPercentage,
   style,
+  shouldUseGlassBackground = false,
 }: HeaderWithBackButtonProps) {
   const theme = useTheme();
   const styles = useThemeStyles();
@@ -136,6 +142,13 @@ function HeaderWithBackButton({
         shouldOverlay && StyleSheet.absoluteFillObject,
         style,
       ]}>
+      {shouldUseGlassBackground && SUPPORTS_LIQUID_GLASS && (
+        <GlassView
+          style={StyleSheet.absoluteFill}
+          glassEffectStyle="regular"
+          colorScheme={theme.colorScheme}
+        />
+      )}
       <View
         style={[
           styles.dFlex,

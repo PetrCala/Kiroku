@@ -70,6 +70,10 @@ type PopoverMenuProps = Partial<PopoverModalProps> & {
 
   /** Whether we want to show the popover on the right side of the screen */
   fromSidebarMediumScreen?: boolean;
+
+  /** Render the menu surface as an iOS 26 liquid-glass material (no-op without
+   *  Liquid Glass support). Opt-in per caller; defaults off. */
+  shouldUseGlassBackground?: boolean;
 };
 
 function PopoverMenu({
@@ -91,6 +95,7 @@ function PopoverMenu({
   disableAnimation = true,
   withoutOverlay = false,
   shouldSetModalVisibility = true,
+  shouldUseGlassBackground = false,
 }: PopoverMenuProps) {
   const styles = useThemeStyles();
   const {shouldUseNarrowLayout} = useResponsiveLayout();
@@ -199,7 +204,8 @@ function PopoverMenu({
       disableAnimation={disableAnimation}
       fromSidebarMediumScreen={fromSidebarMediumScreen}
       withoutOverlay={withoutOverlay}
-      shouldSetModalVisibility={shouldSetModalVisibility}>
+      shouldSetModalVisibility={shouldSetModalVisibility}
+      shouldUseGlassBackground={shouldUseGlassBackground}>
       <View style={shouldUseNarrowLayout ? {} : styles.createMenuContainer}>
         {!!headerText && (
           <Text style={[styles.createMenuHeaderText, styles.ml3]}>

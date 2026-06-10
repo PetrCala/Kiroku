@@ -116,6 +116,11 @@ type HeaderWithBackButtonProps = Partial<ChildrenProps> & {
 
   /** Additional styles to add to the component */
   style?: StyleProp<ViewStyle>;
+
+  /** Render the header bar as an iOS 26 liquid-glass material instead of the
+   *  inherited opaque surface (no-op without Liquid Glass support). The effect
+   *  reads strongest on screens where the header overlays scrollable content. */
+  shouldUseGlassBackground?: boolean;
 };
 
 export type {ThreeDotsMenuItem};

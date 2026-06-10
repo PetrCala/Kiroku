@@ -92,7 +92,8 @@ function DayDrillDownSheet({
       // data on return — unless the day has been emptied in the meantime.
       isVisible={isVisible && isFocused && hasSessions}
       onClose={onClose}
-      type={CONST.MODAL.MODAL_TYPE.BOTTOM_DOCKED}>
+      type={CONST.MODAL.MODAL_TYPE.BOTTOM_DOCKED}
+      shouldUseGlassBackground>
       <View style={[styles.pt3, styles.pb5, {minHeight: 240, maxHeight: 560}]}>
         <View
           style={[

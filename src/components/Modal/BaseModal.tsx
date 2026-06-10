@@ -1,4 +1,5 @@
 import {PortalHost} from '@gorhom/portal';
+import {GlassView, isLiquidGlassAvailable} from 'expo-glass-effect';
 import React, {
   forwardRef,
   useCallback,
@@ -6,7 +7,7 @@ import React, {
   useMemo,
   useRef,
 } from 'react';
-import {View} from 'react-native';
+import {StyleSheet, View} from 'react-native';
 import Animated from 'react-native-reanimated';
 import ColorSchemeWrapper from '@components/ColorSchemeWrapper';
 import useKeyboardState from '@hooks/useKeyboardState';
@@ -26,6 +27,11 @@ import ModalContext from './ModalContext';
 import ReanimatedModal from './ReanimatedModal';
 import type {AnimationIn, AnimationOut} from './ReanimatedModal/types';
 import type BaseModalProps from './types';
+
+// iOS 26 ships native Liquid Glass; older iOS and Android do not. The value is
+// fixed for the session, so it's evaluated once at module load (mirrors
+// `BottomTabNavigator`).
+const SUPPORTS_LIQUID_GLASS = isLiquidGlassAvailable();
 
 const SUPPORTED_ANIMATIONS_IN: AnimationIn[] = [
   'fadeIn',
@@ -95,6 +101,7 @@ function BaseModal(
     restoreFocusType,
     shouldUseModalPaddingStyle = true,
     initialFocus = false,
+    shouldUseGlassBackground = false,
   }: BaseModalProps,
   ref: React.ForwardedRef<View>,
 ) {
@@ -276,6 +283,21 @@ function BaseModal(
     [isVisible, type],
   );
 
+  // When the caller opts into glass and the device supports Liquid Glass, drop
+  // the opaque container fill so the native glass surface shows through, and for
+  // POPOVER also drop the border/drop-shadow — those double up with the glass's
+  // own edge and render incorrectly around a now-transparent native view. The
+  // container keeps its `borderRadius` + `overflow: 'hidden'`, which clips the
+  // glass to the rounded corners.
+  const useGlass = shouldUseGlassBackground && SUPPORTS_LIQUID_GLASS;
+  const glassContainerOverride = useGlass
+    ? {
+        backgroundColor: theme.transparent,
+        borderWidth: 0,
+        boxShadow: undefined,
+      }
+    : undefined;
+
   return (
     <ModalContext.Provider value={modalContextValue}>
       <View
@@ -341,9 +363,17 @@ function BaseModal(
               styles.defaultModalContainer,
               modalContainerStyle,
               modalPaddingStyles,
+              glassContainerOverride,
               !isVisible && styles.pointerEventsNone,
             ]}
             ref={ref}>
+            {useGlass && (
+              <GlassView
+                style={StyleSheet.absoluteFill}
+                glassEffectStyle="regular"
+                colorScheme={theme.colorScheme}
+              />
+            )}
             <ColorSchemeWrapper>{children}</ColorSchemeWrapper>
             <PortalHost name="modal" />
           </Animated.View>

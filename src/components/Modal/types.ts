@@ -93,6 +93,13 @@ type BaseModalProps = Partial<ModalProps> & {
 
   /** Used to set the element that should receive the initial focus */
   initialFocus?: FocusTrapOptions['initialFocus'];
+
+  /**
+   * Render the modal container as an iOS 26 liquid-glass surface instead of the
+   * opaque `componentBG`. No-op on platforms without Liquid Glass (the opaque
+   * background is kept). Intended for BOTTOM_DOCKED sheets and POPOVER menus.
+   */
+  shouldUseGlassBackground?: boolean;
 };
 
 export default BaseModalProps;
