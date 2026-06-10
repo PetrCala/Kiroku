@@ -48,6 +48,7 @@ const ERROR_MAPPING: ErrorMapping = {
   [ERRORS.SESSION.SAVE_FAILED]: 'errors.session.saveFailed',
   [ERRORS.SESSION.START_FAILED]: 'errors.session.startFailed',
   [ERRORS.USER.BUG_SUBMISSION_FAILED]: 'errors.user.bugSubmissionFailed',
+  [ERRORS.USER.COULD_NOT_BLOCK_USER]: 'errors.user.couldNotBlockUser',
   [ERRORS.USER.COULD_NOT_UNFRIEND]: 'errors.user.couldNotUnfriend',
   [ERRORS.USER.DATA_FETCH_FAILED]: 'errors.user.dataFetchFailed',
   [ERRORS.USER.FEEDBACK_REMOVAL_FAILED]: 'errors.user.feedbackRemovalFailed',

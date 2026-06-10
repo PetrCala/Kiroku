@@ -64,6 +64,7 @@ const ERRORS = {
   },
   USER: {
     BUG_SUBMISSION_FAILED: 'user/bug-submission-failed',
+    COULD_NOT_BLOCK_USER: 'user/could-not-block-user',
     COULD_NOT_UNFRIEND: 'user/could-not-unfriend',
     DATA_FETCH_FAILED: 'user/data-fetch-failed',
     FEEDBACK_REMOVAL_FAILED: 'user/feedback-removal-failed',

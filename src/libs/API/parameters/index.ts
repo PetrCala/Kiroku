@@ -4,6 +4,8 @@ export type {default as SendFriendRequestParams} from './SendFriendRequestParams
 export type {default as AcceptFriendRequestParams} from './AcceptFriendRequestParams';
 export type {default as DeleteFriendRequestParams} from './DeleteFriendRequestParams';
 export type {default as UnfriendParams} from './UnfriendParams';
+export type {default as BlockUserParams} from './BlockUserParams';
+export type {default as UnblockUserParams} from './UnblockUserParams';
 export type {default as UpdateSessionParams} from './UpdateSessionParams';
 export type {default as DeleteSessionParams} from './DeleteSessionParams';
 export type {default as CaptureSessionLocationParams} from './CaptureSessionLocationParams';

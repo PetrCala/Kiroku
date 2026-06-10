@@ -1,5 +1,6 @@
 import React, {useRef} from 'react';
 import {View} from 'react-native';
+import * as Block from '@userActions/Block';
 import * as Friends from '@userActions/Friends';
 import * as Privacy from '@userActions/Privacy';
 import {useFirebase} from '@src/context/global/FirebaseContext';
@@ -39,6 +40,7 @@ function ManageFriendPopover({
   const fabRef = useRef<HTMLDivElement>(null);
   const {windowHeight} = useWindowDimensions();
   const [unfriendModalVisible, setUnfriendModalVisible] = React.useState(false);
+  const [blockModalVisible, setBlockModalVisible] = React.useState(false);
 
   const isHidden = dataVisibility?.hidden_from?.[friendId] === true;
 
@@ -64,6 +66,13 @@ function ManageFriendPopover({
         setUnfriendModalVisible(true);
       },
     },
+    {
+      text: translate('profileScreen.blockUser'),
+      icon: KirokuIcons.Lock,
+      onSelected: () => {
+        setBlockModalVisible(true);
+      },
+    },
   ];
 
   const handleUnfriend = () => {
@@ -77,6 +86,22 @@ function ManageFriendPopover({
         ErrorUtils.raiseAppError(ERRORS.USER.COULD_NOT_UNFRIEND, error);
       } finally {
         setUnfriendModalVisible(false);
+        Navigation.goBack();
+      }
+    })();
+  };
+
+  const handleBlock = () => {
+    (async () => {
+      if (!user) {
+        return;
+      }
+      try {
+        Block.blockUser(friendId);
+      } catch (error) {
+        ErrorUtils.raiseAppError(ERRORS.USER.COULD_NOT_BLOCK_USER, error);
+      } finally {
+        setBlockModalVisible(false);
         Navigation.goBack();
       }
     })();
@@ -103,6 +128,16 @@ function ManageFriendPopover({
           setUnfriendModalVisible(false);
         }}
         onConfirm={handleUnfriend}
+        danger
+      />
+      <ConfirmModal
+        isVisible={blockModalVisible}
+        title={translate('profileScreen.blockUserTitle')}
+        prompt={translate('profileScreen.blockUserPrompt')}
+        onCancel={() => {
+          setBlockModalVisible(false);
+        }}
+        onConfirm={handleBlock}
         danger
       />
     </View>

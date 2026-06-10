@@ -35,6 +35,8 @@ const WRITE_COMMANDS = {
   ACCEPT_FRIEND_REQUEST: 'AcceptFriendRequest',
   DELETE_FRIEND_REQUEST: 'DeleteFriendRequest',
   UNFRIEND: 'Unfriend',
+  BLOCK_USER: 'BlockUser',
+  UNBLOCK_USER: 'UnblockUser',
   UPDATE_SESSION: 'UpdateSession',
   DELETE_SESSION: 'DeleteSession',
   UPDATE_PREFERENCES: 'UpdatePreferences',
@@ -86,6 +88,8 @@ type WriteCommandParameters = {
   [WRITE_COMMANDS.ACCEPT_FRIEND_REQUEST]: Parameters.AcceptFriendRequestParams;
   [WRITE_COMMANDS.DELETE_FRIEND_REQUEST]: Parameters.DeleteFriendRequestParams;
   [WRITE_COMMANDS.UNFRIEND]: Parameters.UnfriendParams;
+  [WRITE_COMMANDS.BLOCK_USER]: Parameters.BlockUserParams;
+  [WRITE_COMMANDS.UNBLOCK_USER]: Parameters.UnblockUserParams;
   [WRITE_COMMANDS.UPDATE_SESSION]: Parameters.UpdateSessionParams;
   [WRITE_COMMANDS.DELETE_SESSION]: Parameters.DeleteSessionParams;
   [WRITE_COMMANDS.UPDATE_PREFERENCES]: Parameters.UpdatePreferencesParams;
