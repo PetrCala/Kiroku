@@ -716,7 +716,7 @@ export default {
     improvementThoughts: 'Co byste chtěli zlepšit?',
     general: 'Obecné',
     reportBug: 'Nahlásit chybu',
-    giveFeedback: 'Zpětná vazba',
+    giveFeedback: 'Poslat zpětnou vazbu',
     signOut: 'Odhlásit se',
     shareTheApp: 'Sdílet aplikaci',
     adminTools: 'Nástroje pro administrátory',
