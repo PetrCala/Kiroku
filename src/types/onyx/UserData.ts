@@ -119,7 +119,8 @@ type UserData = {
    * Only ever populated for the signed-in user's own `USER_DATA_LIST` entry; a
    * user can NOT see who has blocked *them* (that list stays owner-private
    * server-side). The UI uses it to filter blocked users out of discovery and
-   * consumption surfaces, as defense-in-depth on top of the server's block gate.
+   * consumption surfaces, and to drive the Settings → Privacy → Blocked users
+   * management screen, as defense-in-depth on top of the server's block gate.
    */
   blocked?: UserList;
 

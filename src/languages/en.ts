@@ -592,6 +592,13 @@ export default {
       success: 'Your location history has been cleared.',
       error: "We couldn't clear your location history. Please try again.",
     },
+    blockingSection: {
+      title: 'Blocking',
+    },
+    blockedUsers: {
+      label: 'Blocked users',
+      description: 'Review and manage the people you have blocked.',
+    },
     accountSection: {
       title: 'Account',
     },
@@ -601,6 +608,18 @@ export default {
     },
     error: {
       save: "We couldn't save your privacy preferences. Please try again.",
+    },
+  },
+  blockedUsersScreen: {
+    title: 'Blocked users',
+    unblockNote:
+      'Unblocking does not add someone back as a friend. To be friends again, one of you needs to send a new friend request.',
+    unblock: 'Unblock',
+    unknownUser: 'Blocked user',
+    emptyList: {
+      title: "You haven't blocked anyone yet",
+      subtitle:
+        'When you block someone, they show up here so you can unblock them later.',
     },
   },
   unitsToColorsScreen: {

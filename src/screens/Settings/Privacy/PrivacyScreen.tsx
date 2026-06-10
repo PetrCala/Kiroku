@@ -186,6 +186,21 @@ function PrivacyScreen() {
           </View>
         </Section>
         <Section
+          title={translate('privacyScreen.blockingSection.title')}
+          titleStyles={styles.generalSectionTitle}
+          isCentralPane
+          childrenStyles={styles.pt3}>
+          <MenuItem
+            title={translate('privacyScreen.blockedUsers.label')}
+            description={translate('privacyScreen.blockedUsers.description')}
+            wrapperStyle={styles.sectionMenuItemTopDescription}
+            shouldShowRightIcon
+            onPress={() =>
+              Navigation.navigate(ROUTES.SETTINGS_PRIVACY_BLOCKED_USERS)
+            }
+          />
+        </Section>
+        <Section
           title={translate('privacyScreen.diagnosticsSection.title')}
           titleStyles={styles.generalSectionTitle}
           isCentralPane

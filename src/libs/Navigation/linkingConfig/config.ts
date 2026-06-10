@@ -128,6 +128,10 @@ const config: LinkingOptions<RootStackParamList>['config'] = {
               path: ROUTES.SETTINGS_PRIVACY,
               exact: true,
             },
+            [SCREENS.SETTINGS.PRIVACY.BLOCKED_USERS]: {
+              path: ROUTES.SETTINGS_PRIVACY_BLOCKED_USERS,
+              exact: true,
+            },
             [SCREENS.SETTINGS.ACCOUNT.USER_NAME]: {
               path: ROUTES.SETTINGS_USER_NAME,
               exact: true,
