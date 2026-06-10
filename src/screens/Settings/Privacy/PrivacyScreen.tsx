@@ -40,6 +40,15 @@ function PrivacyScreen() {
   const displayCrashReporting =
     pendingCrashReporting ?? persistedCrashReporting;
 
+  // Absent ⇒ off (strict opt-in consent default).
+  const persistedEmailMarketing = preferences?.email_marketing_consent === true;
+  const [pendingEmailMarketing, setPendingEmailMarketing] = useState<
+    boolean | null
+  >(null);
+  const [savingEmailMarketing, setSavingEmailMarketing] = useState(false);
+  const displayEmailMarketing =
+    pendingEmailMarketing ?? persistedEmailMarketing;
+
   const persistedTrackLocation =
     preferences?.track_location_during_sessions === true;
   const [pendingTrackLocation, setPendingTrackLocation] = useState<
@@ -84,6 +93,23 @@ function PrivacyScreen() {
         Alert.alert(translate('privacyScreen.error.save'), errorMessage);
       })
       .finally(() => setSavingCrashReporting(false));
+  };
+
+  const onToggleEmailMarketing = (next: boolean) => {
+    if (savingEmailMarketing || next === displayEmailMarketing) {
+      return;
+    }
+    setPendingEmailMarketing(next);
+    setSavingEmailMarketing(true);
+    Preferences.updatePreferences({
+      email_marketing_consent: next,
+    })
+      .catch(error => {
+        setPendingEmailMarketing(null);
+        const errorMessage = error instanceof Error ? error.message : '';
+        Alert.alert(translate('privacyScreen.error.save'), errorMessage);
+      })
+      .finally(() => setSavingEmailMarketing(false));
   };
 
   const onToggleTrackLocation = (next: boolean) => {
@@ -283,6 +309,37 @@ function PrivacyScreen() {
                 text={translate('privacyScreen.clearLocationHistory.button')}
                 isDisabled={isPurging}
                 onPress={() => setShowPurgeConfirmModal(true)}
+              />
+            </View>
+          </View>
+        </Section>
+        <Section
+          title={translate('privacyScreen.communicationsSection.title')}
+          titleStyles={styles.generalSectionTitle}
+          isCentralPane
+          childrenStyles={styles.pt3}>
+          <View style={styles.sectionMenuItemTopDescription}>
+            <View
+              style={[
+                styles.flexRow,
+                styles.alignItemsCenter,
+                styles.justifyContentBetween,
+                styles.mb4,
+              ]}>
+              <View style={[styles.flexColumn, styles.flex1, styles.mr3]}>
+                <Text style={[styles.textNormal, styles.textStrong]}>
+                  {translate('privacyScreen.emailMarketing.label')}
+                </Text>
+                <Text style={[styles.textMicroSupporting, styles.mt1]}>
+                  {translate('privacyScreen.emailMarketing.description')}
+                </Text>
+              </View>
+              <Switch
+                accessibilityLabel={translate(
+                  'privacyScreen.emailMarketing.label',
+                )}
+                isOn={displayEmailMarketing}
+                onToggle={onToggleEmailMarketing}
               />
             </View>
           </View>
