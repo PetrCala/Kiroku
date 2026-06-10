@@ -223,6 +223,9 @@ const ProfileModalStackNavigator =
     [SCREENS.PROFILE.FRIENDS_FRIENDS]: () =>
       require<ReactComponentModule>('@screens/Profile/FriendsFriendsScreen')
         .default,
+    [SCREENS.PROFILE.REPORT_USER]: () =>
+      require<ReactComponentModule>('@screens/Profile/ReportUserScreen')
+        .default,
   });
 
 const SessionsCalendarModalStackNavigator =

@@ -101,6 +101,7 @@ const SCREENS = {
   PROFILE: {
     ROOT: 'Profile_Root',
     FRIENDS_FRIENDS: 'Profile_FriendsFriends',
+    REPORT_USER: 'Profile_ReportUser',
   },
 
   SESSIONS_CALENDAR: {

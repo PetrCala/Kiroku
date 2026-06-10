@@ -204,6 +204,9 @@ const config: LinkingOptions<RootStackParamList>['config'] = {
             [SCREENS.PROFILE.FRIENDS_FRIENDS]: {
               path: ROUTES.PROFILE_FRIENDS_FRIENDS.route,
             },
+            [SCREENS.PROFILE.REPORT_USER]: {
+              path: ROUTES.PROFILE_REPORT_USER.route,
+            },
           },
         },
         [SCREENS.RIGHT_MODAL.SOCIAL]: {
