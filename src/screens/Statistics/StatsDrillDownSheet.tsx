@@ -136,7 +136,8 @@ function StatsDrillDownSheet() {
     <Modal
       isVisible={isVisible}
       onClose={closeDrillDown}
-      type={CONST.MODAL.MODAL_TYPE.BOTTOM_DOCKED}>
+      type={CONST.MODAL.MODAL_TYPE.BOTTOM_DOCKED}
+      shouldUseGlassBackground>
       <View style={[styles.pt3, styles.pb5, {minHeight: 240, maxHeight: 560}]}>
         <View
           style={[
