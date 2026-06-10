@@ -1,0 +1,45 @@
+name: Web build
+
+# Regression gate for the react-native-web build. Runs `npm run build-web`
+# (production webpack config, no deploy) so a web break can't merge silently.
+# Path-filtered to web-relevant changes; can also be triggered manually.
+# Forcing a full build + hosted preview for an arbitrary PR is the job of the
+# `Ready To Build - Web` label, handled by deployWeb.yml.
+on:
+  pull_request:
+    paths:
+      - src/**
+      - web/**
+      - assets/**
+      - config/webpack/**
+      - package.json
+      - package-lock.json
+      - .github/workflows/webBuild.yml
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  webBuild:
+    name: Build web (no deploy)
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+
+      # build-web runs webpack with `--env file=.env.production`; dotenv needs
+      # the file to exist. Stage it from the same secret the native production
+      # build and the screenshots workflow use.
+      - name: Stage .env.production from secret
+        run: echo "${{ secrets.PRODUCTION_ENV_FILE }}" > .env.production
+
+      - name: Setup Node
+        uses: ./.github/actions/composite/setupNode
+
+      - name: Build web
+        run: npm run build-web
