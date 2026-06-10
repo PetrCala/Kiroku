@@ -13,6 +13,13 @@ type SignUpScreenLayoutProps = {
   welcomeHeader?: string;
 
   navigateFocus?: () => void;
+
+  /**
+   * Controls the logo entrance animation. `undefined` (default) keeps the
+   * logo static; `false` mounts the animated variant armed/invisible;
+   * `true` starts it. See KirokuLogoProps.shouldPlayAnimation.
+   */
+  shouldPlayLogoAnimation?: boolean;
 };
 
 type SignUpScreenLayoutRef = {
