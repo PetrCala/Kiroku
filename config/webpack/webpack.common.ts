@@ -48,6 +48,10 @@ const includeModules = [
   'expo-image',
   'expo-image-manipulator',
   'expo-modules-core',
+  // iOS-26 Liquid Glass. Ships untranspiled JSX in build/*.js; the cross-platform
+  // (non-.ios) files are a no-op (isLiquidGlassAvailable() === false, Glass* render
+  // a plain View), so transpiling them yields a clean web fallback.
+  'expo-glass-effect',
   'victory-native',
   '@shopify/react-native-skia',
 ].join('|');
