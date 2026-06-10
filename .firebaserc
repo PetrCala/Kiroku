@@ -9,6 +9,11 @@
       "hosting": {
         "app": ["kiroku-app-prod"]
       }
+    },
+    "dev-alcohol-tracker-db": {
+      "hosting": {
+        "app": ["kiroku-app-dev"]
+      }
     }
   }
 }
