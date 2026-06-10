@@ -66,9 +66,12 @@ function Kiroku() {
   const appStateChangeListener = useRef<NativeEventSubscription | null>(null);
   const [isNavigationReady, setIsNavigationReady] = useState(false);
   const [isOnyxMigrated, setIsOnyxMigrated] = useState(false);
-  const {splashScreenState, setSplashScreenState, isAuthDataReady} = useContext(
-    SplashScreenStateContext,
-  );
+  const {
+    splashScreenState,
+    setSplashScreenState,
+    isAuthDataReady,
+    setIsLogoHandoffActive,
+  } = useContext(SplashScreenStateContext);
   const [lastVisitedPath] = useOnyx(ONYXKEYS.LAST_VISITED_PATH);
   const [lastRoute] = useOnyx(ONYXKEYS.LAST_ROUTE);
   const [loadingText] = useOnyx(ONYXKEYS.APP_LOADING_TEXT);
@@ -196,7 +199,12 @@ function Kiroku() {
   // condition can't pin the splash forever.
   const onSplashHide = useCallback(() => {
     setSplashScreenState(CONST.BOOT_SPLASH_STATE.HIDDEN);
-  }, [setSplashScreenState]);
+    // The logo handoff (if any) is finished once the splash is hidden. Clear
+    // the flag so a later logout remount of InitialScreen plays its assembly
+    // entrance again — the InitialScreen logo that just received the handoff is
+    // already latched-settled, so it ignores the change.
+    setIsLogoHandoffActive(false);
+  }, [setSplashScreenState, setIsLogoHandoffActive]);
 
   useLayoutEffect(() => {
     // Initialize this client as being an active client

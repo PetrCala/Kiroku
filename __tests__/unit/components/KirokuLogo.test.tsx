@@ -270,4 +270,20 @@ describe('AnimatedKirokuLogoSvg', () => {
       reanimatedMock.setReduceMotion(false);
     }
   });
+
+  it('renders the full mark when handed off (entrance skipped)', () => {
+    // On the splash → logo handoff the entrance is suppressed and the settled
+    // mark renders underneath the flying splash logo.
+    const {toJSON} = render(
+      <AnimatedKirokuLogoSvg
+        fill="#000000"
+        liquidColor="#F5C400"
+        environment={CONST.ENVIRONMENT.PROD}
+        shouldStart={false}
+        isHandoff
+      />,
+    );
+    const ds = collectProp(toJSON() as RenderedNode, 'd');
+    EXPECTED_SHAPES.forEach(d => expect(ds).toContain(d));
+  });
 });
