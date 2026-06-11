@@ -990,6 +990,11 @@ export default {
     sending: 'Sending feedback...',
     error: 'There was an error sending your feedback. Please try again.',
   },
+  accountSuspendedScreen: {
+    title: 'Account suspended',
+    body: 'Your account has been suspended for violating our community guidelines. If you think this is a mistake, contact support.',
+    contactSupport: 'Contact support',
+  },
   reportUserScreen: {
     title: 'Report',
     prompt:

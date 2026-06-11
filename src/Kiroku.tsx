@@ -33,8 +33,10 @@ import UnderMaintenanceModal from './components/Modals/UnderMaintenanceModal';
 import UpdateAppModal from './components/UpdateAppModal';
 import ForceUpdateModal from './components/Modals/ForceUpdateModal';
 import VerifyEmailModal from './components/VerifyEmailModal';
+import AccountSuspendedModal from './components/Modals/AccountSuspendedModal';
 import FullScreenLoadingIndicator from './components/FullscreenLoadingIndicator';
 import useNativeAppearanceSync from './hooks/useNativeAppearanceSync';
+import useCurrentUserData from './hooks/useCurrentUserData';
 import colors from './styles/theme/colors';
 import CONST from './CONST';
 
@@ -88,6 +90,12 @@ function Kiroku() {
 
   const {config} = useConfig();
   const [isAuthenticated, setIsAuthenticated] = useState(false);
+  // An admin ban pushes `banned: true` onto the signed-in user's own record
+  // (Kiroku #1238); lock the app out immediately rather than waiting for the
+  // Firebase token to expire.
+  const currentUserData = useCurrentUserData();
+  const isAccountSuspended =
+    isAuthenticated && currentUserData?.banned === true;
   const [authenticationChecked, setAuthenticationChecked] = useState(false);
   const [isUnderMaintenance, setIsUnderMaintenance] = useState<boolean>(false);
   const [updateAvailable, setUpdateAvailable] = useState<boolean>(false);
@@ -325,13 +333,18 @@ function Kiroku() {
             isUnderMaintenance && <UnderMaintenanceModal config={config} />
           )}
 
-          {shouldInit && (
-            <>
-              {shouldShowVerifyEmailModal && <VerifyEmailModal />}
-              {shouldShowUpdateModal && <UpdateAppModal />}
-              {/* // TODO show shared session invites here */}
-            </>
-          )}
+          {shouldInit &&
+            (isAccountSuspended ? (
+              // A suspended account supersedes every other gate — the only
+              // affordance is sign-out.
+              <AccountSuspendedModal />
+            ) : (
+              <>
+                {shouldShowVerifyEmailModal && <VerifyEmailModal />}
+                {shouldShowUpdateModal && <UpdateAppModal />}
+                {/* // TODO show shared session invites here */}
+              </>
+            ))}
 
           <NavigationRoot
             onReady={setNavigationReady}

@@ -994,6 +994,11 @@ export default {
     sending: 'Odesílám zpětnou vazbu…',
     error: 'Došlo k chybě při odesílání zpětné vazby. Zkuste to prosím znovu.',
   },
+  accountSuspendedScreen: {
+    title: 'Účet pozastaven',
+    body: 'Váš účet byl pozastaven kvůli porušení našich pravidel komunity. Pokud si myslíte, že jde o omyl, kontaktujte podporu.',
+    contactSupport: 'Kontaktovat podporu',
+  },
   manageAccountScreen: {
     title: 'Správa účtu',
     dangerZone: {
