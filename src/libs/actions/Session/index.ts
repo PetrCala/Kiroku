@@ -689,6 +689,25 @@ function cleanupSession() {
   // `isLoadingApp === false` as "this auth session's bootstrap completed", so a
   // leftover `false` must not carry into the next sign-in on this device.
   Onyx.set(ONYXKEYS.IS_LOADING_APP, null);
+  // Drop ALL user records on sign-out, same rationale as the cached-sessions
+  // clear above but more critical: the onboarding/terms gates read
+  // `USER_DATA_LIST[uid]` the moment the next session's bootstrap completes,
+  // and a stale entry from a previous session (e.g. a poisoned or
+  // mid-onboarding record) re-routes an already-onboarded user back into the
+  // one-way onboarding flow (2026-06-11 field repro). Friends' records are
+  // refetched by the next session's app/open + friend reads.
+  Onyx.set(ONYXKEYS.USER_DATA_LIST, null);
+  // The server's update sequence (lastUpdateID) is PER USER, but this client
+  // key is global: after switching from a high-counter account to a
+  // low-counter one, every update for the new account compares as "older than
+  // current state" and its onyxData is silently skipped (only OpenApp
+  // survives, via its explicit exemption in OnyxUpdates.apply). Reset on
+  // sign-out so the next account starts from its own baseline.
+  Onyx.set(ONYXKEYS.ONYX_UPDATES_LAST_UPDATE_ID_APPLIED_TO_CLIENT, null);
+  // Per-account onboarding/terms mirrors written by app/open — must not leak
+  // into the next account's session on this device.
+  Onyx.set(ONYXKEYS.NVP_ONBOARDING, null);
+  Onyx.set(ONYXKEYS.NVP_TERMS_ACCEPTED_VERSION, null);
   clearCache().then(() => {
     Log.info('Cleared all cache data', true, {}, true);
   });
