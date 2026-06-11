@@ -186,6 +186,20 @@ function getOnyxDataForOpenOrReconnect(isOpenApp = false): OnyxData {
 }
 
 /**
+ * Reset `IS_LOADING_APP` on cold launch. The key is persisted, so without this
+ * a `false` from a PREVIOUS session survives the restart, and the onboarding /
+ * terms readiness gates (which treat `isLoadingApp === false` as "THIS
+ * session's OpenApp bootstrap finished") open before `openApp` has even been
+ * dispatched — re-exposing the partial-hydration window those gates exist to
+ * close. Can't go in `initialKeyStates`: Onyx drops `null` defaults
+ * (shouldRemoveNestedNulls), so the persisted value would survive hydration.
+ * `Onyx.merge` clears it; called from `setup` before the React tree mounts.
+ */
+function resetIsLoadingAppForColdLaunch(): void {
+  Onyx.merge(ONYXKEYS.IS_LOADING_APP, null);
+}
+
+/**
  * Fetches data needed for app initialization
  */
 function openApp() {
@@ -562,6 +576,7 @@ export {
   redirectThirdPartyDesktopSignIn,
   isReadyToOpenApp,
   openApp,
+  resetIsLoadingAppForColdLaunch,
   reconnectApp,
   confirmReadyToOpenApp,
   handleRestrictedEvent,

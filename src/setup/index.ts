@@ -1,5 +1,6 @@
 import {I18nManager} from 'react-native';
 import Onyx from 'react-native-onyx';
+import * as App from '@userActions/App';
 import * as Calendar from '@userActions/Calendar';
 import * as Device from '@userActions/Device';
 import * as Subscriptions from '@userActions/Subscriptions';
@@ -61,6 +62,12 @@ export default function () {
   // which clears the persisted value; running here (before the React tree mounts)
   // clears it before any screen subscribes, so there's no month flip.
   Calendar.resetCalendarStateForColdLaunch();
+
+  // Reset the OpenApp bootstrap flag for the same reason: it is persisted, and
+  // the onboarding/terms readiness gates read `isLoadingApp === false` as
+  // "this session's bootstrap completed". A stale `false` from a previous
+  // session would open those gates before `openApp` runs.
+  App.resetIsLoadingAppForColdLaunch();
 
   Device.setDeviceID();
 

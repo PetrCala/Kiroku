@@ -1,8 +1,11 @@
-import {useMemo} from 'react';
+import {useEffect, useMemo} from 'react';
+import {Alert} from 'react-native';
 import {useOnyx} from 'react-native-onyx';
 import {useConfig} from '@context/global/ConfigContext';
 import {useFirebase} from '@context/global/FirebaseContext';
 import useCurrentUserData from '@hooks/useCurrentUserData';
+import * as Environment from '@libs/Environment/Environment';
+import Log from '@libs/Log';
 import {
   getOnboardingLastVisitedPath,
   hasAcceptedCurrentTerms,
@@ -43,7 +46,7 @@ function useOnboardingFlow(): OnboardingFlowState {
   const currentUserData = useCurrentUserData();
   const userData = isEmptyObject(currentUserData) ? undefined : currentUserData;
 
-  return useMemo<OnboardingFlowState>(() => {
+  const flowState = useMemo<OnboardingFlowState>(() => {
     const skipOnboarding = CONFIG.SKIP_ONBOARDING;
     const isAuthenticated = !!userID;
     // Defer the decision until the OpenApp bootstrap has fully completed
@@ -98,6 +101,53 @@ function useOnboardingFlow(): OnboardingFlowState {
       skipOnboarding,
     };
   }, [userID, userData, config, isLoadingApp]);
+
+  // TODO: temporary diagnostics for the onboarding re-prompt investigation —
+  // remove once the firing mechanism is confirmed. Captures the exact decision
+  // snapshot whenever the flow decides to fire, so a spurious re-prompt on a
+  // device immediately shows WHICH input was poisonous (stale isLoadingApp,
+  // partial onboarding node, clobbered username_chosen, missing terms, ...).
+  const usernameChosen = userData?.profile?.username_chosen;
+  const hasOnboardingNode = userData?.onboarding !== undefined;
+  const completedAt = userData?.onboarding?.completed_at;
+  const agreedToTermsAt = userData?.agreed_to_terms_at;
+  const termsLastUpdated = config?.terms_last_updated;
+  useEffect(() => {
+    if (!flowState.shouldFireOnboarding) {
+      return;
+    }
+    const snapshot = {
+      isLoadingApp,
+      route: flowState.currentOnboardingRoute,
+      resumePath: flowState.lastVisitedPath,
+      usernameChosen,
+      hasOnboardingNode,
+      completedAt,
+      agreedToTermsAt,
+      termsLastUpdated,
+    };
+    Log.info('[useOnboardingFlow] onboarding fired', false, snapshot);
+    // On dev builds the Log line lands in the Metro console, but ad-hoc/staging
+    // builds strip `console.debug` (babel transform-remove-console) and have no
+    // in-app log viewer, so surface the snapshot as an alert there instead.
+    // Never on production: a genuine new user must not see a debug popup.
+    Environment.isProduction().then(isProd => {
+      if (isProd) {
+        return;
+      }
+      Alert.alert('Onboarding diagnostics', JSON.stringify(snapshot, null, 2));
+    });
+  }, [
+    flowState,
+    isLoadingApp,
+    usernameChosen,
+    hasOnboardingNode,
+    completedAt,
+    agreedToTermsAt,
+    termsLastUpdated,
+  ]);
+
+  return flowState;
 }
 
 export default useOnboardingFlow;
