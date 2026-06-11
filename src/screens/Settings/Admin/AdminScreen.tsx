@@ -4,6 +4,8 @@ import type {StackScreenProps} from '@react-navigation/stack';
 import type {SettingsNavigatorParamList} from '@libs/Navigation/types';
 import type SCREENS from '@src/SCREENS';
 import Navigation from '@libs/Navigation/Navigation';
+import getPlatform from '@libs/getPlatform';
+import CONST from '@src/CONST';
 import ROUTES from '@src/ROUTES';
 import type {TranslationPaths} from '@src/languages/types';
 import type {Route} from '@src/ROUTES';
@@ -111,8 +113,13 @@ function AdminScreen({route}: AdminScreenProps) {
     [generalMenuItemsData, getMenuItemsSection],
   );
 
-  // Make the system back press toggle the go back handler
+  // Make the system back press toggle the go back handler. BackHandler is a
+  // native-only API; on web it warns and no-ops, so skip it (web uses the
+  // browser back button / Escape instead).
   useEffect(() => {
+    if (getPlatform() === CONST.PLATFORM.WEB) {
+      return;
+    }
     const backAction = () => {
       Navigation.goBack();
       return true; // Prevent the event from bubbling up and being handled by the default handler

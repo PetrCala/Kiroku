@@ -12,6 +12,8 @@ import useCurrentUserData from '@hooks/useCurrentUserData';
 import useLocalize from '@hooks/useLocalize';
 import useThemeStyles from '@hooks/useThemeStyles';
 import Navigation from '@libs/Navigation/Navigation';
+import getPlatform from '@libs/getPlatform';
+import CONST from '@src/CONST';
 import {unblockUser} from '@userActions/Block';
 import ONYXKEYS from '@src/ONYXKEYS';
 
@@ -54,6 +56,10 @@ function BlockedUsersScreen() {
   // Match PrivacyScreen: route the Android hardware back press through the
   // app's navigation stack rather than the OS default.
   useEffect(() => {
+    // BackHandler is native-only; on web it warns and no-ops, so skip it.
+    if (getPlatform() === CONST.PLATFORM.WEB) {
+      return;
+    }
     const backAction = () => {
       Navigation.goBack();
       return true;

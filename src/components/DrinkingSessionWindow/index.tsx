@@ -8,6 +8,7 @@ import type {DrinkingSession} from '@src/types/onyx';
 import DrinkTypesView from '@components/DrinkTypesView';
 import SessionDetailsWindow from '@components/SessionDetailsWindow';
 import FillerView from '@components/FillerView';
+import getPlatform from '@libs/getPlatform';
 import CONST from '@src/CONST';
 import useCurrentUserPreferences from '@hooks/useCurrentUserPreferences';
 import useLocalize from '@hooks/useLocalize';
@@ -169,8 +170,13 @@ function DrinkingSessionWindow({
     setSessionColor(newSessionColor);
   }, [session?.drinks, preferences, totalUnits]);
 
-  // Make the system back press toggle the go back handler
+  // Make the system back press toggle the go back handler. BackHandler is a
+  // native-only API; on web it warns and no-ops, so skip it (web uses the
+  // browser back button / Escape instead).
   useEffect(() => {
+    if (getPlatform() === CONST.PLATFORM.WEB) {
+      return;
+    }
     const backAction = () => {
       handleBackPress();
       return true; // Prevent the event from bubbling up and being handled by the default handler
