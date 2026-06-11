@@ -558,5 +558,8 @@ export default defineConfig([
     'ios/Pods/**',
     'ios/build/**',
     'web-build/**',
+    // Playwright web E2E suite -- typed against its own e2e/web/tsconfig.json,
+    // follows Playwright's own conventions rather than the app's lint rules.
+    'e2e/**',
   ]),
 ]);
