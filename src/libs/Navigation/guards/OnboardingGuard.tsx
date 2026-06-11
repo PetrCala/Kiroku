@@ -6,6 +6,20 @@ import type {Route} from '@src/ROUTES';
 
 const ONBOARDING_ROUTE_PREFIX = 'onboarding/';
 
+/**
+ * How long a fire decision must stay stable before the guard commits the
+ * navigate. The onboarding readiness gate reads two Onyx keys that commit
+ * independently inside one `Onyx.update` batch (`Promise.all` over per-key
+ * operations — no cross-key ordering): `IS_LOADING_APP` (a tiny merge) can
+ * notify subscribers a beat before the `USER_DATA_LIST` record (a large merge)
+ * lands. A render in that beat sees "bootstrap done" with a stale record and
+ * decides to fire. The commits race on the order of milliseconds; one settle
+ * window absorbs them, and the effect cleanup cancels the pending navigate
+ * when the late-landing record flips the decision back. A genuine new user
+ * just sees the onboarding screen this much later.
+ */
+const NAVIGATE_SETTLE_MS = 500;
+
 function isOnboardingPath(path: string | undefined): path is string {
   return !!path && path.startsWith(ONBOARDING_ROUTE_PREFIX);
 }
@@ -55,26 +69,39 @@ function OnboardingGuard() {
     }
 
     let stale = false;
+    let settleTimer: ReturnType<typeof setTimeout> | undefined;
     const target = pickResumeRoute(currentOnboardingRoute, lastVisitedPath);
 
     Navigation.isNavigationReady().then(() => {
       if (stale) {
         return;
       }
-      const active = Navigation.getActiveRoute().replace(/^\//, '');
-      if (isOnboardingPath(active)) {
-        return;
-      }
-      if (lastTargetRef.current === target) {
-        return;
-      }
-      lastTargetRef.current = target;
-      Log.info(`[OnboardingGuard] Redirecting to ${target}`);
-      Navigation.navigate(target);
+      // Don't navigate on the first render that decided to fire: hold the
+      // decision through one settle window so a fire computed from a
+      // mid-commit Onyx state (see NAVIGATE_SETTLE_MS) is cancelled by the
+      // cleanup instead of stranding the user in the one-way flow.
+      settleTimer = setTimeout(() => {
+        if (stale) {
+          return;
+        }
+        const active = Navigation.getActiveRoute().replace(/^\//, '');
+        if (isOnboardingPath(active)) {
+          return;
+        }
+        if (lastTargetRef.current === target) {
+          return;
+        }
+        lastTargetRef.current = target;
+        Log.info(`[OnboardingGuard] Redirecting to ${target}`);
+        Navigation.navigate(target);
+      }, NAVIGATE_SETTLE_MS);
     });
 
     return () => {
       stale = true;
+      if (settleTimer !== undefined) {
+        clearTimeout(settleTimer);
+      }
     };
   }, [isReady, shouldFireOnboarding, currentOnboardingRoute, lastVisitedPath]);
 
@@ -84,4 +111,4 @@ function OnboardingGuard() {
 OnboardingGuard.displayName = 'OnboardingGuard';
 
 export default OnboardingGuard;
-export {ONBOARDING_ROUTE_PREFIX, isOnboardingPath};
+export {ONBOARDING_ROUTE_PREFIX, isOnboardingPath, NAVIGATE_SETTLE_MS};

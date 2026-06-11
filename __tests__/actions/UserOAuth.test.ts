@@ -13,6 +13,7 @@ import * as API from '@libs/API';
 import {WRITE_COMMANDS} from '@libs/API/types';
 import HttpsError from '@libs/Errors/HttpsError';
 import ONYXKEYS from '@src/ONYXKEYS';
+import type Response from '@src/types/onyx/Response';
 import * as Session from '@userActions/Session';
 import * as UserActions from '@userActions/User';
 
@@ -39,6 +40,12 @@ jest.mock('@libs/Firebase/FirebaseApp', () => ({
 // can't transform; stub them so importing the action under test doesn't load them.
 jest.mock('@libs/OAuthCredential', () => ({getOAuthCredential: jest.fn()}));
 jest.mock('@userActions/Session', () => ({clearSignInData: jest.fn()}));
+
+// The temporary non-200-resolution diagnostics check the environment before
+// showing an alert; report "production" so no Alert fires during tests.
+jest.mock('@libs/Environment/Environment', () => ({
+  isProduction: jest.fn(() => Promise.resolve(true)),
+}));
 
 // Log schedules a periodic flush timer at import that fires after teardown.
 jest.mock('@libs/Log', () => ({
@@ -123,7 +130,7 @@ describe('signInWithOAuth', () => {
   });
 
   it('provisions and sets the display name for a brand-new account (no optimistic data)', async () => {
-    mockedProvision.mockResolvedValue(undefined);
+    mockedProvision.mockResolvedValue({jsonCode: 200} as Response);
 
     await UserActions.signInWithOAuth(fakeAuth, fakeCredential, 'Jane Doe');
 
@@ -148,7 +155,7 @@ describe('signInWithOAuth', () => {
   });
 
   it('seeds the default user data into Onyx for a brand-new account so the redirect is deterministic', async () => {
-    mockedProvision.mockResolvedValue(undefined);
+    mockedProvision.mockResolvedValue({jsonCode: 200} as Response);
 
     await UserActions.signInWithOAuth(fakeAuth, fakeCredential, 'Jane Doe');
 
@@ -185,6 +192,39 @@ describe('signInWithOAuth', () => {
     // Their real Onyx data must NOT be clobbered with brand-new defaults.
     expect(mockedOnyxUpdate).not.toHaveBeenCalled();
     // Sign-in still proceeds.
+    expect(mockedClearSignInData).toHaveBeenCalledTimes(1);
+  });
+
+  it('does NOT seed when provisioning resolves with a non-200 envelope (swallowed-rejection regression)', async () => {
+    // Field repro (2026-06-11, dev): an already-provisioned account was seeded
+    // with new-account defaults after the server returned a real HTTP 409 —
+    // i.e. some layer resolved the rejection. Resolution alone must therefore
+    // never trigger the seed; only the server's positive `jsonCode: 200`
+    // creation signal may.
+    mockedProvision.mockResolvedValue({jsonCode: 409} as Response);
+
+    await expect(
+      UserActions.signInWithOAuth(fakeAuth, fakeCredential, 'Jane Doe'),
+    ).resolves.toBeUndefined();
+
+    expect(mockedOnyxUpdate).not.toHaveBeenCalled();
+    expect(mockedUpdateProfile).not.toHaveBeenCalled();
+    // Sign-in still proceeds — the account exists; this is a returning user.
+    expect(mockedClearSignInData).toHaveBeenCalledTimes(1);
+  });
+
+  it('does NOT seed when provisioning resolves with no envelope at all', async () => {
+    // `makeRequestWithSideEffects` can resolve `undefined` (e.g. the update
+    // was already applied via Pusher). Without the positive creation signal
+    // the seed must be skipped — the Pusher/openApp data is authoritative.
+    mockedProvision.mockResolvedValue(undefined);
+
+    await expect(
+      UserActions.signInWithOAuth(fakeAuth, fakeCredential, 'Jane Doe'),
+    ).resolves.toBeUndefined();
+
+    expect(mockedOnyxUpdate).not.toHaveBeenCalled();
+    expect(mockedUpdateProfile).not.toHaveBeenCalled();
     expect(mockedClearSignInData).toHaveBeenCalledTimes(1);
   });
 
