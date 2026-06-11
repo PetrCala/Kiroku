@@ -19,6 +19,7 @@ import MenuItemGroup from '@components/MenuItemGroup';
 import LocaleUtils from '@libs/LocaleUtils';
 import Section from '@components/Section';
 import MenuItem from '@components/MenuItem';
+import getPlatform from '@libs/getPlatform';
 import CONST from '@src/CONST';
 import type {PaletteId} from '@libs/SessionColorPalettes';
 import {
@@ -180,8 +181,13 @@ function PreferencesScreen({route}: PreferencesScreenProps) {
     [drinksAndUnitsMenuItemsData, getMenuItemsSection],
   );
 
-  // Make the system back press toggle the go back handler
+  // Make the system back press toggle the go back handler. BackHandler is a
+  // native-only API; on web it warns and no-ops, so skip it (web uses the
+  // browser back button / Escape instead).
   useEffect(() => {
+    if (getPlatform() === CONST.PLATFORM.WEB) {
+      return;
+    }
     const backAction = () => {
       Navigation.goBack();
       return true; // Prevent the event from bubbling up and being handled by the default handler

@@ -4,6 +4,8 @@ import {useFirebase} from '@context/global/FirebaseContext';
 import useCurrentUserDataVisibility from '@hooks/useCurrentUserDataVisibility';
 import useCurrentUserPreferences from '@hooks/useCurrentUserPreferences';
 import Navigation from '@libs/Navigation/Navigation';
+import getPlatform from '@libs/getPlatform';
+import CONST from '@src/CONST';
 import ScreenWrapper from '@components/ScreenWrapper';
 import HeaderWithBackButton from '@components/HeaderWithBackButton';
 import useLocalize from '@hooks/useLocalize';
@@ -160,6 +162,10 @@ function PrivacyScreen() {
   // Match PreferencesScreen: the system back press goes back through the
   // app's navigation stack rather than the OS default.
   useEffect(() => {
+    // BackHandler is native-only; on web it warns and no-ops, so skip it.
+    if (getPlatform() === CONST.PLATFORM.WEB) {
+      return;
+    }
     const backAction = () => {
       Navigation.goBack();
       return true;

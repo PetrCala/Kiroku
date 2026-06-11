@@ -13,6 +13,8 @@ import useLocalize from '@hooks/useLocalize';
 import useTheme from '@hooks/useTheme';
 import useThemeStyles from '@hooks/useThemeStyles';
 import Navigation from '@libs/Navigation/Navigation';
+import getPlatform from '@libs/getPlatform';
+import CONST from '@src/CONST';
 import * as Session from '@userActions/Session';
 
 type OnboardingScreenLayoutProps = {
@@ -51,6 +53,10 @@ function OnboardingScreenLayout({
   const [isSigningOut, setIsSigningOut] = useState(false);
 
   useEffect(() => {
+    // BackHandler is native-only; on web it warns and no-ops, so skip it.
+    if (getPlatform() === CONST.PLATFORM.WEB) {
+      return;
+    }
     const backAction = () => {
       if (isFirstScreen) {
         return true;
