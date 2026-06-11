@@ -43,16 +43,25 @@ export class LoginPage {
     // AuthScreen defaults to sign-up mode (submit = "Create account", toggle =
     // "Log in"). The URL param ?mode=logIn should set log-in mode, but if the
     // custom linking layer strips query params, fall back to clicking the toggle.
-    const inSignUpMode = await this.page
-      .getByRole('button', {name: 'Create account'})
+    //
+    // Wait for the form to paint before probing mode — isVisible() called
+    // immediately after goto() can race React's first render and return false,
+    // leaving the form in sign-up mode when credentials are submitted.
+    const createAccountButton = this.page.getByRole('button', {
+      name: 'Create account',
+    });
+    await createAccountButton
+      .or(this.submitButton())
+      .first()
+      .waitFor({state: 'visible', timeout: 15_000});
+
+    const inSignUpMode = await createAccountButton
       .isVisible()
       .catch(() => false);
     if (inSignUpMode) {
       await this.page.getByRole('button', {name: 'Log in'}).click();
       // Wait for the form to flip: "Create account" disappears, submit becomes "Log in".
-      await this.page
-        .getByRole('button', {name: 'Create account'})
-        .waitFor({state: 'hidden', timeout: 5000});
+      await createAccountButton.waitFor({state: 'hidden', timeout: 5000});
     }
 
     await this.emailInput().fill(email);

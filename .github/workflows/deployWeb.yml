@@ -124,6 +124,12 @@ jobs:
       - name: Stage .env.development from staging secret
         run: echo "${{ secrets.STAGING_ENV_FILE }}" > .env.development
 
+      # The Playwright suite signs in with a test account that may not have
+      # completed onboarding. SKIP_ONBOARDING bypasses OnboardingGuard so the
+      # guard never redirects the test session to an unhandled onboarding screen.
+      - name: Enable onboarding bypass for Playwright build
+        run: echo "SKIP_ONBOARDING=true" >> .env.development
+
       - name: Setup Node
         uses: ./.github/actions/composite/setupNode
 
