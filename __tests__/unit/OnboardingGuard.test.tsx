@@ -2,7 +2,9 @@
 
 import {render} from '@testing-library/react-native';
 import React from 'react';
-import OnboardingGuard from '@libs/Navigation/guards/OnboardingGuard';
+import OnboardingGuard, {
+  NAVIGATE_SETTLE_MS,
+} from '@libs/Navigation/guards/OnboardingGuard';
 import useOnboardingFlow from '@hooks/useOnboardingFlow';
 import Navigation from '@libs/Navigation/Navigation';
 import ROUTES from '@src/ROUTES';
@@ -53,11 +55,27 @@ async function flushAsync(): Promise<void> {
   await Promise.resolve();
 }
 
+/**
+ * Run the guard's full navigate pipeline: flush the `isNavigationReady`
+ * continuation (which schedules the settle timer), elapse the settle window,
+ * and flush again so the navigate (if any) has executed.
+ */
+async function elapseSettleWindow(): Promise<void> {
+  await flushAsync();
+  jest.advanceTimersByTime(NAVIGATE_SETTLE_MS);
+  await flushAsync();
+}
+
 describe('OnboardingGuard', () => {
   beforeEach(() => {
+    jest.useFakeTimers();
     jest.clearAllMocks();
     mockedGetActiveRoute.mockReturnValue('/home');
     mockedIsNavigationReady.mockReturnValue(Promise.resolve());
+  });
+
+  afterEach(() => {
+    jest.useRealTimers();
   });
 
   test('navigates to currentOnboardingRoute when fire-ready', async () => {
@@ -67,7 +85,7 @@ describe('OnboardingGuard', () => {
     });
 
     render(<OnboardingGuard />);
-    await flushAsync();
+    await elapseSettleWindow();
 
     expect(mockedNavigate).toHaveBeenCalledWith(ROUTES.ONBOARDING_TERMS);
   });
@@ -80,7 +98,7 @@ describe('OnboardingGuard', () => {
     });
 
     render(<OnboardingGuard />);
-    await flushAsync();
+    await elapseSettleWindow();
 
     expect(mockedNavigate).toHaveBeenCalledWith(ROUTES.ONBOARDING_DISPLAY_NAME);
   });
@@ -93,7 +111,7 @@ describe('OnboardingGuard', () => {
     });
 
     render(<OnboardingGuard />);
-    await flushAsync();
+    await elapseSettleWindow();
 
     expect(mockedNavigate).toHaveBeenCalledWith(ROUTES.ONBOARDING_DISPLAY_NAME);
   });
@@ -102,7 +120,7 @@ describe('OnboardingGuard', () => {
     setFlow({shouldFireOnboarding: false, currentOnboardingRoute: null});
 
     render(<OnboardingGuard />);
-    await flushAsync();
+    await elapseSettleWindow();
 
     expect(mockedNavigate).not.toHaveBeenCalled();
   });
@@ -115,7 +133,7 @@ describe('OnboardingGuard', () => {
     });
 
     render(<OnboardingGuard />);
-    await flushAsync();
+    await elapseSettleWindow();
 
     expect(mockedNavigate).not.toHaveBeenCalled();
   });
@@ -128,7 +146,7 @@ describe('OnboardingGuard', () => {
     });
 
     render(<OnboardingGuard />);
-    await flushAsync();
+    await elapseSettleWindow();
 
     expect(mockedNavigate).not.toHaveBeenCalled();
   });
@@ -157,6 +175,29 @@ describe('OnboardingGuard', () => {
     rerender(<OnboardingGuard />);
 
     resolveReady();
+    await elapseSettleWindow();
+
+    expect(mockedNavigate).not.toHaveBeenCalled();
+  });
+
+  test('cancels a pending navigate when the flow flips to false during the settle window', async () => {
+    setFlow({
+      shouldFireOnboarding: true,
+      currentOnboardingRoute: ROUTES.ONBOARDING_TERMS,
+    });
+
+    const {rerender} = render(<OnboardingGuard />);
+    // The isNavigationReady continuation runs and schedules the settle timer.
+    await flushAsync();
+    jest.advanceTimersByTime(NAVIGATE_SETTLE_MS - 1);
+
+    // The Onyx commit race: `IS_LOADING_APP=false` notified first and produced
+    // a transient fire decision; the full user record commits a beat later and
+    // flips the flow back. The pending navigate must be cancelled.
+    setFlow({shouldFireOnboarding: false, currentOnboardingRoute: null});
+    rerender(<OnboardingGuard />);
+
+    jest.advanceTimersByTime(NAVIGATE_SETTLE_MS + 1);
     await flushAsync();
 
     expect(mockedNavigate).not.toHaveBeenCalled();
@@ -169,9 +210,9 @@ describe('OnboardingGuard', () => {
     });
 
     const {rerender} = render(<OnboardingGuard />);
-    await flushAsync();
+    await elapseSettleWindow();
     rerender(<OnboardingGuard />);
-    await flushAsync();
+    await elapseSettleWindow();
 
     expect(mockedNavigate).toHaveBeenCalledTimes(1);
   });

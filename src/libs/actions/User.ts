@@ -24,7 +24,9 @@ import {
   updateProfile,
   verifyBeforeUpdateEmail,
 } from 'firebase/auth';
+import {Alert} from 'react-native';
 import {getOAuthCredential} from '@libs/OAuthCredential';
+import * as Environment from '@libs/Environment/Environment';
 import * as Localize from '@libs/Localize';
 import type {SelectedTimezone, Timezone} from '@src/types/onyx/UserData';
 import {validateAppVersion} from '@libs/Validation';
@@ -501,22 +503,51 @@ async function signInWithOAuth(
     // Speculative: optimistic Onyx defaults are intentionally NOT applied (see
     // `provisionUser`) because a returning user reaches this on every sign-in
     // and the defaults would briefly overwrite their real data with no rollback.
-    await provisionUser(user.uid, profileData, {applyOptimisticData: false});
-    // Brand-new account only — a `409` jumps to the catch and skips everything
-    // below, since a returning user already has their data and display name.
-    //
-    // Seed the default user data into Onyx now that the `200` has confirmed a
-    // genuinely new account. Without a local write the post-auth OnboardingGuard
-    // has no `userData` to gate on (its readiness check is
-    // `isLoadingApp === false && userData !== undefined`) and depends entirely on
-    // the server echoing `onyxData` winning a race against `openApp` — on native
-    // that race is routinely lost, leaving the new account stranded on the auth
-    // screen instead of being redirected into onboarding. This mirrors the
-    // synchronous optimistic write the email/password signup already does, making
-    // the OAuth redirect deterministic. The returning-user path must never reach
-    // here (it would clobber their real prefs/theme); the 409 catch guarantees it.
-    await Onyx.update(getNewUserOnyxData(user.uid, profileData));
-    await updateProfile(user, {displayName: name});
+    const response = await provisionUser(user.uid, profileData, {
+      applyOptimisticData: false,
+    });
+    // The seed below must run for a CONFIRMED brand-new account ONLY — for a
+    // returning user it would shadow their real record with new-account
+    // defaults (`username_chosen: false`, no terms/onboarding stamps) and
+    // mis-route them into onboarding. The `409` rejection jumping to the catch
+    // is the primary gate, but resolution alone is NOT proof of creation: a
+    // field repro (2026-06-11, dev) showed an already-provisioned account
+    // getting seeded after the server returned a real HTTP 409, i.e. some
+    // layer turned the rejection into a resolution. So require the positive
+    // creation signal — the server's own `jsonCode === 200` envelope — before
+    // seeding, and treat anything else as "already provisioned".
+    const jsonCode = (response as Response | undefined)?.jsonCode;
+    if (jsonCode === 200) {
+      // Seed the default user data into Onyx now that the `200` has confirmed a
+      // genuinely new account. Without a local write the post-auth OnboardingGuard
+      // has no `userData` to gate on (its readiness check is
+      // `isLoadingApp === false && userData !== undefined`) and depends entirely on
+      // the server echoing `onyxData` winning a race against `openApp` — on native
+      // that race is routinely lost, leaving the new account stranded on the auth
+      // screen instead of being redirected into onboarding. This mirrors the
+      // synchronous optimistic write the email/password signup already does, making
+      // the OAuth redirect deterministic.
+      await Onyx.update(getNewUserOnyxData(user.uid, profileData));
+      await updateProfile(user, {displayName: name});
+    } else {
+      // TODO: temporary diagnostics for the onboarding re-prompt investigation —
+      // this branch existing AT ALL means a middleware/transport layer resolved
+      // a non-2xx provisioning response instead of rejecting it. Capture the
+      // envelope so the mechanism can finally be pinned, then remove the alert.
+      Log.alert(
+        '[signInWithOAuth] provisioning RESOLVED with a non-200 envelope; treating as returning account',
+        {jsonCode: String(jsonCode)},
+      );
+      Environment.isProduction().then(isProd => {
+        if (isProd) {
+          return;
+        }
+        Alert.alert(
+          'OAuth diagnostics',
+          `provisioning resolved (not rejected) with jsonCode=${String(jsonCode)}. Seed skipped — this confirms the swallowed-rejection mechanism.`,
+        );
+      });
+    }
   } catch (error) {
     // `409 Conflict` = the account already exists (returning user). That is the
     // expected replay outcome — proceed to sign-in. Everything else is a real
