@@ -2,14 +2,8 @@ import type {Page} from '@playwright/test';
 
 /**
  * Drive the app from just-after-sign-in (or a fresh authenticated page load) to
- * the Home screen, clearing whatever sits in between:
+ * the Home screen, clearing the dev-build gates that can sit in between:
  *
- *   - the **stale `/auth` URL**. Sign-in happens on the public `/auth` route;
- *     once Firebase auth flips, the navigator swaps to the authenticated stack,
- *     which has *no* `/auth` route, so the app renders NotFound (not Home) until
- *     something navigates. `homePage.goto()` sidesteps this by loading `/`
- *     directly, but a bare `signIn()` leaves the URL on `/auth`. So if Home
- *     hasn't appeared and no gate is up, nudge the app to its root once.
  *   - the **email-verification** screen. Dev/staging/adhoc builds expose a
  *     "Skip verification (dev only)" action; for an unverified account this gate
  *     is re-shown on every fresh load, so authenticated navigations need to
@@ -18,16 +12,17 @@ import type {Page} from '@playwright/test';
  *     This is the post-onboarding `TermsReConsentGuard`, which `SKIP_ONBOARDING`
  *     does *not* bypass, so it can appear even on the E2E build.
  *
- * All of these are best-effort: an already-verified account that has accepted
- * the current terms and is already on Home exits on the first check. The suite
- * runs against the dev/staging build (`npm run web`, preview channel), where the
- * skip action exists; on a production build it would not, and a verified account
- * would not see the gate at all.
+ * Both are best-effort: an already-verified account that has accepted the
+ * current terms goes straight to Home and the loop exits on the first check.
+ * The suite runs against the dev/staging build (`npm run web`, preview channel),
+ * where the skip action exists; on a production build it would not, and a
+ * verified account would not see the gate at all.
  *
  * If Home never appears, dump the page URL + ARIA snapshot to stdout before
  * failing. CI artifacts (screenshots/traces) are not always reachable, so the
  * job log is the only place this state is guaranteed to surface — the snapshot
- * names whatever screen we got stuck on.
+ * names whatever screen we got stuck on (e.g. a sign-in form still showing a
+ * server/validation error means authentication never actually completed).
  */
 export async function reachAuthenticatedApp(page: Page): Promise<void> {
   const home = page.getByTestId('Home Screen');
@@ -37,14 +32,8 @@ export async function reachAuthenticatedApp(page: Page): Promise<void> {
   const confirmTerms = page.getByRole('button', {name: 'Confirm'});
   const agreeToTerms = page.getByRole('checkbox').first();
 
-  // Only nudge to the app root once: a repeated reload loop would just burn the
-  // fixture timeout if something other than the stale URL is keeping us off Home.
-  let didNavigateToRoot = false;
-
-  // Several gates can stack between sign-in and Home; clear whatever is up until
-  // Home renders (or we run out of attempts and dump + assert below). Budget the
-  // loop well under the test timeout so the diagnostics always get to print even
-  // on the slow sign-in path (two ~8MB CanvasKit boots: /auth then the root).
+  // A couple of gates can stack between sign-in and Home; clear whatever is up
+  // until Home renders (or we run out of attempts and dump + assert below).
   for (let attempt = 0; attempt < 8; attempt += 1) {
     if (await home.isVisible().catch(() => false)) {
       return;
@@ -57,12 +46,6 @@ export async function reachAuthenticatedApp(page: Page): Promise<void> {
       await confirmTerms.click().catch(() => {});
     } else if (await skipVerification.isVisible().catch(() => false)) {
       await skipVerification.click().catch(() => {});
-    } else if (!didNavigateToRoot) {
-      // No gate is up but Home still isn't here — most likely the URL is stuck
-      // on `/auth` (NotFound under the authenticated stack). Resolve to the Home
-      // tab by loading the app root.
-      didNavigateToRoot = true;
-      await page.goto('/').catch(() => {});
     }
 
     // Wait for the next screen (Home or another gate) to mount before retrying.
@@ -70,7 +53,7 @@ export async function reachAuthenticatedApp(page: Page): Promise<void> {
       .or(skipVerification)
       .or(confirmTerms)
       .first()
-      .waitFor({state: 'visible', timeout: 6000})
+      .waitFor({state: 'visible', timeout: 8000})
       .catch(() => {});
   }
 
@@ -86,12 +69,23 @@ export async function reachAuthenticatedApp(page: Page): Promise<void> {
 /**
  * Log where the app got stuck. The ARIA snapshot lists the roles + accessible
  * names of everything on screen, which is enough to tell a blocking modal
- * (verify-email, force-update, terms) apart from a NotFound / loading screen.
+ * (verify-email, force-update, terms) apart from a still-logged-out sign-in
+ * form (which means authentication never completed) or a NotFound / loading
+ * screen.
  */
 async function dumpStuckPageState(page: Page): Promise<void> {
   /* eslint-disable no-console */
   try {
     console.log(`[reachAuthenticatedApp] stuck — URL: ${page.url()}`);
+    // If we're still on the sign-in form, the email field's value tells us
+    // whether Playwright's fill() actually reached the FormProvider-backed
+    // input (empty -> fill never registered -> validation blocked submit;
+    // populated -> the failure is credentials / a server error instead).
+    const emailValue = await page
+      .locator('input[aria-label="Email"]')
+      .inputValue()
+      .catch(() => '<no email input on page>');
+    console.log(`[reachAuthenticatedApp] email input value: "${emailValue}"`);
     const snapshot = await page
       .locator('body')
       .ariaSnapshot()
