@@ -96,22 +96,37 @@ function useLazyMarkedDates(
 
   const [userDataList] = useOnyx(ONYXKEYS.USER_DATA_LIST);
 
-  // Cap the effective scroll depth at the user's earliest tracked month. The
+  // Whether the viewed user has a *canonical* earliest-tracked floor. It is
+  // only ever written for the signed-in user (the `earliest_session_at` backfill
+  // / session-write path keys it on the authoring uid); no friend read carries
+  // it. So this is `true` for self and `false` for friends — the distinction the
+  // capping below and the orchestrator's load-older guards both turn on.
+  const persistedEarliest = userDataList?.[userID]?.earliest_session_at;
+  const hasPersistedFloor = persistedEarliest !== undefined;
+
+  // Cap the effective scroll depth at the user's earliest tracked month — but
+  // ONLY when we know the canonical floor (self). The
   // `SESSIONS_CALENDAR_MONTHS_BY_USER_ID` lever is shared with the Statistics
   // fetch-window widener (`StatsContextProvider`), which a comparison/All
   // range can push a full span *before* the first session — inflating the
   // persisted depth well past the user's data. There are no sessions (and no
   // tracking) before `earliest_session_at`, so building day-keys / week-rows
   // there is pure waste and would paint "sober day" dots on untracked days.
-  // Prefer the canonical backfilled floor, falling back to the earliest loaded
-  // session for friend profiles and pre-backfill accounts.
+  //
+  // For a FRIEND there is no canonical floor: `sessions` is the server-windowed
+  // slice, so its earliest entry is the edge of what we've fetched, NOT the
+  // friend's real first session. Capping to it would clamp the build to the
+  // current window and freeze scroll-back at the window edge (Kiroku #1197).
+  // So when the floor is unknown we don't cap — `loadUpTo` only ever deepens as
+  // far as the user actually scrolls, and the fetch hook stops returning earlier
+  // sessions once the friend's history is exhausted, so the build can't run away
+  // into empty pre-tracking months.
   const earliestTracked = useMemo<Date | null>(() => {
-    const persistedEarliest = userDataList?.[userID]?.earliest_session_at;
-    if (persistedEarliest !== undefined) {
+    if (hasPersistedFloor) {
       return new Date(persistedEarliest);
     }
-    return DSUtils.getUserTrackingStartDate(sessions);
-  }, [userDataList, userID, sessions]);
+    return null;
+  }, [hasPersistedFloor, persistedEarliest]);
 
   const cappedMonths = useMemo(() => {
     if (!earliestTracked) {
@@ -172,6 +187,48 @@ function useLazyMarkedDates(
         loadedFromDate: start,
       };
     }, [sessions, cappedMonths, defaultTimezone]);
+
+  // Whether scrolling back can still reveal older data. Only meaningful when the
+  // viewed user has NO canonical floor (a friend): `sessions` is the windowed
+  // slice, so we can't derive the true first session from it. Instead we ask
+  // "did the current window actually reach the bottom of the friend's history?"
+  //
+  //  - No sessions at all (empty / privacy-denied / evicted #786 read): there is
+  //    nothing to widen into. Exhausted — so the orchestrator stops, no infinite
+  //    widen loop and a clean empty calendar.
+  //  - Earliest loaded session's month is STRICTLY LATER than the fetch floor
+  //    month: the server returned every session with `start_time >= fetch floor`
+  //    and the earliest one still sits above that floor, so there is provably
+  //    nothing older. Exhausted — the earliest loaded session IS the real first.
+  //  - Earliest loaded session sits IN the fetch floor month: the window may be
+  //    clipping older sessions at the edge, so keep widening (not exhausted).
+  //
+  // The comparison is against the FETCH floor (`useDrinkingSessionsFetch` reads
+  // `start_time >= startOfMonth(subMonths(now, max(SESSIONS_INITIAL_FETCH_MONTHS,
+  // monthsLoaded)))`), NOT `loadedFromDate`: the latter is `startOfMonth − 1 day`,
+  // which lands in the previous month and would report exhaustion a month early.
+  // For self this is unused — the persisted floor drives the guards directly.
+  // Plain derivation: React Compiler memoizes it from the captured reads
+  // (`hasPersistedFloor`, `sessions`, `loadedMonths`), so no manual `useMemo`.
+  let isWindowExhausted = false;
+  if (!hasPersistedFloor) {
+    // Self: the canonical floor governs; this signal isn't consulted, so it
+    // stays false above.
+    const earliestLoaded = DSUtils.getUserTrackingStartDate(sessions);
+    if (!earliestLoaded) {
+      isWindowExhausted = true;
+    } else {
+      const fetchFloorMonths = Math.max(
+        CONST.SESSIONS_INITIAL_FETCH_MONTHS,
+        loadedMonths,
+      );
+      const fetchFloorMonth = startOfMonth(
+        subMonths(new Date(), fetchFloorMonths),
+      );
+      isWindowExhausted =
+        startOfMonth(earliestLoaded).getTime() > fetchFloorMonth.getTime();
+    }
+  }
 
   // Resolve which palette to render with. When the viewer has enabled
   // `use_own_palette_for_others`, this swaps the viewed user's palette for the
@@ -369,6 +426,14 @@ function useLazyMarkedDates(
     loadedFromDate,
     loadMoreMonths,
     loadUpTo,
+    // `true` only for the viewed user with a canonical `earliest_session_at`
+    // (self). The orchestrator uses this to pick which load-older guard applies:
+    // a hard month floor for self, or the window-exhaustion signal for friends.
+    hasPersistedFloor,
+    // For friends (no canonical floor): `true` once scrolling back can reveal
+    // nothing older — an empty/denied read, or the earliest loaded session
+    // already sits above the loaded window edge. Always `false` for self.
+    isWindowExhausted,
     isLoading: false,
   };
 }
