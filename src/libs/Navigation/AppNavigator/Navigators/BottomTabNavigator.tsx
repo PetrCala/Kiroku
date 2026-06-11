@@ -54,6 +54,12 @@ function BottomTabNavigator() {
         // selected tab in the dark theme. Both are no-ops on iOS.
         activeIndicatorColor={theme.activeComponentBG}
         rippleColor={theme.hoverComponentBG}
+        // Always show every tab's text label, not just the selected one. The
+        // Android Material bar defaults to label-on-selected-only (the library
+        // passes `labeled: undefined` on Android), which hid the inactive
+        // labels and left bare icons. iOS already defaults to labels-always-on,
+        // so this only changes Android and brings it in line.
+        labeled
         // On iOS 26, let the system render its native Liquid Glass tab bar: it
         // gives the items the roomier, vertically-centered spacing of modern iOS
         // (the legacy opaque appearance looked vertically squashed). On older iOS
