@@ -1,12 +1,11 @@
 import {View} from 'react-native';
 import type {DateData} from 'react-native-calendars';
-import type {GestureType} from 'react-native-gesture-handler';
 import {useFirebase} from '@context/global/FirebaseContext';
 import MonthlyOverviewCard, {
   MonthlyOverviewCardSkeleton,
 } from '@components/Items/MonthlyOverviewCard';
 import ProfileOverview from '@components/Social/ProfileOverview';
-import React, {useCallback, useEffect, useMemo, useRef, useState} from 'react';
+import React, {useCallback, useEffect, useMemo, useState} from 'react';
 import {useOnyx} from 'react-native-onyx';
 import ONYXKEYS from '@src/ONYXKEYS';
 import * as App from '@userActions/App';
@@ -37,7 +36,6 @@ import useThemeStyles from '@hooks/useThemeStyles';
 import Button from '@components/Button';
 import ManageFriendPopover from '@components/ManageFriendPopover';
 import ScrollView from '@components/ScrollView';
-import SwipeBackGestureDetector from '@components/SwipeBackGestureDetector';
 import Text from '@components/Text';
 import useStyleUtils from '@hooks/useStyleUtils';
 
@@ -119,12 +117,6 @@ function ProfileScreen({route}: ProfileScreenProps) {
   });
   const [manageFriendModalVisible, setManageFriendModalVisible] =
     useState(false);
-  // Handle on the calendar's month-swipe pan. The screen-level swipe-back is
-  // told to yield to it, so a horizontal swipe on the calendar always pages the
-  // month instead of dismissing the profile. The native nav swipe-back is
-  // disabled for this screen (see ProfileModalStackNavigator + the
-  // rightModalNavigator gesture guard) precisely so this RNGH gesture can win.
-  const calendarGestureRef = useRef<GestureType | undefined>(undefined);
   const profileData = userData?.profile;
   const friends = userData?.friends;
   // The common-friends count compares the viewed user's friends against the
@@ -208,16 +200,14 @@ function ProfileScreen({route}: ProfileScreenProps) {
         testID={ProfileScreen.displayName}
         onEntryTransitionEnd={onEntryTransitionEnd}>
         {header}
-        <SwipeBackGestureDetector onSwipeBack={Navigation.goBack}>
-          <View
-            style={[
-              styles.flex1,
-              styles.justifyContentCenter,
-              styles.alignItemsCenter,
-            ]}>
-            <FlexibleLoadingIndicator />
-          </View>
-        </SwipeBackGestureDetector>
+        <View
+          style={[
+            styles.flex1,
+            styles.justifyContentCenter,
+            styles.alignItemsCenter,
+          ]}>
+          <FlexibleLoadingIndicator />
+        </View>
       </ScreenWrapper>
     );
   }
@@ -230,28 +220,26 @@ function ProfileScreen({route}: ProfileScreenProps) {
         testID={ProfileScreen.displayName}
         onEntryTransitionEnd={onEntryTransitionEnd}>
         {header}
-        <SwipeBackGestureDetector onSwipeBack={Navigation.goBack}>
-          <View
+        <View
+          style={[
+            styles.flex1,
+            styles.justifyContentCenter,
+            styles.alignItemsCenter,
+            styles.ph5,
+          ]}>
+          <Text style={[styles.textHeadlineH1, styles.textAlignCenter]}>
+            {translate('profileScreen.offlineUnavailableTitle')}
+          </Text>
+          <Text
             style={[
-              styles.flex1,
-              styles.justifyContentCenter,
-              styles.alignItemsCenter,
-              styles.ph5,
+              styles.textNormal,
+              styles.textSupporting,
+              styles.textAlignCenter,
+              styles.mt2,
             ]}>
-            <Text style={[styles.textHeadlineH1, styles.textAlignCenter]}>
-              {translate('profileScreen.offlineUnavailableTitle')}
-            </Text>
-            <Text
-              style={[
-                styles.textNormal,
-                styles.textSupporting,
-                styles.textAlignCenter,
-                styles.mt2,
-              ]}>
-              {translate('profileScreen.offlineUnavailableMessage')}
-            </Text>
-          </View>
-        </SwipeBackGestureDetector>
+            {translate('profileScreen.offlineUnavailableMessage')}
+          </Text>
+        </View>
       </ScreenWrapper>
     );
   }
@@ -261,84 +249,78 @@ function ProfileScreen({route}: ProfileScreenProps) {
       testID={ProfileScreen.displayName}
       onEntryTransitionEnd={onEntryTransitionEnd}>
       {header}
-      <SwipeBackGestureDetector
-        onSwipeBack={Navigation.goBack}
-        requireToFail={calendarGestureRef}>
-        <ScrollView
-          style={[styles.flexGrow1, styles.mnw100]}
-          showsVerticalScrollIndicator={false}>
-          {user?.uid === userID && (
-            <>
-              {FeatureFlags.isEnabled('BADGES') && (
-                <Button
-                  icon={KirokuIcons.Star}
-                  iconFill={StyleUtils.getIconFillColor()}
-                  style={[styles.profileBadgesIndicator, styles.bgTransparent]}
-                  onPress={() => Navigation.navigate(ROUTES.BADGES)}
-                />
-              )}
+      <ScrollView
+        style={[styles.flexGrow1, styles.mnw100]}
+        showsVerticalScrollIndicator={false}>
+        {user?.uid === userID && (
+          <>
+            {FeatureFlags.isEnabled('BADGES') && (
               <Button
-                icon={KirokuIcons.Gear}
+                icon={KirokuIcons.Star}
                 iconFill={StyleUtils.getIconFillColor()}
-                style={[styles.editProfileIndicator, styles.bgTransparent]}
-                onPress={() => Navigation.navigate(ROUTES.SETTINGS_ACCOUNT)}
+                style={[styles.profileBadgesIndicator, styles.bgTransparent]}
+                onPress={() => Navigation.navigate(ROUTES.BADGES)}
               />
-            </>
-          )}
-          <ProfileOverview
-            userID={userID}
-            profileData={profileData} // For live propagation of current user
-          />
-          <View
-            style={[styles.profileFriendsInfoContainer, styles.borderBottom]}>
-            <View style={[styles.flexGrow1, styles.flexRow]}>
-              <Text>{friendCountLabel}</Text>
-              <Text style={styles.ml2}>{friendCountText}</Text>
-            </View>
+            )}
             <Button
-              text={translate('profileScreen.seeAllFriends')}
-              style={[styles.bgTransparent, styles.p0]}
-              textStyles={styles.link}
-              onPress={onSeeAllFriendsButtonPress}
+              icon={KirokuIcons.Gear}
+              iconFill={StyleUtils.getIconFillColor()}
+              style={[styles.editProfileIndicator, styles.bgTransparent]}
+              onPress={() => Navigation.navigate(ROUTES.SETTINGS_ACCOUNT)}
             />
+          </>
+        )}
+        <ProfileOverview
+          userID={userID}
+          profileData={profileData} // For live propagation of current user
+        />
+        <View style={[styles.profileFriendsInfoContainer, styles.borderBottom]}>
+          <View style={[styles.flexGrow1, styles.flexRow]}>
+            <Text>{friendCountLabel}</Text>
+            <Text style={styles.ml2}>{friendCountText}</Text>
           </View>
-          <View style={styles.ph2}>
-            {didScreenTransitionEnd ? (
-              <MonthlyOverviewCard
-                stats={profileStats}
-                showWeeklyUnits={false}
-                showMonthComparison
-                interactive={isSelf}
-                showArrow={isSelf}
-              />
-            ) : (
-              <MonthlyOverviewCardSkeleton />
-            )}
-            {didScreenTransitionEnd ? (
-              <SessionsCalendar
-                userID={userID}
-                visibleDate={visibleDateData}
-                onDateChange={onDateChange}
-                drinkingSessionData={drinkingSessionData}
-                preferences={preferences}
-                isFetchingOlderMonths={isFetchingOlderMonths}
-                gestureRef={calendarGestureRef}
-              />
-            ) : (
-              <SessionsCalendarCompactSkeleton />
-            )}
-          </View>
-          <View style={[styles.flexRow, styles.justifyContentEnd]}>
-            {user?.uid !== userID && (
-              <Button
-                text={translate('common.manage')}
-                style={styles.m2}
-                onPress={() => setManageFriendModalVisible(true)}
-              />
-            )}
-          </View>
-        </ScrollView>
-      </SwipeBackGestureDetector>
+          <Button
+            text={translate('profileScreen.seeAllFriends')}
+            style={[styles.bgTransparent, styles.p0]}
+            textStyles={styles.link}
+            onPress={onSeeAllFriendsButtonPress}
+          />
+        </View>
+        <View style={styles.ph2}>
+          {didScreenTransitionEnd ? (
+            <MonthlyOverviewCard
+              stats={profileStats}
+              showWeeklyUnits={false}
+              showMonthComparison
+              interactive={isSelf}
+              showArrow={isSelf}
+            />
+          ) : (
+            <MonthlyOverviewCardSkeleton />
+          )}
+          {didScreenTransitionEnd ? (
+            <SessionsCalendar
+              userID={userID}
+              visibleDate={visibleDateData}
+              onDateChange={onDateChange}
+              drinkingSessionData={drinkingSessionData}
+              preferences={preferences}
+              isFetchingOlderMonths={isFetchingOlderMonths}
+            />
+          ) : (
+            <SessionsCalendarCompactSkeleton />
+          )}
+        </View>
+        <View style={[styles.flexRow, styles.justifyContentEnd]}>
+          {user?.uid !== userID && (
+            <Button
+              text={translate('common.manage')}
+              style={styles.m2}
+              onPress={() => setManageFriendModalVisible(true)}
+            />
+          )}
+        </View>
+      </ScrollView>
       <ManageFriendPopover
         isVisible={manageFriendModalVisible}
         onClose={() => setManageFriendModalVisible(false)}

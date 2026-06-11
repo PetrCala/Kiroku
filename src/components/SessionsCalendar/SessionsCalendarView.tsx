@@ -1,6 +1,5 @@
 import React, {memo, useCallback, useEffect, useMemo, useState} from 'react';
 import {ActivityIndicator, Animated, View} from 'react-native';
-import type {GestureType} from 'react-native-gesture-handler';
 import {Gesture, GestureDetector} from 'react-native-gesture-handler';
 import {runOnJS} from 'react-native-reanimated';
 import {PressableWithFeedback} from '@components/Pressable';
@@ -81,11 +80,6 @@ type SessionsCalendarViewProps = {
   /** Show an inline spinner next to the month header while older months are
    *  being fetched after a back-nav past the loaded window edge. */
   isFetchingOlderMonths?: boolean;
-
-  /** Exposes the month-swipe pan via `.withRef` so a host screen can make its
-   *  own swipe-back yield to it (see ProfileScreen). Omit when there's no
-   *  competing gesture (Home, palette preview). */
-  gestureRef?: React.MutableRefObject<GestureType | undefined>;
 };
 
 /**
@@ -116,7 +110,6 @@ function SessionsCalendarView({
   hideMonthHeader,
   hideDayNames,
   isFetchingOlderMonths,
-  gestureRef,
 }: SessionsCalendarViewProps) {
   const styles = useThemeStyles();
   const StyleUtils = useStyleUtils();
@@ -320,39 +313,32 @@ function SessionsCalendarView({
     onRightArrowPress(() => {});
   }, [onRightArrowPress, visibleDate.timestamp, resolvedMaxDate]);
 
-  const swipeGesture = useMemo(() => {
-    const gesture = Gesture.Pan()
-      // Activate only after clear horizontal intent so day-cell taps and
-      // scroll-locked vertical pans still win uncontested. Kept low so casual
-      // flicks engage promptly; `failOffsetY` still yields to vertical scroll.
-      .activeOffsetX([-10, 10])
-      .failOffsetY([-20, 20])
-      .onEnd(e => {
-        'worklet';
+  const swipeGesture = useMemo(
+    () =>
+      Gesture.Pan()
+        // Activate only after clear horizontal intent so day-cell taps and
+        // scroll-locked vertical pans still win uncontested.
+        .activeOffsetX([-15, 15])
+        .failOffsetY([-20, 20])
+        .onEnd(e => {
+          'worklet';
 
-        // Forgiving thresholds so a short or slow flick still pages the month
-        // (the commit is on release — there's no live finger-following).
-        const SWIPE_THRESHOLD = 40;
-        const VELOCITY_THRESHOLD = 300;
-        if (
-          e.translationX < -SWIPE_THRESHOLD ||
-          e.velocityX < -VELOCITY_THRESHOLD
-        ) {
-          runOnJS(goToNextMonth)();
-        } else if (
-          e.translationX > SWIPE_THRESHOLD ||
-          e.velocityX > VELOCITY_THRESHOLD
-        ) {
-          runOnJS(goToPreviousMonth)();
-        }
-      });
-    // Hand the host screen a handle to this pan so its swipe-back can yield to
-    // it (ProfileScreen). No-op for consumers that don't pass a ref.
-    if (gestureRef) {
-      gesture.withRef(gestureRef);
-    }
-    return gesture;
-  }, [goToPreviousMonth, goToNextMonth, gestureRef]);
+          const SWIPE_THRESHOLD = 60;
+          const VELOCITY_THRESHOLD = 400;
+          if (
+            e.translationX < -SWIPE_THRESHOLD ||
+            e.velocityX < -VELOCITY_THRESHOLD
+          ) {
+            runOnJS(goToNextMonth)();
+          } else if (
+            e.translationX > SWIPE_THRESHOLD ||
+            e.velocityX > VELOCITY_THRESHOLD
+          ) {
+            runOnJS(goToPreviousMonth)();
+          }
+        }),
+    [goToPreviousMonth, goToNextMonth],
+  );
 
   return (
     <GestureDetector gesture={swipeGesture}>

@@ -217,16 +217,9 @@ const SettingsModalStackNavigator =
 
 const ProfileModalStackNavigator =
   createModalStackNavigator<ProfileNavigatorParamList>({
-    [SCREENS.PROFILE.ROOT]: {
-      getComponent: () =>
-        require<ReactComponentModule>('@screens/Profile/ProfileScreen').default,
-      // The screen owns a horizontal swipe-back gesture (SwipeBackGestureDetector,
-      // coordinated to yield to the calendar's month-swipe). Disable this stack's
-      // own swipe-back — and the outer rightModalNavigator card's, in
-      // getRootNavigatorScreenOptions — so neither native pan races the calendar
-      // on iOS. Our content gesture works on both platforms.
-      options: {gestureEnabled: false},
-    },
+    [SCREENS.PROFILE.ROOT]: () =>
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
+      require('@screens/Profile/ProfileScreen').default as React.ComponentType,
     [SCREENS.PROFILE.FRIENDS_FRIENDS]: () =>
       require<ReactComponentModule>('@screens/Profile/FriendsFriendsScreen')
         .default,
