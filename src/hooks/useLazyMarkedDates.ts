@@ -208,24 +208,27 @@ function useLazyMarkedDates(
   // monthsLoaded)))`), NOT `loadedFromDate`: the latter is `startOfMonth − 1 day`,
   // which lands in the previous month and would report exhaustion a month early.
   // For self this is unused — the persisted floor drives the guards directly.
-  const isWindowExhausted = useMemo(() => {
-    if (hasPersistedFloor) {
-      // Self: the canonical floor governs; this signal isn't consulted.
-      return false;
-    }
+  // Plain derivation: React Compiler memoizes it from the captured reads
+  // (`hasPersistedFloor`, `sessions`, `loadedMonths`), so no manual `useMemo`.
+  let isWindowExhausted = false;
+  if (!hasPersistedFloor) {
+    // Self: the canonical floor governs; this signal isn't consulted, so it
+    // stays false above.
     const earliestLoaded = DSUtils.getUserTrackingStartDate(sessions);
     if (!earliestLoaded) {
-      return true;
+      isWindowExhausted = true;
+    } else {
+      const fetchFloorMonths = Math.max(
+        CONST.SESSIONS_INITIAL_FETCH_MONTHS,
+        loadedMonths,
+      );
+      const fetchFloorMonth = startOfMonth(
+        subMonths(new Date(), fetchFloorMonths),
+      );
+      isWindowExhausted =
+        startOfMonth(earliestLoaded).getTime() > fetchFloorMonth.getTime();
     }
-    const fetchFloorMonths = Math.max(
-      CONST.SESSIONS_INITIAL_FETCH_MONTHS,
-      loadedMonths,
-    );
-    const fetchFloorMonth = startOfMonth(
-      subMonths(new Date(), fetchFloorMonths),
-    );
-    return startOfMonth(earliestLoaded).getTime() > fetchFloorMonth.getTime();
-  }, [hasPersistedFloor, sessions, loadedMonths]);
+  }
 
   // Resolve which palette to render with. When the viewer has enabled
   // `use_own_palette_for_others`, this swaps the viewed user's palette for the
