@@ -116,7 +116,7 @@ function SesssionDateScreen({route}: SessionDateScreenProps) {
           onChangeSingle={setSelectedDate}
         />
       </View>
-      <BottomActionBar containerStyle={styles.ph5}>
+      <BottomActionBar>
         <Button
           large
           success

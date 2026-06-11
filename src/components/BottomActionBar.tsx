@@ -19,6 +19,10 @@ type BottomActionBarProps = {
  * the disabled button. OfflineIndicator self-hides while online, so this adds no
  * visual gap when connected.
  *
+ * The bar applies a default horizontal padding (`ph5`) so its button(s) never
+ * touch the screen edges on any device. Pass `containerStyle` to add more (e.g.
+ * `gap`/vertical padding) or to override the horizontal padding when needed.
+ *
  * Screens using this should pass `shouldShowOfflineIndicator={false}` to their
  * `ScreenWrapper` to avoid a duplicate indicator rendering below the button.
  */
@@ -28,7 +32,7 @@ function BottomActionBar({children, containerStyle}: BottomActionBarProps) {
   return (
     <View style={styles.flexShrink0}>
       <OfflineIndicator />
-      <View style={[styles.bottomTabBarContainer, containerStyle]}>
+      <View style={[styles.bottomTabBarContainer, styles.ph5, containerStyle]}>
         {children}
       </View>
     </View>
