@@ -108,7 +108,6 @@ function FloatingActionButton(
           buttonRef.current = el ?? null;
         }
       }}
-      style={[styles.bottomTabBarItem, {transform: [{translateY: -4}]}]}
       accessibilityLabel={accessibilityLabel}
       onPress={toggleFabAction}
       onLongPress={() => {}}
