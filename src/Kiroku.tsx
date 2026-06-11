@@ -163,7 +163,7 @@ function Kiroku() {
   // hasCheckedAutoLogin so that navigating directly to /auth (bypassing
   // InitialScreen, which is the normal setter) can still clear the splash.
   const shouldInit =
-    isNavigationReady && (hasCheckedAutoLogin || authenticationChecked);
+    isNavigationReady && (hasCheckedAutoLogin ?? authenticationChecked);
 
   // Wait until Onyx has finished hydrating PREFERRED_THEME from local storage
   // before hiding the splash. Otherwise the ThemeProvider renders one frame
