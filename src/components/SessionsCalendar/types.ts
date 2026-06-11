@@ -1,3 +1,5 @@
+import type {MutableRefObject} from 'react';
+import type {GestureType} from 'react-native-gesture-handler';
 import type {DrinkingSessionList, Preferences} from '@src/types/onyx';
 import type {DateString, UserID} from '@src/types/onyx/OnyxCommon';
 import type {DateData} from 'react-native-calendars';
@@ -64,6 +66,10 @@ type SessionsCalendarProps = {
    *  scroll (or determined it doesn't need one). The screen uses this to
    *  drop a loading overlay that hides the brief pre-scroll frame. */
   onInitialScrollReady?: () => void;
+
+  /** Compact-only. Exposes the month-swipe pan via `.withRef` so a host screen
+   *  can make its own swipe-back yield to it (see ProfileScreen). */
+  gestureRef?: MutableRefObject<GestureType | undefined>;
 };
 
 type SessionsCalendarDayMarking = {
