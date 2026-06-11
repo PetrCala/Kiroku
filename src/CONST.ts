@@ -84,6 +84,7 @@ const CONST = {
   DISCORD_INVITE_URL: 'https://discord.gg/PjvUFkuwMv',
   TERMS_URL: `${KIROKU_URL}/terms`,
   PRIVACY_URL: `${KIROKU_URL}/privacy`,
+  SUPPORT_URL: `${KIROKU_URL}/support`,
   SUBSCRIPTION_TERMS_URL: `${KIROKU_URL}/subscription-terms`,
   CURRENT_TERMS_VERSION: 1,
   GITHUB_RELEASE_URL:

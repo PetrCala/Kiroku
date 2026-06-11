@@ -743,6 +743,7 @@ export default {
     general: 'General',
     reportBug: 'Report a bug',
     giveFeedback: 'Give us feedback',
+    help: 'Help & support',
     signOut: 'Sign out',
     shareTheApp: 'Share the app',
     adminTools: 'Admin tools',
@@ -772,6 +773,9 @@ export default {
     },
     subscriptionTermsScreen: {
       loading: 'Loading Subscription Terms...',
+    },
+    helpScreen: {
+      loading: 'Loading support...',
     },
     error: {},
   },

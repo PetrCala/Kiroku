@@ -119,6 +119,7 @@ const ROUTES = {
   SETTINGS_COLOR_PALETTE: 'settings/preferences/color-palette',
 
   SETTINGS_SUPPORT: 'settings/support',
+  SETTINGS_HELP: 'settings/help',
   SETTINGS_MANAGE_SUBSCRIPTION: 'settings/manage-subscription',
   SETTINGS_TERMS_OF_SERVICE: 'settings/terms-of-service',
   SETTINGS_PRIVACY_POLICY: 'settings/privacy-policy',

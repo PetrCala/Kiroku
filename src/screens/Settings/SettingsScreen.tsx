@@ -173,6 +173,11 @@ function SettingsScreen() {
           routeName: ROUTES.SETTINGS_FEEDBACK,
         },
         {
+          translationKey: 'settingsScreen.help',
+          icon: KirokuIcons.Mail,
+          routeName: ROUTES.SETTINGS_HELP,
+        },
+        {
           translationKey: 'settingsScreen.shareTheApp',
           icon: KirokuIcons.Share,
           routeName: ROUTES.SETTINGS_APP_SHARE,
