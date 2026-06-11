@@ -14,7 +14,13 @@ module.exports = {
   transformIgnorePatterns: [
     'node_modules/(?!(react-native|@react-native|@react-navigation|expo-modules-core|react-native-gesture-handler|react-native-reanimated|react-native-worklets|react-native-nitro-sqlite|react-native-nitro-modules))',
   ],
-  testPathIgnorePatterns: ['<rootDir>/node_modules', '<rootDir>/.claude/'],
+  // `e2e/` holds the Playwright web suite, which has its own runner/config and
+  // must never be picked up by Jest.
+  testPathIgnorePatterns: [
+    '<rootDir>/node_modules',
+    '<rootDir>/.claude/',
+    '<rootDir>/e2e/',
+  ],
   watchPathIgnorePatterns: ['<rootDir>/.claude/'],
   modulePathIgnorePatterns: ['<rootDir>/.claude/'],
   globals: {

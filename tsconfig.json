@@ -69,6 +69,7 @@
     "**/node_modules/*",
     "**/dist/*",
     ".github/actions/**/index.js",
-    "**/local/*"
+    "**/local/*",
+    "e2e"
   ]
 }

@@ -1,0 +1,11 @@
+# Playwright artifacts
+/playwright-report/
+/test-results/
+
+# Cached signed-in session (contains a live auth token)
+/.auth/
+
+# Local-only test credentials. The repo-root `*.env*` rule already ignores
+# this; the negation below re-includes the committed template.
+.env.e2e
+!.env.e2e.example
