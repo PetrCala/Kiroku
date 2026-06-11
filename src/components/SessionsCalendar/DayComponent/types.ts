@@ -11,6 +11,10 @@ type DayComponentProps = {
   units?: number;
   marking?: MarkingProps;
   theme?: Theme;
+  /** Earliest tracked day ('yyyy-MM-dd'). Days before it render dimmed (like
+   *  future days) but stay clickable, so the user can still add a past session.
+   *  Styling-only — never gates the press. */
+  trackingStartDate?: string;
   onPress?: (day: DateData) => void;
   onLongPress?: (day: DateData) => void;
 };

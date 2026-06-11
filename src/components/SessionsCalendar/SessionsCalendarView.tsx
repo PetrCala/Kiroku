@@ -49,6 +49,11 @@ type SessionsCalendarViewProps = {
   /** Latest selectable date (defaults to today) */
   maxDate?: string;
 
+  /** Earliest tracked day ('yyyy-MM-dd'). Days before it render dimmed (like
+   *  future days) but stay clickable. Styling-only — distinct from `minDate`,
+   *  which gates clickability/navigation. */
+  trackingStartDate?: string;
+
   /** Tapped-day handler; omit to make the calendar non-interactive */
   onDayPress?: (day: DateData) => void;
 
@@ -95,6 +100,7 @@ function SessionsCalendarView({
   visibleDate,
   minDate,
   maxDate,
+  trackingStartDate,
   onDayPress,
   onDayLongPress,
   onLeftArrowPress,
@@ -125,11 +131,12 @@ function SessionsCalendarView({
         units={date ? unitsMap.get(date.dateString as DateString) : 0}
         marking={marking}
         theme={dayTheme}
+        trackingStartDate={trackingStartDate}
         onPress={onDayPress}
         onLongPress={onDayLongPress}
       />
     ),
-    [unitsMap, onDayPress, onDayLongPress],
+    [unitsMap, trackingStartDate, onDayPress, onDayLongPress],
   );
 
   // Custom header: matches the default month-text styling but reserves space
