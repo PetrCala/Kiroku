@@ -742,7 +742,7 @@ export default {
     improvementThoughts: 'What would you like us to improve?',
     general: 'General',
     reportBug: 'Report a bug',
-    giveFeedback: 'Give use a feedback',
+    giveFeedback: 'Give us feedback',
     signOut: 'Sign out',
     shareTheApp: 'Share the app',
     adminTools: 'Admin tools',
