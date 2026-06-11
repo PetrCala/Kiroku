@@ -543,9 +543,9 @@ function setLastViewedCalendarDate(date: DateString) {
 }
 
 /** Clear the consumed last-viewed date so subsequent focuses don't re-apply
- *  it. The cold-launch reset lives in `setup` via `Onyx.merge(key, null)` (the
- *  `initialKeyStates` null is a no-op — Onyx drops null defaults); this is for
- *  in-app clears, e.g. manual month navigation. */
+ *  it. The cold-launch reset lives in the `Calendar.resetCalendarStateForColdLaunch`
+ *  action (the `initialKeyStates` null is a no-op — Onyx drops null defaults);
+ *  this is for in-app clears, e.g. manual month navigation. */
 function clearLastViewedCalendarDate() {
   Onyx.set(ONYXKEYS.NVP_LAST_VIEWED_CALENDAR_DATE, null);
 }

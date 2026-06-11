@@ -1,5 +1,6 @@
 import {I18nManager} from 'react-native';
 import Onyx from 'react-native-onyx';
+import * as Calendar from '@userActions/Calendar';
 import * as Device from '@userActions/Device';
 import * as Subscriptions from '@userActions/Subscriptions';
 import CONST from '@src/CONST';
@@ -54,14 +55,12 @@ export default function () {
   });
 
   // Reset the calendar's cross-screen sync state on every cold launch so the home
-  // calendar always opens on the current month. These can't go in `initialKeyStates`
+  // calendar always opens on the current month. Can't go in `initialKeyStates`
   // above: Onyx drops `null` defaults (shouldRemoveNestedNulls), so a value persisted
-  // from a previous session would survive hydration. `Onyx.merge(key, null)` reads the
-  // stored value first, then removes it (delete + broadcast); `Onyx.set(key, null)`
-  // can't here, it no-ops on the empty pre-hydration cache. Running before the React
-  // tree mounts clears the value before any screen subscribes, so there's no flip.
-  Onyx.merge(ONYXKEYS.NVP_LAST_VIEWED_CALENDAR_DATE, null);
-  Onyx.merge(ONYXKEYS.SESSIONS_CALENDAR_MONTHS_LOADED, null);
+  // from a previous session would survive hydration. The action uses `Onyx.merge`,
+  // which clears the persisted value; running here (before the React tree mounts)
+  // clears it before any screen subscribes, so there's no month flip.
+  Calendar.resetCalendarStateForColdLaunch();
 
   Device.setDeviceID();
 
