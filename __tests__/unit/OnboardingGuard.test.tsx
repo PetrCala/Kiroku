@@ -133,6 +133,35 @@ describe('OnboardingGuard', () => {
     expect(mockedNavigate).not.toHaveBeenCalled();
   });
 
+  test('cancels a queued navigate when the flow flips to false before navigation is ready', async () => {
+    // Hold navigation "not ready" so the navigate stays queued in the
+    // isNavigationReady continuation.
+    let resolveReady: () => void = () => {};
+    mockedIsNavigationReady.mockReturnValue(
+      new Promise<void>(resolve => {
+        resolveReady = resolve;
+      }),
+    );
+    setFlow({
+      shouldFireOnboarding: true,
+      currentOnboardingRoute: ROUTES.ONBOARDING_TERMS,
+    });
+
+    const {rerender} = render(<OnboardingGuard />);
+
+    // The store settles (e.g. the complete record finishes loading) before
+    // navigation becomes ready: the flow flips to "don't fire". The queued
+    // navigate from the transient fire-render must NOT execute afterwards —
+    // entering onboarding is one-way, so it would strand the user.
+    setFlow({shouldFireOnboarding: false, currentOnboardingRoute: null});
+    rerender(<OnboardingGuard />);
+
+    resolveReady();
+    await flushAsync();
+
+    expect(mockedNavigate).not.toHaveBeenCalled();
+  });
+
   test('debounces: re-rendering with the same target does not re-navigate', async () => {
     setFlow({
       shouldFireOnboarding: true,

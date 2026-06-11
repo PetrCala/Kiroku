@@ -31,6 +31,13 @@ function pickResumeRoute(
  * after `completeOnboarding`, and a state listener races that dismissal —
  * the listener fires on the dismissal pop before React has cleaned up the
  * old effect closure, and re-navigates the user back into onboarding.
+ *
+ * The navigate is queued behind `Navigation.isNavigationReady()`, which can
+ * resolve long after the render that scheduled it. The effect cleanup marks
+ * the pending continuation stale so a transient `shouldFireOnboarding` render
+ * (e.g. a partial record observed mid-hydration) can never navigate an
+ * already-onboarded user into the flow after the store has settled — entering
+ * onboarding is one-way, so a single stale navigate would strand them there.
  */
 function OnboardingGuard() {
   const {
@@ -47,9 +54,13 @@ function OnboardingGuard() {
       return;
     }
 
+    let stale = false;
     const target = pickResumeRoute(currentOnboardingRoute, lastVisitedPath);
 
     Navigation.isNavigationReady().then(() => {
+      if (stale) {
+        return;
+      }
       const active = Navigation.getActiveRoute().replace(/^\//, '');
       if (isOnboardingPath(active)) {
         return;
@@ -61,6 +72,10 @@ function OnboardingGuard() {
       Log.info(`[OnboardingGuard] Redirecting to ${target}`);
       Navigation.navigate(target);
     });
+
+    return () => {
+      stale = true;
+    };
   }, [isReady, shouldFireOnboarding, currentOnboardingRoute, lastVisitedPath]);
 
   return null;
