@@ -13,6 +13,9 @@ type WeekRowProps = {
   row: MonthWeek;
   markedDates: MarkedDates;
   unitsMap: Map<DateString, number>;
+  /** Earliest tracked day ('yyyy-MM-dd'). Days before it render dimmed but stay
+   *  clickable. Styling-only. */
+  trackingStartDate?: string;
   onDayPress?: (day: DateData) => void;
   onDayLongPress?: (day: DateData) => void;
 };
@@ -43,6 +46,7 @@ function WeekRow({
   row,
   markedDates,
   unitsMap,
+  trackingStartDate,
   onDayPress,
   onDayLongPress,
 }: WeekRowProps) {
@@ -67,6 +71,7 @@ function WeekRow({
               date={dayKeyToDateData(dayKey)}
               units={unitsMap.get(dayKey)}
               marking={marking}
+              trackingStartDate={trackingStartDate}
               onPress={onDayPress}
               onLongPress={onDayLongPress}
             />

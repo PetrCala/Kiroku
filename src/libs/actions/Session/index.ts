@@ -682,6 +682,9 @@ function cleanupSession() {
   // Drop the cached drinking sessions snapshot so the next account on this
   // device can't briefly render the previous user's data on cold launch.
   Onyx.set(ONYXKEYS.CACHED_DRINKING_SESSIONS, null);
+  // Reset the last visited path so re-login always starts at Home, not wherever
+  // the user happened to be when they signed out.
+  Onyx.set(ONYXKEYS.LAST_VISITED_PATH, null);
   clearCache().then(() => {
     Log.info('Cleared all cache data', true, {}, true);
   });

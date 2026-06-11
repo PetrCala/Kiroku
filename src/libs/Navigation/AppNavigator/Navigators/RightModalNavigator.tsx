@@ -1,6 +1,7 @@
 import type {StackScreenProps} from '@react-navigation/stack';
 import {createStackNavigator} from '@react-navigation/stack';
 import React, {useMemo, useRef} from 'react';
+import {View} from 'react-native';
 // import NoDropZone from '@components/DragAndDrop/NoDropZone';
 import useThemeStyles from '@hooks/useThemeStyles';
 import useResponsiveLayout from '@hooks/useResponsiveLayout';
@@ -41,8 +42,6 @@ function RightModalNavigator({navigation}: RightModalNavigatorProps) {
   // }, [isSmallScreenWidth, styleUtils, styles]);
 
   return (
-    // <NoDropZone>
-    // <View style={styles.RHPNavigatorContainer(isSmallScreenWidth)}>
     <>
       {!shouldUseNarrowLayout && (
         <Overlay
@@ -55,28 +54,30 @@ function RightModalNavigator({navigation}: RightModalNavigatorProps) {
           }}
         />
       )}
-      <Stack.Navigator screenOptions={screenOptions}>
-        <Stack.Screen
-          name={SCREENS.RIGHT_MODAL.BADGES}
-          component={ModalStackNavigators.BadgesModalStackNavigator}
-        />
-        <Stack.Screen
-          name={SCREENS.RIGHT_MODAL.DRINKING_SESSION}
-          component={ModalStackNavigators.DrinkingSessionModalStackNavigator}
-        />
-        <Stack.Screen
-          name={SCREENS.RIGHT_MODAL.PROFILE}
-          component={ModalStackNavigators.ProfileModalStackNavigator}
-        />
-        <Stack.Screen
-          name={SCREENS.RIGHT_MODAL.SETTINGS}
-          component={ModalStackNavigators.SettingsModalStackNavigator}
-        />
-        <Stack.Screen
-          name={SCREENS.RIGHT_MODAL.SOCIAL}
-          component={ModalStackNavigators.SocialModalStackNavigator}
-        />
-      </Stack.Navigator>
+      <View style={styles.RHPNavigatorContainer(shouldUseNarrowLayout)}>
+        <Stack.Navigator screenOptions={screenOptions}>
+          <Stack.Screen
+            name={SCREENS.RIGHT_MODAL.BADGES}
+            component={ModalStackNavigators.BadgesModalStackNavigator}
+          />
+          <Stack.Screen
+            name={SCREENS.RIGHT_MODAL.DRINKING_SESSION}
+            component={ModalStackNavigators.DrinkingSessionModalStackNavigator}
+          />
+          <Stack.Screen
+            name={SCREENS.RIGHT_MODAL.PROFILE}
+            component={ModalStackNavigators.ProfileModalStackNavigator}
+          />
+          <Stack.Screen
+            name={SCREENS.RIGHT_MODAL.SETTINGS}
+            component={ModalStackNavigators.SettingsModalStackNavigator}
+          />
+          <Stack.Screen
+            name={SCREENS.RIGHT_MODAL.SOCIAL}
+            component={ModalStackNavigators.SocialModalStackNavigator}
+          />
+        </Stack.Navigator>
+      </View>
     </>
   );
 }

@@ -52,6 +52,12 @@ const LOAD_AHEAD_BUFFER_MONTHS = 6;
 // is idempotent — a no-op if the persisted depth is already deeper.
 const INITIAL_PREFETCH_MONTHS = 12;
 
+// Once the fullscreen list has scrolled past the earliest-tracked floor there
+// is no more data to fetch (those months are empty), but the user may still
+// want to scroll into them to add a past session. Extend the *rendered* range
+// by this many months at a time as they approach the top — no fetch involved.
+const RENDER_AHEAD_MONTHS = 12;
+
 function SessionsCalendar({
   userID,
   visibleDate,
@@ -171,6 +177,31 @@ function SessionsCalendar({
     [minDate],
   );
 
+  // Absolute floor for navigation/rendering — the product's 20-year horizon.
+  // Bounds how far the compact calendar can page and the fullscreen list can
+  // scroll into empty pre-tracking months, so neither can run away to year 1.
+  const absoluteFloor = useMemo(
+    () => startOfMonth(CONST.CALENDAR_PICKER.MIN_DATE),
+    [],
+  );
+
+  // Fullscreen-only render floor, decoupled from the data floor. The data
+  // floor (`loadedFromDate`, capped at the earliest tracked month) governs
+  // what's *fetched*; this governs what's *rendered*. It extends past the data
+  // floor as the user scrolls toward the top, letting them reach pre-tracking
+  // days (which render blank/dimmed — no fetch) down to `absoluteFloor`.
+  const [renderFromDate, setRenderFromDate] = useState<Date | null>(null);
+  const fullscreenRenderFrom = useMemo(() => {
+    if (!loadedFromDate) {
+      return loadedFromDate;
+    }
+    const candidate =
+      renderFromDate && renderFromDate < loadedFromDate
+        ? renderFromDate
+        : loadedFromDate;
+    return candidate < absoluteFloor ? absoluteFloor : candidate;
+  }, [loadedFromDate, renderFromDate, absoluteFloor]);
+
   // Whether there is older data still to load — drives the day-list's load
   // trigger and its "loading older" header.
   //  - Self (canonical floor): stop once the loaded window reaches the earliest
@@ -191,15 +222,35 @@ function SessionsCalendar({
   const handleRequestOlder = (earliestVisible: Date) => {
     const floor = loadedFrom?.current ?? new Date();
     // Self (canonical floor): stop once loaded back to the earliest tracked
-    // month. Friend (no canonical floor): stop only once the window is exhausted
-    // — `minDateFloor` is the windowed edge for friends, so never clamp to it.
+    // month, compared at month granularity so the `startOfMonth − 1 day` baked
+    // into `loadedFromDate` (see `useLazyMarkedDates`) can't trip the guard a
+    // day early. In fullscreen, keep widening the *rendered* range past it so
+    // the user can scroll into the empty pre-tracking months (to add a past
+    // session); those render blank/dimmed for free. Walls at `absoluteFloor`.
     if (hasPersistedFloor) {
       if (startOfMonth(floor).getTime() <= minDateFloor.getTime()) {
-        // Already loaded back to the earliest tracked month — nothing more.
+        if (mode === 'fullscreen') {
+          setRenderFromDate(prev => {
+            const current = prev ?? loadedFromDate ?? new Date();
+            if (current.getTime() <= absoluteFloor.getTime()) {
+              return prev;
+            }
+            let next = startOfMonth(
+              subMonths(earliestVisible, RENDER_AHEAD_MONTHS),
+            );
+            if (next < absoluteFloor) {
+              next = absoluteFloor;
+            }
+            // Monotonic — only ever grow older.
+            return !prev || next < prev ? next : prev;
+          });
+        }
         return;
       }
     } else if (isWindowExhausted) {
-      // Friend whose history is fully loaded (or empty/denied) — nothing more.
+      // Friend (no canonical floor): `minDateFloor` is only the windowed edge,
+      // so never clamp to it; the history is done only once the window is
+      // exhausted (empty/denied reads included) — Kiroku #1197.
       return;
     }
     let target = computeLoadTarget(
@@ -356,7 +407,8 @@ function SessionsCalendar({
           markedDates={markedDates}
           unitsMap={unitsMap}
           monthlyTotalsMap={monthlyTotalsMap}
-          loadedFromDate={loadedFromDate}
+          loadedFromDate={fullscreenRenderFrom}
+          trackingStartDate={minDate}
           isFetchingOlderMonths={isFetchingOlderMonths}
           onDayPress={onDayPress}
           onDayLongPress={dayLongPressHandler}
@@ -377,7 +429,8 @@ function SessionsCalendar({
         markedDates={markedDates}
         unitsMap={unitsMap}
         visibleDate={visibleDate}
-        minDate={minDate}
+        minDate={format(absoluteFloor, CONST.DATE.CALENDAR_FORMAT)}
+        trackingStartDate={minDate}
         onDayPress={onDayPress}
         onDayLongPress={dayLongPressHandler}
         onLeftArrowPress={handleLeftArrowPress}

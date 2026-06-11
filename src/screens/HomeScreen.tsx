@@ -21,7 +21,6 @@ import MonthlyOverviewCard, {
 import ScreenWrapper from '@components/ScreenWrapper';
 import HomeBanner, {HomeBannerSkeleton} from '@components/Info/HomeBanner';
 import useThemeStyles from '@hooks/useThemeStyles';
-import getPlatform from '@libs/getPlatform';
 import * as FeatureFlags from '@libs/FeatureFlags';
 import FullScreenLoadingIndicator from '@components/FullscreenLoadingIndicator';
 import * as DSUtils from '@libs/DrinkingSessionUtils';
@@ -266,7 +265,7 @@ function HomeScreen({route}: HomeScreenProps) {
       <ScreenWrapper
         testID={HomeScreen.displayName}
         shouldShowOfflineIndicator={false}
-        includeSafeAreaPaddingBottom={getPlatform() !== CONST.PLATFORM.IOS}>
+        includeSafeAreaPaddingBottom={false}>
         {/* // TODO rewrite this into the HeaderWithBackButton component */}
         {isUserDataReady ? (
           <View style={[styles.headerBar, styles.borderBottom, styles.ph2]}>

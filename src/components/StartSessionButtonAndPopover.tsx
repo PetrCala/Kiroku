@@ -319,7 +319,7 @@ function StartSessionButtonAndPopover(
   ]);
 
   return (
-    <View style={[styles.flexShrink1, styles.ph2]}>
+    <View>
       <PopoverMenu
         onClose={hideCreateMenu}
         isVisible={isCreateMenuActive && (!shouldUseNarrowLayout || isFocused)}

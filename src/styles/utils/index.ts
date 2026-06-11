@@ -1386,7 +1386,7 @@ const createStyleUtils = (theme: ThemeColors, styles: ThemeStyles) => ({
    */
   getSessionsCalendarDayCellStyle: (
     marking: MarkingProps | undefined,
-    isDisabled: boolean,
+    isDimmed: boolean,
   ): ViewStyle => {
     const markingColor = marking?.color;
     // Every marked tile gets a 1px border derived from its own swatch, shifted
@@ -1406,7 +1406,7 @@ const createStyleUtils = (theme: ThemeColors, styles: ThemeStyles) => ({
       alignItems: 'center',
       justifyContent: 'center',
       backgroundColor: markingColor ?? 'transparent',
-      opacity: isDisabled ? 0.35 : 1,
+      opacity: isDimmed ? 0.35 : 1,
     };
   },
 
@@ -1420,14 +1420,14 @@ const createStyleUtils = (theme: ThemeColors, styles: ThemeStyles) => ({
    */
   getSessionsCalendarDayLabelStyle: (
     marking: MarkingProps | undefined,
-    isDisabled: boolean,
+    isDimmed: boolean,
   ): TextStyle => {
     const markingColor = marking?.color;
     const isLightColor = !!markingColor && isLightHex(markingColor);
     let textColor: Color;
     if (!markingColor) {
       textColor = theme.textSupporting;
-    } else if (isDisabled) {
+    } else if (isDimmed) {
       textColor = theme.textMutedReversed;
     } else if (isLightColor) {
       textColor = theme.textDark;
