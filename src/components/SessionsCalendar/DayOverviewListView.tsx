@@ -192,6 +192,14 @@ function DayOverviewListView({
 
   const listRef = useRef<FlashListRef<ListItem>>(null);
   const hasAppliedInitialScrollRef = useRef(false);
+  // FlashList v2 renders nothing on its first cycle: it measures itself and its
+  // rows, then fires `onLoad`. Only after that are the real row heights known.
+  // The initial centering scroll must wait for it — applied earlier (e.g. in a
+  // mount effect, as this used to do) it runs against v2's 200px-per-row
+  // default estimate, lands at the wrong offset, and on Android leaves the list
+  // blank until a manual scroll re-engages the renderer (the reported bug).
+  // This flips true in `onLoad`.
+  const hasLoadedRef = useRef(false);
   // Whether the user has actually dragged the list. Until they do, the only
   // scroll is our programmatic centering, so there's no new position to sync —
   // gating the write on a real drag keeps an open-and-close-without-moving a
@@ -201,44 +209,83 @@ function DayOverviewListView({
     hasUserScrolledRef.current = true;
   }, []);
 
-  useEffect(() => {
+  // Apply the one-time initial scroll, then reveal the list (via
+  // `onInitialScrollReady`). Runs only once `onLoad` has fired, so the scroll
+  // is computed against measured rows: `scrollToIndex` steps toward the target,
+  // measuring rows along the way (so it lands precisely) and re-engaging the
+  // renderer (so Android actually paints). Revealing only after the returned
+  // promise settles avoids a visible jump. Idempotent — safe to call from both
+  // `onLoad` and the data-widening effect below.
+  const maybeApplyInitialScroll = useCallback(() => {
     if (hasAppliedInitialScrollRef.current) {
       return;
     }
-    if (!initialDay) {
+    // Empty list: nothing to scroll or measure — and FlashList v2 doesn't fire
+    // `onLoad` for empty data — so reveal immediately (the ListEmptyComponent
+    // is what shows). Waiting on a layout signal that never arrives would hang
+    // the screen on its skeleton.
+    if (items.length === 0) {
       hasAppliedInitialScrollRef.current = true;
       onInitialScrollReady?.();
       return;
     }
+    // Everything below scrolls, so it needs measured rows: wait for the first
+    // layout (`onLoad`). Applied earlier it would scroll against v2's default
+    // row estimate and leave the list blank on Android until a manual scroll.
+    if (!hasLoadedRef.current) {
+      return;
+    }
+    // Scroll, then reveal once the scroll settles (avoids a visible jump). Falls
+    // back to an immediate reveal if the ref somehow isn't attached, so the
+    // screen never hangs on its skeleton waiting for a scroll that can't run.
+    const reveal = () => onInitialScrollReady?.();
+    const list = listRef.current;
+    const scrollThenReveal = (index: number, viewPosition?: number) => {
+      hasAppliedInitialScrollRef.current = true;
+      if (list) {
+        list
+          .scrollToIndex({index, animated: false, viewPosition})
+          .then(reveal, reveal);
+      } else {
+        reveal();
+      }
+    };
     if (targetIndex !== undefined) {
       // Center the focused day in the viewport (context above and below). The
       // list's bottom padding (`contentContainerStyle`) gives the newest day
       // room to settle at center rather than clamping to the bottom edge. The
       // oldest day (no top padding) and short lists still land toward the top.
-      listRef.current?.scrollToIndex({
-        index: targetIndex,
-        animated: false,
-        viewPosition: 0.5,
-      });
-      hasAppliedInitialScrollRef.current = true;
-      onInitialScrollReady?.();
+      scrollThenReveal(targetIndex, 0.5);
       return;
     }
-    // No matching day yet. If we can't load any older data (window already
-    // covers the user's earliest session) or there's nothing to show, stop
-    // waiting and reveal the list. Otherwise wait for the orchestrator to
-    // widen the window; this effect re-fires on `items`.
-    if (canLoadOlder === false || items.length === 0) {
-      hasAppliedInitialScrollRef.current = true;
-      onInitialScrollReady?.();
+    // No resolved target: either no focused day was requested, or the requested
+    // day is outside the loaded window and can't be loaded (window already
+    // covers the user's earliest session). Land on the newest sessions
+    // (bottom), matching `initialScrollIndex`'s fallback, and reveal.
+    if (!initialDay || canLoadOlder === false) {
+      scrollThenReveal(items.length - 1);
     }
+    // Otherwise the focused day isn't loaded yet — wait for the orchestrator to
+    // widen the window; the effect below re-fires as `items` grows.
   }, [
-    initialDay,
     targetIndex,
-    items.length,
+    initialDay,
     canLoadOlder,
+    items.length,
     onInitialScrollReady,
   ]);
+
+  const handleListLoad = useCallback(() => {
+    hasLoadedRef.current = true;
+    maybeApplyInitialScroll();
+  }, [maybeApplyInitialScroll]);
+
+  // Re-attempt the initial scroll when the loaded window widens (older months
+  // arriving can make a previously-out-of-range focused day resolvable). No-op
+  // until `onLoad` has set `hasLoadedRef`.
+  useEffect(() => {
+    maybeApplyInitialScroll();
+  }, [maybeApplyInitialScroll]);
 
   // Record the day the user is looking at so the home/profile calendar can
   // sync to it on back-navigation, and report it to the screen (for the
@@ -350,6 +397,13 @@ function DayOverviewListView({
 
   const keyExtractor = useCallback((item: ListItem) => item.key, []);
 
+  // Distinct recycling pools (and per-type size estimates) for the two row
+  // shapes — day headers are far shorter than session tiles, so a shared pool
+  // would recycle a header view into a session row (and vice versa), thrashing
+  // layout. v2 keys its running height estimate by type, so this also sharpens
+  // the offset math that `initialScrollIndex`/`scrollToIndex` rely on.
+  const getItemType = useCallback((item: ListItem) => item.kind, []);
+
   // Sits above the oldest loaded day (the top of the list) — only while an
   // older-data fetch is in flight, signaling "more on the way".
   const listHeader = useMemo(() => {
@@ -401,11 +455,13 @@ function DayOverviewListView({
         data={items}
         renderItem={renderItem}
         keyExtractor={keyExtractor}
+        getItemType={getItemType}
         initialScrollIndex={initialScrollIndex}
         contentContainerStyle={contentContainerStyle}
         showsVerticalScrollIndicator
         ListHeaderComponent={listHeader}
         ListEmptyComponent={listEmpty}
+        onLoad={handleListLoad}
         onScrollBeginDrag={onScrollBeginDrag}
         onViewableItemsChanged={onViewableItemsChanged}
         viewabilityConfig={VIEWABILITY_CONFIG}

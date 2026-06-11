@@ -217,6 +217,14 @@ function SessionsCalendarWeekListView({
 
   const listRef = useRef<FlashListRef<ListItem>>(null);
   const hasAppliedInitialScrollRef = useRef(false);
+  // FlashList v2 renders nothing on its first cycle: it measures itself and its
+  // rows, then fires `onLoad`. Only after that are the real row heights known.
+  // The initial centering scroll must wait for it — applied earlier (e.g. in a
+  // mount effect, as this used to do) it runs against v2's 200px-per-row
+  // default estimate, lands at the wrong offset, and on Android leaves the list
+  // blank until a manual scroll re-engages the renderer (the reported bug).
+  // This flips true in `onLoad`.
+  const hasLoadedRef = useRef(false);
   // Whether the user has actually dragged the list. Until they do, the only
   // scroll is our programmatic centering, so there's no new position to sync —
   // syncing then would write whatever the centering math reports (a neighbour
@@ -238,32 +246,60 @@ function SessionsCalendarWeekListView({
 
   const wantsInitialScroll = !!initialMonthYear;
 
-  useEffect(() => {
-    if (hasAppliedInitialScrollRef.current) {
+  // Apply the one-time initial scroll, then reveal the calendar (via
+  // `onInitialScrollReady`). Runs only once `onLoad` has fired, so the scroll
+  // is computed against measured rows: `scrollToIndex` steps toward the target,
+  // measuring rows along the way (so it lands precisely) and re-engaging the
+  // renderer (so Android actually paints). Revealing only after the returned
+  // promise settles avoids a visible jump. Idempotent — safe to call from both
+  // `onLoad` and the data-widening effect below.
+  const maybeApplyInitialScroll = useCallback(() => {
+    if (hasAppliedInitialScrollRef.current || !hasLoadedRef.current) {
+      return;
+    }
+    // Scroll, then reveal once the scroll settles (avoids a visible jump). Falls
+    // back to an immediate reveal if the ref somehow isn't attached, so the
+    // screen never hangs on its skeleton waiting for a scroll that can't run.
+    const reveal = () => onInitialScrollReady?.();
+    const list = listRef.current;
+    const scrollThenReveal = (index: number, viewPosition?: number) => {
+      hasAppliedInitialScrollRef.current = true;
+      if (list) {
+        list
+          .scrollToIndex({index, animated: false, viewPosition})
+          .then(reveal, reveal);
+      } else {
+        reveal();
+      }
+    };
+    if (targetIndex !== undefined) {
+      // Center the target month's first week-row, mirroring the day-overview's
+      // centered open. The bottom spacer (`contentContainerStyle`) gives a
+      // near-latest target room to reach center rather than clamping to the
+      // bottom edge.
+      scrollThenReveal(targetIndex, 0.5);
       return;
     }
     if (!wantsInitialScroll) {
-      hasAppliedInitialScrollRef.current = true;
-      onInitialScrollReady?.();
-      return;
+      // No target month requested — land on the latest weeks (bottom),
+      // matching `initialScrollIndex`'s fallback, and reveal.
+      scrollThenReveal(Math.max(0, items.length - 1));
     }
-    if (targetIndex === undefined) {
-      // Waiting for the data fetcher to widen the loaded range so the
-      // target month enters `items`. The effect will re-fire on `items`.
-      return;
-    }
-    // Center the target month's first week-row, mirroring the day-overview's
-    // centered open. The bottom spacer (`contentContainerStyle`) gives a
-    // near-latest target room to reach center rather than clamping to the
-    // bottom edge.
-    listRef.current?.scrollToIndex({
-      index: targetIndex,
-      animated: false,
-      viewPosition: 0.5,
-    });
-    hasAppliedInitialScrollRef.current = true;
-    onInitialScrollReady?.();
-  }, [items, targetIndex, wantsInitialScroll, onInitialScrollReady]);
+    // Otherwise the target month isn't in the loaded range yet — wait for the
+    // data fetcher to widen it; the effect below re-fires as `items` grows.
+  }, [items.length, targetIndex, wantsInitialScroll, onInitialScrollReady]);
+
+  const handleListLoad = useCallback(() => {
+    hasLoadedRef.current = true;
+    maybeApplyInitialScroll();
+  }, [maybeApplyInitialScroll]);
+
+  // Re-attempt the initial scroll when the loaded range widens (the target
+  // month entering `items`) or when `onLoad` arrives. No-op until `onLoad` has
+  // set `hasLoadedRef`.
+  useEffect(() => {
+    maybeApplyInitialScroll();
+  }, [maybeApplyInitialScroll]);
 
   // Room below the newest week so `scrollToIndex({viewPosition: 0.5})` can pull
   // a near-latest target toward center instead of clamping it to the bottom.
@@ -388,6 +424,12 @@ function SessionsCalendarWeekListView({
 
   const keyExtractor = useCallback((item: ListItem) => item.key, []);
 
+  // Distinct recycling pools (and per-type size estimates) for the two row
+  // shapes — a one-line month label vs. a full week grid-row. v2 keys its
+  // running height estimate by type, so this also sharpens the offset math that
+  // `initialScrollIndex`/`scrollToIndex` rely on.
+  const getItemType = useCallback((item: ListItem) => item.kind, []);
+
   // FlashList renders this above the first item in the list — i.e. above
   // the oldest loaded week. It only shows while a data fetch is in flight,
   // signaling "more months are on the way" when the user has scrolled past
@@ -440,11 +482,13 @@ function SessionsCalendarWeekListView({
           data={items}
           renderItem={renderItem}
           keyExtractor={keyExtractor}
+          getItemType={getItemType}
           stickyHeaderIndices={stickyHeaderIndices}
           initialScrollIndex={initialScrollIndex}
           contentContainerStyle={contentContainerStyle}
           showsVerticalScrollIndicator
           ListHeaderComponent={listHeader}
+          onLoad={handleListLoad}
           onScrollBeginDrag={onScrollBeginDrag}
           onViewableItemsChanged={onViewableItemsChanged}
           viewabilityConfig={VIEWABILITY_CONFIG}

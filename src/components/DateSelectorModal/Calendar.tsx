@@ -11,7 +11,8 @@ import {
   subMonths,
 } from 'date-fns';
 import {FlashList} from '@shopify/flash-list';
-import React, {useState} from 'react';
+import type {FlashListRef} from '@shopify/flash-list';
+import React, {useCallback, useRef, useState} from 'react';
 import {StyleSheet, View} from 'react-native';
 import ArrowIcon from '@components/DatePicker/CalendarPicker/ArrowIcon';
 import generateMonthMatrix from '@components/DatePicker/CalendarPicker/generateMonthMatrix';
@@ -214,6 +215,19 @@ function Calendar(props: CalendarProps) {
   );
   const initialScrollIndex = Math.max(0, monthView.getFullYear() - minYear);
 
+  // FlashList v2 only knows the real year-block height after its first layout
+  // (`onLoad`); `initialScrollIndex` alone is resolved against the default
+  // estimate, so on Android the overview can open parked a few years off (and
+  // not repaint until a scroll). Re-apply the scroll once measured so the
+  // current year lands where it should.
+  const yearListRef = useRef<FlashListRef<number>>(null);
+  const handleYearListLoad = useCallback(() => {
+    yearListRef.current?.scrollToIndex({
+      index: initialScrollIndex,
+      animated: false,
+    });
+  }, [initialScrollIndex]);
+
   const renderYearBlock = ({item: year}: {item: number}) => (
     <View style={localStyles.yearBlock}>
       <View style={localStyles.yearLabel}>
@@ -304,11 +318,13 @@ function Calendar(props: CalendarProps) {
       {view === 'overview' ? (
         <View style={localStyles.overview}>
           <FlashList
+            ref={yearListRef}
             data={years}
             extraData={`${monthView.getFullYear()}-${monthView.getMonth()}`}
             keyExtractor={year => String(year)}
             renderItem={renderYearBlock}
             initialScrollIndex={initialScrollIndex}
+            onLoad={handleYearListLoad}
             showsVerticalScrollIndicator={false}
           />
         </View>
