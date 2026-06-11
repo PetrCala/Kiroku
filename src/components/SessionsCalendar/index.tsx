@@ -254,7 +254,6 @@ function SessionsCalendar({
   useEffect(() => {
     if (mode === 'compact') {
       hasPrefetchedRef.current = false;
-      setRenderFromDate(null);
       return;
     }
     if (hasPrefetchedRef.current) {
