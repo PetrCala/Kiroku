@@ -39,6 +39,28 @@ const CROSSFADE_START_FRACTION = 2200 / TOTAL_DURATION_MS;
 /** Period of one full wave oscillation (drives the independent phase value) */
 const WAVE_PERIOD_MS = 1600;
 
+// Ambient idle shimmer: after the entrance settles, a soft brand-yellow band
+// sweeps diagonally across the resting mark on its own repeating phase value.
+// One loop = a long dwell with the band parked off-screen followed by a short
+// visible sweep, so it reads as a gentle premium accent, not a loader. The sweep
+// sits at the END of the loop, so the first shimmer lands a full interval after
+// the entrance settles rather than right on top of the liquid fill.
+/** Period of one full shimmer loop (dwell + visible sweep) */
+const SHIMMER_PERIOD_MS = 7000;
+/** Length of the visible sweep within a loop; the rest of the period is dwell */
+const SHIMMER_SWEEP_DURATION_MS = 1100;
+/**
+ * Fraction of the loop spent sweeping (at the loop's end). The dwell is baked
+ * into the band's interpolation (it parks off-screen for everything before the
+ * sweep) rather than a literal delay, so the shared value can repeat on a single
+ * uninterrupted timing.
+ */
+const SHIMMER_SWEEP_FRACTION = SHIMMER_SWEEP_DURATION_MS / SHIMMER_PERIOD_MS;
+/** Width of the gradient highlight band (viewBox units) */
+const SHIMMER_BAND_WIDTH = 460;
+/** Peak alpha of the brand-yellow highlight at the band's center */
+const SHIMMER_PEAK_OPACITY = 0.32;
+
 // Composed at module scope so the worklets below capture ready-made easing
 // functions instead of rebuilding them per frame.
 const SHAPE_OPACITY_EASING = Easing.out(Easing.quad);
@@ -68,6 +90,11 @@ export {
   LIQUID_SURFACE_END_Y,
   CROSSFADE_START_FRACTION,
   WAVE_PERIOD_MS,
+  SHIMMER_PERIOD_MS,
+  SHIMMER_SWEEP_DURATION_MS,
+  SHIMMER_SWEEP_FRACTION,
+  SHIMMER_BAND_WIDTH,
+  SHIMMER_PEAK_OPACITY,
   SHAPE_OPACITY_EASING,
   SHAPE_TRANSLATE_EASING,
   LIQUID_LEVEL_EASING,
