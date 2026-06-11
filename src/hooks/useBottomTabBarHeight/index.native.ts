@@ -3,10 +3,13 @@ import {BottomTabBarHeightContext} from 'react-native-bottom-tabs';
 import variables from '@src/styles/variables';
 
 /**
- * The height of the native bottom tab bar (bar + bottom safe-area inset),
- * read from `react-native-bottom-tabs`' context. Tab-root screens use this to
- * inset scroll content (and lift the Home FAB) so nothing is hidden behind the
- * bar, which overlays the scene rather than insetting it.
+ * iOS (Android resolves to `index.android.ts` instead, which returns 0 —
+ * there the bar is a sibling laid out below the scene, not an overlay, so
+ * content needs no clearance): the height of the native bottom tab bar (bar +
+ * bottom safe-area inset), read from `react-native-bottom-tabs`' context.
+ * Tab-root screens use this to inset scroll content (and lift the Home FAB)
+ * so nothing is hidden behind the bar, which on iOS overlays the scene rather
+ * than insetting it.
  *
  * Reads the context directly (rather than the library's `useBottomTabBarHeight`,
  * which throws without a provider) so it degrades gracefully to the static bar
