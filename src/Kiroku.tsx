@@ -151,8 +151,11 @@ function Kiroku() {
   // authenticationChecked (Firebase onAuthStateChanged) is an alternative to
   // hasCheckedAutoLogin so that navigating directly to /auth (bypassing
   // InitialScreen, which is the normal setter) can still clear the splash.
+  // HAS_CHECKED_AUTO_LOGIN initialises to `false` in initialKeyStates (not
+  // null/undefined), so treat `=== true` as the "set" gate before falling back.
   const shouldInit =
-    isNavigationReady && (hasCheckedAutoLogin ?? authenticationChecked);
+    isNavigationReady &&
+    (hasCheckedAutoLogin === true || authenticationChecked);
 
   // Wait until Onyx has finished hydrating PREFERRED_THEME from local storage
   // before hiding the splash. Otherwise the ThemeProvider renders one frame
