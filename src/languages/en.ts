@@ -452,6 +452,8 @@ export default {
     error: {
       hasInvalidCharacter: 'Invalid character',
       containsReservedWord: 'This name contains a reserved word.',
+      containsProfanity:
+        'This name contains inappropriate language. Please choose another.',
       characterLimitExceedCounter: ({length, limit}) =>
         `Character limit exceeded (${length}/${limit})`,
       characterLimit: ({limit}: CharacterLimitParams) =>
