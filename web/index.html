@@ -81,6 +81,31 @@
         transition-property: opacity;
         z-index: 10000;
       }
+
+      /*
+        Desktop "phone frame" (issue #1219). Kiroku is mobile-first (native
+        bottom tabs, no central pane), so above the responsive breakpoint we
+        center the app at a phone width on a backdrop rather than show the
+        inherited wide layout with a large empty central pane. index.web.js
+        clamps the reported viewport width to match, so the app renders its
+        normal mobile layout inside this column. Keep the 480px width and the
+        801px breakpoint in sync with index.web.js (FRAME_WIDTH / BREAKPOINT).
+      */
+      @media (min-width: 801px) {
+        body {
+          background: radial-gradient(
+            circle at 50% 30%,
+            #2a2a2e 0%,
+            #0d0d0f 75%
+          );
+        }
+        #root {
+          width: 480px;
+          max-width: 100%;
+          margin: 0 auto;
+          box-shadow: 0 0 40px rgba(0, 0, 0, 0.5);
+        }
+      }
     </style>
     <meta
       name="viewport"
