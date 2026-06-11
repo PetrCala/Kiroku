@@ -13,7 +13,6 @@ import * as API from '@libs/API';
 import {WRITE_COMMANDS} from '@libs/API/types';
 import HttpsError from '@libs/Errors/HttpsError';
 import ONYXKEYS from '@src/ONYXKEYS';
-import type Response from '@src/types/onyx/Response';
 import * as Session from '@userActions/Session';
 import * as UserActions from '@userActions/User';
 
@@ -130,7 +129,7 @@ describe('signInWithOAuth', () => {
   });
 
   it('provisions and sets the display name for a brand-new account (no optimistic data)', async () => {
-    mockedProvision.mockResolvedValue({jsonCode: 200} as Response);
+    mockedProvision.mockResolvedValue({jsonCode: 200});
 
     await UserActions.signInWithOAuth(fakeAuth, fakeCredential, 'Jane Doe');
 
@@ -155,7 +154,7 @@ describe('signInWithOAuth', () => {
   });
 
   it('seeds the default user data into Onyx for a brand-new account so the redirect is deterministic', async () => {
-    mockedProvision.mockResolvedValue({jsonCode: 200} as Response);
+    mockedProvision.mockResolvedValue({jsonCode: 200});
 
     await UserActions.signInWithOAuth(fakeAuth, fakeCredential, 'Jane Doe');
 
@@ -201,7 +200,7 @@ describe('signInWithOAuth', () => {
     // i.e. some layer resolved the rejection. Resolution alone must therefore
     // never trigger the seed; only the server's positive `jsonCode: 200`
     // creation signal may.
-    mockedProvision.mockResolvedValue({jsonCode: 409} as Response);
+    mockedProvision.mockResolvedValue({jsonCode: 409});
 
     await expect(
       UserActions.signInWithOAuth(fakeAuth, fakeCredential, 'Jane Doe'),
