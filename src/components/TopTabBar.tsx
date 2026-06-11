@@ -49,7 +49,19 @@ function renderTopTabLabel({
   route: TopTabRoute;
   color: string;
 }): React.ReactNode {
-  return <Text style={[styles.tabBarLabel, {color}]}>{route.title}</Text>;
+  // Tabs are fixed equal-width (`scrollEnabled={false}`), so a long label like
+  // "Breakdown" can overflow a narrow tab. Keep it on one line and let it shrink
+  // to fit rather than wrap or truncate, so every label stays readable at any
+  // screen width.
+  return (
+    <Text
+      style={[styles.tabBarLabel, {color}]}
+      numberOfLines={1}
+      adjustsFontSizeToFit
+      minimumFontScale={0.8}>
+      {route.title}
+    </Text>
+  );
 }
 
 /** Shared `commonOptions` for a top-tab `TabView` — themes the labels. */
