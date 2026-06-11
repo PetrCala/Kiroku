@@ -15,10 +15,11 @@ import type CONST from '@src/CONST';
  * surfaces a success confirmation; a dismissible error is raised at the call
  * site (mirroring the block flow) if the write throws synchronously.
  *
- * Reporting is intentionally NOT gated behind the friend-management flow: any
- * viewable profile (friend, friend-of-friend, search result) can be reported, so
- * unlike block this carries no unfriend side effect. Part of the moderation epic
- * (#757) required for App Store Guideline 1.2.
+ * Unlike block, reporting carries no unfriend side effect, and the action is
+ * profile-agnostic: it works for any user id, even though every profile the app
+ * can currently navigate to belongs to a friend (so the entry point lives in the
+ * friend-management popover beside Block). Part of the moderation epic (#757)
+ * required for App Store Guideline 1.2.
  */
 
 type ReportReason = ValueOf<typeof CONST.REPORT.REASON>;

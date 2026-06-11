@@ -11,6 +11,7 @@ import Navigation from '@libs/Navigation/Navigation';
 import * as ErrorUtils from '@libs/ErrorUtils';
 import useWindowDimensions from '@hooks/useWindowDimensions';
 import ERRORS from '@src/ERRORS';
+import ROUTES from '@src/ROUTES';
 import * as KirokuIcons from './Icon/KirokuIcons';
 import type {PopoverMenuItem} from './PopoverMenu';
 import PopoverMenu from './PopoverMenu';
@@ -71,6 +72,17 @@ function ManageFriendPopover({
       icon: KirokuIcons.Lock,
       onSelected: () => {
         setBlockModalVisible(true);
+      },
+    },
+    // Report sits beside Block so the two moderation actions share one surface.
+    // Every reachable profile is currently a friend's (see #765; public
+    // profiles tracked in #1217), so the friend-management popover covers all
+    // reportable users today.
+    {
+      text: translate('profileScreen.report'),
+      icon: KirokuIcons.Info,
+      onSelected: () => {
+        Navigation.navigate(ROUTES.PROFILE_REPORT_USER.getRoute(friendId));
       },
     },
   ];
