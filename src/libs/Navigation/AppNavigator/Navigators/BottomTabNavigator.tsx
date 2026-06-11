@@ -64,6 +64,7 @@ function BottomTabNavigator() {
         tabBarStyle={{backgroundColor: theme.appBG}}
         translucent={SUPPORTS_LIQUID_GLASS}
         scrollEdgeAppearance={SUPPORTS_LIQUID_GLASS ? 'default' : 'opaque'}
+        disablePageAnimations
         // Match the rest of the app's typography on the native labels.
         tabLabelStyle={{
           fontFamily: FontUtils.fontFamily.platform.EXP_NEUE.fontFamily,
