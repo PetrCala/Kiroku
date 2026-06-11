@@ -10,6 +10,19 @@ on:
   pull_request:
     types: [labeled]
 
+# Supersede an in-flight test build for the same PR + trigger label. A rebase or
+# a re-applied "Ready To Build" label starts a fresh run; without this, the older
+# run keeps compiling, and when it is cancelled its platform jobs end as
+# `cancelled` while the `postGithubComment` job (`if: always()`) still runs and
+# renders that result as "❌ FAILED ❌" — a false failure on a build that was only
+# superseded. Cancelling the stale run as a whole unit stops the misleading
+# comment and frees the expensive macOS/Android runners. The label name is part
+# of the key so the single-platform "- iOS" / "- Android" builds stay independent
+# of each other (and of the combined "Ready To Build").
+concurrency:
+  group: testBuild-${{ github.event.pull_request.number || github.event.inputs.PULL_REQUEST_NUMBER }}-${{ github.event.label.name || 'workflow_dispatch' }}
+  cancel-in-progress: true
+
 permissions:
   id-token: write
   pull-requests: write
