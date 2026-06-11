@@ -13,6 +13,7 @@ import type {ThemeStyles} from '@styles/index';
 import type {StyleUtilsType} from '@styles/utils';
 import variables from '@styles/variables';
 import CONFIG from '@src/CONFIG';
+import SCREENS from '@src/SCREENS';
 import createModalCardStyleInterpolator from './createModalCardStyleInterpolator';
 import getModalPresentationStyle from './getModalPresentationStyle';
 import sessionsCalendarCardStyleInterpolator from './ModalStackNavigators/sessionsCalendarTransition';
@@ -61,6 +62,20 @@ function hasPoppableInnerStack(state: NestedState): boolean {
   }
   const activeRoute = state.routes[activeIndex];
   return hasPoppableInnerStack(activeRoute?.state);
+}
+
+/**
+ * Name of the right-modal screen currently shown (e.g. `Profile`, `Settings`).
+ * Used to opt a screen out of the root-level swipe-back so its content can own
+ * a competing horizontal gesture — the Profile calendar's month-swipe, which a
+ * native card pan would otherwise steal.
+ */
+function getActiveRightModalRouteName(state: NestedState): string | undefined {
+  if (!state?.routes) {
+    return undefined;
+  }
+  const activeIndex = state.index ?? 0;
+  return state.routes[activeIndex]?.name;
 }
 
 type GetRootNavigatorScreenOptions = (
@@ -121,9 +136,14 @@ const getRootNavigatorScreenOptions: GetRootNavigatorScreenOptions = (
     // stack bottoms out.
     rightModalNavigator: ({route}) => ({
       ...rightModalStaticOptions,
+      // Profile is excluded so its content-level SwipeBackGestureDetector can
+      // own dismissal and yield to the calendar's month-swipe — the full-width
+      // card pan (gestureResponseDistance: 10000) would otherwise steal it.
       gestureEnabled:
         Platform.OS === 'ios' &&
-        !hasPoppableInnerStack((route as {state?: NestedState}).state),
+        !hasPoppableInnerStack((route as {state?: NestedState}).state) &&
+        getActiveRightModalRouteName((route as {state?: NestedState}).state) !==
+          SCREENS.RIGHT_MODAL.PROFILE,
     }),
     onboardingModalNavigator: (shouldUseNarrowLayout: boolean) => ({
       cardStyleInterpolator: (props: StackCardInterpolationProps) =>
