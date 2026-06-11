@@ -1,40 +1,20 @@
 import {appleAuthAndroid} from '@invertase/react-native-apple-authentication';
 import {OAuthProvider} from 'firebase/auth';
 import React from 'react';
-import {StyleSheet, View} from 'react-native';
+import {View} from 'react-native';
 import Icon from '@components/Icon';
 import * as KirokuIcons from '@components/Icon/KirokuIcons';
 import PressableWithFeedback from '@components/Pressable/PressableWithFeedback';
 import Text from '@components/Text';
 import {useFirebase} from '@context/global/FirebaseContext';
 import useLocalize from '@hooks/useLocalize';
+import useThemeStyles from '@hooks/useThemeStyles';
 import ERRORS from '@src/ERRORS';
 import * as ErrorUtils from '@libs/ErrorUtils';
 import Log from '@libs/Log';
 import * as App from '@userActions/App';
 import * as User from '@userActions/User';
 import CONFIG from '@src/CONFIG';
-
-const styles = StyleSheet.create({
-  button: {
-    width: '100%',
-    height: 48,
-    borderRadius: 8,
-    backgroundColor: '#000000',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  content: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-  },
-  label: {
-    color: '#FFFFFF',
-    fontSize: 17,
-    fontWeight: '600',
-  },
-});
 
 type AppleSignInProps = {
   onPress?: () => void;
@@ -97,6 +77,7 @@ function AppleSignIn({
 }: AppleSignInProps) {
   const {auth} = useFirebase();
   const {translate} = useLocalize();
+  const styles = useThemeStyles();
 
   const handleSignIn = async () => {
     let loadingShown = false;
@@ -160,20 +141,26 @@ function AppleSignIn({
 
   return (
     <PressableWithFeedback
-      style={styles.button}
+      style={[styles.signInProviderButton, styles.appleSignInButton]}
       onPress={() => {
         handleSignIn();
       }}
       accessibilityRole="button"
       accessibilityLabel={translate('common.signInWithApple')}>
-      <View style={styles.content}>
+      <View style={styles.signInProviderButtonContent}>
         <Icon
           src={KirokuIcons.AppleLogo}
           width={18}
           height={18}
-          fill="#FFFFFF"
+          fill={styles.appleSignInButtonLabel.color}
         />
-        <Text style={styles.label}>{translate('common.signInWithApple')}</Text>
+        <Text
+          style={[
+            styles.signInProviderButtonLabel,
+            styles.appleSignInButtonLabel,
+          ]}>
+          {translate('common.signInWithApple')}
+        </Text>
       </View>
     </PressableWithFeedback>
   );

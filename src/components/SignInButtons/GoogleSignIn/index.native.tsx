@@ -4,13 +4,14 @@ import {
 } from '@react-native-google-signin/google-signin';
 import {GoogleAuthProvider} from 'firebase/auth';
 import React from 'react';
-import {StyleSheet, View} from 'react-native';
+import {View} from 'react-native';
 import Icon from '@components/Icon';
 import * as KirokuIcons from '@components/Icon/KirokuIcons';
 import PressableWithFeedback from '@components/Pressable/PressableWithFeedback';
 import Text from '@components/Text';
 import {useFirebase} from '@context/global/FirebaseContext';
 import useLocalize from '@hooks/useLocalize';
+import useThemeStyles from '@hooks/useThemeStyles';
 import ERRORS from '@src/ERRORS';
 import * as ErrorUtils from '@libs/ErrorUtils';
 import Log from '@libs/Log';
@@ -22,29 +23,6 @@ type GoogleSignInProps = {
   onPress?: () => void;
   onError?: (message: string) => void;
 };
-
-const styles = StyleSheet.create({
-  button: {
-    width: '100%',
-    height: 48,
-    borderRadius: 8,
-    backgroundColor: '#FFFFFF',
-    borderWidth: 1,
-    borderColor: '#DADCE0',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  content: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-  },
-  label: {
-    color: '#1F1F1F',
-    fontSize: 17,
-    fontWeight: '600',
-  },
-});
 
 /**
  * Performs the native Google Sign In request and returns the resulting idToken.
@@ -79,6 +57,7 @@ function GoogleSignIn({
 }: GoogleSignInProps) {
   const {auth} = useFirebase();
   const {translate} = useLocalize();
+  const styles = useThemeStyles();
 
   const handleSignIn = async () => {
     let loadingShown = false;
@@ -135,15 +114,21 @@ function GoogleSignIn({
 
   return (
     <PressableWithFeedback
-      style={styles.button}
+      style={[styles.signInProviderButton, styles.googleSignInButton]}
       onPress={() => {
         handleSignIn();
       }}
       accessibilityRole="button"
       accessibilityLabel={translate('common.signInWithGoogle')}>
-      <View style={styles.content}>
+      <View style={styles.signInProviderButtonContent}>
         <Icon src={KirokuIcons.GoogleG} width={16} height={16} />
-        <Text style={styles.label}>{translate('common.signInWithGoogle')}</Text>
+        <Text
+          style={[
+            styles.signInProviderButtonLabel,
+            styles.googleSignInButtonLabel,
+          ]}>
+          {translate('common.signInWithGoogle')}
+        </Text>
       </View>
     </PressableWithFeedback>
   );

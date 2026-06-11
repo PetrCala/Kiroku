@@ -2059,6 +2059,46 @@ const styles = (theme: ThemeColors) =>
       width: CONST.SIGN_IN_FORM_WIDTH,
     },
 
+    // Third-party sign-in buttons follow the providers' brand guidelines
+    // (Apple: black fill, Google: white fill with border), so their colors
+    // are fixed and intentionally the same in both themes.
+    signInProviderButton: {
+      width: '100%',
+      height: 48,
+      borderRadius: 8,
+      justifyContent: 'center',
+      alignItems: 'center',
+    },
+
+    signInProviderButtonContent: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 8,
+    },
+
+    signInProviderButtonLabel: {
+      fontSize: 17,
+      fontWeight: '600',
+    },
+
+    appleSignInButton: {
+      backgroundColor: '#000000',
+    },
+
+    appleSignInButtonLabel: {
+      color: '#FFFFFF',
+    },
+
+    googleSignInButton: {
+      backgroundColor: '#FFFFFF',
+      borderWidth: 1,
+      borderColor: '#DADCE0',
+    },
+
+    googleSignInButtonLabel: {
+      color: '#1F1F1F',
+    },
+
     changeSignUpScreenLinkContainer: {
       flexDirection: 'row',
       flexWrap: 'wrap',
