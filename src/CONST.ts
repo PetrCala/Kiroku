@@ -116,6 +116,10 @@ const CONST = {
   FEATURES: {
     BADGES: false,
     FULLSCREEN_CALENDAR: true,
+    // Boot-splash logo fly-in / splash→logo handoff (#1196). Off so the in-app
+    // logo plays its full assembly + liquid-fill entrance instead of being
+    // masked by the flying splash logo.
+    LOGO_FLY_IN: false,
   },
   APP_UPDATE: {
     // How long the dismiss update button should hide the window for

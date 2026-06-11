@@ -13,6 +13,7 @@ import ImageSVG from '@components/ImageSVG';
 import SplashScreenStateContext from '@context/global/SplashScreenStateContext';
 import useThemeStyles from '@hooks/useThemeStyles';
 import BootSplash from '@libs/BootSplash';
+import * as FeatureFlags from '@libs/FeatureFlags';
 import Log from '@libs/Log';
 import colors from '@src/styles/theme/colors';
 import type {
@@ -117,9 +118,12 @@ function SplashScreenHider({
       const reduceMotionEnabled =
         await AccessibilityInfo.isReduceMotionEnabled().catch(() => false);
 
-      // Handoff only when the signed-out tree reported a usable logo slot and
-      // motion isn't reduced. Otherwise keep today's hide.
+      // Handoff only when the fly-in feature is enabled, the signed-out tree
+      // reported a usable logo slot, and motion isn't reduced. Otherwise keep
+      // today's hide. With LOGO_FLY_IN off, every path shrinks out and the
+      // in-app logo plays its full assembly + liquid-fill entrance.
       if (
+        !FeatureFlags.isEnabled('LOGO_FLY_IN') ||
         !target ||
         target.width <= 0 ||
         target.height <= 0 ||
