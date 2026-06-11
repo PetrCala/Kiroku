@@ -241,7 +241,7 @@ function DrinkingSessionWindow({
           text={translate('liveSessionScreen.discardSession', {
             discardWord: deleteSessionWording,
           })}
-          style={styles.buttonLarge}
+          style={[styles.buttonLarge, styles.flex1]}
           onPress={handleDiscardSession}
         />
         <Button
@@ -249,7 +249,7 @@ function DrinkingSessionWindow({
           large
           isDisabled={isSaveDisabled}
           text={translate('liveSessionScreen.saveSession')}
-          style={styles.buttonLargeSuccess}
+          style={[styles.buttonLargeSuccess, styles.flex1]}
           onPress={() => saveSession(user)}
         />
       </BottomActionBar>
