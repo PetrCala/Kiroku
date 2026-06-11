@@ -9,11 +9,12 @@ import {reachAuthenticatedApp} from '../fixtures/devGates';
 export class LoginPage {
   constructor(private readonly page: Page) {}
 
-  // The email/password form lives at `/auth` (`AuthScreen`). The app root `/`
-  // is the logged-out welcome screen (just a "Create account" entry), so going
-  // there would never surface the sign-in form.
+  // The email/password form lives at `/auth?mode=logIn`. The app defaults to
+  // sign-up mode when no `mode` param is present, which applies password
+  // complexity validation and prevents sign-in credentials from submitting.
+  // `/auth` (the logged-out welcome screen) has only a "Create account" entry.
   async goto(): Promise<void> {
-    await this.page.goto('/auth');
+    await this.page.goto('/auth?mode=logIn');
   }
 
   // Target the `<input>` elements directly. react-native-web puts the
