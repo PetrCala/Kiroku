@@ -1,3 +1,8 @@
+/* eslint-disable @typescript-eslint/naming-convention -- jest mock factory keys (__esModule) and captured RTDB push-ids / epoch-ms keys are dictated by the real envelope shape */
+/* eslint-disable rulesdir/prefer-actions-set-data -- this integration test seeds/asserts Onyx directly to model the poisoned-store cold-launch the flush must heal */
+/* eslint-disable rulesdir/no-onyx-connect -- this test reads final Onyx state via connect; it is not app code */
+/* eslint-disable rulesdir/prefer-onyx-connect-in-libs -- same: test-only Onyx.connect to assert the flushed state */
+
 /**
  * Replays the EXACT app/open response envelope captured from the dev backend
  * (2026-06-11, uid UJs3…) through a real react-native-onyx instance the same
