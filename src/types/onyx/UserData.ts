@@ -124,6 +124,17 @@ type UserData = {
    */
   blocked?: UserList;
 
+  /**
+   * Whether an admin has banned/suspended this account (`users/{uid}/banned`,
+   * Kiroku #766/#1238). Server-authoritative — written by the kiroku-api admin
+   * ban/unban handlers (which also disable the Firebase Auth account) and pushed
+   * to the signed-in user's own `USER_DATA_LIST` entry via Pusher / `/v1/updates`
+   * / `app/open`. The app reads it on the OWN record to force an immediate
+   * "account suspended" lockout + sign-out, instead of waiting for the Firebase
+   * token to expire. Not meaningful on other users' records.
+   */
+  banned?: boolean;
+
   /** User's private data */
   private_data?: UserPrivateData;
 
