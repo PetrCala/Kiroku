@@ -21,11 +21,14 @@ const baseURL = process.env.PLAYWRIGHT_BASE_URL ?? 'http://localhost:8082';
 // CI and agent runs target an already-deployed URL and must not boot webpack.
 const shouldStartLocalServer = !process.env.PLAYWRIGHT_BASE_URL;
 
-// We deliberately drive the app at a MOBILE viewport. The wide desktop layout
-// has a known open bug (#1219: the tab roots stay pinned to a ~375px left
-// column, leaving the central pane empty), so testing at desktop width would
-// flap on a defect that is not ours to assert on here. 393x852 is the
-// verified-clean layout from the #934 / #1188 web QA pass.
+// The full smoke flow runs at a MOBILE viewport -- 393x852 is the
+// verified-clean layout from the #934 / #1188 web QA pass and the app's primary
+// surface. The wide desktop layout is covered separately by
+// tests/desktop-frame.spec.ts, which drives the app at 1440x900 and asserts the
+// post-#1224 phone frame (#1219): above the 800px breakpoint the app renders
+// its mobile layout centered in a ~480px column instead of leaving an empty
+// central pane. Those tests set their own viewport via the auth fixture, so
+// this value only governs the logged-out sign-in flow.
 const MOBILE_VIEWPORT = {width: 393, height: 852};
 
 export default defineConfig({

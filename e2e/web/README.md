@@ -14,7 +14,11 @@ navigation across the four bottom tabs (Home, Friends, Statistics, Settings).
 - **CI:** the `playwright` job in `.github/workflows/deployWeb.yml` runs this
   against the PR preview channel when a PR is labeled `Ready To Build - Web`.
 
-Notes: tests run at a mobile viewport (393x852) on purpose, to stay in the
-verified-clean layout and avoid the known wide-desktop bug (#1219). The sign-in
-session is cached once per worker (`.auth/user.json`) so navigation tests skip
-the login flow.
+Notes: the smoke flow (`tests/smoke.spec.ts`) runs at a mobile viewport
+(393x852) -- the app's primary surface and the verified-clean layout from the
+#934 / #1188 QA pass. The wide desktop layout is covered by
+`tests/desktop-frame.spec.ts`, which drives the app at 1440x900 and asserts the
+post-#1224 phone frame (#1219): above the 800px breakpoint the app renders its
+mobile layout centered in a ~480px column rather than leaving an empty central
+pane. The sign-in session is cached once per worker (`.auth/user.json`) so
+navigation tests skip the login flow.
