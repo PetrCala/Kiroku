@@ -747,6 +747,7 @@ export default {
     general: 'Obecné',
     reportBug: 'Nahlásit chybu',
     giveFeedback: 'Poslat zpětnou vazbu',
+    help: 'Nápověda a podpora',
     signOut: 'Odhlásit se',
     shareTheApp: 'Sdílet aplikaci',
     adminTools: 'Nástroje pro administrátory',
@@ -775,6 +776,9 @@ export default {
     },
     subscriptionTermsScreen: {
       loading: 'Načítám Podmínky předplatného…',
+    },
+    helpScreen: {
+      loading: 'Načítám podporu…',
     },
     error: {},
   },

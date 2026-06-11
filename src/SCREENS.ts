@@ -88,6 +88,7 @@ const SCREENS = {
 
     ABOUT: 'Settings_About',
     SUPPORT: 'Settings_Support',
+    HELP: 'Settings_Help',
     MANAGE_SUBSCRIPTION: 'Settings_ManageSubscription',
     TERMS_OF_SERVICE: 'Settings_TermsOfService',
     PRIVACY_POLICY: 'Settings_PrivacyPolicy',
