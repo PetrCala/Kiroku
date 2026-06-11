@@ -49,6 +49,9 @@ type SessionsCalendarWeekListViewProps = {
   monthlyTotalsMap: Map<string, number>;
   /** Earliest day currently loaded (drives the bottom of the list). */
   loadedFromDate: Date | null;
+  /** Earliest tracked day ('yyyy-MM-dd'). Days before it render dimmed but stay
+   *  clickable. Styling-only; the parent decides how far the list renders. */
+  trackingStartDate?: string;
   /** Latest day to render (defaults to today). */
   endDate?: Date;
   /** True while the data fetcher is widening the loaded window. The view
@@ -108,6 +111,7 @@ function SessionsCalendarWeekListView({
   unitsMap,
   monthlyTotalsMap,
   loadedFromDate,
+  trackingStartDate,
   endDate,
   isFetchingOlderMonths,
   onDayPress,
@@ -361,6 +365,7 @@ function SessionsCalendarWeekListView({
           row={args.item.row}
           markedDates={markedDates}
           unitsMap={unitsMap}
+          trackingStartDate={trackingStartDate}
           onDayPress={onDayPress}
           onDayLongPress={onDayLongPress}
         />
@@ -370,6 +375,7 @@ function SessionsCalendarWeekListView({
       markedDates,
       unitsMap,
       monthlyTotalsMap,
+      trackingStartDate,
       onDayPress,
       onDayLongPress,
       translate,

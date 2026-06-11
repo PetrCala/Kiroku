@@ -10,13 +10,21 @@ function DayComponent({
   units,
   marking,
   theme, // eslint-disable-line @typescript-eslint/no-unused-vars
+  trackingStartDate,
   onPress,
   onLongPress,
 }: DayComponentProps) {
   const StyleUtils = useStyleUtils();
+  // `isDisabled` gates clickability — set only for out-of-range days (future
+  // days, via the calendar's maxDate). `isBeforeTracking` is a styling-only
+  // signal for days before the user started tracking: those stay clickable so
+  // the user can add a past session, but render dimmed like future days.
   const isDisabled = state === 'disabled';
+  const isBeforeTracking =
+    !!trackingStartDate && !!date && date.dateString < trackingStartDate;
+  const isDimmed = isDisabled || isBeforeTracking;
   const unitsText =
-    !isDisabled && units !== undefined && units > 0
+    !isDimmed && units !== undefined && units > 0
       ? (Number.isInteger(units) ? units : units.toFixed(1)).toString()
       : '';
 
@@ -28,14 +36,11 @@ function DayComponent({
         onPress={() => onPress && date && onPress(date)}
         onLongPress={onLongPress ? () => date && onLongPress(date) : undefined}>
         <View
-          style={StyleUtils.getSessionsCalendarDayCellStyle(
-            marking,
-            isDisabled,
-          )}>
+          style={StyleUtils.getSessionsCalendarDayCellStyle(marking, isDimmed)}>
           <Text
             style={StyleUtils.getSessionsCalendarDayLabelStyle(
               marking,
-              isDisabled,
+              isDimmed,
             )}>
             {date?.day}
           </Text>
