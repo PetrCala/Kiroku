@@ -101,22 +101,6 @@ function applyAirshipOnyxUpdates(updates: OnyxUpdateEvent[]) {
   return airshipEventsPromise;
 }
 
-// TODO: temporary diagnostics for the onboarding re-prompt investigation —
-// remove together with the useOnboardingFlow fire alert. Records which branch
-// each server update took (apply / skip-as-old / skip-with-finally) so a
-// spurious onboarding fire can show whether a response's onyxData was dropped
-// by the lastUpdateID staleness gate. Ring buffer; newest last.
-const applyTrace: string[] = [];
-function recordApplyTrace(entry: string): void {
-  applyTrace.push(entry);
-  if (applyTrace.length > 15) {
-    applyTrace.shift();
-  }
-}
-function getApplyTrace(): string[] {
-  return [...applyTrace];
-}
-
 /**
  * @param [updateParams.request] Exists if updateParams.type === 'https'
  * @param [updateParams.response] Exists if updateParams.type === 'https'
@@ -176,10 +160,6 @@ function apply({
   const isFullReconnectRequest =
     request?.command === SIDE_EFFECT_REQUEST_COMMANDS.RECONNECT_APP &&
     !request?.data?.updateIDFrom;
-
-  recordApplyTrace(
-    `${request?.command ?? type} last=${String(lastUpdateID)} applied=${String(lastUpdateIDAppliedToClient)} old=${String(!!isUpdateOld)} exempt=${String(isOpenAppRequest || isFullReconnectRequest)} data=${String(response?.onyxData?.length ?? updates?.length ?? 0)}`,
-  );
 
   if (isUpdateOld && !isOpenAppRequest && !isFullReconnectRequest) {
     Log.info(
@@ -279,4 +259,4 @@ function doesClientNeedToBeUpdated(
 }
 
 // eslint-disable-next-line import/prefer-default-export
-export {apply, doesClientNeedToBeUpdated, saveUpdateInformation, getApplyTrace};
+export {apply, doesClientNeedToBeUpdated, saveUpdateInformation};

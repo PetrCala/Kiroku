@@ -40,12 +40,6 @@ jest.mock('@libs/Firebase/FirebaseApp', () => ({
 jest.mock('@libs/OAuthCredential', () => ({getOAuthCredential: jest.fn()}));
 jest.mock('@userActions/Session', () => ({clearSignInData: jest.fn()}));
 
-// The temporary non-200-resolution diagnostics check the environment before
-// showing an alert; report "production" so no Alert fires during tests.
-jest.mock('@libs/Environment/Environment', () => ({
-  isProduction: jest.fn(() => Promise.resolve(true)),
-}));
-
 // Log schedules a periodic flush timer at import that fires after teardown.
 jest.mock('@libs/Log', () => ({
   __esModule: true,

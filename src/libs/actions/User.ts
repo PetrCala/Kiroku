@@ -24,9 +24,7 @@ import {
   updateProfile,
   verifyBeforeUpdateEmail,
 } from 'firebase/auth';
-import {Alert} from 'react-native';
 import {getOAuthCredential} from '@libs/OAuthCredential';
-import * as Environment from '@libs/Environment/Environment';
 import * as Localize from '@libs/Localize';
 import type {SelectedTimezone, Timezone} from '@src/types/onyx/UserData';
 import {validateAppVersion} from '@libs/Validation';
@@ -530,23 +528,18 @@ async function signInWithOAuth(
       await Onyx.update(getNewUserOnyxData(user.uid, profileData));
       await updateProfile(user, {displayName: name});
     } else {
-      // TODO: temporary diagnostics for the onboarding re-prompt investigation —
-      // this branch existing AT ALL means a middleware/transport layer resolved
-      // a non-2xx provisioning response instead of rejecting it. Capture the
-      // envelope so the mechanism can finally be pinned, then remove the alert.
-      Log.alert(
-        '[signInWithOAuth] provisioning RESOLVED with a non-200 envelope; treating as returning account',
+      // Any non-200 resolution is treated as "already provisioned": a returning
+      // user whose record must NOT be shadowed with new-account defaults. This is
+      // intentionally defensive — a `409` normally rejects into the catch below,
+      // but a 2026-06-11 field repro showed an already-provisioned account being
+      // seeded after a real HTTP 409, i.e. some transport layer resolving the
+      // rejection. Gating the seed on the positive `jsonCode === 200` creation
+      // signal closes that hole regardless of which layer swallowed the rejection.
+      Log.info(
+        '[signInWithOAuth] provisioning resolved without a 200 creation signal; skipping new-user seed',
+        false,
         {jsonCode: String(jsonCode)},
       );
-      Environment.isProduction().then(isProd => {
-        if (isProd) {
-          return;
-        }
-        Alert.alert(
-          'OAuth diagnostics',
-          `provisioning resolved (not rejected) with jsonCode=${String(jsonCode)}. Seed skipped — this confirms the swallowed-rejection mechanism.`,
-        );
-      });
     }
   } catch (error) {
     // `409 Conflict` = the account already exists (returning user). That is the

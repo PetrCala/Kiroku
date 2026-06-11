@@ -32,21 +32,6 @@ jest.mock('react-native-onyx', () => {
   };
 });
 
-// The hook's temporary fire-diagnostics import `Log`, which transitively runs
-// a module-scope `Onyx.connect` (src/libs/Console) that the partial Onyx mock
-// above can't satisfy. The diagnostics are irrelevant to these tests.
-jest.mock('@libs/Log', () => ({
-  __esModule: true,
-  default: {info: jest.fn()},
-}));
-
-// Same story for the diagnostics' apply-trace import: the real OnyxUpdates
-// pulls in SequentialQueue/PersistedRequests, which run module-scope
-// Onyx.connect calls the partial mock can't satisfy.
-jest.mock('@userActions/OnyxUpdates', () => ({
-  getApplyTrace: jest.fn(() => []),
-}));
-
 const mockedUseFirebase = jest.mocked(useFirebase);
 const mockedUseConfig = jest.mocked(useConfig);
 const mockedUseCurrentUserData = jest.mocked(useCurrentUserData);
