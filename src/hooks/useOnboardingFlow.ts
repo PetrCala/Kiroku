@@ -6,6 +6,7 @@ import {useFirebase} from '@context/global/FirebaseContext';
 import useCurrentUserData from '@hooks/useCurrentUserData';
 import * as Environment from '@libs/Environment/Environment';
 import Log from '@libs/Log';
+import * as OnyxUpdates from '@userActions/OnyxUpdates';
 import {
   getOnboardingLastVisitedPath,
   hasAcceptedCurrentTerms,
@@ -125,6 +126,11 @@ function useOnboardingFlow(): OnboardingFlowState {
       completedAt,
       agreedToTermsAt,
       termsLastUpdated,
+      // The full record the decision saw, plus which branch each recent server
+      // update took in OnyxUpdates.apply — shows whether a response's onyxData
+      // was dropped by the lastUpdateID staleness gate.
+      record: userData,
+      applyTrace: OnyxUpdates.getApplyTrace(),
     };
     Log.info('[useOnboardingFlow] onboarding fired', false, snapshot);
     // On dev builds the Log line lands in the Metro console, but ad-hoc/staging
@@ -145,6 +151,7 @@ function useOnboardingFlow(): OnboardingFlowState {
     completedAt,
     agreedToTermsAt,
     termsLastUpdated,
+    userData,
   ]);
 
   return flowState;
