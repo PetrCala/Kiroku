@@ -40,6 +40,21 @@ export class LoginPage {
    * sit between sign-in and Home; clear them so the caller ends up on Home.
    */
   async signIn(email: string, password: string): Promise<void> {
+    // AuthScreen defaults to sign-up mode (submit = "Create account", toggle =
+    // "Log in"). The URL param ?mode=logIn should set log-in mode, but if the
+    // custom linking layer strips query params, fall back to clicking the toggle.
+    const inSignUpMode = await this.page
+      .getByRole('button', {name: 'Create account'})
+      .isVisible()
+      .catch(() => false);
+    if (inSignUpMode) {
+      await this.page.getByRole('button', {name: 'Log in'}).click();
+      // Wait for the form to flip: "Create account" disappears, submit becomes "Log in".
+      await this.page
+        .getByRole('button', {name: 'Create account'})
+        .waitFor({state: 'hidden', timeout: 5000});
+    }
+
     await this.emailInput().fill(email);
     await this.passwordInput().fill(password);
     await this.submitButton().click();
