@@ -96,6 +96,8 @@ function SessionsCalendar({
     loadedFromDate,
     loadMoreMonths,
     loadUpTo,
+    hasPersistedFloor,
+    isWindowExhausted,
     isLoading,
   } = useLazyMarkedDates(
     userID,
@@ -158,17 +160,29 @@ function SessionsCalendar({
   // empty months — and for the day-list (which renders no empty months) that
   // means the list never grows, so an unguarded `loadUpTo` would loop until
   // React's update-depth limit. Clamp to this and short-circuit once reached.
+  //
+  // Only authoritative when `hasPersistedFloor` (self): then `minDate` is the
+  // canonical `earliest_session_at`. For a friend `minDate` is derived from the
+  // windowed session slice, so it collapses onto the current loaded edge — using
+  // it as a hard floor froze scroll-back at the 12-month prefetch window
+  // (Kiroku #1197). The friend path uses `isWindowExhausted` instead (below).
   const minDateFloor = useMemo(
     () => startOfMonth(parseISO(minDate)),
     [minDate],
   );
 
   // Whether there is older data still to load — drives the day-list's load
-  // trigger and its "loading older" header. Once the loaded floor reaches the
-  // earliest tracked month there is nothing more to fetch.
-  const canLoadOlder =
-    loadedFromDate !== null &&
-    loadedFromDate.getTime() > minDateFloor.getTime();
+  // trigger and its "loading older" header.
+  //  - Self (canonical floor): stop once the loaded window reaches the earliest
+  //    tracked month. Compared at month granularity (`startOfMonth`) so the
+  //    harmless boundary day baked into `loadedFromDate` (a `startOfMonth − 1
+  //    day`, see `useLazyMarkedDates`) can't trip the guard a day early.
+  //  - Friend (no canonical floor): keep loading until the window is exhausted —
+  //    the server returns nothing earlier than what we already have.
+  const canLoadOlder = hasPersistedFloor
+    ? loadedFromDate !== null &&
+      startOfMonth(loadedFromDate).getTime() > minDateFloor.getTime()
+    : !isWindowExhausted;
 
   // Regular function — `loadedFrom` is a ref whose `.current` mutates
   // without re-rendering. A `useCallback` keyed on it would either be stale
@@ -176,8 +190,16 @@ function SessionsCalendar({
   // events, so referential stability isn't required.
   const handleRequestOlder = (earliestVisible: Date) => {
     const floor = loadedFrom?.current ?? new Date();
-    if (floor.getTime() <= minDateFloor.getTime()) {
-      // Already loaded back to the earliest tracked month — nothing more.
+    // Self (canonical floor): stop once loaded back to the earliest tracked
+    // month. Friend (no canonical floor): stop only once the window is exhausted
+    // — `minDateFloor` is the windowed edge for friends, so never clamp to it.
+    if (hasPersistedFloor) {
+      if (startOfMonth(floor).getTime() <= minDateFloor.getTime()) {
+        // Already loaded back to the earliest tracked month — nothing more.
+        return;
+      }
+    } else if (isWindowExhausted) {
+      // Friend whose history is fully loaded (or empty/denied) — nothing more.
       return;
     }
     let target = computeLoadTarget(
@@ -189,7 +211,11 @@ function SessionsCalendar({
     if (!target) {
       return;
     }
-    if (target.getTime() < minDateFloor.getTime()) {
+    // Clamp to the canonical floor only when we actually know it (self). For a
+    // friend the floor is the windowed edge, so clamping there would re-freeze
+    // scroll-back at the current window; let the target ride down past it and
+    // rely on `isWindowExhausted` to stop once the history runs out.
+    if (hasPersistedFloor && target.getTime() < minDateFloor.getTime()) {
       target = minDateFloor;
     }
     deepestRequestedRef.current = target;
