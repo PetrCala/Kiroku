@@ -1,9 +1,11 @@
-import {
-  appleAuthAndroid,
-  AppleButton,
-} from '@invertase/react-native-apple-authentication';
+import {appleAuthAndroid} from '@invertase/react-native-apple-authentication';
 import {OAuthProvider} from 'firebase/auth';
 import React from 'react';
+import {StyleSheet, View} from 'react-native';
+import Icon from '@components/Icon';
+import * as KirokuIcons from '@components/Icon/KirokuIcons';
+import PressableWithFeedback from '@components/Pressable/PressableWithFeedback';
+import Text from '@components/Text';
 import {useFirebase} from '@context/global/FirebaseContext';
 import useLocalize from '@hooks/useLocalize';
 import ERRORS from '@src/ERRORS';
@@ -12,6 +14,27 @@ import Log from '@libs/Log';
 import * as App from '@userActions/App';
 import * as User from '@userActions/User';
 import CONFIG from '@src/CONFIG';
+
+const styles = StyleSheet.create({
+  button: {
+    width: '100%',
+    height: 48,
+    borderRadius: 8,
+    backgroundColor: '#000000',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  content: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  label: {
+    color: '#FFFFFF',
+    fontSize: 17,
+    fontWeight: '600',
+  },
+});
 
 type AppleSignInProps = {
   onPress?: () => void;
@@ -62,6 +85,11 @@ async function appleSignInRequestAndroid(): Promise<AppleAndroidSignInResult | n
  * Apple Sign In button for Android.
  * Drives Apple's web-based OAuth flow via appleAuthAndroid, then passes the
  * resulting identity token to Firebase the same way the iOS variant does.
+ *
+ * Visual: custom button matching the native iOS AppleButton geometry and the
+ * GoogleSignIn button (the library's JS AppleButton on Android renders no
+ * logo and a smaller label, so we draw our own per Apple's brand guidelines:
+ * black fill, white logo and label).
  */
 function AppleSignIn({
   onPress = () => {},
@@ -131,15 +159,23 @@ function AppleSignIn({
   };
 
   return (
-    <AppleButton
-      buttonStyle={AppleButton.Style.BLACK}
-      buttonType={AppleButton.Type.SIGN_IN}
-      cornerRadius={8}
-      style={{height: 48, width: '100%'}}
+    <PressableWithFeedback
+      style={styles.button}
       onPress={() => {
         handleSignIn();
       }}
-    />
+      accessibilityRole="button"
+      accessibilityLabel={translate('common.signInWithApple')}>
+      <View style={styles.content}>
+        <Icon
+          src={KirokuIcons.AppleLogo}
+          width={18}
+          height={18}
+          fill="#FFFFFF"
+        />
+        <Text style={styles.label}>{translate('common.signInWithApple')}</Text>
+      </View>
+    </PressableWithFeedback>
   );
 }
 
