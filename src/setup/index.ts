@@ -43,12 +43,6 @@ export default function () {
       [ONYXKEYS.NETWORK]: CONST.DEFAULT_NETWORK_DATA,
       [ONYXKEYS.IS_SIDEBAR_LOADED]: false,
       [ONYXKEYS.HAS_CHECKED_AUTO_LOGIN]: false,
-      [ONYXKEYS.SESSIONS_CALENDAR_MONTHS_LOADED]: null, // Reset calendar
-      // Reset to today on launch. This is a transient cross-screen sync value;
-      // resetting it here (rather than via a module-load side effect) is
-      // race-free with Onyx hydration, so a cold start never lands the home
-      // calendar on a month persisted from a previous session.
-      [ONYXKEYS.NVP_LAST_VIEWED_CALENDAR_DATE]: null,
       [ONYXKEYS.SHOULD_SHOW_COMPOSE_INPUT]: true,
       [ONYXKEYS.MODAL]: {
         isVisible: false,
@@ -58,6 +52,16 @@ export default function () {
       [ONYXKEYS.LAST_VISITED_PATH]: initializeLastVisitedPath(),
     },
   });
+
+  // Reset the calendar's cross-screen sync state on every cold launch so the home
+  // calendar always opens on the current month. These can't go in `initialKeyStates`
+  // above: Onyx drops `null` defaults (shouldRemoveNestedNulls), so a value persisted
+  // from a previous session would survive hydration. `Onyx.merge(key, null)` reads the
+  // stored value first, then removes it (delete + broadcast); `Onyx.set(key, null)`
+  // can't here, it no-ops on the empty pre-hydration cache. Running before the React
+  // tree mounts clears the value before any screen subscribes, so there's no flip.
+  Onyx.merge(ONYXKEYS.NVP_LAST_VIEWED_CALENDAR_DATE, null);
+  Onyx.merge(ONYXKEYS.SESSIONS_CALENDAR_MONTHS_LOADED, null);
 
   Device.setDeviceID();
 
