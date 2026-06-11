@@ -1,7 +1,6 @@
 import React, {useMemo} from 'react';
 import type {StyleProp, ViewStyle} from 'react-native';
 import {View} from 'react-native';
-import type {GestureType} from 'react-native-gesture-handler';
 import {Gesture, GestureDetector} from 'react-native-gesture-handler';
 import {runOnJS} from 'react-native-reanimated';
 import useThemeStyles from '@hooks/useThemeStyles';
@@ -16,13 +15,6 @@ type SwipeBackGestureDetectorProps = {
   /** Invoked when the user completes a rightward swipe. When omitted the gesture
    *  stays inert, so the wrapped content behaves normally. */
   onSwipeBack?: () => void;
-
-  /** A ref to an inner gesture this swipe-back must yield to. When provided, the
-   *  swipe-back won't activate until that gesture fails — so an inner horizontal
-   *  pan (e.g. the calendar's month-swipe) always wins where the two overlap,
-   *  while the swipe-back still fires everywhere that inner gesture isn't
-   *  tracking the touch. */
-  requireToFail?: React.MutableRefObject<GestureType | undefined>;
 
   /** Style for the gesture's host view. Defaults to filling the parent. */
   style?: StyleProp<ViewStyle>;
@@ -40,40 +32,33 @@ type SwipeBackGestureDetectorProps = {
  */
 function SwipeBackGestureDetector({
   onSwipeBack,
-  requireToFail,
   style,
   children,
 }: SwipeBackGestureDetectorProps) {
   const styles = useThemeStyles();
-  const swipeBackGesture = useMemo(() => {
-    const gesture = Gesture.Pan()
-      .enabled(!!onSwipeBack)
-      // Only a rightward drag is a candidate; the generous left failOffset
-      // keeps horizontal day-rows / the scrollbar from tripping it.
-      .activeOffsetX(20)
-      .failOffsetY([-20, 20])
-      .onEnd(e => {
-        'worklet';
+  const swipeBackGesture = useMemo(
+    () =>
+      Gesture.Pan()
+        .enabled(!!onSwipeBack)
+        // Only a rightward drag is a candidate; the generous left failOffset
+        // keeps horizontal day-rows / the scrollbar from tripping it.
+        .activeOffsetX(20)
+        .failOffsetY([-20, 20])
+        .onEnd(e => {
+          'worklet';
 
-        if (!onSwipeBack) {
-          return;
-        }
-        if (
-          e.translationX > SWIPE_DISTANCE_THRESHOLD ||
-          e.velocityX > SWIPE_VELOCITY_THRESHOLD
-        ) {
-          runOnJS(onSwipeBack)();
-        }
-      });
-    // Yield to the inner gesture (when supplied) so it always wins where they
-    // overlap. `requireExternalGestureToFail` only gates this gesture while the
-    // referenced one is actually tracking the touch, so swipe-back elsewhere on
-    // the screen is unaffected.
-    if (requireToFail) {
-      gesture.requireExternalGestureToFail(requireToFail);
-    }
-    return gesture;
-  }, [onSwipeBack, requireToFail]);
+          if (!onSwipeBack) {
+            return;
+          }
+          if (
+            e.translationX > SWIPE_DISTANCE_THRESHOLD ||
+            e.velocityX > SWIPE_VELOCITY_THRESHOLD
+          ) {
+            runOnJS(onSwipeBack)();
+          }
+        }),
+    [onSwipeBack],
+  );
 
   return (
     <GestureDetector gesture={swipeBackGesture}>

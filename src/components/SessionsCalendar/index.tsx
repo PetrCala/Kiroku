@@ -67,7 +67,6 @@ function SessionsCalendar({
   initialDay,
   onVisibleDayChange,
   onInitialScrollReady,
-  gestureRef,
 }: SessionsCalendarProps) {
   const {auth} = useFirebase();
   const [ongoingSession] = useOnyx(ONYXKEYS.ONGOING_SESSION_DATA);
@@ -359,7 +358,6 @@ function SessionsCalendar({
         onRightArrowPress={handleRightArrowPress}
         onJumpToCurrent={handleJumpToCurrent}
         isFetchingOlderMonths={isFetchingOlderMonths}
-        gestureRef={gestureRef}
       />
       {longPressDrillDown}
     </>

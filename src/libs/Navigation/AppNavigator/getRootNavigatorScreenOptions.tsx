@@ -66,9 +66,9 @@ function hasPoppableInnerStack(state: NestedState): boolean {
 
 /**
  * Name of the right-modal screen currently shown (e.g. `Profile`, `Settings`).
- * Used to opt a screen out of the root-level swipe-back so its content can own
- * a competing horizontal gesture — the Profile calendar's month-swipe, which a
- * native card pan would otherwise steal.
+ * Used to narrow the root-level swipe-back to a left-edge strip on screens
+ * whose content owns a competing horizontal gesture — the Profile calendar's
+ * month-swipe, which a full-width card pan would otherwise steal.
  */
 function getActiveRightModalRouteName(state: NestedState): string | undefined {
   if (!state?.routes) {
@@ -77,6 +77,13 @@ function getActiveRightModalRouteName(state: NestedState): string | undefined {
   const activeIndex = state.index ?? 0;
   return state.routes[activeIndex]?.name;
 }
+
+// Swipe-back hit area (px from the left screen edge) on the Profile modal. The
+// embedded calendar pages months with a horizontal pan, so the card's
+// swipe-back must not listen across the full width there — but a narrow edge
+// strip keeps the native, finger-following dismiss. The calendar grid is inset
+// past most of this strip, and month-swipes start on the grid body.
+const PROFILE_SWIPE_BACK_EDGE_WIDTH = 25;
 
 type GetRootNavigatorScreenOptions = (
   isSmallScreenWidth: boolean,
@@ -134,17 +141,22 @@ const getRootNavigatorScreenOptions: GetRootNavigatorScreenOptions = (
     // no inner stack has cards left to pop, so the inner card pops one step
     // at a time and the outermost swipe dismisses the modal once the inner
     // stack bottoms out.
-    rightModalNavigator: ({route}) => ({
-      ...rightModalStaticOptions,
-      // Profile is excluded so its content-level SwipeBackGestureDetector can
-      // own dismissal and yield to the calendar's month-swipe — the full-width
-      // card pan (gestureResponseDistance: 10000) would otherwise steal it.
-      gestureEnabled:
-        Platform.OS === 'ios' &&
-        !hasPoppableInnerStack((route as {state?: NestedState}).state) &&
-        getActiveRightModalRouteName((route as {state?: NestedState}).state) !==
-          SCREENS.RIGHT_MODAL.PROFILE,
-    }),
+    rightModalNavigator: ({route}) => {
+      const state = (route as {state?: NestedState}).state;
+      const isProfile =
+        getActiveRightModalRouteName(state) === SCREENS.RIGHT_MODAL.PROFILE;
+      return {
+        ...rightModalStaticOptions,
+        gestureEnabled: Platform.OS === 'ios' && !hasPoppableInnerStack(state),
+        // On Profile, arm the swipe-back only near the left edge so the
+        // calendar's month-swipe owns the rest of the width (see
+        // PROFILE_SWIPE_BACK_EDGE_WIDTH). Other right-modals keep the
+        // full-width dismiss from rightModalStaticOptions.
+        ...(isProfile && {
+          gestureResponseDistance: PROFILE_SWIPE_BACK_EDGE_WIDTH,
+        }),
+      };
+    },
     onboardingModalNavigator: (shouldUseNarrowLayout: boolean) => ({
       cardStyleInterpolator: (props: StackCardInterpolationProps) =>
         modalCardStyleInterpolator(
