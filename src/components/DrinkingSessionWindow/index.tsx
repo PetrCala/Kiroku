@@ -236,22 +236,29 @@ function DrinkingSessionWindow({
         <FillerView />
       </ScrollView>
       <BottomActionBar containerStyle={styles.gap2}>
-        <Button
-          large
-          text={translate('liveSessionScreen.discardSession', {
-            discardWord: deleteSessionWording,
-          })}
-          style={[styles.buttonLarge, styles.flex1]}
-          onPress={handleDiscardSession}
-        />
-        <Button
-          success
-          large
-          isDisabled={isSaveDisabled}
-          text={translate('liveSessionScreen.saveSession')}
-          style={[styles.buttonLargeSuccess, styles.flex1]}
-          onPress={() => saveSession(user)}
-        />
+        {/* Each button is wrapped in a flex:1 view so the pair splits the row
+            evenly; the wrapper (not the button) carries the flex, so the
+            buttons keep their natural height instead of stretching vertically. */}
+        <View style={styles.flex1}>
+          <Button
+            large
+            text={translate('liveSessionScreen.discardSession', {
+              discardWord: deleteSessionWording,
+            })}
+            style={styles.buttonLarge}
+            onPress={handleDiscardSession}
+          />
+        </View>
+        <View style={styles.flex1}>
+          <Button
+            success
+            large
+            isDisabled={isSaveDisabled}
+            text={translate('liveSessionScreen.saveSession')}
+            style={styles.buttonLargeSuccess}
+            onPress={() => saveSession(user)}
+          />
+        </View>
       </BottomActionBar>
       <ConfirmModal
         danger
