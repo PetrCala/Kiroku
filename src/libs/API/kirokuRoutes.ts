@@ -146,6 +146,18 @@ const KIROKU_ROUTES: Record<string, KirokuRoute> = {
     method: 'post',
     path: '/v1/friends/remove',
   },
+  [WRITE_COMMANDS.BLOCK_USER]: {
+    method: 'post',
+    path: '/v1/friends/block',
+  },
+  [WRITE_COMMANDS.UNBLOCK_USER]: {
+    method: 'post',
+    path: '/v1/friends/unblock',
+  },
+  [WRITE_COMMANDS.REPORT_USER]: {
+    method: 'post',
+    path: '/v1/reports',
+  },
   [WRITE_COMMANDS.UPDATE_SESSION]: {
     method: 'post',
     path: '/v1/sessions/update',
