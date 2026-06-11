@@ -1,9 +1,9 @@
 import React, {useState} from 'react';
 import type {StackScreenProps} from '@react-navigation/stack';
+import {View} from 'react-native';
 import Button from '@components/Button';
 import CheckboxWithLabel from '@components/CheckboxWithLabel';
 import ConfirmModal from '@components/ConfirmModal';
-import FixedFooter from '@components/FixedFooter';
 import HeaderWithBackButton from '@components/HeaderWithBackButton';
 import MenuItem from '@components/MenuItem';
 import ScreenWrapper from '@components/ScreenWrapper';
@@ -11,6 +11,7 @@ import ScrollView from '@components/ScrollView';
 import Text from '@components/Text';
 import TextInput from '@components/TextInput';
 import useLocalize from '@hooks/useLocalize';
+import useStyledSafeAreaInsets from '@hooks/useStyledSafeAreaInsets';
 import useThemeStyles from '@hooks/useThemeStyles';
 import * as ErrorUtils from '@libs/ErrorUtils';
 import Navigation from '@libs/Navigation/Navigation';
@@ -57,6 +58,14 @@ function ReportUserScreen({route}: ReportUserScreenProps) {
   const {userID} = route.params;
   const styles = useThemeStyles();
   const {translate} = useLocalize();
+  // Mimic FormWrapper (the FeedbackScreen/ReportBugScreen footer): the screen
+  // disables ScreenWrapper's own bottom inset and pads the area below the
+  // submit button itself, with the device's bottom inset or pb5 when there is
+  // none (e.g. Android, devices without a home indicator).
+  const {safeAreaPaddingBottomStyle} = useStyledSafeAreaInsets();
+  const footerPaddingStyle = safeAreaPaddingBottomStyle.paddingBottom
+    ? safeAreaPaddingBottomStyle
+    : styles.pb5;
   const [selectedReason, setSelectedReason] = useState<ReportReason | null>(
     null,
   );
@@ -95,6 +104,7 @@ function ReportUserScreen({route}: ReportUserScreenProps) {
   return (
     <ScreenWrapper
       includeSafeAreaPaddingBottom={false}
+      shouldShowOfflineIndicator={false}
       testID={ReportUserScreen.displayName}>
       <HeaderWithBackButton
         title={translate('reportUserScreen.title')}
@@ -102,47 +112,54 @@ function ReportUserScreen({route}: ReportUserScreenProps) {
       />
       <ScrollView
         style={[styles.flex1]}
-        contentContainerStyle={[styles.ph5, styles.pb5]}>
-        <Text style={[styles.mb3]}>{translate('reportUserScreen.prompt')}</Text>
-        {REASONS.map(({reason, translationKey}) => (
-          <MenuItem
-            key={reason}
-            title={translate(translationKey)}
-            shouldShowSelectedState
-            isSelected={selectedReason === reason}
-            onPress={() => setSelectedReason(reason)}
-            wrapperStyle={[styles.ph0]}
+        contentContainerStyle={[
+          styles.flexGrow1,
+          styles.ph5,
+          footerPaddingStyle,
+        ]}>
+        <View style={styles.flexGrow1}>
+          <Text style={[styles.mb3]}>
+            {translate('reportUserScreen.prompt')}
+          </Text>
+          {REASONS.map(({reason, translationKey}) => (
+            <MenuItem
+              key={reason}
+              title={translate(translationKey)}
+              shouldShowSelectedState
+              isSelected={selectedReason === reason}
+              onPress={() => setSelectedReason(reason)}
+              wrapperStyle={[styles.ph0]}
+            />
+          ))}
+          <TextInput
+            accessibilityLabel={translate('reportUserScreen.descriptionLabel')}
+            label={translate('reportUserScreen.descriptionLabel')}
+            role={CONST.ROLE.PRESENTATION}
+            value={description}
+            onChangeText={setDescription}
+            autoGrowHeight
+            maxAutoGrowHeight={variables.textInputAutoGrowMaxHeight}
+            maxLength={CONST.DESCRIPTION_LIMIT}
+            spellCheck={false}
+            containerStyles={[styles.mt5]}
           />
-        ))}
-        <TextInput
-          accessibilityLabel={translate('reportUserScreen.descriptionLabel')}
-          label={translate('reportUserScreen.descriptionLabel')}
-          role={CONST.ROLE.PRESENTATION}
-          value={description}
-          onChangeText={setDescription}
-          autoGrowHeight
-          maxAutoGrowHeight={variables.textInputAutoGrowMaxHeight}
-          maxLength={CONST.DESCRIPTION_LIMIT}
-          spellCheck={false}
-          containerStyles={[styles.mt5]}
-        />
-        <CheckboxWithLabel
-          label={translate('reportUserScreen.alsoBlock')}
-          accessibilityLabel={translate('reportUserScreen.alsoBlock')}
-          isChecked={alsoBlock}
-          onInputChange={value => setAlsoBlock(value ?? false)}
-          style={[styles.mt5]}
-        />
-      </ScrollView>
-      <FixedFooter>
+          <CheckboxWithLabel
+            label={translate('reportUserScreen.alsoBlock')}
+            accessibilityLabel={translate('reportUserScreen.alsoBlock')}
+            isChecked={alsoBlock}
+            onInputChange={value => setAlsoBlock(value ?? false)}
+            style={[styles.mt5]}
+          />
+        </View>
         <Button
           success
           large
+          style={styles.mt5}
           text={translate('reportUserScreen.submit')}
           onPress={onSubmit}
           isDisabled={!selectedReason}
         />
-      </FixedFooter>
+      </ScrollView>
       <ConfirmModal
         isVisible={isSuccessVisible}
         title={translate('reportUserScreen.successTitle')}
