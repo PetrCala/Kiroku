@@ -1,6 +1,7 @@
 import {useCallback, useEffect, useRef} from 'react';
 import BootSplash from '@libs/BootSplash';
 import Log from '@libs/Log';
+import CONST from '@src/CONST';
 import type {
   SplashScreenHiderProps,
   SplashScreenHiderReturnType,
@@ -10,7 +11,13 @@ import type {
 // shouldHideSplash hasn't fired by this point. On web this matters doubly --
 // the #splash div sits at z-index 10000 and swallows every pointer event, so a
 // gating condition that never flips leaves the app visible but untappable.
-const FORCE_HIDE_TIMEOUT_MS = 15 * 1000;
+//
+// This is the LAST resort, not the primary fix: the authenticated splash gate
+// (`isAuthDataReady`) has its own bounded backstop in Kiroku.tsx, so a healthy
+// boot resolves well before this fires. Kiroku.tsx logs the full gate snapshot
+// one tick before this (the "[BootSplash] splash screen is still visible"
+// alert), so a trip here always has an accompanying breadcrumb of the offender.
+const FORCE_HIDE_TIMEOUT_MS = CONST.BOOT_SPLASH_FORCE_HIDE_TIMEOUT_MS;
 
 function SplashScreenHider({
   onHide = () => {},

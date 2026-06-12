@@ -742,6 +742,14 @@ const CONST = {
   // a warm listener (typically <500 ms) and shorter than the safety net.
   BOOT_SPLASH_AUTH_DATA_TIMEOUT_MS: 3 * 1000,
 
+  // Last-resort safety net (SplashScreenHider): force-hide the splash if the
+  // gates never resolve, so a stuck boot can't pin the (untappable) overlay.
+  BOOT_SPLASH_FORCE_HIDE_TIMEOUT_MS: 15 * 1000,
+  // Kiroku logs a full gate snapshot if the splash is still up this long, to
+  // name the offender. Must stay BELOW BOOT_SPLASH_FORCE_HIDE_TIMEOUT_MS so it
+  // fires while still stuck, just before the net hides the splash.
+  BOOT_SPLASH_STUCK_LOG_TIMEOUT_MS: 14 * 1000,
+
   KEYBOARD_TYPE: {
     VISIBLE_PASSWORD: 'visible-password',
     ASCII_CAPABLE: 'ascii-capable',
