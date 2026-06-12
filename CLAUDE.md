@@ -187,6 +187,7 @@ The skill provides guidance on:
 
 - **Unit Tests**: Jest with React Native Testing Library
 - **Performance Tests**: Reassure framework
+- **Web E2E (Playwright)**: smoke suite in `e2e/web`. When iterating on web changes, run it against the live `npm run web` dev server (hot reload; a targeted test re-runs in seconds thanks to the cached sign-in) instead of pushing through the `deployWeb.yml` preview-channel CI loop, which costs 30+ minutes per attempt. Setup, worktree symlinks, and timings: `e2e/web/README.md`.
 
 ## Special Considerations
 
