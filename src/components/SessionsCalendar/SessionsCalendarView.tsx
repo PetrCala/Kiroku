@@ -19,6 +19,8 @@ import ONYXKEYS from '@src/ONYXKEYS';
 import CONST from '@src/CONST';
 import ROUTES from '@src/ROUTES';
 import Navigation from '@libs/Navigation/Navigation';
+import DateUtils from '@libs/DateUtils';
+import setCalendarLocale from '@libs/setCalendarLocale';
 import * as FeatureFlags from '@libs/FeatureFlags';
 import type {DateString, UserID} from '@src/types/onyx/OnyxCommon';
 import Text from '@components/Text';
@@ -26,7 +28,6 @@ import DayComponent from './DayComponent';
 import type {DayComponentProps} from './types';
 import CalendarArrow from './CalendarArrow';
 import type {Direction} from './CalendarArrow';
-import setCalendarLocale from './setCalendarLocale';
 
 type SessionsCalendarViewProps = {
   /** Owning user — required to deep-link to the full-screen calendar route
@@ -118,6 +119,11 @@ function SessionsCalendarView({
   const themePreference = useThemePreference();
   const [preferredLocale] = useOnyx(ONYXKEYS.NVP_PREFERRED_LOCALE);
   const locale = preferredLocale ?? CONST.LOCALES.DEFAULT;
+  // Localizes the month header below (date-fns ignores the global default
+  // unless an explicit `locale` is passed) and, by being a dependency of
+  // `renderHeader`, forces `<Calendar>` to re-render on a locale change so the
+  // library re-reads its (now-updated) day-name locale too.
+  const dateFnsLocale = DateUtils.getDateFnsLocale(locale);
 
   useEffect(() => {
     setCalendarLocale(locale);
@@ -199,6 +205,7 @@ function SessionsCalendarView({
       const formatted = format(
         new Date(date.getTime()),
         CONST.DATE.MONTH_YEAR_ABBR_FORMAT,
+        {locale: dateFnsLocale},
       );
       const monthText = (
         <Text style={styles.sessionsCalendarHeaderMonthText}>{formatted}</Text>
@@ -264,6 +271,7 @@ function SessionsCalendarView({
       );
     },
     [
+      dateFnsLocale,
       hideMonthHeader,
       isFetchingOlderMonths,
       isHeaderTappable,

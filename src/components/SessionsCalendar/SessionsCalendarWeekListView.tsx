@@ -18,11 +18,12 @@ import ONYXKEYS from '@src/ONYXKEYS';
 import CONST from '@src/CONST';
 import * as App from '@userActions/App';
 import {roundToTwoDecimalPlaces} from '@libs/NumberUtils';
+import DateUtils from '@libs/DateUtils';
+import setCalendarLocale from '@libs/setCalendarLocale';
 import type {DateString} from '@src/types/onyx/OnyxCommon';
 import buildMonthSections from './buildMonthSections';
 import type {MonthSection, MonthWeek} from './buildMonthSections';
 import WeekRow from './WeekRow';
-import setCalendarLocale from './setCalendarLocale';
 
 // Trigger `onRequestOlder` when the lowest visible item is within this
 // many weeks of index 0. Generous so the parent's prefetch starts well
@@ -127,6 +128,9 @@ function SessionsCalendarWeekListView({
   const {windowHeight} = useWindowDimensions();
   const [preferredLocale] = useOnyx(ONYXKEYS.NVP_PREFERRED_LOCALE);
   const locale = preferredLocale ?? CONST.LOCALES.DEFAULT;
+  // Explicit date-fns locale for the month labels — date-fns ignores the global
+  // default unless `locale` is passed (see SessionsCalendarView for the rationale).
+  const dateFnsLocale = DateUtils.getDateFnsLocale(locale);
 
   useEffect(() => {
     setCalendarLocale(locale);
@@ -162,7 +166,9 @@ function SessionsCalendarWeekListView({
       out.push({
         kind: 'label',
         key: `label-${section.year}-${section.month}`,
-        label: format(labelDate, CONST.DATE.MONTH_YEAR_ABBR_FORMAT),
+        label: format(labelDate, CONST.DATE.MONTH_YEAR_ABBR_FORMAT, {
+          locale: dateFnsLocale,
+        }),
         monthKey,
       });
       section.weeks.forEach((week, weekIdx) => {
@@ -189,7 +195,7 @@ function SessionsCalendarWeekListView({
       stickyHeaderIndices: sticky,
       firstWeekIndexByMonth: monthIndex,
     };
-  }, [monthSections]);
+  }, [monthSections, dateFnsLocale]);
 
   const dayNames = useMemo(() => {
     // `LocaleConfig` is re-exported from xdate without precise TS types for
