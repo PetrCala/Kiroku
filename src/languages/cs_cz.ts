@@ -454,6 +454,8 @@ export default {
     error: {
       hasInvalidCharacter: 'Neplatný znak',
       containsReservedWord: 'Toto jméno obsahuje vyhrazené slovo.',
+      containsProfanity:
+        'Toto jméno obsahuje nevhodné výrazy. Zvolte prosím jiné.',
       characterLimitExceedCounter: ({length, limit}) =>
         `Byl překročen limit znaků (${length}/${limit})`,
       characterLimit: ({limit}: CharacterLimitParams) =>
@@ -999,6 +1001,23 @@ export default {
     body: 'Váš účet byl pozastaven kvůli porušení našich pravidel komunity. Pokud si myslíte, že jde o omyl, kontaktujte podporu.',
     contactSupport: 'Kontaktovat podporu',
   },
+  reportUserScreen: {
+    title: 'Nahlásit',
+    prompt:
+      'Proč tohoto uživatele nahlašujete? Vaše hlášení je soukromé a bude předáno našemu moderátorskému týmu.',
+    reasons: {
+      inappropriateName: 'Nevhodné jméno',
+      inappropriatePhoto: 'Nevhodná profilová fotografie',
+      harassment: 'Obtěžování nebo šikana',
+      other: 'Něco jiného',
+    },
+    descriptionLabel: 'Přidejte podrobnosti (volitelné)',
+    alsoBlock: 'Také zablokovat tohoto uživatele',
+    submit: 'Odeslat hlášení',
+    successTitle: 'Hlášení přijato',
+    successMessage:
+      'Děkujeme za upozornění. Náš moderátorský tým tohoto uživatele prověří.',
+  },
   manageAccountScreen: {
     title: 'Správa účtu',
     dangerZone: {
@@ -1036,6 +1055,7 @@ export default {
     unitsConsumed: ({unitCount}: UnitCountParams) =>
       `${Str.pluralize('Zkonzumovaná jednotka', 'Zkonzumovaných jednotek', unitCount)}`,
     manageFriend: 'Spravovat přítele',
+    report: 'Nahlásit',
     unfriendPrompt: 'Opravdu chcete tohoto uživatele odebrat z přátel?',
     unfriend: 'Odebrat z přátel',
     blockUser: 'Zablokovat uživatele',
