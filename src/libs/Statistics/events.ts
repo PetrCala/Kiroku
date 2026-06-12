@@ -126,7 +126,10 @@ let lastCall: {
  * iterate users → sessions → drink timestamps → drink type entries → emit
  * one `DrinkEvent` per (timestamp, drink type).
  *
- * - Excludes `ongoing` sessions and sessions with non-finite `start_time`.
+ * - Excludes only sessions with non-finite `start_time`. In-progress
+ *   (`ongoing`) sessions ARE included so a live session counts toward the
+ *   monthly stats just as it does on the calendar (the owner's even-fresher
+ *   live buffer is overlaid separately in `useHomeStats`).
  * - `localDow` is rotated so 0 = `weekStart`; `isWeekend` is the absolute
  *   calendar Sat/Sun.
  * - Both the legacy `number` entry shape and the v2-A
@@ -174,7 +177,7 @@ function buildDrinkEvents(
     }
     for (const sessionId of Object.keys(userSessions)) {
       const session: DrinkingSession | undefined = userSessions[sessionId];
-      if (!session || session.ongoing === true) {
+      if (!session) {
         continue;
       }
       const startMs = Number(session.start_time);

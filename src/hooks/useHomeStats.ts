@@ -39,9 +39,27 @@ function useHomeStats(visibleDate: DateData): MonthlyStats {
   // Overlay the live session's units (visible month only). Gated on focus
   // because the buffer mutates on every drink tap while Home stays mounted
   // behind the live-session screen.
+  //
+  // `buildDrinkEvents` now includes `ongoing` sessions, so once the live
+  // session has been echoed into the cached snapshot it is already counted in
+  // `current.totalUnits`. Overlaying its buffer on top would then double-count
+  // it, so skip the overlay when that session id is already in `events` (the
+  // not-yet-cached case keeps the overlay, which is the fresher source).
   const drinksToUnits = preferences?.drinks_to_units;
+  const liveSessionId = ongoingSessionData?.id;
+  const liveAlreadyInEvents = useMemo(
+    () =>
+      !!liveSessionId &&
+      events.some(event => event.sessionId === liveSessionId),
+    [events, liveSessionId],
+  );
   const liveExtraUnits = useMemo(() => {
-    if (!isFocused || !drinksToUnits || !ongoingSessionData?.ongoing) {
+    if (
+      liveAlreadyInEvents ||
+      !isFocused ||
+      !drinksToUnits ||
+      !ongoingSessionData?.ongoing
+    ) {
       return 0;
     }
     return calculateThisMonthUnits(
@@ -49,7 +67,13 @@ function useHomeStats(visibleDate: DateData): MonthlyStats {
       [ongoingSessionData],
       drinksToUnits,
     );
-  }, [isFocused, ongoingSessionData, visibleDate, drinksToUnits]);
+  }, [
+    liveAlreadyInEvents,
+    isFocused,
+    ongoingSessionData,
+    visibleDate,
+    drinksToUnits,
+  ]);
 
   return {isLoading, current, previous, subPeriods, liveExtraUnits};
 }
