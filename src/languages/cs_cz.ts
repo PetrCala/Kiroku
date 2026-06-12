@@ -639,7 +639,7 @@ export default {
   unitsToColorsScreen: {
     title: 'Jednotky na barvy',
     description:
-      'Nastavte maximální počet jednotek pro mírnou a střední relaci. Cokoli nad tím už je těžká relace.',
+      'Nastavte maximální počet jednotek pro mírnou a střední relaci. Cokoli nad tím už je náročná relace.',
   },
   colorPaletteScreen: {
     title: 'Barvy relací',
@@ -1102,7 +1102,7 @@ export default {
             af: 'Bez alk.',
             light: 'Mírná',
             moderate: 'Střední',
-            heavy: 'Těžká',
+            heavy: 'Náročná',
           },
         },
         empty: {

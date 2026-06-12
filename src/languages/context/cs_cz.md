@@ -73,7 +73,7 @@ zde`, `Přidejte si je zde`, `Zkuste hledat zde`.
 | streak (alcohol-free)       | **série** (dnů bez alkoholu)                      |                |
 | session intensity: light    | **mírná** (relace)                                | lehká          |
 | session intensity: moderate | **střední** (relace)                              |                |
-| session intensity: heavy    | **těžká** (relace)                                | silná, náročná |
+| session intensity: heavy    | **náročná** (relace)                              | silná, těžká   |
 
 ## Do-not-translate (keep verbatim)
 
