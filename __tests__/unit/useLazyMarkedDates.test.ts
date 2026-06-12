@@ -1,8 +1,9 @@
 /* eslint-disable @typescript-eslint/naming-convention -- jest mock factory keys (__esModule) are dictated by Node module shape */
 
 import {act, renderHook} from '@testing-library/react-native';
-import {addMonths, differenceInMonths, subMonths} from 'date-fns';
+import {addMonths, differenceInMonths, startOfMonth, subMonths} from 'date-fns';
 import useLazyMarkedDates from '@hooks/useLazyMarkedDates';
+import * as Calendar from '@userActions/Calendar';
 import type {
   DrinkingSession,
   DrinkingSessionList,
@@ -12,16 +13,23 @@ import type {DateString} from '@src/types/onyx/OnyxCommon';
 import type * as OnyxModule from 'react-native-onyx';
 import ONYXKEYS from '@src/ONYXKEYS';
 
-jest.mock('@hooks/useResolvedPalette', () => ({
-  __esModule: true,
-  default: jest.fn(() => ({
+jest.mock('@hooks/useResolvedPalette', () => {
+  // A single stable palette object: the hook keys its month-derivation cache
+  // on the `{...preferences, session_color_palette: palette}` identity, so a
+  // fresh palette per render would defeat the cache the identity tests below
+  // assert on (the real hook returns a stable resolved palette too).
+  const stablePalette = {
     green: '#00ff00',
     yellow: '#ffff00',
     orange: '#ff8800',
     red: '#ff0000',
     black: '#000000',
-  })),
-}));
+  };
+  return {
+    __esModule: true,
+    default: jest.fn(() => stablePalette),
+  };
+});
 
 jest.mock('@userActions/Calendar', () => ({
   __esModule: true,
@@ -58,6 +66,7 @@ const TEST_UID = 'user-123';
 beforeEach(() => {
   // Default: friend profile (no canonical floor). Self-path tests opt in.
   mockUserDataList = undefined;
+  jest.clearAllMocks();
 });
 
 function makePreferences(): Preferences {
@@ -335,5 +344,193 @@ describe('useLazyMarkedDates ongoing overlay', () => {
     );
     expect(result.current.unitsMap.size).toBe(0);
     expect(result.current.sessionEntriesByDay.size).toBe(0);
+  });
+});
+
+describe('useLazyMarkedDates incremental derivation', () => {
+  test('widening keeps previously derived month objects referentially identical', () => {
+    // Stable inputs across re-renders — the per-month cache is keyed on the
+    // session-group and effective-preferences identities.
+    const prefs = makePreferences();
+    const windowEdge = subMonths(new Date(), 12);
+    const sessions = {
+      s1: {start_time: windowEdge.getTime(), timezone: 'UTC', drinks: {}},
+    } as unknown as DrinkingSessionList;
+
+    const {result} = renderHook(() =>
+      useLazyMarkedDates(TEST_UID, sessions, prefs),
+    );
+
+    act(() => {
+      result.current.loadUpTo(subMonths(new Date(), 12));
+    });
+    const before = new Map(
+      result.current.calendarMonths.map(month => [month.monthKey, month]),
+    );
+
+    act(() => {
+      result.current.loadUpTo(subMonths(new Date(), 24));
+    });
+    const after = result.current.calendarMonths;
+
+    // The widen appended older months…
+    expect(after.length).toBeGreaterThan(before.size);
+    // …and every month that was already derived kept its identity, so the
+    // week-list's memoized rows for those months never re-render.
+    let overlapCount = 0;
+    after.forEach(month => {
+      const previous = before.get(month.monthKey);
+      if (!previous) {
+        return;
+      }
+      overlapCount += 1;
+      expect(month).toBe(previous);
+    });
+    expect(overlapCount).toBe(before.size);
+  });
+
+  test('a live-drink overlay re-derives only the overlay month', () => {
+    const prefs = makePreferences();
+    const today = new Date();
+    const previousMonth = subMonths(today, 1);
+    const sessions = {
+      old: {
+        id: 'old',
+        start_time: previousMonth.getTime(),
+        timezone: 'UTC',
+        drinks: {[previousMonth.getTime()]: {beer: 1}},
+      },
+    } as unknown as DrinkingSessionList;
+
+    const initialProps: {overlay?: DrinkingSession} = {overlay: undefined};
+    const {result, rerender} = renderHook(
+      ({overlay}: {overlay?: DrinkingSession}) =>
+        useLazyMarkedDates(TEST_UID, sessions, prefs, overlay),
+      {initialProps},
+    );
+
+    act(() => {
+      result.current.loadUpTo(previousMonth);
+    });
+    const before = new Map(
+      result.current.calendarMonths.map(month => [month.monthKey, month]),
+    );
+
+    const overlay = {
+      id: 'live-1',
+      ongoing: true,
+      start_time: today.getTime(),
+      timezone: 'UTC',
+      drinks: {[today.getTime()]: {beer: 2}},
+    } as unknown as DrinkingSession;
+    rerender({overlay});
+
+    const pad = (n: number) => String(n).padStart(2, '0');
+    const currentMonthKey = `${today.getFullYear()}-${pad(today.getMonth() + 1)}`;
+
+    result.current.calendarMonths.forEach(month => {
+      const previous = before.get(month.monthKey);
+      if (!previous) {
+        return;
+      }
+      if (month.monthKey === currentMonthKey) {
+        // The overlay's month is a patched clone carrying the live units.
+        expect(month).not.toBe(previous);
+        expect(month.totalUnits).toBe(2);
+      } else {
+        // Every other month keeps identity — a drink tap repaints one month.
+        expect(month).toBe(previous);
+      }
+    });
+  });
+
+  test('deriveFullRangeToFloor derives to the canonical floor without writing the depth lever', () => {
+    jest.useFakeTimers();
+    try {
+      const earliest = subMonths(new Date(), 10);
+      mockUserDataList = {
+        [TEST_UID]: {earliest_session_at: earliest.getTime()},
+      };
+      const prefs = makePreferences();
+      const sessions = {
+        s1: {start_time: earliest.getTime(), timezone: 'UTC', drinks: {}},
+      } as unknown as DrinkingSessionList;
+
+      const {result} = renderHook(() =>
+        useLazyMarkedDates(TEST_UID, sessions, prefs, undefined, {
+          deriveFullRangeToFloor: true,
+        }),
+      );
+
+      // The whole tracked range is derived up front (no loadUpTo needed):
+      // months from the earliest tracked month through the current one.
+      expect(result.current.calendarMonths.length).toBe(11);
+      expect(getLoadedFrom(result).getTime()).toBe(
+        startOfMonth(earliest).getTime(),
+      );
+
+      // …and the persisted depth lever was never touched (the full-range
+      // derivation must not pollute the compact calendar's / Statistics'
+      // shared depth).
+      jest.advanceTimersByTime(1000);
+      expect(
+        Calendar.setSessionsCalendarMonthsLoadedForUser,
+      ).not.toHaveBeenCalled();
+    } finally {
+      jest.useRealTimers();
+    }
+  });
+
+  test('deriveFullRangeToFloor is a no-op without a canonical floor (friend)', () => {
+    const prefs = makePreferences();
+    const {result} = renderHook(() =>
+      useLazyMarkedDates(TEST_UID, {}, prefs, undefined, {
+        deriveFullRangeToFloor: true,
+      }),
+    );
+    // No floor to derive to — only the current month, as without the option.
+    expect(result.current.calendarMonths.length).toBe(1);
+  });
+
+  test('merged outputs keep their contracts (green sober days, units, sparse month totals)', () => {
+    const prefs = makePreferences();
+    const today = new Date();
+    const sessions = {
+      s1: {
+        id: 's1',
+        start_time: today.getTime(),
+        timezone: 'UTC',
+        drinks: {[today.getTime()]: {beer: 1}},
+      },
+    } as unknown as DrinkingSessionList;
+
+    const {result} = renderHook(() =>
+      useLazyMarkedDates(TEST_UID, sessions, prefs),
+    );
+
+    act(() => {
+      // Widen one month so a guaranteed sober day (the 1st of the previous
+      // month) is in range regardless of today's date.
+      result.current.loadUpTo(subMonths(new Date(), 1));
+    });
+
+    const pad = (n: number) => String(n).padStart(2, '0');
+    const todayKey =
+      `${today.getFullYear()}-${pad(today.getMonth() + 1)}-${pad(today.getDate())}` as DateString;
+    const monthKey = todayKey.slice(0, 7);
+    const previousMonth = subMonths(today, 1);
+    const soberKey =
+      `${previousMonth.getFullYear()}-${pad(previousMonth.getMonth() + 1)}-01` as DateString;
+
+    // Session day: marked, in unitsMap, in the (sparse) month totals.
+    expect(result.current.markedDates[todayKey]).toBeDefined();
+    expect(result.current.unitsMap.get(todayKey)).toBe(1);
+    expect(result.current.monthlyTotalsMap.get(monthKey)).toBe(1);
+    // Sober in-range day: green marking, no units entry, no month-total entry.
+    expect(result.current.markedDates[soberKey]).toEqual({color: '#00ff00'});
+    expect(result.current.unitsMap.has(soberKey)).toBe(false);
+    expect(result.current.monthlyTotalsMap.has(soberKey.slice(0, 7))).toBe(
+      false,
+    );
   });
 });

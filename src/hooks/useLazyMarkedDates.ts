@@ -2,62 +2,58 @@ import {useEffect, useMemo, useRef, useState} from 'react';
 import {toZonedTime} from 'date-fns-tz';
 import type {
   DrinkingSession,
-  DrinkingSessionArray,
   DrinkingSessionList,
   Preferences,
 } from '@src/types/onyx';
-import type DrinkingSessionKeyValue from '@src/types/utils/databaseUtils';
 import CONST from '@src/CONST';
-import {
-  differenceInCalendarMonths,
-  eachDayOfInterval,
-  isWithinInterval,
-  startOfMonth,
-  subDays,
-  subMonths,
-} from 'date-fns';
+import {differenceInCalendarMonths, startOfMonth, subMonths} from 'date-fns';
 import {sessionsToDayMarking} from '@libs/DataHandling';
 import useResolvedPalette from '@hooks/useResolvedPalette';
 import lodashDebounce from 'lodash/debounce';
-import type {MarkingProps} from 'react-native-calendars/src/calendar/day/marking';
 import type {MarkedDates} from 'react-native-calendars/src/types';
 import {useOnyx} from 'react-native-onyx';
 import ONYXKEYS from '@src/ONYXKEYS';
 import * as Calendar from '@userActions/Calendar';
 import * as DSUtils from '@libs/DrinkingSessionUtils';
+import {
+  getDerivedCalendarMonth,
+  groupSessionsByMonth,
+  toDateKey,
+  toMonthKey,
+} from '@components/SessionsCalendar/deriveCalendarMonth';
+import type {
+  CalendarMonthData,
+  DayCellData,
+} from '@components/SessionsCalendar/deriveCalendarMonth';
+import type DrinkingSessionKeyValue from '@src/types/utils/databaseUtils';
 import type {UserID, DateString} from '@src/types/onyx/OnyxCommon';
 
-// Hand-rolled 'yyyy-MM-dd' (matches CONST.DATE.FNS_FORMAT_STRING). date-fns
-// `format` is ~100× slower and this runs once per day across the whole loaded
-// range — which can be years deep — so it dominated the day-overview mount
-// (e.g. 77 months ≈ 2.3k `format` calls ≈ ~460ms on Hermes). The Date's local
-// fields already carry the right wall-clock day (`toZonedTime` shifted them to
-// the session's zone for the per-session key; the day list is built in local
-// time), so reading them directly is both correct and cheap.
-function toDateKey(date: Date): DateString {
-  const year = date.getFullYear();
-  const month = date.getMonth() + 1;
-  const day = date.getDate();
-  return `${year}-${month < 10 ? '0' : ''}${month}-${
-    day < 10 ? '0' : ''
-  }${day}` as DateString;
-}
+type UseLazyMarkedDatesOptions = {
+  /** Derive the whole tracked range (down to the canonical
+   *  `earliest_session_at` floor) immediately, instead of the lazily widened
+   *  `loadedMonths` window. Used by the fullscreen calendar for the signed-in
+   *  user, whose sessions are all on-device — scrolling back then never waits
+   *  on a widen. Does NOT touch the persisted depth lever (`loadUpTo` still
+   *  governs that), so the compact calendar's and Statistics' shared depth
+   *  stay exactly as driven by their own usage. No-op for users without the
+   *  canonical floor (friends). */
+  deriveFullRangeToFloor?: boolean;
+};
 
 /**
  * Custom hook to derive a calendar's markedDates and per-day unit counts from a
  * session list and the user's preferences.
  *
- * `markedDates` is computed synchronously via `useMemo` — when any input
- * changes (sessions, preferences, the loaded month range), the next render
- * already carries the new payload. The earlier state-based pipeline left the
- * home calendar stale after a palette change because the state update path
- * had several failure modes (focus gating, batched setState during overlay
- * navigation, react-native-calendars memoization races). Synchronous
- * derivation is the same pattern the palette-picker preview uses, which is
- * why that path was reliable.
+ * Derivation is per-month and cached (see `deriveCalendarMonth`): widening the
+ * loaded window only derives the newly exposed months, and previously derived
+ * months keep referential identity — the fullscreen week-list's row memoization
+ * depends on this. The merged outputs (`markedDates`, `unitsMap`,
+ * `monthlyTotalsMap`, `sessionEntriesByDay`) are reassembled from the cached
+ * months via cheap reference copies, preserving the original contracts for the
+ * compact calendar (react-native-calendars) and the day-overview list.
  *
  * `loadMoreMonths(N)` extends the visible range by N months by bumping
- * `loadedMonths` state, which triggers the memo to recompute.
+ * `loadedMonths` state, which triggers the assembly memo to recompute.
  *
  * @param userID  ID of the user whose sessions/preferences these are
  * @param sessions Session list to render
@@ -68,17 +64,20 @@ function toDateKey(date: Date): DateString {
  *   never receive it). Live drinks live only in `ONGOING_SESSION_DATA`, not the
  *   cached snapshot — see `DrinkingSession.flushLiveSessionPersist`. Overlaid as
  *   a cheap single-day patch so the heavy index passes stay off the per-tap path.
+ * @param options See `UseLazyMarkedDatesOptions`.
  */
 function useLazyMarkedDates(
   userID: UserID,
   sessions: DrinkingSessionList,
   preferences: Preferences,
   ongoingOverlay?: DrinkingSession,
+  options?: UseLazyMarkedDatesOptions,
 ) {
   const [monthsLoaded, monthsLoadedMeta] = useOnyx(
     `${ONYXKEYS.COLLECTION.SESSIONS_CALENDAR_MONTHS_BY_USER_ID}${userID}`,
   );
   const defaultTimezone = CONST.DEFAULT_TIME_ZONE.selected;
+  const deriveFullRangeToFloor = options?.deriveFullRangeToFloor === true;
 
   // Resume the user's saved scroll depth (or 0 if this is the first visit).
   // Same logic for auth user and friends — state is per-UID now.
@@ -128,65 +127,34 @@ function useLazyMarkedDates(
     return null;
   }, [hasPersistedFloor, persistedEarliest]);
 
-  const cappedMonths = useMemo(() => {
+  // Months between today and the canonical floor — null when there is no
+  // canonical floor (friends).
+  const monthsToEarliest = useMemo<number | null>(() => {
     if (!earliestTracked) {
-      return loadedMonths;
+      return null;
     }
-    const monthsToEarliest = Math.max(
-      0,
-      differenceInCalendarMonths(new Date(), earliestTracked),
-    );
-    return Math.min(loadedMonths, monthsToEarliest);
-  }, [loadedMonths, earliestTracked]);
+    return Math.max(0, differenceInCalendarMonths(new Date(), earliestTracked));
+  }, [earliestTracked]);
 
-  // First pass — rebuild the session-by-day index only when sessions or the
-  // visible range change. Preferences are *not* a dependency here: a palette
-  // or threshold change must not trigger the O(N) session filter+index pass.
-  const {sessionIndex, sessionEntriesByDay, dayKeys, loadedFromDate} =
-    useMemo(() => {
-      const today = new Date();
-      const start = subDays(startOfMonth(subMonths(today, cappedMonths)), 1);
-      const end = today;
+  const cappedMonths =
+    monthsToEarliest === null
+      ? loadedMonths
+      : Math.min(loadedMonths, monthsToEarliest);
 
-      const index = new Map<DateString, DrinkingSessionArray>();
-      // Parallel index that keeps the session IDs alongside each session, so
-      // consumers that render session tiles (the day-overview scroll) don't
-      // have to re-derive IDs. Built in the same pass — the marking/units
-      // passes below keep using `index` unchanged.
-      const entriesByDay = new Map<DateString, DrinkingSessionKeyValue[]>();
-      Object.entries(sessions)
-        .filter(([, session]) =>
-          isWithinInterval(session.start_time, {start, end}),
-        )
-        .forEach(([sessionId, session]) => {
-          const sessionDate = toZonedTime(
-            session.start_time,
-            session.timezone ?? defaultTimezone,
-          );
-          const dayKey = toDateKey(sessionDate);
-          const existing = index.get(dayKey);
-          if (existing) {
-            existing.push(session);
-          } else {
-            index.set(dayKey, [session]);
-          }
-          const existingEntries = entriesByDay.get(dayKey);
-          if (existingEntries) {
-            existingEntries.push({sessionId, session});
-          } else {
-            entriesByDay.set(dayKey, [{sessionId, session}]);
-          }
-        });
+  // Depth the derivation actually builds. `deriveFullRangeToFloor` (fullscreen
+  // self) jumps straight to the canonical floor without touching the persisted
+  // lever; everyone else uses the lazily widened window.
+  const effectiveMonths =
+    deriveFullRangeToFloor && monthsToEarliest !== null
+      ? monthsToEarliest
+      : cappedMonths;
 
-      const days = eachDayOfInterval({start, end}).map(toDateKey);
-
-      return {
-        sessionIndex: index,
-        sessionEntriesByDay: entriesByDay,
-        dayKeys: days,
-        loadedFromDate: start,
-      };
-    }, [sessions, cappedMonths, defaultTimezone]);
+  // First pass — regroup the sessions by zoned month/day only when the source
+  // list changes. Widening the loaded window doesn't touch this O(N) pass.
+  const sessionsByMonth = useMemo(
+    () => groupSessionsByMonth(sessions, defaultTimezone),
+    [sessions, defaultTimezone],
+  );
 
   // Whether scrolling back can still reveal older data. Only meaningful when the
   // viewed user has NO canonical floor (a friend): `sessions` is the windowed
@@ -205,8 +173,8 @@ function useLazyMarkedDates(
   //
   // The comparison is against the FETCH floor (`useDrinkingSessionsFetch` reads
   // `start_time >= startOfMonth(subMonths(now, max(SESSIONS_INITIAL_FETCH_MONTHS,
-  // monthsLoaded)))`), NOT `loadedFromDate`: the latter is `startOfMonth − 1 day`,
-  // which lands in the previous month and would report exhaustion a month early.
+  // monthsLoaded)))`), NOT the render floor — the fetch window is what bounds
+  // what the server could have returned.
   // For self this is unused — the persisted floor drives the guards directly.
   // Plain derivation: React Compiler memoizes it from the captured reads
   // (`hasPersistedFloor`, `sessions`, `loadedMonths`), so no manual `useMemo`.
@@ -238,72 +206,101 @@ function useLazyMarkedDates(
   // Substitute the resolved palette into the preferences object so downstream
   // pure functions (sessionsToDayMarking → convertUnitsToColors) use it without
   // needing to know about the toggle. Unit thresholds and drink mappings stay
-  // the viewed user's — only the palette is swapped.
+  // the viewed user's — only the palette is swapped. Also the month-cache
+  // branch key: a fresh object here invalidates every cached month, which is
+  // exactly right for a palette/threshold change.
   const effectivePreferences = useMemo(
     () => ({...preferences, session_color_palette: palette}),
     [preferences, palette],
   );
 
-  // Second pass — build markedDates + unitsMap + monthlyTotalsMap from the
-  // pre-built index. This is the only memo that needs `preferences`; on a
-  // palette change it walks the day list (~30 entries) instead of
-  // re-filtering N sessions. `monthlyTotalsMap` is keyed by 'YYYY-MM'.
+  // Second pass — assemble the loaded range from cached per-month derivations.
+  // On a widen only the newly exposed months actually derive; everything else
+  // is reference-copied, so this memo is O(loaded days) of Map sets at worst.
   const paletteGreen = palette.green;
-  const {markedDatesMap, unitsMap, monthlyTotalsMap} = useMemo(() => {
-    const newMarkedDatesMap = new Map<DateString, MarkingProps>();
+  const {
+    calendarMonths,
+    markedDates,
+    unitsMap,
+    monthlyTotalsMap,
+    sessionEntriesByDay,
+    loadedFromDate,
+  } = useMemo(() => {
+    const today = new Date();
+    // Hoisted const, not inlined in the return literal: inside the object
+    // literal TS 5.x loses the date-fns generic inference (the literal is the
+    // useMemo type-inference source) and degrades the property to `any`.
+    const rangeStart = startOfMonth(subMonths(today, effectiveMonths));
+    const months: CalendarMonthData[] = [];
+    const newMarkedDates: MarkedDates = {};
     const newUnitsMap = new Map<DateString, number>();
     const newMonthlyTotalsMap = new Map<string, number>();
+    const newSessionEntriesByDay = new Map<
+      DateString,
+      DrinkingSessionKeyValue[]
+    >();
 
-    dayKeys.forEach(dayKey => {
-      const dailySessions = sessionIndex.get(dayKey) ?? [];
-      const newMarking = sessionsToDayMarking(
-        dailySessions,
+    for (let monthsBack = effectiveMonths; monthsBack >= 0; monthsBack--) {
+      const monthStart = startOfMonth(subMonths(today, monthsBack));
+      const monthData = getDerivedCalendarMonth({
+        year: monthStart.getFullYear(),
+        month: monthStart.getMonth(),
+        monthEntriesByDay: sessionsByMonth.get(
+          toMonthKey(monthStart.getFullYear(), monthStart.getMonth()),
+        ),
         effectivePreferences,
-      );
-      if (!newMarking) {
-        newMarkedDatesMap.set(dayKey, {color: paletteGreen});
-        return;
+        endClamp: monthsBack === 0 ? today : null,
+      });
+      months.push(monthData);
+      monthData.dayData.forEach((cell, dayKey) => {
+        newMarkedDates[dayKey] = cell.marking;
+        if (cell.units !== undefined) {
+          newUnitsMap.set(dayKey, cell.units);
+        }
+      });
+      monthData.entriesByDay.forEach((entries, dayKey) => {
+        newSessionEntriesByDay.set(dayKey, entries);
+      });
+      if (monthData.entriesByDay.size > 0) {
+        newMonthlyTotalsMap.set(monthData.monthKey, monthData.totalUnits);
       }
-      newMarkedDatesMap.set(dayKey, newMarking.marking);
-      newUnitsMap.set(dayKey, newMarking.units);
-      // dayKey is 'YYYY-MM-DD' — slice the month bucket directly without
-      // re-parsing the date.
-      const monthKey = dayKey.slice(0, 7);
-      newMonthlyTotalsMap.set(
-        monthKey,
-        (newMonthlyTotalsMap.get(monthKey) ?? 0) + newMarking.units,
-      );
-    });
+    }
 
     return {
-      markedDatesMap: newMarkedDatesMap,
+      calendarMonths: months,
+      markedDates: newMarkedDates,
       unitsMap: newUnitsMap,
       monthlyTotalsMap: newMonthlyTotalsMap,
+      sessionEntriesByDay: newSessionEntriesByDay,
+      loadedFromDate: rangeStart,
     };
-  }, [sessionIndex, dayKeys, effectivePreferences, paletteGreen]);
-
-  const markedDates: MarkedDates = useMemo(
-    () => Object.fromEntries(markedDatesMap),
-    [markedDatesMap],
-  );
+  }, [sessionsByMonth, effectiveMonths, effectivePreferences]);
 
   // Overlay the live (in-progress) session on top of the base outputs. The live
   // buffer's drinks are deliberately kept out of `cachedDrinkingSessions` (the
   // server skips the cache echo while `sessionIsLive && ongoing`), so without
   // this the day tile / day-overview / month totals show the session flagged
   // ongoing but with 0 units until it is finalized. Patches only the overlay
-  // session's single day — the O(N)/Intl index pass and the O(D) marking pass
-  // above stay keyed on `sessions`, so a drink tap costs one day's recompute
-  // plus shallow map clones, not a full re-index. When there is no live session
-  // the base outputs are returned untouched (refs stable, zero overhead).
+  // session's single day — and, for the per-month sections, only that day's
+  // month — so a drink tap costs one day's recompute plus shallow clones, not a
+  // full re-index. Every other month keeps referential identity. When there is
+  // no live session the base outputs are returned untouched (refs stable, zero
+  // overhead).
   const {
+    calendarMonths: overlaidCalendarMonths,
     markedDates: overlaidMarkedDates,
     unitsMap: overlaidUnitsMap,
     monthlyTotalsMap: overlaidMonthlyTotalsMap,
     sessionEntriesByDay: overlaidSessionEntriesByDay,
   } = useMemo(() => {
     if (!ongoingOverlay?.ongoing || !ongoingOverlay.id) {
-      return {markedDates, unitsMap, monthlyTotalsMap, sessionEntriesByDay};
+      return {
+        calendarMonths,
+        markedDates,
+        unitsMap,
+        monthlyTotalsMap,
+        sessionEntriesByDay,
+      };
     }
 
     const overlayId = ongoingOverlay.id;
@@ -331,6 +328,9 @@ function useLazyMarkedDates(
       patchedEntries.map(entry => entry.session),
       effectivePreferences,
     );
+    const patchedCell: DayCellData = newMarking
+      ? {marking: newMarking.marking, units: newMarking.units}
+      : {marking: {color: paletteGreen}};
     const newUnits = newMarking?.units ?? 0;
     const oldUnits = unitsMap.get(dayKey) ?? 0;
 
@@ -346,10 +346,27 @@ function useLazyMarkedDates(
     const nextSessionEntriesByDay = new Map(sessionEntriesByDay);
     nextSessionEntriesByDay.set(dayKey, patchedEntries);
 
+    const nextCalendarMonths = calendarMonths.map(monthData => {
+      if (monthData.monthKey !== monthKey) {
+        return monthData;
+      }
+      const nextDayData = new Map(monthData.dayData);
+      nextDayData.set(dayKey, patchedCell);
+      const nextEntriesByDay = new Map(monthData.entriesByDay);
+      nextEntriesByDay.set(dayKey, patchedEntries);
+      return {
+        ...monthData,
+        dayData: nextDayData,
+        entriesByDay: nextEntriesByDay,
+        totalUnits: monthData.totalUnits - oldUnits + newUnits,
+      };
+    });
+
     return {
+      calendarMonths: nextCalendarMonths,
       markedDates: {
         ...markedDates,
-        [dayKey]: newMarking ? newMarking.marking : {color: paletteGreen},
+        [dayKey]: patchedCell.marking,
       },
       unitsMap: nextUnitsMap,
       monthlyTotalsMap: nextMonthlyTotalsMap,
@@ -357,6 +374,7 @@ function useLazyMarkedDates(
     };
   }, [
     ongoingOverlay,
+    calendarMonths,
     markedDates,
     unitsMap,
     monthlyTotalsMap,
@@ -422,6 +440,10 @@ function useLazyMarkedDates(
     unitsMap: overlaidUnitsMap,
     monthlyTotalsMap: overlaidMonthlyTotalsMap,
     sessionEntriesByDay: overlaidSessionEntriesByDay,
+    // Per-month render payloads for the fullscreen week-list, ascending. Month
+    // objects keep referential identity across widens (and across live-drink
+    // taps, for all but the overlay's month).
+    calendarMonths: overlaidCalendarMonths,
     loadedFrom,
     loadedFromDate,
     loadMoreMonths,
@@ -439,3 +461,4 @@ function useLazyMarkedDates(
 }
 
 export default useLazyMarkedDates;
+export type {UseLazyMarkedDatesOptions};

@@ -96,8 +96,8 @@ function SessionsCalendar({
   const {
     markedDates,
     unitsMap,
-    monthlyTotalsMap,
     sessionEntriesByDay,
+    calendarMonths,
     loadedFrom,
     loadedFromDate,
     loadMoreMonths,
@@ -110,6 +110,12 @@ function SessionsCalendar({
     drinkingSessionData ?? {},
     preferences,
     ongoingOverlay,
+    {
+      // Fullscreen + canonical floor (self): derive the whole tracked range up
+      // front so scrolling back never waits on a widen — the data is all
+      // on-device. Does not touch the persisted depth lever. No-op for friends.
+      deriveFullRangeToFloor: mode === 'fullscreen',
+    },
   );
   const startEditSessionForDate = useStartEditSessionForDate();
   const [userDataList] = useOnyx(ONYXKEYS.USER_DATA_LIST);
@@ -191,23 +197,47 @@ function SessionsCalendar({
   // floor as the user scrolls toward the top, letting them reach pre-tracking
   // days (which render blank/dimmed — no fetch) down to `absoluteFloor`.
   const [renderFromDate, setRenderFromDate] = useState<Date | null>(null);
+
+  // When the fullscreen view opens centered on a month *before* the user's
+  // tracking start (e.g. from a compact calendar paged into pre-tracking
+  // months), the target can never enter the data range — the derivation is
+  // capped at the canonical floor. Extend the render floor to cover it so the
+  // centering target exists from the first render; without this the initial
+  // scroll never resolves and the screen would hang on its skeleton. Self-only
+  // (`hasPersistedFloor`): for a friend the floor is unknown, so the target is
+  // reached by widening the fetch window instead (the prefetch effect below).
+  const initialRenderTarget = useMemo(() => {
+    if (mode !== 'fullscreen' || !initialMonthYear || !hasPersistedFloor) {
+      return null;
+    }
+    const target = startOfMonth(parseISO(`${initialMonthYear}-01`));
+    if (target >= minDateFloor) {
+      return null;
+    }
+    return target < absoluteFloor ? absoluteFloor : target;
+  }, [mode, initialMonthYear, hasPersistedFloor, minDateFloor, absoluteFloor]);
+
   const fullscreenRenderFrom = useMemo(() => {
     if (!loadedFromDate) {
       return loadedFromDate;
     }
-    const candidate =
+    let candidate =
       renderFromDate && renderFromDate < loadedFromDate
         ? renderFromDate
         : loadedFromDate;
+    if (initialRenderTarget && initialRenderTarget < candidate) {
+      candidate = initialRenderTarget;
+    }
     return candidate < absoluteFloor ? absoluteFloor : candidate;
-  }, [loadedFromDate, renderFromDate, absoluteFloor]);
+  }, [loadedFromDate, renderFromDate, initialRenderTarget, absoluteFloor]);
 
   // Whether there is older data still to load — drives the day-list's load
-  // trigger and its "loading older" header.
+  // trigger and its "loading older" header, and the week-list's pending
+  // skeleton months.
   //  - Self (canonical floor): stop once the loaded window reaches the earliest
-  //    tracked month. Compared at month granularity (`startOfMonth`) so the
-  //    harmless boundary day baked into `loadedFromDate` (a `startOfMonth − 1
-  //    day`, see `useLazyMarkedDates`) can't trip the guard a day early.
+  //    tracked month (with the fullscreen full-range derivation this is true
+  //    from the first render). Compared at month granularity for robustness —
+  //    `loadedFromDate` is already a `startOfMonth`.
   //  - Friend (no canonical floor): keep loading until the window is exhausted —
   //    the server returns nothing earlier than what we already have.
   const canLoadOlder = hasPersistedFloor
@@ -222,11 +252,11 @@ function SessionsCalendar({
   const handleRequestOlder = (earliestVisible: Date) => {
     const floor = loadedFrom?.current ?? new Date();
     // Self (canonical floor): stop once loaded back to the earliest tracked
-    // month, compared at month granularity so the `startOfMonth − 1 day` baked
-    // into `loadedFromDate` (see `useLazyMarkedDates`) can't trip the guard a
-    // day early. In fullscreen, keep widening the *rendered* range past it so
-    // the user can scroll into the empty pre-tracking months (to add a past
-    // session); those render blank/dimmed for free. Walls at `absoluteFloor`.
+    // month — with the fullscreen full-range derivation that's the case from
+    // the very first call. In fullscreen, keep widening the *rendered* range
+    // past it so the user can scroll into the empty pre-tracking months (to
+    // add a past session); those render blank/dimmed for free. Walls at
+    // `absoluteFloor`.
     if (hasPersistedFloor) {
       if (startOfMonth(floor).getTime() <= minDateFloor.getTime()) {
         if (mode === 'fullscreen') {
@@ -286,6 +316,14 @@ function SessionsCalendar({
     if (hasPrefetchedRef.current) {
       return;
     }
+    // Fullscreen + canonical floor (self): the full tracked range is derived
+    // up front (`deriveFullRangeToFloor`), so there is nothing to prefetch and
+    // no reason to bump the persisted depth lever. The day-list keeps the
+    // prefetch — it still loads lazily. If the floor hydrates late, one
+    // friend-style prefetch may fire first; harmless and parity with before.
+    if (mode === 'fullscreen' && hasPersistedFloor) {
+      return;
+    }
     hasPrefetchedRef.current = true;
     // If the user opened an enlarged view (fullscreen calendar or day-overview
     // scroll) on a month older than our default 12-month buffer, deepen the
@@ -301,7 +339,7 @@ function SessionsCalendar({
         loadUpTo(targetFloor);
       }
     }
-  }, [mode, loadUpTo, initialMonthYear, initialDay]);
+  }, [mode, loadUpTo, initialMonthYear, initialDay, hasPersistedFloor]);
 
   const onDayPress = useCallback(
     (dateData: DateData) => {
@@ -404,12 +442,10 @@ function SessionsCalendar({
     return (
       <>
         <SessionsCalendarWeekListView
-          markedDates={markedDates}
-          unitsMap={unitsMap}
-          monthlyTotalsMap={monthlyTotalsMap}
-          loadedFromDate={fullscreenRenderFrom}
+          calendarMonths={calendarMonths}
+          renderFromDate={fullscreenRenderFrom}
+          canLoadOlder={canLoadOlder}
           trackingStartDate={minDate}
-          isFetchingOlderMonths={isFetchingOlderMonths}
           onDayPress={onDayPress}
           onDayLongPress={dayLongPressHandler}
           onRequestOlder={handleRequestOlder}
