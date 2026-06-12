@@ -1,17 +1,15 @@
 import React, {memo, useCallback, useEffect, useMemo, useRef} from 'react';
-import {ActivityIndicator, View} from 'react-native';
+import {View} from 'react-native';
 import {FlashList} from '@shopify/flash-list';
 import type {FlashListRef} from '@shopify/flash-list';
-import {format, parseISO, startOfDay} from 'date-fns';
+import {parseISO, startOfMonth} from 'date-fns';
 import lodashDebounce from 'lodash/debounce';
 import type {DateData} from 'react-native-calendars';
 import {LocaleConfig} from 'react-native-calendars';
-import type {MarkedDates} from 'react-native-calendars/src/types';
 import {useOnyx} from 'react-native-onyx';
 import SwipeBackGestureDetector from '@components/SwipeBackGestureDetector';
 import Text from '@components/Text';
 import useLocalize from '@hooks/useLocalize';
-import useTheme from '@hooks/useTheme';
 import useThemeStyles from '@hooks/useThemeStyles';
 import useWindowDimensions from '@hooks/useWindowDimensions';
 import ONYXKEYS from '@src/ONYXKEYS';
@@ -21,14 +19,25 @@ import {roundToTwoDecimalPlaces} from '@libs/NumberUtils';
 import DateUtils from '@libs/DateUtils';
 import setCalendarLocale from '@libs/setCalendarLocale';
 import type {DateString} from '@src/types/onyx/OnyxCommon';
-import buildMonthSections from './buildMonthSections';
-import type {MonthSection, MonthWeek} from './buildMonthSections';
+import buildWeekListItems from './buildWeekListItems';
+import type {ListItem} from './buildWeekListItems';
+import type {CalendarMonthData} from './deriveCalendarMonth';
 import WeekRow from './WeekRow';
+import WeekRowSkeleton from './WeekRowSkeleton';
 
 // Trigger `onRequestOlder` when the lowest visible item is within this
-// many weeks of index 0. Generous so the parent's prefetch starts well
-// before the user catches up to the loaded floor.
+// many weeks of the first real (non-pending) item. Generous so the parent's
+// prefetch starts well before the user catches up to the loaded floor; being
+// anywhere inside the pending-skeleton zone always triggers.
 const LOAD_AHEAD_BUFFER_WEEKS = 12;
+
+// How many months of pending skeletons to render above the loaded floor while
+// older data can still arrive (`canLoadOlder`). ~1.5 viewports of runway — the
+// parent's 6-month widen chunk refills faster than a user can cross it, so the
+// list reads as "loading" rather than ending at a hard edge. Their keys and
+// geometry are identical to the real months that replace them, so the swap is
+// an in-place repaint with zero scroll jump.
+const PENDING_SKELETON_MONTHS = 3;
 
 // Fraction of the window height left empty below the latest week so
 // `scrollToIndex({viewPosition: 0.5})` can pull a near-latest target toward
@@ -42,31 +51,29 @@ const BOTTOM_SPACER_RATIO = 0.4;
 const VIEWABILITY_CONFIG = {itemVisiblePercentThreshold: 50};
 
 type SessionsCalendarWeekListViewProps = {
-  /** Marked dates payload keyed by `DateString`. */
-  markedDates: MarkedDates;
-  /** Per-day unit count, also keyed by `DateString`. */
-  unitsMap: Map<DateString, number>;
-  /** Per-month unit totals keyed by 'YYYY-MM'. Rendered in the month label. */
-  monthlyTotalsMap: Map<string, number>;
-  /** Earliest day currently loaded (drives the bottom of the list). */
-  loadedFromDate: Date | null;
+  /** Per-month render payloads, ascending. Month objects are referentially
+   *  stable across loaded-window widens (see `useLazyMarkedDates`), so rows of
+   *  already-loaded months never re-render when older months stream in. */
+  calendarMonths: CalendarMonthData[];
+  /** Render-only floor (self): months between it and the data floor render as
+   *  dimmed pre-tracking months (clickable, no data). Pass the data floor (or
+   *  null) to render no extra months. */
+  renderFromDate: Date | null;
+  /** Whether scrolling back can still reveal older data. While true, the list
+   *  renders pending skeleton months above the loaded floor instead of a hard
+   *  edge. */
+  canLoadOlder?: boolean;
   /** Earliest tracked day ('yyyy-MM-dd'). Days before it render dimmed but stay
    *  clickable. Styling-only; the parent decides how far the list renders. */
   trackingStartDate?: string;
-  /** Latest day to render (defaults to today). */
-  endDate?: Date;
-  /** True while the data fetcher is widening the loaded window. The view
-   *  renders a "Loading older months…" row at the top of the list while
-   *  this is true. */
-  isFetchingOlderMonths?: boolean;
   /** Day cell tap handler. */
   onDayPress?: (day: DateData) => void;
   /** Day cell long-press handler (create-session shortcut). */
   onDayLongPress?: (day: DateData) => void;
   /** Called when the user scrolls within `LOAD_AHEAD_BUFFER_WEEKS` of the
-   *  loaded floor; receives the date of the earliest in-range day currently
-   *  visible. The parent decides (via `computeLoadTarget`) whether to
-   *  actually widen the loaded window. */
+   *  loaded floor (or into the pending zone); receives the date of the
+   *  earliest in-range day currently visible. The parent decides (via
+   *  `computeLoadTarget`) whether to actually widen the loaded window. */
   onRequestOlder?: (earliestVisible: Date) => void;
   /** Target month ('YYYY-MM') to center on first render. When omitted, the
    *  list falls back to "latest at bottom". */
@@ -80,21 +87,6 @@ type SessionsCalendarWeekListViewProps = {
   onSwipeBack?: () => void;
 };
 
-type LabelItem = {
-  kind: 'label';
-  key: string;
-  label: string;
-  monthKey: string;
-};
-
-type WeekItem = {
-  kind: 'week';
-  key: string;
-  row: MonthWeek;
-};
-
-type ListItem = LabelItem | WeekItem;
-
 /**
  * Vertical, self-contained-months calendar.
  *
@@ -104,17 +96,19 @@ type ListItem = LabelItem | WeekItem;
  * as the user scrolls past it (Apple-Photos pattern). No custom scroll
  * rail; the platform-native scrollbar carries the timeline-position cue.
  *
+ * While older data can still arrive, the months above the loaded floor render
+ * as skeleton rows (real month labels, placeholder day tiles) so the user
+ * scrolls into "loading" rather than a hard edge; the rows fill in place when
+ * the data lands.
+ *
  * Pure presentational — no Onyx writes, no Firebase reads. The parent owns
  * extending the loaded range via `onRequestOlder`.
  */
 function SessionsCalendarWeekListView({
-  markedDates,
-  unitsMap,
-  monthlyTotalsMap,
-  loadedFromDate,
+  calendarMonths,
+  renderFromDate,
+  canLoadOlder,
   trackingStartDate,
-  endDate,
-  isFetchingOlderMonths,
   onDayPress,
   onDayLongPress,
   onRequestOlder,
@@ -123,7 +117,6 @@ function SessionsCalendarWeekListView({
   onSwipeBack,
 }: SessionsCalendarWeekListViewProps) {
   const styles = useThemeStyles();
-  const theme = useTheme();
   const {translate} = useLocalize();
   const {windowHeight} = useWindowDimensions();
   const [preferredLocale] = useOnyx(ONYXKEYS.NVP_PREFERRED_LOCALE);
@@ -136,66 +129,31 @@ function SessionsCalendarWeekListView({
     setCalendarLocale(locale);
   }, [locale]);
 
-  const resolvedEnd = useMemo(
-    () => startOfDay(endDate ?? new Date()),
-    [endDate],
-  );
-  const resolvedStart = useMemo(
-    () => (loadedFromDate ? startOfDay(loadedFromDate) : resolvedEnd),
-    [loadedFromDate, resolvedEnd],
+  // The product's 20-year horizon — neither the pending-skeleton zone nor the
+  // pre-tracking dimmed zone renders past it.
+  const absoluteFloor = useMemo(
+    () => startOfMonth(CONST.CALENDAR_PICKER.MIN_DATE),
+    [],
   );
 
-  const monthSections: MonthSection[] = useMemo(
-    () => buildMonthSections({start: resolvedStart, end: resolvedEnd}),
-    [resolvedStart, resolvedEnd],
-  );
-
-  // Flatten the per-month sections into a single list of items. Labels
-  // sit between sections and double as FlashList sticky headers. We also
-  // build a `monthYear → first-week-row index` map in the same pass for
-  // the initial-scroll lookup.
-  const {items, stickyHeaderIndices, firstWeekIndexByMonth} = useMemo(() => {
-    const out: ListItem[] = [];
-    const sticky: number[] = [];
-    const monthIndex = new Map<string, number>();
-
-    monthSections.forEach(section => {
-      const labelDate = new Date(section.year, section.month, 1);
-      const monthKey = `${section.year}-${String(section.month + 1).padStart(2, '0')}`;
-      sticky.push(out.length);
-      out.push({
-        kind: 'label',
-        key: `label-${section.year}-${section.month}`,
-        label: format(labelDate, CONST.DATE.MONTH_YEAR_ABBR_FORMAT, {
-          locale: dateFnsLocale,
+  const {items, stickyHeaderIndices, firstWeekIndexByMonth, firstRealIndex} =
+    useMemo(
+      () =>
+        buildWeekListItems({
+          months: calendarMonths,
+          renderFromDate,
+          pendingMonthCount: canLoadOlder ? PENDING_SKELETON_MONTHS : 0,
+          absoluteFloor,
+          dateFnsLocale,
         }),
-        monthKey,
-      });
-      section.weeks.forEach((week, weekIdx) => {
-        if (weekIdx === 0) {
-          // The first week-row of each section is what we anchor the
-          // initial-scroll lookup against. Key by 'YYYY-MM'.
-          monthIndex.set(monthKey, out.length);
-        }
-        // Section-qualified key — two halves of a calendar week that spans
-        // a month boundary share the same `week.key` (the Monday's ISO
-        // date), so without the section prefix React reconciliation would
-        // see a duplicate and drop one of them. Concretely: October's
-        // last row and November's first row both start Mon 2025-10-27.
-        out.push({
-          kind: 'week',
-          key: `week-${section.year}-${section.month}-${week.key}`,
-          row: week,
-        });
-      });
-    });
-
-    return {
-      items: out,
-      stickyHeaderIndices: sticky,
-      firstWeekIndexByMonth: monthIndex,
-    };
-  }, [monthSections, dateFnsLocale]);
+      [
+        calendarMonths,
+        renderFromDate,
+        canLoadOlder,
+        absoluteFloor,
+        dateFnsLocale,
+      ],
+    );
 
   const dayNames = useMemo(() => {
     // `LocaleConfig` is re-exported from xdate without precise TS types for
@@ -242,7 +200,8 @@ function SessionsCalendarWeekListView({
   }, []);
 
   // Resolve the target index — undefined while data hasn't loaded enough
-  // months yet (the items memo widens as `loadedFromDate` extends).
+  // months yet (the items memo widens as the loaded range extends; pending
+  // months don't count as a landing target).
   const targetIndex = useMemo(() => {
     if (!initialMonthYear) {
       return undefined;
@@ -326,11 +285,12 @@ function SessionsCalendarWeekListView({
   useEffect(() => () => writeLastViewedDay.cancel(), [writeLastViewedDay]);
 
   // Lazy-load older months when the user scrolls within the buffer of the
-  // loaded floor. Walk forward from the lowest visible index to the first
-  // week item with at least one in-range day; surface that day to the
-  // parent so it can decide whether to widen the loaded window. Walking
-  // forward handles label items and leading-blank week rows at the top
-  // of the very first month section.
+  // first real (non-pending) item — anywhere inside the pending-skeleton zone
+  // included. Walk forward from the lowest visible index to the first week
+  // item with at least one in-range day; surface that day to the parent so it
+  // can decide whether to widen the loaded window. Pending rows carry real
+  // dates, so scrolling deep into the skeletons asks for correspondingly
+  // older months.
   const onViewableItemsChanged = useCallback(
     ({viewableItems}: {viewableItems: Array<{index: number | null}>}) => {
       const visibleIndices = viewableItems
@@ -347,10 +307,12 @@ function SessionsCalendarWeekListView({
       // focused on (matching the centered open) rather than a sliver clipped
       // at the top edge. Only once the user has actually scrolled — otherwise
       // an open-and-close without moving would overwrite the origin month.
+      // Pending months don't count: they have no data yet, and pointing the
+      // compact calendar at one would land it on an unloaded month.
       if (hasUserScrolledRef.current) {
         const centerItem =
           items[visibleIndices[Math.floor(visibleIndices.length / 2)]];
-        if (centerItem) {
+        if (centerItem && !centerItem.pending) {
           const centerDay =
             centerItem.kind === 'label'
               ? (`${centerItem.monthKey}-01` as DateString)
@@ -364,7 +326,7 @@ function SessionsCalendarWeekListView({
       if (!onRequestOlder) {
         return;
       }
-      if (minIndex > LOAD_AHEAD_BUFFER_WEEKS) {
+      if (minIndex - firstRealIndex > LOAD_AHEAD_BUFFER_WEEKS) {
         return;
       }
       for (let i = Math.max(0, minIndex); i < items.length; i++) {
@@ -379,13 +341,13 @@ function SessionsCalendarWeekListView({
         }
       }
     },
-    [items, onRequestOlder, writeLastViewedDay],
+    [items, firstRealIndex, onRequestOlder, writeLastViewedDay],
   );
 
   const renderItem = useCallback(
     (args: {item: ListItem}) => {
       if (args.item.kind === 'label') {
-        const total = monthlyTotalsMap.get(args.item.monthKey);
+        const total = args.item.totalUnits;
         return (
           <View style={styles.sessionsCalendarMonthLabel}>
             <Text style={styles.sessionsCalendarMonthLabelText}>
@@ -402,11 +364,13 @@ function SessionsCalendarWeekListView({
           </View>
         );
       }
+      if (args.item.pending) {
+        return <WeekRowSkeleton row={args.item.row} />;
+      }
       return (
         <WeekRow
           row={args.item.row}
-          markedDates={markedDates}
-          unitsMap={unitsMap}
+          dayData={args.item.dayData}
           trackingStartDate={trackingStartDate}
           onDayPress={onDayPress}
           onDayLongPress={onDayLongPress}
@@ -414,9 +378,6 @@ function SessionsCalendarWeekListView({
       );
     },
     [
-      markedDates,
-      unitsMap,
-      monthlyTotalsMap,
       trackingStartDate,
       onDayPress,
       onDayLongPress,
@@ -433,32 +394,10 @@ function SessionsCalendarWeekListView({
   // Distinct recycling pools (and per-type size estimates) for the two row
   // shapes — a one-line month label vs. a full week grid-row. v2 keys its
   // running height estimate by type, so this also sharpens the offset math that
-  // `initialScrollIndex`/`scrollToIndex` rely on.
+  // `initialScrollIndex`/`scrollToIndex` rely on. Pending rows share the
+  // 'week' pool deliberately: their geometry is pixel-identical, which keeps
+  // the offset math consistent across the skeleton→data swap.
   const getItemType = useCallback((item: ListItem) => item.kind, []);
-
-  // FlashList renders this above the first item in the list — i.e. above
-  // the oldest loaded week. It only shows while a data fetch is in flight,
-  // signaling "more months are on the way" when the user has scrolled past
-  // the prefetch buffer and is waiting on the network.
-  const listHeader = useMemo(() => {
-    if (!isFetchingOlderMonths) {
-      return null;
-    }
-    return (
-      <View style={styles.sessionsCalendarLoadingRow}>
-        <ActivityIndicator size="small" color={theme.spinner} />
-        <Text style={styles.sessionsCalendarLoadingRowText}>
-          {translate('calendar.loadingOlderMonths')}
-        </Text>
-      </View>
-    );
-  }, [
-    isFetchingOlderMonths,
-    styles.sessionsCalendarLoadingRow,
-    styles.sessionsCalendarLoadingRowText,
-    theme.spinner,
-    translate,
-  ]);
 
   // When we have a target, seed `initialScrollIndex` to it so we land close
   // to the right place even before the corrective `scrollToIndex` lands —
@@ -493,7 +432,6 @@ function SessionsCalendarWeekListView({
           initialScrollIndex={initialScrollIndex}
           contentContainerStyle={contentContainerStyle}
           showsVerticalScrollIndicator
-          ListHeaderComponent={listHeader}
           onLoad={handleListLoad}
           onScrollBeginDrag={onScrollBeginDrag}
           onViewableItemsChanged={onViewableItemsChanged}

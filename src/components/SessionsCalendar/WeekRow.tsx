@@ -2,17 +2,18 @@ import React, {memo} from 'react';
 import {View} from 'react-native';
 import {parseISO} from 'date-fns';
 import type {DateData} from 'react-native-calendars';
-import type {MarkedDates} from 'react-native-calendars/src/types';
-import type {MarkingProps} from 'react-native-calendars/src/calendar/day/marking';
 import type {DateString} from '@src/types/onyx/OnyxCommon';
 import useThemeStyles from '@hooks/useThemeStyles';
 import DayComponent from './DayComponent';
 import type {MonthWeek} from './buildMonthSections';
+import type {DayCellData} from './deriveCalendarMonth';
 
 type WeekRowProps = {
   row: MonthWeek;
-  markedDates: MarkedDates;
-  unitsMap: Map<DateString, number>;
+  /** Per-day cell payload for the row's month (marking + units). Month-scoped
+   *  and referentially stable across loaded-window widens, which is what lets
+   *  this component's `memo` hold while older months stream in. */
+  dayData: ReadonlyMap<DateString, DayCellData>;
   /** Earliest tracked day ('yyyy-MM-dd'). Days before it render dimmed but stay
    *  clickable. Styling-only. */
   trackingStartDate?: string;
@@ -44,8 +45,7 @@ function dayKeyToDateData(key: DateString): DateData {
  */
 function WeekRow({
   row,
-  markedDates,
-  unitsMap,
+  dayData,
   trackingStartDate,
   onDayPress,
   onDayLongPress,
@@ -64,13 +64,13 @@ function WeekRow({
             />
           );
         }
-        const marking = markedDates[dayKey] as MarkingProps | undefined;
+        const cell = dayData.get(dayKey);
         return (
           <View key={dayKey} style={styles.sessionsCalendarWeekCell}>
             <DayComponent
               date={dayKeyToDateData(dayKey)}
-              units={unitsMap.get(dayKey)}
-              marking={marking}
+              units={cell?.units}
+              marking={cell?.marking}
               trackingStartDate={trackingStartDate}
               onPress={onDayPress}
               onLongPress={onDayLongPress}
