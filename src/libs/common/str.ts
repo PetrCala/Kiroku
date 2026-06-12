@@ -132,11 +132,13 @@ const Str = {
     function recapCallaback(t: unknown, a: string, b: string) {
       return a + b.toUpperCase();
     }
-    return str.replace(
-      // **NOTE: Match to _libfop.php
-      /([^A-Za-z'.0-9])([a-z])/g,
-      recapCallaback,
-    );
+    // Uppercase the first letter following any separator (space, hyphen, etc.).
+    // The character classes are Unicode-aware (`\p{L}` letter, `\p{Ll}`
+    // lowercase letter, `u` flag) so accented letters are treated as letters,
+    // not word boundaries. An ASCII-only class like `[^A-Za-z...]` would treat
+    // e.g. Czech "č"/"á"/"ú" as separators and wrongly capitalize the next
+    // letter ("červen" -> "ČErven", "pát" -> "PáT").
+    return str.replace(/([^\p{L}'.0-9])(\p{Ll})/gu, recapCallaback);
   },
 
   /**
