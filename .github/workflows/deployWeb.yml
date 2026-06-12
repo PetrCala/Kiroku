@@ -119,10 +119,12 @@ jobs:
         with:
           ref: ${{ github.event.pull_request.head.sha || steps.ref.outputs.REF }}
 
-      # Previews are built with the dev/staging config so they exercise the
-      # staging API, and are hosted as a channel on the dev site.
-      - name: Stage .env.development from staging secret
-        run: echo "${{ secrets.STAGING_ENV_FILE }}" > .env.development
+      # Previews use the dev Firebase project (DEV_ENV_FILE) so the Playwright
+      # suite can sign in with the dev-only test account. STAGING_ENV_FILE points
+      # at alcohol-tracker-db (prod Firebase auth) where that account does not
+      # exist, causing "password incorrect" on every CI run.
+      - name: Stage .env.development from dev secret
+        run: echo "${{ secrets.DEV_ENV_FILE }}" > .env.development
 
       # The Playwright suite signs in with a test account that may not have
       # completed onboarding. SKIP_ONBOARDING bypasses OnboardingGuard so the
@@ -201,7 +203,8 @@ jobs:
 
       # PLAYWRIGHT_BASE_URL points the suite at the deployed preview channel.
       # E2E_TEST_EMAIL / E2E_TEST_PASSWORD are repo secrets holding a dev-backend
-      # account (the preview runs the dev/staging build). See the header note.
+      # account (the preview build uses DEV_ENV_FILE → dev Firebase auth).
+      # See the header note.
       - name: Run web smoke suite against the preview channel
         env:
           PLAYWRIGHT_BASE_URL: ${{ needs.deployPreview.outputs.preview-url }}
