@@ -239,7 +239,7 @@ describe('buildDrinkEvents — drink entry shapes', () => {
 });
 
 describe('buildDrinkEvents — session filtering', () => {
-  it('excludes ongoing sessions', () => {
+  it('includes ongoing sessions so live activity counts toward stats', () => {
     const sessions = makeMultiUser({
       u1: {
         live: {
@@ -254,8 +254,11 @@ describe('buildDrinkEvents — session filtering', () => {
       },
     });
     const events = buildDrinkEvents(sessions, UNITS, DEFAULTS, UTC, MON);
-    expect(events).toHaveLength(1);
-    expect(events[0].sessionId).toBe('done');
+    expect(events).toHaveLength(2);
+    expect(events.map(event => event.sessionId).sort()).toEqual([
+      'done',
+      'live',
+    ]);
   });
 
   it('skips sessions with non-finite start_time', () => {
