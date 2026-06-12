@@ -523,8 +523,15 @@ export default defineConfig([
   // too. Several `.ts` files here (e.g. the CLI arg parser, Git helpers) are
   // vendored from Expensify and kept byte-faithful for easy re-syncs, so we also
   // relax `no-unnecessary-type-assertion` rather than diverging the source.
+  // The mascot design tooling under `assets/design/` is the same class of
+  // run-by-hand build script (it emits the master logo SVGs).
   {
-    files: ['scripts/**/*.ts', 'scripts/**/*.mjs'],
+    files: [
+      'scripts/**/*.ts',
+      'scripts/**/*.mjs',
+      'assets/design/**/*.mjs',
+      'assets/design/**/*.cjs',
+    ],
     rules: {
       'no-console': 'off',
       'no-await-in-loop': 'off',
