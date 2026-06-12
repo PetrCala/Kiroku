@@ -10,8 +10,11 @@ import {HomePage} from '../pages/HomePage';
  */
 const STORAGE_STATE = path.resolve(__dirname, '..', '.auth', 'user.json');
 
-const E2E_TEST_EMAIL = process.env.E2E_TEST_EMAIL;
-const E2E_TEST_PASSWORD = process.env.E2E_TEST_PASSWORD;
+// Trim the credentials: a trailing newline/space in the GitHub secret would
+// otherwise be submitted verbatim (the app trims the email but not the
+// password), which Firebase rejects as `auth/wrong-password`.
+const E2E_TEST_EMAIL = process.env.E2E_TEST_EMAIL?.trim();
+const E2E_TEST_PASSWORD = process.env.E2E_TEST_PASSWORD?.trim();
 
 type AuthFixtures = {
   /** A page already signed in via the cached storage state. */

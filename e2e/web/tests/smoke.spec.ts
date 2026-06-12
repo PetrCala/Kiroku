@@ -4,8 +4,10 @@ import {HomePage} from '../pages/HomePage';
 import {TabNav, type TabName} from '../pages/TabNav';
 import {trackErrors} from '../fixtures/consoleErrors';
 
-const E2E_TEST_EMAIL = process.env.E2E_TEST_EMAIL ?? '';
-const E2E_TEST_PASSWORD = process.env.E2E_TEST_PASSWORD ?? '';
+// Trim: a trailing newline/space in the GitHub secret would otherwise be
+// submitted verbatim and rejected by Firebase as `auth/wrong-password`.
+const E2E_TEST_EMAIL = (process.env.E2E_TEST_EMAIL ?? '').trim();
+const E2E_TEST_PASSWORD = (process.env.E2E_TEST_PASSWORD ?? '').trim();
 
 test.describe('web smoke', () => {
   test('signs in with email and password and lands on Home', async ({page}) => {
