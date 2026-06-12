@@ -72,6 +72,7 @@ function Kiroku() {
     splashScreenState,
     setSplashScreenState,
     isAuthDataReady,
+    setIsAuthDataReady,
     setIsLogoHandoffActive,
   } = useContext(SplashScreenStateContext);
   const [lastVisitedPath] = useOnyx(ONYXKEYS.LAST_VISITED_PATH);
@@ -177,11 +178,33 @@ function Kiroku() {
   // For authenticated users, wait for the user's RTDB data (userData +
   // preferences) to hydrate before hiding the splash, so the home screen
   // can paint real content immediately and OnboardingGuard can redirect
-  // without flicker. The signal is set from inside AuthScreens via
-  // `setIsAuthDataReady`. For unauthenticated users this condition is
-  // bypassed — the public stack
-  // is ready as soon as nav + theme are ready.
+  // without flicker. The fast path is set from inside AuthScreens via
+  // `setIsAuthDataReady` once data lands; the bounded backstop below guarantees
+  // it resolves even if AuthScreens never reaches a stable mount. For
+  // unauthenticated users this condition is bypassed — the public stack is
+  // ready as soon as nav + theme are ready.
   const isAuthScreenReady = !isAuthenticated || isAuthDataReady;
+
+  // Backstop for the authenticated splash gate, owned HERE rather than in
+  // AuthScreens. `isAuthDataReady` was previously settable only from inside
+  // AuthScreensContent (the data-arrival effect and its own timeout). But
+  // AuthScreens is lazy-loaded behind <Suspense fallback={null}> and mounts
+  // only after `onAuthStateChanged` fires, whereas the VerifyEmailModal renders
+  // straight from `isAuthenticated` here — so when the AuthScreens chunk-load or
+  // mount loses the boot race (~1 in 8 under load), the modal shows but the
+  // gate's only setter never runs and the splash is pinned forever (web #splash
+  // is z-index 10000 and swallows every click). Tying the backstop to
+  // `isAuthenticated` makes it fire regardless of AuthScreens, so the gate can't
+  // deadlock. The 15s SplashScreenHider net remains as the last resort.
+  useEffect(() => {
+    if (!isAuthenticated || isAuthDataReady) {
+      return undefined;
+    }
+    const timeoutId = setTimeout(() => {
+      setIsAuthDataReady(true);
+    }, CONST.BOOT_SPLASH_AUTH_DATA_TIMEOUT_MS);
+    return () => clearTimeout(timeoutId);
+  }, [isAuthenticated, isAuthDataReady, setIsAuthDataReady]);
 
   const shouldHideSplash = !!(
     shouldInit &&
@@ -234,6 +257,12 @@ function Kiroku() {
     Log.info('App launched', false, {Platform});
   }, []);
 
+  // If the splash is still up this long, it's stuck. Log a full snapshot of the
+  // gate inputs so the offender is obvious, then SplashScreenHider's 15s net
+  // force-hides just after. Fires one tick before the net so it captures the
+  // still-stuck state; on a healthy boot the splash hides in a couple seconds
+  // and this never runs. All gates are already in scope here, so the breadcrumb
+  // lives with the data rather than being plumbed into the overlay.
   useEffect(() => {
     if (splashScreenState !== CONST.BOOT_SPLASH_STATE.VISIBLE) {
       return undefined;
@@ -244,24 +273,42 @@ function Kiroku() {
         {
           propsToLog: {
             appState: AppState.currentState,
+            shouldInit,
+            isNavigationReady,
+            hasCheckedAutoLogin,
+            authenticationChecked,
+            isThemeReady,
+            preferredThemeStatus: preferredThemeMetadata.status,
+            isAuthenticated,
+            isAuthDataReady,
+            isAuthScreenReady,
+            shouldShowVerifyEmailModal,
+            isOnyxMigrated,
             updateRequired,
             updateAvailable,
-            isAuthenticated,
-            isThemeReady,
             preferredTheme,
             lastVisitedPath,
           },
         },
         false,
       );
-    }, 30 * 1000);
+    }, CONST.BOOT_SPLASH_STUCK_LOG_TIMEOUT_MS);
     return () => clearTimeout(timer);
   }, [
     splashScreenState,
+    shouldInit,
+    isNavigationReady,
+    hasCheckedAutoLogin,
+    authenticationChecked,
+    isThemeReady,
+    preferredThemeMetadata.status,
+    isAuthenticated,
+    isAuthDataReady,
+    isAuthScreenReady,
+    shouldShowVerifyEmailModal,
+    isOnyxMigrated,
     updateRequired,
     updateAvailable,
-    isAuthenticated,
-    isThemeReady,
     preferredTheme,
     lastVisitedPath,
   ]);

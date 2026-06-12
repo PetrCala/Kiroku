@@ -121,12 +121,19 @@ function AuthScreensContent() {
     StyleUtils,
   );
 
-  // Signal "auth data ready" to the boot splash gate in Kiroku.tsx. The
-  // splash hides only once these two fields have arrived from the live
-  // listener — matches HomeScreen's own render gate so the user sees the
-  // splash continuously until real content can paint.
+  // Signal "auth data ready" to the boot splash gate in Kiroku.tsx — the fast
+  // path. The splash hides as soon as these two fields arrive from the live
+  // listener, matching HomeScreen's own render gate so the user sees the splash
+  // continuously until real content can paint.
   // `useCurrentUserData` returns {} (truthy) while loading; the auth-ready gate
   // below must treat the empty object as "not loaded", so map empty → undefined.
+  //
+  // The bounded BACKSTOP for this gate does NOT live here — it lives in
+  // Kiroku.tsx, tied to `isAuthenticated`. AuthScreens is lazy-loaded and mounts
+  // only after auth resolves, so a backstop placed here could never fire if the
+  // chunk-load/mount itself is what stalls (the splash-deadlock root cause). The
+  // gate owner must guarantee its own resolution; this component only supplies
+  // the earlier, data-driven signal when it can.
   const currentUserData = useCurrentUserData();
   const userData = isEmptyObject(currentUserData) ? undefined : currentUserData;
   const preferences = useCurrentUserPreferences();
@@ -137,17 +144,6 @@ function AuthScreensContent() {
     }
     setIsAuthDataReady(true);
   }, [userData, preferences, setIsAuthDataReady]);
-  // Safety: if the listener doesn't deliver both fields within the
-  // timeout (offline cold start, slow network, or missing fields in the
-  // user's RTDB document), flip the gate anyway. HomeScreen renders
-  // skeletons until real data arrives, so this falls back to a brief
-  // skeleton flash instead of leaving the user staring at the splash.
-  useEffect(() => {
-    const timeoutId = setTimeout(() => {
-      setIsAuthDataReady(true);
-    }, CONST.BOOT_SPLASH_AUTH_DATA_TIMEOUT_MS);
-    return () => clearTimeout(timeoutId);
-  }, [setIsAuthDataReady]);
   // Reset on sign-out (AuthScreens unmounts) so a subsequent sign-in
   // re-gates the splash on fresh data.
   useEffect(() => () => setIsAuthDataReady(false), [setIsAuthDataReady]);

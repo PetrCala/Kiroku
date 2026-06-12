@@ -16,6 +16,7 @@ import BootSplash from '@libs/BootSplash';
 import * as FeatureFlags from '@libs/FeatureFlags';
 import Log from '@libs/Log';
 import colors from '@src/styles/theme/colors';
+import CONST from '@src/CONST';
 import type {
   SplashScreenHiderProps,
   SplashScreenHiderReturnType,
@@ -24,7 +25,7 @@ import type {
 // Force-hide the splash if shouldHideSplash hasn't fired by this point.
 // Protects against deadlocks where a gating condition (e.g. hasCheckedAutoLogin)
 // never flips and the user is left staring at the yellow overlay indefinitely.
-const FORCE_HIDE_TIMEOUT_MS = 15 * 1000;
+const FORCE_HIDE_TIMEOUT_MS = CONST.BOOT_SPLASH_FORCE_HIDE_TIMEOUT_MS;
 
 // Storyboard asset is 108pt (108/216/324 at 1×/2×/3×). The JS overlay
 // renders the logo at the same size so the native → JS handoff is seamless.
