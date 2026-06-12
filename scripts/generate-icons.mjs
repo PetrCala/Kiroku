@@ -1,11 +1,21 @@
 #!/usr/bin/env node
 /**
- * Generates all app icon and splash-screen assets from a single master SVG.
+ * Generates all app icon and splash-screen assets from the committed master
+ * SVGs (sources built by assets/design/mascot/build-masters.mjs):
+ *
+ *   assets/images/app-logo.svg            full-color tilted mascot
+ *                                         → app icons, favicon, apple-touch-icon, og-image
+ *   assets/images/app-logo-splash.svg     the same mascot on a white rounded chip
+ *                                         → boot splashes + env splash logos (the
+ *                                           splash backdrop is the brand yellow,
+ *                                           which the bare pencil body would
+ *                                           vanish into)
+ *   assets/images/app-logo-silhouette.svg white silhouette, face as alpha holes
+ *                                         → Android notification + themed-icon art
  *
  * Usage:
  *   node scripts/generate-icons.mjs
  *
- * Input:  assets/images/app-logo.svg  (master source, 1024×1024 recommended)
  * Output: iOS asset catalogs, Android mipmap/drawable directories, web icons
  *
  * Requires: sharp  (npm install --save-dev sharp)
@@ -48,21 +58,24 @@ const VARIANTS = {
   adhoc: {badge: {label: 'ADHOC', color: '#AF52DE'}},
 };
 
-// ─── Brand colors ─────────────────────────────────────────────────────────────
-// The master SVG (assets/images/app-logo.svg) is intentionally WHITE — it is a
-// silhouette that gets composited onto BRAND_BG for opaque surfaces (iOS app
-// icons, legacy Android launcher, web favicons), or rendered onto a separately
-// configured colored backdrop for transparent surfaces (boot splashes via
-// storyboard / colors.xml). In-app rendering tints the master via expo-image
-// `tintColor` in src/components/ImageSVG, so the same white master themes
-// correctly on light and dark backgrounds.
+// ─── Color model ─────────────────────────────────────────────────────────────
+// The masters are FULL-COLOR flat art (the mascot's pencil body carries the
+// brand yellow itself), constrained to <path>/<rect> elements with literal hex
+// fills and no strokes — svgToVectorDrawable() enforces this. Opaque surfaces
+// (iOS app icons, legacy Android launcher, web icons) composite the mascot
+// onto ICON_BG, a white field (the foam's soft contour keeps it legible).
+// Boot splashes get the brand-yellow backdrop from the storyboard /
+// colors.xml and render the chip master, which carries its own white field.
+// The silhouette master is the one single-color exception: Android tints
+// notification/themed-icon art through its alpha channel, so its face is cut
+// out as holes (assertSilhouette() guards it stays pure white).
 //
-// BRAND_BG must stay in sync with:
-//   - android/app/src/main/res/values/colors.xml          (bootsplash_background)
-//   - android/app/src/main/res/values/ic_launcher_background.xml
-//   - ios/kiroku/BootSplash.storyboard                    (root view backgroundColor)
+// ICON_BG must stay in sync with `brandIconBg` in src/styles/theme/colors.ts;
+// run scripts/sync-brand-colors.mjs after changing either (it also syncs the
+// yellowStrong splash backdrop into colors.xml, BootSplash.storyboard, and
+// web/index.html).
 
-const BRAND_BG = '#F5C400';
+const ICON_BG = '#FFFFFF';
 
 // ─── iOS icon specs ───────────────────────────────────────────────────────────
 // Each entry: logical size (pt), scale factor, idiom string
@@ -298,9 +311,10 @@ async function generateIosIcons(svgBuffer) {
     for (const spec of IOS_ICON_SPECS) {
       const px = Math.round(spec.size * spec.scale);
       const filename = iosIconFilename(spec, key);
-      // iOS app icons must be opaque (Apple rejects alpha). Bake in brand bg.
+      // iOS app icons must be opaque (Apple rejects alpha). Bake in the
+      // icon backdrop.
       const buf = await renderIcon(svgBuffer, px, variant, {
-        background: BRAND_BG,
+        background: ICON_BG,
       });
       writeFileSync(join(dir, filename), buf);
 
@@ -529,9 +543,21 @@ function svgToVectorDrawable(
     elementCount += 1;
     const elTag = match[1].toLowerCase();
     const elAttrs = parseSvgAttrs(match[2]);
+    if (elAttrs.stroke && elAttrs.stroke !== 'none') {
+      throw new Error(
+        `svgToVectorDrawable: <${elTag}> uses stroke="${elAttrs.stroke}". ` +
+          `Strokes are not converted — bake them to filled outlines in the ` +
+          `master (see assets/design/mascot/build-masters.mjs).`,
+      );
+    }
     const fill = elAttrs.fill;
     if (!fill || fill === 'none') {
-      continue;
+      // A silent skip here would drop art (e.g. a face feature) from the
+      // launcher icon with no warning — fail loudly instead.
+      throw new Error(
+        `svgToVectorDrawable: <${elTag}> has no fill. Every element in the ` +
+          `master must carry a literal hex fill.`,
+      );
     }
     const fillColor = normalizeHexColor(fill);
     if (elTag === 'path') {
@@ -650,7 +676,11 @@ function sweepLegacyRoundLauncherXml(anydpiDir) {
   }
 }
 
-async function generateAndroidIcons(svgBuffer, masterSvgText) {
+async function generateAndroidIcons(
+  svgBuffer,
+  masterSvgText,
+  silhouetteBuffer,
+) {
   for (const [key, variant] of Object.entries(VARIANTS)) {
     const srcSet = ANDROID_VARIANT_SRC[key];
     const resBase = join(ROOT, `android/app/src/${srcSet}/res`);
@@ -663,7 +693,7 @@ async function generateAndroidIcons(svgBuffer, masterSvgText) {
       writeFileSync(
         join(dir, 'ic_launcher.png'),
         await renderIcon(svgBuffer, d.iconSize, variant, {
-          background: BRAND_BG,
+          background: ICON_BG,
         }),
       );
       // Drop the per-density adaptive-layer PNGs we used to write here.
@@ -703,14 +733,20 @@ async function generateAndroidIcons(svgBuffer, masterSvgText) {
   // Monochrome layer for Android 13+ themed icons. Production only — see
   // above. One PNG in drawable/ (Android scales it per density); rasterized
   // at xxxhdpi resolution so downscale artifacts stay invisible on a
-  // silhouette.
+  // silhouette. Uses the silhouette master: the system tints through the
+  // alpha channel, so the face must be negative space, not colored paths.
   const mainDrawable = join(ROOT, 'android/app/src/main/res/drawable');
   ensureDir(mainDrawable);
   writeFileSync(
     join(mainDrawable, 'ic_launcher_monochrome.png'),
-    await renderIcon(svgBuffer, ANDROID_MONOCHROME_PNG_SIZE, VARIANTS.prod, {
-      innerScale: ADAPTIVE_SAFE_ZONE,
-    }),
+    await renderIcon(
+      silhouetteBuffer,
+      ANDROID_MONOCHROME_PNG_SIZE,
+      VARIANTS.prod,
+      {
+        innerScale: ADAPTIVE_SAFE_ZONE,
+      },
+    ),
   );
   console.log('  ✓ Android monochrome (main only)');
 }
@@ -743,8 +779,9 @@ async function generateAndroidBootSplash(svgBuffer) {
 }
 
 // ─── Android notification icons ───────────────────────────────────────────────
-// Notification icons live in main/ only; they should be white-on-transparent
-// silhouettes. We render at small sizes from the production variant (no badge).
+// Notification icons live in main/ only; Android tints them through the alpha
+// channel, so they render from the white silhouette master (face as holes).
+// Small sizes, production variant (no badge).
 
 async function generateAndroidNotificationIcons(svgBuffer) {
   for (const d of ANDROID_NOTIF_DENSITIES) {
@@ -758,11 +795,12 @@ async function generateAndroidNotificationIcons(svgBuffer) {
   console.log('  ✓ Android notification icons');
 }
 
-// ─── Env-specific in-app SVG logos ────────────────────────────────────────────
-// These are used by KirokuLogo.tsx to render a logo whose corner identifies the
-// build environment (matches the badge styling on the app icons). The base art
-// is preserved verbatim so it still themes correctly via `fill={theme.appLogo}`;
-// the badge is appended with hardcoded fills so it keeps its variant color.
+// ─── Env-specific splash SVG logos ────────────────────────────────────────────
+// Inlined into the web boot splash (config/webpack/webpack.common.ts) and
+// rendered by the Android splash hider overlay; the corner badge identifies
+// the build environment (matches the badge styling on the app icons). The
+// chip splash art is preserved verbatim; the badge is appended with
+// hardcoded fills so it keeps its variant color.
 
 const LOGO_VARIANT_FILE = {
   prod: 'app-logo--prod.svg',
@@ -799,17 +837,17 @@ function generateEnvLogoSvgs(masterSvgText) {
 
 // ─── Web icons ────────────────────────────────────────────────────────────────
 
-async function generateWebIcons(svgBuffer) {
+async function generateWebIcons(logoBuffer) {
   const webDir = join(ROOT, 'web');
   ensureDir(webDir);
 
   for (const spec of WEB_SPECS) {
     // Web icons render on arbitrary page/OS chrome backgrounds and must be
-    // legible standalone — bake in brand bg.
+    // legible standalone — bake in the icon backdrop.
     writeFileSync(
       join(webDir, spec.name),
-      await renderIcon(svgBuffer, spec.size, VARIANTS.prod, {
-        background: BRAND_BG,
+      await renderIcon(logoBuffer, spec.size, VARIANTS.prod, {
+        background: ICON_BG,
       }),
     );
   }
@@ -854,37 +892,66 @@ function ensureWebManifest() {
 
 // ─── Entry point ─────────────────────────────────────────────────────────────
 
-async function main() {
-  const masterSvg = join(ROOT, 'assets/images/app-logo.svg');
-  if (!existsSync(masterSvg)) {
-    console.error(`ERROR: master SVG not found at ${masterSvg}`);
+/**
+ * The silhouette master is tinted by Android through its alpha channel, so any
+ * non-white fill is a design error (it would silently disappear or muddy the
+ * tint). Fails loudly instead.
+ */
+function assertSilhouette(svgText, name) {
+  const fills = [...svgText.matchAll(/fill="([^"]+)"/g)].map(m => m[1]);
+  if (fills.length === 0) {
+    throw new Error(`${name}: no fills found — not a valid silhouette master`);
+  }
+  for (const fill of fills) {
+    if (fill.toUpperCase() !== '#FFFFFF') {
+      throw new Error(
+        `${name}: silhouette master must be pure white; found fill="${fill}". ` +
+          `Face features belong as evenodd holes, not colored paths.`,
+      );
+    }
+  }
+}
+
+function loadMaster(relPath) {
+  const abs = join(ROOT, relPath);
+  if (!existsSync(abs)) {
+    console.error(`ERROR: master SVG not found at ${abs}`);
     process.exit(1);
   }
+  const buffer = readFileSync(abs);
+  return {buffer, text: buffer.toString('utf-8')};
+}
 
-  console.log(`Generating icons from ${masterSvg}\n`);
-  const svgBuffer = readFileSync(masterSvg);
-  const masterSvgText = svgBuffer.toString('utf-8');
+async function main() {
+  const logo = loadMaster('assets/images/app-logo.svg');
+  const splash = loadMaster('assets/images/app-logo-splash.svg');
+  const silhouette = loadMaster('assets/images/app-logo-silhouette.svg');
+  assertSilhouette(silhouette.text, 'assets/images/app-logo-silhouette.svg');
 
-  console.log('Env-specific in-app SVG logos:');
-  generateEnvLogoSvgs(masterSvgText);
+  console.log(
+    'Generating icons from assets/images/{app-logo,app-logo-splash,app-logo-silhouette}.svg\n',
+  );
+
+  console.log('Env-specific splash SVG logos:');
+  generateEnvLogoSvgs(splash.text);
 
   console.log('\niOS app icons:');
-  await generateIosIcons(svgBuffer);
+  await generateIosIcons(logo.buffer);
 
   console.log('\niOS boot splash:');
-  await generateIosBootSplash(svgBuffer);
+  await generateIosBootSplash(splash.buffer);
 
   console.log('\nAndroid launcher icons:');
-  await generateAndroidIcons(svgBuffer, masterSvgText);
+  await generateAndroidIcons(logo.buffer, logo.text, silhouette.buffer);
 
   console.log('\nAndroid boot splash:');
-  await generateAndroidBootSplash(svgBuffer);
+  await generateAndroidBootSplash(splash.buffer);
 
   console.log('\nAndroid notification icons:');
-  await generateAndroidNotificationIcons(svgBuffer);
+  await generateAndroidNotificationIcons(silhouette.buffer);
 
   console.log('\nWeb icons:');
-  await generateWebIcons(svgBuffer);
+  await generateWebIcons(logo.buffer);
   ensureWebManifest();
 
   console.log('\nDone. All icons generated successfully.');

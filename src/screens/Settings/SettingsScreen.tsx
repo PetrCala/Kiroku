@@ -220,7 +220,9 @@ function SettingsScreen() {
           ? [
               {
                 translationKey: 'settingsScreen.adminTools',
-                icon: KirokuIcons.Logo,
+                // The silhouette cut: menu icons are theme-tinted, which
+                // would turn the full-color mascot into a solid blob.
+                icon: KirokuIcons.LogoSilhouette,
                 routeName: ROUTES.SETTINGS_ADMIN,
               } as MenuData,
             ]

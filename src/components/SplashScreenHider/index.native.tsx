@@ -15,7 +15,6 @@ import useThemeStyles from '@hooks/useThemeStyles';
 import BootSplash from '@libs/BootSplash';
 import * as FeatureFlags from '@libs/FeatureFlags';
 import Log from '@libs/Log';
-import colors from '@src/styles/theme/colors';
 import CONST from '@src/CONST';
 import type {
   SplashScreenHiderProps,
@@ -244,11 +243,14 @@ function SplashScreenHider({
             resizeMode="contain"
           />
         ) : (
+          // The chip splash master (mascot on a white rounded card), rendered
+          // untinted so the overlay matches the native bootsplash_logo.png
+          // pixel for pixel — the bare mascot's yellow body would vanish on
+          // the yellow splash backdrop.
           <ImageSVG
             contentFit="fill"
             style={{width: LOGO_SIZE, height: LOGO_SIZE}}
-            fill={colors.white}
-            src={KirokuIcons.Logo}
+            src={KirokuIcons.LogoSplash}
           />
         )}
       </Animated.View>

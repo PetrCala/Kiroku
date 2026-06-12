@@ -88,7 +88,6 @@ const darkTheme = {
   skeletonBase: colors.productDark350,
   skeletonHighlight: colors.productDark400,
   QRLogo: colors.yellow,
-  appLogo: colors.productDark900,
   white: colors.white,
   transparentWhite: `${colors.white}51`,
 

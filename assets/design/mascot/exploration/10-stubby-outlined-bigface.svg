@@ -1,0 +1,28 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024">
+  <rect x="257" y="330" width="510" height="285" fill="#1A1A1A" stroke="#1A1A1A" stroke-width="26" stroke-linejoin="round" stroke-linecap="round"/>
+  <polygon points="257,615 767,615 512,795" fill="#1A1A1A" stroke="#1A1A1A" stroke-width="26" stroke-linejoin="round" stroke-linecap="round"/>
+  <polygon points="417.0833333333333,728 606.9166666666666,728 512,795" fill="#1A1A1A" stroke="#1A1A1A" stroke-width="26" stroke-linejoin="round" stroke-linecap="round"/>
+  <rect x="217" y="225" width="590" height="120" rx="34" fill="#1A1A1A" stroke="#1A1A1A" stroke-width="26" stroke-linejoin="round" stroke-linecap="round"/>
+  <circle cx="327" cy="233" r="105" fill="#1A1A1A" stroke="#1A1A1A" stroke-width="26" stroke-linejoin="round" stroke-linecap="round"/>
+  <circle cx="512" cy="194" r="135" fill="#1A1A1A" stroke="#1A1A1A" stroke-width="26" stroke-linejoin="round" stroke-linecap="round"/>
+  <circle cx="692" cy="236" r="100" fill="#1A1A1A" stroke="#1A1A1A" stroke-width="26" stroke-linejoin="round" stroke-linecap="round"/>
+  <rect x="669" y="330" width="56" height="140" rx="28" fill="#1A1A1A" stroke="#1A1A1A" stroke-width="26" stroke-linejoin="round" stroke-linecap="round"/>
+  <rect x="257" y="330" width="510" height="285" fill="#F5C400"/>
+  <polygon points="257,615 767,615 512,795" fill="#E8C9A0"/>
+  <polygon points="417.0833333333333,728 606.9166666666666,728 512,795" fill="#3A3A3A"/>
+  <rect x="357" y="353" width="10" height="236" fill="#D9AD00"/>
+  <rect x="657" y="353" width="10" height="236" fill="#D9AD00"/>
+  <circle cx="352" cy="615" r="28" fill="#F5C400"/>
+  <circle cx="512" cy="615" r="32" fill="#F5C400"/>
+  <circle cx="662" cy="615" r="28" fill="#F5C400"/>
+  <rect x="217" y="225" width="590" height="120" rx="34" fill="#FFFFFF"/>
+  <circle cx="327" cy="233" r="105" fill="#FFFFFF"/>
+  <circle cx="512" cy="194" r="135" fill="#FFFFFF"/>
+  <circle cx="692" cy="236" r="100" fill="#FFFFFF"/>
+  <rect x="669" y="330" width="56" height="140" rx="28" fill="#FFFFFF"/>
+  <circle cx="417" cy="448" r="38" fill="#1A1A1A"/>
+  <circle cx="404.84" cy="434.7" r="10.260000000000002" fill="#FFFFFF"/>
+  <circle cx="607" cy="448" r="38" fill="#1A1A1A"/>
+  <circle cx="594.84" cy="434.7" r="10.260000000000002" fill="#FFFFFF"/>
+  <path d="M 448 545 Q 512 589 576 545" fill="none" stroke="#1A1A1A" stroke-width="20" stroke-linecap="round"/>
+</svg>
