@@ -35,6 +35,7 @@ import {
 } from 'date-fns-tz';
 import {enUS} from 'date-fns/locale/en-US';
 import {cs as CS_CZ} from 'date-fns/locale/cs';
+import type {Locale as DateFnsLocale} from 'date-fns';
 import throttle from 'lodash/throttle';
 import Onyx from 'react-native-onyx';
 import type {ValueOf} from 'type-fest';
@@ -107,6 +108,15 @@ function setLocale(localeString: Locale) {
     default:
       break;
   }
+}
+
+/**
+ * Resolve an app locale to its `date-fns` locale object. Pass the result as the
+ * `{locale}` option to `format()` so the output is localized deterministically,
+ * without depending on the global `setDefaultOptions` default.
+ */
+function getDateFnsLocale(localeString: Locale): DateFnsLocale {
+  return localeString === CONST.LOCALES.CS_CZ ? CS_CZ : enUS;
 }
 
 function getDayStartAndEndUTC(date: Date, tz: SelectedTimezone) {
@@ -959,6 +969,7 @@ const DateUtils = {
   getDBTime,
   getDBTimeWithSkew,
   getDateFromStatusType,
+  getDateFnsLocale,
   getDateStringFromISOTimestamp,
   getDayValidationErrorKey,
   getDaysOfWeek,

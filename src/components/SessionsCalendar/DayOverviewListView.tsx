@@ -12,6 +12,7 @@ import useTheme from '@hooks/useTheme';
 import useThemeStyles from '@hooks/useThemeStyles';
 import useWindowDimensions from '@hooks/useWindowDimensions';
 import {dateStringToDate} from '@libs/DataHandling';
+import DateUtils from '@libs/DateUtils';
 import {roundToTwoDecimalPlaces} from '@libs/NumberUtils';
 import * as App from '@userActions/App';
 import CONST from '@src/CONST';
@@ -119,7 +120,10 @@ function DayOverviewListView({
 }: DayOverviewListViewProps) {
   const styles = useThemeStyles();
   const theme = useTheme();
-  const {translate} = useLocalize();
+  const {translate, preferredLocale} = useLocalize();
+  // Explicit date-fns locale for the day-header labels (date-fns ignores the
+  // global default unless `locale` is passed).
+  const dateFnsLocale = DateUtils.getDateFnsLocale(preferredLocale);
   const {windowHeight} = useWindowDimensions();
 
   // Room below the newest session so `scrollToIndex({viewPosition: 0.5})` can
@@ -357,6 +361,7 @@ function DayOverviewListView({
         const label = format(
           dateStringToDate(item.dayKey),
           CONST.DATE.MONTH_DAY_YEAR_ABBR_FORMAT,
+          {locale: dateFnsLocale},
         );
         return (
           <View style={styles.sessionsCalendarMonthLabel}>
@@ -388,6 +393,7 @@ function DayOverviewListView({
       isReadOnly,
       isEditModeOn,
       translate,
+      dateFnsLocale,
       styles.sessionsCalendarMonthLabel,
       styles.sessionsCalendarMonthLabelText,
       styles.sessionsCalendarMonthLabelRule,

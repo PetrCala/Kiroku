@@ -25,6 +25,7 @@ import {SIDE_EFFECT_REQUEST_COMMANDS, WRITE_COMMANDS} from '@libs/API/types';
 // import Log from '@libs/Log';
 import getCurrentUrl from '@libs/Navigation/currentUrl';
 import Navigation from '@libs/Navigation/Navigation';
+import setCalendarLocale from '@libs/setCalendarLocale';
 // import Performance from '@libs/Performance';
 // import * as ReportActionsUtils from '@libs/ReportActionsUtils';
 import type CONST from '@src/CONST';
@@ -92,6 +93,15 @@ function setLocale(locale: Locale) {
   if (locale === preferredLocale) {
     return;
   }
+
+  // Update the react-native-calendars global locale synchronously, before the
+  // Onyx merge below triggers the locale-driven re-render. The library reads
+  // its day-name row from this global at render time (not from a prop), so
+  // setting it here means the calendar renders the new locale on the very next
+  // render — no remount, no one-frame-stale flash. The per-screen effect in the
+  // calendar views still covers the cold-start path (locale hydrated from Onyx
+  // without going through this action).
+  setCalendarLocale(locale);
 
   // If user is not signed in, change just locally.
   if (!currentUserID) {

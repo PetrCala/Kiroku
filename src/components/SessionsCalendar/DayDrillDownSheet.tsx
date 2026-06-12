@@ -13,6 +13,7 @@ import useLocalize from '@hooks/useLocalize';
 import useTheme from '@hooks/useTheme';
 import useThemeStyles from '@hooks/useThemeStyles';
 import {dateStringToDate} from '@libs/DataHandling';
+import DateUtils from '@libs/DateUtils';
 import * as DSUtils from '@libs/DrinkingSessionUtils';
 import CONST from '@src/CONST';
 import type {DrinkingSessionList, Preferences} from '@src/types/onyx';
@@ -50,7 +51,7 @@ function DayDrillDownSheet({
 }: DayDrillDownSheetProps) {
   const styles = useThemeStyles();
   const theme = useTheme();
-  const {translate} = useLocalize();
+  const {translate, preferredLocale} = useLocalize();
 
   const sessions = useMemo(() => {
     if (!date) {
@@ -105,7 +106,9 @@ function DayDrillDownSheet({
           ]}>
           <Text style={[styles.textHeadline, styles.flex1, styles.mr2]}>
             {date
-              ? format(dateStringToDate(date), CONST.DATE.SHORT_DATE_FORMAT)
+              ? format(dateStringToDate(date), CONST.DATE.SHORT_DATE_FORMAT, {
+                  locale: DateUtils.getDateFnsLocale(preferredLocale),
+                })
               : ''}
           </Text>
           <PressableWithFeedback

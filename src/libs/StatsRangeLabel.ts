@@ -1,10 +1,8 @@
 import {format, getDate, getYear} from 'date-fns';
-import {enUS} from 'date-fns/locale/en-US';
-import {cs as CS_CZ} from 'date-fns/locale/cs';
 import type {Locale as DateFnsLocale} from 'date-fns';
 import type {LocaleContextProps} from '@components/LocaleContextProvider';
 import type {Range} from '@components/StatsContextProvider/types';
-import CONST from '@src/CONST';
+import DateUtils from '@libs/DateUtils';
 import type Locale from '@src/types/onyx/Locale';
 
 type Translate = LocaleContextProps['translate'];
@@ -16,10 +14,6 @@ type GetStatsRangeLabelParams = {
 };
 
 const EN_DASH = '–';
-
-function resolveDateFnsLocale(locale: Locale): DateFnsLocale {
-  return locale === CONST.LOCALES.CS_CZ ? CS_CZ : enUS;
-}
 
 /** Abbreviated, standalone month name (e.g. "May"; Czech nominative). */
 function shortMonth(date: Date, locale: DateFnsLocale): string {
@@ -77,7 +71,7 @@ function getStatsRangeLabel({
   preferredLocale,
 }: GetStatsRangeLabelParams): string {
   const {preset, offset, start, end} = range;
-  const locale = resolveDateFnsLocale(preferredLocale);
+  const locale = DateUtils.getDateFnsLocale(preferredLocale);
   const isCurrent = offset === 0;
 
   switch (preset) {
