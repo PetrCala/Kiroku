@@ -95,13 +95,32 @@ function ProfileScreen({route}: ProfileScreenProps) {
   // an effect) so it's already correct on the first render after the modal
   // dismisses — the profile updates while still hidden underneath, so the user
   // never sees the month flip. Reset on app launch → today.
+  //
+  // `NVP_LAST_VIEWED_CALENDAR_DATE` is a single global (non-user-scoped) key, so
+  // only the signed-in user's OWN calendar may restore from it. A friend's
+  // profile must always open on the current month — otherwise the last-viewed
+  // month of a different friend (or of home/self) leaks in, and that stale month
+  // also renders empty (it falls outside the fetched window). Friends therefore
+  // ignore the NVP entirely and fall back to today.
   const visibleDateData = useMemo(
     () =>
-      lastViewedCalendarDate
+      isSelf && lastViewedCalendarDate
         ? dateToDateData(dateStringToDate(lastViewedCalendarDate))
         : localVisibleDateData,
-    [lastViewedCalendarDate, localVisibleDateData],
+    [isSelf, lastViewedCalendarDate, localVisibleDateData],
   );
+  // If React Navigation ever reuses this screen instance across a `userID`
+  // change (friend A → friend B), local state would carry A's manually-paged
+  // month. Snap a friend's calendar back to today whenever the viewed user
+  // changes. A fresh mount already inits to today, so this only matters for the
+  // reused-instance edge; it's keyed on `userID` (not focus) so paging within a
+  // single visit is preserved.
+  useEffect(() => {
+    if (isSelf) {
+      return;
+    }
+    setLocalVisibleDateData(dateToDateData(new Date()));
+  }, [userID, isSelf]);
   // Manual month navigation overrides the synced value.
   const onDateChange = useCallback((date: DateData) => {
     setLocalVisibleDateData(date);

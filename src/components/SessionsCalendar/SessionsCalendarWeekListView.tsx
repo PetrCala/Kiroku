@@ -85,6 +85,11 @@ type SessionsCalendarWeekListViewProps = {
    *  this to a navigation back so the fullscreen view feels dismissable on
    *  Android (which has no built-in stack swipe-back). */
   onSwipeBack?: () => void;
+  /** Read-only (a friend's) calendar. When true, scrolling must NOT record the
+   *  last-viewed day: `NVP_LAST_VIEWED_CALENDAR_DATE` is a single global key the
+   *  signed-in user's OWN compact calendar restores from, so a friend's scroll
+   *  would repoint home/self onto the friend's month (mirrors `DayOverviewListView`). */
+  isReadOnly?: boolean;
 };
 
 /**
@@ -115,6 +120,7 @@ function SessionsCalendarWeekListView({
   initialMonthYear,
   onInitialScrollReady,
   onSwipeBack,
+  isReadOnly,
 }: SessionsCalendarWeekListViewProps) {
   const styles = useThemeStyles();
   const {translate} = useLocalize();
@@ -275,12 +281,16 @@ function SessionsCalendarWeekListView({
 
   // Record the month the user is looking at so the compact calendar can sync
   // to it on back-navigation. Debounced so a fast scroll writes once at rest.
+  // Read-only (friend) browsing must not repoint the current user's own compact
+  // calendar, which restores from this global NVP (mirrors `DayOverviewListView`).
   const writeLastViewedDay = useMemo(
     () =>
       lodashDebounce((day: DateString) => {
-        App.setLastViewedCalendarDate(day);
+        if (!isReadOnly) {
+          App.setLastViewedCalendarDate(day);
+        }
       }, 250),
-    [],
+    [isReadOnly],
   );
   useEffect(() => () => writeLastViewedDay.cancel(), [writeLastViewedDay]);
 
