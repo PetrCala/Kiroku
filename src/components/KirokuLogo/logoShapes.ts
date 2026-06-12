@@ -6,6 +6,11 @@ type Badge = {
   color: string;
 };
 
+type LogoShape = {
+  d: string;
+  fill: string;
+};
+
 // Mirror of the badge map in scripts/generate-icons.mjs — keep in sync so the
 // in-app logo matches the rasterized icon assets generated for native targets.
 const BADGES: Partial<Record<Environment, Badge>> = {
@@ -24,27 +29,102 @@ const BADGE_FONT_SIZE = Math.round(BADGE_TRI * 0.28);
 const BADGE_TEXT_X = LOGO_CANVAS - BADGE_TRI * 0.38;
 const BADGE_TEXT_Y = LOGO_CANVAS - BADGE_TRI * 0.18;
 
-// The six shapes of the mark, mirroring the master art (see
-// scripts/generate-icons.mjs — keep in sync). The master draws the stem and
-// baseline as rotated <rect>s; they are pre-converted here to equivalent
-// axis-aligned paths so per-shape animation wrappers don't have to handle
-// attribute transforms:
-//   rect(x=523 y=618 w=185 h=20) rotate(90 523 618)   → x 503–523, y 618–803
-//   rect(x=602 y=808 w=180 h=10) rotate(-180 602 808) → x 422–602, y 798–808
-// Array order is the assembly stagger order (top-down materialize).
-const LOGO_SHAPES: readonly string[] = [
-  // Top triangle
-  'M636.5 348L512.66 134L389 348H636.5Z',
-  // Bottom triangle
-  'M388.5 434L512.34 648L636 434L388.5 434Z',
-  // Stem (converted rect)
-  'M503 618H523V803H503Z',
-  // Left leg
-  'M129 808L316 480L374 580L243.117 808H129Z',
-  // Right leg
-  'M895.5 808L708.5 480L650.5 580L781.383 808H895.5Z',
-  // Baseline bar (converted rect)
-  'M422 798H602V808H422Z',
+// The pencil-mascot shapes, mirrored verbatim from the master art
+// (assets/images/app-logo.svg, emitted by assets/design/mascot/build-masters.mjs).
+// A unit test asserts this list stays byte-identical to the master so the
+// native splash logo and the in-app logo can never drift apart — regenerate
+// this table from the SVG rather than editing path data by hand.
+const LOGO_SHAPES: readonly LogoShape[] = [
+  // Pencil body
+  {
+    d: 'M419.68 290.25 L710.77 362.82 L618.84 731.54 L327.75 658.96 Z',
+    fill: '#F5C400',
+  },
+  // Left facet line
+  {
+    d: 'M455.36 333.15 L465.06 335.57 L381.11 672.26 L371.41 669.85 Z',
+    fill: '#D9AD00',
+  },
+  // Right facet line
+  {
+    d: 'M649.42 381.54 L659.12 383.96 L575.17 720.65 L565.47 718.23 Z',
+    fill: '#D9AD00',
+  },
+  // Wood cone
+  {
+    d: 'M327.75 658.96 L618.84 731.54 L429.75 869.9 Z',
+    fill: '#E8C9A0',
+  },
+  // Graphite tip
+  {
+    d: 'M391.21 790.21 L501.18 817.63 L429.75 869.9 Z',
+    fill: '#3A3A3A',
+  },
+  // Foam contour: cap
+  {
+    d: 'M459.18 239.29 L699.81 299.29 C721.78 304.76 735.15 327.02 729.68 348.99 L727.5 357.72 C722.02 379.69 699.77 393.06 677.8 387.58 L437.16 327.59 C415.19 322.11 401.82 299.86 407.3 277.89 L409.48 269.15 C414.96 247.18 437.21 233.81 459.18 239.29 Z',
+    fill: '#D9D2C0',
+  },
+  // Foam contour: left lobe
+  {
+    d: 'M557.91 264.94 C548.15 304.05 508.54 327.86 469.42 318.11 C430.3 308.35 406.49 268.73 416.24 229.61 C426 190.5 465.62 166.69 504.74 176.44 C543.86 186.2 567.66 225.82 557.91 264.94 Z',
+    fill: '#D9D2C0',
+  },
+  // Foam contour: center lobe
+  {
+    d: 'M669.48 268.02 C657.85 314.64 610.63 343.01 564.01 331.39 C517.39 319.76 489.02 272.55 500.64 225.92 C512.27 179.3 559.49 150.93 606.11 162.55 C652.73 174.18 681.1 221.4 669.48 268.02 Z',
+    fill: '#D9D2C0',
+  },
+  // Foam contour: right lobe
+  {
+    d: 'M737.9 311.87 C728.68 348.85 691.23 371.35 654.26 362.13 C617.28 352.91 594.78 315.46 604 278.49 C613.22 241.51 650.67 219.01 687.64 228.23 C724.62 237.45 747.12 274.9 737.9 311.87 Z',
+    fill: '#D9D2C0',
+  },
+  // Foam: cap
+  {
+    d: 'M457.49 246.08 L698.12 306.08 C716.34 310.62 727.43 329.07 722.88 347.29 L720.71 356.03 C716.16 374.25 697.71 385.33 679.49 380.79 L438.86 320.79 C420.64 316.25 409.55 297.8 414.09 279.58 L416.27 270.85 C420.81 252.63 439.27 241.54 457.49 246.08 Z',
+    fill: '#FFFFFF',
+  },
+  // Foam: left lobe
+  {
+    d: 'M551.12 263.24 C542.3 298.61 506.48 320.13 471.11 311.31 C435.74 302.5 414.22 266.68 423.04 231.31 C431.85 195.94 467.67 174.42 503.04 183.24 C538.41 192.05 559.93 227.87 551.12 263.24 Z',
+    fill: '#FFFFFF',
+  },
+  // Foam: center lobe
+  {
+    d: 'M662.68 266.32 C652 309.19 608.58 335.28 565.71 324.59 C522.84 313.91 496.75 270.49 507.44 227.62 C518.13 184.75 561.54 158.66 604.41 169.35 C647.28 180.04 673.37 223.45 662.68 266.32 Z',
+    fill: '#FFFFFF',
+  },
+  // Foam: right lobe
+  {
+    d: 'M731.11 310.18 C722.82 343.4 689.17 363.62 655.95 355.34 C622.72 347.06 602.51 313.41 610.79 280.18 C619.07 246.96 652.72 226.74 685.95 235.02 C719.17 243.31 739.39 276.96 731.11 310.18 Z',
+    fill: '#FFFFFF',
+  },
+  // Left eye
+  {
+    d: 'M507.57 446.14 C504.5 458.47 492.02 465.97 479.69 462.89 C467.37 459.82 459.87 447.34 462.94 435.01 C466.01 422.69 478.5 415.19 490.82 418.26 C503.15 421.33 510.65 433.82 507.57 446.14 Z',
+    fill: '#1A1A1A',
+  },
+  // Right eye
+  {
+    d: 'M620.13 474.2 C617.06 486.53 604.57 494.03 592.25 490.96 C579.92 487.88 572.42 475.4 575.5 463.08 C578.57 450.75 591.05 443.25 603.38 446.32 C615.7 449.4 623.2 461.88 620.13 474.2 Z',
+    fill: '#1A1A1A',
+  },
+  // Left eye shine
+  {
+    d: 'M488.8 433.16 C487.59 437.99 482.71 440.92 477.89 439.72 C473.06 438.52 470.13 433.63 471.33 428.81 C472.53 423.99 477.42 421.05 482.24 422.25 C487.06 423.46 490 428.34 488.8 433.16 Z',
+    fill: '#FFFFFF',
+  },
+  // Right eye shine
+  {
+    d: 'M601.35 461.23 C600.15 466.05 595.26 468.98 590.44 467.78 C585.62 466.58 582.68 461.69 583.89 456.87 C585.09 452.05 589.97 449.11 594.8 450.32 C599.62 451.52 602.55 456.4 601.35 461.23 Z',
+    fill: '#FFFFFF',
+  },
+  // Smile
+  {
+    d: 'M491.68 515.99 L495.67 519.38 L499.78 522.45 L504.02 525.19 L508.36 527.59 L512.83 529.65 L517.39 531.36 L522.06 532.72 L526.82 533.71 L531.65 534.35 L536.56 534.62 L541.53 534.54 L546.55 534.11 L551.62 533.33 L556.74 532.21 L559.72 530.7 L561.74 528.05 L562.42 524.78 L561.61 521.54 L559.47 518.97 L556.43 517.59 L553.1 517.66 L548.87 518.59 L544.76 519.22 L540.75 519.56 L536.85 519.63 L533.05 519.41 L529.33 518.92 L525.69 518.16 L522.12 517.13 L518.61 515.81 L515.15 514.21 L511.73 512.33 L508.36 510.14 L505.02 507.65 L501.73 504.85 L498.81 503.22 L495.48 503.02 L492.39 504.28 L490.16 506.76 L489.22 509.96 L489.76 513.26 Z',
+    fill: '#1A1A1A',
+  },
 ];
 
 export {
@@ -58,4 +138,4 @@ export {
   BADGE_TEXT_X,
   BADGE_TEXT_Y,
 };
-export type {Badge};
+export type {Badge, LogoShape};

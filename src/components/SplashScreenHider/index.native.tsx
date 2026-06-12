@@ -15,7 +15,6 @@ import useThemeStyles from '@hooks/useThemeStyles';
 import BootSplash from '@libs/BootSplash';
 import * as FeatureFlags from '@libs/FeatureFlags';
 import Log from '@libs/Log';
-import colors from '@src/styles/theme/colors';
 import CONST from '@src/CONST';
 import type {
   SplashScreenHiderProps,
@@ -244,10 +243,11 @@ function SplashScreenHider({
             resizeMode="contain"
           />
         ) : (
+          // The mascot master is full-color art — render it untinted so the
+          // overlay matches the native bootsplash_logo.png pixel for pixel.
           <ImageSVG
             contentFit="fill"
             style={{width: LOGO_SIZE, height: LOGO_SIZE}}
-            fill={colors.white}
             src={KirokuIcons.Logo}
           />
         )}
