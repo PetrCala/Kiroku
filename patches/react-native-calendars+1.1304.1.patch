@@ -1,5 +1,40 @@
+diff --git a/node_modules/react-native-calendars/src/calendar/header/index.d.ts b/node_modules/react-native-calendars/src/calendar/header/index.d.ts
+index eae4b05..9b459c4 100644
+--- a/node_modules/react-native-calendars/src/calendar/header/index.d.ts
++++ b/node_modules/react-native-calendars/src/calendar/header/index.d.ts
+@@ -49,6 +49,8 @@ export interface CalendarHeaderProps {
+     current?: string;
+     /** Left inset for the timeline calendar header, default is 72 */
+     timelineLeftInset?: number;
++    /** Locale key used for the day-name row. Kiroku patch: forwarded from <Calendar> so a locale change re-localizes the weekday header. */
++    locale?: string;
+ }
+ declare const CalendarHeader: React.ForwardRefExoticComponent<CalendarHeaderProps & React.RefAttributes<unknown>>;
+ export default CalendarHeader;
+diff --git a/node_modules/react-native-calendars/src/calendar/header/index.js b/node_modules/react-native-calendars/src/calendar/header/index.js
+index bd75364..8bc6fbd 100644
+--- a/node_modules/react-native-calendars/src/calendar/header/index.js
++++ b/node_modules/react-native-calendars/src/calendar/header/index.js
+@@ -9,7 +9,7 @@ const accessibilityActions = [
+     { name: 'decrement', label: 'decrement' }
+ ];
+ const CalendarHeader = forwardRef((props, ref) => {
+-    const { theme, style: propsStyle, addMonth: propsAddMonth, month, monthFormat, firstDay, hideDayNames, showWeekNumbers, hideArrows, renderArrow, onPressArrowLeft, onPressArrowRight, arrowsHitSlop = 20, disableArrowLeft, disableArrowRight, disabledDaysIndexes, displayLoadingIndicator, customHeaderTitle, renderHeader, webAriaLevel, testID, accessibilityElementsHidden, importantForAccessibility, numberOfDays, current = '', timelineLeftInset } = props;
++    const { theme, style: propsStyle, addMonth: propsAddMonth, month, monthFormat, firstDay, hideDayNames, showWeekNumbers, hideArrows, renderArrow, onPressArrowLeft, onPressArrowRight, arrowsHitSlop = 20, disableArrowLeft, disableArrowRight, disabledDaysIndexes, displayLoadingIndicator, customHeaderTitle, renderHeader, webAriaLevel, testID, accessibilityElementsHidden, importantForAccessibility, numberOfDays, current = '', timelineLeftInset, locale } = props;
+     const numberOfDaysCondition = useMemo(() => {
+         return numberOfDays && numberOfDays > 1;
+     }, [numberOfDays]);
+@@ -77,7 +77,7 @@ const CalendarHeader = forwardRef((props, ref) => {
+           {day}
+         </Text>);
+         });
+-    }, [firstDay, current, numberOfDaysCondition, numberOfDays, disabledDaysIndexes]);
++    }, [firstDay, current, numberOfDaysCondition, numberOfDays, disabledDaysIndexes, locale]);
+     const _renderHeader = () => {
+         const webProps = Platform.OS === 'web' ? { 'aria-level': webAriaLevel } : {};
+         if (renderHeader) {
 diff --git a/node_modules/react-native-calendars/src/calendar/index.js b/node_modules/react-native-calendars/src/calendar/index.js
-index 6f46e8a..a7a3e63 100644
+index 6f46e8a..d57ad39 100644
 --- a/node_modules/react-native-calendars/src/calendar/index.js
 +++ b/node_modules/react-native-calendars/src/calendar/index.js
 @@ -23,7 +23,7 @@ import BasicDay from './day/basic';
@@ -52,6 +87,15 @@ index 6f46e8a..a7a3e63 100644
      };
      const shouldDisplayIndicator = useMemo(() => {
          if (currentMonth) {
+@@ -142,7 +142,7 @@ const Calendar = (props) => {
+         const ref = customHeader ? undefined : header;
+         const CustomHeader = customHeader;
+         const HeaderComponent = customHeader ? CustomHeader : CalendarHeader;
+-        return (<HeaderComponent {...headerProps} testID={`${testID}.header`} style={headerStyle} ref={ref} month={currentMonth} addMonth={addMonth} displayLoadingIndicator={shouldDisplayIndicator}/>);
++        return (<HeaderComponent {...headerProps} testID={`${testID}.header`} style={headerStyle} ref={ref} month={currentMonth} addMonth={addMonth} displayLoadingIndicator={shouldDisplayIndicator} locale={props.locale}/>);
+     };
+     const GestureComponent = enableSwipeMonths ? GestureRecognizer : View;
+     const swipeProps = {
 @@ -150,7 +150,7 @@ const Calendar = (props) => {
      };
      const gestureProps = enableSwipeMonths ? swipeProps : undefined;

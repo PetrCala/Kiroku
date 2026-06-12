@@ -2,6 +2,7 @@ import {format, getDate, getYear} from 'date-fns';
 import type {Locale as DateFnsLocale} from 'date-fns';
 import type {LocaleContextProps} from '@components/LocaleContextProvider';
 import type {Range} from '@components/StatsContextProvider/types';
+import Str from '@libs/common/str';
 import DateUtils from '@libs/DateUtils';
 import type Locale from '@src/types/onyx/Locale';
 
@@ -15,14 +16,16 @@ type GetStatsRangeLabelParams = {
 
 const EN_DASH = '–';
 
+// `Str.UCFirst` capitalizes the first letter so Czech's lowercase month names
+// ("kvě", "květen") match the English convention ("May"). No-op for English.
 /** Abbreviated, standalone month name (e.g. "May"; Czech nominative). */
 function shortMonth(date: Date, locale: DateFnsLocale): string {
-  return format(date, 'LLL', {locale});
+  return Str.UCFirst(format(date, 'LLL', {locale}));
 }
 
 /** Full, standalone month name (e.g. "May"). */
 function longMonth(date: Date, locale: DateFnsLocale): string {
-  return format(date, 'LLLL', {locale});
+  return Str.UCFirst(format(date, 'LLLL', {locale}));
 }
 
 /** Day-level span, e.g. "May 5 – 11, 2025" / "Apr 28 – May 4, 2025". */

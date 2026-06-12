@@ -1,5 +1,6 @@
 import {format, startOfMonth, subDays, subMonths} from 'date-fns';
 import type {Locale as DateFnsLocale} from 'date-fns';
+import Str from '@libs/common/str';
 import CONST from '@src/CONST';
 import type {DateString} from '@src/types/onyx/OnyxCommon';
 import buildMonthSections from './buildMonthSections';
@@ -106,10 +107,16 @@ function buildWeekListItems({
     items.push({
       kind: 'label',
       key: `label-${args.year}-${args.month}`,
-      label: format(
-        new Date(args.year, args.month, 1),
-        CONST.DATE.MONTH_YEAR_ABBR_FORMAT,
-        {locale: dateFnsLocale},
+      // Capitalize the first letter so Czech's lowercase abbreviated months
+      // ("čvn") match the English convention ("Jun"). No-op for English.
+      label: Str.UCFirst(
+        format(
+          new Date(args.year, args.month, 1),
+          CONST.DATE.MONTH_YEAR_ABBR_FORMAT,
+          {
+            locale: dateFnsLocale,
+          },
+        ),
       ),
       monthKey,
       totalUnits: args.totalUnits,
