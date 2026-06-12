@@ -2,7 +2,7 @@
  * @jest-environment node
  */
 
-import buildAfYtdSeries from '@libs/Statistics/trends/afYtd';
+import buildAfCumulativeSeries from '@libs/Statistics/trends/afCumulative';
 import type {DrinkEvent} from '@libs/Statistics';
 
 function event(localDay: string): DrinkEvent {
@@ -23,9 +23,9 @@ function event(localDay: string): DrinkEvent {
   };
 }
 
-describe('buildAfYtdSeries', () => {
+describe('buildAfCumulativeSeries', () => {
   test('returns empty array when end is before start', () => {
-    const out = buildAfYtdSeries(
+    const out = buildAfCumulativeSeries(
       [],
       new Date('2026-05-02'),
       new Date('2026-05-01'),
@@ -34,7 +34,7 @@ describe('buildAfYtdSeries', () => {
   });
 
   test('counts up by one for each day with no events', () => {
-    const out = buildAfYtdSeries(
+    const out = buildAfCumulativeSeries(
       [],
       new Date('2026-05-01T00:00:00.000Z'),
       new Date('2026-05-04T00:00:00.000Z'),
@@ -49,7 +49,7 @@ describe('buildAfYtdSeries', () => {
   });
 
   test('day with events does not increment the counter', () => {
-    const out = buildAfYtdSeries(
+    const out = buildAfCumulativeSeries(
       [event('2026-05-02')],
       new Date('2026-05-01T00:00:00.000Z'),
       new Date('2026-05-04T00:00:00.000Z'),
@@ -57,14 +57,20 @@ describe('buildAfYtdSeries', () => {
     expect(out.map(p => p.count)).toEqual([1, 1, 2, 3]);
   });
 
-  test('resets to zero on Jan 1', () => {
-    const out = buildAfYtdSeries(
+  test('does not reset across a year boundary', () => {
+    const out = buildAfCumulativeSeries(
       [],
       new Date('2025-12-30T00:00:00.000Z'),
       new Date('2026-01-02T00:00:00.000Z'),
     );
-    // 2025-12-30 -> 1, 2025-12-31 -> 2, 2026-01-01 -> reset then +1 -> 1,
-    // 2026-01-02 -> 2.
-    expect(out.map(p => p.count)).toEqual([1, 2, 1, 2]);
+    // The counter keeps climbing across Jan 1 instead of resetting:
+    // 2025-12-30 -> 1, 2025-12-31 -> 2, 2026-01-01 -> 3, 2026-01-02 -> 4.
+    expect(out.map(p => p.count)).toEqual([1, 2, 3, 4]);
+    expect(out.map(p => p.date)).toEqual([
+      '2025-12-30',
+      '2025-12-31',
+      '2026-01-01',
+      '2026-01-02',
+    ]);
   });
 });

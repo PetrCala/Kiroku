@@ -2,12 +2,12 @@ import {useMemo} from 'react';
 import {DRINK_KEY_COLORS} from '@libs/Statistics/drinkKeyMeta';
 import {ewma, mannKendall} from '@libs/Statistics/stats';
 import {
-  buildAfYtdSeries,
+  buildAfCumulativeSeries,
   buildWeeklyStackedSeries,
   buildWeeklyUnits,
   shiftRange,
 } from '@libs/Statistics/trends';
-import type {AfYtdPoint} from '@libs/Statistics/trends';
+import type {AfCumulativePoint} from '@libs/Statistics/trends';
 import useStatsContext from '@hooks/useStatsContext';
 import CONST from '@src/CONST';
 import type {DrinkKey} from '@src/types/onyx/Drinks';
@@ -33,9 +33,9 @@ type Stack = {
 
 type TrendsTabData = {
   hero: Hero;
-  afYtd: {
-    points: AfYtdPoint[];
-    comparisonPoints?: AfYtdPoint[];
+  afCumulative: {
+    points: AfCumulativePoint[];
+    comparisonPoints?: AfCumulativePoint[];
     hidden: boolean;
   };
   stack: Stack;
@@ -52,7 +52,8 @@ const ALL_DRINK_KEYS: readonly DrinkKey[] = Object.values(CONST.DRINKS.KEYS);
  * once, then derives:
  *
  *   - Hero weekly-units series (raw + EWMA + band + Mann–Kendall caption).
- *   - Cumulative AF-days YTD series (and its comparison twin when enabled).
+ *   - Cumulative AF-days series over the range (and its comparison twin when
+ *     enabled).
  *   - Per-DrinkKey weekly stack (respecting the active `drinkTypeFilter`).
  *
  * All series are zero-filled and index-aligned with their comparison
@@ -120,16 +121,16 @@ function useTrendsTabData(): TrendsTabData {
     };
   }, [events, range.start, range.end, comparisonRange]);
 
-  // AF-days YTD.
-  const afYtd = useMemo(() => {
+  // Cumulative AF-days.
+  const afCumulative = useMemo(() => {
     const hidden = range.preset === 'W';
     if (hidden) {
-      return {points: [] as AfYtdPoint[], hidden};
+      return {points: [] as AfCumulativePoint[], hidden};
     }
-    const points = buildAfYtdSeries(events, range.start, range.end);
-    let comparisonPoints: AfYtdPoint[] | undefined;
+    const points = buildAfCumulativeSeries(events, range.start, range.end);
+    let comparisonPoints: AfCumulativePoint[] | undefined;
     if (comparisonRange) {
-      const raw = buildAfYtdSeries(
+      const raw = buildAfCumulativeSeries(
         events,
         comparisonRange.start,
         comparisonRange.end,
@@ -144,7 +145,10 @@ function useTrendsTabData(): TrendsTabData {
       } else if (raw.length > 0) {
         const padCount = points.length - raw.length;
         const head = raw[0];
-        const pad: AfYtdPoint[] = Array.from({length: padCount}, () => head);
+        const pad: AfCumulativePoint[] = Array.from(
+          {length: padCount},
+          () => head,
+        );
         comparisonPoints = [...pad, ...raw];
       }
     }
@@ -213,7 +217,7 @@ function useTrendsTabData(): TrendsTabData {
     };
   }, [events, range.start, range.end, drinkTypeFilter, comparisonRange]);
 
-  return {hero, afYtd, stack, isLoading};
+  return {hero, afCumulative, stack, isLoading};
 }
 
 export default useTrendsTabData;

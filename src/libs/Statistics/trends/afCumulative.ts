@@ -1,30 +1,31 @@
 import {addDays, format, startOfDay} from 'date-fns';
 import type {DrinkEvent} from '@libs/Statistics/types';
 
-type AfYtdPoint = {
+type AfCumulativePoint = {
   date: string;
   count: number;
 };
 
 /**
  * Cumulative alcohol-free-days series over the inclusive window
- * `[start, end]`, resetting to 0 at each Jan 1. One point per day:
+ * `[start, end]`. The counter accumulates across the entire window and never
+ * resets, including at year boundaries, so the line only ever climbs from the
+ * bottom-left to the top-right. One point per day:
  *
- *   - on Jan 1 the counter resets to 0 before evaluating that day.
  *   - if a day has no drink events in `events`, the counter increments and
  *     the new value is emitted.
  *   - if a day has any drink events, the counter is unchanged.
  *
  * Both branches emit a point so the resulting series is dense and
- * monotonically non-decreasing within each calendar year — the chart's
+ * monotonically non-decreasing across the whole window, the chart's
  * "only-up line" visual. Reads `localDay` directly to avoid re-deriving the
  * session timezone here.
  */
-function buildAfYtdSeries(
+function buildAfCumulativeSeries(
   events: DrinkEvent[],
   start: Date,
   end: Date,
-): AfYtdPoint[] {
+): AfCumulativePoint[] {
   const startDay = startOfDay(start);
   const endDay = startOfDay(end);
   if (endDay.getTime() < startDay.getTime()) {
@@ -36,14 +37,11 @@ function buildAfYtdSeries(
     eventDays.add(event.localDay);
   }
 
-  const out: AfYtdPoint[] = [];
+  const out: AfCumulativePoint[] = [];
   let counter = 0;
   let cursor = startDay;
   while (cursor.getTime() <= endDay.getTime()) {
     const key = format(cursor, 'yyyy-MM-dd');
-    if (key.endsWith('-01-01')) {
-      counter = 0;
-    }
     if (!eventDays.has(key)) {
       counter += 1;
     }
@@ -53,5 +51,5 @@ function buildAfYtdSeries(
   return out;
 }
 
-export default buildAfYtdSeries;
-export type {AfYtdPoint};
+export default buildAfCumulativeSeries;
+export type {AfCumulativePoint};
