@@ -1,0 +1,71 @@
+name: Translation Sync Check
+
+# ============================================================
+# Non-blocking guard: when a PR changes the English source of truth
+# (src/languages/en.ts) but does NOT touch a locale file, warn that the
+# translations may be stale and the /translate skill should be run.
+#
+# ADVISORY ONLY — it emits a GitHub ::warning:: annotation and always exits 0,
+# so it never blocks a merge. The hard, always-on gate is the deterministic
+# parity / shape / untranslated unit test in __tests__/unit/Translate.test.ts
+# (runs in test.yml). Locales are discovered from src/languages/context/*.md,
+# so adding a new language needs no change here.
+# ============================================================
+
+permissions:
+  contents: read
+  pull-requests: read
+
+on:
+  pull_request:
+    types: [opened, synchronize]
+    branches-ignore: [staging, production]
+    paths: ['src/languages/**']
+
+concurrency:
+  group: ${{ github.ref }}-translation-sync
+  cancel-in-progress: true
+
+jobs:
+  check:
+    name: Warn on untranslated English changes
+    runs-on: ubuntu-latest
+    env:
+      GH_TOKEN: ${{ github.token }}
+      PR_NUMBER: ${{ github.event.pull_request.number }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+
+      - name: Warn if en.ts changed without a matching locale update
+        run: |
+          shopt -s nullglob
+          changed="$(gh pr view "$PR_NUMBER" --json files --jq '.files[].path')"
+
+          # Nothing to do unless the English source of truth itself changed.
+          if ! grep -qx 'src/languages/en.ts' <<<"$changed"; then
+            echo "src/languages/en.ts not changed in this PR — nothing to check."
+            exit 0
+          fi
+
+          # Discover locales from their context files (self-maintaining: a new
+          # language only needs src/languages/context/<locale>.md to be covered).
+          missing=()
+          for ctx in src/languages/context/*.md; do
+            locale="$(basename "$ctx" .md)"
+            if [ "$locale" = "_TEMPLATE" ]; then
+              continue
+            fi
+            if ! grep -qx "src/languages/${locale}.ts" <<<"$changed"; then
+              missing+=("$locale")
+            fi
+          done
+
+          if [ "${#missing[@]}" -eq 0 ]; then
+            echo "All locale files were updated alongside en.ts."
+            exit 0
+          fi
+
+          for locale in "${missing[@]}"; do
+            echo "::warning title=Translations may be out of sync::src/languages/en.ts changed but src/languages/${locale}.ts was not updated. Run the /translate skill to fill or refresh ${locale}, then verify with: npm run test -- __tests__/unit/Translate.test.ts"
+          done

@@ -1863,6 +1863,11 @@ export default {
         message:
           'Při blokování tohoto uživatele došlo k problému. Zkuste to prosím znovu.',
       },
+      couldNotReportUser: {
+        title: 'Nepodařilo se nahlásit uživatele',
+        message:
+          'Při nahlašování uživatele došlo k problému. Zkuste to prosím znovu.',
+      },
       couldNotUnfriend: {
         title: 'Nepodařilo se odebrat z přátel',
         message:
