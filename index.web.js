@@ -7,14 +7,16 @@
  * `victory-native`) binds CanvasKit at *import* time on web — `Skia.web.ts`
  * runs `JsiSkApi(global.CanvasKit)` the moment the module is evaluated, so the
  * resulting `Skia` object captures whatever `global.CanvasKit` is at that
- * instant. The chart code lives in a lazily-loaded chunk, so we must finish
- * initializing the CanvasKit WASM *before* that chunk (and its Skia import) is
- * evaluated, or every chart throws (`CanvasKit.XYWHRect` on `undefined`).
+ * instant.
  *
- * Load CanvasKit up front, then boot the app. The ~8MB WASM is fetched once and
- * browser-cached. Importing the dedicated `LoadSkiaWeb` module (not the `web`
- * barrel) keeps `Skia.web.ts` out of the main bundle so it isn't evaluated
- * early. Native links CanvasKit into the binary and uses `index.js` directly.
+ * CanvasKit is loaded in the background (fire-and-forget) and the app boots
+ * immediately — no longer gated on the ~8 MB WASM download. The background
+ * promise is stored on `window.canvasKitReady`; chart code reads it via
+ * `waitForCanvasKit()` (src/libs/skiaWeb.web.ts) and defers its Skia imports
+ * until the WASM is ready, so `Skia.web.ts` is never evaluated before
+ * `global.CanvasKit` is set. Importing the dedicated `LoadSkiaWeb` module (not
+ * the `web` barrel) keeps `Skia.web.ts` out of the main bundle. Native links
+ * CanvasKit into the binary and uses `index.js` directly.
  */
 import {Dimensions} from 'react-native';
 // eslint-disable-next-line import/extensions
@@ -85,15 +87,18 @@ if (typeof Dimensions.removeEventListener === 'function') {
   };
 }
 
-// The CanvasKit WASM is emitted at the web root by the webpack CopyPlugin.
-LoadSkiaWeb({locateFile: () => '/canvaskit.wasm'})
-  .catch(() => {
-    // If CanvasKit can't load, still boot — only the charts depend on it.
-  })
-  .finally(() => {
-    // Defer the app (and its transitive Skia imports) until CanvasKit is ready.
-    // The explicit `.js` extension is required so this doesn't resolve back to
-    // `index.web.js` (this file) and recurse.
-    // eslint-disable-next-line import/extensions
-    require('./index.js');
-  });
+// Start loading the CanvasKit WASM in the background — do NOT await it here.
+// Chart code (StatisticsTabs) reads this promise via waitForCanvasKit()
+// (src/libs/skiaWeb.web.ts) and defers its Skia imports until it resolves.
+// The .catch() converts a load failure into a resolved promise so chart code
+// can still proceed (charts will fail gracefully if CanvasKit is unavailable).
+// The WASM file is emitted at the web root by the webpack CopyPlugin.
+window.canvasKitReady = LoadSkiaWeb({
+  locateFile: () => '/canvaskit.wasm',
+}).catch(() => undefined);
+
+// Boot the app immediately — not gated on the 8 MB WASM download.
+// The explicit `.js` extension is required so this doesn't resolve back to
+// `index.web.js` (this file) and recurse.
+// eslint-disable-next-line import/extensions
+require('./index.js');

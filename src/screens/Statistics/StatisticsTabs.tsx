@@ -22,6 +22,7 @@ import useLocalize from '@hooks/useLocalize';
 import useTheme from '@hooks/useTheme';
 import useWindowDimensions from '@hooks/useWindowDimensions';
 import type {TranslationPaths} from '@src/languages/types';
+import waitForCanvasKit from '@libs/skiaWeb';
 import OverviewTab from './tabs/OverviewTab';
 
 // Overview is the default tab, so it stays statically imported and paints on
@@ -36,9 +37,16 @@ import OverviewTab from './tabs/OverviewTab';
 // of a non-Overview tab is dominated by this multi-second dynamic import, while
 // the tab's own aggregation is sub-millisecond — so warming the modules ahead
 // of the tap removes essentially the whole stall.
-const loadTrendsTab = () => import('./tabs/TrendsTab');
-const loadPatternsTab = () => import('./tabs/PatternsTab');
-const loadBreakdownTab = () => import('./tabs/BreakdownTab');
+//
+// On web, each loader waits for CanvasKit before importing — Skia.web.ts runs
+// JsiSkApi(global.CanvasKit) at import time, so the chunk must not be
+// evaluated before the WASM is ready. waitForCanvasKit() is a no-op on native.
+const loadTrendsTab = () =>
+  waitForCanvasKit().then(() => import('./tabs/TrendsTab'));
+const loadPatternsTab = () =>
+  waitForCanvasKit().then(() => import('./tabs/PatternsTab'));
+const loadBreakdownTab = () =>
+  waitForCanvasKit().then(() => import('./tabs/BreakdownTab'));
 
 const TrendsTab = lazy(loadTrendsTab);
 const PatternsTab = lazy(loadPatternsTab);
