@@ -28,7 +28,18 @@ export async function reachAuthenticatedApp(page: Page): Promise<void> {
   // until Home renders (or we run out of attempts and assert below).
   for (let attempt = 0; attempt < 8; attempt += 1) {
     if (await home.isVisible().catch(() => false)) {
-      return;
+      // VerifyEmailModal can mount ~1 s after Home (fires after the Firebase auth
+      // callback) and covers the NavigationRoot with a high z-index. Playwright's
+      // isVisible() is z-index-blind, so Home looks reachable while the modal
+      // swallows every click. Wait for the late-gate window, then check once more
+      // before declaring success.
+      await page.waitForTimeout(1500);
+      const lateGateVisible =
+        (await skipVerification.isVisible().catch(() => false)) ||
+        (await confirmTerms.isVisible().catch(() => false));
+      if (!lateGateVisible) {
+        return;
+      }
     }
 
     if (await confirmTerms.isVisible().catch(() => false)) {
