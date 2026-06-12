@@ -62,13 +62,10 @@ function TrendsTab() {
         <ChartCard
           title={translate('statistics.tabs.trends.weeklyTrend.title')}
           footer={
-            <View style={{rowGap: 8}}>
-              <WeeklyTrendLegend
-                showTrend={heroShowTrend}
-                showComparison={heroComparisonShown}
-              />
-              <Text style={themeStyles.textMicroSupporting}>{heroCaption}</Text>
-            </View>
+            <WeeklyTrendLegend
+              showTrend={heroShowTrend}
+              showComparison={heroComparisonShown}
+            />
           }>
           <TrendLine
             weeks={hero.weeks}

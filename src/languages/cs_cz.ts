@@ -1166,7 +1166,7 @@ export default {
         },
       },
       patterns: {
-        label: 'Vzorce',
+        label: 'Návyky',
         placeholder: 'Kdy a jak (hodina dne a den v týdnu) uvidíte tady.',
       },
       breakdown: {
