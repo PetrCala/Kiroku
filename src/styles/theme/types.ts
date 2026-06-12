@@ -93,7 +93,6 @@ type ThemeColors = {
   skeletonBase: Color;
   skeletonHighlight: Color;
   QRLogo: Color;
-  appLogo: Color;
   white: Color;
   transparentWhite: Color;
 

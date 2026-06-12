@@ -5,11 +5,9 @@ import SplashScreenStateContext from '@context/global/SplashScreenStateContext';
 import useEnvironment from '@hooks/useEnvironment';
 import useResponsiveLayout from '@hooks/useResponsiveLayout';
 import useStyleUtils from '@hooks/useStyleUtils';
-import useTheme from '@hooks/useTheme';
 import useThemeStyles from '@hooks/useThemeStyles';
 import variables from '@styles/variables';
 import CONST from '@src/CONST';
-import AnimatedKirokuLogoSvg from './AnimatedKirokuLogoSvg';
 import KirokuLogoSvg from './KirokuLogoSvg';
 
 type KirokuLogoProps = {
@@ -17,28 +15,26 @@ type KirokuLogoProps = {
   style?: StyleProp<ViewStyle>;
 
   /**
-   * Controls the animated entrance. `undefined` (default) renders the plain
-   * static logo. `false` mounts the animated variant armed at progress 0
-   * (invisible) so it can start the moment the prop flips to `true` — used by
-   * InitialScreen to wait out the boot splash. Latched once per mount.
+   * Marks this instance as the splash → logo handoff slot (the InitialScreen
+   * logo). Any non-undefined value makes the component report its on-screen
+   * position so the native splash hider can fly the splash logo onto it.
+   * The entrance animation this flag used to arm was parked with the mascot
+   * rebrand; rebuilding it for the pencil is tracked as a follow-up.
    */
   shouldPlayAnimation?: boolean;
 };
 
 function KirokuLogo({style, shouldPlayAnimation}: KirokuLogoProps) {
   const styles = useThemeStyles();
-  const theme = useTheme();
   const StyleUtils = useStyleUtils();
   const {environment} = useEnvironment();
-  const {reportLogoHandoffTarget, isLogoHandoffActive} = useContext(
-    SplashScreenStateContext,
-  );
+  const {reportLogoHandoffTarget} = useContext(SplashScreenStateContext);
 
   const {shouldUseNarrowLayout} = useResponsiveLayout();
 
-  // Only the animated variant (the InitialScreen logo) takes part in the
-  // splash → logo handoff: it reports its on-screen slot so the native splash
-  // hider can fly its logo there, and renders settled while that flight runs.
+  // Only the InitialScreen logo takes part in the splash → logo handoff: it
+  // reports its on-screen slot so the native splash hider can fly its logo
+  // there.
   const isHandoffSlot = shouldPlayAnimation !== undefined;
   const wrapperRef = useRef<View>(null);
 
@@ -83,17 +79,7 @@ function KirokuLogo({style, shouldPlayAnimation}: KirokuLogoProps) {
           : {},
         style,
       ]}>
-      {shouldPlayAnimation === undefined ? (
-        <KirokuLogoSvg fill={theme.appLogo} environment={environment} />
-      ) : (
-        <AnimatedKirokuLogoSvg
-          fill={theme.appLogo}
-          liquidColor={theme.success}
-          environment={environment}
-          shouldStart={shouldPlayAnimation}
-          isHandoff={isLogoHandoffActive}
-        />
-      )}
+      <KirokuLogoSvg environment={environment} />
     </View>
   );
 }
