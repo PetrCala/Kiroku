@@ -16,6 +16,12 @@ const colors: Record<string, Color> = {
   yellowHover: '#FFE072',
   yellowPressed: '#FFC457',
   yellowStrong: '#F5C400',
+  // Backdrop for the boot splash and app icons. The full-color mascot logo
+  // carries the brand yellow in its own body, so these surfaces need a
+  // contrasting field, not yellowStrong. Kept equal to productDark100 so the
+  // dark-theme splash reads as one surface with appBG. Synced outward by
+  // scripts/sync-brand-colors.mjs — edit here, then run that script.
+  brandSplashBg: '#0D1117',
   red: '#FF4949',
   redHover: '#DB2A2A',
   redPressed: '#FF9999',

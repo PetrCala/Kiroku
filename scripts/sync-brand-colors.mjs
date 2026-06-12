@@ -1,20 +1,23 @@
 #!/usr/bin/env node
 /**
- * Propagates the brand color from src/styles/theme/colors.ts (`yellowStrong`)
- * to every place outside the TS theme tree where the same color must be
- * hard-coded:
+ * Propagates the splash/icon backdrop color from src/styles/theme/colors.ts
+ * (`brandSplashBg`) to every place outside the TS theme tree where the same
+ * color must be hard-coded:
  *
  *   - android/app/src/main/res/values/colors.xml         (bootsplash_background)
  *   - android/app/src/main/res/values/ic_launcher_background.xml
  *   - ios/kiroku/BootSplash.storyboard                   (root view backgroundColor)
- *   - scripts/generate-icons.mjs                         (BRAND_BG constant)
+ *   - scripts/generate-icons.mjs                         (ICON_BG constant)
+ *   - web/index.html                                     (theme-color meta + #splash bg)
  *
  * Usage:
  *   node scripts/sync-brand-colors.mjs           # write
  *   node scripts/sync-brand-colors.mjs --check   # exit 1 if any file is stale
  *
- * Source of truth: `yellowStrong` in src/styles/theme/colors.ts. Edit that
- * one line and run this script; everything else updates in lockstep.
+ * Source of truth: `brandSplashBg` in src/styles/theme/colors.ts. Edit that
+ * one line and run this script; everything else updates in lockstep. (The
+ * yellow brand accent, `yellowStrong`, lives only in the TS theme tree — the
+ * mascot logo carries it in its own body, so no generated surface needs it.)
  */
 
 import {readFileSync, writeFileSync} from 'fs';
@@ -25,13 +28,14 @@ const __dirname = dirname(fileURLToPath(import.meta.url));
 const ROOT = join(__dirname, '..');
 
 const SOURCE = 'src/styles/theme/colors.ts';
-const TOKEN = 'yellowStrong';
+const TOKEN = 'brandSplashBg';
 
 const TARGETS = [
   'android/app/src/main/res/values/colors.xml',
   'android/app/src/main/res/values/ic_launcher_background.xml',
   'ios/kiroku/BootSplash.storyboard',
   'scripts/generate-icons.mjs',
+  'web/index.html',
 ];
 
 const checkMode = process.argv.includes('--check');
@@ -118,9 +122,21 @@ function floatsToHex(r, g, b) {
 
 function updateGenerateIconsScript(content, hex) {
   return content.replace(
-    /(const\s+BRAND_BG\s*=\s*)['"]#[0-9A-Fa-f]{6,8}['"]/,
+    /(const\s+ICON_BG\s*=\s*)['"]#[0-9A-Fa-f]{6,8}['"]/,
     `$1'${hex}'`,
   );
+}
+
+function updateWebIndexHtml(content, hex) {
+  return content
+    .replace(
+      /(<meta\s+name="theme-color"\s+content=")#[0-9A-Fa-f]{6,8}(")/,
+      `$1${hex}$2`,
+    )
+    .replace(
+      /(#splash\s*\{[^}]*?background-color:\s*)#[0-9A-Fa-f]{6,8}/,
+      `$1${hex}`,
+    );
 }
 
 const UPDATERS = {
@@ -129,6 +145,7 @@ const UPDATERS = {
     updateAndroidIcLauncherBgXml,
   'ios/kiroku/BootSplash.storyboard': updateIosStoryboard,
   'scripts/generate-icons.mjs': updateGenerateIconsScript,
+  'web/index.html': updateWebIndexHtml,
 };
 
 const brand = readBrandColor();
