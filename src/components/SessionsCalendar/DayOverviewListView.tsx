@@ -13,6 +13,7 @@ import useThemeStyles from '@hooks/useThemeStyles';
 import useWindowDimensions from '@hooks/useWindowDimensions';
 import {dateStringToDate} from '@libs/DataHandling';
 import DateUtils from '@libs/DateUtils';
+import Str from '@libs/common/str';
 import {roundToTwoDecimalPlaces} from '@libs/NumberUtils';
 import * as App from '@userActions/App';
 import CONST from '@src/CONST';
@@ -358,10 +359,16 @@ function DayOverviewListView({
     (args: {item: ListItem}) => {
       const {item} = args;
       if (item.kind === 'dayHeader') {
-        const label = format(
-          dateStringToDate(item.dayKey),
-          CONST.DATE.MONTH_DAY_YEAR_ABBR_FORMAT,
-          {locale: dateFnsLocale},
+        // Capitalize the first letter so Czech's lowercase abbreviated months
+        // ("čvn") match the English convention ("Jun"). No-op for English.
+        const label = Str.UCFirst(
+          format(
+            dateStringToDate(item.dayKey),
+            CONST.DATE.MONTH_DAY_YEAR_ABBR_FORMAT,
+            {
+              locale: dateFnsLocale,
+            },
+          ),
         );
         return (
           <View style={styles.sessionsCalendarMonthLabel}>

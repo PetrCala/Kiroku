@@ -20,6 +20,7 @@ import CONST from '@src/CONST';
 import ROUTES from '@src/ROUTES';
 import Navigation from '@libs/Navigation/Navigation';
 import DateUtils from '@libs/DateUtils';
+import Str from '@libs/common/str';
 import setCalendarLocale from '@libs/setCalendarLocale';
 import * as FeatureFlags from '@libs/FeatureFlags';
 import type {DateString, UserID} from '@src/types/onyx/OnyxCommon';
@@ -202,10 +203,12 @@ function SessionsCalendarView({
       if (hideMonthHeader || !date) {
         return null;
       }
-      const formatted = format(
-        new Date(date.getTime()),
-        CONST.DATE.MONTH_YEAR_ABBR_FORMAT,
-        {locale: dateFnsLocale},
+      // Capitalize the first letter so Czech's lowercase abbreviated months
+      // ("čvn") match the English convention ("Jun"). No-op for English.
+      const formatted = Str.UCFirst(
+        format(new Date(date.getTime()), CONST.DATE.MONTH_YEAR_ABBR_FORMAT, {
+          locale: dateFnsLocale,
+        }),
       );
       const monthText = (
         <Text style={styles.sessionsCalendarHeaderMonthText}>{formatted}</Text>
@@ -389,7 +392,9 @@ function SessionsCalendarView({
           renderArrow={(direction: Direction) => CalendarArrow(direction)}
           style={styles.sessionsCalendarContainer}
           theme={StyleUtils.getSessionsCalendarStyle()}
-          // @ts-expect-error locale prop exists at runtime but is not declared in types
+          // Forwarded to the library's CalendarHeader (Kiroku patch). The
+          // weekday-name row reads the global calendar locale; passing `locale`
+          // re-triggers that read so the day names re-localize on a switch.
           locale={locale}
         />
       </View>
