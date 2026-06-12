@@ -3,11 +3,10 @@ import {View} from 'react-native';
 import {DashPathEffect} from '@shopify/react-native-skia';
 import {Bar, BaseChart, Line, useChartFont} from '@components/Charts/BaseChart';
 import {
-  formatWeekTick,
   roundTick,
-  tickIndices,
   valueTicks,
 } from '@components/Charts/BaseChart/axisFormatters';
+import buildDateTicks from '@components/Charts/BaseChart/dateTicks';
 import {PressableWithoutFeedback} from '@components/Pressable';
 
 type TrendLineProps = {
@@ -95,7 +94,16 @@ function TrendLine({
     return max;
   }, [data, showEwma, showComparison]);
 
-  const xTicks = useMemo(() => tickIndices(weeks.length), [weeks.length]);
+  const dateTicks = useMemo(
+    () =>
+      buildDateTicks({
+        firstKey: weeks[0] ?? '',
+        lastKey: weeks[weeks.length - 1] ?? '',
+        length: weeks.length,
+        unit: 'week',
+      }),
+    [weeks],
+  );
   const yTicks = useMemo(() => valueTicks(maxY), [maxY]);
 
   const hasTapTargets = !!onWeekPress && weeks.length > 0;
@@ -110,8 +118,8 @@ function TrendLine({
       height={height}
       axis={{
         font: axisFont,
-        tickValues: {x: xTicks, y: yTicks},
-        formatXLabel: index => formatWeekTick(weeks[Math.round(index)] ?? ''),
+        tickValues: {x: dateTicks.indices, y: yTicks},
+        formatXLabel: dateTicks.labelFor,
         formatYLabel: roundTick,
       }}
       loading={isLoading}>

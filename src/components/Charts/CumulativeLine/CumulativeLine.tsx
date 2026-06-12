@@ -2,11 +2,10 @@ import {useMemo} from 'react';
 import {DashPathEffect} from '@shopify/react-native-skia';
 import {BaseChart, Line, useChartFont} from '@components/Charts/BaseChart';
 import {
-  formatDayTick,
   roundTick,
-  tickIndices,
   valueTicks,
 } from '@components/Charts/BaseChart/axisFormatters';
+import buildDateTicks from '@components/Charts/BaseChart/dateTicks';
 
 type CumulativeLinePoint = {date: string; count: number};
 
@@ -48,7 +47,7 @@ function CumulativeLine({
       points.map((p, i) => ({
         x: i,
         y: p.count,
-        cmp: showComparison ? (comparisonPoints?.[i]?.count ?? 0) : 0,
+        cmp: showComparison ? comparisonPoints?.[i]?.count ?? 0 : 0,
       })),
     [points, comparisonPoints, showComparison],
   );
@@ -71,7 +70,16 @@ function CumulativeLine({
     return max;
   }, [data, showComparison]);
 
-  const xTicks = useMemo(() => tickIndices(points.length), [points.length]);
+  const dateTicks = useMemo(
+    () =>
+      buildDateTicks({
+        firstKey: points[0]?.date ?? '',
+        lastKey: points[points.length - 1]?.date ?? '',
+        length: points.length,
+        unit: 'day',
+      }),
+    [points],
+  );
   const yTicks = useMemo(() => valueTicks(maxCount), [maxCount]);
 
   return (
@@ -84,9 +92,8 @@ function CumulativeLine({
       height={height}
       axis={{
         font: axisFont,
-        tickValues: {x: xTicks, y: yTicks},
-        formatXLabel: index =>
-          formatDayTick(points[Math.round(index)]?.date ?? ''),
+        tickValues: {x: dateTicks.indices, y: yTicks},
+        formatXLabel: dateTicks.labelFor,
         formatYLabel: roundTick,
       }}
       loading={isLoading}>
