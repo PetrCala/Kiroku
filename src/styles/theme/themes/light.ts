@@ -6,7 +6,7 @@ import SCREENS from '@src/SCREENS';
 const lightTheme = {
   // Figma keys
   appBG: colors.productLight100,
-  splashBG: colors.brandSplashBg,
+  splashBG: colors.yellowStrong,
   highlightBG: colors.productLight200,
   cardSoftBG: colors.productLight150,
   calendarRangeBG: `${colors.yellowStrong}38`,

@@ -243,12 +243,14 @@ function SplashScreenHider({
             resizeMode="contain"
           />
         ) : (
-          // The mascot master is full-color art — render it untinted so the
-          // overlay matches the native bootsplash_logo.png pixel for pixel.
+          // The chip splash master (mascot on a white rounded card), rendered
+          // untinted so the overlay matches the native bootsplash_logo.png
+          // pixel for pixel — the bare mascot's yellow body would vanish on
+          // the yellow splash backdrop.
           <ImageSVG
             contentFit="fill"
             style={{width: LOGO_SIZE, height: LOGO_SIZE}}
-            src={KirokuIcons.Logo}
+            src={KirokuIcons.LogoSplash}
           />
         )}
       </Animated.View>

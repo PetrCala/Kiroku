@@ -37,6 +37,7 @@ import Link from '@assets/images/link.svg';
 import Lock from '@assets/images/lock.svg';
 import Logo from '@assets/images/app-logo.svg';
 import LogoSilhouette from '@assets/images/app-logo-silhouette.svg';
+import LogoSplash from '@assets/images/app-logo-splash.svg';
 import Mail from '@assets/images/mail.svg';
 import Menu from '@assets/images/menu.svg';
 import Minus from '@assets/images/minus.svg';
@@ -111,6 +112,7 @@ export {
   Lock,
   Logo,
   LogoSilhouette,
+  LogoSplash,
   Mail,
   Menu,
   Minus,
