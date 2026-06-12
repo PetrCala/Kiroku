@@ -13,17 +13,28 @@ need details the skill doesn't cover (e.g. wiring up iOS staging in Xcode).
 
 ## What "regenerate icons" means here
 
-A single SVG (`assets/images/app-logo.svg`) is the source of truth. The script
-rasterizes it into every platform target — iOS app icon sets (prod / dev /
-staging / adhoc), iOS boot splash imagesets, Android adaptive icon foregrounds
-as **Vector Drawable XML** (one per flavor), Android legacy launcher PNGs across
-four source sets, the per-prod themed-icon monochrome PNG, Android boot splash
-drawables, Android notification icons (main only), web favicon /
-apple-touch-icon / og-preview, the PWA manifest, and four env-specific in-app
-SVG logos used by `src/components/KirokuLogo.tsx`. Non-production variants get a
-colored corner triangle badge so dev / staging / adhoc builds are visually
-distinguishable; the badge label is baked to glyph paths via `text-to-svg` so
-the same geometry drives both raster outputs and the Vector Drawable XMLs.
+Three committed SVG masters are the source of truth, all emitted by the
+parametric builder `assets/design/mascot/build-masters.mjs` (edit geometry
+there, not the SVGs):
+
+- `assets/images/app-logo.svg` — full-color mascot, **full cut** (tilted
+  writing pose) → boot splashes, in-app env logos, og preview.
+- `assets/images/app-icon.svg` — full-color mascot, **icon cut** (upright,
+  tighter) → app icons, adaptive foreground vector, favicon, apple-touch-icon.
+- `assets/images/app-logo-silhouette.svg` — white silhouette, face as evenodd
+  holes → Android notification icons + themed-icon monochrome.
+
+The script rasterizes these into every platform target — iOS app icon sets
+(prod / dev / staging / adhoc), iOS boot splash imagesets, Android adaptive
+icon foregrounds as **Vector Drawable XML** (one per flavor), Android legacy
+launcher PNGs across four source sets, the per-prod themed-icon monochrome
+PNG, Android boot splash drawables, Android notification icons (main only),
+web favicon / apple-touch-icon / og-preview, the PWA manifest, and four
+env-specific in-app SVG logos inlined into the web boot splash. Non-production
+variants get a colored corner triangle badge so dev / staging / adhoc builds
+are visually distinguishable; the badge label is baked to glyph paths via
+`text-to-svg` so the same geometry drives both raster outputs and the Vector
+Drawable XMLs.
 
 You should be able to handle the vast majority of icon work by running the
 script and committing the results. Hand-editing generated files defeats the
@@ -31,24 +42,27 @@ purpose and creates drift that the next regeneration silently wipes out.
 
 ## Color model (important — don't break this)
 
-The pipeline assumes the master SVG is a **white silhouette on transparent
-background**. The script then bakes in the brand background color
-(`BRAND_BG = '#F5C400'`, defined at the top of `scripts/generate-icons.mjs`)
-on surfaces that must be opaque, and leaves transparency intact on surfaces
-that get their backdrop from a separately-configured color resource:
+The masters are **full-color flat art** — the mascot's pencil body carries the
+brand yellow, so opaque surfaces composite onto the dark icon backdrop
+(`ICON_BG = '#0D1117'`, defined at the top of `scripts/generate-icons.mjs`
+and synced from `brandSplashBg` in `src/styles/theme/colors.ts` via
+`scripts/sync-brand-colors.mjs`). Surfaces that the OS tints through the alpha
+channel use the white silhouette master instead (face as holes — a colored
+face would vanish into the tint; `assertSilhouette()` enforces pure white):
 
-| Surface                                                                           | Logo color    | Background                                                           |
-| --------------------------------------------------------------------------------- | ------------- | -------------------------------------------------------------------- |
-| iOS app icons (`AppIcon*.appiconset/`)                                            | white         | baked-in orange (opaque, Apple requires no alpha)                    |
-| iOS boot splash (`BootSplashLogo*.imageset/`)                                     | white         | transparent — `BootSplash.storyboard` view bg provides orange        |
-| Android legacy launcher (`mipmap-*/ic_launcher.png`, Android &lt; 8)              | white         | baked-in orange (older launchers don't composite)                    |
-| Android adaptive foreground (`drawable/ic_launcher_foreground.xml`)               | white         | transparent — vector XML, sits on `@color/ic_launcher_background`    |
-| Android adaptive background                                                       | —             | `@color/ic_launcher_background` resource (no PNG)                    |
-| Android themed-icon monochrome (`drawable/ic_launcher_monochrome.png`, prod only) | white shape   | transparent — Android 13+ Themed Icons tints it                      |
-| Android boot splash (`drawable-*/bootsplash_logo.png`)                            | white         | transparent — `bootsplash_background` color resource provides orange |
-| Android notification (`drawable-*/ic_notification.png`)                           | white shape   | transparent — system tints to white/gray                             |
-| Web (`favicon.png`, `apple-touch-icon.png`, `og-preview-image.png`)               | white         | baked-in orange (renders standalone on arbitrary page chrome)        |
-| In-app SVGs (`app-logo--{prod,dev,staging,adhoc}.svg`)                            | white in file | tinted at render time by `<ImageSVG fill={theme.appLogo} />`         |
+| Surface                                                                           | Source                  | Background                                                        |
+| --------------------------------------------------------------------------------- | ----------------------- | ----------------------------------------------------------------- |
+| iOS app icons (`AppIcon*.appiconset/`)                                            | icon cut, full color    | baked-in `ICON_BG` (opaque, Apple requires no alpha)              |
+| iOS boot splash (`BootSplashLogo*.imageset/`)                                     | full cut, full color    | transparent — `BootSplash.storyboard` view bg provides `ICON_BG`  |
+| Android legacy launcher (`mipmap-*/ic_launcher.png`, Android &lt; 8)              | icon cut, full color    | baked-in `ICON_BG` (older launchers don't composite)              |
+| Android adaptive foreground (`drawable/ic_launcher_foreground.xml`)               | icon cut, full color    | transparent — vector XML, sits on `@color/ic_launcher_background` |
+| Android adaptive background                                                       | —                       | `@color/ic_launcher_background` resource (no PNG)                 |
+| Android themed-icon monochrome (`drawable/ic_launcher_monochrome.png`, prod only) | silhouette (face holes) | transparent — Android 13+ Themed Icons tints it                   |
+| Android boot splash (`drawable-*/bootsplash_logo.png`)                            | full cut, full color    | transparent — `bootsplash_background` color resource provides it  |
+| Android notification (`drawable-*/ic_notification.png`)                           | silhouette (face holes) | transparent — system tints to white/gray                          |
+| Web `favicon.png` / `apple-touch-icon.png`                                        | icon cut, full color    | baked-in `ICON_BG` (renders standalone on arbitrary page chrome)  |
+| Web `og-preview-image.png`                                                        | full cut, full color    | baked-in `ICON_BG`                                                |
+| In-app SVGs (`app-logo--{prod,dev,staging,adhoc}.svg`)                            | full cut, full color    | rendered as-is — **no theme tinting** (web splash, splash hider)  |
 
 ## Android canvas specs (important — don't conflate them)
 
@@ -94,40 +108,47 @@ colored adaptive rendering on themed devices.
 The SVG-to-Vector-Drawable converter inside `scripts/generate-icons.mjs`
 accepts only `<path>` and `<rect>` elements, with a literal hex `fill` and
 at most a single `transform="rotate(angle cx cy)"` on a `<rect>`. Gradients,
-masks, `<defs>`, nested `<g>`, named CSS colors, percentage units, and
-`<text>` all fail with a precise error message naming the offending
-construct. If a master SVG change makes the script throw, that's the safety
-net firing — either keep the SVG inside the subset or extend
-`svgToVectorDrawable()`.
+masks, `<defs>`, nested `<g>`, named CSS colors, percentage units, `<text>`,
+**stroked elements, and fill-less elements** all fail with a precise error
+message naming the offending construct (a silently skipped element would
+drop art — e.g. a face feature — from the launcher icon). If a master SVG
+change makes the script throw, that's the safety net firing — regenerate via
+`assets/design/mascot/build-masters.mjs`, which bakes strokes and round
+shapes to filled paths, or extend `svgToVectorDrawable()`.
 
-## Brand color sync
+## Backdrop color sync
 
-If `BRAND_BG` changes, it must also be updated in:
+The backdrop is single-sourced: `brandSplashBg` in
+`src/styles/theme/colors.ts`. To change it, edit that one line and run
+`node scripts/sync-brand-colors.mjs`, which propagates it to:
 
 - `android/app/src/main/res/values/colors.xml` → `bootsplash_background`
 - `android/app/src/main/res/values/ic_launcher_background.xml` → `ic_launcher_background`
-- `ios/kiroku/BootSplash.storyboard` → root view `backgroundColor` (RGB ≈ 0.961, 0.769, 0 for `#F5C400`)
+- `ios/kiroku/BootSplash.storyboard` → root view `backgroundColor`
+- `scripts/generate-icons.mjs` → `ICON_BG`
+- `web/index.html` → `theme-color` meta + `#splash` background
 
-These four locations must stay in sync. The script does **not** edit them —
-it only consumes `BRAND_BG` for the PNGs it generates.
+Then rerun `npm run generate-icons` so the baked-in PNG backgrounds match.
+Never hand-edit those targets individually; `sync-brand-colors.mjs --check`
+flags drift.
 
-**Why white master, not dark:** in-app `KirokuLogo` renders the SVG through
-`expo-image` with `tintColor={theme.appLogo}`, which replaces the entire image
-color regardless of the fill in the SVG itself. So the master color doesn't
-affect in-app theming — but it does directly determine what color appears in
-every rasterized PNG. White is the right default because every PNG surface
-either sits on the orange brand background or gets tinted by the OS.
+**Why a silhouette master exists:** Android tints notification and
+themed-icon art uniformly through the alpha channel, so the mascot's dark
+face features would vanish into the tint. The silhouette master cuts the face
+out as evenodd holes instead — that's a design decision, which is why it's a
+separate checked-in source and not something the script derives from the
+color art.
 
 ## The standard flow
 
 Always confirm with the user before destructive steps (overwriting the master
 SVG, committing). The script itself is idempotent and safe to re-run.
 
-1. **Confirm the master SVG.** Default location:
-   `assets/images/app-logo.svg`. If the user is providing new artwork, copy it
-   into place first. The art should be square, ideally 1024×1024, and visually
-   centered with internal padding baked into the `viewBox` (the script does
-   not crop or pad). **The logo silhouette must be white (`#FFFFFF`)** — see
+1. **Confirm the masters.** The three SVGs in `assets/images/` are emitted by
+   `assets/design/mascot/build-masters.mjs` — if the artwork is changing, edit
+   the geometry there and run the builder rather than hand-editing or copying
+   foreign SVGs into place. All three must stay square 1024×1024, fill-only
+   `<path>`/`<rect>`, no strokes; the silhouette must stay pure white — see
    "Color model" above.
 
 2. **Run the generator.** From the repo root:
@@ -159,7 +180,10 @@ ios/kiroku/Images.xcassets/AppIcon.appiconset/AppIcon~ios-marketing.png`
 5. **Stage and commit (with user confirmation).** Stage explicitly — do not
    `git add -A` because that picks up `tsconfig.tsbuildinfo`:
    ```bash
-   git add assets/images/app-logo.svg \
+   git add assets/design/mascot/ \
+           assets/images/app-logo.svg \
+           assets/images/app-icon.svg \
+           assets/images/app-logo-silhouette.svg \
            assets/images/app-logo--*.svg \
            ios/kiroku/Images.xcassets/ \
            android/app/src/ \
@@ -215,10 +239,13 @@ the icon pipeline is straightforward:
 
 ### Replacing the master art entirely
 
-Same as the standard flow, but be deliberate about overwriting
-`assets/images/app-logo.svg`. Worth checking with the user first: "Replace the
-current master with `<new file>`? This regenerates 100+ icon files." If yes,
-copy, run, commit.
+Same as the standard flow, but be deliberate: rework
+`assets/design/mascot/build-masters.mjs` (or replace it alongside the three
+masters it emits), keeping the fill-only/no-stroke constraints. Worth checking
+with the user first: "Replace the current masters? This regenerates 100+ icon
+files." If the in-app logo art changes shape, the mirrored paths in
+`src/components/KirokuLogo/logoShapes.ts` must be updated in the same change —
+a unit test asserts parity with `app-logo.svg`.
 
 ### Tweaking which sizes get generated
 
@@ -266,9 +293,10 @@ generator after editing; you may also need to `git rm` the orphaned files.
 - The user wants to edit individual SVG icons inside `assets/images/` that
   aren't the app logo (e.g. `KirokuIcons` UI glyphs). Those are not part of
   the generation pipeline.
-- The user wants to change the splash-screen background color. That's in
-  `ios/kiroku/BootSplash.storyboard` and `android/app/src/main/res/values/colors.xml`,
-  not in the icon script.
+- The user wants to change the splash-screen background color. That's
+  `brandSplashBg` in `src/styles/theme/colors.ts` + `node
+scripts/sync-brand-colors.mjs` (see "Backdrop color sync"), not a direct
+  icon-script edit — though you should rerun the generator afterwards.
 - The user wants to change the app's display name. That's `INFOPLIST_KEY_CFBundleDisplayName`
   in the pbxproj and `app_name` in Android resources — nothing to do with icons.
 
