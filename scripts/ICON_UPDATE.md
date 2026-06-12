@@ -10,7 +10,7 @@ Whenever you want to change the icon, follow the steps below.
 
 > The masters are built from parametric geometry: edit
 > `assets/design/mascot/build-masters.mjs`, run it to refresh the three SVGs in
-> `assets/images/` (`app-logo.svg`, `app-icon.svg`, `app-logo-silhouette.svg`),
+> `assets/images/` (`app-logo.svg`, `app-logo-splash.svg`, `app-logo-silhouette.svg`),
 > then run `npm run generate-icons`. Verify nothing unexpected changed with
 > `git status`, then commit. No other manual edits are needed for production /
 > dev / adhoc / staging — the script handles every output. If the in-app logo
@@ -29,17 +29,22 @@ and are emitted by
 [`assets/design/mascot/build-masters.mjs`](../assets/design/mascot/build-masters.mjs)
 — edit the geometry there, not the SVGs.
 
-- [`assets/images/app-logo.svg`](../assets/images/app-logo.svg) — the
-  **full cut** (tilted writing pose, full color). Drives boot splashes, the
-  in-app env logos, and the og preview image.
-- [`assets/images/app-icon.svg`](../assets/images/app-icon.svg) — the
-  **icon cut** (tighter upright pose, full color). Drives app icons, the
-  adaptive foreground vector, favicon, and apple-touch-icon.
+- [`assets/images/app-logo.svg`](../assets/images/app-logo.svg) — the mascot
+  (tilted writing pose, full color). Drives the app icons, the adaptive
+  foreground vector, favicon, apple-touch-icon, the og preview image, and the
+  in-app logo (`logoShapes.ts` mirrors it).
+- [`assets/images/app-logo-splash.svg`](../assets/images/app-logo-splash.svg)
+  — the same mascot on a **white rounded chip**. Drives the boot splashes and
+  the env splash logos: the splash backdrop is the brand yellow, which the
+  bare pencil body (also brand yellow) would vanish into, so the splash logo
+  carries its own white field — it reads as the app icon the user just tapped.
 - [`assets/images/app-logo-silhouette.svg`](../assets/images/app-logo-silhouette.svg)
-  — the icon cut as a **pure-white silhouette** with the face cut out as
-  evenodd holes. Drives the Android notification icons and the Android 13+
+  — an upright stubby cut as a **pure-white silhouette** with the face cut out
+  as evenodd holes. Drives the Android notification icons and the Android 13+
   themed-icon monochrome layer, both of which the OS tints through the alpha
-  channel (the script's `assertSilhouette()` rejects any non-white fill).
+  channel (the script's `assertSilhouette()` rejects any non-white fill). It
+  deliberately differs from the tilted pose: at 24dp the tilted slim pencil's
+  face holes close up.
 
 See [Color model](#color-model) for the per-surface table.
 
@@ -133,36 +138,41 @@ idempotent — re-running it produces identical output for an unchanged source S
 ### Color model
 
 The masters are **full-color flat art** — the mascot's pencil body carries the
-brand yellow itself, so opaque surfaces composite it onto the dark icon
-backdrop (`ICON_BG = '#0D1117'`, defined at the top of
-[`scripts/generate-icons.mjs`](generate-icons.mjs)) for contrast. The one
-single-color exception is the silhouette master, used where the OS tints art
-through its alpha channel:
+brand yellow itself, so the icon field is white
+(`ICON_BG = '#FFFFFF'`, defined at the top of
+[`scripts/generate-icons.mjs`](generate-icons.mjs); the foam's soft contour
+keeps the white foam legible on it). The boot splash keeps the **brand-yellow
+backdrop** and renders the chip master, which carries its own white field. The
+one single-color exception is the silhouette master, used where the OS tints
+art through its alpha channel:
 
 | Surface                                     | Source                  | Background                                                             |
 | ------------------------------------------- | ----------------------- | ---------------------------------------------------------------------- |
-| iOS app icons                               | icon cut, full color    | baked `ICON_BG` (Apple requires opaque)                                |
-| iOS boot splash                             | full cut, full color    | transparent — storyboard view bg provides `ICON_BG`                    |
-| Android legacy launcher (`ic_launcher.png`) | icon cut, full color    | baked `ICON_BG`                                                        |
-| Android adaptive foreground (vector XML)    | icon cut, full color    | transparent (vector keeps per-path fills)                              |
-| Android adaptive background                 | —                       | solid `ICON_BG` via `@color/ic_launcher_background`                    |
+| iOS app icons                               | mascot, full color      | baked `ICON_BG` white (Apple requires opaque)                          |
+| iOS boot splash                             | chip master             | transparent — storyboard view bg provides the brand yellow             |
+| Android legacy launcher (`ic_launcher.png`) | mascot, full color      | baked `ICON_BG` white                                                  |
+| Android adaptive foreground (vector XML)    | mascot, full color      | transparent (vector keeps per-path fills)                              |
+| Android adaptive background                 | —                       | solid `ICON_BG` white via `@color/ic_launcher_background`              |
 | Android themed-icon monochrome (prod only)  | silhouette (face holes) | transparent (OS tints when Themed Icons is enabled)                    |
-| Android boot splash                         | full cut, full color    | transparent — `bootsplash_background` color provides backdrop          |
+| Android boot splash                         | chip master             | transparent — `bootsplash_background` provides the brand yellow        |
 | Android notification icons                  | silhouette (face holes) | transparent (system tints)                                             |
-| Web favicon / apple-touch                   | icon cut, full color    | baked `ICON_BG`                                                        |
-| Web og-preview                              | full cut, full color    | baked `ICON_BG`                                                        |
-| In-app `app-logo--*.svg`                    | full cut, full color    | rendered as-is (no theme tinting) on web splash + Android splash hider |
+| Web favicon / apple-touch / og-preview      | mascot, full color      | baked `ICON_BG` white                                                  |
+| Splash `app-logo--*.svg`                    | chip master             | rendered as-is (no theme tinting) on web splash + Android splash hider |
 
-#### If you change the backdrop color
+#### If you change a backdrop color
 
-Edit `brandSplashBg` in `src/styles/theme/colors.ts` and run
-`node scripts/sync-brand-colors.mjs` — it propagates the value to
-`colors.xml` (`bootsplash_background`), `ic_launcher_background.xml`, the
-`BootSplash.storyboard` root view color, the `ICON_BG` constant in
-`generate-icons.mjs`, and the `theme-color` meta + `#splash` background in
-`web/index.html`. Then rerun `npm run generate-icons` so the baked PNGs match.
-Hand-editing any of those files individually will flash a mismatched color at
-launch (and `sync-brand-colors.mjs --check` will flag it).
+Two tokens in `src/styles/theme/colors.ts` drive the backdrops, synced by
+`node scripts/sync-brand-colors.mjs`:
+
+- `yellowStrong` (splash) → `colors.xml` (`bootsplash_background`), the
+  `BootSplash.storyboard` root view color, and the `theme-color` meta +
+  `#splash` background in `web/index.html`.
+- `brandIconBg` (icons) → `ic_launcher_background.xml` and the `ICON_BG`
+  constant in `generate-icons.mjs`.
+
+Edit the token, run the sync script, then rerun `npm run generate-icons` so
+the baked PNGs match. Hand-editing any of those files individually will flash
+a mismatched color at launch (and `sync-brand-colors.mjs --check` will flag it).
 
 #### Why the silhouette master exists
 
@@ -270,7 +280,7 @@ script to use a larger triangle or different proportions.
 
 **The script throws "unsupported element", "unsupported color", "uses
 stroke", or "has no fill" when I run it.** That's the SVG-to-Vector-Drawable
-converter rejecting a construct in `assets/images/app-icon.svg` it doesn't
+converter rejecting a construct in `assets/images/app-logo.svg` it doesn't
 recognize. See the "Supported SVG subset" note above — gradients, masks,
 `<defs>`, nested `<g>`, named CSS colors, `<text>`, strokes, and fill-less
 elements are all rejected by design (a silently skipped element would drop

@@ -1,23 +1,25 @@
 #!/usr/bin/env node
 /**
- * Propagates the splash/icon backdrop color from src/styles/theme/colors.ts
- * (`brandSplashBg`) to every place outside the TS theme tree where the same
- * color must be hard-coded:
+ * Propagates the two brand backdrop colors from src/styles/theme/colors.ts to
+ * every place outside the TS theme tree where they must be hard-coded:
  *
+ * `yellowStrong` (boot-splash backdrop — the splash shows the white-chip
+ * splash logo on the brand yellow):
  *   - android/app/src/main/res/values/colors.xml         (bootsplash_background)
- *   - android/app/src/main/res/values/ic_launcher_background.xml
  *   - ios/kiroku/BootSplash.storyboard                   (root view backgroundColor)
- *   - scripts/generate-icons.mjs                         (ICON_BG constant)
  *   - web/index.html                                     (theme-color meta + #splash bg)
+ *
+ * `brandIconBg` (field baked into the app icons; the mascot body carries the
+ * brand yellow itself):
+ *   - android/app/src/main/res/values/ic_launcher_background.xml
+ *   - scripts/generate-icons.mjs                         (ICON_BG constant)
  *
  * Usage:
  *   node scripts/sync-brand-colors.mjs           # write
  *   node scripts/sync-brand-colors.mjs --check   # exit 1 if any file is stale
  *
- * Source of truth: `brandSplashBg` in src/styles/theme/colors.ts. Edit that
- * one line and run this script; everything else updates in lockstep. (The
- * yellow brand accent, `yellowStrong`, lives only in the TS theme tree — the
- * mascot logo carries it in its own body, so no generated surface needs it.)
+ * Edit the token in colors.ts and run this script; everything else updates in
+ * lockstep.
  */
 
 import {readFileSync, writeFileSync} from 'fs';
@@ -28,29 +30,39 @@ const __dirname = dirname(fileURLToPath(import.meta.url));
 const ROOT = join(__dirname, '..');
 
 const SOURCE = 'src/styles/theme/colors.ts';
-const TOKEN = 'brandSplashBg';
 
-const TARGETS = [
-  'android/app/src/main/res/values/colors.xml',
-  'android/app/src/main/res/values/ic_launcher_background.xml',
-  'ios/kiroku/BootSplash.storyboard',
-  'scripts/generate-icons.mjs',
-  'web/index.html',
+// token → the files that hard-code its value.
+const SYNC_GROUPS = [
+  {
+    token: 'yellowStrong',
+    targets: [
+      'android/app/src/main/res/values/colors.xml',
+      'ios/kiroku/BootSplash.storyboard',
+      'web/index.html',
+    ],
+  },
+  {
+    token: 'brandIconBg',
+    targets: [
+      'android/app/src/main/res/values/ic_launcher_background.xml',
+      'scripts/generate-icons.mjs',
+    ],
+  },
 ];
 
 const checkMode = process.argv.includes('--check');
 
-function readBrandColor() {
+function readBrandColor(token) {
   const content = readFileSync(join(ROOT, SOURCE), 'utf8');
-  // Match `yellowStrong: '#XXXXXX'` (or "#XXXXXX"), skipping commented-out lines.
+  // Match `<token>: '#XXXXXX'` (or "#XXXXXX"), skipping commented-out lines.
   const re = new RegExp(
-    `^\\s*${TOKEN}\\s*:\\s*['"](#[0-9a-fA-F]{6,8})['"]`,
+    `^\\s*${token}\\s*:\\s*['"](#[0-9a-fA-F]{6,8})['"]`,
     'm',
   );
   const match = content.match(re);
   if (!match) {
     throw new Error(
-      `Couldn't find active ${TOKEN}: '#…' assignment in ${SOURCE}`,
+      `Couldn't find active ${token}: '#…' assignment in ${SOURCE}`,
     );
   }
   return match[1].toUpperCase();
@@ -148,35 +160,37 @@ const UPDATERS = {
   'web/index.html': updateWebIndexHtml,
 };
 
-const brand = readBrandColor();
-console.log(`Brand color: ${brand} (from ${SOURCE} :: ${TOKEN})\n`);
-
 let staleCount = 0;
-for (const relPath of TARGETS) {
-  const abs = join(ROOT, relPath);
-  const before = readFileSync(abs, 'utf8');
-  const after = UPDATERS[relPath](before, brand);
+for (const {token, targets} of SYNC_GROUPS) {
+  const brand = readBrandColor(token);
+  console.log(`${token}: ${brand} (from ${SOURCE})`);
 
-  if (before === after) {
-    // Either in sync, or the pattern didn't match at all. Differentiate by
-    // re-running the updater against a deliberately-different hex; if the
-    // file still doesn't change, the pattern is broken.
-    const probe = brand === '#000000' ? '#FFFFFF' : '#000000';
-    if (UPDATERS[relPath](before, probe) === before) {
-      throw new Error(
-        `${relPath}: target pattern didn't match. Has the file shape changed?`,
-      );
+  for (const relPath of targets) {
+    const abs = join(ROOT, relPath);
+    const before = readFileSync(abs, 'utf8');
+    const after = UPDATERS[relPath](before, brand);
+
+    if (before === after) {
+      // Either in sync, or the pattern didn't match at all. Differentiate by
+      // re-running the updater against a deliberately-different hex; if the
+      // file still doesn't change, the pattern is broken.
+      const probe = brand === '#000000' ? '#FFFFFF' : '#000000';
+      if (UPDATERS[relPath](before, probe) === before) {
+        throw new Error(
+          `${relPath}: target pattern didn't match. Has the file shape changed?`,
+        );
+      }
+      console.log(`  ✓ ${relPath} (in sync)`);
+      continue;
     }
-    console.log(`  ✓ ${relPath} (in sync)`);
-    continue;
-  }
 
-  staleCount++;
-  if (checkMode) {
-    console.log(`  ✗ ${relPath} (stale)`);
-  } else {
-    writeFileSync(abs, after);
-    console.log(`  ↻ ${relPath} (updated)`);
+    staleCount++;
+    if (checkMode) {
+      console.log(`  ✗ ${relPath} (stale)`);
+    } else {
+      writeFileSync(abs, after);
+      console.log(`  ↻ ${relPath} (updated)`);
+    }
   }
 }
 

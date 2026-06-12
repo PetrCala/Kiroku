@@ -2,8 +2,10 @@
  * Builds the three committed mascot masters from parametric geometry:
  *
  *   assets/images/app-logo.svg            full cut (slim pencil, +14° writing tilt)
- *   assets/images/app-icon.svg            icon cut (upright stubby pencil)
- *   assets/images/app-logo-silhouette.svg icon cut, white, face as evenodd holes
+ *   assets/images/app-logo-splash.svg     full cut on a white rounded chip (for
+ *                                         the yellow boot-splash backdrop)
+ *   assets/images/app-logo-silhouette.svg upright stubby cut, white, face as
+ *                                         evenodd holes (tintable small sizes)
  *
  * Every shape is baked to fill-only <path> data (M/L/C/Z, plus one A-free
  * elliptical mouth approximated with cubics) so the masters satisfy the
@@ -54,6 +56,16 @@ function rotation(deg, cx, cy) {
 }
 
 const IDENTITY = p => p;
+
+/** Returns a point transformer scaling by s around (cx, cy). */
+function scaleAround(s, cx, cy) {
+  return ([x, y]) => [cx + (x - cx) * s, cy + (y - cy) * s];
+}
+
+/** Composes point transformers right-to-left. */
+function compose(...fns) {
+  return p => fns.reduceRight((acc, fn) => fn(acc), p);
+}
 
 class PathBuilder {
   constructor(T) {
@@ -289,8 +301,9 @@ function foamShapes(
 // ---- masters -----------------------------------------------------------------
 
 /** Full cut: variant 11 — slim pencil, +14° writing tilt, soft foam contour. */
-function buildFullCut() {
-  const T = rotation(14, 512, 540);
+function buildFullCut(extraT) {
+  const base = rotation(14, 512, 540);
+  const T = extraT ? compose(extraT, base) : base;
   const dims = {
     halfW: 150,
     bodyTop: 320,
@@ -375,30 +388,18 @@ const ICON_FACE = {
   grinRy: 38,
 };
 
-/** Icon cut: upright stubby pencil, full color, no strokes anywhere. */
-function buildIconCut() {
-  const T = IDENTITY;
-  const pencil = pencilShapes(ICON_DIMS, T);
-  const f = ICON_FACE;
-  const eyes = [-f.eyeDx, f.eyeDx].map(dx => ({
-    d: circleD(512 + dx, f.eyeY, f.eyeR, T),
-    fill: C.ink,
-  }));
-  const shines = [-f.eyeDx, f.eyeDx].map(dx => ({
-    d: circleD(512 + dx - f.eyeR * 0.32, f.eyeY - f.eyeR * 0.35, f.shineR, T),
+/**
+ * Splash cut: the full cut sitting on a white rounded "app icon" chip. The
+ * boot splash backdrop is the brand yellow — the same yellow as the pencil
+ * body — so the splash logo carries its own white background, reading as the
+ * app icon the user just tapped.
+ */
+function buildSplashCut() {
+  const chip = {
+    d: roundedRectD(0, 0, 1024, 1024, 230, IDENTITY),
     fill: C.white,
-  }));
-  const grin = {d: grinD(512, f.grinY, f.grinRx, f.grinRy, T), fill: C.ink};
-  return [
-    pencil.body,
-    ...pencil.facets,
-    pencil.wood,
-    pencil.graphite,
-    ...foamShapes(ICON_FOAM, {fill: C.white}, T),
-    ...eyes,
-    ...shines,
-    grin,
-  ];
+  };
+  return [chip, ...buildFullCut(scaleAround(0.86, 512, 512))];
 }
 
 /** Silhouette: icon-cut geometry, single white fill, face as evenodd holes. */
@@ -450,7 +451,7 @@ function toSvg(shapes) {
 
 const MASTERS = [
   ['app-logo.svg', buildFullCut()],
-  ['app-icon.svg', buildIconCut()],
+  ['app-logo-splash.svg', buildSplashCut()],
   ['app-logo-silhouette.svg', buildSilhouette()],
 ];
 
