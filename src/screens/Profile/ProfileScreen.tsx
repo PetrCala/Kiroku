@@ -84,9 +84,15 @@ function ProfileScreen({route}: ProfileScreenProps) {
   const [userDataList] = useOnyx(ONYXKEYS.USER_DATA_LIST);
   const [friendCount, setFriendCount] = useState(0);
   const [commonFriendCount, setCommonFriendCount] = useState(0);
-  const [localVisibleDateData, setLocalVisibleDateData] = useState(
-    dateToDateData(new Date()),
-  );
+  // The locally-navigated month, tagged with the user it was navigated for. The
+  // tag lets the derivation below fall back to today when the viewed user
+  // changes (the reused-instance edge) without an effect — `setState` in an
+  // effect trips `react-hooks/set-state-in-effect`, and a render-phase reset
+  // would read a ref during render (rejected by the React Compiler).
+  const [localVisible, setLocalVisible] = useState(() => ({
+    userID,
+    date: dateToDateData(new Date()),
+  }));
   const [lastViewedCalendarDate] = useOnyx(
     ONYXKEYS.NVP_LAST_VIEWED_CALENDAR_DATE,
   );
@@ -101,31 +107,33 @@ function ProfileScreen({route}: ProfileScreenProps) {
   // profile must always open on the current month — otherwise the last-viewed
   // month of a different friend (or of home/self) leaks in, and that stale month
   // also renders empty (it falls outside the fetched window). Friends therefore
-  // ignore the NVP entirely and fall back to today.
-  const visibleDateData = useMemo(
-    () =>
-      isSelf && lastViewedCalendarDate
-        ? dateToDateData(dateStringToDate(lastViewedCalendarDate))
-        : localVisibleDateData,
-    [isSelf, lastViewedCalendarDate, localVisibleDateData],
-  );
-  // If React Navigation ever reuses this screen instance across a `userID`
-  // change (friend A → friend B), local state would carry A's manually-paged
-  // month. Snap a friend's calendar back to today whenever the viewed user
-  // changes. A fresh mount already inits to today, so this only matters for the
-  // reused-instance edge; it's keyed on `userID` (not focus) so paging within a
-  // single visit is preserved.
-  useEffect(() => {
-    if (isSelf) {
-      return;
+  // ignore the NVP entirely and fall back to today. The local month only applies
+  // while it still belongs to the user on screen; on a user change it's stale, so
+  // we fall back to today (covers a reused screen instance, friend A → friend B).
+  const visibleDateData = useMemo(() => {
+    if (isSelf && lastViewedCalendarDate) {
+      return dateToDateData(dateStringToDate(lastViewedCalendarDate));
     }
-    setLocalVisibleDateData(dateToDateData(new Date()));
-  }, [userID, isSelf]);
-  // Manual month navigation overrides the synced value.
-  const onDateChange = useCallback((date: DateData) => {
-    setLocalVisibleDateData(date);
-    App.clearLastViewedCalendarDate();
-  }, []);
+    if (localVisible.userID === userID) {
+      return localVisible.date;
+    }
+    return dateToDateData(new Date());
+  }, [
+    isSelf,
+    lastViewedCalendarDate,
+    localVisible.date,
+    localVisible.userID,
+    userID,
+  ]);
+  // Manual month navigation overrides the synced value. Re-tag with the current
+  // user so the derivation keeps using it for this visit only.
+  const onDateChange = useCallback(
+    (date: DateData) => {
+      setLocalVisible({userID, date});
+      App.clearLastViewedCalendarDate();
+    },
+    [userID],
+  );
   const profileStats = useUserMonthlyStats({
     userID,
     visibleDate: visibleDateData,
