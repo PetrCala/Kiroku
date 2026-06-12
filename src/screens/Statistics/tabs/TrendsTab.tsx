@@ -33,7 +33,7 @@ const CAPTION_KEYS: Record<string, TranslationPaths> = {
 function TrendsTab() {
   const {translate} = useLocalize();
   const themeStyles = useThemeStyles();
-  const {hero, afYtd, stack, isLoading} = useTrendsTabData();
+  const {hero, afCumulative, stack, isLoading} = useTrendsTabData();
   const {openDrillDown} = useStatsDrillDown();
 
   const heroComparisonShown = !!hero.comparison;
@@ -84,19 +84,19 @@ function TrendsTab() {
           />
         </ChartCard>
 
-        {afYtd.hidden ? null : (
+        {afCumulative.hidden ? null : (
           <ChartCard
             title={translate('statistics.tabs.trends.cumulativeAf.title')}
             footer={
-              afYtd.comparisonPoints ? (
+              afCumulative.comparisonPoints ? (
                 <Text style={themeStyles.textMicroSupporting}>
                   {comparisonLegend}
                 </Text>
               ) : undefined
             }>
             <CumulativeLine
-              points={afYtd.points}
-              comparisonPoints={afYtd.comparisonPoints}
+              points={afCumulative.points}
+              comparisonPoints={afCumulative.comparisonPoints}
               emptyLabel={translate(
                 'statistics.tabs.trends.cumulativeAf.emptyLabel',
               )}

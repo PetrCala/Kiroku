@@ -1134,8 +1134,8 @@ export default {
           },
         },
         cumulativeAf: {
-          title: 'Dny bez alkoholu letos',
-          emptyLabel: 'Každý letošní den bez alkoholu se počítá.',
+          title: 'Dny bez alkoholu v čase',
+          emptyLabel: 'Každý den bez alkoholu se počítá.',
         },
         drinkTypeStack: {
           title: 'Mix drinků v čase',

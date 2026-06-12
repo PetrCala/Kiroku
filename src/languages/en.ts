@@ -1148,8 +1148,8 @@ export default {
           },
         },
         cumulativeAf: {
-          title: 'Alcohol-free days this year',
-          emptyLabel: 'Every alcohol-free day this year adds up.',
+          title: 'Alcohol-free days over time',
+          emptyLabel: 'Every alcohol-free day adds up.',
         },
         drinkTypeStack: {
           title: 'Drink mix over time',

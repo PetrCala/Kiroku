@@ -26,11 +26,10 @@ type CumulativeRow = {x: number; y: number; cmp: number};
 const COMPARISON_DASH: number[] = [4, 4];
 
 /**
- * Cumulative AF-days line. Resets are handled upstream by
- * `buildAfYtdSeries` (returns 0 on Jan 1), so the chart just plots whatever
- * it's handed — including the reset, which surfaces as a downward step.
- * That step is the only time the line goes down; within a calendar year it
- * is monotonically non-decreasing.
+ * Cumulative AF-days line. `buildAfCumulativeSeries` accumulates across the
+ * whole selected range without resetting at year boundaries, so the series
+ * handed in is monotonically non-decreasing and the line only ever climbs
+ * from the bottom-left to the top-right.
  */
 function CumulativeLine({
   points,
@@ -49,7 +48,7 @@ function CumulativeLine({
       points.map((p, i) => ({
         x: i,
         y: p.count,
-        cmp: showComparison ? comparisonPoints?.[i]?.count ?? 0 : 0,
+        cmp: showComparison ? (comparisonPoints?.[i]?.count ?? 0) : 0,
       })),
     [points, comparisonPoints, showComparison],
   );

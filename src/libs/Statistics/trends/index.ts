@@ -1,5 +1,5 @@
-export {default as buildAfYtdSeries} from './afYtd';
-export type {AfYtdPoint} from './afYtd';
+export {default as buildAfCumulativeSeries} from './afCumulative';
+export type {AfCumulativePoint} from './afCumulative';
 export {default as buildWeeklyUnits} from './weeklyUnits';
 export type {WeeklyUnitsPoint} from './weeklyUnits';
 export {default as buildWeeklyStackedSeries} from './weeklyStacked';
