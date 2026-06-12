@@ -452,6 +452,7 @@ function SessionsCalendar({
           initialMonthYear={initialMonthYear}
           onInitialScrollReady={onInitialScrollReady}
           onSwipeBack={Navigation.goBack}
+          isReadOnly={!isSelf}
         />
         {longPressDrillDown}
       </>
