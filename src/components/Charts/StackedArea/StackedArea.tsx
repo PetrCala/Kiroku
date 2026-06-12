@@ -7,11 +7,10 @@ import {
   useChartFont,
 } from '@components/Charts/BaseChart';
 import {
-  formatWeekTick,
   roundTick,
-  tickIndices,
   valueTicks,
 } from '@components/Charts/BaseChart/axisFormatters';
+import buildDateTicks from '@components/Charts/BaseChart/dateTicks';
 import type {DrinkKey} from '@src/types/onyx/Drinks';
 
 type StackedAreaProps = {
@@ -105,7 +104,16 @@ function StackedArea({
     return max;
   }, [data, trackedKeys, showComparison]);
 
-  const xTicks = useMemo(() => tickIndices(weeks.length), [weeks.length]);
+  const dateTicks = useMemo(
+    () =>
+      buildDateTicks({
+        firstKey: weeks[0] ?? '',
+        lastKey: weeks[weeks.length - 1] ?? '',
+        length: weeks.length,
+        unit: 'week',
+      }),
+    [weeks],
+  );
   const yTicks = useMemo(() => valueTicks(maxStack), [maxStack]);
 
   return (
@@ -118,8 +126,8 @@ function StackedArea({
       height={height}
       axis={{
         font: axisFont,
-        tickValues: {x: xTicks, y: yTicks},
-        formatXLabel: index => formatWeekTick(weeks[Math.round(index)] ?? ''),
+        tickValues: {x: dateTicks.indices, y: yTicks},
+        formatXLabel: dateTicks.labelFor,
         formatYLabel: roundTick,
       }}
       loading={isLoading}>
