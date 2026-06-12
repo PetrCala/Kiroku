@@ -1,42 +1,43 @@
 // Kiroku mascot concept generator — pencil character with beer-foam top.
 // Writes one SVG per variant into /tmp/kiroku-mascot/.
-const fs = require("fs");
-const path = require("path");
-const OUT = "/tmp/kiroku-mascot";
-fs.mkdirSync(OUT, { recursive: true });
+const fs = require('fs');
+const path = require('path');
+
+const OUT = '/tmp/kiroku-mascot';
+fs.mkdirSync(OUT, {recursive: true});
 
 const C = {
-  yellow: "#F5C400",
-  yellowDark: "#D9AD00", // facet line
-  yellowPanel: "#E9B800", // side shading panel experiment
-  wood: "#E8C9A0",
-  graphite: "#3A3A3A",
-  ink: "#1A1A1A",
-  white: "#FFFFFF",
-  cream: "#F4EEDD", // off-white foam for outline-free variants (visible on white bg)
-  foamEdge: "#D9D2C0", // soft contour for white foam in outline-free variants
-  blush: "#F49E7E",
+  yellow: '#F5C400',
+  yellowDark: '#D9AD00', // facet line
+  yellowPanel: '#E9B800', // side shading panel experiment
+  wood: '#E8C9A0',
+  graphite: '#3A3A3A',
+  ink: '#1A1A1A',
+  white: '#FFFFFF',
+  cream: '#F4EEDD', // off-white foam for outline-free variants (visible on white bg)
+  foamEdge: '#D9D2C0', // soft contour for white foam in outline-free variants
+  blush: '#F49E7E',
 };
 
 function attrs(a) {
   return Object.entries(a)
     .map(([k, v]) => `${k}="${v}"`)
-    .join(" ");
+    .join(' ');
 }
-const circle = (cx, cy, r) => ({ tag: "circle", a: { cx, cy, r } });
-const ellipse = (cx, cy, rx, ry) => ({ tag: "ellipse", a: { cx, cy, rx, ry } });
+const circle = (cx, cy, r) => ({tag: 'circle', a: {cx, cy, r}});
+const ellipse = (cx, cy, rx, ry) => ({tag: 'ellipse', a: {cx, cy, rx, ry}});
 const rect = (x, y, w, h, rx) => ({
-  tag: "rect",
-  a: { x, y, width: w, height: h, ...(rx ? { rx } : {}) },
+  tag: 'rect',
+  a: {x, y, width: w, height: h, ...(rx ? {rx} : {})},
 });
-const poly = (pts) => ({
-  tag: "polygon",
-  a: { points: pts.map((p) => p.join(",")).join(" ") },
+const poly = pts => ({
+  tag: 'polygon',
+  a: {points: pts.map(p => p.join(',')).join(' ')},
 });
-const pathd = (d) => ({ tag: "path", a: { d } });
+const pathd = d => ({tag: 'path', a: {d}});
 
 function emit(s, extra = {}) {
-  return `<${s.tag} ${attrs({ ...s.a, ...extra })}/>`;
+  return `<${s.tag} ${attrs({...s.a, ...extra})}/>`;
 }
 
 const CX = 512;
@@ -44,7 +45,7 @@ const CX = 512;
 // ---- builders --------------------------------------------------------------
 
 function buildBody(v, bodySil, det) {
-  const { halfW, bodyTop, woodY, tipY, graphiteY } = v;
+  const {halfW, bodyTop, woodY, tipY, graphiteY} = v;
   if (v.tip) {
     bodySil.push({
       s: rect(CX - halfW, bodyTop, halfW * 2, woodY - bodyTop),
@@ -101,7 +102,7 @@ function buildBody(v, bodySil, det) {
   }
   if (v.scallops) {
     for (const [dx, r] of v.scallops)
-      det.push({ s: circle(CX + dx, v.woodY, r), fill: C.yellow });
+      det.push({s: circle(CX + dx, v.woodY, r), fill: C.yellow});
   }
 }
 
@@ -113,7 +114,7 @@ function buildFoam(v, foamSil) {
     fill: col,
   });
   for (const [dx, cy, r] of f.lobes)
-    foamSil.push({ s: circle(CX + dx, cy, r), fill: col });
+    foamSil.push({s: circle(CX + dx, cy, r), fill: col});
   if (f.drip) {
     const [dx, y0, y1, w] = f.drip;
     foamSil.push({
@@ -122,7 +123,7 @@ function buildFoam(v, foamSil) {
     });
   }
   for (const [dx, cy, r] of f.bubbles ?? [])
-    foamSil.push({ s: circle(CX + dx, cy, r), fill: col });
+    foamSil.push({s: circle(CX + dx, cy, r), fill: col});
 }
 
 function buildFace(v, det) {
@@ -130,14 +131,14 @@ function buildFace(v, det) {
   const ox = fc.faceDx ?? 0;
   const sw = fc.sw;
   const stroke = {
-    fill: "none",
+    fill: 'none',
     stroke: C.ink,
-    "stroke-width": sw,
-    "stroke-linecap": "round",
+    'stroke-width': sw,
+    'stroke-linecap': 'round',
   };
 
-  const dotEye = (ex) => {
-    det.push({ s: circle(ex, fc.eyeY, fc.eyeR), fill: C.ink });
+  const dotEye = ex => {
+    det.push({s: circle(ex, fc.eyeY, fc.eyeR), fill: C.ink});
     if (fc.shine) {
       det.push({
         s: circle(
@@ -149,8 +150,8 @@ function buildFace(v, det) {
       });
     }
   };
-  const ovalEye = (ex) => {
-    det.push({ s: ellipse(ex, fc.eyeY, fc.eyeRx, fc.eyeRy), fill: C.ink });
+  const ovalEye = ex => {
+    det.push({s: ellipse(ex, fc.eyeY, fc.eyeRx, fc.eyeRy), fill: C.ink});
     if (fc.shine) {
       det.push({
         s: circle(
@@ -174,25 +175,27 @@ function buildFace(v, det) {
   const exL = CX + ox - fc.eyeDx;
   const exR = CX + ox + fc.eyeDx;
   switch (fc.eyes) {
-    case "dot":
+    case 'dot':
       dotEye(exL);
       dotEye(exR);
       break;
-    case "oval":
+    case 'oval':
       ovalEye(exL);
       ovalEye(exR);
       break;
-    case "happy":
+    case 'happy':
       arcEye(exL, fc.arcW, fc.arcD);
       arcEye(exR, fc.arcW, fc.arcD);
       break;
-    case "sleepy":
+    case 'sleepy':
       arcEye(exL, fc.arcW, fc.arcD);
       arcEye(exR, fc.arcW, fc.arcD);
       break;
-    case "wink":
+    case 'wink':
       arcEye(exL, fc.arcW, fc.arcD);
       dotEye(exR);
+      break;
+    default:
       break;
   }
 
@@ -209,7 +212,7 @@ function buildFace(v, det) {
   const my = fc.mouthY;
   const mx = CX + ox;
   switch (fc.mouth) {
-    case "smile":
+    case 'smile':
       det.push({
         s: pathd(
           `M ${mx - fc.mw} ${my} Q ${mx} ${my + fc.md} ${mx + fc.mw} ${my}`,
@@ -217,7 +220,7 @@ function buildFace(v, det) {
         attrs: stroke,
       });
       break;
-    case "small":
+    case 'small':
       det.push({
         s: pathd(
           `M ${mx - fc.mw} ${my} Q ${mx} ${my + fc.md} ${mx + fc.mw} ${my}`,
@@ -225,7 +228,7 @@ function buildFace(v, det) {
         attrs: stroke,
       });
       break;
-    case "smirk":
+    case 'smirk':
       det.push({
         s: pathd(
           `M ${mx - fc.mw} ${my + 8} Q ${mx} ${my + fc.md} ${mx + fc.mw + 8} ${my - 8}`,
@@ -233,7 +236,7 @@ function buildFace(v, det) {
         attrs: stroke,
       });
       break;
-    case "grin":
+    case 'grin':
       det.push({
         s: pathd(
           `M ${mx - fc.grinR} ${my} A ${fc.grinR} ${fc.grinR * 0.58} 0 0 0 ${mx + fc.grinR} ${my} Z`,
@@ -241,7 +244,8 @@ function buildFace(v, det) {
         fill: C.ink,
       });
       break;
-    case "none":
+    case 'none':
+    default:
       break;
   }
 }
@@ -264,31 +268,31 @@ function buildVariant(v) {
         emit(it.s, {
           fill: C.ink,
           stroke: C.ink,
-          "stroke-width": v.outline * 2,
-          "stroke-linejoin": "round",
-          "stroke-linecap": "round",
+          'stroke-width': v.outline * 2,
+          'stroke-linejoin': 'round',
+          'stroke-linecap': 'round',
         }),
       );
     }
   }
-  for (const it of bodySil) parts.push(emit(it.s, { fill: it.fill }));
-  for (const it of det) parts.push(emit(it.s, it.attrs ?? { fill: it.fill }));
+  for (const it of bodySil) parts.push(emit(it.s, {fill: it.fill}));
+  for (const it of det) parts.push(emit(it.s, it.attrs ?? {fill: it.fill}));
   if (v.foamContour && !v.outline) {
     for (const it of foamSil) {
       parts.push(
         emit(it.s, {
           fill: C.foamEdge,
           stroke: C.foamEdge,
-          "stroke-width": 14,
-          "stroke-linejoin": "round",
+          'stroke-width': 14,
+          'stroke-linejoin': 'round',
         }),
       );
     }
   }
-  for (const it of foamSil) parts.push(emit(it.s, { fill: it.fill }));
-  for (const it of face) parts.push(emit(it.s, it.attrs ?? { fill: it.fill }));
+  for (const it of foamSil) parts.push(emit(it.s, {fill: it.fill}));
+  for (const it of face) parts.push(emit(it.s, it.attrs ?? {fill: it.fill}));
 
-  const inner = parts.join("\n  ");
+  const inner = parts.join('\n  ');
   const g = v.tilt
     ? `<g transform="rotate(${v.tilt} 512 540)">\n  ${inner}\n  </g>`
     : inner;
@@ -387,19 +391,19 @@ const badgeFoam = {
 
 const VARIANTS = [
   {
-    slug: "01-slim-classic-smile",
+    slug: '01-slim-classic-smile',
     ...slim,
     facetDx: 100,
     foam: slimCap,
     foamColor: C.white,
     foamContour: true,
     face: {
-      eyes: "dot",
+      eyes: 'dot',
       eyeR: 24,
       eyeDx: 60,
       eyeY: 445,
       shine: true,
-      mouth: "smile",
+      mouth: 'smile',
       mw: 46,
       md: 34,
       mouthY: 515,
@@ -407,25 +411,25 @@ const VARIANTS = [
     },
   },
   {
-    slug: "02-slim-outlined-grin",
+    slug: '02-slim-outlined-grin',
     ...slim,
     outline: 12,
     foam: slimCapBouncy,
     foamColor: C.white,
     face: {
-      eyes: "dot",
+      eyes: 'dot',
       eyeR: 25,
       eyeDx: 62,
       eyeY: 442,
       shine: true,
-      mouth: "grin",
+      mouth: 'grin',
       grinR: 62,
       mouthY: 500,
       sw: 16,
     },
   },
   {
-    slug: "03-chubby-blush-drip",
+    slug: '03-chubby-blush-drip',
     ...chubby,
     facetDx: 128,
     scallops: [
@@ -433,17 +437,17 @@ const VARIANTS = [
       [-15, 32],
       [125, 28],
     ],
-    foam: { ...chubbyOver, drip: [170, 316, 462, 54] },
+    foam: {...chubbyOver, drip: [170, 316, 462, 54]},
     foamColor: C.white,
     foamContour: true,
     face: {
-      eyes: "dot",
+      eyes: 'dot',
       eyeR: 32,
       eyeDx: 84,
       eyeY: 432,
       shine: true,
-      blush: { dx: 148, dy: 44, rx: 34, ry: 20 },
-      mouth: "smile",
+      blush: {dx: 148, dy: 44, rx: 34, ry: 20},
+      mouth: 'smile',
       mw: 60,
       md: 40,
       mouthY: 522,
@@ -451,38 +455,38 @@ const VARIANTS = [
     },
   },
   {
-    slug: "04-chubby-outlined-tilt",
+    slug: '04-chubby-outlined-tilt',
     ...chubby,
     outline: 12,
     tilt: 9,
-    foam: { ...chubbyOver, bubbles: [[252, 108, 28]] },
+    foam: {...chubbyOver, bubbles: [[252, 108, 28]]},
     foamColor: C.white,
     face: {
-      eyes: "dot",
+      eyes: 'dot',
       eyeR: 33,
       eyeDx: 86,
       eyeY: 430,
       shine: true,
-      mouth: "grin",
+      mouth: 'grin',
       grinR: 70,
       mouthY: 508,
       sw: 18,
     },
   },
   {
-    slug: "05-chubby-zen",
+    slug: '05-chubby-zen',
     ...chubby,
     facetDx: 130,
     foam: chubbyCap,
     foamColor: C.white,
     foamContour: true,
     face: {
-      eyes: "sleepy",
+      eyes: 'sleepy',
       arcW: 34,
       arcD: 18,
       eyeDx: 84,
       eyeY: 440,
-      mouth: "small",
+      mouth: 'small',
       mw: 26,
       md: 14,
       mouthY: 518,
@@ -490,38 +494,38 @@ const VARIANTS = [
     },
   },
   {
-    slug: "06-slim-minimal-eyes",
+    slug: '06-slim-minimal-eyes',
     ...slim,
     foam: slimCap,
     foamColor: C.white,
     foamContour: true,
     face: {
-      eyes: "oval",
+      eyes: 'oval',
       eyeRx: 22,
       eyeRy: 32,
       eyeDx: 58,
       eyeY: 450,
       shine: true,
-      mouth: "none",
+      mouth: 'none',
       sw: 15,
     },
   },
   {
-    slug: "07-chubby-wink-drip",
+    slug: '07-chubby-wink-drip',
     ...chubby,
     tilt: -8,
-    foam: { ...chubbyOver, drip: [-170, 316, 448, 50] },
+    foam: {...chubbyOver, drip: [-170, 316, 448, 50]},
     foamColor: C.white,
     foamContour: true,
     face: {
-      eyes: "wink",
+      eyes: 'wink',
       arcW: 32,
       arcD: 20,
       eyeR: 32,
       eyeDx: 84,
       eyeY: 432,
       shine: true,
-      mouth: "smirk",
+      mouth: 'smirk',
       mw: 50,
       md: 38,
       mouthY: 518,
@@ -529,7 +533,7 @@ const VARIANTS = [
     },
   },
   {
-    slug: "08-chubby-cheer-bubbles",
+    slug: '08-chubby-cheer-bubbles',
     ...chubby,
     sidePanel: true,
     foam: {
@@ -542,20 +546,20 @@ const VARIANTS = [
     foamColor: C.white,
     foamContour: true,
     face: {
-      eyes: "happy",
+      eyes: 'happy',
       arcW: 34,
       arcD: 24,
       eyeDx: 84,
       eyeY: 428,
-      blush: { dx: 150, dy: 40, rx: 34, ry: 20 },
-      mouth: "grin",
+      blush: {dx: 150, dy: 40, rx: 34, ry: 20},
+      mouth: 'grin',
       grinR: 74,
       mouthY: 512,
       sw: 18,
     },
   },
   {
-    slug: "09-chubby-uwu-rounded",
+    slug: '09-chubby-uwu-rounded',
     halfW: 230,
     bodyTop: 300,
     bottomY: 810,
@@ -564,13 +568,13 @@ const VARIANTS = [
     foamColor: C.white,
     foamContour: true,
     face: {
-      eyes: "happy",
+      eyes: 'happy',
       arcW: 32,
       arcD: 22,
       eyeDx: 82,
       eyeY: 435,
-      blush: { dx: 146, dy: 44, rx: 34, ry: 20 },
-      mouth: "small",
+      blush: {dx: 146, dy: 44, rx: 34, ry: 20},
+      mouth: 'small',
       mw: 30,
       md: 16,
       mouthY: 520,
@@ -578,7 +582,7 @@ const VARIANTS = [
     },
   },
   {
-    slug: "10-stubby-outlined-bigface",
+    slug: '10-stubby-outlined-bigface',
     ...stubby,
     outline: 13,
     facetDx: 150,
@@ -587,15 +591,15 @@ const VARIANTS = [
       [0, 32],
       [150, 28],
     ],
-    foam: { ...stubbyOver, drip: [185, 330, 470, 56] },
+    foam: {...stubbyOver, drip: [185, 330, 470, 56]},
     foamColor: C.white,
     face: {
-      eyes: "dot",
+      eyes: 'dot',
       eyeR: 38,
       eyeDx: 95,
       eyeY: 448,
       shine: true,
-      mouth: "smile",
+      mouth: 'smile',
       mw: 64,
       md: 44,
       mouthY: 545,
@@ -603,7 +607,7 @@ const VARIANTS = [
     },
   },
   {
-    slug: "11-slim-writing-tilt",
+    slug: '11-slim-writing-tilt',
     ...slim,
     tilt: 14,
     facetDx: 100,
@@ -611,14 +615,14 @@ const VARIANTS = [
     foamColor: C.white,
     foamContour: true,
     face: {
-      eyes: "dot",
+      eyes: 'dot',
       eyeR: 23,
       eyeDx: 58,
       eyeY: 450,
       shine: true,
       shineR: 9,
       faceDx: 8,
-      mouth: "small",
+      mouth: 'small',
       mw: 30,
       md: 16,
       mouthY: 515,
@@ -626,7 +630,7 @@ const VARIANTS = [
     },
   },
   {
-    slug: "12-stubby-badge",
+    slug: '12-stubby-badge',
     halfW: 268,
     bodyTop: 330,
     woodY: 600,
@@ -637,12 +641,12 @@ const VARIANTS = [
     foam: badgeFoam,
     foamColor: C.white,
     face: {
-      eyes: "dot",
+      eyes: 'dot',
       eyeR: 40,
       eyeDx: 100,
       eyeY: 455,
       shine: true,
-      mouth: "grin",
+      mouth: 'grin',
       grinR: 72,
       mouthY: 538,
       sw: 22,
@@ -653,5 +657,5 @@ const VARIANTS = [
 for (const v of VARIANTS) {
   const svg = buildVariant(v);
   fs.writeFileSync(path.join(OUT, `${v.slug}.svg`), svg);
-  console.log("wrote", v.slug);
+  console.log('wrote', v.slug);
 }
