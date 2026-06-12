@@ -451,8 +451,8 @@ function ProviderRowView({
             additionalStyles={styles.mr3}
             // The Apple logo is monochrome and needs theme tinting to stay
             // visible in dark mode. The Google "G" is multi-color (brand
-            // requirement) and must not be tinted, so we only set fill on
-            // providers whose SVG uses `currentColor`.
+            // requirement) and must not be tinted, so we only set fill on the
+            // monochrome Apple logo.
             fill={
               row.providerId === CONST.AUTH_PROVIDER.APPLE
                 ? theme.icon
