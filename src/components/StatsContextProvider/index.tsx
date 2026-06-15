@@ -43,6 +43,7 @@ type StatsStateContextValue = {
   comparisonRange: {start: Date; end: Date} | null;
   comparison: Comparison;
   drinkTypeFilter: ReadonlySet<DrinkKey>;
+  liveOnly: boolean;
   userIds: readonly UserID[];
 };
 
@@ -59,6 +60,7 @@ type StatsActionsContextValue = {
   revertFromCustom: () => void;
   setComparison: (next: Comparison) => void;
   setDrinkTypeFilter: (next: ReadonlySet<DrinkKey>) => void;
+  setLiveOnly: (next: boolean) => void;
   setUserIds: (next: readonly UserID[]) => void;
 };
 
@@ -255,6 +257,13 @@ function StatsContextProvider({children, now}: StatsContextProviderProps) {
       : EMPTY_DRINK_FILTER,
   );
 
+  // Derived straight from Onyx (not mirrored into useState) so it restores on a
+  // cold load even when Onyx hydrates after this provider mounts — a useState
+  // initializer would capture the default and never catch up. Absent value
+  // defaults to live-only on: the time-of-day charts are only meaningful for
+  // real-time timestamps.
+  const liveOnly = persisted?.liveOnly ?? true;
+
   // periodOffset, comparison and userIds intentionally do NOT rehydrate from
   // Onyx — they are transient view state, reset on every mount.
   const [periodOffset, setPeriodOffset] = useState(0);
@@ -421,9 +430,22 @@ function StatsContextProvider({children, now}: StatsContextProviderProps) {
     Statistics.setFilters({drinkTypeFilter: Array.from(next)});
   }, []);
 
+  // Write-through: Onyx is the source of truth, so persisting the value is all
+  // that's needed — the `persisted` subscription above re-renders with it.
+  const setLiveOnly = useCallback((next: boolean) => {
+    Statistics.setFilters({liveOnly: next});
+  }, []);
+
   const stateValue = useMemo<StatsStateContextValue>(
-    () => ({range, comparisonRange, comparison, drinkTypeFilter, userIds}),
-    [range, comparisonRange, comparison, drinkTypeFilter, userIds],
+    () => ({
+      range,
+      comparisonRange,
+      comparison,
+      drinkTypeFilter,
+      liveOnly,
+      userIds,
+    }),
+    [range, comparisonRange, comparison, drinkTypeFilter, liveOnly, userIds],
   );
 
   const actionsValue = useMemo<StatsActionsContextValue>(
@@ -435,6 +457,7 @@ function StatsContextProvider({children, now}: StatsContextProviderProps) {
       revertFromCustom,
       setComparison,
       setDrinkTypeFilter,
+      setLiveOnly,
       setUserIds,
     }),
     [
@@ -444,6 +467,7 @@ function StatsContextProvider({children, now}: StatsContextProviderProps) {
       goToLatest,
       revertFromCustom,
       setDrinkTypeFilter,
+      setLiveOnly,
     ],
   );
 

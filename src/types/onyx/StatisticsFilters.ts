@@ -29,6 +29,13 @@ type StatisticsFilters = {
 
   /** Drink-type subset; empty array means "all drinks". Persisted as array (Onyx-friendly); hydrated into a Set at the provider boundary. */
   drinkTypeFilter: DrinkKey[];
+
+  /**
+   * Restrict the time-of-day charts (Patterns tab) to live sessions only,
+   * excluding manually-logged sessions whose timestamps are synthetic.
+   * `undefined` hydrates as `true` (default-on) at the provider boundary.
+   */
+  liveOnly?: boolean;
 };
 
 export default StatisticsFilters;

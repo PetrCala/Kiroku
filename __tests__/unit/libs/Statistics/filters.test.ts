@@ -4,10 +4,12 @@ import {
   drinkTypeSubset,
   excludeBlackouts,
   forUsers,
+  liveSessionsOnly,
   weekdaysOnly,
   weekendsOnly,
 } from '@libs/Statistics/filters';
 import type {DrinkEvent} from '@libs/Statistics/types';
+import CONST from '@src/CONST';
 
 function event(overrides: Partial<DrinkEvent>): DrinkEvent {
   const ts = overrides.ts ?? Date.UTC(2024, 0, 15, 12);
@@ -84,6 +86,38 @@ describe('excludeBlackouts', () => {
 
   it('drops blackout events', () => {
     expect(excludeBlackouts(event({blackoutSession: true}))).toBe(false);
+  });
+});
+
+describe('liveSessionsOnly', () => {
+  it('keeps events from live sessions', () => {
+    expect(
+      liveSessionsOnly(event({sessionType: CONST.SESSION.TYPES.LIVE})),
+    ).toBe(true);
+  });
+
+  it('drops events from edit sessions', () => {
+    expect(
+      liveSessionsOnly(event({sessionType: CONST.SESSION.TYPES.EDIT})),
+    ).toBe(false);
+  });
+
+  it('drops events from legacy untyped sessions', () => {
+    expect(liveSessionsOnly(event({sessionType: undefined}))).toBe(false);
+  });
+
+  it('composes with other filters (AND)', () => {
+    const filter = composeFilters(liveSessionsOnly, drinkTypeSubset(['beer']));
+    expect(
+      filter?.(
+        event({sessionType: CONST.SESSION.TYPES.LIVE, drinkKey: 'beer'}),
+      ),
+    ).toBe(true);
+    expect(
+      filter?.(
+        event({sessionType: CONST.SESSION.TYPES.EDIT, drinkKey: 'beer'}),
+      ),
+    ).toBe(false);
   });
 });
 

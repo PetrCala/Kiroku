@@ -46,6 +46,13 @@ type StatsContextValue = {
   drinkTypeFilter: ReadonlySet<DrinkKey>;
   setDrinkTypeFilter: (next: ReadonlySet<DrinkKey>) => void;
 
+  /**
+   * Restrict the Patterns-tab time-of-day charts to live sessions only.
+   * Persisted; defaults to `true`. Only those charts read it.
+   */
+  liveOnly: boolean;
+  setLiveOnly: (next: boolean) => void;
+
   userIds: readonly UserID[];
   setUserIds: (next: readonly UserID[]) => void;
 };

@@ -1,4 +1,5 @@
 import type {DrinkKey} from '@src/types/onyx/Drinks';
+import type {DrinkingSessionType} from '@src/types/onyx/DrinkingSession';
 import type {UserID} from '@src/types/onyx/OnyxCommon';
 
 /**
@@ -47,6 +48,13 @@ type DrinkEvent = {
   blackoutSession: boolean;
   /** `(end_time - start_time) / 60000`, undefined for ongoing or unended sessions. */
   sessionDurationMin?: number;
+  /**
+   * Source session's `type` ('live' | 'edit'); `undefined` on legacy untyped
+   * sessions. Lets time-of-day charts exclude edit/manually-logged sessions,
+   * whose per-drink timestamps are synthetic (stamped at save, not at the
+   * real moment of consumption).
+   */
+  sessionType?: DrinkingSessionType;
 };
 
 type DayRollup = {
