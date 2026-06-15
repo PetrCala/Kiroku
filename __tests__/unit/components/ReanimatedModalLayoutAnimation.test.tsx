@@ -1,6 +1,7 @@
 /* eslint-disable @typescript-eslint/naming-convention -- jest module-factory keys (__esModule) are Node-module shape, not our convention */
 import {render} from '@testing-library/react-native';
 import React from 'react';
+import type {LayoutChangeEvent} from 'react-native';
 import type {ValueOf} from 'type-fest';
 import Backdrop from '@components/Modal/ReanimatedModal/Backdrop';
 import Container from '@components/Modal/ReanimatedModal/Container';
@@ -267,5 +268,128 @@ describe('ReanimatedModal layout-animation / style separation', () => {
 
       expectNoLayoutAnimatedViewSetsConflictingStyle();
     });
+  });
+
+  // BOTTOM_DOCKED is the only slide type whose animated sheet is content-sized,
+  // so its `translateY: 100%` can't resolve before the first paint on the New
+  // Architecture and the sheet flashes at its docked position for one frame
+  // (#813). The fix keeps the content-sized sheet hidden until its height is
+  // measured (onLayout), then translates by the measured pixel size. The other
+  // types reveal on mount as before.
+  describe('Container open reveal (#813 slide-up flicker)', () => {
+    // The inner content view is the only Animated.View wired with the
+    // slide-measurement onLayout; the wrappers carry the layout animation.
+    function getContentViewProps() {
+      return mockCapturedAnimatedViewProps.find(
+        props => typeof props.onLayout === 'function',
+      );
+    }
+
+    function fireLayout(
+      props: Record<string, unknown> | undefined,
+      height: number,
+      width: number,
+    ) {
+      (props?.onLayout as (event: LayoutChangeEvent) => void)({
+        nativeEvent: {layout: {height, width, x: 0, y: 0}},
+      } as LayoutChangeEvent);
+    }
+
+    test('BOTTOM_DOCKED renders hidden (opacity 0, no transform) until measured', () => {
+      render(
+        <Container
+          onOpenCallBack={jest.fn()}
+          onCloseCallBack={jest.fn()}
+          animationIn="slideInUp"
+          animationOut="slideOutDown"
+          type={CONST.MODAL.MODAL_TYPE.BOTTOM_DOCKED}
+        />,
+      );
+
+      const content = getContentViewProps();
+      expect(content).toBeDefined();
+      const flat = flattenStyle(content?.style);
+      // Hidden, NOT translated to its final docked position — that is the flash.
+      expect(flat.opacity).toBe(0);
+      expect(flat).not.toHaveProperty('transform');
+    });
+
+    test('BOTTOM_DOCKED defers the open animation until onLayout reports a height', () => {
+      const onOpenCallBack = jest.fn();
+      render(
+        <Container
+          onOpenCallBack={onOpenCallBack}
+          onCloseCallBack={jest.fn()}
+          animationIn="slideInUp"
+          animationOut="slideOutDown"
+          type={CONST.MODAL.MODAL_TYPE.BOTTOM_DOCKED}
+        />,
+      );
+
+      // Gated: nothing starts on mount, so the open callback hasn't fired.
+      expect(onOpenCallBack).not.toHaveBeenCalled();
+
+      fireLayout(getContentViewProps(), 220, 320);
+
+      // Measuring the sheet starts the slide, whose completion fires the
+      // callback (withTiming resolves synchronously under the mock).
+      expect(onOpenCallBack).toHaveBeenCalledTimes(1);
+    });
+
+    test('BOTTOM_DOCKED ignores a zero-height layout so it never reveals at full state', () => {
+      const onOpenCallBack = jest.fn();
+      render(
+        <Container
+          onOpenCallBack={onOpenCallBack}
+          onCloseCallBack={jest.fn()}
+          animationIn="slideInUp"
+          animationOut="slideOutDown"
+          type={CONST.MODAL.MODAL_TYPE.BOTTOM_DOCKED}
+        />,
+      );
+
+      fireLayout(getContentViewProps(), 0, 0);
+
+      expect(onOpenCallBack).not.toHaveBeenCalled();
+    });
+
+    test.each([
+      {
+        name: 'CONFIRM (fade)',
+        type: CONST.MODAL.MODAL_TYPE.CONFIRM,
+        animationIn: 'fadeIn' as const,
+        animationOut: 'fadeOut' as const,
+      },
+      {
+        name: 'CENTERED_SMALL (fade)',
+        type: CONST.MODAL.MODAL_TYPE.CENTERED_SMALL,
+        animationIn: 'fadeIn' as const,
+        animationOut: 'fadeOut' as const,
+      },
+      {
+        name: 'RIGHT_DOCKED (fill slide, percentage resolves immediately)',
+        type: CONST.MODAL.MODAL_TYPE.RIGHT_DOCKED,
+        animationIn: 'slideInRight' as const,
+        animationOut: 'slideOutRight' as const,
+      },
+    ])(
+      '$name starts the open animation on mount and skips the measurement gate',
+      ({type, animationIn, animationOut}) => {
+        const onOpenCallBack = jest.fn();
+        render(
+          <Container
+            onOpenCallBack={onOpenCallBack}
+            onCloseCallBack={jest.fn()}
+            animationIn={animationIn}
+            animationOut={animationOut}
+            type={type}
+          />,
+        );
+
+        expect(onOpenCallBack).toHaveBeenCalledTimes(1);
+        // No content-sized slide measurement, so no onLayout reveal hook.
+        expect(getContentViewProps()).toBeUndefined();
+      },
+    );
   });
 });
