@@ -5,10 +5,12 @@ import {
 } from '@src/screens/Statistics/drilldown/bucketToFilter';
 
 function makeEvent(overrides: Partial<DrinkEvent>): DrinkEvent {
+  const ts = overrides.ts ?? 0;
   return {
     userId: 'u1',
     sessionId: 's1',
-    ts: 0,
+    ts,
+    anchorTs: ts,
     localDay: '2025-06-12',
     localIsoWeek: '2025-W24',
     localMonth: '2025-06',

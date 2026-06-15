@@ -6,10 +6,12 @@ import buildAfCumulativeSeries from '@libs/Statistics/trends/afCumulative';
 import type {DrinkEvent} from '@libs/Statistics';
 
 function event(localDay: string): DrinkEvent {
+  const ts = new Date(`${localDay}T12:00:00.000Z`).getTime();
   return {
     userId: 'u1',
     sessionId: 's1',
-    ts: new Date(`${localDay}T12:00:00.000Z`).getTime(),
+    ts,
+    anchorTs: ts,
     localDay,
     localIsoWeek: '2026-W01',
     localMonth: localDay.slice(0, 7),

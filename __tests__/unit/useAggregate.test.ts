@@ -11,12 +11,13 @@ import {
 } from '@libs/Statistics';
 import type {DrinkEvent} from '@libs/Statistics';
 
-
 function makeEvent(overrides: Partial<DrinkEvent>): DrinkEvent {
+  const ts = overrides.ts ?? 0;
   return {
     userId: 'u1',
     sessionId: 's1',
-    ts: 0,
+    ts,
+    anchorTs: ts,
     localDay: '2025-06-12',
     localIsoWeek: '2025-W24',
     localMonth: '2025-06',
@@ -143,9 +144,7 @@ describe('useAggregate', () => {
 
   test('cancels deferred aggregate work on unmount', () => {
     const cancel = jest.fn();
-    runAfterSpy.mockImplementation(
-      () => ({cancel, then: () => {}}) as never,
-    );
+    runAfterSpy.mockImplementation(() => ({cancel, then: () => {}}) as never);
 
     const {unmount} = renderHook(() => useAggregate(EVENTS, byDay, sumUnits));
     unmount();

@@ -17,10 +17,12 @@ const ALL_KEYS: readonly DrinkKey[] = [
 ];
 
 function event(overrides: Partial<DrinkEvent>): DrinkEvent {
+  const ts = overrides.ts ?? new Date('2026-04-08T12:00:00.000Z').getTime();
   return {
     userId: 'u1',
     sessionId: 's1',
-    ts: new Date('2026-04-08T12:00:00.000Z').getTime(),
+    ts,
+    anchorTs: ts,
     localDay: '2026-04-08',
     localIsoWeek: '2026-W15',
     localMonth: '2026-04',

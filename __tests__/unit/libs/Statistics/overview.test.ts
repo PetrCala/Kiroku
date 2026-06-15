@@ -8,9 +8,11 @@ import {
   pickGranularity,
 } from '@libs/Statistics/overview';
 import {byMonth} from '@libs/Statistics/bucketers';
+import buildDrinkEvents from '@libs/Statistics/events';
 import type {Range} from '@components/StatsContextProvider/types';
 import type {RangePreset} from '@src/types/onyx/StatisticsFilters';
 import type {DrinkEvent} from '@libs/Statistics/types';
+import type {SelectedTimezone} from '@src/types/onyx/UserData';
 
 const THRESHOLDS = {yellow: 5, orange: 10};
 
@@ -20,10 +22,12 @@ function event(
   units: number,
   overrides?: Partial<DrinkEvent>,
 ): DrinkEvent {
+  const ts = overrides?.ts ?? new Date(`${localDay}T12:00:00`).getTime();
   return {
     userId: 'u1',
     sessionId: `s-${localDay}`,
-    ts: new Date(`${localDay}T12:00:00`).getTime(),
+    ts,
+    anchorTs: ts,
     localDay,
     localIsoWeek: '2026-W01',
     localMonth: localDay.slice(0, 7),
@@ -324,6 +328,50 @@ describe('buildOverviewModel', () => {
     );
     expect(model.current.elapsedDays).toBe(0);
     expect(model.subPeriods).toEqual([]);
+  });
+});
+
+describe('buildPeriodSummary — session-start anchoring (end-to-end)', () => {
+  it('counts a midnight-crossing session as a single drinking day', () => {
+    // The motivating bug: one night out (23:00 + 01:00 next day) must read as
+    // one drinking day, not two. Build real events, then summarize the month.
+    const start = Date.UTC(2024, 0, 15, 23);
+    const afterMidnight = Date.UTC(2024, 0, 16, 1);
+    const events = buildDrinkEvents(
+      {
+        u1: {
+          s1: {
+            start_time: start,
+            drinks: {
+              [start]: {beer: 1},
+              [afterMidnight]: {beer: 1},
+            },
+          },
+        },
+      },
+      {
+        small_beer: 0.5,
+        beer: 1,
+        cocktail: 1.5,
+        other: 1,
+        strong_shot: 1,
+        weak_shot: 0.5,
+        wine: 1.5,
+      },
+      undefined,
+      'UTC' as SelectedTimezone,
+      1,
+    );
+    const summary = buildPeriodSummary(
+      events,
+      new Date(2024, 0, 1, 0, 0, 0),
+      new Date(2024, 0, 31, 23, 59, 59),
+      new Date(2024, 1, 15, 12, 0, 0),
+      THRESHOLDS,
+    );
+    expect(summary.sessions).toBe(1);
+    expect(summary.drinkingDays).toBe(1);
+    expect(summary.afDays).toBe(summary.elapsedDays - 1);
   });
 });
 

@@ -28,7 +28,10 @@ function collectWindowAggregates(
   const unitsBySubPeriod = new Map<string, number>();
   const sessionIds = new Set<string>();
   for (const event of events) {
-    if (event.ts < startMs || event.ts > endMs) {
+    // Window by the session's anchor (start_time), not the per-drink `ts`, so a
+    // session that crosses midnight/month-end is counted whole on the day it
+    // started — never split across, nor double-counted into, two windows.
+    if (event.anchorTs < startMs || event.anchorTs > endMs) {
       continue;
     }
     sessionIds.add(event.sessionId);

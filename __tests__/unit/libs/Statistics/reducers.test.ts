@@ -17,10 +17,12 @@ import {
 import type {DrinkEvent} from '@libs/Statistics/types';
 
 function event(overrides: Partial<DrinkEvent>): DrinkEvent {
+  const ts = overrides.ts ?? 0;
   return {
     userId: 'u1',
     sessionId: 's1',
-    ts: 0,
+    ts,
+    anchorTs: ts,
     localDay: '2024-01-15',
     localIsoWeek: '2024-W03',
     localMonth: '2024-01',

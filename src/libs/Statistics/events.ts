@@ -104,6 +104,50 @@ function localPartsFor(
   return resolveLocalParts(ts, sessionTz);
 }
 
+/** Calendar identity shared by every drink in a session (its `start_time`). */
+type AnchorParts = {
+  localDay: string;
+  localMonth: string;
+  localIsoWeek: string;
+  localDow: number;
+  isWeekend: boolean;
+};
+
+/**
+ * Derive a session's calendar identity once from its `start_time`. Every drink
+ * in the session inherits these day/week/month/dow fields, so a session that
+ * crosses midnight (or a month/year boundary) counts on the day it *started* —
+ * matching the calendar and the user's "one night out" mental model. The
+ * per-drink `localHour` is kept on the real drink time by the caller.
+ *
+ * `stored` is `session.drinksTimeParts.byTs[startMs]` when the start coincides
+ * with a logged drink (zero `Intl`); otherwise the start is resolved fresh via
+ * the cached UTC-offset path (one probe per timezone/month). Returns `null`
+ * only when the timestamp cannot be resolved at all.
+ *
+ * NOTE: this single function is the seam a future "day boundary at 6/7am"
+ * rule would replace — shift `startMs` before resolving and nothing else needs
+ * to change.
+ */
+function anchorPartsForSession(
+  startMs: number,
+  sessionTz: string,
+  weekStart: WeekStart,
+  stored: unknown,
+): AnchorParts | null {
+  const parts = localPartsFor(startMs, sessionTz, stored);
+  if (!parts) {
+    return null;
+  }
+  return {
+    localDay: parts.localDay,
+    localMonth: parts.localMonth,
+    localIsoWeek: parts.localIsoWeek,
+    localDow: (parts.calendarDow - weekStart + 7) % 7,
+    isWeekend: parts.calendarDow === 0 || parts.calendarDow === 6,
+  };
+}
+
 /**
  * Single-slot last-call cache. Onyx values come in with stable identity
  * until structurally changed, so identity equality on the object inputs is
@@ -202,6 +246,22 @@ function buildDrinkEvents(
         session.drinksTimeParts?.tz === sessionTz
           ? session.drinksTimeParts.byTs
           : undefined;
+      // The whole session is anchored to its start day; every drink below
+      // inherits these calendar fields (only `localHour` stays per-drink).
+      let anchor: AnchorParts | null;
+      try {
+        anchor = anchorPartsForSession(
+          startMs,
+          sessionTz,
+          weekStart,
+          storedByTs?.[startMs],
+        );
+      } catch {
+        continue;
+      }
+      if (!anchor) {
+        continue;
+      }
       for (const [tsKey, drinksAtTs] of Object.entries(drinks)) {
         const ts = Number(tsKey);
         if (!Number.isFinite(ts)) {
@@ -219,10 +279,9 @@ function buildDrinkEvents(
         if (!parts) {
           continue;
         }
-        const {localDay, localMonth, localHour, localIsoWeek, calendarDow} =
-          parts;
-        const localDow = (calendarDow - weekStart + 7) % 7;
-        const isWeekend = calendarDow === 0 || calendarDow === 6;
+        // Only the hour is taken from the drink's own time; day/week/month/dow
+        // come from the session anchor.
+        const {localHour} = parts;
         for (const drinkKeyRaw of Object.keys(drinksAtTs)) {
           const drinkKey = drinkKeyRaw as DrinkKey;
           const entry = normalizeEntry(
@@ -238,12 +297,13 @@ function buildDrinkEvents(
             userId,
             sessionId,
             ts,
-            localDay,
-            localIsoWeek,
-            localMonth,
+            anchorTs: startMs,
+            localDay: anchor.localDay,
+            localIsoWeek: anchor.localIsoWeek,
+            localMonth: anchor.localMonth,
             localHour,
-            localDow,
-            isWeekend,
+            localDow: anchor.localDow,
+            isWeekend: anchor.isWeekend,
             drinkKey,
             count: entry.count,
             units,
