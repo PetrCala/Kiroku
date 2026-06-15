@@ -246,12 +246,12 @@ function OverviewTab() {
         </View>
 
         <View style={styles.mb3}>
-          {sectionLabel('statistics.tabs.overview.sections.load')}
+          {sectionLabel('statistics.tabs.overview.sections.consumption')}
           <KpiCardGroup cards={loadCards} isLoading={isLoading} />
         </View>
 
         <View style={styles.mb3}>
-          {sectionLabel('statistics.tabs.overview.sections.risk')}
+          {sectionLabel('statistics.tabs.overview.sections.heavyDays')}
           <KpiCardGroup cards={riskCards} isLoading={isLoading} />
         </View>
 

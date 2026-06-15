@@ -1088,8 +1088,8 @@ export default {
         },
         sections: {
           highlights: 'Hlavní body',
-          load: 'Zátěž',
-          risk: 'Riziko',
+          consumption: 'Konzumace',
+          heavyDays: 'Náročné dny',
         },
         kpi: {
           afDays: {label: 'Dny bez alkoholu'},

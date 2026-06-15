@@ -1082,8 +1082,8 @@ export default {
         },
         sections: {
           highlights: 'Highlights',
-          load: 'Load',
-          risk: 'Risk',
+          consumption: 'Consumption',
+          heavyDays: 'Heavy days',
         },
         kpi: {
           afDays: {label: 'Alcohol-free days'},
