@@ -22,6 +22,16 @@ function getCenteredModalStyles(
     width: isSmallScreenWidth
       ? '100%'
       : windowWidth - modalStyles.marginHorizontal * 2,
+    // On web above the responsive breakpoint we render the app inside a centered
+    // ~480px "phone frame" (web/index.html + index.web.js clamp `windowWidth` to
+    // that frame). But `react-native-web`'s Modal portals to `document.body`,
+    // outside the `#root` frame, so a `width: '100%'` container resolves against
+    // the *real* browser window and the modal spills across the whole screen.
+    // Cap it at the reported (frame-clamped) width so the modal's own
+    // `alignItems: 'center'` centers it over the frame. This is a no-op on native
+    // and on narrow web, where the reported width already equals the real
+    // container width.
+    maxWidth: windowWidth,
   };
 }
 
@@ -213,6 +223,13 @@ const createModalStyleUtils: StyleUtilGenerator<GetModalStylesStyleUtil> = ({
         };
         modalContainerStyle = {
           width: '100%',
+          // Cap at the reported (frame-clamped) width so the docked sheet stays
+          // within the centered ~480px web "phone frame" instead of stretching
+          // across the whole browser window (the modal is portaled to
+          // `document.body`, outside `#root`). The `alignItems: 'center'` above
+          // centers it over the frame. No-op on native and narrow web — see
+          // `getCenteredModalStyles`.
+          maxWidth: windowWidth,
           borderTopLeftRadius: variables.componentBorderRadiusLarge,
           borderTopRightRadius: variables.componentBorderRadiusLarge,
           paddingTop: variables.componentBorderRadiusLarge,
