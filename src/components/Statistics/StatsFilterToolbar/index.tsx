@@ -27,10 +27,12 @@ const styles = StyleSheet.create({
   rangeWrapper: {
     flex: 1,
   },
-  sessionTypeRow: {
-    width: '100%',
-    flexDirection: 'row',
-    justifyContent: 'flex-end',
+  rightColumn: {
+    // Right-align Compare + Live only so their right edges sit flush.
+    alignItems: 'flex-end',
+    // MUST match RangeSegmentedControl's rowGap so a wrapped period row lines up
+    // with the Live-only button on the second row.
+    rowGap: 6,
   },
 });
 
@@ -95,13 +97,11 @@ function StatsFilterToolbar({
             onChange={handleRangeChange}
           />
         </View>
-        <ComparisonToggle value={comparison} onChange={setComparison} />
-      </View>
-      {showSessionTypeToggle ? (
-        <View style={styles.sessionTypeRow}>
-          <SessionTypeToggle />
+        <View style={styles.rightColumn}>
+          <ComparisonToggle value={comparison} onChange={setComparison} />
+          {showSessionTypeToggle ? <SessionTypeToggle /> : null}
         </View>
-      ) : null}
+      </View>
       <StatsRangeNavigator
         range={range}
         onPrev={goToPreviousPeriod}
