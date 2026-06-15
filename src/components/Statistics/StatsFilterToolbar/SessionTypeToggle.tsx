@@ -8,9 +8,9 @@ import useTheme from '@hooks/useTheme';
 
 const styles = StyleSheet.create({
   pill: {
-    paddingHorizontal: 10,
-    paddingVertical: 4,
-    borderRadius: 14,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 16,
     borderWidth: 1,
     alignItems: 'center',
     justifyContent: 'center',
@@ -19,10 +19,11 @@ const styles = StyleSheet.create({
 });
 
 /**
- * Per-chart filter chip for the Patterns-tab time-of-day charts. Filled when
- * `liveOnly` is on (the default): the chart then excludes manually-logged
- * sessions, whose timestamps are synthetic. Tapping it toggles the shared
- * `liveOnly` state, so both time charts switch together.
+ * Tab-level filter chip for the Patterns-tab timing charts (hour-of-day,
+ * dow×hour, session duration). Filled when `liveOnly` is on (the default): the
+ * charts then exclude manually-logged sessions, whose timestamps are synthetic
+ * and whose duration is always zero. Tapping it toggles the shared `liveOnly`
+ * state, so every timing chart switches together.
  */
 function SessionTypeToggle() {
   const {translate} = useLocalize();
@@ -48,7 +49,7 @@ function SessionTypeToggle() {
           borderColor: liveOnly ? appColor : border,
         },
       ]}>
-      <Text color={liveOnly ? textReversed : text} fontSize={12}>
+      <Text color={liveOnly ? textReversed : text} fontSize={13}>
         {translate('statistics.filters.sessionType.liveOnly')}
       </Text>
     </PressableWithFeedback>
