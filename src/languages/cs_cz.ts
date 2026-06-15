@@ -1271,6 +1271,9 @@ export default {
       drinkType: {
         all: 'Všechny drinky',
       },
+      sessionType: {
+        liveOnly: 'Jen živé relace',
+      },
       comparison: {
         none: 'Porovnat',
         previousPeriod: 'vs minulé období',
@@ -1291,6 +1294,7 @@ export default {
       a11y: {
         rangeSegmentedControl: 'Výběr časového rozsahu',
         drinkTypeChipRow: 'Filtr typu drinku',
+        sessionTypeToggle: 'Zobrazit jen živé relace',
         comparisonToggle: 'Režim porovnání',
         previousPeriod: 'Předchozí období',
         nextPeriod: 'Další období',

@@ -1266,6 +1266,9 @@ export default {
       drinkType: {
         all: 'All drinks',
       },
+      sessionType: {
+        liveOnly: 'Live only',
+      },
       comparison: {
         none: 'Compare',
         previousPeriod: 'vs last period',
@@ -1286,6 +1289,7 @@ export default {
       a11y: {
         rangeSegmentedControl: 'Date range selector',
         drinkTypeChipRow: 'Drink type filter',
+        sessionTypeToggle: 'Show live sessions only',
         comparisonToggle: 'Comparison mode',
         previousPeriod: 'Previous period',
         nextPeriod: 'Next period',

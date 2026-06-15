@@ -23,6 +23,7 @@ export {
   drinkTypeSubset,
   excludeBlackouts,
   forUsers,
+  liveSessionsOnly,
   weekdaysOnly,
   weekendsOnly,
 } from './filters';

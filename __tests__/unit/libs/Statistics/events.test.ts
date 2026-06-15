@@ -2,10 +2,14 @@ import buildDrinkEvents from '@libs/Statistics/events';
 import type {DrinkDefaults} from '@libs/Statistics/events';
 import {sduFrom} from '@libs/Statistics/sdu';
 import type {WeekStart} from '@libs/Statistics/types';
+import CONST from '@src/CONST';
 import type Drinks from '@src/types/onyx/Drinks';
 import type {DrinkKey, DrinksList} from '@src/types/onyx/Drinks';
 import type DrinkingSession from '@src/types/onyx/DrinkingSession';
-import type {UserDrinkingSessionsList} from '@src/types/onyx/DrinkingSession';
+import type {
+  DrinkingSessionType,
+  UserDrinkingSessionsList,
+} from '@src/types/onyx/DrinkingSession';
 import type {UserID} from '@src/types/onyx/OnyxCommon';
 import type {DrinksToUnits} from '@src/types/onyx/Preferences';
 import type {SelectedTimezone} from '@src/types/onyx/UserData';
@@ -32,6 +36,7 @@ type SessionInput = {
   timezone?: SelectedTimezone;
   blackout?: boolean;
   ongoing?: boolean;
+  type?: DrinkingSessionType;
   drinks?: DrinksList;
 };
 
@@ -55,6 +60,9 @@ function makeMultiUser(
       }
       if (input.ongoing !== undefined) {
         session.ongoing = input.ongoing;
+      }
+      if (input.type !== undefined) {
+        session.type = input.type;
       }
       if (input.drinks !== undefined) {
         session.drinks = input.drinks;
@@ -604,5 +612,54 @@ describe('buildDrinkEvents — memoisation', () => {
     const b = buildDrinkEvents(s2, UNITS, DEFAULTS, UTC, MON);
     expect(b).not.toBe(a);
     expect(b).toEqual(a);
+  });
+});
+
+describe('buildDrinkEvents — sessionType propagation', () => {
+  const drinks = makeDrinks([[Date.UTC(2024, 0, 15, 11), {beer: 1}]]);
+
+  it('stamps live sessions with sessionType "live"', () => {
+    const sessions = makeMultiUser({
+      u1: {
+        s1: {
+          start: Date.UTC(2024, 0, 15, 10),
+          type: CONST.SESSION.TYPES.LIVE,
+          drinks,
+        },
+      },
+    });
+    const events = buildDrinkEvents(sessions, UNITS, DEFAULTS, UTC, MON);
+    expect(events).toHaveLength(1);
+    expect(events[0].sessionType).toBe(CONST.SESSION.TYPES.LIVE);
+  });
+
+  it('stamps edit sessions with sessionType "edit"', () => {
+    const sessions = makeMultiUser({
+      u1: {
+        s1: {
+          start: Date.UTC(2024, 0, 15, 10),
+          type: CONST.SESSION.TYPES.EDIT,
+          drinks,
+        },
+      },
+    });
+    const events = buildDrinkEvents(sessions, UNITS, DEFAULTS, UTC, MON);
+    expect(events[0].sessionType).toBe(CONST.SESSION.TYPES.EDIT);
+  });
+
+  it('treats an ongoing session as live even without an explicit type', () => {
+    const sessions = makeMultiUser({
+      u1: {s1: {start: Date.UTC(2024, 0, 15, 10), ongoing: true, drinks}},
+    });
+    const events = buildDrinkEvents(sessions, UNITS, DEFAULTS, UTC, MON);
+    expect(events[0].sessionType).toBe(CONST.SESSION.TYPES.LIVE);
+  });
+
+  it('leaves sessionType undefined on legacy untyped sessions', () => {
+    const sessions = makeMultiUser({
+      u1: {s1: {start: Date.UTC(2024, 0, 15, 10), drinks}},
+    });
+    const events = buildDrinkEvents(sessions, UNITS, DEFAULTS, UTC, MON);
+    expect(events[0].sessionType).toBeUndefined();
   });
 });

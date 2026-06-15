@@ -7,6 +7,7 @@ import type {HistogramBin} from '@components/Charts/Histogram';
 import {HourPolar} from '@components/Charts/HourPolar';
 import {ChartCard} from '@components/Charts/ChartCard';
 import StatsFilterToolbar from '@components/Statistics/StatsFilterToolbar';
+import SessionTypeToggle from '@components/Statistics/StatsFilterToolbar/SessionTypeToggle';
 import Text from '@components/Text';
 import useCurrentUserPreferences from '@hooks/useCurrentUserPreferences';
 import useLocalize from '@hooks/useLocalize';
@@ -22,6 +23,7 @@ import {
   countEvents,
   dateRange,
   drinkTypeSubset,
+  liveSessionsOnly,
   percentile,
   sessionDurationMin,
   sumUnits,
@@ -119,7 +121,7 @@ function formatDurationMin(minutes: number): string {
 }
 
 function PatternsTab() {
-  const {range, drinkTypeFilter, userIds} = useStatsContext();
+  const {range, drinkTypeFilter, liveOnly, userIds} = useStatsContext();
   const preferences = useCurrentUserPreferences();
   const {events, isLoading} = useDrinkEvents(
     userIds.length > 0 ? [...userIds] : undefined,
@@ -139,12 +141,21 @@ function PatternsTab() {
     [range, drinkTypeFilter],
   );
 
-  const hourBuckets = useAggregate(events, byHour, sumUnits, eventFilter);
+  // Time-of-day charts default to live sessions only: edit/manually-logged
+  // sessions carry synthetic per-drink timestamps, so their hour buckets are
+  // noise. The per-session histograms below intentionally keep `eventFilter`
+  // (a drink count / session duration is meaningful regardless of session type).
+  const timeOfDayFilter = useMemo(
+    () => composeFilters(eventFilter, liveOnly ? liveSessionsOnly : undefined),
+    [eventFilter, liveOnly],
+  );
+
+  const hourBuckets = useAggregate(events, byHour, sumUnits, timeOfDayFilter);
   const dowHourBuckets = useAggregate(
     events,
     composeBuckets(byDow, byHour),
     sumUnits,
-    eventFilter,
+    timeOfDayFilter,
   );
   const perSessionCounts = useAggregate(
     events,
@@ -189,7 +200,9 @@ function PatternsTab() {
       <ScrollView
         style={[styles.scroll, {backgroundColor: undefined}]}
         contentContainerStyle={styles.scrollContent}>
-        <ChartCard title={translate('statistics.charts.hourOfDay.title')}>
+        <ChartCard
+          title={translate('statistics.charts.hourOfDay.title')}
+          headerAction={<SessionTypeToggle />}>
           <HourPolar
             buckets={hourBuckets}
             accessibilityLabel={translate('statistics.charts.hourOfDay.title')}
@@ -198,7 +211,9 @@ function PatternsTab() {
             isLoading={isLoading}
           />
         </ChartCard>
-        <ChartCard title={translate('statistics.charts.dowHour.title')}>
+        <ChartCard
+          title={translate('statistics.charts.dowHour.title')}
+          headerAction={<SessionTypeToggle />}>
           <DowHourHeatmap
             buckets={dowHourBuckets}
             weekStart={weekStart}

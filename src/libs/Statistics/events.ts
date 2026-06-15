@@ -1,3 +1,4 @@
+import CONST from '@src/CONST';
 import type {DrinkKey, DrinksList} from '@src/types/onyx/Drinks';
 import type DrinkingSession from '@src/types/onyx/DrinkingSession';
 import type {UserDrinkingSessionsList} from '@src/types/onyx/DrinkingSession';
@@ -235,6 +236,11 @@ function buildDrinkEvents(
           ? (session.end_time - startMs) / 60000
           : undefined;
       const blackoutSession = session.blackout === true;
+      // An in-progress session is live by definition (it counts as live even if
+      // its `type` were somehow unset); otherwise trust the stored `type`.
+      const sessionType = session.ongoing
+        ? CONST.SESSION.TYPES.LIVE
+        : session.type;
       const drinks: DrinksList | undefined = session.drinks;
       if (!drinks) {
         continue;
@@ -310,6 +316,7 @@ function buildDrinkEvents(
             sdu,
             blackoutSession,
             sessionDurationMin,
+            sessionType,
           });
         }
       }
