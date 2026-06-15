@@ -276,7 +276,7 @@ function VerifyEmailModal() {
       );
     }
     return (
-      <View>
+      <View style={styles.flex1}>
         <View
           style={[
             styles.flexGrow1,
