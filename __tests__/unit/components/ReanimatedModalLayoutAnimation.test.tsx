@@ -140,6 +140,17 @@ jest.mock('@hooks/useLocalize', () => ({
   default: () => ({translate: () => 'backdrop'}),
 }));
 
+// Container seeds the content-sized slide distance from the window size; a fixed
+// window keeps the off-screen start deterministic for the assertions below.
+const MOCK_WINDOW_HEIGHT = 800;
+jest.mock('@hooks/useWindowDimensions', () => ({
+  __esModule: true,
+  default: () => ({
+    windowHeight: 800,
+    windowWidth: 400,
+  }),
+}));
+
 // GestureHandler pulls in gesture-handler + worklets; for layout assertions we
 // only need it to render its children.
 jest.mock('@components/Modal/ReanimatedModal/Container/GestureHandler', () => ({
@@ -273,9 +284,11 @@ describe('ReanimatedModal layout-animation / style separation', () => {
   // BOTTOM_DOCKED is the only slide type whose animated sheet is content-sized,
   // so its `translateY: 100%` can't resolve before the first paint on the New
   // Architecture and the sheet flashes at its docked position for one frame
-  // (#813). The fix keeps the content-sized sheet hidden until its height is
-  // measured (onLayout), then translates by the measured pixel size. The other
-  // types reveal on mount as before.
+  // (#813). The fix translates by a concrete pixel distance (the window size,
+  // refined to the measured sheet height) and starts on mount, so the sheet is
+  // always off-screen on the first frame and always slides in — it can neither
+  // flash at its final state nor get stuck hidden. The other types are
+  // unchanged.
   describe('Container open reveal (#813 slide-up flicker)', () => {
     // The inner content view is the only Animated.View wired with the
     // slide-measurement onLayout; the wrappers carry the layout animation.
@@ -283,6 +296,16 @@ describe('ReanimatedModal layout-animation / style separation', () => {
       return mockCapturedAnimatedViewProps.find(
         props => typeof props.onLayout === 'function',
       );
+    }
+
+    function getTranslateY(style: unknown): unknown {
+      const {transform} = flattenStyle(style);
+      if (!Array.isArray(transform)) {
+        return undefined;
+      }
+      const entries = transform as Array<Record<string, unknown>>;
+      const entry = entries.find(item => 'translateY' in item);
+      return entry ? entry.translateY : undefined;
     }
 
     function fireLayout(
@@ -295,7 +318,7 @@ describe('ReanimatedModal layout-animation / style separation', () => {
       } as LayoutChangeEvent);
     }
 
-    test('BOTTOM_DOCKED renders hidden (opacity 0, no transform) until measured', () => {
+    test('BOTTOM_DOCKED first frame is a concrete off-screen pixel translate (no flash, never hidden)', () => {
       render(
         <Container
           onOpenCallBack={jest.fn()}
@@ -308,13 +331,14 @@ describe('ReanimatedModal layout-animation / style separation', () => {
 
       const content = getContentViewProps();
       expect(content).toBeDefined();
-      const flat = flattenStyle(content?.style);
-      // Hidden, NOT translated to its final docked position — that is the flash.
-      expect(flat.opacity).toBe(0);
-      expect(flat).not.toHaveProperty('transform');
+      // Starts a full window height below its docked rest: a concrete number
+      // (not a layout-dependent percentage that resolves to 0 = the flash), and
+      // never opacity 0 (the "modal never shows" regression).
+      expect(getTranslateY(content?.style)).toBe(MOCK_WINDOW_HEIGHT);
+      expect(flattenStyle(content?.style)).not.toHaveProperty('opacity');
     });
 
-    test('BOTTOM_DOCKED defers the open animation until onLayout reports a height', () => {
+    test('BOTTOM_DOCKED starts the open animation on mount so it can never get stuck hidden', () => {
       const onOpenCallBack = jest.fn();
       render(
         <Container
@@ -326,17 +350,14 @@ describe('ReanimatedModal layout-animation / style separation', () => {
         />,
       );
 
-      // Gated: nothing starts on mount, so the open callback hasn't fired.
-      expect(onOpenCallBack).not.toHaveBeenCalled();
-
-      fireLayout(getContentViewProps(), 220, 320);
-
-      // Measuring the sheet starts the slide, whose completion fires the
-      // callback (withTiming resolves synchronously under the mock).
+      // The slide runs without waiting for a layout callback (withTiming
+      // resolves synchronously under the mock, firing the completion callback).
       expect(onOpenCallBack).toHaveBeenCalledTimes(1);
+      // It still wires the measure hook to refine the travel to the sheet height.
+      expect(typeof getContentViewProps()?.onLayout).toBe('function');
     });
 
-    test('BOTTOM_DOCKED ignores a zero-height layout so it never reveals at full state', () => {
+    test('BOTTOM_DOCKED onLayout refines the travel without restarting the animation', () => {
       const onOpenCallBack = jest.fn();
       render(
         <Container
@@ -348,9 +369,12 @@ describe('ReanimatedModal layout-animation / style separation', () => {
         />,
       );
 
-      fireLayout(getContentViewProps(), 0, 0);
-
-      expect(onOpenCallBack).not.toHaveBeenCalled();
+      const content = getContentViewProps();
+      // Refinement is a no-op for the open callback; later re-layouts are
+      // ignored, so neither fires (or restarts) the open animation again.
+      expect(() => fireLayout(content, 250, 400)).not.toThrow();
+      fireLayout(content, 300, 400);
+      expect(onOpenCallBack).toHaveBeenCalledTimes(1);
     });
 
     test.each([
@@ -373,7 +397,7 @@ describe('ReanimatedModal layout-animation / style separation', () => {
         animationOut: 'slideOutRight' as const,
       },
     ])(
-      '$name starts the open animation on mount and skips the measurement gate',
+      '$name starts the open animation on mount and skips the measurement hook',
       ({type, animationIn, animationOut}) => {
         const onOpenCallBack = jest.fn();
         render(

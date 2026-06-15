@@ -16,6 +16,7 @@ import {
   getModalOutAnimation,
 } from '@components/Modal/ReanimatedModal/utils';
 import useThemeStyles from '@hooks/useThemeStyles';
+import useWindowDimensions from '@hooks/useWindowDimensions';
 import CONST from '@src/CONST';
 import GestureHandler from './GestureHandler';
 
@@ -34,11 +35,9 @@ function Container({
   ...props
 }: Partial<ReanimatedModalProps> & ContainerProps) {
   const styles = useThemeStyles();
+  const {windowHeight, windowWidth} = useWindowDimensions();
   const initProgress = useSharedValue(0);
   const isInitiated = useSharedValue(false);
-  // Measured pixel size of a content-sized sliding sheet, captured on its first
-  // onLayout. 0 until then, while the sheet is kept hidden (see below).
-  const slideDistance = useSharedValue(0);
 
   // BOTTOM_DOCKED, CENTERED_SMALL and CONFIRM stay content-sized so the outer
   // `style` (flex-end / center) can position the sheet; the others fill.
@@ -51,20 +50,32 @@ function Container({
 
   // A content-sized sliding sheet (BOTTOM_DOCKED) can't resolve a percentage
   // translate (`translateY: 100%`) before its first paint on the New
-  // Architecture: its auto height isn't measured yet, so the percentage resolves
+  // Architecture: its auto size isn't measured yet, so the percentage resolves
   // to 0 and the sheet flashes at its docked (final) position for one frame
   // (#813). Fill sheets size to their parent, so the percentage resolves
-  // immediately (the #783 fix). For the content-sized case we translate by the
-  // measured pixel size instead, captured on the first onLayout, and keep the
-  // sheet hidden until then.
+  // immediately (the #783 fix). For the content-sized case we translate by a
+  // concrete pixel distance instead (see `slideDistance`).
   const needsMeasuredSlide = isSlide && !fillContainer;
+
+  // Pixel distance the content-sized sheet travels on open. It starts at the
+  // full window size: a concrete number resolves on the first frame (no
+  // percentage-vs-layout flash) and is always larger than the sheet, so the
+  // sheet starts fully off-screen and is guaranteed to slide in — it can never
+  // get stuck hidden (the failure of an opacity/`onLayout` gate). The first
+  // onLayout then refines it to the sheet's own measured size for a tight slide;
+  // that fires while the sheet is still off-screen, so the refinement isn't
+  // visible.
+  const slideDistance = useSharedValue(
+    animationIn === 'slideInRight' ? windowWidth : windowHeight,
+  );
+  const hasMeasuredSlide = useSharedValue(false);
 
   // Drive the open animation through a shared value + useAnimatedStyle instead
   // of an `entering` Keyframe. On the New Architecture a Keyframe's `from` frame
   // is not applied before the first paint, so the modal flashes at its final
   // state for one frame; applying progress=0 via useAnimatedStyle on mount
   // avoids that. Mirrors the web Container (index.web.tsx).
-  const startOpenAnimation = useCallback(() => {
+  useEffect(() => {
     if (isInitiated.get()) {
       return;
     }
@@ -88,18 +99,12 @@ function Container({
     );
   }, [animationInTiming, onOpenCallBack, initProgress, isInitiated]);
 
-  useEffect(() => {
-    // A measured slide starts once its height is known (onContentLayout);
-    // everything else starts on mount — its initial frame needs no layout.
-    if (needsMeasuredSlide) {
-      return;
-    }
-    startOpenAnimation();
-  }, [needsMeasuredSlide, startOpenAnimation]);
-
+  // Refine the travel to the sheet's own height once (so the slide is tight, not
+  // a full-window sweep). Only the open is affected; later re-layouts are
+  // ignored so dynamic content can't retrigger the offset mid-animation.
   const onContentLayout = useCallback(
     (event: LayoutChangeEvent) => {
-      if (!needsMeasuredSlide || slideDistance.get() > 0) {
+      if (!needsMeasuredSlide || hasMeasuredSlide.get()) {
         return;
       }
       const {height, width} = event.nativeEvent.layout;
@@ -107,10 +112,10 @@ function Container({
       if (distance <= 0) {
         return;
       }
+      hasMeasuredSlide.set(true);
       slideDistance.set(distance);
-      startOpenAnimation();
     },
-    [needsMeasuredSlide, animationIn, slideDistance, startOpenAnimation],
+    [needsMeasuredSlide, animationIn, slideDistance, hasMeasuredSlide],
   );
 
   // Equivalent to getModalInAnimationStyle (used by the web Container) but
@@ -120,13 +125,9 @@ function Container({
     const progress = initProgress.get();
     if (animationIn === 'slideInUp' || animationIn === 'slideInRight') {
       if (needsMeasuredSlide) {
-        const distance = slideDistance.get();
-        // Until the sheet is measured, keep it hidden so its docked (final)
-        // position never flashes; then translate by the measured pixel size.
-        if (distance === 0) {
-          return {opacity: 0};
-        }
-        const offset = distance * (1 - progress);
+        // Concrete-pixel translate (window size, refined to the measured sheet
+        // size) so the off-screen start resolves on the first frame.
+        const offset = slideDistance.get() * (1 - progress);
         return animationIn === 'slideInUp'
           ? {transform: [{translateY: offset}]}
           : {transform: [{translateX: offset}]};
