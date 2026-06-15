@@ -60,7 +60,7 @@ function ReanimatedModal({
   const [isVisibleState, setIsVisibleState] = useState(isVisible);
   const [isContainerOpen, setIsContainerOpen] = useState(false);
   const [isTransitioning, setIsTransitioning] = useState(false);
-  const {windowWidth, windowHeight} = useWindowDimensions();
+  const {windowHeight} = useWindowDimensions();
 
   const backHandlerListener = useRef<NativeEventSubscription | null>(null);
   const handleRef = useRef<number | undefined>(undefined);
@@ -151,11 +151,18 @@ function ReanimatedModal({
 
   const backdropStyle: ViewStyle = useMemo(
     () => ({
-      width: windowWidth,
+      // Fill the real window rather than `windowWidth`. On web above the
+      // responsive breakpoint the app renders inside a centered ~480px "phone
+      // frame" and `windowWidth` is clamped to it (index.web.js), but the modal
+      // portals to `document.body` outside that frame — a 480px backdrop would
+      // dim only the left of the window and leave the rest of the overlay
+      // uncovered. `'100%'` fills the portal's full-window container and is a
+      // no-op on native and narrow web, where it already equals `windowWidth`.
+      width: '100%',
       height: windowHeight,
       backgroundColor: backdropColor,
     }),
-    [windowWidth, windowHeight, backdropColor],
+    [windowHeight, backdropColor],
   );
 
   const onOpenCallBack = useCallback(() => {
