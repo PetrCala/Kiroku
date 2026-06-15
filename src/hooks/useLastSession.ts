@@ -9,9 +9,12 @@ import useCurrentUserPreferences from '@hooks/useCurrentUserPreferences';
 import useLocalize from '@hooks/useLocalize';
 import {timestampToDateString} from '@libs/DataHandling';
 import * as DSUtils from '@libs/DrinkingSessionUtils';
+import type {DrinkingSessionId} from '@src/types/onyx/DrinkingSession';
 import type {DateString} from '@src/types/onyx/OnyxCommon';
 
 type LastSessionView = {
+  /** Collection key of the session, for single-session summary navigation. */
+  sessionId: DrinkingSessionId;
   /** Day-granularity relative time, e.g. "Today", "Yesterday", "3 days ago". */
   when: string;
   /** Formatted total units, e.g. "4.5". */
@@ -40,10 +43,11 @@ function useLastSession(): LastSessionView | null {
   const drinksToUnits = preferences?.drinks_to_units;
 
   return useMemo(() => {
-    const session = DSUtils.getLastSession(drinkingSessionData);
-    if (!session) {
+    const lastSession = DSUtils.getLastSession(drinkingSessionData);
+    if (!lastSession) {
       return null;
     }
+    const {sessionId, session} = lastSession;
 
     const date = new Date(session.start_time);
     const now = new Date();
@@ -69,6 +73,7 @@ function useLastSession(): LastSessionView | null {
     }
 
     return {
+      sessionId,
       when,
       units: formatUnits(
         DSUtils.calculateTotalUnits(session.drinks, drinksToUnits),
