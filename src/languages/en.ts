@@ -1495,7 +1495,7 @@ export default {
   },
   login: {
     hero: {
-      header: 'Track your everyday alcohol adventures',
+      header: 'Keep track of your alcohol adventures',
       body: 'Welcome to Kiroku, where you can track, monitor, and share your alcohol consumption',
     },
     email: 'Email',
