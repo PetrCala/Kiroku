@@ -32,8 +32,48 @@ const C = {
   graphite: '#3A3A3A',
   ink: '#1A1A1A',
   white: '#FFFFFF',
-  foamEdge: '#D9D2C0',
+  // Warm-grey contour wrapping the whole character at uniform weight, so the
+  // white foam reads on light backgrounds and the dark tip reads on dark ones.
+  outline: '#B0A488',
 };
+
+// Uniform outward offset of a convex polygon (constant line weight, unlike a
+// proportional scale). Used to wrap the pencil silhouette with the contour.
+const OUTLINE_WIDTH = 8;
+function offsetConvex(pts, e) {
+  const n = pts.length;
+  const cx = pts.reduce((a, p) => a + p[0], 0) / n;
+  const cy = pts.reduce((a, p) => a + p[1], 0) / n;
+  const lines = [];
+  for (let i = 0; i < n; i++) {
+    const a = pts[i];
+    const b = pts[(i + 1) % n];
+    let dx = b[0] - a[0];
+    let dy = b[1] - a[1];
+    const len = Math.hypot(dx, dy);
+    dx /= len;
+    dy /= len;
+    let nx = -dy;
+    let ny = dx;
+    const mx = (a[0] + b[0]) / 2;
+    const my = (a[1] + b[1]) / 2;
+    if (nx * (mx - cx) + ny * (my - cy) < 0) {
+      nx = -nx;
+      ny = -ny;
+    }
+    lines.push({p: [a[0] + nx * e, a[1] + ny * e], d: [dx, dy]});
+  }
+  const out = [];
+  for (let i = 0; i < n; i++) {
+    const l1 = lines[(i - 1 + n) % n];
+    const l2 = lines[i];
+    const denom = l1.d[0] * l2.d[1] - l1.d[1] * l2.d[0];
+    const t =
+      ((l2.p[0] - l1.p[0]) * l2.d[1] - (l2.p[1] - l1.p[1]) * l2.d[0]) / denom;
+    out.push([l1.p[0] + l1.d[0] * t, l1.p[1] + l1.d[1] * t]);
+  }
+  return out;
+}
 
 const KAPPA = 0.5522847498;
 
@@ -324,6 +364,24 @@ function buildFullCut(extraT) {
     ],
   };
   const pencil = pencilShapes(dims, T);
+
+  // Uniform warm-grey contour wrapping the whole character: the pencil
+  // silhouette (body + wood + tip is one convex pentagon) offset outward, plus
+  // the foam expanded by the same amount. Drawn underneath every fill so only
+  // an even-weight ring shows around the outside.
+  const {halfW, bodyTop, woodY, tipY} = dims;
+  const pentagon = [
+    [512 - halfW, bodyTop],
+    [512 + halfW, bodyTop],
+    [512 + halfW, woodY],
+    [512, tipY],
+    [512 - halfW, woodY],
+  ];
+  const outline = [
+    {d: polygonD(offsetConvex(pentagon, OUTLINE_WIDTH), T), fill: C.outline},
+    ...foamShapes(foam, {expand: OUTLINE_WIDTH, fill: C.outline}, T),
+  ];
+
   const faceDx = 8;
   const eyeY = 450;
   const eyeR = 23;
@@ -346,11 +404,11 @@ function buildFullCut(extraT) {
     fill: C.ink,
   };
   return [
+    ...outline,
     pencil.body,
     ...pencil.facets,
     pencil.wood,
     pencil.graphite,
-    ...foamShapes(foam, {expand: 7, fill: C.foamEdge}, T),
     ...foamShapes(foam, {fill: C.white}, T),
     ...eyes,
     ...shines,
