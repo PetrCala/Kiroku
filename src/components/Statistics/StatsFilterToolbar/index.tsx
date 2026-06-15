@@ -8,6 +8,7 @@ import type {RangePreset} from '@components/StatsContextProvider/types';
 import ComparisonToggle from './ComparisonToggle';
 import DrinkTypeChipRow from './DrinkTypeChipRow';
 import RangeSegmentedControl from './RangeSegmentedControl';
+import SessionTypeToggle from './SessionTypeToggle';
 import StatsRangeNavigator from './StatsRangeNavigator';
 
 const styles = StyleSheet.create({
@@ -26,6 +27,11 @@ const styles = StyleSheet.create({
   rangeWrapper: {
     flex: 1,
   },
+  sessionTypeRow: {
+    width: '100%',
+    flexDirection: 'row',
+    justifyContent: 'flex-end',
+  },
 });
 
 type StatsFilterToolbarProps = {
@@ -35,10 +41,18 @@ type StatsFilterToolbarProps = {
    * Breakdown tab).
    */
   showDrinkTypeFilter?: boolean;
+
+  /**
+   * Whether to show the "Live only" toggle (sits under the Compare button).
+   * Only the Patterns tab opts in, since `liveOnly` only filters that tab's
+   * timing charts.
+   */
+  showSessionTypeToggle?: boolean;
 };
 
 function StatsFilterToolbar({
   showDrinkTypeFilter = true,
+  showSessionTypeToggle = false,
 }: StatsFilterToolbarProps) {
   const {appBG, border} = useTheme();
   const {translate} = useLocalize();
@@ -83,6 +97,11 @@ function StatsFilterToolbar({
         </View>
         <ComparisonToggle value={comparison} onChange={setComparison} />
       </View>
+      {showSessionTypeToggle ? (
+        <View style={styles.sessionTypeRow}>
+          <SessionTypeToggle />
+        </View>
+      ) : null}
       <StatsRangeNavigator
         range={range}
         onPrev={goToPreviousPeriod}

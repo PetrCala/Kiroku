@@ -7,7 +7,6 @@ import type {HistogramBin} from '@components/Charts/Histogram';
 import {HourPolar} from '@components/Charts/HourPolar';
 import {ChartCard} from '@components/Charts/ChartCard';
 import StatsFilterToolbar from '@components/Statistics/StatsFilterToolbar';
-import SessionTypeToggle from '@components/Statistics/StatsFilterToolbar/SessionTypeToggle';
 import Text from '@components/Text';
 import useCurrentUserPreferences from '@hooks/useCurrentUserPreferences';
 import useLocalize from '@hooks/useLocalize';
@@ -38,10 +37,6 @@ const styles = StyleSheet.create({
   scrollContent: {
     paddingBottom: 32,
     paddingHorizontal: 16,
-  },
-  toggleRow: {
-    paddingHorizontal: 16,
-    paddingBottom: 8,
   },
   histogramRow: {
     flexDirection: 'row',
@@ -201,12 +196,7 @@ function PatternsTab() {
 
   return (
     <View style={themeStyles.flex1}>
-      <StatsFilterToolbar />
-      {/* One tab-level control for every timing chart below; pinned above the
-          scroll so it stays reachable while scrolling to the duration chart. */}
-      <View style={styles.toggleRow}>
-        <SessionTypeToggle />
-      </View>
+      <StatsFilterToolbar showSessionTypeToggle />
       <ScrollView
         style={[styles.scroll, {backgroundColor: undefined}]}
         contentContainerStyle={styles.scrollContent}>

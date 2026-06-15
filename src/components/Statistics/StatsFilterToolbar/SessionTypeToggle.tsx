@@ -14,16 +14,16 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     alignItems: 'center',
     justifyContent: 'center',
-    alignSelf: 'flex-start',
   },
 });
 
 /**
- * Tab-level filter chip for the Patterns-tab timing charts (hour-of-day,
- * dow×hour, session duration). Filled when `liveOnly` is on (the default): the
- * charts then exclude manually-logged sessions, whose timestamps are synthetic
- * and whose duration is always zero. Tapping it toggles the shared `liveOnly`
- * state, so every timing chart switches together.
+ * "Live only" filter chip for the Patterns-tab timing charts (hour-of-day,
+ * dow×hour, session duration), shown in that tab's filter toolbar under the
+ * Compare button. Filled when `liveOnly` is on (the default): the charts then
+ * exclude manually-logged sessions, whose timestamps are synthetic and whose
+ * duration is always zero. Tapping it toggles the shared `liveOnly` state, so
+ * every timing chart switches together. Alignment is left to the parent.
  */
 function SessionTypeToggle() {
   const {translate} = useLocalize();
