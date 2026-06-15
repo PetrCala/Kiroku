@@ -798,7 +798,7 @@
 "src/libs/Log.ts"	"@typescript-eslint/no-unnecessary-type-assertion"	1
 "src/libs/Log.ts"	"rulesdir/no-onyx-connect"	1
 "src/libs/Navigation/AppNavigator/AuthScreens.tsx"	"react-hooks/refs"	2
-"src/libs/Navigation/AppNavigator/AuthScreens.tsx"	"rulesdir/no-onyx-connect"	2
+"src/libs/Navigation/AppNavigator/AuthScreens.tsx"	"rulesdir/no-onyx-connect"	1
 "src/libs/Navigation/AppNavigator/ModalStackNavigators/useModalScreenOptions.ts"	"rulesdir/prefer-narrow-hook-dependencies"	1
 "src/libs/Navigation/AppNavigator/getPartialStateDiff.ts"	"@typescript-eslint/ban-types"	1
 "src/libs/Navigation/AppNavigator/getPartialStateDiff.ts"	"@typescript-eslint/no-restricted-types"	2
