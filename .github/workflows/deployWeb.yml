@@ -5,9 +5,14 @@ name: Deploy web
 # - push to `production` -> build-web        -> live deploy to the prod project
 #                                                (hosting target `app` =
 #                                                 kiroku-app-prod / app.kiroku.cz)
-# - push to `staging`    -> build-web-dev     -> live deploy to the dev project
+# - push to `staging`    -> build-web-adhoc   -> live deploy to the dev project
 #                                                (hosting target `app` =
-#                                                 kiroku-app-dev)
+#                                                 kiroku-app-dev / app-dev.kiroku.cz).
+#                                                The adhoc env points the build at
+#                                                the DEV Firebase project AND the
+#                                                DEV kiroku-api — a production-grade
+#                                                build on the dev backend, so the
+#                                                dev-only test account can sign in.
 # - PR labeled `Ready To Build - Web`         -> build-web-dev -> preview channel
 #   (or manual dispatch with a PR number)        `pr-<number>` on the dev site,
 #                                                URL commented on the PR
@@ -59,20 +64,22 @@ jobs:
           else
             {
               echo "PROJECT=dev"
-              echo "BUILD_SCRIPT=build-web-dev"
+              echo "BUILD_SCRIPT=build-web-adhoc"
             } >> "$GITHUB_OUTPUT"
           fi
 
-      # build-web reads .env.production; build-web-dev reads .env.development.
-      # Stage the matching file from secrets (the dev/staging site is fed the
-      # staging env so it points at the staging API roots).
+      # build-web reads .env.production; build-web-adhoc reads .env.adhoc.
+      # Stage the matching file from secrets. app-dev.kiroku.cz is fed the adhoc
+      # env so the running app targets the DEV Firebase project + DEV kiroku-api
+      # (not prod, as STAGING_ENV_FILE did) — a production-grade build on the dev
+      # backend.
       - name: Stage .env.production from secret
         if: ${{ github.ref_name == 'production' }}
         run: echo "${{ secrets.PRODUCTION_ENV_FILE }}" > .env.production
 
-      - name: Stage .env.development from staging secret
+      - name: Stage .env.adhoc from secret
         if: ${{ github.ref_name == 'staging' }}
-        run: echo "${{ secrets.STAGING_ENV_FILE }}" > .env.development
+        run: echo "${{ secrets.ADHOC_ENV_FILE }}" > .env.adhoc
 
       - name: Setup Node
         uses: ./.github/actions/composite/setupNode
