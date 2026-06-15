@@ -4,9 +4,11 @@ import type {EventFilter} from './aggregate';
 
 /**
  * Inclusive on both ends. `startMs` and `endMs` are JavaScript milliseconds.
+ * Windows by the session anchor (`start_time`), not the per-drink `ts`, so a
+ * midnight-crossing session falls entirely in the window of the day it started.
  */
 function dateRange(startMs: number, endMs: number): EventFilter {
-  return event => event.ts >= startMs && event.ts <= endMs;
+  return event => event.anchorTs >= startMs && event.anchorTs <= endMs;
 }
 
 function drinkTypeSubset(

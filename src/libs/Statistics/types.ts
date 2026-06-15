@@ -18,17 +18,24 @@ type DrinkEvent = {
   sessionId: string;
   /** ms, per-drink timestamp (the `DrinksList` key), not the session start. */
   ts: number;
-  /** `yyyy-MM-dd` in the session's timezone. */
+  /**
+   * ms, the owning session's `start_time` — the calendar anchor for every
+   * `local*` day/week/month/dow field below and the timestamp all windowing
+   * keys off, so a session that crosses midnight counts on the day it started
+   * (matching the calendar). `localHour` is the exception: it stays on `ts`.
+   */
+  anchorTs: number;
+  /** `yyyy-MM-dd` of the session's `start_time`, in the session's timezone. */
   localDay: string;
-  /** ISO-8601 week label `yyyy-Www` in the session's timezone. */
+  /** ISO-8601 week label `yyyy-Www` of the session's `start_time`. */
   localIsoWeek: string;
-  /** `yyyy-MM` in the session's timezone. */
+  /** `yyyy-MM` of the session's `start_time`, in the session's timezone. */
   localMonth: string;
-  /** 0..23 in the session's timezone. */
+  /** 0..23 of *this drink* (`ts`), in the session's timezone. */
   localHour: number;
-  /** 0..6, rotated so 0 = the user's `WeekStart`. */
+  /** 0..6 of the session's `start_time`, rotated so 0 = the user's `WeekStart`. */
   localDow: number;
-  /** Calendar Saturday/Sunday membership, independent of `WeekStart`. */
+  /** Session `start_time`'s calendar Sat/Sun membership, independent of `WeekStart`. */
   isWeekend: boolean;
   drinkKey: DrinkKey;
   /** Entry count (>=1). */

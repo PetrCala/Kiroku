@@ -6,10 +6,12 @@ import buildWeeklyUnits from '@libs/Statistics/trends/weeklyUnits';
 import type {DrinkEvent} from '@libs/Statistics';
 
 function event(overrides: Partial<DrinkEvent>): DrinkEvent {
+  const ts = overrides.ts ?? 0;
   return {
     userId: 'u1',
     sessionId: 's1',
-    ts: 0,
+    ts,
+    anchorTs: ts,
     localDay: '2026-04-08',
     localIsoWeek: '2026-W15',
     localMonth: '2026-04',

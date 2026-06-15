@@ -404,15 +404,12 @@ describe('buildDrinkEvents — day-of-week rotation', () => {
   it('isWeekend stays calendar-bound regardless of weekStart', () => {
     const sat = Date.UTC(2024, 0, 13, 12);
     const mon = Date.UTC(2024, 0, 15, 12);
+    // Each session is anchored to its own start day, so isWeekend reflects the
+    // start: a Saturday session is weekend, a Monday session is not.
     const sessions = makeMultiUser({
       u1: {
-        s1: {
-          start: sat,
-          drinks: makeDrinks([
-            [sat, {beer: 1}],
-            [mon, {beer: 1}],
-          ]),
-        },
+        sat: {start: sat, drinks: makeDrinks([[sat, {beer: 1}]])},
+        mon: {start: mon, drinks: makeDrinks([[mon, {beer: 1}]])},
       },
     });
     const monStart = buildDrinkEvents(sessions, UNITS, DEFAULTS, UTC, MON);
@@ -499,6 +496,54 @@ describe('buildDrinkEvents — calendar edge cases', () => {
     expect(events[1].localHour).toBe(1);
     expect(events[0].localDay).toBe('2024-10-27');
     expect(events[1].localDay).toBe('2024-10-27');
+  });
+});
+
+describe('buildDrinkEvents — session-start anchoring', () => {
+  it('anchors a midnight-crossing session to the day it started', () => {
+    // Session starts 23:00 on Jan 15; the second drink lands 01:00 on Jan 16.
+    // Both belong to the one night out that started on Jan 15.
+    const start = Date.UTC(2024, 0, 15, 23);
+    const afterMidnight = Date.UTC(2024, 0, 16, 1);
+    const sessions = makeMultiUser({
+      u1: {
+        s1: {
+          start,
+          drinks: makeDrinks([
+            [start, {beer: 1}],
+            [afterMidnight, {beer: 1}],
+          ]),
+        },
+      },
+    });
+    const events = buildDrinkEvents(sessions, UNITS, DEFAULTS, UTC, MON);
+    expect(events).toHaveLength(2);
+    // Calendar identity is the session start for both drinks.
+    expect(events.map(e => e.localDay)).toEqual(['2024-01-15', '2024-01-15']);
+    expect(events.every(e => e.anchorTs === start)).toBe(true);
+    // But the hour and the raw ts stay on each real drink time.
+    expect(events.map(e => e.localHour)).toEqual([23, 1]);
+    expect(events.map(e => e.ts)).toEqual([start, afterMidnight]);
+  });
+
+  it('anchors a month-crossing session to the month it started', () => {
+    // Starts 23:30 Jan 31, second drink 00:30 Feb 1 → both count in January.
+    const start = Date.UTC(2024, 0, 31, 23, 30);
+    const afterMidnight = Date.UTC(2024, 1, 1, 0, 30);
+    const sessions = makeMultiUser({
+      u1: {
+        s1: {
+          start,
+          drinks: makeDrinks([
+            [start, {beer: 1}],
+            [afterMidnight, {beer: 1}],
+          ]),
+        },
+      },
+    });
+    const events = buildDrinkEvents(sessions, UNITS, DEFAULTS, UTC, MON);
+    expect(events.map(e => e.localMonth)).toEqual(['2024-01', '2024-01']);
+    expect(events.map(e => e.localDay)).toEqual(['2024-01-31', '2024-01-31']);
   });
 });
 

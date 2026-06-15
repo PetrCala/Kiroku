@@ -7,10 +7,12 @@ import type {DrinkEvent} from '@libs/Statistics';
 
 /** Minimal DrinkEvent fixture — only localDay/units/sessionId matter here. */
 function ev(localDay: string, units: number, sessionId?: string): DrinkEvent {
+  const ts = Date.parse(`${localDay}T12:00:00Z`);
   return {
     userId: 'u1',
     sessionId: sessionId ?? `s-${localDay}`,
-    ts: Date.parse(`${localDay}T12:00:00Z`),
+    ts,
+    anchorTs: ts,
     localDay,
     localIsoWeek: '2026-W01',
     localMonth: localDay.slice(0, 7),

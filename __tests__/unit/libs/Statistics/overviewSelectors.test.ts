@@ -5,10 +5,12 @@ import {
 import type {DrinkEvent} from '@libs/Statistics/types';
 
 function event(overrides: Partial<DrinkEvent>): DrinkEvent {
+  const ts = overrides.ts ?? new Date('2026-05-25T12:00:00Z').getTime();
   return {
     userId: 'u1',
     sessionId: 's-default',
-    ts: new Date('2026-05-25T12:00:00Z').getTime(),
+    ts,
+    anchorTs: ts,
     localDay: '2026-05-25',
     localIsoWeek: '2026-W22',
     localMonth: '2026-05',
