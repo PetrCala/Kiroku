@@ -216,22 +216,29 @@ function getOngoingSessionId(
 
 /**
  * Returns the most recent COMPLETED session (latest `start_time`), excluding
- * any ongoing/in-progress session. `undefined` when there are none.
+ * any ongoing/in-progress session, together with its collection key
+ * (`sessionId`). `undefined` when there are none.
+ *
+ * The key is returned explicitly because the session's own `id` field is only
+ * populated locally and cannot be relied on — callers that need to navigate to
+ * a specific session use this `sessionId`.
  */
 function getLastSession(
   drinkingSessions: DrinkingSessionList | null | undefined,
-): DrinkingSession | undefined {
+): {sessionId: DrinkingSessionId; session: DrinkingSession} | undefined {
   if (isEmptyObject(drinkingSessions)) {
     return undefined;
   }
 
-  let latest: DrinkingSession | undefined;
-  Object.values(drinkingSessions).forEach(session => {
+  let latest:
+    | {sessionId: DrinkingSessionId; session: DrinkingSession}
+    | undefined;
+  Object.entries(drinkingSessions).forEach(([sessionId, session]) => {
     if (!session || session.ongoing) {
       return;
     }
-    if (!latest || session.start_time > latest.start_time) {
-      latest = session;
+    if (!latest || session.start_time > latest.session.start_time) {
+      latest = {sessionId, session};
     }
   });
 

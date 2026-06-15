@@ -251,7 +251,7 @@ function HomeScreen({route}: HomeScreenProps) {
           })}
           onPress={() =>
             Navigation.navigate(
-              ROUTES.DAY_OVERVIEW.getRoute(user.uid, lastSession.dateString),
+              ROUTES.DRINKING_SESSION_SUMMARY.getRoute(lastSession.sessionId),
             )
           }
         />
