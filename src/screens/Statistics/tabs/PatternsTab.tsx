@@ -39,6 +39,10 @@ const styles = StyleSheet.create({
     paddingBottom: 32,
     paddingHorizontal: 16,
   },
+  toggleRow: {
+    paddingHorizontal: 16,
+    paddingBottom: 8,
+  },
   histogramRow: {
     flexDirection: 'row',
     gap: 8,
@@ -141,21 +145,22 @@ function PatternsTab() {
     [range, drinkTypeFilter],
   );
 
-  // Time-of-day charts default to live sessions only: edit/manually-logged
-  // sessions carry synthetic per-drink timestamps, so their hour buckets are
-  // noise. The per-session histograms below intentionally keep `eventFilter`
-  // (a drink count / session duration is meaningful regardless of session type).
-  const timeOfDayFilter = useMemo(
+  // Timing-derived charts (hour-of-day, dow×hour, session duration) honor the
+  // tab-level "Live only" toggle: edit/manually-logged sessions carry synthetic
+  // per-drink timestamps AND a fixed zero duration (start_time === end_time, no
+  // UI to set an end), so they're noise here. Drinks-per-session keeps the plain
+  // `eventFilter` — a drink count is meaningful for any session type.
+  const timeFilter = useMemo(
     () => composeFilters(eventFilter, liveOnly ? liveSessionsOnly : undefined),
     [eventFilter, liveOnly],
   );
 
-  const hourBuckets = useAggregate(events, byHour, sumUnits, timeOfDayFilter);
+  const hourBuckets = useAggregate(events, byHour, sumUnits, timeFilter);
   const dowHourBuckets = useAggregate(
     events,
     composeBuckets(byDow, byHour),
     sumUnits,
-    timeOfDayFilter,
+    timeFilter,
   );
   const perSessionCounts = useAggregate(
     events,
@@ -167,7 +172,7 @@ function PatternsTab() {
     events,
     bySessionId,
     sessionDurationMin,
-    eventFilter,
+    timeFilter,
   );
 
   const drinkBins = useMemo(
@@ -197,12 +202,15 @@ function PatternsTab() {
   return (
     <View style={themeStyles.flex1}>
       <StatsFilterToolbar />
+      {/* One tab-level control for every timing chart below; pinned above the
+          scroll so it stays reachable while scrolling to the duration chart. */}
+      <View style={styles.toggleRow}>
+        <SessionTypeToggle />
+      </View>
       <ScrollView
         style={[styles.scroll, {backgroundColor: undefined}]}
         contentContainerStyle={styles.scrollContent}>
-        <ChartCard
-          title={translate('statistics.charts.hourOfDay.title')}
-          headerAction={<SessionTypeToggle />}>
+        <ChartCard title={translate('statistics.charts.hourOfDay.title')}>
           <HourPolar
             buckets={hourBuckets}
             accessibilityLabel={translate('statistics.charts.hourOfDay.title')}
@@ -211,9 +219,7 @@ function PatternsTab() {
             isLoading={isLoading}
           />
         </ChartCard>
-        <ChartCard
-          title={translate('statistics.charts.dowHour.title')}
-          headerAction={<SessionTypeToggle />}>
+        <ChartCard title={translate('statistics.charts.dowHour.title')}>
           <DowHourHeatmap
             buckets={dowHourBuckets}
             weekStart={weekStart}
