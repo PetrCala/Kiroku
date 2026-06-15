@@ -33,7 +33,6 @@ import useIdlePrefetch from '@hooks/useIdlePrefetch';
 import useAutoUpdateTimezone from '@hooks/useAutoUpdateTimezone';
 import useCurrentUserData from '@hooks/useCurrentUserData';
 import useCurrentUserPreferences from '@hooks/useCurrentUserPreferences';
-import prefetchStatisticsBundle from '@screens/Statistics/prefetchStatisticsBundle';
 import {useFirebase} from '@context/global/FirebaseContext';
 import OnboardingGuard from '@libs/Navigation/guards/OnboardingGuard';
 import TermsReConsentGuard from '@libs/Navigation/guards/TermsReConsentGuard';
@@ -96,9 +95,13 @@ const modalScreenListeners = {
   },
 };
 
-// Module graphs warmed once the authenticated app is idle, so the first open
-// of these screens is a cache hit instead of a cold parse on the critical path.
-const IDLE_PREFETCHERS = [prefetchStatisticsBundle];
+// [StatsProfile] DIAGNOSTIC (diagnostic branch only — restore to
+// `[prefetchStatisticsBundle]` before any merge). Emptied on purpose: with the
+// idle prewarm active, `import('./StatisticsTabs')` is already a cache hit by
+// the time Statistics opens (measured TOTAL=0.1 ms), so it hides the cold
+// parse. Disabling the prewarm reproduces the post-#1299 world where the parse
+// fires on open, so StatisticsScreen's bisection can measure the true cold cost.
+const IDLE_PREFETCHERS: ReadonlyArray<() => unknown> = [];
 
 function AuthScreensContent() {
   const styles = useThemeStyles();
