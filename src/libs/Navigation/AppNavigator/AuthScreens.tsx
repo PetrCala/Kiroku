@@ -29,11 +29,9 @@ import * as ApiUtils from '@libs/ApiUtils';
 import kirokuPusherAuthorizer from '@libs/Pusher/kirokuAuthorizer';
 import type ReactComponentModule from '@src/types/utils/ReactComponentModule';
 import useResponsiveLayout from '@hooks/useResponsiveLayout';
-import useIdlePrefetch from '@hooks/useIdlePrefetch';
 import useAutoUpdateTimezone from '@hooks/useAutoUpdateTimezone';
 import useCurrentUserData from '@hooks/useCurrentUserData';
 import useCurrentUserPreferences from '@hooks/useCurrentUserPreferences';
-import prefetchStatisticsBundle from '@screens/Statistics/prefetchStatisticsBundle';
 import {useFirebase} from '@context/global/FirebaseContext';
 import OnboardingGuard from '@libs/Navigation/guards/OnboardingGuard';
 import TermsReConsentGuard from '@libs/Navigation/guards/TermsReConsentGuard';
@@ -95,10 +93,6 @@ const modalScreenListeners = {
     Modal.willAlertModalBecomeVisible(false);
   },
 };
-
-// Module graphs warmed once the authenticated app is idle, so the first open
-// of these screens is a cache hit instead of a cold parse on the critical path.
-const IDLE_PREFETCHERS = [prefetchStatisticsBundle];
 
 function AuthScreensContent() {
   const styles = useThemeStyles();
@@ -263,11 +257,6 @@ function AuthScreensContent() {
     // Rule disabled because this effect is only for component did mount & will component unmount lifecycle event
     // eslint-disable-next-line react-compiler/react-compiler, react-hooks/exhaustive-deps
   }, []);
-
-  // Warm heavy screen bundles (the Statistics chart graph) once the app is
-  // idle, so their first open is a cache hit rather than a cold parse on the
-  // navigation critical path.
-  useIdlePrefetch(IDLE_PREFETCHERS);
 
   // const CentralPaneScreenOptions = {
   //   headerShown: false,
