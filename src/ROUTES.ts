@@ -117,6 +117,7 @@ const ROUTES = {
   SETTINGS_UNITS_TO_COLORS: 'settings/preferences/units-to-colors',
   SETTINGS_DRINKS_TO_UNITS: 'settings/preferences/drinks-to-units',
   SETTINGS_COLOR_PALETTE: 'settings/preferences/color-palette',
+  SETTINGS_COLOR_PALETTE_CUSTOM: 'settings/preferences/color-palette/custom',
 
   SETTINGS_SUPPORT: 'settings/support',
   SETTINGS_HELP: 'settings/help',

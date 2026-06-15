@@ -664,6 +664,28 @@ export default {
       description:
         "Friends' sessions will appear in your selected palette instead of theirs.",
     },
+    custom: {
+      label: 'Custom',
+      description: 'Pick your own color for each session level.',
+      createYourOwn: 'Create your own',
+    },
+    editor: {
+      title: 'Custom palette',
+      selectBand: 'Pick a level, then choose its color.',
+      save: 'Save palette',
+    },
+    bands: {
+      green: 'No drinks',
+      yellow: 'Light',
+      orange: 'Moderate',
+      red: 'Heavy',
+      black: 'Blackout',
+    },
+    hex: {
+      label: 'Hex color',
+      placeholder: '#RRGGBB',
+      invalid: 'Enter a valid hex color, like #1A2B3C.',
+    },
   },
   drinksToUnitsScreen: {
     title: 'Drinks to Units',

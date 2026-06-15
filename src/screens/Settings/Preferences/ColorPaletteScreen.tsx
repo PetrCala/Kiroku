@@ -24,6 +24,8 @@ import {
   getPaletteIdFromColors,
 } from '@libs/SessionColorPalettes';
 import useTheme from '@hooks/useTheme';
+import ROUTES from '@src/ROUTES';
+import PaletteWeekPreview from './PaletteWeekPreview';
 
 const PREVIEW_KEYS: ReadonlyArray<keyof SessionColorPalette> = [
   'green',
@@ -31,25 +33,6 @@ const PREVIEW_KEYS: ReadonlyArray<keyof SessionColorPalette> = [
   'orange',
   'red',
   'black',
-];
-
-type WeekCell = {
-  day: number;
-  slot: keyof SessionColorPalette;
-  units: number;
-};
-
-// A representative week — 3 rest days + 4 active days covering each severity
-// once. Keeps the preview honest about what a normal week looks like rather
-// than showing every cell maxed out.
-const WEEK_OVERLAY: readonly WeekCell[] = [
-  {day: 10, slot: 'green', units: 0},
-  {day: 11, slot: 'yellow', units: 3},
-  {day: 12, slot: 'green', units: 0},
-  {day: 13, slot: 'orange', units: 7},
-  {day: 14, slot: 'red', units: 12},
-  {day: 15, slot: 'black', units: 20},
-  {day: 16, slot: 'green', units: 0},
 ];
 
 function ColorPaletteScreen() {
@@ -70,17 +53,40 @@ function ColorPaletteScreen() {
   // Selection accent uses the app brand color (yellowStrong) so the picker stays
   // visually integrated with the rest of the app.
   const accent = theme.appColor;
-  const accentTint = `${accent}1F`;
 
-  const activePaletteId =
-    getPaletteIdFromColors(preferences?.session_color_palette) ??
-    DEFAULT_PALETTE_ID;
-  // Optimistic preview: while a save is in flight, render the just-tapped palette.
-  const displayPaletteId = pendingPaletteId ?? activePaletteId;
-  const displayPalette = PALETTES[displayPaletteId];
+  const activePalette = preferences?.session_color_palette;
+  const matchedPresetId = getPaletteIdFromColors(activePalette);
+  // A defined palette that matches no preset means the user's custom slot is the
+  // active one (getPaletteIdFromColors returns null in that case).
+  const isCustomActive = !!activePalette && matchedPresetId === null;
+  const activePresetId = matchedPresetId ?? DEFAULT_PALETTE_ID;
+  const customPalette = preferences?.custom_session_color_palette;
+
+  // Which preset row reads as selected: a pending tap wins; otherwise none when
+  // the custom slot is active.
+  let selectedPresetId: PaletteId | null;
+  if (pendingPaletteId) {
+    selectedPresetId = pendingPaletteId;
+  } else if (isCustomActive) {
+    selectedPresetId = null;
+  } else {
+    selectedPresetId = activePresetId;
+  }
+  const isCustomSelected = !pendingPaletteId && isCustomActive;
+
+  // Optimistic preview: a just-tapped preset wins; otherwise show the active
+  // custom palette when it's selected, falling back to the active preset.
+  let displayPalette: SessionColorPalette;
+  if (pendingPaletteId) {
+    displayPalette = PALETTES[pendingPaletteId];
+  } else if (isCustomActive && activePalette) {
+    displayPalette = activePalette;
+  } else {
+    displayPalette = PALETTES[activePresetId];
+  }
 
   const onSelectPalette = (id: PaletteId) => {
-    if (saving || id === displayPaletteId) {
+    if (saving || id === selectedPresetId) {
       return;
     }
     setPendingPaletteId(id);
@@ -137,45 +143,7 @@ function ColorPaletteScreen() {
           isCentralPane>
           <View />
         </Section>
-        <View style={[styles.ph5, styles.pv2, {backgroundColor: theme.appBG}]}>
-          <View
-            style={[
-              styles.overflowHidden,
-              styles.p3,
-              styles.flexRow,
-              styles.justifyContentBetween,
-              {borderRadius: 12, borderWidth: 1, borderColor: accentTint},
-            ]}>
-            {WEEK_OVERLAY.map(cell => {
-              const marking = {color: displayPalette[cell.slot]};
-              const unitsText = cell.units > 0 ? String(cell.units) : '';
-              return (
-                <View
-                  key={cell.day}
-                  style={StyleUtils.getSessionsCalendarDayCellStyle(
-                    marking,
-                    false,
-                  )}>
-                  <Text
-                    style={StyleUtils.getSessionsCalendarDayLabelStyle(
-                      marking,
-                      false,
-                    )}>
-                    {cell.day}
-                  </Text>
-                  {unitsText !== '' && (
-                    <Text
-                      style={StyleUtils.getSessionsCalendarDayUnitsTextStyle(
-                        marking,
-                      )}>
-                      {unitsText}
-                    </Text>
-                  )}
-                </View>
-              );
-            })}
-          </View>
-        </View>
+        <PaletteWeekPreview palette={displayPalette} />
         <View style={[styles.ph5, styles.pt3]}>
           <View
             style={[
@@ -205,7 +173,7 @@ function ColorPaletteScreen() {
           <View>
             {PALETTE_IDS.map(id => {
               const palette = PALETTES[id];
-              const isActive = id === displayPaletteId;
+              const isActive = id === selectedPresetId;
               const paletteName = translate(
                 `colorPaletteScreen.palettes.${id}` as const,
               );
@@ -264,6 +232,73 @@ function ColorPaletteScreen() {
                 </PressableWithFeedback>
               );
             })}
+            <PressableWithFeedback
+              accessibilityLabel={translate('colorPaletteScreen.custom.label')}
+              accessibilityState={{selected: isCustomSelected}}
+              onPress={() =>
+                Navigation.navigate(ROUTES.SETTINGS_COLOR_PALETTE_CUSTOM)
+              }
+              style={[
+                styles.flexRow,
+                styles.alignItemsCenter,
+                styles.justifyContentBetween,
+                styles.p4,
+                styles.mb2,
+                StyleUtils.getColorAccentRowStyle(
+                  isCustomSelected ? accent : null,
+                ),
+              ]}>
+              <View style={[styles.flexColumn, styles.flex1]}>
+                <Text style={[styles.textNormal, styles.textStrong]}>
+                  {translate('colorPaletteScreen.custom.label')}
+                </Text>
+                <Text style={[styles.textMicroSupporting, styles.mt1]}>
+                  {translate('colorPaletteScreen.custom.description')}
+                </Text>
+                {customPalette ? (
+                  <View style={[styles.flexRow, styles.mt2]}>
+                    {PREVIEW_KEYS.map(key => (
+                      <View
+                        key={key}
+                        style={[
+                          {
+                            width: 40,
+                            height: 22,
+                            borderRadius: 6,
+                            marginRight: 8,
+                            backgroundColor: customPalette[key],
+                          },
+                          StyleUtils.getDerivedSwatchBorderStyle(
+                            customPalette[key],
+                          ),
+                        ]}
+                      />
+                    ))}
+                  </View>
+                ) : (
+                  <Text style={[styles.textMicroSupporting, styles.mt2]}>
+                    {translate('colorPaletteScreen.custom.createYourOwn')}
+                  </Text>
+                )}
+              </View>
+              <View style={[styles.flexRow, styles.alignItemsCenter]}>
+                {isCustomSelected ? (
+                  <Icon
+                    src={KirokuIcons.Checkmark}
+                    fill={accent}
+                    width={20}
+                    height={20}
+                  />
+                ) : null}
+                <Icon
+                  src={KirokuIcons.ArrowRight}
+                  fill={theme.icon}
+                  width={20}
+                  height={20}
+                  additionalStyles={[styles.ml2]}
+                />
+              </View>
+            </PressableWithFeedback>
           </View>
         </View>
       </ScrollView>
