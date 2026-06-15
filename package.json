@@ -56,6 +56,7 @@
     "web:framed": "echo '▶ Device simulator: http://localhost:8082/simulator.html' && npm run web",
     "build-web": "tsx ./node_modules/.bin/webpack-cli --config config/webpack/webpack.common.ts --env file=.env.production",
     "build-web-dev": "tsx ./node_modules/.bin/webpack-cli --config config/webpack/webpack.common.ts --env file=.env.development",
+    "build-web-adhoc": "tsx ./node_modules/.bin/webpack-cli --config config/webpack/webpack.common.ts --env file=.env.adhoc",
     "web-server": "http-server ./dist -c-1 --port 8080",
     "test:e2e:web": "playwright test --project=chromium --config=e2e/web/playwright.config.ts",
     "test:e2e:web:ui": "playwright test --ui --project=chromium --config=e2e/web/playwright.config.ts"
