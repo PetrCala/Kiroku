@@ -8,6 +8,8 @@ import type DataVisibility from './DataVisibility';
 import type DatabaseProps from './DatabaseProps';
 import type Download from './Download';
 import type DrinkingSession from './DrinkingSession';
+import type FeatureAccessOverrides from './FeatureAccessOverrides';
+import type {FeatureOverride} from './FeatureAccessOverrides';
 import type {
   DrinkingSessionId,
   DrinkingSessionArray,
@@ -102,6 +104,8 @@ export type {
   DrinksList,
   DrinksTimestamp,
   DrinksToUnits,
+  FeatureAccessOverrides,
+  FeatureOverride,
   Feedback,
   FeedbackId,
   FeedbackList,

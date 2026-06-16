@@ -4,6 +4,8 @@ import useCurrentUserPreferences from '@hooks/useCurrentUserPreferences';
 import Navigation from '@libs/Navigation/Navigation';
 import ScreenWrapper from '@components/ScreenWrapper';
 import HeaderWithBackButton from '@components/HeaderWithBackButton';
+import FullScreenLoadingIndicator from '@components/FullscreenLoadingIndicator';
+import useFeatureAccessGuard from '@hooks/useFeatureAccessGuard';
 import useLocalize from '@hooks/useLocalize';
 import useThemeStyles from '@hooks/useThemeStyles';
 import useStyleUtils from '@hooks/useStyleUtils';
@@ -34,6 +36,10 @@ function CustomColorPaletteScreen() {
   const theme = useTheme();
   const {translate} = useLocalize();
   const preferences = useCurrentUserPreferences();
+
+  // Premium gate: redirects to the palette list once we know the feature is
+  // locked, and lets us avoid flashing the editor to a locked user.
+  const access = useFeatureAccessGuard('CUSTOM_COLOR_PALETTE');
 
   // Seed from the saved custom slot when present, otherwise from the active
   // palette so the user starts from whatever they already see.
@@ -71,6 +77,27 @@ function CustomColorPaletteScreen() {
       })
       .finally(() => setSaving(false));
   }, [draft, translate]);
+
+  // While supporter status hydrates, show a spinner rather than the editor so a
+  // locked user never glimpses the picker before the guard redirects.
+  if (access.isResolving) {
+    return (
+      <ScreenWrapper testID={CustomColorPaletteScreen.displayName}>
+        <HeaderWithBackButton
+          title={translate('colorPaletteScreen.editor.title')}
+          shouldShowBackButton
+          onBackButtonPress={() => Navigation.goBack()}
+          onCloseButtonPress={() => Navigation.dismissModal()}
+        />
+        <FullScreenLoadingIndicator />
+      </ScreenWrapper>
+    );
+  }
+
+  // Locked: the guard's effect is redirecting; render nothing in the meantime.
+  if (access.isLocked) {
+    return null;
+  }
 
   return (
     <ScreenWrapper testID={CustomColorPaletteScreen.displayName}>

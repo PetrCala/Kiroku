@@ -19,6 +19,23 @@ function isSupporterTierVisible(): boolean {
 }
 
 /**
+ * Whether premium-feature gates ENFORCE entitlement in this build.
+ *
+ * When inactive, every `plus`-tier feature is an unlocked placeholder (it ships
+ * free), so the gating layer is invisible. When active, `plus` features lock for
+ * non-supporters and surface the upsell path.
+ *
+ * Deliberately a separate predicate from `isSupporterTierVisible` even though
+ * both return `!CONFIG.IS_IN_PRODUCTION` today: a staged v1.1 rollout can make
+ * the paywall visible (visibility) before flipping enforcement on (gates), or
+ * vice versa. When that day comes this is the single, well-commented edit — e.g.
+ * `return CONFIG.PREMIUM_GATES_ACTIVE;` behind a dedicated env flag.
+ */
+function arePremiumGatesActive(): boolean {
+  return isSupporterTierVisible();
+}
+
+/**
  * Formats an ISO date string (e.g. a RevenueCat `expirationDate`) into a
  * locale-aware short date. Returns an empty string for missing or unparseable
  * input so callers can treat "no date" and "bad date" identically.
@@ -34,4 +51,8 @@ function formatSupporterDate(iso: string | null | undefined): string {
   return parsed.toLocaleDateString();
 }
 
-export default {isSupporterTierVisible, formatSupporterDate};
+export default {
+  isSupporterTierVisible,
+  arePremiumGatesActive,
+  formatSupporterDate,
+};

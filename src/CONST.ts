@@ -121,6 +121,19 @@ const CONST = {
     // masked by the flying splash logo.
     LOGO_FLY_IN: false,
   },
+  // Registry of features gated behind a subscription tier. Read via the pure
+  // `getFeatureAccess` resolver (`@libs/Entitlements`) and the `useFeatureAccess`
+  // hook — never branch on this object directly at call sites.
+  //
+  // - `tier`: `'free'` is always unlocked; `'plus'` is locked only when the
+  //   premium gates are active (dev/staging today, production at v1.1) AND the
+  //   user is not a supporter.
+  // - `availabilityFlag` (optional): a `CONST.FEATURES` key. When that flag is
+  //   off the feature is treated as not-in-build (unavailable), which wins over
+  //   every gate, including the dev override.
+  PREMIUM_FEATURES: {
+    CUSTOM_COLOR_PALETTE: {tier: 'plus'},
+  },
   APP_UPDATE: {
     // How long the dismiss update button should hide the window for
     DISMISS_TIME: 1000 * 60 * 60 * 24 * 1, // 1 day

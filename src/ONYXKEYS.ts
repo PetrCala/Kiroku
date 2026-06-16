@@ -133,6 +133,10 @@ const ONYXKEYS = {
   /** Is the test tools modal open? */
   IS_TEST_TOOLS_MODAL_OPEN: 'isTestToolsModalOpen',
 
+  /** Developer-only premium-feature gating overrides (Test Tools panel). Only
+   *  read/written outside production — see `@libs/actions/FeatureAccess`. */
+  FEATURE_ACCESS_OVERRIDES: 'featureAccessOverrides',
+
   /** Whether we should show the compose input or not */
   SHOULD_SHOW_COMPOSE_INPUT: 'shouldShowComposeInput',
 
@@ -318,6 +322,7 @@ type OnyxValuesMapping = {
   [ONYXKEYS.APP_LOADING_TEXT]: string;
   [ONYXKEYS.IS_LOADING_APP]: boolean;
   [ONYXKEYS.IS_TEST_TOOLS_MODAL_OPEN]: boolean;
+  [ONYXKEYS.FEATURE_ACCESS_OVERRIDES]: OnyxTypes.FeatureAccessOverrides;
   [ONYXKEYS.SHOULD_SHOW_COMPOSE_INPUT]: boolean;
   [ONYXKEYS.APP_UPDATE_DISMISSED]: Timestamp;
   [ONYXKEYS.VERIFY_EMAIL_SENT]: Timestamp;

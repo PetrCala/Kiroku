@@ -101,6 +101,7 @@ const UNTRANSLATED_ALLOWLIST = new Set<string>([
   'connectedAccounts.providers.apple',
   'supporter.tierName',
   'supporter.badgeAccessibilityLabel',
+  'premiumFeatures.plusBadge',
   'bottomTabBar.menu',
   'onboarding.title',
   // Format / placeholder strings
@@ -119,6 +120,7 @@ const UNTRANSLATED_ALLOWLIST = new Set<string>([
   'settingsScreen.aboutScreen.versionLetter',
   'statistics.filters.range.M',
   'statistics.filters.range.sixM',
+  'testTools.override.auto',
   // Correct Czech happens to be identical to the English word
   'common.ok',
   'common.role',
