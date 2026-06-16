@@ -195,6 +195,13 @@ function MonthlyOverviewCard({
             style={[styles.textLabelSupporting, styles.textStrong, styles.mb1]}
             numberOfLines={1}>
             {title ?? translate('homeScreen.stats.thisMonth')}
+            {/* Qualify only the in-progress month, inline on the title, so the
+                comparison basis costs no extra vertical space. */}
+            {showMonthComparison && comparisonAvailable && isCurrentMonth ? (
+              <Text style={styles.textLabelSupporting}>
+                {` · ${translate('homeScreen.stats.monthToDate')}`}
+              </Text>
+            ) : null}
           </Text>
         ) : null}
 
@@ -231,22 +238,6 @@ function MonthlyOverviewCard({
             comparisonAvailable={comparisonAvailable}
           />
         </View>
-
-        {showMonthComparison ? (
-          <Text
-            style={[styles.textMicroSupporting, styles.mt1]}
-            numberOfLines={1}>
-            {/* One caption for all three columns. Blank, height-reserving
-                space when there's nothing to compare (future/untracked). */}
-            {!comparisonAvailable
-              ? ' '
-              : translate(
-                  isCurrentMonth
-                    ? 'homeScreen.stats.monthToDate'
-                    : 'homeScreen.stats.vsLastMonth',
-                )}
-          </Text>
-        ) : null}
 
         {showWeeklyUnits ? (
           <View style={styles.mt3}>
