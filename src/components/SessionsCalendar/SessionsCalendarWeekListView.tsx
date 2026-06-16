@@ -18,6 +18,7 @@ import * as App from '@userActions/App';
 import {roundToTwoDecimalPlaces} from '@libs/NumberUtils';
 import DateUtils from '@libs/DateUtils';
 import setCalendarLocale from '@libs/setCalendarLocale';
+import {canSyncGlobalLastViewedDate} from '@libs/SessionsCalendarUtils';
 import type {DateString} from '@src/types/onyx/OnyxCommon';
 import buildWeekListItems from './buildWeekListItems';
 import type {ListItem} from './buildWeekListItems';
@@ -286,7 +287,7 @@ function SessionsCalendarWeekListView({
   const writeLastViewedDay = useMemo(
     () =>
       lodashDebounce((day: DateString) => {
-        if (!isReadOnly) {
+        if (canSyncGlobalLastViewedDate(isReadOnly)) {
           App.setLastViewedCalendarDate(day);
         }
       }, 250),

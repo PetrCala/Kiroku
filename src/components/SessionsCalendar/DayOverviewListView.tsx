@@ -16,6 +16,7 @@ import DateUtils from '@libs/DateUtils';
 import Str from '@libs/common/str';
 import {roundToTwoDecimalPlaces} from '@libs/NumberUtils';
 import * as App from '@userActions/App';
+import {canSyncGlobalLastViewedDate} from '@libs/SessionsCalendarUtils';
 import CONST from '@src/CONST';
 import type {Preferences} from '@src/types/onyx';
 import type {DateString} from '@src/types/onyx/OnyxCommon';
@@ -301,7 +302,7 @@ function DayOverviewListView({
       lodashDebounce((day: DateString) => {
         // Read-only (friend) browsing must not repoint the current user's own
         // compact calendar, which restores from this NVP.
-        if (!isReadOnly) {
+        if (canSyncGlobalLastViewedDate(isReadOnly)) {
           App.setLastViewedCalendarDate(day);
         }
         onVisibleDayChange?.(day);
