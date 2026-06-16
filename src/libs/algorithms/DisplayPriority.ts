@@ -8,6 +8,15 @@ import {sumAllDrinks} from '@libs/DataHandling';
 import * as DSUtils from '@libs/DrinkingSessionUtils';
 
 /**
+ * Floor priority for users with no usable session signal: those whose latest
+ * session is missing/expired and those absent from `userStatusList` entirely (a
+ * friend who hid their drinking data, whose `user_status` the server evicts).
+ * Keeps both in the bottom band instead of letting a hidden friend — which used
+ * to default to `0` — float above genuinely idle friends.
+ */
+const LOWEST_PRIORITY = -1e10;
+
+/**
  * Based on the user status data, calculate the display priority of the users.
  * Return the user IDs in the order they should be displayed.
  *
@@ -29,7 +38,10 @@ function calculateAllUsersPriority(
 ): UserPriorityList {
   const usersPriority: UserPriorityList = {};
   userIDs.forEach(userID => {
-    let userPriority: UserPriority = 0;
+    // Absent from `userStatusList` → no readable status (e.g. a friend who hid
+    // their data; the server evicts their `user_status`). Floor them into the
+    // bottom band rather than the old `0`, which floated them above idle friends.
+    let userPriority: UserPriority = LOWEST_PRIORITY;
     const userStatusData: UserStatus = userStatusList[userID];
     if (userStatusData) {
       userPriority = calculateUserPriority(userStatusData);
@@ -40,11 +52,9 @@ function calculateAllUsersPriority(
 }
 
 function calculateUserPriority(userStatusData: UserStatus): number {
-  const lowestPrio = -1e10;
-
   const latestSession = userStatusData.latest_session;
   if (!latestSession) {
-    return lowestPrio;
+    return LOWEST_PRIORITY;
   }
 
   const latestSessionTime = latestSession ? latestSession.start_time : null;

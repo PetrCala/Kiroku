@@ -11,6 +11,7 @@ import DateUtils from '@libs/DateUtils';
 import type {Timezone} from '@src/types/onyx/UserData';
 import Text from '@components/Text';
 import Icon from '@components/Icon';
+import * as KirokuIcons from '@components/Icon/KirokuIcons';
 import useTheme from '@hooks/useTheme';
 import useLocalize from '@hooks/useLocalize';
 
@@ -19,6 +20,10 @@ type UserOverviewProps = {
   profileData: Profile;
   userStatusData: UserStatus;
   timezone?: Timezone;
+  /** The friend hid their drinking data, so `userStatusData` is empty and
+   *  carries no session/presence info. Show a neutral "Private" marker instead
+   *  of any activity status. */
+  isPrivate?: boolean;
 };
 
 function UserOverview({
@@ -26,6 +31,7 @@ function UserOverview({
   profileData,
   userStatusData,
   timezone,
+  isPrivate = false,
 }: UserOverviewProps) {
   const styles = useThemeStyles();
   const theme = useTheme();
@@ -61,6 +67,64 @@ function UserOverview({
     return translate('userOverview.noSessionsYet');
   }
 
+  // Right-hand status content, three mutually exclusive states. A hidden friend
+  // (`isPrivate`) has no `user_status`, so render a neutral "Private" marker —
+  // never `getSessionStatus()`'s "no sessions yet", which would misrepresent a
+  // hidden history as an empty one.
+  function renderRightContent() {
+    if (isPrivate) {
+      return (
+        <>
+          <Icon small src={KirokuIcons.Lock} fill={theme.textSupporting} />
+          <Text
+            style={[
+              styles.textLabelSupporting,
+              styles.textAlignCenter,
+              styles.ml1,
+            ]}>
+            {translate('userOverview.private')}
+          </Text>
+        </>
+      );
+    }
+    if (inSession && shouldDisplaySessionInfo) {
+      return (
+        <View style={styles.flexColumn}>
+          <View style={commonStyles.flexRow}>
+            <Text
+              key={`${userID}-status-info`}
+              style={[styles.textLabelSupporting, styles.textAlignCenter]}>
+              {`${translate('userOverview.inSession')}${mostCommonDrinkIcon ? ':' : ''}`}
+            </Text>
+            {mostCommonDrinkIcon && (
+              <Icon
+                small
+                src={mostCommonDrinkIcon}
+                fill={theme.textSupporting}
+              />
+            )}
+          </View>
+          <Text
+            key={`${userID}-status-time`}
+            style={[
+              styles.textLabelSupporting,
+              styles.textAlignCenter,
+              styles.mt1,
+            ]}>
+            {`${translate('userOverview.from')}: ${sessionStartTime}`}
+          </Text>
+        </View>
+      );
+    }
+    return (
+      <Text
+        key={`${userID}-status`}
+        style={[styles.textLabelSupporting, styles.textAlignCenter]}>
+        {getSessionStatus()}
+      </Text>
+    );
+  }
+
   return (
     <View key={`${userID}-container`} style={styles.userOverviewContainer}>
       <View
@@ -85,40 +149,7 @@ function UserOverview({
       <View
         key={`${userID}-right-container`}
         style={[styles.flexRow, styles.alignItemsCenter]}>
-        {/* ? `In session:\n${drinksThisSession} ${mostCommonDrink}` */}
-        {inSession && shouldDisplaySessionInfo ? (
-          <View style={styles.flexColumn}>
-            <View style={commonStyles.flexRow}>
-              <Text
-                key={`${userID}-status-info`}
-                style={[styles.textLabelSupporting, styles.textAlignCenter]}>
-                {`${translate('userOverview.inSession')}${mostCommonDrinkIcon ? ':' : ''}`}
-              </Text>
-              {mostCommonDrinkIcon && (
-                <Icon
-                  small
-                  src={mostCommonDrinkIcon}
-                  fill={theme.textSupporting}
-                />
-              )}
-            </View>
-            <Text
-              key={`${userID}-status-time`}
-              style={[
-                styles.textLabelSupporting,
-                styles.textAlignCenter,
-                styles.mt1,
-              ]}>
-              {`${translate('userOverview.from')}: ${sessionStartTime}`}
-            </Text>
-          </View>
-        ) : (
-          <Text
-            key={`${userID}-status`}
-            style={[styles.textLabelSupporting, styles.textAlignCenter]}>
-            {getSessionStatus()}
-          </Text>
-        )}
+        {renderRightContent()}
       </View>
     </View>
   );
