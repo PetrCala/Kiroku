@@ -181,7 +181,29 @@ function makeRequestWithSideEffects<
   };
 
   // Return a promise containing the response from HTTPS
-  return Request.processWithMiddleware(request);
+  const responsePromise = Request.processWithMiddleware(request);
+
+  // Read-type requests are fire-and-forget reads: their response is merged into
+  // Onyx by the SaveResponseInOnyx middleware, and callers only await them to
+  // settle a loading state (`.finally`) — they don't handle the rejection. A
+  // non-2xx response rejects this promise (`HttpUtils` throws an `HttpsError`),
+  // so an uncaught read rejection escapes as an UNHANDLED promise rejection,
+  // which pops the full-screen react-error-overlay on the web dev server (seen
+  // as "Uncaught HttpsError: Unauthorized" during the #781 revoked-token QA).
+  // Swallow it here: the Logging middleware already logged the failure, the read
+  // carried no optimistic data to roll back, and a 401 already triggered the
+  // central sign-out in `HttpUtils`. Writes and true side-effect requests keep
+  // rejecting so their callers can still handle errors.
+  if (apiRequestType === CONST.API_REQUEST_TYPE.READ) {
+    return responsePromise.catch((error: unknown): void => {
+      Log.info('[API] Swallowed rejected read request', false, {
+        command,
+        error: error instanceof Error ? error.message : String(error),
+      });
+    });
+  }
+
+  return responsePromise;
 }
 
 /**
@@ -205,14 +227,25 @@ function read<TCommand extends ReadCommand>(
   // Ensure all write requests on the sequential queue have finished responding before running read requests.
   // Responses from read requests can overwrite the optimistic data inserted by
   // write requests that use the same Onyx keys and haven't responded yet.
-  SequentialQueue.waitForIdle().then(() =>
-    makeRequestWithSideEffects(
-      command,
-      apiCommandParameters,
-      onyxData,
-      CONST.API_REQUEST_TYPE.READ,
-    ),
-  );
+  SequentialQueue.waitForIdle()
+    .then(() =>
+      makeRequestWithSideEffects(
+        command,
+        apiCommandParameters,
+        onyxData,
+        CONST.API_REQUEST_TYPE.READ,
+      ),
+    )
+    // `makeRequestWithSideEffects` already swallows a read's non-2xx rejection
+    // (see above), so this outer catch is a backstop: it guards against a
+    // synchronous throw on the read path (or a future change) ever surfacing as
+    // an unhandled rejection — which would pop the web dev-server error overlay.
+    .catch((error: unknown) => {
+      Log.info('[API] Swallowed rejected read request (queue)', false, {
+        command,
+        error: error instanceof Error ? error.message : String(error),
+      });
+    });
 }
 
 export {write, makeRequestWithSideEffects, read};
