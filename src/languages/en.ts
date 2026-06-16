@@ -668,6 +668,8 @@ export default {
       label: 'Custom',
       description: 'Pick your own color for each session level.',
       createYourOwn: 'Create your own',
+      select: 'Use custom palette',
+      edit: 'Edit custom palette',
     },
     editor: {
       title: 'Custom palette',

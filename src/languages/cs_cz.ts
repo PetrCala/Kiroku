@@ -674,6 +674,8 @@ export default {
       label: 'Vlastní',
       description: 'Vyberte si vlastní barvu pro každou úroveň relace.',
       createYourOwn: 'Vytvořte si vlastní',
+      select: 'Použít vlastní paletu',
+      edit: 'Upravit vlastní paletu',
     },
     editor: {
       title: 'Vlastní paleta',

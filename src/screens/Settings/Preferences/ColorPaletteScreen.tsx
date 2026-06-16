@@ -41,9 +41,9 @@ function ColorPaletteScreen() {
   const theme = useTheme();
   const {translate} = useLocalize();
   const preferences = useCurrentUserPreferences();
-  const [pendingPaletteId, setPendingPaletteId] = useState<PaletteId | null>(
-    null,
-  );
+  const [pendingSelection, setPendingSelection] = useState<
+    PaletteId | 'custom' | null
+  >(null);
   const [saving, setSaving] = useState(false);
   const [pendingUseOwnForOthers, setPendingUseOwnForOthers] = useState<
     boolean | null
@@ -62,23 +62,32 @@ function ColorPaletteScreen() {
   const activePresetId = matchedPresetId ?? DEFAULT_PALETTE_ID;
   const customPalette = preferences?.custom_session_color_palette;
 
-  // Which preset row reads as selected: a pending tap wins; otherwise none when
-  // the custom slot is active.
+  // Whether the custom slot reads as selected: a pending tap wins, otherwise
+  // fall back to whichever palette is actually active.
+  const isCustomSelected = pendingSelection
+    ? pendingSelection === 'custom'
+    : isCustomActive;
+
+  // Which preset row reads as selected: a pending preset tap wins; none when the
+  // custom slot is the selection.
   let selectedPresetId: PaletteId | null;
-  if (pendingPaletteId) {
-    selectedPresetId = pendingPaletteId;
+  if (pendingSelection === 'custom') {
+    selectedPresetId = null;
+  } else if (pendingSelection) {
+    selectedPresetId = pendingSelection;
   } else if (isCustomActive) {
     selectedPresetId = null;
   } else {
     selectedPresetId = activePresetId;
   }
-  const isCustomSelected = !pendingPaletteId && isCustomActive;
 
-  // Optimistic preview: a just-tapped preset wins; otherwise show the active
-  // custom palette when it's selected, falling back to the active preset.
+  // Optimistic preview: a just-tapped selection wins; otherwise show the active
+  // custom palette when it's active, falling back to the active preset.
   let displayPalette: SessionColorPalette;
-  if (pendingPaletteId) {
-    displayPalette = PALETTES[pendingPaletteId];
+  if (pendingSelection === 'custom') {
+    displayPalette = customPalette ?? PALETTES[activePresetId];
+  } else if (pendingSelection) {
+    displayPalette = PALETTES[pendingSelection];
   } else if (isCustomActive && activePalette) {
     displayPalette = activePalette;
   } else {
@@ -89,13 +98,32 @@ function ColorPaletteScreen() {
     if (saving || id === selectedPresetId) {
       return;
     }
-    setPendingPaletteId(id);
+    setPendingSelection(id);
     setSaving(true);
     Preferences.updatePreferences({
       session_color_palette: PALETTES[id],
     })
       .catch(error => {
-        setPendingPaletteId(null);
+        setPendingSelection(null);
+        const errorMessage = error instanceof Error ? error.message : '';
+        Alert.alert(translate('preferencesScreen.error.save'), errorMessage);
+      })
+      .finally(() => setSaving(false));
+  };
+
+  // Select the saved custom palette as the active one (parallels onSelectPalette
+  // but sources the colors from the custom slot).
+  const onSelectCustom = () => {
+    if (saving || !customPalette || isCustomSelected) {
+      return;
+    }
+    setPendingSelection('custom');
+    setSaving(true);
+    Preferences.updatePreferences({
+      session_color_palette: customPalette,
+    })
+      .catch(error => {
+        setPendingSelection(null);
         const errorMessage = error instanceof Error ? error.message : '';
         Alert.alert(translate('preferencesScreen.error.save'), errorMessage);
       })
@@ -232,64 +260,123 @@ function ColorPaletteScreen() {
                 </PressableWithFeedback>
               );
             })}
-            <PressableWithFeedback
-              accessibilityLabel={translate('colorPaletteScreen.custom.label')}
-              accessibilityState={{selected: isCustomSelected}}
-              onPress={() =>
-                Navigation.navigate(ROUTES.SETTINGS_COLOR_PALETTE_CUSTOM)
-              }
-              style={[
-                styles.flexRow,
-                styles.alignItemsCenter,
-                styles.justifyContentBetween,
-                styles.p4,
-                styles.mb2,
-                StyleUtils.getColorAccentRowStyle(
-                  isCustomSelected ? accent : null,
-                ),
-              ]}>
-              <View style={[styles.flexColumn, styles.flex1]}>
-                <Text style={[styles.textNormal, styles.textStrong]}>
-                  {translate('colorPaletteScreen.custom.label')}
-                </Text>
-                <Text style={[styles.textMicroSupporting, styles.mt1]}>
-                  {translate('colorPaletteScreen.custom.description')}
-                </Text>
-                {customPalette ? (
-                  <View style={[styles.flexRow, styles.mt2]}>
-                    {PREVIEW_KEYS.map(key => (
-                      <View
-                        key={key}
-                        style={[
-                          {
-                            width: 40,
-                            height: 22,
-                            borderRadius: 6,
-                            marginRight: 8,
-                            backgroundColor: customPalette[key],
-                          },
-                          StyleUtils.getDerivedSwatchBorderStyle(
-                            customPalette[key],
-                          ),
-                        ]}
-                      />
-                    ))}
+            {customPalette ? (
+              // Saved custom palette: split the row so the main area selects it
+              // (like the presets) and the trailing button opens the editor.
+              <View
+                style={[
+                  styles.flexRow,
+                  styles.alignItemsCenter,
+                  styles.mb2,
+                  styles.overflowHidden,
+                  StyleUtils.getColorAccentRowStyle(
+                    isCustomSelected ? accent : null,
+                  ),
+                ]}>
+                <PressableWithFeedback
+                  accessibilityLabel={translate(
+                    'colorPaletteScreen.custom.select',
+                  )}
+                  accessibilityState={{selected: isCustomSelected}}
+                  onPress={onSelectCustom}
+                  style={[
+                    styles.flexRow,
+                    styles.alignItemsCenter,
+                    styles.justifyContentBetween,
+                    styles.flex1,
+                    styles.p4,
+                  ]}>
+                  <View style={[styles.flexColumn, styles.flex1]}>
+                    <Text style={[styles.textNormal, styles.textStrong]}>
+                      {translate('colorPaletteScreen.custom.label')}
+                    </Text>
+                    <Text style={[styles.textMicroSupporting, styles.mt1]}>
+                      {translate('colorPaletteScreen.custom.description')}
+                    </Text>
+                    <View style={[styles.flexRow, styles.mt2]}>
+                      {PREVIEW_KEYS.map(key => (
+                        <View
+                          key={key}
+                          style={[
+                            {
+                              width: 40,
+                              height: 22,
+                              borderRadius: 6,
+                              marginRight: 8,
+                              backgroundColor: customPalette[key],
+                            },
+                            StyleUtils.getDerivedSwatchBorderStyle(
+                              customPalette[key],
+                            ),
+                          ]}
+                        />
+                      ))}
+                    </View>
                   </View>
-                ) : (
-                  <Text style={[styles.textMicroSupporting, styles.mt2]}>
-                    {translate('colorPaletteScreen.custom.createYourOwn')}
-                  </Text>
-                )}
-              </View>
-              <View style={[styles.flexRow, styles.alignItemsCenter]}>
-                {isCustomSelected ? (
+                  {isCustomSelected ? (
+                    <Icon
+                      src={KirokuIcons.Checkmark}
+                      fill={accent}
+                      width={20}
+                      height={20}
+                    />
+                  ) : null}
+                </PressableWithFeedback>
+                <PressableWithFeedback
+                  accessibilityLabel={translate(
+                    'colorPaletteScreen.custom.edit',
+                  )}
+                  role="button"
+                  onPress={() =>
+                    Navigation.navigate(ROUTES.SETTINGS_COLOR_PALETTE_CUSTOM)
+                  }
+                  style={[
+                    styles.alignItemsCenter,
+                    {
+                      justifyContent: 'center',
+                      alignSelf: 'stretch',
+                      paddingHorizontal: 16,
+                      borderLeftWidth: 1,
+                      borderLeftColor: theme.border,
+                    },
+                  ]}>
                   <Icon
-                    src={KirokuIcons.Checkmark}
-                    fill={accent}
+                    src={KirokuIcons.Edit}
+                    fill={theme.icon}
                     width={20}
                     height={20}
                   />
-                ) : null}
+                </PressableWithFeedback>
+              </View>
+            ) : (
+              // First-time users: no palette to select yet, so the whole row
+              // navigates to the editor to create one.
+              <PressableWithFeedback
+                accessibilityLabel={translate(
+                  'colorPaletteScreen.custom.label',
+                )}
+                onPress={() =>
+                  Navigation.navigate(ROUTES.SETTINGS_COLOR_PALETTE_CUSTOM)
+                }
+                style={[
+                  styles.flexRow,
+                  styles.alignItemsCenter,
+                  styles.justifyContentBetween,
+                  styles.p4,
+                  styles.mb2,
+                  StyleUtils.getColorAccentRowStyle(null),
+                ]}>
+                <View style={[styles.flexColumn, styles.flex1]}>
+                  <Text style={[styles.textNormal, styles.textStrong]}>
+                    {translate('colorPaletteScreen.custom.label')}
+                  </Text>
+                  <Text style={[styles.textMicroSupporting, styles.mt1]}>
+                    {translate('colorPaletteScreen.custom.description')}
+                  </Text>
+                  <Text style={[styles.textMicroSupporting, styles.mt2]}>
+                    {translate('colorPaletteScreen.custom.createYourOwn')}
+                  </Text>
+                </View>
                 <Icon
                   src={KirokuIcons.ArrowRight}
                   fill={theme.icon}
@@ -297,8 +384,8 @@ function ColorPaletteScreen() {
                   height={20}
                   additionalStyles={[styles.ml2]}
                 />
-              </View>
-            </PressableWithFeedback>
+              </PressableWithFeedback>
+            )}
           </View>
         </View>
       </ScrollView>
