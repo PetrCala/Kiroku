@@ -1428,6 +1428,7 @@ export default {
       statistics: 'Statistics',
       viewStatistics: 'View statistics',
       vsLastMonth: 'vs last month',
+      monthToDate: 'month to date',
       unitsByWeek: 'Units by week',
       unitsPerWeekA11y: 'Units consumed per week this month',
     },

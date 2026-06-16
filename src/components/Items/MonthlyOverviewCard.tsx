@@ -44,8 +44,14 @@ type MetricColumnProps = {
   direction: Direction;
   deltaColor: string;
   accentColor: string;
-  /** When false, the trend arrow + previous value row is hidden. */
+  /** When false, the trend arrow + previous value row is hidden entirely. */
   showComparison: boolean;
+  /**
+   * When `showComparison` is on but no comparison is meaningful (future or
+   * untracked month), reserve the row's height with blank space instead of
+   * showing a delta — keeps the card height fixed so the calendar doesn't jump.
+   */
+  comparisonAvailable: boolean;
 };
 
 /** One stat in the consolidated home tile: label, current value, arrow + previous. */
@@ -58,9 +64,21 @@ function MetricColumn({
   deltaColor,
   accentColor,
   showComparison,
+  comparisonAvailable,
 }: MetricColumnProps) {
   const styles = useThemeStyles();
   const {translate} = useLocalize();
+
+  // Blank, height-reserving line when there's nothing to compare (future or
+  // untracked month); otherwise the trend arrow + previous value, or "No change".
+  let comparisonLine = ' ';
+  if (comparisonAvailable) {
+    comparisonLine =
+      direction === 'flat'
+        ? translate('homeScreen.stats.noChange')
+        : `${ARROW[direction]} ${previous}`;
+  }
+
   return (
     <View style={styles.flex1}>
       <Text style={styles.textLabelSupporting} numberOfLines={1}>
@@ -85,12 +103,10 @@ function MetricColumn({
             styles.textMicro,
             styles.textStrong,
             styles.mt1,
-            {color: deltaColor},
+            comparisonAvailable ? {color: deltaColor} : undefined,
           ]}
           numberOfLines={1}>
-          {direction === 'flat'
-            ? translate('homeScreen.stats.noChange')
-            : `${ARROW[direction]} ${previous}`}
+          {comparisonLine}
         </Text>
       ) : null}
     </View>
@@ -138,7 +154,15 @@ function MonthlyOverviewCard({
   const styles = useThemeStyles();
   const theme = useTheme();
   const {translate} = useLocalize();
-  const {isLoading, current, previous, subPeriods, liveExtraUnits} = stats;
+  const {
+    isLoading,
+    current,
+    previous,
+    subPeriods,
+    liveExtraUnits,
+    isCurrentMonth,
+    comparisonAvailable,
+  } = stats;
 
   const deltaColorFor = (direction: Direction, polarity: Polarity): string => {
     if (direction === 'flat') {
@@ -183,6 +207,7 @@ function MonthlyOverviewCard({
             deltaColor={deltaColorFor(unitsDir, 'lower-is-supportive')}
             accentColor={theme.text}
             showComparison={showMonthComparison}
+            comparisonAvailable={comparisonAvailable}
           />
           <MetricColumn
             label={translate('homeScreen.stats.sessions')}
@@ -192,6 +217,7 @@ function MonthlyOverviewCard({
             deltaColor={deltaColorFor(sessionsDir, 'lower-is-supportive')}
             accentColor={theme.text}
             showComparison={showMonthComparison}
+            comparisonAvailable={comparisonAvailable}
           />
           <MetricColumn
             label={translate('homeScreen.stats.alcoholFree')}
@@ -202,8 +228,25 @@ function MonthlyOverviewCard({
             deltaColor={deltaColorFor(afDir, 'higher-is-supportive')}
             accentColor={theme.successHover}
             showComparison={showMonthComparison}
+            comparisonAvailable={comparisonAvailable}
           />
         </View>
+
+        {showMonthComparison ? (
+          <Text
+            style={[styles.textMicroSupporting, styles.mt1]}
+            numberOfLines={1}>
+            {/* One caption for all three columns. Blank, height-reserving
+                space when there's nothing to compare (future/untracked). */}
+            {!comparisonAvailable
+              ? ' '
+              : translate(
+                  isCurrentMonth
+                    ? 'homeScreen.stats.monthToDate'
+                    : 'homeScreen.stats.vsLastMonth',
+                )}
+          </Text>
+        ) : null}
 
         {showWeeklyUnits ? (
           <View style={styles.mt3}>

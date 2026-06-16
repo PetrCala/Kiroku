@@ -2,6 +2,7 @@ import {useMemo} from 'react';
 import {useIsFocused} from '@react-navigation/native';
 import {useOnyx} from 'react-native-onyx';
 import type {DateData} from 'react-native-calendars';
+import useCurrentUserData from '@hooks/useCurrentUserData';
 import useCurrentUserPreferences from '@hooks/useCurrentUserPreferences';
 import useDrinkEvents from '@hooks/useStatistics/useDrinkEvents';
 import {calculateThisMonthUnits} from '@libs/DataHandling';
@@ -19,6 +20,7 @@ import ONYXKEYS from '@src/ONYXKEYS';
 function useHomeStats(visibleDate: DateData): MonthlyStats {
   const {events, isLoading} = useDrinkEvents();
   const preferences = useCurrentUserPreferences();
+  const currentUserData = useCurrentUserData();
   const [ongoingSessionData] = useOnyx(ONYXKEYS.ONGOING_SESSION_DATA);
   const isFocused = useIsFocused();
 
@@ -31,10 +33,20 @@ function useHomeStats(visibleDate: DateData): MonthlyStats {
   const now = useMemo(() => new Date(), []);
 
   const {year, month} = visibleDate;
-  const {current, previous, subPeriods} = useMemo(
-    () => buildMonthlyStats(events, year, month, now, thresholds),
-    [events, year, month, now, thresholds],
-  );
+  const earliestSessionAt = currentUserData?.earliest_session_at;
+  const {current, previous, subPeriods, isCurrentMonth, comparisonAvailable} =
+    useMemo(
+      () =>
+        buildMonthlyStats(
+          events,
+          year,
+          month,
+          now,
+          thresholds,
+          earliestSessionAt,
+        ),
+      [events, year, month, now, thresholds, earliestSessionAt],
+    );
 
   // Overlay the live session's units (visible month only). Gated on focus
   // because the buffer mutates on every drink tap while Home stays mounted
@@ -75,7 +87,15 @@ function useHomeStats(visibleDate: DateData): MonthlyStats {
     drinksToUnits,
   ]);
 
-  return {isLoading, current, previous, subPeriods, liveExtraUnits};
+  return {
+    isLoading,
+    current,
+    previous,
+    subPeriods,
+    liveExtraUnits,
+    isCurrentMonth,
+    comparisonAvailable,
+  };
 }
 
 export default useHomeStats;

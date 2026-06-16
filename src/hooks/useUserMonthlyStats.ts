@@ -65,12 +65,23 @@ function useUserMonthlyStats({
   }, [drinkingSessionData, userID, drinksToUnits, resolvedTimezone, weekStart]);
 
   const {year, month} = visibleDate;
-  const {current, previous, subPeriods} = useMemo(
-    () => buildMonthlyStats(events, year, month, now, thresholds),
-    [events, year, month, now, thresholds],
-  );
+  // No persisted floor is threaded for a friend; `buildMonthlyStats` falls back
+  // to the earliest loaded event to decide whether a baseline exists.
+  const {current, previous, subPeriods, isCurrentMonth, comparisonAvailable} =
+    useMemo(
+      () => buildMonthlyStats(events, year, month, now, thresholds),
+      [events, year, month, now, thresholds],
+    );
 
-  return {isLoading, current, previous, subPeriods, liveExtraUnits: 0};
+  return {
+    isLoading,
+    current,
+    previous,
+    subPeriods,
+    liveExtraUnits: 0,
+    isCurrentMonth,
+    comparisonAvailable,
+  };
 }
 
 export default useUserMonthlyStats;
