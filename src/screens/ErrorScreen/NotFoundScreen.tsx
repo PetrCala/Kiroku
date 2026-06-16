@@ -20,7 +20,7 @@ function NotFoundScreen() {
       style={styles.appContent}>
       <HeaderWithBackButton
         title={translate('notFoundScreen.title')}
-        onBackButtonPress={() => Navigation.navigate(ROUTES.HOME)}
+        onBackButtonPress={() => Navigation.goBack(ROUTES.HOME)}
       />
       <View style={{backgroundColor: theme.appBG}} />
       {/* // TODO  */}
