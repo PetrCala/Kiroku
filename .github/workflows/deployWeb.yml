@@ -60,11 +60,13 @@ jobs:
             {
               echo "PROJECT=prod"
               echo "BUILD_SCRIPT=build-web"
+              echo "HOST=https://app.kiroku.cz"
             } >> "$GITHUB_OUTPUT"
           else
             {
               echo "PROJECT=dev"
               echo "BUILD_SCRIPT=build-web-adhoc"
+              echo "HOST=https://app-dev.kiroku.cz"
             } >> "$GITHUB_OUTPUT"
           fi
 
@@ -101,6 +103,9 @@ jobs:
             --project ${{ steps.target.outputs.PROJECT }} \
             --non-interactive \
             --message "Deploy ${{ github.sha }} (${{ github.ref_name }})"
+
+      - name: Verify the new build is live
+        run: bash ./.github/scripts/verifyWebDeploy.sh "${{ steps.target.outputs.HOST }}"
 
   deployPreview:
     name: Build and deploy web preview channel
