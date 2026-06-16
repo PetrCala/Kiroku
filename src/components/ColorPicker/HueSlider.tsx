@@ -3,6 +3,8 @@ import {View} from 'react-native';
 import {Gesture, GestureDetector} from 'react-native-gesture-handler';
 import {runOnJS} from 'react-native-reanimated';
 import Svg, {Defs, LinearGradient, Rect, Stop} from 'react-native-svg';
+import useStyleUtils from '@hooks/useStyleUtils';
+import useThemeStyles from '@hooks/useThemeStyles';
 import {hsvToHex} from '@libs/Color';
 
 const DEFAULT_WIDTH = 280;
@@ -38,6 +40,8 @@ function HueSlider({
   width = DEFAULT_WIDTH,
   height = DEFAULT_HEIGHT,
 }: HueSliderProps) {
+  const styles = useThemeStyles();
+  const StyleUtils = useStyleUtils();
   const gradientId = `hue-${useId().replace(/:/g, '')}`;
 
   const panGesture = useMemo(
@@ -65,11 +69,10 @@ function HueSlider({
   return (
     <GestureDetector gesture={panGesture}>
       <View
-        style={{
-          width,
-          height: THUMB_SIZE,
-          justifyContent: 'center',
-        }}>
+        style={[
+          styles.justifyContentCenter,
+          StyleUtils.getWidthAndHeightStyle(width, THUMB_SIZE),
+        ]}>
         <Svg width={width} height={height}>
           <Defs>
             <LinearGradient id={gradientId} x1="0%" y1="0%" x2="100%" y2="0%">
@@ -94,21 +97,11 @@ function HueSlider({
         </Svg>
         <View
           pointerEvents="none"
-          style={{
-            position: 'absolute',
-            left: thumbLeft,
-            width: THUMB_SIZE,
-            height: THUMB_SIZE,
-            borderRadius: THUMB_SIZE / 2,
-            borderWidth: 3,
-            borderColor: '#FFFFFF',
-            backgroundColor: thumbColor,
-            shadowColor: '#000000',
-            shadowOpacity: 0.35,
-            shadowRadius: 2,
-            shadowOffset: {width: 0, height: 1},
-            elevation: 2,
-          }}
+          style={[
+            styles.colorPickerThumb,
+            StyleUtils.getColorPickerThumbStyle(thumbLeft, 0, THUMB_SIZE),
+            StyleUtils.getBackgroundColorStyle(thumbColor),
+          ]}
         />
       </View>
     </GestureDetector>

@@ -3,6 +3,8 @@ import {View} from 'react-native';
 import {Gesture, GestureDetector} from 'react-native-gesture-handler';
 import {runOnJS} from 'react-native-reanimated';
 import Svg, {Defs, LinearGradient, Rect, Stop} from 'react-native-svg';
+import useStyleUtils from '@hooks/useStyleUtils';
+import useThemeStyles from '@hooks/useThemeStyles';
 import {hsvToHex} from '@libs/Color';
 
 const DEFAULT_SIZE = 280;
@@ -39,6 +41,8 @@ function SaturationValuePanel({
   onChange,
   size = DEFAULT_SIZE,
 }: SaturationValuePanelProps) {
+  const styles = useThemeStyles();
+  const StyleUtils = useStyleUtils();
   const gradientId = useId().replace(/:/g, '');
   const satGradientId = `sat-${gradientId}`;
   const valGradientId = `val-${gradientId}`;
@@ -73,7 +77,7 @@ function SaturationValuePanel({
 
   return (
     <GestureDetector gesture={panGesture}>
-      <View style={{width: size, height: size}}>
+      <View style={StyleUtils.getWidthAndHeightStyle(size, size)}>
         <Svg width={size} height={size}>
           <Defs>
             <LinearGradient
@@ -122,23 +126,15 @@ function SaturationValuePanel({
         </Svg>
         <View
           pointerEvents="none"
-          style={{
-            position: 'absolute',
-            left: thumbLeft,
-            top: thumbTop,
-            width: THUMB_SIZE,
-            height: THUMB_SIZE,
-            borderRadius: THUMB_SIZE / 2,
-            borderWidth: 3,
-            borderColor: '#FFFFFF',
-            backgroundColor: thumbColor,
-            // A second outline keeps the white ring visible on light swatches.
-            shadowColor: '#000000',
-            shadowOpacity: 0.35,
-            shadowRadius: 2,
-            shadowOffset: {width: 0, height: 1},
-            elevation: 2,
-          }}
+          style={[
+            styles.colorPickerThumb,
+            StyleUtils.getColorPickerThumbStyle(
+              thumbLeft,
+              thumbTop,
+              THUMB_SIZE,
+            ),
+            StyleUtils.getBackgroundColorStyle(thumbColor),
+          ]}
         />
       </View>
     </GestureDetector>

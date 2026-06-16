@@ -234,13 +234,8 @@ function ColorPaletteScreen() {
                         <View
                           key={key}
                           style={[
-                            {
-                              width: 40,
-                              height: 22,
-                              borderRadius: 6,
-                              marginRight: 8,
-                              backgroundColor: palette[key],
-                            },
+                            styles.palettePreviewSwatch,
+                            StyleUtils.getBackgroundColorStyle(palette[key]),
                             StyleUtils.getDerivedSwatchBorderStyle(
                               palette[key],
                             ),
@@ -266,7 +261,6 @@ function ColorPaletteScreen() {
               <View
                 style={[
                   styles.flexRow,
-                  styles.alignItemsCenter,
                   styles.mb2,
                   styles.overflowHidden,
                   StyleUtils.getColorAccentRowStyle(
@@ -279,11 +273,12 @@ function ColorPaletteScreen() {
                   )}
                   accessibilityState={{selected: isCustomSelected}}
                   onPress={onSelectCustom}
+                  wrapperStyle={styles.flex1}
                   style={[
+                    styles.flex1,
                     styles.flexRow,
                     styles.alignItemsCenter,
                     styles.justifyContentBetween,
-                    styles.flex1,
                     styles.p4,
                   ]}>
                   <View style={[styles.flexColumn, styles.flex1]}>
@@ -298,13 +293,10 @@ function ColorPaletteScreen() {
                         <View
                           key={key}
                           style={[
-                            {
-                              width: 40,
-                              height: 22,
-                              borderRadius: 6,
-                              marginRight: 8,
-                              backgroundColor: customPalette[key],
-                            },
+                            styles.palettePreviewSwatch,
+                            StyleUtils.getBackgroundColorStyle(
+                              customPalette[key],
+                            ),
                             StyleUtils.getDerivedSwatchBorderStyle(
                               customPalette[key],
                             ),
@@ -330,15 +322,12 @@ function ColorPaletteScreen() {
                   onPress={() =>
                     Navigation.navigate(ROUTES.SETTINGS_COLOR_PALETTE_CUSTOM)
                   }
+                  wrapperStyle={styles.alignSelfStretch}
                   style={[
+                    styles.flex1,
                     styles.alignItemsCenter,
-                    {
-                      justifyContent: 'center',
-                      alignSelf: 'stretch',
-                      paddingHorizontal: 16,
-                      borderLeftWidth: 1,
-                      borderLeftColor: theme.border,
-                    },
+                    styles.justifyContentCenter,
+                    styles.colorPaletteEditButton,
                   ]}>
                   <Icon
                     src={KirokuIcons.Edit}

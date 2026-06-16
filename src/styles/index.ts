@@ -294,6 +294,58 @@ const styles = (theme: ThemeColors) =>
     // ...textDecorationLine,
     editedLabelStyles,
 
+    palettePreviewSwatch: {
+      width: 40,
+      height: 22,
+      borderRadius: 6,
+      marginRight: 8,
+    },
+
+    colorPaletteEditButton: {
+      paddingHorizontal: 16,
+      borderLeftWidth: 1,
+      borderLeftColor: theme.border,
+    },
+
+    paletteBandChip: {
+      width: 44,
+      height: 44,
+      borderRadius: 22,
+    },
+
+    paletteBandChipSelected: {
+      borderWidth: 3,
+    },
+
+    paletteWeekPreviewSurface: {
+      backgroundColor: theme.appBG,
+    },
+
+    paletteWeekPreviewCard: {
+      borderRadius: 12,
+      borderWidth: 1,
+    },
+
+    colorPickerSwatch: {
+      width: 48,
+      height: 48,
+      borderRadius: 10,
+      marginRight: 12,
+    },
+
+    // Shared static ring/shadow for the picker thumbs; size and position come
+    // from StyleUtils.getColorPickerThumbStyle, color from getBackgroundColorStyle.
+    colorPickerThumb: {
+      position: 'absolute',
+      borderWidth: 3,
+      borderColor: '#FFFFFF',
+      shadowColor: '#000000',
+      shadowOpacity: 0.35,
+      shadowRadius: 2,
+      shadowOffset: {width: 0, height: 1},
+      elevation: 2,
+    },
+
     generalSectionTitle: {
       ...FontUtils.fontFamily.platform.EXP_NEUE_BOLD,
     },

@@ -123,17 +123,12 @@ function ColorPicker({
           styles.flexRow,
           styles.alignItemsCenter,
           styles.mt4,
-          {width: size},
+          StyleUtils.getWidthStyle(size),
         ]}>
         <View
           style={[
-            {
-              width: 48,
-              height: 48,
-              borderRadius: 10,
-              marginRight: 12,
-              backgroundColor: currentHex,
-            },
+            styles.colorPickerSwatch,
+            StyleUtils.getBackgroundColorStyle(currentHex),
             StyleUtils.getDerivedSwatchBorderStyle(currentHex),
           ]}
         />

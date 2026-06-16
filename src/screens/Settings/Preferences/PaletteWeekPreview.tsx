@@ -43,14 +43,15 @@ function PaletteWeekPreview({palette}: PaletteWeekPreviewProps) {
   const accentTint = `${theme.appColor}1F`;
 
   return (
-    <View style={[styles.ph5, styles.pv2, {backgroundColor: theme.appBG}]}>
+    <View style={[styles.ph5, styles.pv2, styles.paletteWeekPreviewSurface]}>
       <View
         style={[
           styles.overflowHidden,
           styles.p3,
           styles.flexRow,
           styles.justifyContentBetween,
-          {borderRadius: 12, borderWidth: 1, borderColor: accentTint},
+          styles.paletteWeekPreviewCard,
+          StyleUtils.getBorderColorStyle(accentTint),
         ]}>
         {WEEK_OVERLAY.map(cell => {
           const marking = {color: palette[cell.slot]};

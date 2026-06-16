@@ -104,14 +104,13 @@ function CustomColorPaletteScreen() {
                   style={[styles.alignItemsCenter, styles.flex1]}>
                   <View
                     style={[
-                      {
-                        width: 44,
-                        height: 44,
-                        borderRadius: 22,
-                        backgroundColor: draft[key],
-                      },
+                      styles.paletteBandChip,
+                      StyleUtils.getBackgroundColorStyle(draft[key]),
                       isSelected
-                        ? {borderWidth: 3, borderColor: accent}
+                        ? [
+                            styles.paletteBandChipSelected,
+                            StyleUtils.getBorderColorStyle(accent),
+                          ]
                         : StyleUtils.getDerivedSwatchBorderStyle(draft[key]),
                     ]}
                   />
@@ -120,7 +119,7 @@ function CustomColorPaletteScreen() {
                       styles.textMicroSupporting,
                       styles.mt1,
                       styles.textAlignCenter,
-                      isSelected && {color: accent},
+                      isSelected ? StyleUtils.getColorStyle(accent) : undefined,
                     ]}
                     numberOfLines={1}>
                     {bandLabel}
