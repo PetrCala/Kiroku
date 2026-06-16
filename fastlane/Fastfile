@@ -134,18 +134,16 @@ platform :android do
   lane :production do
     # Google is very unreliable, so we retry a few times
     ENV["SUPPLY_UPLOAD_MAX_RETRIES"]="5"
-    google_play_track_version_codes(
-      package_name: "com.alcohol_tracker",
-      json_key: './android/app/android-fastlane-json-key.json',
-      track: 'beta' # modify to 'production' when ready
-    )
-
     upload_to_play_store(
       package_name: "com.alcohol_tracker",
       json_key: './android/app/android-fastlane-json-key.json',
       version_code: ENV["VERSION"].to_i,
       track: 'internal',
       track_promote_to: 'beta', # Modify to production when ready
+      # 'completed' auto-submits the promoted open-testing release for Google
+      # review. The go-live to testers is held by Play Console "Managed
+      # publishing", so releasing to open testing stays a manual click.
+      track_promote_release_status: 'completed',
       rollout: '1.0',
       skip_upload_apk: true,
       skip_upload_aab: true,
