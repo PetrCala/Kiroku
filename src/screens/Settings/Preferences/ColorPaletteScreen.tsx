@@ -14,6 +14,8 @@ import Text from '@components/Text';
 import {PressableWithFeedback} from '@components/Pressable';
 import Icon from '@components/Icon';
 import * as KirokuIcons from '@components/Icon/KirokuIcons';
+import PlusBadge from '@components/PlusBadge';
+import useFeatureAccess from '@hooks/useFeatureAccess';
 import * as Preferences from '@userActions/Preferences';
 import type {SessionColorPalette} from '@src/types/onyx';
 import type {PaletteId} from '@libs/SessionColorPalettes';
@@ -41,6 +43,7 @@ function ColorPaletteScreen() {
   const theme = useTheme();
   const {translate} = useLocalize();
   const preferences = useCurrentUserPreferences();
+  const customAccess = useFeatureAccess('CUSTOM_COLOR_PALETTE');
   const [pendingSelection, setPendingSelection] = useState<
     PaletteId | 'custom' | null
   >(null);
@@ -130,6 +133,16 @@ function ColorPaletteScreen() {
       .finally(() => setSaving(false));
   };
 
+  // Locked (Plus-gated, non-supporter) users are routed to the paywall; everyone
+  // else opens the editor. Used by every entry point into the custom feature.
+  const onOpenCustom = () => {
+    Navigation.navigate(
+      customAccess.isLocked
+        ? ROUTES.SETTINGS_SUPPORT
+        : ROUTES.SETTINGS_COLOR_PALETTE_CUSTOM,
+    );
+  };
+
   const persistedUseOwnForOthers =
     preferences?.use_own_palette_for_others === true;
   const displayUseOwnForOthers =
@@ -150,6 +163,156 @@ function ColorPaletteScreen() {
         Alert.alert(translate('preferencesScreen.error.save'), errorMessage);
       })
       .finally(() => setSavingUseOwnForOthers(false));
+  };
+
+  // The "Custom" entry. Three shapes: a locked upsell row (Plus-gated,
+  // non-supporter), a split select/edit row once a custom palette is saved, or
+  // a plain "create your own" row for first-time users. A trailing Plus badge
+  // marks it as a premium feature when gates are active (it renders null
+  // otherwise, so the row reads as free in production).
+  const renderCustomRow = () => {
+    if (customAccess.isLocked) {
+      return (
+        <PressableWithFeedback
+          accessibilityLabel={translate('colorPaletteScreen.custom.label')}
+          onPress={onOpenCustom}
+          style={[
+            styles.flexRow,
+            styles.alignItemsCenter,
+            styles.justifyContentBetween,
+            styles.p4,
+            styles.mb2,
+            StyleUtils.getColorAccentRowStyle(null),
+          ]}>
+          <View style={[styles.flexColumn, styles.flex1]}>
+            <Text style={[styles.textNormal, styles.textStrong]}>
+              {translate('colorPaletteScreen.custom.label')}
+            </Text>
+            <Text style={[styles.textMicroSupporting, styles.mt1]}>
+              {translate('colorPaletteScreen.custom.description')}
+            </Text>
+          </View>
+          <PlusBadge locked />
+        </PressableWithFeedback>
+      );
+    }
+
+    if (customPalette) {
+      // Split the row so the main area selects it (like the presets) and the
+      // trailing button opens the editor.
+      return (
+        <View
+          style={[
+            styles.flexRow,
+            styles.mb2,
+            styles.overflowHidden,
+            StyleUtils.getColorAccentRowStyle(isCustomSelected ? accent : null),
+          ]}>
+          <PressableWithFeedback
+            accessibilityLabel={translate('colorPaletteScreen.custom.select')}
+            accessibilityState={{selected: isCustomSelected}}
+            onPress={onSelectCustom}
+            wrapperStyle={styles.flex1}
+            style={[
+              styles.flex1,
+              styles.flexRow,
+              styles.alignItemsCenter,
+              styles.justifyContentBetween,
+              styles.p4,
+            ]}>
+            <View style={[styles.flexColumn, styles.flex1]}>
+              <View style={[styles.flexRow, styles.alignItemsCenter]}>
+                <Text style={[styles.textNormal, styles.textStrong]}>
+                  {translate('colorPaletteScreen.custom.label')}
+                </Text>
+                <PlusBadge locked={false} />
+              </View>
+              <Text style={[styles.textMicroSupporting, styles.mt1]}>
+                {translate('colorPaletteScreen.custom.description')}
+              </Text>
+              <View style={[styles.flexRow, styles.mt2]}>
+                {PREVIEW_KEYS.map(key => (
+                  <View
+                    key={key}
+                    style={[
+                      styles.palettePreviewSwatch,
+                      StyleUtils.getBackgroundColorStyle(customPalette[key]),
+                      StyleUtils.getDerivedSwatchBorderStyle(
+                        customPalette[key],
+                      ),
+                    ]}
+                  />
+                ))}
+              </View>
+            </View>
+            {isCustomSelected ? (
+              <Icon
+                src={KirokuIcons.Checkmark}
+                fill={accent}
+                width={20}
+                height={20}
+              />
+            ) : null}
+          </PressableWithFeedback>
+          <PressableWithFeedback
+            accessibilityLabel={translate('colorPaletteScreen.custom.edit')}
+            role="button"
+            onPress={onOpenCustom}
+            wrapperStyle={styles.alignSelfStretch}
+            style={[
+              styles.flex1,
+              styles.alignItemsCenter,
+              styles.justifyContentCenter,
+              styles.colorPaletteEditButton,
+            ]}>
+            <Icon
+              src={KirokuIcons.Edit}
+              fill={theme.icon}
+              width={20}
+              height={20}
+            />
+          </PressableWithFeedback>
+        </View>
+      );
+    }
+
+    // First-time users: no palette to select yet, so the whole row navigates to
+    // the editor to create one.
+    return (
+      <PressableWithFeedback
+        accessibilityLabel={translate('colorPaletteScreen.custom.label')}
+        onPress={onOpenCustom}
+        style={[
+          styles.flexRow,
+          styles.alignItemsCenter,
+          styles.justifyContentBetween,
+          styles.p4,
+          styles.mb2,
+          StyleUtils.getColorAccentRowStyle(null),
+        ]}>
+        <View style={[styles.flexColumn, styles.flex1]}>
+          <View style={[styles.flexRow, styles.alignItemsCenter]}>
+            <Text style={[styles.textNormal, styles.textStrong]}>
+              {translate('colorPaletteScreen.custom.label')}
+            </Text>
+            <PlusBadge locked={false} />
+          </View>
+          <Text style={[styles.textMicroSupporting, styles.mt1]}>
+            {translate('colorPaletteScreen.custom.description')}
+          </Text>
+          <Text style={[styles.textMicroSupporting, styles.mt2]}>
+            {translate('colorPaletteScreen.custom.createYourOwn')}
+          </Text>
+        </View>
+        <Icon
+          src={KirokuIcons.ArrowRight}
+          fill={theme.icon}
+          width={20}
+          height={20}
+          additionalStyles={[styles.ml2]}
+        />
+      </PressableWithFeedback>
+    );
   };
 
   return (
@@ -255,126 +418,7 @@ function ColorPaletteScreen() {
                 </PressableWithFeedback>
               );
             })}
-            {customPalette ? (
-              // Saved custom palette: split the row so the main area selects it
-              // (like the presets) and the trailing button opens the editor.
-              <View
-                style={[
-                  styles.flexRow,
-                  styles.mb2,
-                  styles.overflowHidden,
-                  StyleUtils.getColorAccentRowStyle(
-                    isCustomSelected ? accent : null,
-                  ),
-                ]}>
-                <PressableWithFeedback
-                  accessibilityLabel={translate(
-                    'colorPaletteScreen.custom.select',
-                  )}
-                  accessibilityState={{selected: isCustomSelected}}
-                  onPress={onSelectCustom}
-                  wrapperStyle={styles.flex1}
-                  style={[
-                    styles.flex1,
-                    styles.flexRow,
-                    styles.alignItemsCenter,
-                    styles.justifyContentBetween,
-                    styles.p4,
-                  ]}>
-                  <View style={[styles.flexColumn, styles.flex1]}>
-                    <Text style={[styles.textNormal, styles.textStrong]}>
-                      {translate('colorPaletteScreen.custom.label')}
-                    </Text>
-                    <Text style={[styles.textMicroSupporting, styles.mt1]}>
-                      {translate('colorPaletteScreen.custom.description')}
-                    </Text>
-                    <View style={[styles.flexRow, styles.mt2]}>
-                      {PREVIEW_KEYS.map(key => (
-                        <View
-                          key={key}
-                          style={[
-                            styles.palettePreviewSwatch,
-                            StyleUtils.getBackgroundColorStyle(
-                              customPalette[key],
-                            ),
-                            StyleUtils.getDerivedSwatchBorderStyle(
-                              customPalette[key],
-                            ),
-                          ]}
-                        />
-                      ))}
-                    </View>
-                  </View>
-                  {isCustomSelected ? (
-                    <Icon
-                      src={KirokuIcons.Checkmark}
-                      fill={accent}
-                      width={20}
-                      height={20}
-                    />
-                  ) : null}
-                </PressableWithFeedback>
-                <PressableWithFeedback
-                  accessibilityLabel={translate(
-                    'colorPaletteScreen.custom.edit',
-                  )}
-                  role="button"
-                  onPress={() =>
-                    Navigation.navigate(ROUTES.SETTINGS_COLOR_PALETTE_CUSTOM)
-                  }
-                  wrapperStyle={styles.alignSelfStretch}
-                  style={[
-                    styles.flex1,
-                    styles.alignItemsCenter,
-                    styles.justifyContentCenter,
-                    styles.colorPaletteEditButton,
-                  ]}>
-                  <Icon
-                    src={KirokuIcons.Edit}
-                    fill={theme.icon}
-                    width={20}
-                    height={20}
-                  />
-                </PressableWithFeedback>
-              </View>
-            ) : (
-              // First-time users: no palette to select yet, so the whole row
-              // navigates to the editor to create one.
-              <PressableWithFeedback
-                accessibilityLabel={translate(
-                  'colorPaletteScreen.custom.label',
-                )}
-                onPress={() =>
-                  Navigation.navigate(ROUTES.SETTINGS_COLOR_PALETTE_CUSTOM)
-                }
-                style={[
-                  styles.flexRow,
-                  styles.alignItemsCenter,
-                  styles.justifyContentBetween,
-                  styles.p4,
-                  styles.mb2,
-                  StyleUtils.getColorAccentRowStyle(null),
-                ]}>
-                <View style={[styles.flexColumn, styles.flex1]}>
-                  <Text style={[styles.textNormal, styles.textStrong]}>
-                    {translate('colorPaletteScreen.custom.label')}
-                  </Text>
-                  <Text style={[styles.textMicroSupporting, styles.mt1]}>
-                    {translate('colorPaletteScreen.custom.description')}
-                  </Text>
-                  <Text style={[styles.textMicroSupporting, styles.mt2]}>
-                    {translate('colorPaletteScreen.custom.createYourOwn')}
-                  </Text>
-                </View>
-                <Icon
-                  src={KirokuIcons.ArrowRight}
-                  fill={theme.icon}
-                  width={20}
-                  height={20}
-                  additionalStyles={[styles.ml2]}
-                />
-              </PressableWithFeedback>
-            )}
+            {customAccess.isAvailable ? renderCustomRow() : null}
           </View>
         </View>
       </ScrollView>

@@ -881,6 +881,10 @@ export default {
         'Your supporter subscription has expired. Subscribe again from the Support Kiroku screen.',
     },
   },
+  premiumFeatures: {
+    plusBadge: 'Plus',
+    upsellAccessibilityLabel: 'Kiroku Plus feature. Tap to learn more.',
+  },
   accountScreen: {
     title: 'Profile Details',
     generalOptions: {
@@ -1496,6 +1500,16 @@ export default {
     intro: 'Developer-only panel for runtime tweaks and debugging.',
     placeholderNotice:
       'This is a placeholder. Real toggles (feature flags, environment overrides, forced network states) will land here over time.',
+    simulatePlus: 'Simulate Plus',
+    simulatePlusDescription:
+      'Treat this account as a Kiroku Plus supporter so gated features unlock.',
+    featureOverridesTitle: 'Premium feature overrides',
+    override: {
+      auto: 'Auto',
+      locked: 'Locked',
+      unlocked: 'Unlocked',
+    },
+    resetOverrides: 'Reset overrides',
     environmentLabel: 'Environment',
     howToOpen:
       'Open via ⌘D → Open Test Preferences, or a four-finger tap anywhere in the app.',

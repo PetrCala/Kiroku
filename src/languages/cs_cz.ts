@@ -887,6 +887,10 @@ export default {
         'Vaše předplatné podporovatele vypršelo. Předplatné si můžete obnovit na obrazovce Podpořit Kiroku.',
     },
   },
+  premiumFeatures: {
+    plusBadge: 'Plus',
+    upsellAccessibilityLabel: 'Funkce Kiroku Plus. Klepnutím se dozvíte více.',
+  },
   accountScreen: {
     title: 'Detaily profilu',
     generalOptions: {
@@ -1497,6 +1501,16 @@ export default {
     intro: 'Vývojářský panel pro úpravy za běhu a ladění.',
     placeholderNotice:
       'Toto je zástupný panel. Skutečné přepínače (feature flagy, přepsání prostředí, vynucené stavy sítě) sem postupně přibudou.',
+    simulatePlus: 'Simulovat Plus',
+    simulatePlusDescription:
+      'Považovat tento účet za podporovatele Kiroku Plus, aby se uzamčené funkce odemkly.',
+    featureOverridesTitle: 'Přepsání prémiových funkcí',
+    override: {
+      auto: 'Auto',
+      locked: 'Zamčeno',
+      unlocked: 'Odemčeno',
+    },
+    resetOverrides: 'Resetovat přepsání',
     environmentLabel: 'Prostředí',
     howToOpen:
       'Otevřete přes ⌘D → Open Test Preferences nebo čtyřprstovým ťuknutím kdekoli v aplikaci.',
