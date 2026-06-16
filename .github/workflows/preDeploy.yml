@@ -31,12 +31,8 @@ jobs:
     steps:
       - uses: actions/checkout@v5
 
-      - name: Announce failed workflow in Discord
-        if: ${{ needs.typecheck.result == 'failure' || needs.lint.result == 'failure' || needs.test.result == 'failure' }}
-        uses: ./.github/actions/composite/announceFailedWorkflowInDiscord
-        with:
-          DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_URL }}
-
+      # The enriched Discord notification (failing job + blamed PR + error) is posted by the decoupled
+      # failureNotifier.yml workflow_run listener, so confirmPassingBuild only needs to fail the run.
       - name: Exit failed workflow
         if: ${{ needs.typecheck.result == 'failure' || needs.lint.result == 'failure' || needs.test.result == 'failure' }}
         run: |

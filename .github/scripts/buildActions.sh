@@ -14,6 +14,7 @@ declare -r GITHUB_ACTIONS=(
     "$ACTIONS_DIR/bumpVersion/bumpVersion.ts"
     "$ACTIONS_DIR/checkDeployBlockers/checkDeployBlockers.ts"
     "$ACTIONS_DIR/createOrUpdateStagingDeploy/createOrUpdateStagingDeploy.ts"
+    "$ACTIONS_DIR/failureNotifier/failureNotifier.ts"
     "$ACTIONS_DIR/getDeployPullRequestList/getDeployPullRequestList.ts"
     # "$ACTIONS_DIR/getPreviousVersion/getPreviousVersion.ts"
     # "$ACTIONS_DIR/getPullRequestDetails/getPullRequestDetails.ts"

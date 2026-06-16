@@ -1,0 +1,18 @@
+name: 'Notify on failed workflow'
+description: 'Posts an enriched Discord message for a failed master pipeline run: failing job(s), the blamed merged PR, and the error.'
+inputs:
+  GITHUB_TOKEN:
+    description: Auth token for Kiroku Github
+    required: true
+  DISCORD_WEBHOOK_URL:
+    description: URL of the Discord webhook to post the failure summary to
+    required: true
+  RUN_ID:
+    description: Optional workflow run id to report on. Used for manual (workflow_dispatch) testing; ignored when a workflow_run payload is present.
+    required: false
+outputs:
+  failure_summary:
+    description: JSON summary of the failure (run, blamed PR, failing jobs) for downstream automation.
+runs:
+  using: 'node24'
+  main: 'index.js'
