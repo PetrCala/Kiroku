@@ -265,7 +265,7 @@ export default {
     member: 'Člen',
     role: 'Role',
     note: 'Poznámka',
-    blackout: 'Výpadek paměti',
+    blackout: 'Blackout',
     timezone: 'Časové pásmo',
   },
   modal: {
@@ -687,7 +687,7 @@ export default {
       yellow: 'Mírná',
       orange: 'Střední',
       red: 'Náročná',
-      black: 'Výpadek paměti',
+      black: 'Blackout',
     },
     hex: {
       label: 'Hex barva',
@@ -756,9 +756,9 @@ export default {
   },
   appShareScreen: {
     title: 'Sdílet aplikaci',
-    sectionTitle: 'Všichni sem!',
+    sectionTitle: 'Sezvěte své přátele!',
     prompt:
-      'Pomozte nám růst tím, že budete Kiroku sdílet se svými přáteli! Můžete tak učinit pomocí odkazu nebo naskenováním QR kódu.',
+      'Líbí se vám Kiroku? Sdílejte ho s přáteli! Stačí poslat odkaz nebo naskenovat QR kód.',
     link: 'Zkopírovat odkaz ke sdílení do schránky',
     linkCopied: 'Odkaz ke sdílení byl zkopírován do schránky!',
     qrCode: 'Zobrazit QR kód',
@@ -820,7 +820,7 @@ export default {
       heroPill: 'Odznak podporovatele',
       heroTitle: 'Staňte se Kiroku Supporter',
       heroSubtitle:
-        'Vyjádřete svou podporu a noste na profilu exkluzivní odznak podporovatele.',
+        'Vyjádřete svou podporu a získejte exkluzivní odznak podporovatele.',
       featureBadgeTitle: 'Odznak podporovatele',
       featureBadgeDescription:
         'Exkluzivní odznak zobrazený na vašem veřejném profilu',
@@ -909,7 +909,7 @@ export default {
     },
     live: {
       title: 'Živá',
-      description: 'Přidávejte drinky v reálném čase',
+      description: 'Přidávejte drinky průběžně',
     },
     edit: {
       title: 'Zpětná',
@@ -1049,7 +1049,7 @@ export default {
   manageAccountScreen: {
     title: 'Správa účtu',
     dangerZone: {
-      title: 'Nebezpečná zóna',
+      title: 'Nevratné akce',
       subtitle: 'Tyto akce jsou trvalé a nelze je vrátit zpět.',
     },
     deleteAccount: {
@@ -1076,7 +1076,7 @@ export default {
   },
   profileScreen: {
     title: 'Profil',
-    titleNotSelf: 'Přehled uživatele',
+    titleNotSelf: 'Profil uživatele',
     seeAllFriends: 'Zobrazit všechny přátele',
     drinkingSessions: ({sessionsCount}: DrinkingSessionsParams) =>
       `${Str.pluralize('Alkoholová relace', 'Alkoholových relací', sessionsCount)}`,
@@ -1125,7 +1125,7 @@ export default {
           afDays: {label: 'Dny bez alkoholu'},
           dryStreak: {label: 'Nejdelší série bez alkoholu', unit: 'dní'},
           sessions: {label: 'Relace'},
-          heaviestDay: {label: 'Nejtěžší den', unit: 'jednotek'},
+          heaviestDay: {label: 'Nejnáročnější den', unit: 'jednotek'},
           avgPerDrinkingDay: {label: 'Průměr / den pití', unit: 'jednotek'},
           monthlyAvg: {label: 'Průměr / měsíc', unit: 'jednotek'},
           daysOverYellow: {
@@ -1157,14 +1157,14 @@ export default {
         },
         empty: {
           neverLogged: {
-            title: 'Zatím není co zaznamenat',
-            body: 'Až zaznamenáte relaci, objeví se zde váš přehled za období.',
+            title: 'Zatím žádné záznamy',
+            body: 'Až zaznamenáte první relaci, objeví se zde váš přehled za období.',
           },
           noDataInRange:
             'Žádné relace v tomto období. Každý uplynulý den byl bez alkoholu.',
         },
         sparseFooter:
-          'Zatím jen málo historie. Tato čísla se zpřesní, jak budete přidávat další záznamy.',
+          'Zatím máte jen málo záznamů. Postupně, jak budete přidávat další, se čísla zpřesní.',
       },
       trends: {
         label: 'Trendy',
@@ -1176,9 +1176,9 @@ export default {
             trend: 'Trend',
           },
           captions: {
-            trendingDown: 'Vaše týdenní jednotky mají sestupný trend.',
-            trendingUp: 'Vaše týdenní jednotky mají vzestupný trend.',
-            neutral: 'Vaše týdny se mění obvyklým způsobem.',
+            trendingDown: 'Vaše týdenní konzumace klesá.',
+            trendingUp: 'Vaše týdenní konzumace roste.',
+            neutral: 'Vaše týdenní hodnoty se pohybují v obvyklém rozmezí.',
             notEnoughData:
               'Pokračujte v zaznamenávání. Trend se ukáže, až bude víc dat.',
           },
@@ -1197,7 +1197,8 @@ export default {
       },
       patterns: {
         label: 'Návyky',
-        placeholder: 'Kdy a jak (hodina dne a den v týdnu) uvidíte tady.',
+        placeholder:
+          'Zde se objeví, kdy a jak pijete (hodina dne a den v týdnu).',
       },
       breakdown: {
         label: 'Rozpis',
@@ -1224,9 +1225,9 @@ export default {
         },
         concentration: {
           moreVaried: ({period}: BreakdownPeriodParams) =>
-            `Tento ${period} jste pil/a pestřeji než minulý.`,
+            `Tento ${period} jste pil/a více druhů než minulý.`,
           moreFocused: ({period}: BreakdownPeriodParams) =>
-            `Tento ${period} jste se zaměřil/a víc než minulý.`,
+            `Tento ${period} jste pil/a méně druhů než minulý.`,
           aboutTheSame: ({period}: BreakdownPeriodParams) =>
             `Skladba drinků je zhruba stejná jako minulý ${period}.`,
           period: {
@@ -1337,8 +1338,7 @@ export default {
   badgesScreen: {
     title: 'Odznaky',
     badgesTitle: 'Odznaky',
-    empty:
-      'Zaznamenejte svou první alkoholovou relaci, abyste začali získávat odznaky a sledovat svou sérii dnů bez alkoholu.',
+    empty: 'Zaznamenejte svou první relaci a začněte sbírat odznaky.',
     dayUnit: ({count}: BadgesDayCountParams) => (count === 1 ? 'den' : 'dní'),
     streak: {
       label: 'Aktuální série dnů bez alkoholu',
@@ -1378,7 +1378,7 @@ export default {
         description: 'Nasbírejte 50 dní bez alkoholu.',
       },
       sessions25: {
-        title: 'Pečlivé zaznamenávání',
+        title: 'Mistr zápisů',
         description: 'Zaznamenejte 25 alkoholových relací.',
       },
     },
@@ -1401,7 +1401,7 @@ export default {
     startingSession: 'Spouštím novou relaci…',
     welcomeToKiroku: 'Vítejte v Kiroku!',
     startNewSessionByClickingPlus:
-      'Spusťte novou relaci kliknutím na tlačítko plus v dolní části obrazovky',
+      'Klepnutím na tlačítko plus dole na obrazovce spustíte novou relaci',
     offlineNoData: {
       title: 'Jste offline',
       message:
@@ -1436,7 +1436,7 @@ export default {
       statistics: 'Statistiky',
       viewStatistics: 'Zobrazit statistiky',
       vsLastMonth: 'vs minulý měsíc',
-      monthToDate: 'zatím',
+      monthToDate: 'k dnešku',
       unitsByWeek: 'Jednotky podle týdne',
       unitsPerWeekA11y: 'Zkonzumované jednotky za týden v tomto měsíci',
     },
@@ -1452,8 +1452,8 @@ export default {
     drinksConsumed: 'Zkonzumované drinky',
     sessionFrom: 'Relace od',
     sessionOn: 'Relace dne',
-    blackout: 'Výpadek paměti',
-    blackoutSwitchLabel: 'Označuje, zda vaše relace skončila výpadkem paměti.',
+    blackout: 'Blackout',
+    blackoutSwitchLabel: 'Označuje, zda vaše relace skončila blackoutem.',
     note: 'Poznámka',
     discardSessionWarning: (discardWord: string) =>
       `Opravdu chcete tuto relaci ${discardWord}?`,
@@ -1537,7 +1537,7 @@ export default {
   forceUpdate: {
     heading: 'Je vyžadována aktualizace aplikace',
     text: ({platform}: ForceUpdateTextParams) =>
-      `Tato verze aplikace je nyní ukončena. Aktualizujte prosím na nejnovější verzi pomocí odkazu níže${
+      `Podpora této verze aplikace skončila. Aktualizujte prosím na nejnovější verzi pomocí odkazu níže${
         platform === CONST.PLATFORM.IOS
           ? ' nebo z prostředí aplikace TestFlight'
           : ''
@@ -1547,7 +1547,7 @@ export default {
   login: {
     hero: {
       header: 'Mějte přehled o svých alkoholových dobrodružstvích',
-      body: 'Vítejte v Kiroku, kde můžete sledovat, monitorovat a sdílet svou konzumaci alkoholu',
+      body: 'Vítejte v Kiroku, kde můžete sledovat svou konzumaci alkoholu a sdílet ji s přáteli',
     },
     email: 'E-mail',
     existingAccount: 'Už máte účet?',

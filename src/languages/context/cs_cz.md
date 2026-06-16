@@ -69,7 +69,7 @@ zde`, `Přidejte si je zde`, `Zkuste hledat zde`.
 | sober                       | **bez pití**                                      |                |
 | alcohol-free day(s)         | **dny bez alkoholu**                              |                |
 | quiet day(s)                | **klidné dny**                                    |                |
-| blackout                    | **výpadek paměti**                                |                |
+| blackout                    | **Blackout** (loanword)                           | výpadek paměti |
 | streak (alcohol-free)       | **série** (dnů bez alkoholu)                      |                |
 | session intensity: light    | **mírná** (relace)                                | lehká          |
 | session intensity: moderate | **střední** (relace)                              |                |

@@ -126,6 +126,11 @@ const UNTRANSLATED_ALLOWLIST = new Set<string>([
   'common.role',
   'statistics.tabs.trends.weeklyTrend.legend.trend',
   'errors.auth.networkRequestFailed.title',
+  // "Blackout" kept as a loanword in Czech (casual register, used as a
+  // severity-band label); see src/languages/context/cs_cz.md glossary.
+  'common.blackout',
+  'liveSessionScreen.blackout',
+  'colorPaletteScreen.bands.black',
 ]);
 
 describe('Translation Keys', () => {
