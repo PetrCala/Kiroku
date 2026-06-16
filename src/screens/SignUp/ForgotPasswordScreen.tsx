@@ -20,7 +20,6 @@ import InputWrapper from '@components/Form/InputWrapper';
 import variables from '@src/styles/variables';
 import TextInput from '@components/TextInput';
 import {useFirebase} from '@context/global/FirebaseContext';
-import ROUTES from '@src/ROUTES';
 import DotIndicatorMessage from '@components/DotIndicatorMessage';
 
 function ForgotPasswordScreen() {
@@ -94,7 +93,7 @@ function ForgotPasswordScreen() {
       <HeaderWithBackButton
         title={translate('forgotPasswordScreen.title')}
         shouldShowBackButton
-        onBackButtonPress={() => Navigation.navigate(ROUTES.AUTH)}
+        onBackButtonPress={() => Navigation.goBack()}
       />
       {isLoading ? (
         <FullscreenLoadingIndicator
