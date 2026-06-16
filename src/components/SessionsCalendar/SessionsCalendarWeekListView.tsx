@@ -14,11 +14,9 @@ import useThemeStyles from '@hooks/useThemeStyles';
 import useWindowDimensions from '@hooks/useWindowDimensions';
 import ONYXKEYS from '@src/ONYXKEYS';
 import CONST from '@src/CONST';
-import * as App from '@userActions/App';
 import {roundToTwoDecimalPlaces} from '@libs/NumberUtils';
 import DateUtils from '@libs/DateUtils';
 import setCalendarLocale from '@libs/setCalendarLocale';
-import {canSyncGlobalLastViewedDate} from '@libs/SessionsCalendarUtils';
 import type {DateString} from '@src/types/onyx/OnyxCommon';
 import buildWeekListItems from './buildWeekListItems';
 import type {ListItem} from './buildWeekListItems';
@@ -86,11 +84,11 @@ type SessionsCalendarWeekListViewProps = {
    *  this to a navigation back so the fullscreen view feels dismissable on
    *  Android (which has no built-in stack swipe-back). */
   onSwipeBack?: () => void;
-  /** Read-only (a friend's) calendar. When true, scrolling must NOT record the
-   *  last-viewed day: `NVP_LAST_VIEWED_CALENDAR_DATE` is a single global key the
-   *  signed-in user's OWN compact calendar restores from, so a friend's scroll
-   *  would repoint home/self onto the friend's month (mirrors `DayOverviewListView`). */
-  isReadOnly?: boolean;
+  /** Records the day the viewer is looking at (debounced) into the viewed user's
+   *  own per-user last-viewed slot, so backing out restores that user's calendar
+   *  position. Per-user keyed by the parent, so it never repoints another user's
+   *  calendar (Rule 2). */
+  onRecordLastViewedDay?: (day: DateString) => void;
 };
 
 /**
@@ -121,7 +119,7 @@ function SessionsCalendarWeekListView({
   initialMonthYear,
   onInitialScrollReady,
   onSwipeBack,
-  isReadOnly,
+  onRecordLastViewedDay,
 }: SessionsCalendarWeekListViewProps) {
   const styles = useThemeStyles();
   const {translate} = useLocalize();
@@ -280,18 +278,17 @@ function SessionsCalendarWeekListView({
     [windowHeight],
   );
 
-  // Record the month the user is looking at so the compact calendar can sync
-  // to it on back-navigation. Debounced so a fast scroll writes once at rest.
-  // Read-only (friend) browsing must not repoint the current user's own compact
-  // calendar, which restores from this global NVP (mirrors `DayOverviewListView`).
+  // Record the month the user is looking at so the compact calendar can sync to
+  // it on back-navigation. Debounced so a fast scroll writes once at rest. The
+  // parent binds the write to the viewed user's own per-user slot, so this
+  // records for the signed-in user and friends alike, with no cross-user leak
+  // (Rule 2).
   const writeLastViewedDay = useMemo(
     () =>
       lodashDebounce((day: DateString) => {
-        if (canSyncGlobalLastViewedDate(isReadOnly)) {
-          App.setLastViewedCalendarDate(day);
-        }
+        onRecordLastViewedDay?.(day);
       }, 250),
-    [isReadOnly],
+    [onRecordLastViewedDay],
   );
   useEffect(() => () => writeLastViewedDay.cancel(), [writeLastViewedDay]);
 

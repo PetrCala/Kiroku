@@ -90,9 +90,12 @@ const ONYXKEYS = {
   //   /** Indicates which locale should be used */
   NVP_PREFERRED_LOCALE: 'nvp_preferredLocale',
 
-  /** The day a user last viewed in an enlarged calendar / day-overview scroll.
-   *  Consumed once by the home & profile calendars on focus so navigating back
-   *  lands on the date the user was looking at. Reset on app launch. */
+  /** Per-viewed-user map of the day last seen in an enlarged calendar /
+   *  day-overview scroll, keyed by the viewed user's ID. Consumed by the home &
+   *  profile calendars so navigating back lands on the date the user was looking
+   *  at — for the signed-in user AND for friends, each independently (one user's
+   *  entry never affects another's; Rule 2). Reset (whole map) on app launch so
+   *  every user's calendar opens on today the first time it's viewed per session. */
   NVP_LAST_VIEWED_CALENDAR_DATE: 'nvp_lastViewedCalendarDate',
 
   //   /** Does this user have push notifications enabled for this device? */
@@ -306,7 +309,7 @@ type OnyxValuesMapping = {
   [ONYXKEYS.FOCUS_MODE_NOTIFICATION]: boolean;
   [ONYXKEYS.PUSH_NOTIFICATIONS_ENABLED]: boolean;
   [ONYXKEYS.NVP_PREFERRED_LOCALE]: OnyxTypes.Locale;
-  [ONYXKEYS.NVP_LAST_VIEWED_CALENDAR_DATE]: DateString;
+  [ONYXKEYS.NVP_LAST_VIEWED_CALENDAR_DATE]: Record<string, DateString>;
   [ONYXKEYS.ONGOING_SESSION_DATA]: OnyxTypes.DrinkingSession;
   [ONYXKEYS.EDIT_SESSION_DATA]: OnyxTypes.DrinkingSession;
   [ONYXKEYS.IS_CREATING_NEW_SESSION]: boolean;

@@ -17,6 +17,7 @@ import {
 } from '@libs/DataHandling';
 import * as DSUtils from '@libs/DrinkingSessionUtils';
 import * as DS from '@userActions/DrinkingSession';
+import * as App from '@userActions/App';
 import {
   computeLoadTarget,
   getCompactCalendarLoadTarget,
@@ -172,6 +173,16 @@ function SessionsCalendar({
   const handleJumpToCurrent = () => {
     onDateChange(dateToDateData(new Date()));
   };
+
+  // Record the day the viewer is looking at in this user's enlarged calendar /
+  // day-overview scroll, into that user's OWN per-user last-viewed slot. Bound
+  // to the viewed `userID`, so a friend's scroll restores the friend's profile
+  // (and the signed-in user's restores home/self) without ever repointing
+  // another user's calendar (Rule 2: per-user independence is structural).
+  const recordLastViewedDay = useCallback(
+    (day: DateString) => App.setLastViewedCalendarDate(userID, day),
+    [userID],
+  );
 
   // Coalesce scroll-driven `loadUpTo` calls — store the deepest target we've
   // already requested, skip subsequent triggers that aren't deeper. Avoids
@@ -441,6 +452,7 @@ function SessionsCalendar({
         initialDay={initialDay}
         onInitialScrollReady={onInitialScrollReady}
         onVisibleDayChange={onVisibleDayChange}
+        onRecordLastViewedDay={recordLastViewedDay}
         isReadOnly={isReadOnly}
         isEditModeOn={isEditModeOn}
         onSwipeBack={Navigation.goBack}
@@ -462,7 +474,7 @@ function SessionsCalendar({
           initialMonthYear={initialMonthYear}
           onInitialScrollReady={onInitialScrollReady}
           onSwipeBack={Navigation.goBack}
-          isReadOnly={!isSelf}
+          onRecordLastViewedDay={recordLastViewedDay}
         />
         {longPressDrillDown}
       </>

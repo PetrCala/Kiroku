@@ -67,11 +67,16 @@ function HomeScreen({route}: HomeScreenProps) {
   // the FAB both clear it by this much (plus a small margin).
   const bottomTabBarHeight = useBottomTabBarHeight();
   const user = auth.currentUser;
+  // Hoisted to a simple local so the per-user last-viewed lookup and the
+  // manual memo/callback dependencies below reference a stable identifier
+  // (the React Compiler can't preserve memoization keyed on a `user?.uid`
+  // optional-chain expression directly).
+  const uid = user?.uid;
   const [loadingText] = useOnyx(ONYXKEYS.APP_LOADING_TEXT);
   const [ongoingSessionData] = useOnyx(ONYXKEYS.ONGOING_SESSION_DATA);
-  const [lastViewedCalendarDate] = useOnyx(
-    ONYXKEYS.NVP_LAST_VIEWED_CALENDAR_DATE,
-  );
+  const [lastViewedByUser] = useOnyx(ONYXKEYS.NVP_LAST_VIEWED_CALENDAR_DATE);
+  // The signed-in user's OWN last-viewed day (the home calendar is always self).
+  const lastViewedForUser = uid ? lastViewedByUser?.[uid] : undefined;
   // `useCurrentUserData` returns {} (truthy) while loading; the readiness gates
   // and header below treat `undefined` as "not loaded", so map empty → undefined.
   const currentUserData = useCurrentUserData();
@@ -92,20 +97,26 @@ function HomeScreen({route}: HomeScreenProps) {
   // Deriving it (rather than syncing via an effect) means it's already correct
   // on the first render after the modal dismisses — home updates while still
   // hidden underneath, so the user never sees the month flip from today. The
-  // NVP is reset on app launch, so a cold start shows today.
+  // per-user map is reset on app launch, so a cold start shows today.
   const visibleDate = useMemo<DateData>(
     () =>
-      lastViewedCalendarDate
-        ? dateToDateData(dateStringToDate(lastViewedCalendarDate))
+      lastViewedForUser
+        ? dateToDateData(dateStringToDate(lastViewedForUser))
         : localVisibleDate,
-    [lastViewedCalendarDate, localVisibleDate],
+    [lastViewedForUser, localVisibleDate],
   );
 
-  // Manual month navigation overrides the synced value.
-  const onDateChange = useCallback((nextDate: DateData) => {
-    setLocalVisibleDate(nextDate);
-    App.clearLastViewedCalendarDate();
-  }, []);
+  // Manual month navigation overrides the synced value — clear this user's own
+  // per-user slot.
+  const onDateChange = useCallback(
+    (nextDate: DateData) => {
+      setLocalVisibleDate(nextDate);
+      if (uid) {
+        App.clearLastViewedCalendarDate(uid);
+      }
+    },
+    [uid],
+  );
 
   const monthlyStats = useHomeStats(visibleDate);
 

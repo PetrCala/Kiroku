@@ -63,23 +63,27 @@ function getCompactCalendarLoadTarget(
 type CalendarVisibleSource = 'lastViewed' | 'local' | 'today';
 
 /**
- * Pick the source for a profile/home calendar's visible month, enforcing
- * per-user independence (Rule 2):
- *   - The single global `NVP_LAST_VIEWED_CALENDAR_DATE` may only be honoured for
- *     the signed-in user's OWN calendar (`isSelf`); a friend never restores from
- *     it, so one user's last-shown month can't leak onto another's calendar.
- *   - A user viewed for the first time since launch (no local month tagged for
- *     them) opens on today.
+ * Pick the source for a profile/home calendar's visible month.
+ *
+ * `NVP_LAST_VIEWED_CALENDAR_DATE` is keyed PER VIEWED USER, so independence
+ * (Rule 2) is structural: the caller derives `hasLastViewed` from that user's
+ * OWN entry (`map[userID]`), and one user's entry can never reach another's
+ * calendar. Precedence:
+ *   - the viewed user's own last-viewed date, when present (restores both the
+ *     signed-in user's and a friend's last-scrolled position);
+ *   - otherwise the locally-navigated month, while it still belongs to the
+ *     viewed user;
+ *   - otherwise today (a user viewed for the first time since launch — their
+ *     entry was cleared by the cold-launch reset).
  *
  * Pure and value-free so it can be unit-tested without `DataHandling`/`DateData`
  * dependencies; the caller maps the returned source to a concrete date.
  */
 function selectCalendarVisibleSource(params: {
-  isSelf: boolean;
   hasLastViewed: boolean;
   localBelongsToViewedUser: boolean;
 }): CalendarVisibleSource {
-  if (params.isSelf && params.hasLastViewed) {
+  if (params.hasLastViewed) {
     return 'lastViewed';
   }
   if (params.localBelongsToViewedUser) {
@@ -88,20 +92,9 @@ function selectCalendarVisibleSource(params: {
   return 'today';
 }
 
-/**
- * Whether a calendar surface may persist to (or clear) the single global
- * `NVP_LAST_VIEWED_CALENDAR_DATE`. Only the signed-in user's OWN (non
- * read-only) calendar may, so browsing another user's history never repoints —
- * or wipes — the current user's own restored month (Rule 2).
- */
-function canSyncGlobalLastViewedDate(isReadOnly: boolean | undefined): boolean {
-  return !isReadOnly;
-}
-
 export {
   computeLoadTarget,
   getCompactCalendarLoadTarget,
   selectCalendarVisibleSource,
-  canSyncGlobalLastViewedDate,
 };
 export type {CalendarVisibleSource};
