@@ -193,15 +193,6 @@ type BackdropProps = {
 
   /** Shows backdrop content */
   isBackdropVisible: boolean;
-
-  /**
-   * Paint the dim at full strength on the very first frame instead of fading it
-   * in from transparent. A bottom-docked sheet slides up while the sheet itself
-   * is off-screen, so a fade-from-0 backdrop leaves the first frame transparent
-   * and, on iOS, the native modal window shows through it as a one-frame
-   * brightening flash (#813). Covering immediately hides it.
-   */
-  shouldShowImmediately?: boolean;
 };
 
 type ContainerProps = {

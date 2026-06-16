@@ -25,13 +25,10 @@ function Backdrop({
   animationInTiming = CONST.MODAL.ANIMATION_TIMING.DEFAULT_IN,
   animationOutTiming = CONST.MODAL.ANIMATION_TIMING.DEFAULT_OUT,
   backdropOpacity = variables.overlayOpacity,
-  shouldShowImmediately = false,
 }: BackdropProps) {
   const styles = useThemeStyles();
   const {translate} = useLocalize();
-  // When covering immediately, the dim starts at full strength (progress 1) so
-  // the first painted frame already hides whatever is behind the backdrop.
-  const initProgress = useSharedValue(shouldShowImmediately ? 1 : 0);
+  const initProgress = useSharedValue(0);
   const isInitiated = useSharedValue(false);
 
   // Reveal via a shared value + useAnimatedStyle (progress=0 applied on mount)
@@ -39,7 +36,7 @@ function Backdrop({
   // the first paint on the New Architecture — that flashed the dim backdrop at
   // full opacity for a frame before the fade.
   useEffect(() => {
-    if (isInitiated.get() || shouldShowImmediately) {
+    if (isInitiated.get()) {
       return;
     }
     isInitiated.set(true);
@@ -50,7 +47,7 @@ function Backdrop({
         reduceMotion: ReduceMotion.Never,
       }),
     );
-  }, [animationInTiming, initProgress, isInitiated, shouldShowImmediately]);
+  }, [animationInTiming, initProgress, isInitiated]);
 
   const animatedStyles = useAnimatedStyle(
     () => ({opacity: initProgress.get()}),
