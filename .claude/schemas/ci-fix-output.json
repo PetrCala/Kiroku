@@ -1,0 +1,38 @@
+{
+  "type": "object",
+  "properties": {
+    "outcome": {
+      "type": "string",
+      "enum": ["fixed", "cannot_fix", "not_a_code_issue"]
+    },
+    "category": {
+      "type": "string",
+      "enum": [
+        "typecheck",
+        "lint",
+        "prettier",
+        "imports",
+        "react-compiler",
+        "merge-conflict",
+        "test",
+        "logic",
+        "flake",
+        "infra",
+        "unknown"
+      ]
+    },
+    "verified": {
+      "type": "boolean"
+    },
+    "summary": {
+      "type": "string"
+    },
+    "filesChanged": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    }
+  },
+  "required": ["outcome", "category", "verified", "summary", "filesChanged"]
+}

@@ -1,0 +1,222 @@
+# Manually dispatched self-heal for master CI failures.
+#
+# Given a failed "Process new code merged to master" run id, this spins up a Claude agent to
+# REPRODUCE + FIX a MECHANICAL failure (typecheck / lint / prettier / imports / react-compiler) on
+# master tip, deterministically re-verifies the fix, and opens a human-reviewed PR. It never
+# auto-merges. Test / logic / flake / infra failures are escalated to Discord, not fixed.
+#
+# Dispatch-only by design (cost): the Phase-1 failureNotifier still auto-pings; healing is on demand.
+# Agent contract: .claude/commands/fix-ci-failure.md  +  .claude/schemas/ci-fix-output.json
+name: Self-heal CI failure
+
+on:
+  workflow_dispatch:
+    inputs:
+      run_id:
+        description: 'Failed "Process new code merged to master" run id to heal'
+        required: true
+
+permissions:
+  contents: write
+  pull-requests: write
+  actions: read
+  checks: read
+
+concurrency:
+  group: self-heal-${{ github.event.inputs.run_id }}
+  cancel-in-progress: false
+
+jobs:
+  heal:
+    name: Reproduce, fix, and open a PR
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out master tip
+        uses: actions/checkout@v5
+        with:
+          ref: master
+          fetch-depth: 0
+          # KirokuAdmin PAT so the later push (and its PR) is authorized.
+          token: ${{ secrets.KIROKU_ADMIN_COMMIT_TOKEN }}
+
+      - name: Set up node
+        uses: ./.github/actions/composite/setupNode
+
+      - name: Gather failure context
+        id: context
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RUN_ID: ${{ github.event.inputs.run_id }}
+        run: |
+          set -eo pipefail
+
+          LOG_FILE="$RUNNER_TEMP/failed-logs.txt"
+          gh run view "$RUN_ID" --repo "$GITHUB_REPOSITORY" --log-failed > "$LOG_FILE" 2>/dev/null || true
+          if [[ ! -s "$LOG_FILE" ]]; then
+            gh run view "$RUN_ID" --repo "$GITHUB_REPOSITORY" --log > "$LOG_FILE" 2>/dev/null || echo "(no logs available for run $RUN_ID)" > "$LOG_FILE"
+          fi
+
+          RUN_JSON="$(gh run view "$RUN_ID" --repo "$GITHUB_REPOSITORY" --json headSha,headBranch,url,conclusion)"
+          HEAD_SHA="$(echo "$RUN_JSON" | jq -r '.headSha')"
+          RUN_URL="$(echo "$RUN_JSON" | jq -r '.url')"
+
+          # Head branch of the merged PR that introduced this commit (for the heal-of-heal guard).
+          PR_BRANCH="$(gh api "repos/$GITHUB_REPOSITORY/commits/$HEAD_SHA/pulls" -q 'map(select(.merged_at != null)) | .[0].head.ref // ""' 2>/dev/null || echo "")"
+
+          {
+            echo "log_file=$LOG_FILE"
+            echo "head_sha=$HEAD_SHA"
+            echo "short_sha=${HEAD_SHA:0:8}"
+            echo "run_url=$RUN_URL"
+            echo "pr_branch=$PR_BRANCH"
+          } >> "$GITHUB_OUTPUT"
+
+      - name: Guard against heal-of-heal
+        id: guard
+        env:
+          DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_URL }}
+          PR_BRANCH: ${{ steps.context.outputs.pr_branch }}
+          RUN_URL: ${{ steps.context.outputs.run_url }}
+        run: |
+          set -eo pipefail
+          if [[ "$PR_BRANCH" == automated-fix/* ]]; then
+            echo "proceed=false" >> "$GITHUB_OUTPUT"
+            curl -s -X POST "$DISCORD_WEBHOOK_URL" -H "Content-Type: application/json" \
+              -d "$(jq -n --arg c "🔧 Self-heal skipped for <$RUN_URL>: the failure originates from an automated-fix branch (no heal-of-heal)." '{content: $c}')" >/dev/null || true
+            echo "Refusing to heal a failure caused by an automated-fix branch."
+          else
+            echo "proceed=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Load self-heal output schema
+        id: schema
+        if: ${{ steps.guard.outputs.proceed == 'true' }}
+        run: echo "json=$(jq -c . .claude/schemas/ci-fix-output.json)" >> "$GITHUB_OUTPUT"
+
+      - name: Run self-heal agent
+        id: heal
+        if: ${{ steps.guard.outputs.proceed == 'true' }}
+        uses: anthropics/claude-code-action@ba026a3e56b9f646ae3b1be02dd9c0812aa2f8ae # v1.0.86
+        with:
+          display_report: 'true'
+          anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
+          github_token: ${{ github.token }}
+          prompt: '/fix-ci-failure RUN_ID: ${{ github.event.inputs.run_id }} RUN_URL: ${{ steps.context.outputs.run_url }} LOG_FILE: ${{ steps.context.outputs.log_file }}'
+          claude_args: |
+            --model claude-opus-4-8
+            --allowedTools "Read,Edit,Write,Glob,Grep,Bash(cat:*),Bash(npm run typecheck:*),Bash(npm run prettier:*),Bash(npx prettier:*),Bash(./scripts/lint.sh:*),Bash(npm run react-compiler-compliance-check:*),Bash(git diff:*),Bash(git status:*),Bash(gh run view:*),Bash(gh pr view:*),Bash(gh pr diff:*)" --json-schema '${{ steps.schema.outputs.json }}'
+
+      - name: Open PR or escalate
+        if: ${{ steps.guard.outputs.proceed == 'true' && steps.heal.outcome == 'success' }}
+        env:
+          GH_TOKEN: ${{ secrets.KIROKU_ADMIN_COMMIT_TOKEN }}
+          DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_URL }}
+          STRUCTURED_OUTPUT: ${{ steps.heal.outputs.structured_output }}
+          REPO: ${{ github.repository }}
+          RUN_ID: ${{ github.event.inputs.run_id }}
+          RUN_URL: ${{ steps.context.outputs.run_url }}
+          SHORT_SHA: ${{ steps.context.outputs.short_sha }}
+        run: |
+          set -eo pipefail
+
+          post_discord() {
+            curl -s -X POST "$DISCORD_WEBHOOK_URL" -H "Content-Type: application/json" \
+              -d "$(jq -n --arg c "$1" '{content: $c}')" >/dev/null || true
+          }
+
+          if [[ -z "$STRUCTURED_OUTPUT" ]]; then
+            echo "::error::agent returned empty structured output"
+            post_discord "🔧 Self-heal for <$RUN_URL> failed: the agent returned no result."
+            exit 1
+          fi
+
+          OUTCOME="$(echo "$STRUCTURED_OUTPUT" | jq -r '.outcome')"
+          CATEGORY="$(echo "$STRUCTURED_OUTPUT" | jq -r '.category')"
+          VERIFIED="$(echo "$STRUCTURED_OUTPUT" | jq -r '.verified')"
+          SUMMARY="$(echo "$STRUCTURED_OUTPUT" | jq -r '.summary')"
+          mapfile -t FILES < <(echo "$STRUCTURED_OUTPUT" | jq -r '.filesChanged[]?')
+
+          MECHANICAL=" typecheck lint prettier imports react-compiler merge-conflict "
+
+          # Escalate anything that is not a verified mechanical fix with real file changes.
+          if [[ "$OUTCOME" != "fixed" || "$VERIFIED" != "true" || ${#FILES[@]} -eq 0 ]] || [[ "$MECHANICAL" != *" $CATEGORY "* ]]; then
+            post_discord "🔧 Self-heal attempted for <$RUN_URL>, no PR opened (outcome: \`$OUTCOME\` / \`$CATEGORY\`). $SUMMARY"
+            echo "No PR. outcome=$OUTCOME category=$CATEGORY verified=$VERIFIED files=${#FILES[@]}"
+            exit 0
+          fi
+
+          # Idempotency: skip if an open auto-fix PR already exists for this commit.
+          EXISTING="$(gh pr list --repo "$REPO" --state open --json headRefName \
+            -q "[.[] | select(.headRefName | startswith(\"automated-fix/ci-$SHORT_SHA\"))] | length")"
+          if [[ "${EXISTING:-0}" -gt 0 ]]; then
+            post_discord "🔧 Self-heal: an open auto-fix PR already exists for commit \`$SHORT_SHA\`; skipping (<$RUN_URL>)."
+            echo "Open auto-fix PR already exists for $SHORT_SHA; skipping."
+            exit 0
+          fi
+
+          # Deterministic re-verify on the agent's changed files (do not trust the self-report).
+          echo "Re-verifying: ${FILES[*]}"
+          VERIFY_OK=true
+          npm run typecheck || VERIFY_OK=false
+          if [[ "$VERIFY_OK" == "true" ]]; then ./scripts/lint.sh "${FILES[@]}" || VERIFY_OK=false; fi
+          if [[ "$VERIFY_OK" == "true" ]]; then npx prettier --check "${FILES[@]}" || VERIFY_OK=false; fi
+          if [[ "$VERIFY_OK" == "true" && "$CATEGORY" == "react-compiler" ]]; then
+            for f in "${FILES[@]}"; do npm run react-compiler-compliance-check check "$f" || VERIFY_OK=false; done
+          fi
+          if [[ "$VERIFY_OK" != "true" ]]; then
+            post_discord "🔧 Self-heal: the agent reported a fix for <$RUN_URL> but workflow re-verification FAILED; no PR opened. $SUMMARY"
+            echo "Workflow re-verify failed; not opening a PR."
+            exit 0
+          fi
+
+          # Open the PR as KirokuAdmin. master is unprotected + the PR is human-reviewed, so commits
+          # are not GPG-signed (keeps this on ubuntu, in line with the check workflows).
+          git config user.name KirokuAdmin
+          git config user.email kiroku.alcohol.tracker@gmail.com
+          BRANCH="automated-fix/ci-${SHORT_SHA}-run-${RUN_ID}"
+          git switch -c "$BRANCH"
+          git add -A
+          git commit \
+            -m "fix(ci): auto-heal $CATEGORY failure on master" \
+            -m "$SUMMARY" \
+            -m "Automated fix for failed run $RUN_URL." \
+            -m "Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>"
+          git push --set-upstream origin "$BRANCH"
+
+          BODY_FILE="$RUNNER_TEMP/pr-body.md"
+          {
+            echo "## Automated CI self-heal"
+            echo ""
+            echo "The **Process new code merged to master** pipeline failed ([run]($RUN_URL)). This PR is an automated **$CATEGORY** fix."
+            echo ""
+            echo "**Root cause / fix:** $SUMMARY"
+            echo ""
+            echo "**Files changed:**"
+            for f in "${FILES[@]}"; do echo "- \`$f\`"; done
+            echo ""
+            echo "### Workflow re-verification (✅ passed before this PR opened)"
+            echo "- \`npm run typecheck\`"
+            echo "- \`./scripts/lint.sh\` on the changed files"
+            echo "- \`npx prettier --check\` on the changed files"
+            if [[ "$CATEGORY" == "react-compiler" ]]; then echo "- react-compiler compliance on the changed files"; fi
+            echo ""
+            echo "> ⚠️ PRs opened by KirokuAdmin skip the standard \`pull_request\` checks, so the re-verification above (run by selfHeal.yml) is the gate. Review the diff before merging. Master's own pipeline re-runs on merge."
+            echo ""
+            echo "🤖 Generated with [Claude Code](https://claude.com/claude-code)"
+          } > "$BODY_FILE"
+
+          gh pr create --base master --head "$BRANCH" \
+            --title "fix(ci): auto-heal $CATEGORY failure on master" \
+            --body-file "$BODY_FILE"
+          PR_URL="$(gh pr view "$BRANCH" --json url -q '.url')"
+          post_discord "🔧 Self-heal opened a PR for the \`$CATEGORY\` failure on <$RUN_URL>: $PR_URL — review before merging."
+
+      - name: Report agent error
+        if: ${{ steps.guard.outputs.proceed == 'true' && steps.heal.outcome == 'failure' }}
+        env:
+          DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_URL }}
+          RUN_URL: ${{ steps.context.outputs.run_url }}
+        run: |
+          set -eo pipefail
+          curl -s -X POST "$DISCORD_WEBHOOK_URL" -H "Content-Type: application/json" \
+            -d "$(jq -n --arg c "🔧 Self-heal for <$RUN_URL> failed: the agent step errored. See the selfHeal run logs." '{content: $c}')" >/dev/null || true
