@@ -358,7 +358,7 @@ jobs:
           # Release' (automatic_release: false) and Android promotes to the beta track.
           # Remind a human to bump the in-app version gate once the build actually ships.
           if [[ "${{ inputs.SHOULD_DEPLOY_PRODUCTION }}" == "true" ]]; then
-            DESCRIPTION="${DESCRIPTION}\n\n📌 Reminder: once v${CLI_VERSION} is live on BOTH the App Store (manually release from 'Pending Developer Release') and Google Play, bump the in-app update prompt with: \`kiroku-cli app-version set --latest ${CLI_VERSION}\`"
+            DESCRIPTION="${DESCRIPTION}\n\n📌 Production build is not live yet. It's awaiting manual release:\n• App Store: release it from 'Pending Developer Release'\n• Google Play: promote it from the beta track to production\n\nOnce v${CLI_VERSION} is downloadable on both, bump the in-app update prompt:\n\`kiroku-cli app-version set --latest ${CLI_VERSION}\`"
           fi
           curl -s -X POST "$DISCORD_WEBHOOK_URL" \
             -H "Content-Type: application/json" \
