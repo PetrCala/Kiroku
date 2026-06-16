@@ -21,7 +21,6 @@ import Section from '@components/Section';
 import MenuItem from '@components/MenuItem';
 import getPlatform from '@libs/getPlatform';
 import CONST from '@src/CONST';
-import type {PaletteId} from '@libs/SessionColorPalettes';
 import {
   DEFAULT_PALETTE_ID,
   getPaletteIdFromColors,
@@ -85,9 +84,17 @@ function PreferencesScreen({route}: PreferencesScreenProps) {
     [translate, preferences?.theme, preferredLocale],
   ); // Check whether preferred locale does not cause infinite re-render
 
-  const activePaletteId: PaletteId =
-    getPaletteIdFromColors(preferences?.session_color_palette) ??
-    DEFAULT_PALETTE_ID;
+  // A defined palette that matches no preset means the custom slot is active
+  // (getPaletteIdFromColors returns null), in which case we label it "Custom"
+  // rather than falling back to the default preset's name.
+  const activePalette = preferences?.session_color_palette;
+  const matchedPresetId = getPaletteIdFromColors(activePalette);
+  const isCustomActive = !!activePalette && matchedPresetId === null;
+  const colorPaletteDescription = isCustomActive
+    ? translate('colorPaletteScreen.custom.label')
+    : translate(
+        `colorPaletteScreen.palettes.${matchedPresetId ?? DEFAULT_PALETTE_ID}` as const,
+      );
 
   const drinksAndUnitsMenuItemsData: Menu = useMemo(
     () => ({
@@ -112,14 +119,12 @@ function PreferencesScreen({route}: PreferencesScreenProps) {
           title: translate(
             'preferencesScreen.drinksAndUnitsSection.colorPalette',
           ),
-          description: translate(
-            `colorPaletteScreen.palettes.${activePaletteId}` as const,
-          ),
+          description: colorPaletteDescription,
           pageRoute: ROUTES.SETTINGS_COLOR_PALETTE,
         },
       ],
     }),
-    [translate, activePaletteId],
+    [translate, colorPaletteDescription],
   );
 
   /**
