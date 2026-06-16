@@ -349,9 +349,20 @@ jobs:
       - name: 'Announces the deploy in the #announce Discord channel'
         shell: bash
         run: |
+          APP_VERSION="${{ inputs.APP_VERSION }}"
+          # The in-app version gate uses the marketing version (MAJOR.MINOR.PATCH),
+          # so drop the build suffix (e.g. 0.3.16-14 -> 0.3.16).
+          CLI_VERSION="${APP_VERSION%-*}"
+          DESCRIPTION="Successfully deployed Kiroku [${{ inputs.RELEASE_TAG }}](https://github.com/PetrCala/Kiroku/releases/tag/${{ inputs.RELEASE_TAG }}) to ${{ inputs.DEPLOY_ENVIRONMENT }}"
+          # Production builds are NOT live for users yet: iOS sits in 'Pending Developer
+          # Release' (automatic_release: false) and Android promotes to the beta track.
+          # Remind a human to bump the in-app version gate once the build actually ships.
+          if [[ "${{ inputs.SHOULD_DEPLOY_PRODUCTION }}" == "true" ]]; then
+            DESCRIPTION="${DESCRIPTION}\n\n📌 Reminder: once v${CLI_VERSION} is live on BOTH the App Store (manually release from 'Pending Developer Release') and Google Play, bump the in-app update prompt with: \`kiroku-cli app-version set --latest ${CLI_VERSION}\`"
+          fi
           curl -s -X POST "$DISCORD_WEBHOOK_URL" \
             -H "Content-Type: application/json" \
-            -d "{\"content\":\"\",\"embeds\":[{\"title\":\"Deploy Successful\",\"color\":3066993,\"description\":\"Successfully deployed Kiroku [${{ inputs.RELEASE_TAG }}](https://github.com/PetrCala/Kiroku/releases/tag/${{ inputs.RELEASE_TAG }}) to ${{ inputs.DEPLOY_ENVIRONMENT }}\",\"footer\":{\"text\":\"GitHub Actions\",\"icon_url\":\"https://github.githubassets.com/images/modules/logos_page/GitHub-Mark.png\"}}]}"
+            -d "{\"content\":\"\",\"embeds\":[{\"title\":\"Deploy Successful\",\"color\":3066993,\"description\":\"${DESCRIPTION}\",\"footer\":{\"text\":\"GitHub Actions\",\"icon_url\":\"https://github.githubassets.com/images/modules/logos_page/GitHub-Mark.png\"}}]}"
         env:
           DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_URL }}
 
