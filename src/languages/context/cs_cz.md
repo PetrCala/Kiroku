@@ -74,6 +74,7 @@ zde`, `Přidejte si je zde`, `Zkuste hledat zde`.
 | session intensity: light    | **mírná** (relace)                                | lehká          |
 | session intensity: moderate | **střední** (relace)                              |                |
 | session intensity: heavy    | **náročná** (relace)                              | silná, těžká   |
+| private (data status label) | **Soukromé** (neuter, of implied data/údaje)      | Skryté         |
 | report (verb)               | **nahlásit**                                      |                |
 | report (noun)               | **hlášení**                                       |                |
 | inappropriate               | **nevhodné / nevhodný / nevhodná**                |                |

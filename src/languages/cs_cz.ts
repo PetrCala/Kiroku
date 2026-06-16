@@ -1511,6 +1511,7 @@ export default {
     sober: 'Bez pití',
     sessionStarted: 'Relace zahájena',
     noSessionsYet: 'Zatím žádné relace',
+    private: 'Soukromé',
   },
   yearPickerScreen: {
     year: 'Rok',

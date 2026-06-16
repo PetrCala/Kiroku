@@ -100,11 +100,16 @@ function UserListComponent({
     const profileData = profileList[userID] ?? {};
     const userStatusData = userStatusList[userID] ?? {};
 
-    // A friend whose status the viewer may not see is hidden (the server evicts
-    // status for hidden/denied friends), matching the pre-existing behaviour.
-    if (isEmptyObject(profileData) || isEmptyObject(userStatusData)) {
+    // No profile means the server evicted everything (block, ban, or a deleted
+    // account) — there's nothing to show, so keep the row hidden.
+    if (isEmptyObject(profileData)) {
       return null;
     }
+    // Profile present but status evicted → the friend hid their drinking data
+    // (`hide_from_all` / `hidden_from`). Still list them by name + avatar; the
+    // `isPrivate` branch in UserOverview shows a neutral marker instead of any
+    // activity info.
+    const isPrivate = isEmptyObject(userStatusData);
 
     return (
       <FriendOfflineFeedback key={`${index}-user-feedback`} userID={userID}>
@@ -117,6 +122,7 @@ function UserListComponent({
             profileData={profileData}
             userStatusData={userStatusData}
             timezone={userData?.timezone}
+            isPrivate={isPrivate}
           />
         </PressableWithFeedback>
       </FriendOfflineFeedback>

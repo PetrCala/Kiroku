@@ -1510,6 +1510,7 @@ export default {
     sober: 'Sober',
     sessionStarted: 'Session started',
     noSessionsYet: 'No sessions yet',
+    private: 'Private',
   },
   yearPickerScreen: {
     year: 'Year',
