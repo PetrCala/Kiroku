@@ -1088,6 +1088,8 @@ export default {
     offlineUnavailableTitle: "Couldn't load this profile",
     offlineUnavailableMessage:
       "We couldn't load this profile while offline. Reconnect to view it.",
+    privateTitle: 'Private profile',
+    privateMessage: 'This person keeps their drinking sessions private.',
   },
   statistics: {
     title: 'Statistics',

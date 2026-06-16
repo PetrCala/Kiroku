@@ -17,6 +17,7 @@ import {getCommonFriendsCount} from '@libs/FriendUtils';
 import {isBlocked} from '@libs/BlockUtils';
 import * as FeatureFlags from '@libs/FeatureFlags';
 import * as KirokuIcons from '@components/Icon/KirokuIcons';
+import Icon from '@components/Icon';
 import type {StackScreenProps} from '@react-navigation/stack';
 import type {ProfileNavigatorParamList} from '@libs/Navigation/types';
 import type SCREENS from '@src/SCREENS';
@@ -38,6 +39,7 @@ import ManageFriendPopover from '@components/ManageFriendPopover';
 import ScrollView from '@components/ScrollView';
 import Text from '@components/Text';
 import useStyleUtils from '@hooks/useStyleUtils';
+import useNetwork from '@hooks/useNetwork';
 
 type ProfileScreenProps = StackScreenProps<
   ProfileNavigatorParamList,
@@ -56,6 +58,7 @@ function ProfileScreen({route}: ProfileScreenProps) {
   const {translate} = useLocalize();
   const styles = useThemeStyles();
   const StyleUtils = useStyleUtils();
+  const {isOffline} = useNetwork();
   const {userData, isLoading: isProfileFetchLoading} = useFriendProfile(userID);
   const {preferences, isLoading: isPrefsLoading} = useFriendPreferences(userID);
   // Own sessions come straight off the app/open snapshot in Onyx; the windowed
@@ -130,6 +133,19 @@ function ProfileScreen({route}: ProfileScreenProps) {
   // data (the server denies block-gated reads, but a cached entry may linger).
   const myBlocked = user ? userDataList?.[user.uid]?.blocked : undefined;
   const isViewingBlockedUser = !isSelf && isBlocked(myBlocked, userID);
+  // A friend who hid their drinking data (`hide_from_all` / `hidden_from`)
+  // returns a readable profile, but the server evicts their preferences,
+  // sessions, and status (#786). That is NOT an unreachable profile: render it
+  // with a "private" notice in place of the sessions overview + calendar.
+  // Online-gated so an offline read that simply hasn't landed still falls
+  // through to the "couldn't load / reconnect" state below.
+  const isPrivateProfile =
+    !isSelf &&
+    !isViewingBlockedUser &&
+    !isOffline &&
+    !!profileData &&
+    !!userData &&
+    !preferences;
 
   const friendCountLabel = useMemo((): string => {
     return `${translate('profileScreen.commonFriendsLabel', {
@@ -211,10 +227,15 @@ function ProfileScreen({route}: ProfileScreenProps) {
       </ScreenWrapper>
     );
   }
-  // A blocked/blocking user resolves with no profile (we blocked them, or they
-  // blocked us and the server denied/evicted the read), so this is a clean empty
-  // state with no sessions and no common-friends count — never a surfaced error.
-  if (!profileData || !preferences || !userData || isViewingBlockedUser) {
+  // Full-screen "couldn't load" only when the profile is genuinely unreachable:
+  // no profile (deleted, or they blocked us), we blocked them, or we're offline
+  // without cached preferences to render. A friend who merely hid their data
+  // (`isPrivateProfile`) is reachable and online, so it's excluded here and
+  // renders below with a private notice instead of a surfaced error.
+  if (
+    !isPrivateProfile &&
+    (!profileData || !preferences || !userData || isViewingBlockedUser)
+  ) {
     return (
       <ScreenWrapper
         testID={ProfileScreen.displayName}
@@ -287,28 +308,63 @@ function ProfileScreen({route}: ProfileScreenProps) {
           />
         </View>
         <View style={styles.ph2}>
-          {didScreenTransitionEnd ? (
-            <MonthlyOverviewCard
-              stats={profileStats}
-              showWeeklyUnits={false}
-              showMonthComparison
-              interactive={isSelf}
-              showArrow={isSelf}
-            />
+          {preferences ? (
+            <>
+              {didScreenTransitionEnd ? (
+                <MonthlyOverviewCard
+                  stats={profileStats}
+                  showWeeklyUnits={false}
+                  showMonthComparison
+                  interactive={isSelf}
+                  showArrow={isSelf}
+                />
+              ) : (
+                <MonthlyOverviewCardSkeleton />
+              )}
+              {didScreenTransitionEnd ? (
+                <SessionsCalendar
+                  userID={userID}
+                  visibleDate={visibleDateData}
+                  onDateChange={onDateChange}
+                  drinkingSessionData={drinkingSessionData}
+                  preferences={preferences}
+                  isFetchingOlderMonths={isFetchingOlderMonths}
+                />
+              ) : (
+                <SessionsCalendarCompactSkeleton />
+              )}
+            </>
           ) : (
-            <MonthlyOverviewCardSkeleton />
-          )}
-          {didScreenTransitionEnd ? (
-            <SessionsCalendar
-              userID={userID}
-              visibleDate={visibleDateData}
-              onDateChange={onDateChange}
-              drinkingSessionData={drinkingSessionData}
-              preferences={preferences}
-              isFetchingOlderMonths={isFetchingOlderMonths}
-            />
-          ) : (
-            <SessionsCalendarCompactSkeleton />
+            <View
+              style={[
+                styles.alignItemsCenter,
+                styles.justifyContentCenter,
+                styles.ph5,
+                styles.mt5,
+              ]}>
+              <Icon
+                src={KirokuIcons.Lock}
+                fill={StyleUtils.getIconFillColor()}
+                medium
+              />
+              <Text
+                style={[
+                  styles.textHeadlineH1,
+                  styles.textAlignCenter,
+                  styles.mt2,
+                ]}>
+                {translate('profileScreen.privateTitle')}
+              </Text>
+              <Text
+                style={[
+                  styles.textNormal,
+                  styles.textSupporting,
+                  styles.textAlignCenter,
+                  styles.mt2,
+                ]}>
+                {translate('profileScreen.privateMessage')}
+              </Text>
+            </View>
           )}
         </View>
         <View style={[styles.flexRow, styles.justifyContentEnd]}>
