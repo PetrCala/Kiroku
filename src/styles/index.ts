@@ -303,8 +303,6 @@ const styles = (theme: ThemeColors) =>
 
     colorPaletteEditButton: {
       paddingHorizontal: 16,
-      borderLeftWidth: 1,
-      borderLeftColor: theme.border,
     },
 
     paletteBandChip: {
