@@ -70,7 +70,11 @@ function Backdrop({
   // separate elements avoids Reanimated's "Property "opacity" may be overwritten
   // by a layout animation" dev warning.
   const BackdropOverlay = (
-    <Animated.View style={frame} exiting={Exiting}>
+    // TEMP DEBUG #813: tint the full-screen backdrop frame opaque RED so we can
+    // tell whether the first-frame brightening is this React layer (screen turns
+    // red on frame 1) or the native iOS modal window behind it (screen is white
+    // on frame 1, red only appears a frame later). REMOVE before merge.
+    <Animated.View style={[frame, {backgroundColor: 'red'}]} exiting={Exiting}>
       <Animated.View style={[StyleSheet.absoluteFill, animatedStyles]}>
         {customBackdrop ?? (
           <View
