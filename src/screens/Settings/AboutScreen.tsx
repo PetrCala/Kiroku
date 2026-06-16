@@ -137,7 +137,7 @@ function AboutScreen() {
       <HeaderWithBackButton
         title={translate('settingsScreen.about')}
         shouldShowBackButton={shouldUseNarrowLayout}
-        onBackButtonPress={() => Navigation.goBack(ROUTES.SETTINGS)}
+        onBackButtonPress={() => Navigation.goBack()}
       />
       <ScrollView contentContainerStyle={styles.pt3}>
         <View style={[styles.flex1]}>
