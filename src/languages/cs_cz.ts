@@ -1095,7 +1095,7 @@ export default {
     offlineUnavailableMessage:
       'Tento profil se nepodařilo načíst v režimu offline. Pro zobrazení se znovu připojte.',
     privateTitle: 'Soukromý profil',
-    privateMessage: 'Tento uživatel nesdílí své alkoholové relace.',
+    privateMessage: 'Relace tohoto uživatele jsou soukromé.',
   },
   statistics: {
     title: 'Statistiky',
