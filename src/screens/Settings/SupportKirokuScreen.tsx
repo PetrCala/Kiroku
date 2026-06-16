@@ -78,7 +78,7 @@ function SupportKirokuScreen() {
   const isVisible = SupporterUtils.isSupporterTierVisible();
   useEffect(() => {
     if (!isVisible) {
-      Navigation.goBack(ROUTES.SETTINGS);
+      Navigation.goBack();
     }
   }, [isVisible]);
 
@@ -501,7 +501,7 @@ function SupportKirokuScreen() {
     <ScreenWrapper testID={SupportKirokuScreen.displayName}>
       <HeaderWithBackButton
         title={translate('supporter.paywallScreen.title')}
-        onBackButtonPress={() => Navigation.goBack(ROUTES.SETTINGS)}
+        onBackButtonPress={() => Navigation.goBack()}
       />
       <ScrollView contentContainerStyle={[styles.pt3, styles.ph5, styles.pb5]}>
         {renderBody()}

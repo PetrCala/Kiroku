@@ -14,7 +14,6 @@ import Navigation from '@libs/Navigation/Navigation';
 import SupporterUtils from '@libs/SupporterUtils';
 import * as UserUtils from '@libs/UserUtils';
 import ONYXKEYS from '@src/ONYXKEYS';
-import ROUTES from '@src/ROUTES';
 import type {SupporterStatus} from '@src/types/onyx/UserData';
 
 // Both stores require subscription cancellation in the OS settings, not in-app
@@ -39,7 +38,7 @@ function ManageSubscriptionScreen() {
   const isVisible = SupporterUtils.isSupporterTierVisible();
   useEffect(() => {
     if (!isVisible) {
-      Navigation.goBack(ROUTES.SETTINGS);
+      Navigation.goBack();
     }
   }, [isVisible]);
 
@@ -145,7 +144,7 @@ function ManageSubscriptionScreen() {
     <ScreenWrapper testID={ManageSubscriptionScreen.displayName}>
       <HeaderWithBackButton
         title={translate('supporter.manageSubscription.title')}
-        onBackButtonPress={() => Navigation.goBack(ROUTES.SETTINGS)}
+        onBackButtonPress={() => Navigation.goBack()}
       />
       <ScrollView contentContainerStyle={[styles.pt3, styles.ph5, styles.pb5]}>
         <Section
