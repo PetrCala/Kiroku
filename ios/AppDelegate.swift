@@ -40,10 +40,7 @@ class AppDelegate: ExpoAppDelegate {
     window = UIWindow(frame: UIScreen.main.bounds)
     // Match BootSplash.storyboard background so there is never a white frame
     // peeking through during the OS LaunchScreen → RCTBootSplash overlay handoff.
-    // TEMP DEBUG #813: was UIColor(red: 0.9607843, green: 0.76862745, blue: 0, alpha: 1)
-    // (splash yellow). Tinted MAGENTA to see if the modal-present flash is the
-    // UIWindow background. REVERT before merge.
-    window?.backgroundColor = UIColor.magenta
+    window?.backgroundColor = UIColor(red: 0.9607843, green: 0.76862745, blue: 0, alpha: 1)
     factory.startReactNative(
       withModuleName: "kiroku",
       in: window,
@@ -55,10 +52,8 @@ class AppDelegate: ExpoAppDelegate {
     // RCTSurfaceHostingProxyRootView whose default background is the system
     // background (white on light mode). Painting it yellow means any frame
     // where the cross-dissolve transition reveals it will not flash white.
-    // TEMP DEBUG #813: was UIColor(red: 0.9607843, green: 0.76862745, blue: 0, alpha: 1)
-    // (splash yellow). Tinted CYAN to see if the modal-present flash is the
-    // root view controller's view. REVERT before merge.
-    self.window?.rootViewController?.view.backgroundColor = UIColor.cyan
+    self.window?.rootViewController?.view.backgroundColor =
+      UIColor(red: 0.9607843, green: 0.76862745, blue: 0, alpha: 1)
 
     // Force the app to LTR mode.
     RCTI18nUtil.sharedInstance().allowRTL(false)
