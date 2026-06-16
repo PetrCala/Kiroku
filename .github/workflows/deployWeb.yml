@@ -14,8 +14,16 @@ name: Deploy web
 #                                                build on the dev backend, so the
 #                                                dev-only test account can sign in.
 # - PR labeled `Ready To Build - Web`         -> build-web-dev -> preview channel
-#   (or manual dispatch with a PR number)        `pr-<number>` on the dev site,
+#                                                `pr-<number>` on the dev site,
 #                                                URL commented on the PR
+# - manual dispatch (Actions tab / `gh workflow run`), `ENVIRONMENT` input:
+#     * `production` -> build-web       -> live deploy to app.kiroku.cz
+#     * `staging`    -> build-web-adhoc -> live deploy to app-dev.kiroku.cz
+#     * `preview`    -> build-web-dev   -> PR preview channel (needs PULL_REQUEST_NUMBER)
+#   Break-glass: a `production` dispatch ships the web to prod WITHOUT pushing the
+#   `production` branch (which would also fire the native iOS/Android store deploy
+#   via deploy.yml). It builds whatever ref the run is dispatched from, so dispatch
+#   from `master`/`staging` (or a vetted hotfix branch) only.
 #
 # Auth: a single Google service-account JSON in the FIREBASE_SERVICE_ACCOUNT
 # secret, granted Firebase Hosting Admin on BOTH Firebase projects
@@ -32,9 +40,18 @@ on:
     types: [labeled]
   workflow_dispatch:
     inputs:
-      PULL_REQUEST_NUMBER:
-        description: Pull request number to build a preview channel for
+      ENVIRONMENT:
+        description: What to deploy (preview = temporary PR channel)
         required: true
+        default: preview
+        type: choice
+        options:
+          - preview
+          - staging
+          - production
+      PULL_REQUEST_NUMBER:
+        description: PR number to build a preview channel for (only when ENVIRONMENT=preview)
+        required: false
 
 permissions:
   contents: read
@@ -47,7 +64,7 @@ concurrency:
 jobs:
   deployLive:
     name: Build and deploy web (live)
-    if: ${{ github.event_name == 'push' }}
+    if: ${{ github.event_name == 'push' || (github.event_name == 'workflow_dispatch' && inputs.ENVIRONMENT != 'preview') }}
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
@@ -55,14 +72,26 @@ jobs:
 
       - name: Resolve deploy target
         id: target
+        env:
+          # On a branch push the environment is the branch name; on a manual
+          # workflow_dispatch it is the chosen ENVIRONMENT input.
+          DISPATCH_ENVIRONMENT: ${{ inputs.ENVIRONMENT }}
         run: |
-          if [[ "$GITHUB_REF_NAME" == "production" ]]; then
+          if [[ "$GITHUB_EVENT_NAME" == "workflow_dispatch" ]]; then
+            ENVIRONMENT="$DISPATCH_ENVIRONMENT"
+          else
+            ENVIRONMENT="$GITHUB_REF_NAME"
+          fi
+
+          if [[ "$ENVIRONMENT" == "production" ]]; then
             {
+              echo "ENVIRONMENT=production"
               echo "PROJECT=prod"
               echo "BUILD_SCRIPT=build-web"
             } >> "$GITHUB_OUTPUT"
           else
             {
+              echo "ENVIRONMENT=staging"
               echo "PROJECT=dev"
               echo "BUILD_SCRIPT=build-web-adhoc"
             } >> "$GITHUB_OUTPUT"
@@ -74,11 +103,11 @@ jobs:
       # (not prod, as STAGING_ENV_FILE did) — a production-grade build on the dev
       # backend.
       - name: Stage .env.production from secret
-        if: ${{ github.ref_name == 'production' }}
+        if: ${{ steps.target.outputs.ENVIRONMENT == 'production' }}
         run: echo "${{ secrets.PRODUCTION_ENV_FILE }}" > .env.production
 
       - name: Stage .env.adhoc from secret
-        if: ${{ github.ref_name == 'staging' }}
+        if: ${{ steps.target.outputs.ENVIRONMENT == 'staging' }}
         run: echo "${{ secrets.ADHOC_ENV_FILE }}" > .env.adhoc
 
       - name: Setup Node
@@ -100,17 +129,23 @@ jobs:
             --only hosting:app \
             --project ${{ steps.target.outputs.PROJECT }} \
             --non-interactive \
-            --message "Deploy ${{ github.sha }} (${{ github.ref_name }})"
+            --message "Deploy ${{ github.sha }} (${{ steps.target.outputs.ENVIRONMENT }})"
 
   deployPreview:
     name: Build and deploy web preview channel
-    if: ${{ github.event_name == 'workflow_dispatch' || (github.event_name == 'pull_request' && github.event.label.name == 'Ready To Build - Web') }}
+    if: ${{ (github.event_name == 'workflow_dispatch' && inputs.ENVIRONMENT == 'preview') || (github.event_name == 'pull_request' && github.event.label.name == 'Ready To Build - Web') }}
     runs-on: ubuntu-latest
     outputs:
       preview-url: ${{ steps.preview.outputs.URL }}
     env:
       PULL_REQUEST_NUMBER: ${{ github.event.number || github.event.inputs.PULL_REQUEST_NUMBER }}
     steps:
+      - name: Require PULL_REQUEST_NUMBER for a preview dispatch
+        if: ${{ github.event_name == 'workflow_dispatch' && env.PULL_REQUEST_NUMBER == '' }}
+        run: |
+          echo "::error::ENVIRONMENT=preview requires the PULL_REQUEST_NUMBER input." >&2
+          exit 1
+
       - name: Resolve PR head ref
         id: ref
         if: ${{ github.event_name == 'workflow_dispatch' }}
