@@ -1,0 +1,40 @@
+# Listens for failures of the "Process new code merged to master" pipeline (preDeploy.yml) and posts
+# an enriched Discord message naming the failing job(s), the blamed merged PR, and the error.
+#
+# Decoupled from the deploy path on purpose: it runs after the pipeline completes and never slows it
+# down. workflow_run listeners only fire from the version of this file on the default branch (master).
+name: Notify on Workflow Failure
+
+on:
+  workflow_run:
+    workflows: ['Process new code merged to master']
+    types: [completed]
+  # Manual testing against a past failed run (mirrors translation-review.yml's dispatch-for-testing).
+  workflow_dispatch:
+    inputs:
+      run_id:
+        description: 'Failed workflow run id to notify on'
+        required: true
+
+# Private repo: a permissions block sets every unlisted scope to `none`, so the read scopes the
+# action needs (jobs/runs, annotations, associated PR) must be granted explicitly.
+permissions:
+  actions: read
+  checks: read
+  contents: read
+  pull-requests: read
+
+jobs:
+  notifyFailure:
+    name: Announce failed master pipeline in Discord
+    runs-on: ubuntu-latest
+    if: ${{ github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'failure' }}
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Notify on failed workflow
+        uses: ./.github/actions/javascript/failureNotifier
+        with:
+          GITHUB_TOKEN: ${{ github.token }}
+          DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_URL }}
+          RUN_ID: ${{ github.event.inputs.run_id }}
