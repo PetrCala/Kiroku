@@ -559,19 +559,22 @@ async function setLoadingText(
   await Onyx.merge(ONYXKEYS.APP_LOADING_TEXT, text);
 }
 
-/** Record the day the user is currently looking at in an enlarged calendar /
- *  day-overview scroll. The home & profile calendars consume this once on
- *  focus so backing out lands on the same date. */
-function setLastViewedCalendarDate(date: DateString) {
-  Onyx.set(ONYXKEYS.NVP_LAST_VIEWED_CALENDAR_DATE, date);
+/** Record the day the viewer is currently looking at in `userID`'s enlarged
+ *  calendar / day-overview scroll. Stored per viewed user so backing out to that
+ *  user's profile (or home, for self) lands on the same date, while a different
+ *  user's calendar is never repointed (Rule 2). Merge (not set) so other users'
+ *  entries are preserved. */
+function setLastViewedCalendarDate(userID: UserID, date: DateString) {
+  Onyx.merge(ONYXKEYS.NVP_LAST_VIEWED_CALENDAR_DATE, {[userID]: date});
 }
 
-/** Clear the consumed last-viewed date so subsequent focuses don't re-apply
- *  it. The cold-launch reset lives in the `Calendar.resetCalendarStateForColdLaunch`
- *  action (the `initialKeyStates` null is a no-op — Onyx drops null defaults);
- *  this is for in-app clears, e.g. manual month navigation. */
-function clearLastViewedCalendarDate() {
-  Onyx.set(ONYXKEYS.NVP_LAST_VIEWED_CALENDAR_DATE, null);
+/** Clear `userID`'s consumed last-viewed date so subsequent focuses don't
+ *  re-apply it (e.g. after manual month navigation on that user's calendar). The
+ *  nested null deletes only that user's entry, leaving every other user's
+ *  untouched. The cold-launch reset of the WHOLE map lives in
+ *  `Calendar.resetCalendarStateForColdLaunch`. */
+function clearLastViewedCalendarDate(userID: UserID) {
+  Onyx.merge(ONYXKEYS.NVP_LAST_VIEWED_CALENDAR_DATE, {[userID]: null});
 }
 
 export {

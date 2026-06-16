@@ -15,8 +15,6 @@ import {dateStringToDate} from '@libs/DataHandling';
 import DateUtils from '@libs/DateUtils';
 import Str from '@libs/common/str';
 import {roundToTwoDecimalPlaces} from '@libs/NumberUtils';
-import * as App from '@userActions/App';
-import {canSyncGlobalLastViewedDate} from '@libs/SessionsCalendarUtils';
 import CONST from '@src/CONST';
 import type {Preferences} from '@src/types/onyx';
 import type {DateString} from '@src/types/onyx/OnyxCommon';
@@ -85,9 +83,13 @@ type DayOverviewListViewProps = {
    *  screen uses it to open the add-session picker on the viewed month. */
   onVisibleDayChange?: (day: DateString) => void;
   /** Render the session tiles non-interactively (viewing another user's
-   *  history). Also suppresses the "last viewed day" persistence so browsing a
-   *  friend's days doesn't repoint the current user's own compact calendar. */
+   *  history). */
   isReadOnly?: boolean;
+  /** Records the day the viewer is looking at (debounced) into the viewed user's
+   *  own per-user last-viewed slot, so backing out restores that user's calendar
+   *  position. Per-user keyed by the parent, so it never repoints another user's
+   *  calendar (Rule 2). */
+  onRecordLastViewedDay?: (day: DateString) => void;
   /** When true, each session tile shows its edit affordance. Driven by the
    *  day-overview screen's Edit/Done header toggle (self only). */
   isEditModeOn?: boolean;
@@ -116,6 +118,7 @@ function DayOverviewListView({
   initialDay,
   onInitialScrollReady,
   onVisibleDayChange,
+  onRecordLastViewedDay,
   isReadOnly,
   isEditModeOn,
   onSwipeBack,
@@ -300,14 +303,13 @@ function DayOverviewListView({
   const recordVisibleDay = useMemo(
     () =>
       lodashDebounce((day: DateString) => {
-        // Read-only (friend) browsing must not repoint the current user's own
-        // compact calendar, which restores from this NVP.
-        if (canSyncGlobalLastViewedDate(isReadOnly)) {
-          App.setLastViewedCalendarDate(day);
-        }
+        // The parent binds the write to the viewed user's own per-user slot, so
+        // this records for the signed-in user and friends alike, with no
+        // cross-user leak (Rule 2).
+        onRecordLastViewedDay?.(day);
         onVisibleDayChange?.(day);
       }, LAST_VIEWED_DEBOUNCE_MS),
-    [onVisibleDayChange, isReadOnly],
+    [onVisibleDayChange, onRecordLastViewedDay],
   );
   useEffect(() => () => recordVisibleDay.cancel(), [recordVisibleDay]);
 

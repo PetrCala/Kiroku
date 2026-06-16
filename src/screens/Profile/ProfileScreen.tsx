@@ -11,10 +11,7 @@ import ONYXKEYS from '@src/ONYXKEYS';
 import * as App from '@userActions/App';
 import * as Profile from '@userActions/Profile';
 import {dateToDateData, dateStringToDate, objKeys} from '@libs/DataHandling';
-import {
-  canSyncGlobalLastViewedDate,
-  selectCalendarVisibleSource,
-} from '@libs/SessionsCalendarUtils';
+import {selectCalendarVisibleSource} from '@libs/SessionsCalendarUtils';
 import SessionsCalendar from '@components/SessionsCalendar';
 import SessionsCalendarCompactSkeleton from '@components/SessionsCalendar/SessionsCalendarCompactSkeleton';
 import {getCommonFriendsCount} from '@libs/FriendUtils';
@@ -97,58 +94,45 @@ function ProfileScreen({route}: ProfileScreenProps) {
     userID,
     date: dateToDateData(new Date()),
   }));
-  const [lastViewedCalendarDate] = useOnyx(
-    ONYXKEYS.NVP_LAST_VIEWED_CALENDAR_DATE,
-  );
-  // The calendar's visible month: the last-viewed day from an enlarged calendar
-  // when present, otherwise the locally-navigated month. Derived (not synced via
-  // an effect) so it's already correct on the first render after the modal
-  // dismisses — the profile updates while still hidden underneath, so the user
-  // never sees the month flip. Reset on app launch → today.
+  const [lastViewedByUser] = useOnyx(ONYXKEYS.NVP_LAST_VIEWED_CALENDAR_DATE);
+  // This user's OWN last-viewed day (narrow primitive so the memo below only
+  // re-runs when THIS user's entry changes, not on any other user's).
+  const lastViewedForUser = lastViewedByUser?.[userID];
+  // The calendar's visible month: the viewed user's last-scrolled day from an
+  // enlarged calendar when present, otherwise the locally-navigated month,
+  // otherwise today. Derived (not synced via an effect) so it's already correct
+  // on the first render after the modal dismisses — the profile updates while
+  // still hidden underneath, so the user never sees the month flip.
   //
-  // `NVP_LAST_VIEWED_CALENDAR_DATE` is a single global (non-user-scoped) key, so
-  // only the signed-in user's OWN calendar may restore from it. A friend's
-  // profile must always open on the current month — otherwise the last-viewed
-  // month of a different friend (or of home/self) leaks in, and that stale month
-  // also renders empty (it falls outside the fetched window). Friends therefore
-  // ignore the NVP entirely and fall back to today. The local month only applies
-  // while it still belongs to the user on screen; on a user change it's stale, so
-  // we fall back to today (covers a reused screen instance, friend A → friend B).
+  // `NVP_LAST_VIEWED_CALENDAR_DATE` is keyed PER VIEWED USER, so this restores a
+  // friend's last position the same way it does the signed-in user's, while one
+  // user's entry can never leak onto another's calendar (Rule 2 — structural,
+  // since we only ever read `[userID]`). The whole map is cleared on app launch,
+  // so a user viewed for the first time this session opens on today. The local
+  // month only applies while it still belongs to the user on screen; on a user
+  // change it's stale, so we fall back to today (reused instance, friend A → B).
   const visibleDateData = useMemo(() => {
     const source = selectCalendarVisibleSource({
-      isSelf,
-      hasLastViewed: !!lastViewedCalendarDate,
+      hasLastViewed: !!lastViewedForUser,
       localBelongsToViewedUser: localVisible.userID === userID,
     });
-    if (source === 'lastViewed' && lastViewedCalendarDate) {
-      return dateToDateData(dateStringToDate(lastViewedCalendarDate));
+    if (source === 'lastViewed' && lastViewedForUser) {
+      return dateToDateData(dateStringToDate(lastViewedForUser));
     }
     if (source === 'local') {
       return localVisible.date;
     }
     return dateToDateData(new Date());
-  }, [
-    isSelf,
-    lastViewedCalendarDate,
-    localVisible.date,
-    localVisible.userID,
-    userID,
-  ]);
-  // Manual month navigation overrides the synced value. Re-tag with the current
-  // user so the derivation keeps using it for this visit only.
+  }, [lastViewedForUser, localVisible.date, localVisible.userID, userID]);
+  // Manual month navigation overrides the restored scroll position. Re-tag with
+  // the current user so the derivation keeps using it for this visit, and clear
+  // ONLY this user's own per-user slot (never another user's; Rule 2).
   const onDateChange = useCallback(
     (date: DateData) => {
       setLocalVisible({userID, date});
-      // Only the signed-in user's OWN calendar may touch the single global
-      // last-viewed key. A friend paging their calendar must NOT clear it, or it
-      // would wipe the current user's own restored month (Rule 2: one user's
-      // calendar never affects another's). For a friend's profile the read-only
-      // flag is `!isSelf === true`, so the clear is skipped.
-      if (canSyncGlobalLastViewedDate(!isSelf)) {
-        App.clearLastViewedCalendarDate();
-      }
+      App.clearLastViewedCalendarDate(userID);
     },
-    [isSelf, userID],
+    [userID],
   );
   const profileStats = useUserMonthlyStats({
     userID,

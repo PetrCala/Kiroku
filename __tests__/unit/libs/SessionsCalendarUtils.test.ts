@@ -4,7 +4,6 @@
 
 import {startOfMonth, subMonths} from 'date-fns';
 import {
-  canSyncGlobalLastViewedDate,
   computeLoadTarget,
   getCompactCalendarLoadTarget,
   selectCalendarVisibleSource,
@@ -127,90 +126,65 @@ describe('getCompactCalendarLoadTarget', () => {
   });
 });
 
-// Rule 2 (per-user independence): the single global last-viewed date may only
-// be honoured for the signed-in user's OWN calendar, and a freshly-viewed user
-// always opens on today — one user's last-shown month never leaks onto another.
+// Rule 2 (per-user independence): the last-viewed date is keyed PER VIEWED USER,
+// so the caller passes `hasLastViewed` derived from that user's own slot
+// (`map[userID]`). Both the signed-in user and a friend restore from their own
+// slot; a user with no slot (cleared on cold launch) opens on today; and one
+// user's slot can never reach another's calendar.
 describe('selectCalendarVisibleSource', () => {
-  test('self with a last-viewed date restores from it', () => {
+  test('restores from the per-user last-viewed date when present', () => {
+    // Holds regardless of whether a local month is also tagged for this user —
+    // the restored scroll position wins. Same precedence for self and friends.
     expect(
       selectCalendarVisibleSource({
-        isSelf: true,
         hasLastViewed: true,
         localBelongsToViewedUser: true,
       }),
     ).toBe('lastViewed');
-  });
-
-  test('self without a last-viewed date uses the local navigated month', () => {
     expect(
       selectCalendarVisibleSource({
-        isSelf: true,
+        hasLastViewed: true,
+        localBelongsToViewedUser: false,
+      }),
+    ).toBe('lastViewed');
+  });
+
+  test('uses the local navigated month when there is no last-viewed date but the local month belongs to this user', () => {
+    expect(
+      selectCalendarVisibleSource({
         hasLastViewed: false,
         localBelongsToViewedUser: true,
       }),
     ).toBe('local');
   });
 
-  test('self with no last-viewed and no local month falls back to today', () => {
+  test('a freshly-viewed user (no last-viewed slot, no local month) opens on today', () => {
+    // Cold-launch cleared every slot, and a reused screen instance (friend A →
+    // friend B) leaves the local month tagged for the previous user, so B opens
+    // on today.
     expect(
       selectCalendarVisibleSource({
-        isSelf: true,
         hasLastViewed: false,
         localBelongsToViewedUser: false,
       }),
     ).toBe('today');
   });
 
-  test('a friend NEVER restores from the global last-viewed date', () => {
-    // The core Rule 2 guarantee: even when a global last-viewed date exists
-    // (set by the signed-in user, or by a previously-viewed friend), another
-    // user's calendar must not inherit it.
-    const friendCombinations = [
-      {hasLastViewed: true, localBelongsToViewedUser: true},
-      {hasLastViewed: true, localBelongsToViewedUser: false},
-      {hasLastViewed: false, localBelongsToViewedUser: true},
-      {hasLastViewed: false, localBelongsToViewedUser: false},
-    ];
-    friendCombinations.forEach(combo => {
-      expect(selectCalendarVisibleSource({isSelf: false, ...combo})).not.toBe(
-        'lastViewed',
-      );
+  test("Rule 2: a user's slot never leaks into another — viewing a user with no slot opens on today, while the other still restores", () => {
+    // The independence is structural: the caller derives `hasLastViewed` from
+    // `map[viewedUserID]`, so user B (no slot) can never inherit user A's date.
+    const lastViewedByUser: Record<string, string> = {userA: '2026-01-15'};
+
+    const viewingB = selectCalendarVisibleSource({
+      hasLastViewed: !!lastViewedByUser.userB,
+      localBelongsToViewedUser: false,
     });
-  });
+    expect(viewingB).toBe('today');
 
-  test('a freshly-viewed user (no local month tagged for them) opens on today', () => {
-    // Reused screen instance, friend A → friend B: B has no local month yet and
-    // (being a friend) ignores the global key, so B opens on today.
-    expect(
-      selectCalendarVisibleSource({
-        isSelf: false,
-        hasLastViewed: true,
-        localBelongsToViewedUser: false,
-      }),
-    ).toBe('today');
-  });
-
-  test('a friend keeps their own in-visit navigated month', () => {
-    expect(
-      selectCalendarVisibleSource({
-        isSelf: false,
-        hasLastViewed: true,
-        localBelongsToViewedUser: true,
-      }),
-    ).toBe('local');
-  });
-});
-
-describe('canSyncGlobalLastViewedDate', () => {
-  test('a read-only (friend) surface may not write or clear the global key', () => {
-    expect(canSyncGlobalLastViewedDate(true)).toBe(false);
-  });
-
-  test("the signed-in user's own calendar may sync the global key", () => {
-    expect(canSyncGlobalLastViewedDate(false)).toBe(true);
-  });
-
-  test('an unset read-only flag defaults to writable (own calendar)', () => {
-    expect(canSyncGlobalLastViewedDate(undefined)).toBe(true);
+    const viewingA = selectCalendarVisibleSource({
+      hasLastViewed: !!lastViewedByUser.userA,
+      localBelongsToViewedUser: false,
+    });
+    expect(viewingA).toBe('lastViewed');
   });
 });
