@@ -73,6 +73,7 @@ const SCREENS = {
       UNITS_TO_COLORS: 'Settings_Preferences_UnitsToColors',
       DRINKS_TO_UNITS: 'Settings_Preferences_DrinksToUnits',
       COLOR_PALETTE: 'Settings_Preferences_ColorPalette',
+      COLOR_PALETTE_CUSTOM: 'Settings_Preferences_ColorPalette_Custom',
     },
 
     PRIVACY: {

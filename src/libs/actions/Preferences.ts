@@ -22,16 +22,26 @@ import type {UserID} from '@src/types/onyx/OnyxCommon';
  */
 
 /**
- * Optimistic Onyx updates mirroring the server's `onyxData`. Only `theme` and
- * `locale` have dedicated top-level Onyx keys, so only those are echoed; the
- * remaining fields have no top-level key and are reflected by the Firebase
- * listener after the write lands. Mirroring the server keeps the inline/pushed
- * response idempotent.
+ * Optimistic Onyx updates mirroring the server's `onyxData`.
+ *
+ * The whole partial update is merged into the `PREFERENCES` key so changes
+ * (palette, toggles, etc.) reflect across the app instantly. This mirrors
+ * exactly what the server does (`merge(PREFERENCES, patch)`), so re-applying
+ * the same patch on the inline/pushed response is idempotent.
+ *
+ * `theme` and `locale` additionally have dedicated top-level Onyx keys, so they
+ * are also echoed there.
  */
 function preferencesOptimisticData(
   updates: Partial<Preferences>,
 ): OnyxUpdate[] {
-  const optimisticData: OnyxUpdate[] = [];
+  const optimisticData: OnyxUpdate[] = [
+    {
+      onyxMethod: Onyx.METHOD.MERGE,
+      key: ONYXKEYS.PREFERENCES,
+      value: updates,
+    },
+  ];
   if (updates.theme !== undefined) {
     optimisticData.push({
       onyxMethod: Onyx.METHOD.SET,

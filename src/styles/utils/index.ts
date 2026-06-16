@@ -495,6 +495,25 @@ function getWidthAndHeightStyle(width: number, height?: number): ViewStyle {
   };
 }
 
+/**
+ * Position + size for a color-picker thumb (combined with the static
+ * `styles.colorPickerThumb` ring and a background-color style). Kept here
+ * because `left`/`top` update on every drag frame.
+ */
+function getColorPickerThumbStyle(
+  left: number,
+  top: number,
+  size: number,
+): ViewStyle {
+  return {
+    left,
+    top,
+    width: size,
+    height: size,
+    borderRadius: size / 2,
+  };
+}
+
 type MarginPaddingValue = ViewStyle[
   | 'marginTop'
   | 'marginBottom'
@@ -1167,6 +1186,7 @@ const staticStyleUtils = {
   getSignUpLogoWidthStyle,
   getTextColorStyle,
   getTransparentColor,
+  getColorPickerThumbStyle,
   getWidthAndHeightStyle,
   getWidthStyle,
   getWrappingStyle,

@@ -670,6 +670,30 @@ export default {
       description:
         'Relace přátel se zobrazí ve vybrané paletě místo v jejich vlastní.',
     },
+    custom: {
+      label: 'Vlastní',
+      description: 'Vyberte si vlastní barvu pro každou úroveň relace.',
+      createYourOwn: 'Vytvořte si vlastní',
+      select: 'Použít vlastní paletu',
+      edit: 'Upravit vlastní paletu',
+    },
+    editor: {
+      title: 'Vlastní paleta',
+      selectBand: 'Vyberte úroveň a poté zvolte její barvu.',
+      save: 'Uložit paletu',
+    },
+    bands: {
+      green: 'Žádné drinky',
+      yellow: 'Mírná',
+      orange: 'Střední',
+      red: 'Náročná',
+      black: 'Výpadek paměti',
+    },
+    hex: {
+      label: 'Hex barva',
+      placeholder: '#RRGGBB',
+      invalid: 'Zadejte platnou hex barvu, například #1A2B3C.',
+    },
   },
   drinksToUnitsScreen: {
     title: 'Drinky na jednotky',

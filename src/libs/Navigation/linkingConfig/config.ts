@@ -124,6 +124,10 @@ const config: LinkingOptions<RootStackParamList>['config'] = {
               path: ROUTES.SETTINGS_COLOR_PALETTE,
               exact: true,
             },
+            [SCREENS.SETTINGS.PREFERENCES.COLOR_PALETTE_CUSTOM]: {
+              path: ROUTES.SETTINGS_COLOR_PALETTE_CUSTOM,
+              exact: true,
+            },
             [SCREENS.SETTINGS.PRIVACY.ROOT]: {
               path: ROUTES.SETTINGS_PRIVACY,
               exact: true,

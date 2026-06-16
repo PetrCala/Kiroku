@@ -57,6 +57,11 @@ type Preferences = {
   /** User's selected session color palette */
   session_color_palette?: SessionColorPalette;
 
+  /** The user's saved custom palette slot, independent of the active
+   *  session_color_palette. Lets the user switch to a preset and back without
+   *  losing the colors they hand-picked. */
+  custom_session_color_palette?: SessionColorPalette;
+
   /** When true, other users' sessions are rendered using the viewer's own
    *  palette instead of each owner's palette. Undefined/false preserves the
    *  original behavior (each user's own palette is shown). */

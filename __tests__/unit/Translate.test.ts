@@ -106,6 +106,7 @@ const UNTRANSLATED_ALLOWLIST = new Set<string>([
   // Format / placeholder strings
   'common.dateFormat',
   'common.phoneNumberPlaceholder',
+  'colorPaletteScreen.hex.placeholder',
   // Universal abbreviations (time, version, range)
   'common.am',
   'common.pm',

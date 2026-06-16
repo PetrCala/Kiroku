@@ -1,5 +1,7 @@
 import type {SessionColorPalette} from '@src/types/onyx';
 import {sessionPaletteColors} from '@styles/theme/colors';
+import type {Rgb} from './Color';
+import {parseHex} from './Color';
 
 type PaletteId = keyof typeof sessionPaletteColors;
 
@@ -34,28 +36,6 @@ function resolvePalette(
   palette: SessionColorPalette | undefined,
 ): SessionColorPalette {
   return palette ?? PALETTES[DEFAULT_PALETTE_ID];
-}
-
-type Rgb = {r: number; g: number; b: number};
-
-function parseHex(color: string): Rgb | null {
-  let hex = color.trim();
-  if (!hex.startsWith('#')) {
-    return null;
-  }
-  if (hex.length === 4) {
-    hex = `#${hex[1]}${hex[1]}${hex[2]}${hex[2]}${hex[3]}${hex[3]}`;
-  }
-  if (hex.length !== 7) {
-    return null;
-  }
-  const r = parseInt(hex.slice(1, 3), 16);
-  const g = parseInt(hex.slice(3, 5), 16);
-  const b = parseInt(hex.slice(5, 7), 16);
-  if (Number.isNaN(r) || Number.isNaN(g) || Number.isNaN(b)) {
-    return null;
-  }
-  return {r, g, b};
 }
 
 function rgbLuminance({r, g, b}: Rgb): number {
