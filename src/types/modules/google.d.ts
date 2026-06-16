@@ -12,7 +12,7 @@ type Options = {
   theme?: 'outline';
   size?: 'large';
   type?: 'standard' | 'icon';
-  shape?: 'circle' | 'pill';
+  shape?: 'circle' | 'pill' | 'rectangular' | 'square';
   width?: string;
 };
 

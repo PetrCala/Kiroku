@@ -1,15 +1,18 @@
 import React, {useCallback, useEffect, useRef} from 'react';
 import {View} from 'react-native';
 import {GoogleAuthProvider} from 'firebase/auth';
+import Icon from '@components/Icon';
+import * as KirokuIcons from '@components/Icon/KirokuIcons';
+import Text from '@components/Text';
 import {useFirebase} from '@context/global/FirebaseContext';
 import useLocalize from '@hooks/useLocalize';
+import useThemeStyles from '@hooks/useThemeStyles';
 import ERRORS from '@src/ERRORS';
 import * as ErrorUtils from '@libs/ErrorUtils';
 import Log from '@libs/Log';
 import * as App from '@userActions/App';
 import * as User from '@userActions/User';
 import CONFIG from '@src/CONFIG';
-import CONST from '@src/CONST';
 
 type GoogleSignInProps = {
   onPress?: () => void;
@@ -26,15 +29,19 @@ const DEFAULT_BUTTON_WIDTH = 320;
 /**
  * Google Sign In button for web.
  *
- * Mirrors the native flow: obtain a Google ID token, wrap it in a Firebase
- * credential and run it through the shared `signInWithOAuth` path (including the
- * "account exists with a different credential" collision handling). The token is
- * sourced from Google Identity Services (the web equivalent of
- * `@react-native-google-signin`), which renders its own brand-compliant button.
+ * Renders a custom button matching the iOS/Android variant's geometry (white
+ * fill, #DADCE0 border, height 48, radius 8, 4-color G logo, our own localized
+ * label) so it lines up with the Apple button instead of using GIS's pill-shaped,
+ * Google-localized widget.
  *
- * The structure follows the upstream Expensify web implementation (inject the
- * GIS client script, then `initialize` + `renderButton`); only the credential
- * handler is Kiroku-specific because we authenticate through Firebase.
+ * Google Identity Services requires its OWN button element to issue the
+ * credential, so we render the GIS button INVISIBLY (opacity 0) on top of ours
+ * to capture the click while the styled button shows through beneath. This keeps
+ * the exact idToken → `signInWithOAuth` flow (including the "account exists with
+ * a different credential" collision handling) with no backend change.
+ *
+ * The credential handler mirrors the upstream Expensify web implementation; only
+ * the button presentation is Kiroku-specific.
  */
 function GoogleSignIn({
   onPress = () => {},
@@ -42,6 +49,7 @@ function GoogleSignIn({
 }: GoogleSignInProps) {
   const {auth} = useFirebase();
   const {translate} = useLocalize();
+  const styles = useThemeStyles();
   const containerRef = useRef<HTMLDivElement | null>(null);
 
   const signIn = useCallback(
@@ -125,17 +133,21 @@ function GoogleSignIn({
         },
       });
 
+      // The GIS button is invisible and only there to capture the click, so
+      // render it as wide as our button to maximize the hit area.
       const measuredWidth = Math.round(container.getBoundingClientRect().width);
       const width = Math.min(
         MAX_BUTTON_WIDTH,
         Math.max(MIN_BUTTON_WIDTH, measuredWidth || DEFAULT_BUTTON_WIDTH),
       );
 
+      // Clear any previous render (e.g. on remount) before re-rendering.
+      container.replaceChildren();
       google.accounts.id.renderButton(container, {
         theme: 'outline',
         size: 'large',
         type: 'standard',
-        shape: 'pill',
+        shape: 'rectangular',
         width: `${width}px`,
       });
     };
@@ -159,16 +171,38 @@ function GoogleSignIn({
   }, []);
 
   return (
-    <View style={{width: '100%', alignItems: 'center'}}>
+    <View
+      style={[
+        styles.signInProviderButton,
+        styles.googleSignInButton,
+        // Anchor the invisible GIS overlay and clip it to the button's radius.
+        {position: 'relative', overflow: 'hidden'},
+      ]}>
+      {/* Visual layer — clicks pass through to the GIS button beneath. */}
+      <View style={styles.signInProviderButtonContent} pointerEvents="none">
+        <Icon src={KirokuIcons.GoogleG} width={16} height={16} />
+        <Text
+          style={[
+            styles.signInProviderButtonLabel,
+            styles.googleSignInButtonLabel,
+          ]}>
+          {translate('common.signInWithGoogle')}
+        </Text>
+      </View>
+      {/* Invisible GIS button that actually issues the credential on click. */}
       <div
         ref={containerRef}
-        role={CONST.ROLE.BUTTON}
-        aria-label={translate('common.signInWithGoogle')}
+        aria-hidden
         style={{
-          width: '100%',
+          position: 'absolute',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
           display: 'flex',
+          alignItems: 'center',
           justifyContent: 'center',
-          minHeight: 44,
+          opacity: 0,
         }}
       />
     </View>
