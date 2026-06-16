@@ -18,6 +18,7 @@ import useTheme from '@hooks/useTheme';
 import useThemeStyles from '@hooks/useThemeStyles';
 import useWindowDimensions from '@hooks/useWindowDimensions';
 import ComposerFocusManager from '@libs/ComposerFocusManager';
+import getIsInPhoneFrame from '@libs/getIsInPhoneFrame';
 import Overlay from '@libs/Navigation/AppNavigator/Navigators/Overlay';
 import variables from '@styles/variables';
 import * as Modal from '@userActions/Modal';
@@ -111,7 +112,18 @@ function BaseModal(
   const {windowWidth, windowHeight} = useWindowDimensions();
   // We need to use isSmallScreenWidth instead of shouldUseNarrowLayout to apply correct modal width
   // eslint-disable-next-line rulesdir/prefer-shouldUseNarrowLayout-instead-of-isSmallScreenWidth
-  const {isSmallScreenWidth} = useResponsiveLayout();
+  const {isSmallScreenWidth: isSmallScreenWidthFromLayout} =
+    useResponsiveLayout();
+  // On desktop web the app renders inside a clamped ~480px "phone frame", which
+  // reports a small-screen width even though the modal is portaled to the real
+  // (wide) browser window. Treat the frame as the wide screen it really is, so
+  // `getModalStyles` keeps the desktop "inset card" layout (and the backdrop
+  // dims the app) instead of the full-bleed mobile branch that hides it. This
+  // restores the upstream invariant that a modal's `isSmallScreenWidth` tracks
+  // its real container. No-op on native and genuinely narrow web, where
+  // `getIsInPhoneFrame()` is false.
+  const isSmallScreenWidth =
+    isSmallScreenWidthFromLayout && !getIsInPhoneFrame();
   const keyboardStateContextValue = useKeyboardState();
 
   const safeAreaInsets = useSafeAreaInsets();
