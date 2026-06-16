@@ -222,6 +222,12 @@ function ReanimatedModal({
       animationOutTiming={animationOutTiming}
       animationInDelay={animationInDelay}
       backdropOpacity={backdropOpacity}
+      // A bottom-docked sheet slides up while it's still off-screen, so a
+      // backdrop that fades from transparent leaves the first frame uncovered
+      // and the native iOS modal window shows through it as a one-frame flash
+      // (#813). Cover immediately for this type; other types fill that frame
+      // with their own content, so they keep the fade-in.
+      shouldShowImmediately={type === CONST.MODAL.MODAL_TYPE.BOTTOM_DOCKED}
     />
   );
 

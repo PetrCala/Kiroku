@@ -279,6 +279,48 @@ describe('ReanimatedModal layout-animation / style separation', () => {
 
       expectNoLayoutAnimatedViewSetsConflictingStyle();
     });
+
+    // The reveal opacity lives on the inner (non-layout-animated) Animated.View;
+    // its first-frame value is what either covers the window or leaves it
+    // exposed (#813).
+    function getRevealOpacity() {
+      const revealView = mockCapturedAnimatedViewProps.find(
+        props =>
+          !isLayoutAnimated(props) && 'opacity' in flattenStyle(props.style),
+      );
+      return flattenStyle(revealView?.style).opacity;
+    }
+
+    test('fades in from transparent by default (first frame opacity 0)', () => {
+      render(
+        <Backdrop
+          style={{width: 100, height: 100, backgroundColor: 'black'}}
+          isBackdropVisible
+          animationInTiming={300}
+          animationOutTiming={300}
+          backdropOpacity={0.7}
+        />,
+      );
+
+      expect(getRevealOpacity()).toBe(0);
+    });
+
+    test('shouldShowImmediately covers on the first frame (opacity 1, no fade)', () => {
+      render(
+        <Backdrop
+          style={{width: 100, height: 100, backgroundColor: 'black'}}
+          isBackdropVisible
+          shouldShowImmediately
+          animationInTiming={300}
+          animationOutTiming={300}
+          backdropOpacity={0.7}
+        />,
+      );
+
+      // Full strength on frame 1 so the native iOS modal window never shows
+      // through the dim's first frame as a brightening flash.
+      expect(getRevealOpacity()).toBe(1);
+    });
   });
 
   // BOTTOM_DOCKED is the only slide type whose animated sheet is content-sized,

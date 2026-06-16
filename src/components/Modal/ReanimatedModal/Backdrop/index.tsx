@@ -25,10 +25,13 @@ function Backdrop({
   animationInTiming = CONST.MODAL.ANIMATION_TIMING.DEFAULT_IN,
   animationOutTiming = CONST.MODAL.ANIMATION_TIMING.DEFAULT_OUT,
   backdropOpacity = variables.overlayOpacity,
+  shouldShowImmediately = false,
 }: BackdropProps) {
   const styles = useThemeStyles();
   const {translate} = useLocalize();
-  const initProgress = useSharedValue(0);
+  // When covering immediately, the dim starts at full strength (progress 1) so
+  // the first painted frame already hides whatever is behind the backdrop.
+  const initProgress = useSharedValue(shouldShowImmediately ? 1 : 0);
   const isInitiated = useSharedValue(false);
 
   // Reveal via a shared value + useAnimatedStyle (progress=0 applied on mount)
@@ -36,7 +39,7 @@ function Backdrop({
   // the first paint on the New Architecture — that flashed the dim backdrop at
   // full opacity for a frame before the fade.
   useEffect(() => {
-    if (isInitiated.get()) {
+    if (isInitiated.get() || shouldShowImmediately) {
       return;
     }
     isInitiated.set(true);
@@ -47,7 +50,7 @@ function Backdrop({
         reduceMotion: ReduceMotion.Never,
       }),
     );
-  }, [animationInTiming, initProgress, isInitiated]);
+  }, [animationInTiming, initProgress, isInitiated, shouldShowImmediately]);
 
   const animatedStyles = useAnimatedStyle(
     () => ({opacity: initProgress.get()}),
@@ -70,11 +73,7 @@ function Backdrop({
   // separate elements avoids Reanimated's "Property "opacity" may be overwritten
   // by a layout animation" dev warning.
   const BackdropOverlay = (
-    // TEMP DEBUG #813: tint the full-screen backdrop frame opaque RED so we can
-    // tell whether the first-frame brightening is this React layer (screen turns
-    // red on frame 1) or the native iOS modal window behind it (screen is white
-    // on frame 1, red only appears a frame later). REMOVE before merge.
-    <Animated.View style={[frame, {backgroundColor: 'red'}]} exiting={Exiting}>
+    <Animated.View style={frame} exiting={Exiting}>
       <Animated.View style={[StyleSheet.absoluteFill, animatedStyles]}>
         {customBackdrop ?? (
           <View

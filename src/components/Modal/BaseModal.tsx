@@ -365,11 +365,6 @@ function BaseModal(
               modalPaddingStyles,
               glassContainerOverride,
               !isVisible && styles.pointerEventsNone,
-              // TEMP DEBUG #813: tint the sheet's own surface GREEN so we can
-              // tell if the brightening is the content (a green bottom strip)
-              // vs the backdrop (red) vs the native window (white). REMOVE
-              // before merge.
-              {backgroundColor: 'lime'},
             ]}
             ref={ref}>
             {useGlass && (
