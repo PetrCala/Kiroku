@@ -2,6 +2,7 @@ import Onyx from 'react-native-onyx';
 import type {OnyxUpdate} from 'react-native-onyx';
 import * as API from '@libs/API';
 import {SIDE_EFFECT_REQUEST_COMMANDS, WRITE_COMMANDS} from '@libs/API/types';
+import Log from '@libs/Log';
 import type {Bug, BugList, Feedback, FeedbackList} from '@src/types/onyx';
 import ONYXKEYS from '@src/ONYXKEYS';
 
@@ -27,6 +28,15 @@ import ONYXKEYS from '@src/ONYXKEYS';
  * via `useOnyx`. Storing it in Onyx (rather than transient component state) means
  * a slow response still lands safely after the screen has unmounted, and a
  * re-visit renders the cached list instantly while a fresh fetch refreshes it.
+ *
+ * These reads go through `makeRequestWithSideEffects` (the default
+ * `MAKE_REQUEST_WITH_SIDE_EFFECTS` request type, not `READ`), so a non-2xx response
+ * (e.g. a 500 or a 401) rejects out of the call — `HttpUtils` throws an `HttpsError`.
+ * The screens fire these without a `.catch` (only `.finally`), so that rejection
+ * would escape as an unhandled promise rejection and pop the web dev-server red
+ * overlay. Each read therefore catches its own failure: it logs and resolves WITHOUT
+ * touching the Onyx key, so a transient failure leaves the cached list intact rather
+ * than clearing it (which is why we don't simply resolve-undefined-on-error).
  * Part of the #809 realtime cutover.
  */
 
@@ -83,10 +93,17 @@ function getFeedbackList(): Promise<void> {
   return API.makeRequestWithSideEffects(
     SIDE_EFFECT_REQUEST_COMMANDS.GET_FEEDBACK_LIST,
     {},
-  ).then(response => {
-    const list = (response as unknown as FeedbackList | undefined) ?? {};
-    return Onyx.set(ONYXKEYS.FEEDBACK_LIST, list);
-  });
+  )
+    .then(response => {
+      const list = (response as unknown as FeedbackList | undefined) ?? {};
+      return Onyx.set(ONYXKEYS.FEEDBACK_LIST, list);
+    })
+    .catch((error: unknown) => {
+      // Swallow the rejection so it doesn't escape as an unhandled promise
+      // rejection, and leave FEEDBACK_LIST untouched so a transient failure keeps
+      // the cached list instead of clearing it.
+      Log.warn('[Feedback] getFeedbackList failed', {error});
+    });
 }
 
 function getBugList(): Promise<void> {
@@ -94,10 +111,17 @@ function getBugList(): Promise<void> {
   return API.makeRequestWithSideEffects(
     SIDE_EFFECT_REQUEST_COMMANDS.GET_BUG_LIST,
     {},
-  ).then(response => {
-    const list = (response as unknown as BugList | undefined) ?? {};
-    return Onyx.set(ONYXKEYS.BUG_LIST, list);
-  });
+  )
+    .then(response => {
+      const list = (response as unknown as BugList | undefined) ?? {};
+      return Onyx.set(ONYXKEYS.BUG_LIST, list);
+    })
+    .catch((error: unknown) => {
+      // Swallow the rejection so it doesn't escape as an unhandled promise
+      // rejection, and leave BUG_LIST untouched so a transient failure keeps the
+      // cached list instead of clearing it.
+      Log.warn('[Feedback] getBugList failed', {error});
+    });
 }
 
 export {
