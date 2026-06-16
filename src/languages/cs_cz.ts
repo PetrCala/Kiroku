@@ -1430,7 +1430,7 @@ export default {
       statistics: 'Statistiky',
       viewStatistics: 'Zobrazit statistiky',
       vsLastMonth: 'vs minulý měsíc',
-      monthToDate: 'tento měsíc zatím',
+      monthToDate: 'zatím',
       unitsByWeek: 'Jednotky podle týdne',
       unitsPerWeekA11y: 'Zkonzumované jednotky za týden v tomto měsíci',
     },
