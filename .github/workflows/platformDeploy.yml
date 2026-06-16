@@ -354,11 +354,12 @@ jobs:
           # so drop the build suffix (e.g. 0.3.16-14 -> 0.3.16).
           CLI_VERSION="${APP_VERSION%-*}"
           DESCRIPTION="Successfully deployed Kiroku [${{ inputs.RELEASE_TAG }}](https://github.com/PetrCala/Kiroku/releases/tag/${{ inputs.RELEASE_TAG }}) to ${{ inputs.DEPLOY_ENVIRONMENT }}"
-          # Production builds are NOT live for users yet: iOS sits in 'Pending Developer
-          # Release' (automatic_release: false) and Android promotes to the beta track.
-          # Remind a human to bump the in-app version gate once the build actually ships.
+          # Production builds are deployed but not public yet: iOS is submitted to
+          # App Store review and held as Pending Developer Release (automatic_release:
+          # false); Android is promoted to the open-testing track (held by Managed
+          # publishing). Remind a human of the manual steps to go fully public.
           if [[ "${{ inputs.SHOULD_DEPLOY_PRODUCTION }}" == "true" ]]; then
-            DESCRIPTION="${DESCRIPTION}\n\n📌 Production build is not live yet. It's awaiting manual release:\n• App Store: release it from 'Pending Developer Release'\n• Google Play: promote it from the beta track to production\n\nOnce v${CLI_VERSION} is downloadable on both, bump the in-app update prompt:\n\`kiroku-cli app-version set --latest ${CLI_VERSION}\`"
+            DESCRIPTION="${DESCRIPTION}\n\n📌 v${CLI_VERSION} is deployed but not public yet. Manual steps to go live:\n• App Store: release it from 'Pending Developer Release' once Apple approves\n• Google Play: publish the open-testing release (Managed publishing), then promote it to production\n\nOnce v${CLI_VERSION} is public on both, bump the in-app update prompt:\n\`kiroku-cli app-version set --latest ${CLI_VERSION}\`"
           fi
           curl -s -X POST "$DISCORD_WEBHOOK_URL" \
             -H "Content-Type: application/json" \
