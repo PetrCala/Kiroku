@@ -6,7 +6,9 @@ import CONST from '@src/CONST';
 import ONYXKEYS from '@src/ONYXKEYS';
 import type {RequestType} from '@src/types/onyx/Request';
 import type Response from '@src/types/onyx/Response';
+import Log from './Log';
 import * as NetworkActions from './actions/Network';
+import * as Session from './actions/Session';
 import * as UpdateRequired from './actions/UpdateRequired';
 import {SIDE_EFFECT_REQUEST_COMMANDS, WRITE_COMMANDS} from './API/types';
 import {getKirokuRoute} from './API/kirokuRoutes';
@@ -31,6 +33,37 @@ Onyx.connect({
 
 // We use the AbortController API to terminate pending request in `cancelPendingRequests`
 let cancellationController = new AbortController();
+
+// A 401 from kiroku-api means the caller's Firebase ID token was
+// revoked/disabled/invalid — NOT merely expired (that is `jsonCode` 407, which
+// the Reauthentication middleware refreshes and replays). A token refresh cannot
+// recover a revoked token, so the only correct response is to sign the user out
+// and let the app fall back to the login screen.
+//
+// `Session.signOut` flips Firebase auth state, which unmounts `AuthScreens` and
+// runs `cleanupSession()` (it clears the persisted-request queue, the
+// lastUpdateID baseline, and cached user data) — the exact path the in-app
+// "Sign out" button uses, so we never hand-roll a new one.
+//
+// A burst of in-flight requests (e.g. the SequentialQueue replay) can each see a
+// 401 at once; this flag collapses the burst into a single sign-out. It re-arms
+// once the sign-out settles, so a later session whose token is revoked is handled
+// again. A 401 only arrives on an actual server response, so this never fires
+// while offline.
+let isHandlingRevokedToken = false;
+
+function handleRevokedToken() {
+  if (isHandlingRevokedToken) {
+    return;
+  }
+  isHandlingRevokedToken = true;
+  Log.warn(
+    '[HttpUtils] kiroku-api returned 401 (revoked/invalid token); signing out',
+  );
+  Session.signOut(getFirebaseAuth()).finally(() => {
+    isHandlingRevokedToken = false;
+  });
+}
 
 // Some existing old commands (6+ years) exempted from the auth writes count check
 const exemptedCommandsWithAuthWrites: string[] = [
@@ -120,6 +153,18 @@ function processHTTPRequest(
             status: response.status.toString(),
             title: 'API request throttled',
           });
+        }
+
+        // A 401 on a request that carried a `Bearer` token is a revoked/invalid
+        // Firebase ID token: force a clean sign-out. We still fall through to the
+        // generic throw below so the failing request rolls back its optimistic
+        // data like any other failure. The `Bearer` guard scopes this to
+        // authenticated kiroku-api calls and ignores any unrelated legacy 401.
+        if (
+          response.status === CONST.HTTP_STATUS.UNAUTHORIZED &&
+          headers?.Authorization
+        ) {
+          handleRevokedToken();
         }
 
         throw new HttpsError({
