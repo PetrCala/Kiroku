@@ -350,6 +350,11 @@ const CONST = {
     UNDEFINED: 'undefined',
   },
   HTTP_STATUS: {
+    // The Firebase ID token was revoked/disabled/invalid (NOT merely expired —
+    // that is `JSON_CODE.NOT_AUTHENTICATED` 407, which the Reauthentication
+    // middleware refreshes and replays). A 401 means a token refresh cannot
+    // recover the session, so the client force-signs-out (see HttpUtils).
+    UNAUTHORIZED: 401,
     // The resource already exists — e.g. provisioning an already-provisioned
     // user. Expected/benign for idempotent retries, not a service failure.
     CONFLICT: 409,
