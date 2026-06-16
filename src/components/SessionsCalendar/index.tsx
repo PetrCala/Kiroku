@@ -8,13 +8,7 @@ import React, {
 } from 'react';
 import {useIsFocused} from '@react-navigation/native';
 import type {DateData} from 'react-native-calendars';
-import {
-  differenceInMonths,
-  format,
-  parseISO,
-  startOfMonth,
-  subMonths,
-} from 'date-fns';
+import {format, parseISO, startOfMonth, subMonths} from 'date-fns';
 import {
   dateStringToDate,
   dateToDateData,
@@ -23,7 +17,10 @@ import {
 } from '@libs/DataHandling';
 import * as DSUtils from '@libs/DrinkingSessionUtils';
 import * as DS from '@userActions/DrinkingSession';
-import {computeLoadTarget} from '@libs/SessionsCalendarUtils';
+import {
+  computeLoadTarget,
+  getCompactCalendarLoadTarget,
+} from '@libs/SessionsCalendarUtils';
 import CONST from '@src/CONST';
 import Navigation from '@libs/Navigation/Navigation';
 import ROUTES from '@src/ROUTES';
@@ -57,6 +54,14 @@ const INITIAL_PREFETCH_MONTHS = 12;
 // want to scroll into them to add a past session. Extend the *rendered* range
 // by this many months at a time as they approach the top — no fetch involved.
 const RENDER_AHEAD_MONTHS = 12;
+
+// Compact-calendar page-back look-ahead. Paging left always widens the loaded
+// window (via `loadUpTo`) to at least the month about to be shown plus this
+// many months below it, so the windowed friend fetch is pre-warmed and the new
+// month never renders blank until the user moves again (Rule 1). `loadUpTo` is
+// monotonic and capped at the user's earliest tracked month for self, so the
+// buffer never derives empty pre-tracking months.
+const COMPACT_LOAD_AHEAD_BUFFER_MONTHS = 3;
 
 function SessionsCalendar({
   userID,
@@ -100,7 +105,6 @@ function SessionsCalendar({
     calendarMonths,
     loadedFrom,
     loadedFromDate,
-    loadMoreMonths,
     loadUpTo,
     hasPersistedFloor,
     isWindowExhausted,
@@ -137,15 +141,21 @@ function SessionsCalendar({
   }, [drinkingSessionData, persistedEarliest]);
 
   const handleLeftArrowPress = (subtractMonth: () => void) => {
-    const monthsAway = differenceInMonths(
-      new Date(visibleDate.timestamp),
-      new Date(loadedFrom?.current ?? new Date()),
-    );
-    if (monthsAway <= 1) {
-      loadMoreMonths(1);
-    }
-
     const previousMonth = getPreviousMonth(visibleDate);
+    // Proactively widen the loaded window so the month about to become visible
+    // (plus a small look-ahead buffer that pre-warms the windowed friend fetch)
+    // is always inside the derived/fetched range. Replaces the old reactive
+    // `monthsAway <= 1 ? loadMoreMonths(1)` step, which locked the floor
+    // one-to-one with the visible month and left a friend's just-paged month
+    // blank until a debounced refetch landed (Rule 1: data is always rendered,
+    // with no in-calendar navigation needed for it to appear). `loadUpTo` is
+    // monotonic, so re-requesting the same depth on a later press is a no-op.
+    loadUpTo(
+      getCompactCalendarLoadTarget(
+        new Date(previousMonth.timestamp),
+        COMPACT_LOAD_AHEAD_BUFFER_MONTHS,
+      ),
+    );
     onDateChange(previousMonth);
 
     subtractMonth();

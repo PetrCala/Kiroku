@@ -11,6 +11,10 @@ import ONYXKEYS from '@src/ONYXKEYS';
 import * as App from '@userActions/App';
 import * as Profile from '@userActions/Profile';
 import {dateToDateData, dateStringToDate, objKeys} from '@libs/DataHandling';
+import {
+  canSyncGlobalLastViewedDate,
+  selectCalendarVisibleSource,
+} from '@libs/SessionsCalendarUtils';
 import SessionsCalendar from '@components/SessionsCalendar';
 import SessionsCalendarCompactSkeleton from '@components/SessionsCalendar/SessionsCalendarCompactSkeleton';
 import {getCommonFriendsCount} from '@libs/FriendUtils';
@@ -111,10 +115,15 @@ function ProfileScreen({route}: ProfileScreenProps) {
   // while it still belongs to the user on screen; on a user change it's stale, so
   // we fall back to today (covers a reused screen instance, friend A → friend B).
   const visibleDateData = useMemo(() => {
-    if (isSelf && lastViewedCalendarDate) {
+    const source = selectCalendarVisibleSource({
+      isSelf,
+      hasLastViewed: !!lastViewedCalendarDate,
+      localBelongsToViewedUser: localVisible.userID === userID,
+    });
+    if (source === 'lastViewed' && lastViewedCalendarDate) {
       return dateToDateData(dateStringToDate(lastViewedCalendarDate));
     }
-    if (localVisible.userID === userID) {
+    if (source === 'local') {
       return localVisible.date;
     }
     return dateToDateData(new Date());
@@ -130,9 +139,16 @@ function ProfileScreen({route}: ProfileScreenProps) {
   const onDateChange = useCallback(
     (date: DateData) => {
       setLocalVisible({userID, date});
-      App.clearLastViewedCalendarDate();
+      // Only the signed-in user's OWN calendar may touch the single global
+      // last-viewed key. A friend paging their calendar must NOT clear it, or it
+      // would wipe the current user's own restored month (Rule 2: one user's
+      // calendar never affects another's). For a friend's profile the read-only
+      // flag is `!isSelf === true`, so the clear is skipped.
+      if (canSyncGlobalLastViewedDate(!isSelf)) {
+        App.clearLastViewedCalendarDate();
+      }
     },
-    [userID],
+    [isSelf, userID],
   );
   const profileStats = useUserMonthlyStats({
     userID,

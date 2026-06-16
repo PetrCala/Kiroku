@@ -3,6 +3,7 @@
 import {act, renderHook} from '@testing-library/react-native';
 import {addMonths, differenceInMonths, startOfMonth, subMonths} from 'date-fns';
 import useLazyMarkedDates from '@hooks/useLazyMarkedDates';
+import {getCompactCalendarLoadTarget} from '@libs/SessionsCalendarUtils';
 import * as Calendar from '@userActions/Calendar';
 import type {
   DrinkingSession,
@@ -263,6 +264,64 @@ describe('useLazyMarkedDates friend window (no canonical floor) — Kiroku #1197
     // earliest loaded session's month (~12).
     const depth = differenceInMonths(new Date(), getLoadedFrom(result));
     expect(depth).toBeGreaterThanOrEqual(23);
+  });
+});
+
+describe('useLazyMarkedDates compact paging covers the visible month (Rule 1)', () => {
+  const pad = (n: number) => String(n).padStart(2, '0');
+
+  test('paging back to an older month makes its data present without a second move', () => {
+    // A friend (no canonical floor) with a single session 5 months back, built
+    // at noon UTC so the zoned day key is timezone-stable. Fresh, the derived
+    // window is only the current month — the older month's data is NOT on
+    // screen yet, which is exactly the "blank until you move again" state Rule 1
+    // forbids when you page to it.
+    const targetStart = startOfMonth(subMonths(new Date(), 5));
+    const targetYear = targetStart.getFullYear();
+    const targetMonth = targetStart.getMonth(); // 0-based
+    const sessionInstant = Date.UTC(targetYear, targetMonth, 15, 12, 0, 0);
+    const targetMonthKey = `${targetYear}-${pad(targetMonth + 1)}`;
+    const sessionDayKey = `${targetMonthKey}-15` as DateString;
+    const sessions = {
+      s1: {
+        id: 's1',
+        start_time: sessionInstant,
+        timezone: 'UTC',
+        drinks: {[sessionInstant]: {beer: 1}},
+      },
+    } as unknown as DrinkingSessionList;
+
+    const {result} = renderHook(() =>
+      useLazyMarkedDates(TEST_UID, sessions, makePreferences()),
+    );
+
+    // Precondition: the older month is outside the initial derived window, so
+    // its session is not yet rendered.
+    expect(
+      result.current.calendarMonths.some(
+        month => month.monthKey === targetMonthKey,
+      ),
+    ).toBe(false);
+    expect(result.current.markedDates[sessionDayKey]).toBeUndefined();
+
+    // Page back to that month: the compact handler drives `loadUpTo` with the
+    // look-ahead load target for the month about to become visible.
+    act(() => {
+      result.current.loadUpTo(getCompactCalendarLoadTarget(targetStart, 3));
+    });
+
+    // The loaded floor now covers the visible month (at or below its start) and
+    // its data is on screen — no further in-calendar navigation needed.
+    expect(getLoadedFrom(result).getTime()).toBeLessThanOrEqual(
+      targetStart.getTime(),
+    );
+    expect(
+      result.current.calendarMonths.some(
+        month => month.monthKey === targetMonthKey,
+      ),
+    ).toBe(true);
+    expect(result.current.markedDates[sessionDayKey]).toBeDefined();
+    expect(result.current.unitsMap.get(sessionDayKey)).toBe(1);
   });
 });
 
