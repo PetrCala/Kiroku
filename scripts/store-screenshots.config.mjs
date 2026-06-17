@@ -25,6 +25,17 @@ const devices = [
 // ─── Locales (must match RAW_DIR subfolders and caption keys below) ──────────
 const locales = ['en-US', 'cs'];
 
+// ─── Capture-side identifiers (single-source the fastlane `snapshot` matrix) ──
+// The ingest mapper (scripts/ingest-store-screenshots.mjs) reads fastlane
+// `snapshot` output and copies it into RAW_DIR. `captureLocales` maps each
+// framing locale above to the locale folder `snapshot` writes (it emits
+// `en-US` / `cs-CZ`; the framing pipeline uses `en-US` / `cs`).
+// `captureSourceDevice` is the iPhone folder to read from — the 6.9"/1320×2868
+// master that every output size is derived from, so the iPad capture is not
+// consumed here. Keep this in sync with the first device in fastlane/Snapfile.
+const captureLocales = {'en-US': 'en-US', cs: 'cs-CZ'};
+const captureSourceDevice = 'iPhone 17 Pro Max';
+
 // ─── Visual theme ───────────────────────────────────────────────────────────
 const theme = {
   // Background gradient stops (top → bottom). Use one entry for a solid color.
@@ -43,11 +54,19 @@ const theme = {
 };
 
 // ─── Screenshots, in store order ────────────────────────────────────────────
-// `raw` is the filename inside RAW_DIR/<locale>/. `caption` is keyed by locale.
+// `snapshot` is the capture name the UI test emits (ios/KirokuUITests/
+// ScreenshotTests.swift → `<snapshot>.png`); the ingest mapper copies it to
+// `raw` (the filename inside RAW_DIR/<locale>/). `caption` is keyed by locale.
 // Captions stay consistent with Kiroku's harm-reduction framing — never
 // anything that celebrates drinking *volume*.
+//
+// This is the current 4-screen set (the screens we already capture). The
+// captured `05_Settings` is intentionally left unmapped. Growing to the full
+// marketing set (Statistics, alcohol-free streak) needs new captures and lands
+// in a follow-up PR alongside a CI capture run.
 const shots = [
   {
+    snapshot: '01_Home',
     raw: '01-home.png',
     caption: {
       'en-US': 'See your drinking clearly',
@@ -55,6 +74,7 @@ const shots = [
     },
   },
   {
+    snapshot: '02_LiveSession',
     raw: '02-session.png',
     caption: {
       'en-US': 'Log a drink in seconds',
@@ -62,28 +82,16 @@ const shots = [
     },
   },
   {
-    raw: '03-calendar.png',
+    snapshot: '03_DayOverview',
+    raw: '03-day-overview.png',
     caption: {
       'en-US': 'Know exactly what you drink',
       cs: 'Vězte přesně, co pijete',
     },
   },
   {
-    raw: '04-stats.png',
-    caption: {
-      'en-US': 'Track your progress every week',
-      cs: 'Sledujte svůj pokrok každý týden',
-    },
-  },
-  {
-    raw: '05-alcohol-free.png',
-    caption: {
-      'en-US': 'Watch your alcohol-free days add up',
-      cs: 'Sledujte, jak přibývají dny bez alkoholu',
-    },
-  },
-  {
-    raw: '06-profile.png',
+    snapshot: '04_Profile',
+    raw: '04-profile.png',
     caption: {
       'en-US': 'Stay on track with friends',
       cs: 'Zůstaňte na správné cestě s přáteli',
@@ -91,4 +99,13 @@ const shots = [
   },
 ];
 
-export default {RAW_DIR, OUT_DIR, devices, locales, theme, shots};
+export default {
+  RAW_DIR,
+  OUT_DIR,
+  devices,
+  locales,
+  theme,
+  shots,
+  captureLocales,
+  captureSourceDevice,
+};
