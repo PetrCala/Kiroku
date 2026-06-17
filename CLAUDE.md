@@ -183,6 +183,10 @@ The skill provides guidance on:
 3. **TypeScript**: Run `npm run typecheck-tsgo` after changes that may affect typing (types, interfaces, or function signatures). It is ~10x faster and usually stricter than tsc. CI validates with `npm run typecheck` (tsc), which remains the required merge gate.
 4. **React Compiler**: If you added new React components/hooks or modified existing ones, run `npm run react-compiler-compliance-check check-changed` to verify they compile with React Compiler. This applies the same rules as CI: new components/hooks must compile, and existing compiled files must not regress. See `contributingGuides/REACT_COMPILER.md` for details and common fixes.
 
+### Delivering Changes
+
+When asked to make a code change, deliver it as an open PR, not staged work. As the final step: branch (never `master`), commit, push, `gh pr create` against `master`, report the link. Skip for read-only sessions or when told to hold. Never push `master` directly.
+
 ### Testing
 
 - **Unit Tests**: Jest with React Native Testing Library
