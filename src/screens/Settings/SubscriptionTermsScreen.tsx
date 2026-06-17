@@ -1,10 +1,11 @@
 import {Linking, View} from 'react-native';
 import {WebView} from 'react-native-webview';
 import Navigation from '@libs/Navigation/Navigation';
+import SupporterUtils from '@libs/SupporterUtils';
 import ScreenWrapper from '@components/ScreenWrapper';
 import CONST from '@src/CONST';
 import HeaderWithBackButton from '@components/HeaderWithBackButton';
-import {useState} from 'react';
+import {useEffect, useState} from 'react';
 import useThemeStyles from '@hooks/useThemeStyles';
 import FullScreenLoadingIndicator from '@components/FullscreenLoadingIndicator';
 import {useUserConnection} from '@context/global/UserConnectionContext';
@@ -20,6 +21,17 @@ function SubscriptionTermsScreen() {
     'settingsScreen.subscriptionTermsScreen.loading',
   );
   const [isLoading, setIsLoading] = useState(false);
+  const isSupporterTierVisible = SupporterUtils.isSupporterTierVisible();
+
+  // The Supporter tier is hidden in production, so this page has no in-app entry
+  // point there. Bounce back if it is somehow reached (e.g. via deep link) to
+  // keep parity with the gated About menu item.
+  useEffect(() => {
+    if (isSupporterTierVisible) {
+      return;
+    }
+    Navigation.goBack();
+  }, [isSupporterTierVisible]);
 
   const handleStartLoadWithRequest = (request: WebViewRequest) => {
     if (request.url.startsWith('mailto:')) {
@@ -28,6 +40,10 @@ function SubscriptionTermsScreen() {
     }
     return true;
   };
+
+  if (!isSupporterTierVisible) {
+    return null;
+  }
 
   return (
     <ScreenWrapper testID={SubscriptionTermsScreen.displayName}>

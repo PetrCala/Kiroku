@@ -15,6 +15,7 @@ import useResponsiveLayout from '@hooks/useResponsiveLayout';
 import useThemeStyles from '@hooks/useThemeStyles';
 import * as Environment from '@libs/Environment/Environment';
 import Navigation from '@libs/Navigation/Navigation';
+import SupporterUtils from '@libs/SupporterUtils';
 import CONST from '@src/CONST';
 import type {TranslationPaths} from '@src/languages/types';
 import ROUTES from '@src/ROUTES';
@@ -47,6 +48,12 @@ function AboutScreen() {
   const styles = useThemeStyles();
   const popoverAnchor = useRef<View | RNText | null>(null);
   const {shouldUseNarrowLayout} = useResponsiveLayout();
+
+  // The Supporter tier (and its subscription terms) is hidden in production
+  // until the v1.1 launch attaches the IAP. Gate the subscription-terms link on
+  // the same visibility predicate as the Support Kiroku menu so production
+  // builds never reference a subscription they can't actually purchase.
+  const shouldShowSubscriptionTerms = SupporterUtils.isSupporterTierVisible();
 
   const menuItems = useMemo(() => {
     const baseMenuItems: MenuItem[] = [
@@ -89,11 +96,16 @@ function AboutScreen() {
         icon: KirokuIcons.FileDocument,
         onPress: () => Navigation.navigate(ROUTES.SETTINGS_PRIVACY_POLICY),
       },
-      {
-        translationKey: 'common.subscriptionTerms',
-        icon: KirokuIcons.FileDocument,
-        onPress: () => Navigation.navigate(ROUTES.SETTINGS_SUBSCRIPTION_TERMS),
-      },
+      ...(shouldShowSubscriptionTerms
+        ? [
+            {
+              translationKey: 'common.subscriptionTerms',
+              icon: KirokuIcons.FileDocument,
+              onPress: () =>
+                Navigation.navigate(ROUTES.SETTINGS_SUBSCRIPTION_TERMS),
+            } as MenuItem,
+          ]
+        : []),
     ];
 
     return baseMenuItems.map(
@@ -109,7 +121,7 @@ function AboutScreen() {
         wrapperStyle: [styles.sectionMenuItemTopDescription],
       }),
     );
-  }, [styles, translate]);
+  }, [shouldShowSubscriptionTerms, styles, translate]);
 
   const versionInfoContainer = useCallback(
     () => (
