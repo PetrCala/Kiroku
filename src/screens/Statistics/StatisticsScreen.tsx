@@ -4,22 +4,22 @@ import {InteractionManager} from 'react-native';
 import HeaderWithBackButton from '@components/HeaderWithBackButton';
 import OfflineIndicator from '@components/OfflineIndicator';
 import ScreenWrapper from '@components/ScreenWrapper';
-import StatsContextProvider from '@components/StatsContextProvider';
 import useBottomTabBarHeight from '@hooks/useBottomTabBarHeight';
 import useLocalize from '@hooks/useLocalize';
-import DrillDownProvider from './drilldown/DrillDownContext';
 import StatisticsScreenSkeleton from './StatisticsScreenSkeleton';
-import StatsDrillDownSheet from './StatsDrillDownSheet';
 
 /**
- * As a bottom tab, this screen has no entry slide to protect, but the chart-tab
- * tree (StatisticsTabs → 4 tabs → Skia/Victory imports) plus the
- * `StatsContextProvider` compute is still heavy enough to block the JS thread
- * for 1–3 s on first mount.
+ * As a bottom tab, this screen has no entry slide to protect, but the content
+ * subtree (`StatisticsContent` → stats providers + chart tabs → Skia/Victory
+ * imports + drill-down sheet) plus the `StatsContextProvider` compute is heavy
+ * enough to block the JS thread for 1–3 s on first mount.
  *
- * Gate the heavy subtree on `InteractionManager.runAfterInteractions` so the
- * layout-faithful skeleton paints first, then mount the providers and the
- * dynamically-imported tabs. The tab is lazily mounted on first visit and then
+ * Keep the screen's *static* import graph to just the header + skeleton, and
+ * defer the whole content subtree behind a dynamic import gated on
+ * `InteractionManager.runAfterInteractions`. That way the first commit (the
+ * layout-faithful skeleton) lands as early as possible — minimizing the blank
+ * native-tab window — and the providers, tabs, and sheet are mounted only once
+ * the screen has settled. The tab is lazily mounted on first visit and then
  * stays mounted (frozen while blurred), so this cost is paid once.
  *
  * `useDrinkEvents` / `useAggregate` further defer the *data* compute, so the
@@ -29,7 +29,7 @@ function StatisticsScreen() {
   const {translate} = useLocalize();
   const bottomTabBarHeight = useBottomTabBarHeight();
   const [isReady, setIsReady] = useState(false);
-  const [Tabs, setTabs] = useState<ComponentType | null>(null);
+  const [Content, setContent] = useState<ComponentType | null>(null);
 
   useEffect(() => {
     const handle = InteractionManager.runAfterInteractions(() =>
@@ -38,19 +38,19 @@ function StatisticsScreen() {
     return () => handle.cancel();
   }, []);
 
-  // Only kick off the chart-bundle import once the screen has settled, so its
+  // Only kick off the content-bundle import once the screen has settled, so its
   // parse and the subsequent heavy mount never compete with the first paint.
   useEffect(() => {
     if (!isReady) {
       return undefined;
     }
     let cancelled = false;
-    import('./StatisticsTabs')
+    import('./StatisticsContent')
       .then(mod => {
         if (cancelled) {
           return;
         }
-        setTabs(() => mod.default);
+        setContent(() => mod.default);
       })
       .catch(() => {
         // Dynamic import only fails when the underlying module itself throws —
@@ -70,16 +70,7 @@ function StatisticsScreen() {
         title={translate('statistics.title')}
         shouldShowBackButton={false}
       />
-      {Tabs ? (
-        <StatsContextProvider>
-          <DrillDownProvider>
-            <Tabs />
-            <StatsDrillDownSheet />
-          </DrillDownProvider>
-        </StatsContextProvider>
-      ) : (
-        <StatisticsScreenSkeleton />
-      )}
+      {Content ? <Content /> : <StatisticsScreenSkeleton />}
       <OfflineIndicator style={{marginBottom: bottomTabBarHeight}} />
     </ScreenWrapper>
   );
