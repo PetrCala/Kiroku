@@ -130,6 +130,41 @@ platform :android do
     capture_android_screenshots   # reads Screengrabfile
   end
 
+  desc "Upload framed Play Store screenshots (screenshots only)"
+  lane :upload_play_store_screenshots do
+    # supply reads phone screenshots from
+    #   fastlane/metadata/android/<lang>/images/phoneScreenshots/
+    # so arrange the framed Android images (framed/android/<locale>/phone/*)
+    # into that layout first. `play_lang` mirrors config.captureLocales
+    # (framing `cs` → Play `cs-CZ`). Verified end-to-end by an emulator dispatch.
+    require "fileutils"
+    framed = "./fastlane/store-screenshots/framed/android"
+    play_lang = {"en-US" => "en-US", "cs" => "cs-CZ"}
+    UI.user_error!("No framed Android screenshots at #{framed}") unless Dir.exist?(framed)
+
+    Dir.glob("#{framed}/*").each do |locale_dir|
+      next unless File.directory?(locale_dir)
+      locale = File.basename(locale_dir)
+      lang = play_lang[locale] || locale
+      dest = "./fastlane/metadata/android/#{lang}/images/phoneScreenshots"
+      FileUtils.mkdir_p(dest)
+      FileUtils.rm_f(Dir.glob("#{dest}/*.png"))
+      Dir.glob("#{locale_dir}/phone/*.png").sort.each { |f| FileUtils.cp(f, dest) }
+    end
+
+    ENV["SUPPLY_UPLOAD_MAX_RETRIES"] = "5"
+    upload_to_play_store(
+      package_name: "com.alcohol_tracker",
+      json_key: './android/app/android-fastlane-json-key.json',
+      skip_upload_apk: true,
+      skip_upload_aab: true,
+      skip_upload_metadata: true,
+      skip_upload_changelogs: true,
+      skip_upload_images: true,
+      skip_upload_screenshots: false
+    )
+  end
+
   desc "Deploy app to Google Play open beta"
   lane :production do
     # Google is very unreliable, so we retry a few times
@@ -503,7 +538,7 @@ platform :ios do
       # Upload screenshots, nothing else. deliver infers each device slot from
       # the image dimensions; the framed tree is grouped by locale then size.
       skip_screenshots: false,
-      screenshots_path: "./fastlane/store-screenshots/framed",
+      screenshots_path: "./fastlane/store-screenshots/framed/ios",
       overwrite_screenshots: true,
       skip_binary_upload: true,
       skip_metadata: true,

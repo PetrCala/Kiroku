@@ -14,36 +14,51 @@
 const RAW_DIR = 'fastlane/store-screenshots/raw';
 const OUT_DIR = 'fastlane/store-screenshots/framed';
 
-// ─── Output device sizes (portrait, EXACT App Store pixel dimensions) ────────
-// 6.9" satisfies the mandatory largest-iPhone slot and ASC will down-scale it
-// for 6.7"/6.5". Add/remove sizes as needed.
-const devices = [
-  {id: '6.9', width: 1320, height: 2868}, // iPhone 16/17 Pro Max
-  {id: '6.7', width: 1290, height: 2796}, // iPhone 15 Pro Max
-  // ─── Apple Watch (DEFERRED — Apple Watch MVP Phase 6.3) ───────────────────
-  // The watchOS companion ships as a non-functional UI shell until the MVP is
-  // wired (Phases 2–5), so watch App Store screenshots are intentionally NOT
-  // captured yet. When the watch app is functional, add the ASC Apple Watch
-  // slot here (confirm the exact size against App Store Connect — Series 7+/
-  // Ultra is 410×502) AND add a watch simulator entry to fastlane/Snapfile so
-  // `snapshot` captures from the watch; the framing/upload pipeline then needs a
-  // watch-shaped frame + caption. Until then this stays commented out.
-  // {id: 'watch', width: 410, height: 502}, // Apple Watch Series 7+/Ultra
-];
-
-// ─── Locales (must match RAW_DIR subfolders and caption keys below) ──────────
+// ─── Locales (RAW_DIR/<platform>/<locale> subfolders + caption keys below) ───
 const locales = ['en-US', 'cs'];
 
-// ─── Capture-side identifiers (single-source the fastlane `snapshot` matrix) ──
-// The ingest mapper (scripts/ingest-store-screenshots.mjs) reads fastlane
-// `snapshot` output and copies it into RAW_DIR. `captureLocales` maps each
-// framing locale above to the locale folder `snapshot` writes (it emits
-// `en-US` / `cs-CZ`; the framing pipeline uses `en-US` / `cs`).
-// `captureSourceDevice` is the iPhone folder to read from — the 6.9"/1320×2868
-// master that every output size is derived from, so the iPad capture is not
-// consumed here. Keep this in sync with the first device in fastlane/Snapfile.
+// `captureLocales` maps each framing locale above to the locale folder the
+// capture tools write (fastlane snapshot/screengrab emit `en-US` / `cs-CZ`; the
+// framing pipeline — and the Google Play `cs-CZ` listing — reuse this map).
 const captureLocales = {'en-US': 'en-US', cs: 'cs-CZ'};
-const captureSourceDevice = 'iPhone 17 Pro Max';
+
+// ─── Platforms ───────────────────────────────────────────────────────────────
+// Each platform has its own captures (different app UI) and its own framed
+// output sizes, so raw/ and framed/ are split by platform:
+//   raw/<platform>/<locale>/<shot.raw>      framed/<platform>/<locale>/<device>/
+// - captureDir    — where the capture tool writes (snapshot / screengrab).
+// - sourceDevice  — capture subfolder to read (iOS; null = single device).
+// - captureLayout — 'device' (snapshot: <locale>/<device>/<snap>.png) or
+//                   'images' (screengrab: <locale>/images/<snap>.png).
+// - devices       — framed output sizes. iOS uses EXACT App Store dimensions;
+//                   Android must stay ≤ 2:1 or Google Play rejects it (the 6.9"
+//                   iPhone frame is 2.17:1).
+const platforms = {
+  ios: {
+    captureDir: 'fastlane/screenshots/ios',
+    sourceDevice: 'iPhone 17 Pro Max',
+    captureLayout: 'device',
+    devices: [
+      {id: '6.9', width: 1320, height: 2868}, // iPhone 16/17 Pro Max
+      {id: '6.7', width: 1290, height: 2796}, // iPhone 15 Pro Max
+      // Apple Watch (DEFERRED — Apple Watch MVP Phase 6.3). The watchOS
+      // companion ships as a non-functional UI shell, so watch App Store
+      // screenshots are intentionally NOT captured yet. When it's functional,
+      // add the ASC watch slot here (Series 7+/Ultra is 410×502) AND a watch
+      // simulator entry to fastlane/Snapfile; framing/upload then needs a
+      // watch-shaped frame + caption. Until then, stays commented out.
+      // {id: 'watch', width: 410, height: 502}, // Apple Watch Series 7+/Ultra
+    ],
+  },
+  android: {
+    captureDir: 'fastlane/screenshots/android',
+    sourceDevice: null,
+    captureLayout: 'images',
+    devices: [
+      {id: 'phone', width: 1080, height: 2160}, // 2:1 — within Google Play's limit
+    ],
+  },
+};
 
 // ─── Visual theme ───────────────────────────────────────────────────────────
 const theme = {
@@ -126,10 +141,9 @@ const shots = [
 export default {
   RAW_DIR,
   OUT_DIR,
-  devices,
+  platforms,
   locales,
   theme,
   shots,
   captureLocales,
-  captureSourceDevice,
 };
