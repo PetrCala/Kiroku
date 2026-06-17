@@ -30,6 +30,14 @@ const DEFAULT_WEEK_START: WeekStart = 1;
 
 const EMPTY_EVENTS: DrinkEvent[] = [];
 
+// Backstop for the deferred rebuild. `runAfterInteractions` normally fires the
+// moment the navigation transition settles (~300ms), so this only matters when
+// the interaction queue is starved by a leaked handle — then the rebuild runs
+// at the latest this long after the inputs changed, instead of never. Kept
+// comfortably above a typical transition so the happy path always wins the race
+// and the heavy walk never lands mid-transition.
+const REBUILD_BACKSTOP_MS = 1000;
+
 function resolveWeekStart(label: string | undefined): WeekStart {
   if (!label) {
     return DEFAULT_WEEK_START;
@@ -47,7 +55,12 @@ function resolveWeekStart(label: string | undefined): WeekStart {
  * dominant Statistics-tab cost, so we defer the first pass past the
  * navigation transition with `InteractionManager.runAfterInteractions` —
  * the freshly-mounted tab paints skeletons in one frame, then the real
- * events arrive on a later frame.
+ * events arrive on a later frame. A `setTimeout` backstop runs alongside it so
+ * the rebuild always lands even if the interaction queue is starved (otherwise
+ * a post-save recompute can be dropped and the overview stays stale until the
+ * app is reloaded). Per-tap live edits never reach this path — they mutate
+ * `ONGOING_SESSION_DATA`, not the cached snapshot — so this stays off the
+ * drink-logging touch frame.
  *
  * `isLoading` is true until the Onyx subscription has hydrated **and** the
  * deferred compute has produced its first result. During that window
@@ -76,11 +89,25 @@ function useDrinkEvents(userIds?: UserID[]): UseDrinkEventsResult {
     if (!isHydrated) {
       return;
     }
-    let cancelled = false;
-    const handle = InteractionManager.runAfterInteractions(() => {
-      if (cancelled) {
+    let done = false;
+    let handle: {cancel?: () => void} | undefined;
+    let backstop: ReturnType<typeof setTimeout> | undefined;
+
+    // Whichever of the two timers wins runs the rebuild exactly once; the loser
+    // is cancelled. We prefer `runAfterInteractions` (keeps the heavy walk off
+    // the navigation-transition frame) but can't depend on it alone: a leaked
+    // interaction handle starves its queue indefinitely, which would silently
+    // drop a post-save recompute and leave Home/Stats stale until an app reload.
+    const rebuild = () => {
+      if (done) {
         return;
       }
+      done = true;
+      handle?.cancel?.();
+      if (backstop) {
+        clearTimeout(backstop);
+      }
+
       const next = buildDrinkEvents(
         allSessions,
         drinksToUnits,
@@ -102,10 +129,17 @@ function useDrinkEvents(userIds?: UserID[]): UseDrinkEventsResult {
         timezone,
         weekStart,
       );
-    });
+    };
+
+    handle = InteractionManager.runAfterInteractions(rebuild);
+    backstop = setTimeout(rebuild, REBUILD_BACKSTOP_MS);
+
     return () => {
-      cancelled = true;
-      handle.cancel?.();
+      done = true;
+      handle?.cancel?.();
+      if (backstop) {
+        clearTimeout(backstop);
+      }
     };
   }, [isHydrated, allSessions, drinksToUnits, timezone, weekStart]);
 
