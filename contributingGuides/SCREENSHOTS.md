@@ -15,13 +15,18 @@ committed.
 
 ## Prerequisite: demo account must have a session this month
 
-Both the CI and local flows log into a real Kiroku account using the
-`APPLE_DEMO_EMAIL` / `APPLE_DEMO_PASSWORD` credentials (the same demo account
-Apple uses for App Store Review). The Day Overview screenshot taps the first
-day cell with a recorded session — so **before triggering a capture, log in to
-the demo account and record at least one drinking session in the current
-calendar month**. Without an in-month session, the test fails with a missing
-`DayMarking` accessibility identifier.
+Both flows log into a real Kiroku account using the `APPLE_DEMO_EMAIL` /
+`APPLE_DEMO_PASSWORD` credentials (the same demo account Apple uses for App Store
+Review). The Day Overview screenshot taps the first calendar day with a recorded
+session, so the demo account needs **at least one drinking session in the current
+calendar month** — otherwise the test fails on a missing `DayMarking`.
+
+The CI workflow **auto-seeds** this: a "Seed demo session" step runs the
+kiroku-cli `seedDemoSession` command (idempotent) before capture, gated by the
+`seed` input (default on) and best-effort (`continue-on-error`). It needs the
+`KIROKU_CLI_PAT` and `KIROKU_ADMIN_SDK_PROD` secrets; until those are configured
+(and for local runs), seed manually: sign in to the demo account and log one
+session this month.
 
 ---
 
@@ -29,23 +34,31 @@ calendar month**. Without an in-month session, the test fails with a missing
 
 1. Go to **Actions → "Capture App Store / Play Store screenshots" → Run
    workflow**.
-2. Pick a branch (usually `master`) and a `device_subset`:
-   - `all` — full matrix (4 devices x 2 locales, ~30-45 min)
-   - `phone-only` — 3 iPhones x 2 locales (~20-30 min)
-   - `ipad-only` — 1 iPad x 2 locales (~10-15 min, fastest for iterating)
-3. When the run finishes, download the `ios-screenshots-<sha>` artifact from
-   the workflow summary page. PNGs are organized as
-   `ios/<locale>/<device>/*.png`.
+2. Pick a branch (usually `master`) and the inputs:
+   - `device_subset` — `all` / `phone-only` / `ipad-only` (trims the iOS matrix).
+   - `upload` — `none` (artifacts only), `draft` (write the framed images to the
+     editable App Store + Play listings), or `submit` (also submit the iOS
+     version for review; `automatic_release:false`, so it stays Pending Developer
+     Release).
+   - `seed` — auto-seed a current-month demo session first (default on).
+3. Two jobs run: **iOS** (App Store) and **Android** (Play, on an emulator). Each
+   captures, then ingests + frames in-CI. When the run finishes, download the
+   `ios-framed-screenshots-<sha>` / `android-framed-screenshots-<sha>` artifacts
+   (the marketing-ready images); the raw captures ship as
+   `*-raw-screenshots-<sha>` for triage.
 4. If the run failed, the `ios-fastlane-logs-<sha>` artifact contains
    `gym`/`snapshot` logs for triage.
 
 ### Required GitHub secrets
 
-| Secret                | Used for                                          |
-| --------------------- | ------------------------------------------------- |
-| `APPLE_DEMO_EMAIL`    | Demo account login (App Store Review credentials) |
-| `APPLE_DEMO_PASSWORD` | Demo account password                             |
-| `PROD_ENV_FILE`       | Contents of `.env.production`                     |
+| Secret                    | Used for                                                      |
+| ------------------------- | ------------------------------------------------------------- |
+| `APPLE_DEMO_EMAIL`        | Demo account login (App Store Review credentials)             |
+| `APPLE_DEMO_PASSWORD`     | Demo account password                                         |
+| `PRODUCTION_ENV_FILE`     | Contents of `.env.production`                                 |
+| `LARGE_SECRET_PASSPHRASE` | Decrypts the ASC / Play API keys (only when `upload != none`) |
+| `KIROKU_CLI_PAT`          | Read access to the private kiroku-cli repo (seed step)        |
+| `KIROKU_ADMIN_SDK_PROD`   | Prod Firebase admin SDK JSON (seed step)                      |
 
 `KIROKU_DEMO_EMAIL` / `KIROKU_DEMO_PASSWORD` (used inside the UI test) are
 aliased from `APPLE_DEMO_*` in the workflow, so you only need one set.
@@ -95,39 +108,41 @@ full rationale.
 ## From captures to framed store images
 
 Capturing produces raw PNGs; the store needs them **framed** (a branded
-background with a caption, at exact App Store Connect pixel sizes). Two
-deterministic Node steps bridge the gap, both driven by the shared manifest
+background with a caption, at exact store pixel sizes). Two deterministic Node
+steps bridge the gap — both driven by the shared manifest
 [`scripts/store-screenshots.config.mjs`](../scripts/store-screenshots.config.mjs)
-so capture and framing can't drift:
+so capture and framing can't drift, and both take `--platform ios|android`
+(default `ios`):
 
 1. **Ingest** maps the capture output into the framing inputs:
 
    ```bash
-   # from a downloaded CI artifact:
-   npm run ingest-screenshots -- --from <unzipped-artifact-dir>
-   # or from a local fastlane/screenshots/ios capture:
-   npm run ingest-screenshots
+   npm run ingest-screenshots -- --from <unzipped-artifact-dir>      # iOS, from a CI artifact
+   npm run ingest-screenshots                                        # iOS, from local fastlane/screenshots/ios
+   npm run ingest-screenshots -- --platform android --from <dir>     # Android
    ```
 
    It copies + renames each capture into
-   `fastlane/store-screenshots/raw/<locale>/` (`01_Home.png` → `01-home.png`),
-   remaps `cs-CZ` → `cs`, reads the `iPhone 17 Pro Max` master, and skips captures
-   with no manifest entry. Add `--check` for a dry run.
+   `fastlane/store-screenshots/raw/<platform>/<locale>/` (`01_Home.png` →
+   `01-home.png`), remaps `cs-CZ` → `cs`, reads the iOS `iPhone 17 Pro Max` master
+   / Android `images/` dir, and skips captures with no manifest entry. Add
+   `--check` for a dry run.
 
 2. **Frame** renders the store-sized marketing images:
 
    ```bash
-   npm run frame-screenshots   # → fastlane/store-screenshots/framed/<locale>/<device>/
+   npm run frame-screenshots                       # → framed/ios/<locale>/<device>/
+   npm run frame-screenshots -- --platform android # → framed/android/<locale>/phone/
    ```
 
-Then upload `framed/**` to App Store Connect. The full runbook (the
-in-month-session prerequisite, the `gh` capture-dispatch commands, and how to make
-changes) lives in the `store-screenshots` skill.
+In CI these two steps run automatically after capture, and (when the `upload`
+input is set) the framed images are pushed to App Store Connect / Play via the
+`:upload_screenshots` / `:upload_play_store_screenshots` fastlane lanes. The full
+runbook lives in the `store-screenshots` skill.
 
-> **Current screen set (4):** Home, LiveSession, DayOverview, Profile — the
-> screens the UI test already captures. The captured `05_Settings` is left
-> unmapped. Growing to the full marketing set (Statistics, an alcohol-free streak)
-> needs new captures plus native-test edits and lands in a follow-up PR.
+> **Current screen set (6):** Home, LiveSession, DayOverview, Statistics,
+> AlcoholFree (Badges), Profile. The UI tests also capture `05_Settings`, which is
+> intentionally not a marketing shot and is left unmapped.
 
 ---
 
@@ -259,17 +274,17 @@ makes a few assumptions that may need adjustment after the first run:
 
 ---
 
-## What this doesn't include (yet)
+## Known follow-ups
 
-- **Android CI job** — the `android :screenshots` lane works locally but
-  needs the Gradle setup + AVD wiring + manifest permission landed on master
-  before it can be lifted into CI. Follow-up.
+- **First-dispatch validation** — the Android emulator job, screengrab's exact
+  output naming, and the `deliver` / `supply` screenshot layouts are wired but
+  only proven by a real iOS + Android dispatch; expect to iterate on the first
+  run. The `deliver` `screenshots_path` points at the nested `framed/ios/<locale>/<device>/`
+  tree (device inferred by dimensions) — if a run rejects it, flatten per locale.
+- **Seed secrets** — the auto-seed step needs `KIROKU_CLI_PAT` +
+  `KIROKU_ADMIN_SDK_PROD`; until set it's a non-blocking skip (seed manually).
 - **`frameit` device bezels** — uncomment the line in the iOS lane once
   you've installed it (`bundle exec fastlane frameit setup`).
-- **Auto-upload to App Store Connect / Play Console** — both lanes currently
-  stop after capturing PNGs. Wiring them into the existing `production`
-  lanes via `deliver` / `supply` with `skip_screenshots: false` is the
-  natural next step once you trust the output.
 - **Underlying `kirokuTests` `SWIFT_VERSION` fix** — the workaround lives in
   `fastlane/Snapfile` (`xcargs("SWIFT_VERSION=5.0")`). The root-cause fix
   belongs in a separate PR that edits the `kirokuTests` target in

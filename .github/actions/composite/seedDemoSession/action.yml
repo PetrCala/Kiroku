@@ -1,0 +1,50 @@
+name: 'Seed demo session'
+description: >-
+  Ensure the demo/review account has a drinking session in the current calendar
+  month (via the kiroku-cli `seedDemoSession` admin command) so the screenshot
+  capture's "DayMarking" calendar tap succeeds. Idempotent — a no-op when a
+  current-month session already exists.
+
+# Requires three secrets on the calling workflow (configure once):
+#   - the demo account email (passed in as `demo-email`)
+#   - KIROKU_CLI_PAT       — a PAT with read access to the private kiroku-cli repo
+#   - KIROKU_ADMIN_SDK_PROD — contents of the prod Firebase admin SDK JSON
+# The caller runs this with continue-on-error so an unconfigured seed degrades
+# gracefully to the documented manual prerequisite instead of blocking capture.
+inputs:
+  demo-email:
+    description: 'Demo/review account email to seed.'
+    required: true
+  cli-token:
+    description: 'PAT with read access to the private kiroku-cli repo.'
+    required: true
+  admin-sdk-prod:
+    description: 'Contents of the prod Firebase admin SDK service-account JSON.'
+    required: true
+
+runs:
+  using: composite
+  steps:
+    - name: Checkout kiroku-cli
+      uses: actions/checkout@v5
+      with:
+        repository: PetrCala/kiroku-cli
+        token: ${{ inputs.cli-token }}
+        path: .kiroku-cli
+
+    - name: Stage prod admin SDK + environment
+      shell: bash
+      env:
+        ADMIN_SDK_PROD: ${{ inputs.admin-sdk-prod }}
+      run: |
+        printf '%s' "$ADMIN_SDK_PROD" > .kiroku-cli/kiroku-admin-sdk-prod.json
+        echo 'ENVIRONMENT=production' > .kiroku-cli/.env
+
+    - name: Install kiroku-cli and seed the session
+      shell: bash
+      working-directory: .kiroku-cli
+      env:
+        DEMO_EMAIL: ${{ inputs.demo-email }}
+      run: |
+        npm ci
+        npm run kiroku-cli -- seedDemoSession --email "$DEMO_EMAIL" --yes

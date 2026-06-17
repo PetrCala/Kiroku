@@ -9,19 +9,21 @@ See the `store-screenshots` skill for the full capture → ingest → frame → 
 
 ## Quick use
 
-1. **Ingest** real app captures into `raw/`. After a fastlane `snapshot` run (the
-   `screenshots.yml` workflow, or a local capture), map them in:
+1. **Ingest** real app captures into `raw/`. After a fastlane `snapshot` (iOS) or
+   `screengrab` (Android) run — the `screenshots.yml` workflow, or a local
+   capture — map them in (`--platform` defaults to `ios`):
 
    ```bash
-   npm run ingest-screenshots -- --from <unzipped-artifact-dir>   # or omit --from for a local capture
+   npm run ingest-screenshots -- --from <unzipped-artifact-dir>    # iOS (omit --from for a local capture)
+   npm run ingest-screenshots -- --platform android --from <dir>   # Android
    ```
 
    This copies + renames the captures (`01_Home.png → 01-home.png`, `cs-CZ → cs`)
-   into `raw/<locale>/`, driven by `store-screenshots.config.mjs`. Source must be
-   captured on an **iPhone 17 Pro Max** (1320×2868) using the seeded reviewer
-   account so charts/calendar aren't empty.
+   into `raw/<platform>/<locale>/`, driven by `store-screenshots.config.mjs`. iOS
+   source must be an **iPhone 17 Pro Max** (1320×2868); capture with the seeded
+   reviewer account so charts/calendar aren't empty.
 
-2. Check the framing inputs are present:
+2. Check the framing inputs are present (`--check` works on both scripts):
 
    ```bash
    npm run frame-screenshots -- --check
@@ -30,13 +32,16 @@ See the `store-screenshots` skill for the full capture → ingest → frame → 
 3. Render the framed, exact-size images:
 
    ```bash
-   npm run frame-screenshots
+   npm run frame-screenshots                       # → framed/ios/<locale>/<device>/
+   npm run frame-screenshots -- --platform android # → framed/android/<locale>/phone/
    ```
 
-   Output lands in `framed/<locale>/<device>/NN_<name>.png`, sized exactly for
-   App Store Connect (6.9" = 1320×2868, 6.7" = 1290×2796).
+   iOS sizes are exact App Store dimensions (6.9" = 1320×2868, 6.7" = 1290×2796);
+   Android is 1080×2160 (≤ 2:1, within Google Play's limit).
 
-4. Upload `framed/**` to ASC (manually, or wire it into `deliver` later).
+4. Upload: the `screenshots.yml` workflow does this in CI (the `upload` input), or
+   run the `:upload_screenshots` (ASC) / `:upload_play_store_screenshots` (Play)
+   fastlane lanes by hand.
 
 `raw/` and `framed/` are git-ignored — they're inputs/outputs, not source.
 
