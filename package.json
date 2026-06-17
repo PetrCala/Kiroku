@@ -50,6 +50,7 @@
     "bump": "./scripts/bumpVersion.sh",
     "build": "tsc",
     "generate-icons": "node scripts/generate-icons.mjs",
+    "ingest-screenshots": "node scripts/ingest-store-screenshots.mjs",
     "frame-screenshots": "node scripts/frame-app-store-screenshots.mjs",
     "sync-brand-colors": "node scripts/sync-brand-colors.mjs",
     "web": "tsx ./node_modules/.bin/webpack-cli serve --config config/webpack/webpack.dev.ts --env file=.env.development",

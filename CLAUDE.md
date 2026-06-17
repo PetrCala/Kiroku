@@ -134,6 +134,10 @@ Key GitHub Actions workflows:
 
 The Apple Distribution certificate and provisioning profiles (GPG-encrypted in `ios/`) expire ~yearly and break the deploy. To renew, use the `ios-signing` skill — or run `node scripts/ios-signing.mjs check --deep`, then `renew --yes`, merge the PR, and `finalize --yes`. See [`.claude/skills/ios-signing`](.claude/skills/ios-signing/SKILL.md).
 
+### Store Screenshots
+
+App Store / Play Store screenshots run an end-to-end pipeline: **capture** (fastlane `snapshot` via the manual `screenshots.yml` workflow) → **ingest** (`npm run ingest-screenshots`, maps captures into the framing inputs) → **frame** (`npm run frame-screenshots`, branded captions at exact ASC sizes) → **upload**. To create or change them (captions, locales, theme, or which screen a shot shows), use the `store-screenshots` skill; the shot manifest is `scripts/store-screenshots.config.mjs`. See [`contributingGuides/SCREENSHOTS.md`](contributingGuides/SCREENSHOTS.md) and [`.claude/skills/store-screenshots`](.claude/skills/store-screenshots/SKILL.md).
+
 ## Related Repositories
 
 ### kiroku-api

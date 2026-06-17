@@ -92,6 +92,45 @@ full rationale.
 
 ---
 
+## From captures to framed store images
+
+Capturing produces raw PNGs; the store needs them **framed** (a branded
+background with a caption, at exact App Store Connect pixel sizes). Two
+deterministic Node steps bridge the gap, both driven by the shared manifest
+[`scripts/store-screenshots.config.mjs`](../scripts/store-screenshots.config.mjs)
+so capture and framing can't drift:
+
+1. **Ingest** maps the capture output into the framing inputs:
+
+   ```bash
+   # from a downloaded CI artifact:
+   npm run ingest-screenshots -- --from <unzipped-artifact-dir>
+   # or from a local fastlane/screenshots/ios capture:
+   npm run ingest-screenshots
+   ```
+
+   It copies + renames each capture into
+   `fastlane/store-screenshots/raw/<locale>/` (`01_Home.png` → `01-home.png`),
+   remaps `cs-CZ` → `cs`, reads the `iPhone 17 Pro Max` master, and skips captures
+   with no manifest entry. Add `--check` for a dry run.
+
+2. **Frame** renders the store-sized marketing images:
+
+   ```bash
+   npm run frame-screenshots   # → fastlane/store-screenshots/framed/<locale>/<device>/
+   ```
+
+Then upload `framed/**` to App Store Connect. The full runbook (the
+in-month-session prerequisite, the `gh` capture-dispatch commands, and how to make
+changes) lives in the `store-screenshots` skill.
+
+> **Current screen set (4):** Home, LiveSession, DayOverview, Profile — the
+> screens the UI test already captures. The captured `05_Settings` is left
+> unmapped. Growing to the full marketing set (Statistics, an alcohol-free streak)
+> needs new captures plus native-test edits and lands in a follow-up PR.
+
+---
+
 ## Local fallback
 
 Use this if you want to iterate on `ScreenshotTests.swift` against your own
