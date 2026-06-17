@@ -1,0 +1,593 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="robots" content="noindex, nofollow" />
+    <title>Privacy Policy · Kiroku</title>
+    <style>
+      :root { color-scheme: light dark; }
+      * { box-sizing: border-box; }
+      body {
+        margin: 0;
+        padding: 2rem 1.25rem 4rem;
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+          Helvetica, Arial, sans-serif;
+        line-height: 1.6;
+        color: #1a1a1a;
+        background: #ffffff;
+        -webkit-text-size-adjust: 100%;
+      }
+      .doc { max-width: 720px; margin: 0 auto; }
+      h1 { font-size: 1.6rem; line-height: 1.25; margin: 0 0 0.25rem; }
+      h2 { font-size: 1.2rem; margin: 2rem 0 0.5rem; }
+      h3 { font-size: 1.02rem; margin: 1.25rem 0 0.4rem; }
+      header p { color: #666; margin: 0 0 1.5rem; }
+      p, li { font-size: 1rem; }
+      ul, ol { padding-left: 1.4rem; }
+      li { margin: 0.3rem 0; }
+      a { color: #0b69d4; text-decoration: underline; }
+      strong { font-weight: 600; }
+      code {
+        font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+        font-size: 0.9em;
+        background: rgba(0, 0, 0, 0.06);
+        padding: 0.1em 0.35em;
+        border-radius: 4px;
+        word-break: break-word;
+      }
+      @media (prefers-color-scheme: dark) {
+        body { color: #e6e6e6; background: #121212; }
+        header p { color: #9a9a9a; }
+        a { color: #6db3ff; }
+        code { background: rgba(255, 255, 255, 0.1); }
+      }
+    </style>
+  </head>
+  <body>
+    <main class="doc">
+    <header>
+      <h1>Privacy Policy for Kiroku</h1>
+      <p>Last Updated: June 10, 2026</p>
+    </header>
+
+    <section>
+      <p>
+        This Privacy Policy ("Policy") applies to the Kiroku mobile application
+        ("Kiroku" or the "App"). The operator of Kiroku, identified in the
+        <a href="#contact-us">Contact Us</a> section below, is the data
+        controller for the purposes of the General Data Protection Regulation
+        ("GDPR"). This Policy describes how we collect, use, process, and
+        disclose your personal data.
+      </p>
+      <p>
+        Kiroku is a tool for tracking and reflecting on your own alcohol
+        consumption. We process your data to provide that awareness and
+        harm-reduction functionality. We never use your data to encourage you
+        to drink.
+      </p>
+      <p>
+        This website (kiroku.cz) does not use cookies, analytics, or other
+        tracking technologies. The only identifiers we process are those used
+        inside the mobile App and described in this Policy.
+      </p>
+    </section>
+
+    <section id="information-collection">
+      <h2>1. Information We Collect</h2>
+
+      <h3>a. Account and authentication data</h3>
+      <ul>
+        <li>
+          Your email address and, depending on how you sign in, basic profile
+          information from your chosen provider. You can create an account with
+          an email address and password, with Google Sign-In, or with Sign in
+          with Apple.
+        </li>
+        <li>
+          Authentication is handled by Google Firebase Authentication, and your
+          account record is stored in the Firebase Realtime Database.
+        </li>
+      </ul>
+
+      <h3>b. Profile data</h3>
+      <ul>
+        <li>
+          Your first name, last name, display name, and username.
+        </li>
+        <li>
+          A profile photo, if you choose to upload one. Profile photos are
+          stored in Firebase Storage. Your profile information (including your
+          display name, username, and photo) is visible to other signed-in
+          users of the App, including the friends you connect with.
+        </li>
+      </ul>
+
+      <h3>c. Drinking session data (sensitive)</h3>
+      <p>
+        When you log a drinking session, we process the information you enter,
+        which may include:
+      </p>
+      <ul>
+        <li>Session date, start time, and timestamps;</li>
+        <li>The number and type of drinks and their standardized units;</li>
+        <li>Free-text notes you add to a session;</li>
+        <li>A "blackout" indicator, if you set one;</li>
+        <li>Your device timezone, so sessions are recorded at the correct local time.</li>
+      </ul>
+      <p>
+        This information relates to your alcohol consumption and is the most
+        sensitive data the App handles. We treat it accordingly. See
+        <a href="#legal-bases">Legal Bases for Processing</a> for how we rely on
+        your consent to process this category of data.
+      </p>
+
+      <h3>d. Location data (optional, opt-in)</h3>
+      <p>
+        The App can optionally tag each drink you record during a live session
+        with your precise GPS location, so you can later see where a session
+        took place.
+      </p>
+      <ul>
+        <li>
+          <strong>Off by default.</strong> Location tracking is collected only
+          if you turn on the in-app preference ("track location during
+          sessions") and grant the operating system's location permission. If
+          you do nothing, no location data is collected.
+        </li>
+        <li>
+          <strong>What is collected.</strong> The precise GPS coordinates
+          captured at the moment you record a drink during a live session, with
+          a timestamp.
+        </li>
+        <li>
+          <strong>Where it is stored.</strong> In the Firebase Realtime
+          Database, under
+          <code>user_session_locations/{uid}/{sessionId}/{timestamp}</code>,
+          associated with your account identifier.
+        </li>
+        <li>
+          <strong>How to delete it.</strong> You can erase all of your stored
+          location history at any time in the App from
+          <em>Settings → Privacy → "Clear location history"</em>. You can also
+          stop further collection by turning the preference off or revoking the
+          location permission.
+        </li>
+      </ul>
+
+      <h3>e. Friends and social connections</h3>
+      <ul>
+        <li>
+          Your friend list, friend requests you send or receive, and any
+          nicknames you assign to friends.
+        </li>
+        <li>
+          <strong>Visibility of your sessions to friends.</strong> Your
+          drinking sessions and the statistics derived from them are visible
+          to the friends you connect with — by default, to all of your
+          friends. You can hide your sessions from all friends in
+          <em>Settings → Privacy</em>, or from individual friends in that
+          friend's management options, at any time.
+        </li>
+        <li>
+          Friends can also see presence information about you: when you were
+          last online and whether you currently have a session in progress.
+        </li>
+      </ul>
+
+      <h3>f. App preferences and usage data</h3>
+      <ul>
+        <li>
+          Your in-app preferences and settings, such as theme, language and
+          locale, units, and first day of the week.
+        </li>
+        <li>
+          Your onboarding progress and your last-online status, used to operate
+          the App and remember your choices across sessions and devices. Your
+          last-online status is visible to your friends (see
+          <a href="#data-sharing">Data Sharing and Disclosure</a>).
+        </li>
+      </ul>
+
+      <h3>g. Subscription and purchase data</h3>
+      <p>
+        If you purchase a Kiroku Supporter subscription, we process limited
+        purchase data through RevenueCat. This is described in
+        <a href="#payments-revenuecat">Payments and Subscription Management</a>.
+      </p>
+
+      <h3>h. Device identifiers and push notifications</h3>
+      <ul>
+        <li>
+          A device identifier (a randomly generated GUID) that is assigned to
+          your installation of the App. It persists across sign-outs and is used
+          to manage push-notification preferences for your device.
+        </li>
+        <li>
+          If you opt in to push notifications, a push token issued by the
+          operating system, so we can deliver the notifications you requested.
+          Push notifications are opt-in and you can turn them off at any time in
+          the App or in your device settings.
+        </li>
+      </ul>
+
+      <h3>i. Crash and performance diagnostics</h3>
+      <ul>
+        <li>
+          We use Google Firebase Crashlytics to record crash reports and
+          diagnostic information (such as the type of crash, device model,
+          operating system version, and a stack trace) when the App stops
+          working as expected, and Google Firebase Performance Monitoring to
+          collect performance metrics (such as app start time and network
+          request timing). These diagnostics are associated with your account
+          identifier so we can investigate issues affecting your account.
+        </li>
+        <li>
+          Diagnostics collection is gated behind a build flag and a user
+          preference, so it is not active in every build or for every user. You
+          can turn diagnostics off at any time in the App's settings.
+        </li>
+      </ul>
+    </section>
+
+    <section id="data-use">
+      <h2>2. How We Use Your Data</h2>
+      <p>Your data is used for the following purposes:</p>
+      <ul>
+        <li>To create and maintain your account and authenticate you.</li>
+        <li>
+          To provide the App's core functionality, including recording and
+          displaying your drinking sessions and statistics.
+        </li>
+        <li>
+          To operate social features, such as friend connections and friend
+          requests.
+        </li>
+        <li>
+          To show your drinking sessions, statistics, and online presence to
+          the friends you connect with, subject to your visibility settings
+          (see <a href="#data-sharing">Data Sharing and Disclosure</a>).
+        </li>
+        <li>To manage subscriptions and supporter benefits.</li>
+        <li>To send push notifications you have opted in to receive.</li>
+        <li>
+          To tag your drinking sessions with location, if you have opted in to
+          location tracking.
+        </li>
+        <li>
+          To diagnose crashes, monitor performance, maintain security, and
+          improve the stability of the App.
+        </li>
+        <li>
+          To communicate with you about service updates or customer-support
+          inquiries.
+        </li>
+        <li>
+          To send you marketing communications, such as product news, tips,
+          and occasional updates about Kiroku, where you have opted in to
+          receive them. You can withdraw this consent at any time, either in
+          the App's settings or via the unsubscribe link in every such email.
+        </li>
+      </ul>
+      <p>
+        We do not use your personal data for automated decision-making or
+        profiling that produces legal or similarly significant effects for you
+        (Art. 22 GDPR).
+      </p>
+    </section>
+
+    <section id="legal-bases">
+      <h2>3. Legal Bases for Processing</h2>
+      <p>
+        Under the GDPR we rely on the following legal bases:
+      </p>
+      <ul>
+        <li>
+          <strong>Performance of a contract</strong> (Art. 6(1)(b)) — for
+          account, profile, social, and subscription data that is necessary to
+          provide the App you have asked to use.
+        </li>
+        <li>
+          <strong>Consent</strong> (Art. 6(1)(a), and Art. 9(2)(a) for data
+          concerning your alcohol consumption) — your drinking session data is
+          provided voluntarily by you and may reveal information about your
+          health. We process it on the basis of the explicit consent you give by
+          choosing to log it. If you connect with friends, your sessions are
+          also made visible to them on the same consent basis, subject to the
+          visibility controls described in
+          <a href="#information-collection">Information We Collect</a> — you
+          can hide your sessions from all friends or from individual friends
+          at any time. You can withdraw this consent at any time by
+          deleting your sessions or your account; withdrawal does not affect
+          processing carried out before withdrawal.
+        </li>
+        <li>
+          <strong>Consent</strong> (Art. 6(1)(a)) — for push notifications and
+          for location tracking, both of which are opt-in. You can withdraw
+          either at any time in the App's settings.
+        </li>
+        <li>
+          <strong>Consent</strong> (Art. 6(1)(a)) — for marketing emails
+          (product news, tips, and occasional updates about Kiroku), which are
+          opt-in. We send them only if you have given consent, and you can
+          withdraw it at any time in the App's settings or via the unsubscribe
+          link in every marketing email. Withdrawal does not affect processing
+          carried out before withdrawal.
+        </li>
+        <li>
+          <strong>Legal obligation</strong> (Art. 6(1)(c)) — for the retention
+          of purchase and transaction records that we must keep under
+          applicable accounting and tax legislation (see
+          <a href="#data-retention">Data Retention</a>).
+        </li>
+        <li>
+          <strong>Legitimate interests</strong> (Art. 6(1)(f)) — for crash and
+          performance diagnostics and security, to keep the App stable and
+          secure. You can object to this processing, and you can turn
+          diagnostics off in the App's settings.
+        </li>
+      </ul>
+    </section>
+
+    <section id="payments-revenuecat">
+      <h2>4. Payments and Subscription Management</h2>
+      <p>
+        If you purchase a subscription inside the App, payment is processed by
+        Apple (App Store) or Google (Google Play). We do not receive your
+        payment card details. We use RevenueCat, Inc. ("RevenueCat") as a
+        service provider to manage subscription entitlements and to receive
+        purchase events from the stores.
+      </p>
+      <p>In this context the following data is processed:</p>
+      <ul>
+        <li>
+          A RevenueCat app user ID, set to your Kiroku (Firebase) account
+          identifier, used to associate purchases with your account.
+        </li>
+        <li>
+          Anonymized device and platform identifiers (such as the platform
+          IDFV on iOS or an installation ID on Android) provided by the
+          operating system or by RevenueCat's SDK.
+        </li>
+        <li>
+          Purchase and subscription events from Apple and Google, including
+          product identifier, store transaction ID, purchase and expiration
+          dates, renewal and cancellation status, country of the store
+          account, and the currency and price of the transaction.
+        </li>
+      </ul>
+      <p>
+        This data is used to grant and revoke subscription entitlements,
+        prevent fraud, and provide customer support. For details on
+        RevenueCat's processing, see RevenueCat's privacy policy at
+        <a href="https://www.revenuecat.com/privacy" rel="noopener"
+          >revenuecat.com/privacy</a
+        >.
+      </p>
+    </section>
+
+    <section id="subprocessors">
+      <h2>5. Third-Party Service Providers</h2>
+      <p>
+        We rely on the following processors and sub-processors, who process
+        personal data on our behalf under appropriate agreements:
+      </p>
+      <ul>
+        <li>
+          <strong>Google Ireland Limited / Google LLC (Firebase)</strong> —
+          Firebase Authentication (sign-in), Firebase Realtime Database (account,
+          profile, session, location, and social data), Firebase Storage
+          (profile photos), Firebase Crashlytics (crash diagnostics), and
+          Firebase Performance Monitoring (performance diagnostics). Our own
+          backend service (api.kiroku.cz), which enforces the App's privacy
+          and visibility rules, also runs on Google's cloud infrastructure.
+        </li>
+        <li>
+          <strong>RevenueCat, Inc.</strong> — subscription entitlement
+          management and purchase events, as described above.
+        </li>
+        <li>
+          <strong>Pusher Ltd</strong> — real-time delivery of in-app events,
+          such as friend and session updates. Event payloads may include your
+          account identifier and the content of the update, and are processed
+          on Pusher's EU cluster. Pusher Ltd is established in the United
+          Kingdom.
+        </li>
+        <li>
+          <strong>Apple Inc.</strong> and <strong>Google LLC</strong> — payment
+          processing for in-app purchases via the App Store and Google Play.
+        </li>
+      </ul>
+    </section>
+
+    <section id="data-sharing">
+      <h2>6. Data Sharing and Disclosure</h2>
+      <p>
+        We do not sell your personal data. We may share your data with:
+      </p>
+      <ul>
+        <li>
+          The third-party service providers listed above, who process data on
+          our behalf.
+        </li>
+        <li>
+          Other users of the App: your profile information (display name,
+          username, and photo) is visible to other signed-in users, and your
+          drinking sessions, statistics, and presence information (when you
+          were last online and whether a session is in progress) are visible
+          to the friends you connect with — by default, to all of your
+          friends. You can hide your sessions from all friends in
+          <em>Settings → Privacy</em>, or from individual friends, at any
+          time.
+        </li>
+        <li>
+          A successor operator, if the App or our business is transferred or
+          assigned (see our <a href="https://kiroku.cz/en/terms">Terms of Service</a>). The
+          successor remains bound by this Policy, and we will notify you of
+          any change of controller.
+        </li>
+        <li>Legal authorities when required by law.</li>
+      </ul>
+    </section>
+
+    <section id="your-rights">
+      <h2>7. Your Rights</h2>
+      <p>
+        Under the GDPR, you have several rights regarding your personal data:
+      </p>
+      <ul>
+        <li>
+          <strong>Access</strong>: You can request a copy of your personal data.
+        </li>
+        <li>
+          <strong>Rectification</strong>: If you believe any of your data is
+          inaccurate, you can request to have it corrected.
+        </li>
+        <li>
+          <strong>Erasure</strong>: You can request to have your data deleted.
+          You can also delete your account directly in the App (in your account
+          settings), which removes your account and associated data. See our
+          <a href="https://kiroku.cz/en/delete-account">account deletion page</a> for
+          step-by-step instructions.
+        </li>
+        <li>
+          <strong>Restriction</strong>: You can ask us to restrict how we use
+          your data.
+        </li>
+        <li>
+          <strong>Objection</strong>: You can object to our use of your data,
+          including processing based on legitimate interests.
+        </li>
+        <li>
+          <strong>Data Portability</strong>: You can request a copy of your data
+          in a format that's easy to move from one service to another.
+        </li>
+        <li>
+          <strong>Withdraw consent</strong>: Where we rely on your consent
+          (including for drinking session data and push notifications), you can
+          withdraw it at any time.
+        </li>
+        <li>
+          <strong>Lodge a complaint</strong>: You have the right to lodge a
+          complaint with a supervisory authority. In the Czech Republic this is
+          the Office for Personal Data Protection (Úřad pro ochranu osobních
+          údajů,
+          <a href="https://www.uoou.cz" rel="noopener">uoou.cz</a>).
+        </li>
+      </ul>
+      <p>
+        To exercise any of these rights, contact us using the details in the
+        <a href="#contact-us">Contact Us</a> section.
+      </p>
+    </section>
+
+    <section id="data-retention">
+      <h2>8. Data Retention</h2>
+      <p>We retain different categories of data for different periods:</p>
+      <ul>
+        <li>
+          Account, profile, drinking-session, and social data — kept while your
+          account is active, and deleted or anonymized when you delete your
+          account (in the App or by request).
+        </li>
+        <li>
+          Location history — kept until you delete it via
+          <em>Settings → Privacy → "Clear location history"</em>, or until you
+          delete your account.
+        </li>
+        <li>
+          Subscription and purchase records — retained for as long as required
+          by applicable accounting and tax law (in the Czech Republic, this can
+          be up to 10 years).
+        </li>
+        <li>
+          Crash and diagnostic data — retained by Firebase Crashlytics for
+          approximately 90 days.
+        </li>
+        <li>
+          Push tokens — removed when you disable notifications or sign out.
+        </li>
+        <li>
+          The device identifier (GUID) — persists on your device across
+          sign-outs until you delete the App; copies stored on our servers are
+          removed when you delete your account.
+        </li>
+      </ul>
+      <p>
+        Residual copies may remain in encrypted backups for a limited period
+        after deletion before being overwritten.
+      </p>
+    </section>
+
+    <section id="security">
+      <h2>9. Security</h2>
+      <p>
+        We implement appropriate technical and organizational measures to
+        protect your personal data from unauthorized access, use, or disclosure.
+      </p>
+      <p>
+        If a personal data breach occurs, we will handle it in accordance with
+        Articles 33 and 34 GDPR — notifying the Czech supervisory authority
+        (ÚOOÚ) within 72 hours where required, and informing you without undue
+        delay if the breach is likely to result in a high risk to your rights
+        and freedoms.
+      </p>
+    </section>
+
+    <section id="childrens-privacy">
+      <h2>10. Children's Privacy</h2>
+      <p>
+        Our App is not intended for individuals under 18 years old. We do not
+        knowingly collect or solicit data from children under 18.
+      </p>
+    </section>
+
+    <section id="international-transfers">
+      <h2>11. International Data Transfers</h2>
+      <p>
+        Some of our service providers may process your personal data outside
+        the European Economic Area. Google LLC and RevenueCat, Inc. may process
+        data in the United States; both are certified under the EU-U.S. Data
+        Privacy Framework, and we rely on that adequacy decision and, as a
+        fallback, on the European Commission's Standard Contractual Clauses.
+        Pusher Ltd processes data on servers in the EU but is established in
+        the United Kingdom, which is covered by a European Commission adequacy
+        decision.
+      </p>
+    </section>
+
+    <section id="changes-policy">
+      <h2>12. Changes to This Policy</h2>
+      <p>
+        We may update our Privacy Policy from time to time. We will post the
+        updated Policy on this page and update the "Last Updated" date. If the
+        changes are material — for example, if we start processing new
+        categories of data or processing data for new purposes — we will also
+        notify you in the App reasonably in advance of the changes taking
+        effect.
+      </p>
+    </section>
+
+    <section id="contact-us">
+      <h2>13. Contact Us</h2>
+      <p>
+        If you have any questions or concerns about this Privacy Policy, please
+        contact us at:
+      </p>
+      <ul>
+        <li>
+          Email:
+          <a href="mailto:kiroku.alcohol.tracker@gmail.com"
+            >kiroku.alcohol.tracker@gmail.com</a
+          >
+        </li>
+      </ul>
+      <p>
+        <strong>Operator:</strong> Petr Čala, Všemina 251, 763 15 Všemina<br />
+        Business ID (IČO): 08000131<br />
+        Not a VAT payer.
+      </p>
+    </section>
+    </main>
+  </body>
+</html>
