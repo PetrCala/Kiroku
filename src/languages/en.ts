@@ -536,6 +536,7 @@ export default {
       title: 'General',
       firstDayOfWeek: 'First day of the week',
       theme: "App's theme",
+      autoCloseSessions: 'Auto-close sessions',
     },
     drinksAndUnitsSection: {
       title: 'Drinks and Units',
@@ -703,6 +704,13 @@ export default {
         label: 'Czech',
       },
     },
+  },
+  autoCloseSessionsScreen: {
+    title: 'Auto-close sessions',
+    description:
+      'When a live session has no new drinks for this long, Kiroku finishes it for you and sets the end time to your last drink. Pick "Never" to keep your sessions open until you end them yourself.',
+    hoursOption: ({hours}: {hours: number}) => `${hours}h`,
+    never: 'Never',
   },
   themeScreen: {
     theme: 'Theme',

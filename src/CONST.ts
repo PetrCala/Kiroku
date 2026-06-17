@@ -1012,6 +1012,15 @@ const CONST = {
   SESSION: {
     TYPES: SESSION_TYPES,
     REALTIME: [SESSION_TYPES.LIVE],
+    AUTO_CLOSE: {
+      // Compile-time fallback when neither the user nor the global config sets
+      // a threshold. The resolution chain is
+      // `userPref ?? config.auto_close_default_hours ?? DEFAULT_HOURS`.
+      DEFAULT_HOURS: 24,
+      // Threshold choices offered in the picker (hours). "Never" opts out.
+      OPTIONS: [8, 12, 24, 48],
+      NEVER: 'never',
+    },
   },
   SOCIALS: {
     TWITTER: '',
