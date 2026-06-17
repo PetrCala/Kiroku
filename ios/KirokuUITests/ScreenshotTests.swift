@@ -34,11 +34,16 @@ final class ScreenshotTests: XCTestCase {
         openCalendarDay()
         snapshot("03_DayOverview")
 
-        openProfile()
-        snapshot("04_Profile")
+        openStatistics()
+        snapshot("04_Statistics")
 
-        openSettings()
-        snapshot("05_Settings")
+        openProfile()
+        snapshot("06_Profile")
+
+        // Badges (the alcohol-free streak) is captured last — it opens over the
+        // Home flow, so nothing after it needs the bottom tab bar.
+        openBadges()
+        snapshot("05_AlcoholFree")
     }
 
     // MARK: - Login
@@ -139,6 +144,24 @@ final class ScreenshotTests: XCTestCase {
     private func openSettings() {
         tapTabBarButton(matching: ["Settings", "Nastavení"])
         _ = app.otherElements["SettingsScreen"].waitForExistence(timeout: 5)
+    }
+
+    private func openStatistics() {
+        tapTabBarButton(matching: ["Statistics", "Statistiky"])
+        _ = app.otherElements["Statistics Screen"].waitForExistence(timeout: 5)
+    }
+
+    private func openBadges() {
+        // The alcohol-free streak lives on the Badges screen, opened from Home
+        // via the star button (bottomTabBar.badges: "Badges" / "Odznaky").
+        returnToHome()
+        let badges = app.buttons.matching(NSPredicate(format:
+            "label IN { 'Badges', 'Odznaky' }"
+        )).firstMatch
+        if badges.waitForExistence(timeout: 5) {
+            badges.tap()
+        }
+        _ = app.otherElements["Badges Screen"].waitForExistence(timeout: 5)
     }
 
     private func tapTabBarButton(matching labels: [String]) {

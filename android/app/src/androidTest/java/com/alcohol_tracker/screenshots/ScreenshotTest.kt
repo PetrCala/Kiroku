@@ -65,11 +65,16 @@ class ScreenshotTest {
         openCalendarDay()
         Screengrab.screenshot("03_DayOverview")
 
-        openProfile()
-        Screengrab.screenshot("04_Profile")
+        openStatistics()
+        Screengrab.screenshot("04_Statistics")
 
-        openSettings()
-        Screengrab.screenshot("05_Settings")
+        openProfile()
+        Screengrab.screenshot("06_Profile")
+
+        // Badges (the alcohol-free streak) is captured last — it opens over the
+        // Home flow, so nothing after it needs the bottom tab bar.
+        openBadges()
+        Screengrab.screenshot("05_AlcoholFree")
     }
 
     // ---- Login ----------------------------------------------------------------
@@ -136,6 +141,19 @@ class ScreenshotTest {
     private fun openSettings() {
         clickByText(listOf("Settings", "Nastavení"))
         device.wait(Until.findObject(By.desc("SettingsScreen")), 5_000)
+    }
+
+    private fun openStatistics() {
+        clickByText(listOf("Statistics", "Statistiky"))
+        device.wait(Until.findObject(By.desc("Statistics Screen")), 5_000)
+    }
+
+    private fun openBadges() {
+        // The alcohol-free streak lives on the Badges screen, opened from Home
+        // via the star button (bottomTabBar.badges: "Badges" / "Odznaky").
+        returnToHome()
+        clickByText(listOf("Badges", "Odznaky"))
+        device.wait(Until.findObject(By.desc("Badges Screen")), 5_000)
     }
 
     private fun clickByText(candidates: List<String>) {

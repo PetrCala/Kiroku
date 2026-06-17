@@ -21,6 +21,15 @@ on:
           - all
           - phone-only
           - ipad-only
+      upload:
+        description: 'Upload framed screenshots to the stores? none = artifact only; draft = write to the editable store listing; submit = also submit the iOS version for review.'
+        required: false
+        default: 'none'
+        type: choice
+        options:
+          - none
+          - draft
+          - submit
 
 permissions:
   contents: read
@@ -106,11 +115,45 @@ jobs:
           KIROKU_DEMO_EMAIL: ${{ secrets.APPLE_DEMO_EMAIL }}
           KIROKU_DEMO_PASSWORD: ${{ secrets.APPLE_DEMO_PASSWORD }}
 
-      - name: Upload iOS screenshots
+      # Bridge capture → framing: map the raw captures into the framing inputs,
+      # then render the branded, exact-size store images. (npm scripts from the
+      # store-screenshots pipeline; Node is already set up above.)
+      - name: Ingest captures into the framing inputs
+        run: npm run ingest-screenshots
+
+      - name: Frame store screenshots
+        run: npm run frame-screenshots
+
+      # ---- Upload to App Store Connect (gated on the `upload` input) ----
+      # `draft` writes the framed screenshots to the editable App Store version;
+      # `submit` additionally submits that version for review. Both need the ASC
+      # API key, decrypted the same way platformDeploy.yml does it.
+      - name: Decrypt App Store Connect API key
+        if: ${{ github.event.inputs.upload != 'none' }}
+        run: cd ios && gpg --quiet --batch --yes --decrypt --passphrase="$LARGE_SECRET_PASSPHRASE" --output ios-fastlane-json-key.json ios-fastlane-json-key.json.gpg
+        env:
+          LARGE_SECRET_PASSPHRASE: ${{ secrets.LARGE_SECRET_PASSPHRASE }}
+
+      - name: Upload framed screenshots to App Store Connect
+        if: ${{ github.event.inputs.upload != 'none' }}
+        run: bundle exec fastlane ios upload_screenshots
+        env:
+          SCREENSHOTS_SUBMIT: ${{ github.event.inputs.upload == 'submit' }}
+
+      - name: Upload framed screenshots (artifact)
         if: ${{ always() }}
         uses: actions/upload-artifact@v6
         with:
-          name: ios-screenshots-${{ github.sha }}
+          name: ios-framed-screenshots-${{ github.sha }}
+          path: fastlane/store-screenshots/framed/**/*.png
+          if-no-files-found: warn
+          retention-days: 14
+
+      - name: Upload raw captures (artifact, for triage)
+        if: ${{ always() }}
+        uses: actions/upload-artifact@v6
+        with:
+          name: ios-raw-screenshots-${{ github.sha }}
           path: fastlane/screenshots/ios/**/*.png
           if-no-files-found: warn
           retention-days: 14

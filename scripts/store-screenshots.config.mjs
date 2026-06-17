@@ -69,10 +69,9 @@ const theme = {
 // Captions stay consistent with Kiroku's harm-reduction framing — never
 // anything that celebrates drinking *volume*.
 //
-// This is the current 4-screen set (the screens we already capture). The
-// captured `05_Settings` is intentionally left unmapped. Growing to the full
-// marketing set (Statistics, alcohol-free streak) needs new captures and lands
-// in a follow-up PR alongside a CI capture run.
+// 6-screen set. Each `snapshot` is captured by the UI tests (Swift + Kotlin) in
+// this exact order. The tests also capture `05_Settings`, which is intentionally
+// not a marketing shot and therefore not mapped here.
 const shots = [
   {
     snapshot: '01_Home',
@@ -99,8 +98,24 @@ const shots = [
     },
   },
   {
-    snapshot: '04_Profile',
-    raw: '04-profile.png',
+    snapshot: '04_Statistics',
+    raw: '04-stats.png',
+    caption: {
+      'en-US': 'Track your progress every week',
+      cs: 'Sledujte svůj pokrok každý týden',
+    },
+  },
+  {
+    snapshot: '05_AlcoholFree',
+    raw: '05-alcohol-free.png',
+    caption: {
+      'en-US': 'Watch your alcohol-free days add up',
+      cs: 'Sledujte, jak přibývají dny bez alkoholu',
+    },
+  },
+  {
+    snapshot: '06_Profile',
+    raw: '06-profile.png',
     caption: {
       'en-US': 'Stay on track with friends',
       cs: 'Zůstaňte na správné cestě s přáteli',

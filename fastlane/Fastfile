@@ -484,4 +484,37 @@ platform :ios do
     )
   end
 
+  desc "Upload framed store screenshots to the App Store version (screenshots only)"
+  lane :upload_screenshots do
+    # Screenshots-only deliver: writes the framed images (produced by
+    # `npm run frame-screenshots`) to the App Store version's screenshot set,
+    # touching nothing else. SCREENSHOTS_SUBMIT=true flips it to submit the
+    # version for review; otherwise it only updates the editable draft.
+    submit = ENV["SCREENSHOTS_SUBMIT"] == "true"
+
+    deliver(
+      api_key_path: "./ios/ios-fastlane-json-key.json",
+      force: true,
+      run_precheck_before_submit: false,
+
+      # Target the existing editable version. Override with VERSION if needed.
+      app_version: (ENV["VERSION"] ? ENV["VERSION"].rpartition(".")[0] : nil),
+
+      # Upload screenshots, nothing else. deliver infers each device slot from
+      # the image dimensions; the framed tree is grouped by locale then size.
+      skip_screenshots: false,
+      screenshots_path: "./fastlane/store-screenshots/framed",
+      overwrite_screenshots: true,
+      skip_binary_upload: true,
+      skip_metadata: true,
+
+      # Submission is opt-in. When submitting, never auto-release — keep the
+      # approved version Pending Developer Release (mirrors the :production lane).
+      submit_for_review: submit,
+      automatic_release: false,
+
+      precheck_include_in_app_purchases: false
+    )
+  end
+
 end
