@@ -323,6 +323,55 @@ describe('useLazyMarkedDates compact paging covers the visible month (Rule 1)', 
     expect(result.current.markedDates[sessionDayKey]).toBeDefined();
     expect(result.current.unitsMap.get(sessionDayKey)).toBe(1);
   });
+
+  test('restoring the visible month deeper than the loaded window widens the load target to cover it (+ buffer)', () => {
+    // The last-viewed-restore path PR #1297 left open: on Home the compact
+    // calendar's `visibleDate` is driven by `NVP_LAST_VIEWED_CALENDAR_DATE`
+    // (set when the user scrolled the fullscreen calendar / day-overview, e.g.
+    // logging a back-dated session), NOT by the left-arrow handler. The
+    // orchestrator's visible-month effect must widen the window for that
+    // month exactly as the page-back handler does — otherwise the grid renders
+    // blank for it while the "This month" card (full, unwindowed history) is
+    // correct. Asserted at the same hook/util seam: feed the restored month's
+    // look-ahead target into `loadUpTo` and check the session lands.
+    const restoredStart = startOfMonth(subMonths(new Date(), 7));
+    const restoredYear = restoredStart.getFullYear();
+    const restoredMonth = restoredStart.getMonth(); // 0-based
+    const sessionInstant = Date.UTC(restoredYear, restoredMonth, 12, 12, 0, 0);
+    const restoredMonthKey = `${restoredYear}-${pad(restoredMonth + 1)}`;
+    const sessionDayKey = `${restoredMonthKey}-12` as DateString;
+    const sessions = {
+      s1: {
+        id: 's1',
+        start_time: sessionInstant,
+        timezone: 'UTC',
+        drinks: {[sessionInstant]: {beer: 1}},
+      },
+    } as unknown as DrinkingSessionList;
+
+    const {result} = renderHook(() =>
+      useLazyMarkedDates(TEST_UID, sessions, makePreferences()),
+    );
+
+    // Precondition: the restored month is outside the initial derived window,
+    // so its session is blank — the bug's "blank grid, correct card" state.
+    expect(result.current.markedDates[sessionDayKey]).toBeUndefined();
+
+    // Restoring `visibleDate` to that month feeds its look-ahead target into the
+    // monotonic `loadUpTo` (the orchestrator's visible-month effect), the same
+    // target the page-back handler uses for the same month.
+    act(() => {
+      result.current.loadUpTo(getCompactCalendarLoadTarget(restoredStart, 3));
+    });
+
+    // The window now covers the restored month (at or below its start, plus the
+    // buffer) and its data renders — no in-calendar navigation needed.
+    expect(getLoadedFrom(result).getTime()).toBeLessThanOrEqual(
+      startOfMonth(subMonths(restoredStart, 3)).getTime(),
+    );
+    expect(result.current.markedDates[sessionDayKey]).toBeDefined();
+    expect(result.current.unitsMap.get(sessionDayKey)).toBe(1);
+  });
 });
 
 describe('useLazyMarkedDates ongoing overlay', () => {
