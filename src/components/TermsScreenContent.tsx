@@ -76,10 +76,10 @@ function TermsScreenContent({
       <Text style={[styles.mv4, styles.textNormal]}>
         {description ?? translate('agreeToTerms.description')}
       </Text>
-      <TextLink style={linkStyles} href={CONST.TERMS_URL}>
+      <TextLink style={linkStyles} href={CONST.TERMS_URL} forceExternal>
         {translate('common.termsOfService')}
       </TextLink>
-      <TextLink style={linkStyles} href={CONST.PRIVACY_URL}>
+      <TextLink style={linkStyles} href={CONST.PRIVACY_URL} forceExternal>
         {translate('common.privacyPolicy')}
       </TextLink>
     </>

@@ -14,7 +14,7 @@ import type {
 } from 'react-native';
 import useEnvironment from '@hooks/useEnvironment';
 import useThemeStyles from '@hooks/useThemeStyles';
-import {openLink as openLinkUtil} from '@userActions/Link';
+import {openExternalLink, openLink as openLinkUtil} from '@userActions/Link';
 import CONST from '@src/CONST';
 import type {TextProps} from './Text';
 import Text from './Text';
@@ -40,6 +40,15 @@ type TextLinkProps = (LinkProps | PressProps) &
 
     /** Callback that is called when mousedown is triggered */
     onMouseDown?: MouseEventHandler;
+
+    /**
+     * Always open `href` in the system browser (or a new tab on web), skipping
+     * the same-origin internal-navigation heuristic in {@link openLinkUtil}.
+     * Use for public pages (e.g. the terms/privacy marketing pages) that live
+     * on the app's own origin but have no matching in-app route, which would
+     * otherwise resolve to the Not Found screen.
+     */
+    forceExternal?: boolean;
   };
 
 function TextLink(
@@ -49,6 +58,7 @@ function TextLink(
     children,
     style,
     onMouseDown = event => event.preventDefault(),
+    forceExternal = false,
     ...rest
   }: TextLinkProps,
   ref: ForwardedRef<RNText>,
@@ -59,6 +69,8 @@ function TextLink(
   const openLink = (event: GestureResponderEvent | KeyboardEvent) => {
     if (onPress) {
       onPress(event);
+    } else if (forceExternal) {
+      openExternalLink(href);
     } else {
       openLinkUtil(href, environmentURL);
     }
