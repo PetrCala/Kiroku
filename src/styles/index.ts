@@ -1190,6 +1190,29 @@ const styles = (theme: ThemeColors) =>
       right: 20,
     },
 
+    // Dev-only floating button (top-right) that toggles the Test Tools modal.
+    // The `top` offset is applied by the caller to clear the safe-area inset.
+    // Rendered only by <DevMenuButton />, which is gated to non-production
+    // builds, so these styles never reach users.
+    devMenuButtonContainer: {
+      position: 'absolute',
+      right: variables.spacing2,
+      zIndex: 10,
+    },
+
+    devMenuButton: {
+      height: variables.componentSizeNormal,
+      width: variables.componentSizeNormal,
+      borderRadius: variables.componentSizeNormal / 2,
+      alignItems: 'center',
+      justifyContent: 'center',
+      backgroundColor: theme.cardBG,
+      borderWidth: 1,
+      borderColor: theme.border,
+      opacity: 0.9,
+      boxShadow: '0 2px 8px rgba(0, 0, 0, 0.2)',
+    },
+
     highlightBG: {
       backgroundColor: theme.highlightBG,
     },
