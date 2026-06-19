@@ -40,7 +40,8 @@ function setDeviceID() {
     })
     .then(generateDeviceID)
     .then((uniqueID: string) => {
-      Log.info('Got new deviceID', false, uniqueID);
+      // Avoid persisting the deviceID (a per-install identifier) into the in-app log store.
+      Log.info('Got new deviceID');
       Onyx.set(ONYXKEYS.DEVICE_ID, uniqueID);
     })
     .catch((error: Error) =>

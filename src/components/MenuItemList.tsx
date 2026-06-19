@@ -36,7 +36,9 @@ function MenuItemList({
     link: MenuItemLink | undefined,
     event: GestureResponderEvent | MouseEvent,
   ) => {
-    console.debug('Secondary interaction', link, event);
+    if (__DEV__) {
+      console.debug('Secondary interaction', link, event);
+    }
     // if (typeof link === 'function') {
     //   link().then(url =>
     //     ReportActionContextMenu.showContextMenu(
