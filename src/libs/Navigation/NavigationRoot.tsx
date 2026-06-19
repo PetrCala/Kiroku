@@ -149,9 +149,14 @@ function NavigationRoot({
       return;
     }
     const currentRoute = navigationRef.getCurrentRoute();
-    console.debug(
-      `[NAVIGATION] screen: ${currentRoute?.name}, params: ${JSON.stringify(currentRoute?.params ?? {})}`,
-    ); // TODO change this to Firebase.log
+    if (__DEV__) {
+      // Dev-only: route params can include userID/sessionId, so we must not log
+      // them to the device console in production builds.
+      // TODO change this to Firebase.log
+      console.debug(
+        `[NAVIGATION] screen: ${currentRoute?.name}, params: ${JSON.stringify(currentRoute?.params ?? {})}`,
+      );
+    }
 
     // const activeWorkspaceID = getPolicyIDFromState(state as NavigationState<RootStackParamList>);
     // // Performance optimization to avoid context consumers to delay first render
