@@ -4,7 +4,8 @@
  * SVGs (sources built by assets/design/mascot/build-masters.mjs):
  *
  *   assets/images/app-logo.svg            full-color tilted mascot
- *                                         → app icons, favicon, apple-touch-icon, og-image
+ *                                         → app icons, favicon, apple-touch-icon,
+ *                                           og-image, app-logo.png (README raster)
  *   assets/images/app-logo-splash.svg     the same mascot on a white rounded chip
  *                                         → boot splashes + env splash logos (the
  *                                           splash backdrop is the brand yellow,
@@ -150,6 +151,12 @@ const WEB_SPECS = [
   {name: 'apple-touch-icon.png', size: 180},
   {name: 'og-preview-image.png', size: 512},
 ];
+
+// ─── Brand raster (README / external embeds) ───────────────────────────────────
+// Not a platform icon target: `assets/images/app-logo.png` is the raster the
+// GitHub README embeds (the in-app logo uses the .svg master directly). Kept in
+// sync here so it can't drift from the brand the way it did across the rebrand.
+const APP_LOGO_PNG = {path: 'assets/images/app-logo.png', size: 1024};
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 
@@ -854,6 +861,20 @@ async function generateWebIcons(logoBuffer) {
   console.log('  ✓ Web icons');
 }
 
+// ─── Brand raster (assets/images/app-logo.png) ─────────────────────────────────
+
+async function generateAppLogoPng(logoBuffer) {
+  // Same render as the web icons (full-color mascot baked onto the white icon
+  // field) so it matches the shipped app icon, just at README resolution.
+  writeFileSync(
+    join(ROOT, APP_LOGO_PNG.path),
+    await renderIcon(logoBuffer, APP_LOGO_PNG.size, VARIANTS.prod, {
+      background: ICON_BG,
+    }),
+  );
+  console.log(`  ✓ ${APP_LOGO_PNG.path}`);
+}
+
 // ─── web/manifest.json ────────────────────────────────────────────────────────
 // Only written if the file does not already exist, to avoid overwriting
 // app-specific fields the developer may have customised.
@@ -953,6 +974,9 @@ async function main() {
   console.log('\nWeb icons:');
   await generateWebIcons(logo.buffer);
   ensureWebManifest();
+
+  console.log('\nBrand raster (README):');
+  await generateAppLogoPng(logo.buffer);
 
   console.log('\nDone. All icons generated successfully.');
 }
