@@ -201,10 +201,15 @@ def add_testable_to_scheme(target)
   testables = REXML::XPath.first(doc, '//TestAction/Testables')
   abort_with('no <Testables> node in scheme') unless testables
 
-  already_present = REXML::XPath.match(testables, "TestableReference/BuildableReference[@BlueprintName='#{UI_TESTS_TARGET_NAME}']").any?
-  if already_present
-    log "Scheme already references '#{UI_TESTS_TARGET_NAME}'"
-    return
+  # Drop every existing testable (notably the kirokuTests unit-test target) so
+  # the screenshot build-for-testing only builds KirokuUITests. kirokuTests hits
+  # a "Multiple commands produce …/kirokuTests.xctest/Info.plist" build error and
+  # is not needed for screenshots. This scheme edit is throwaway (never committed
+  # back), so pruning it here is safe and keeps the build fast.
+  REXML::XPath.match(testables, 'TestableReference').each do |existing|
+    name = REXML::XPath.first(existing, 'BuildableReference/@BlueprintName')&.value
+    log "Removing testable '#{name || 'unknown'}' from the screenshot TestAction"
+    testables.delete_element(existing)
   end
 
   log "Adding '#{UI_TESTS_TARGET_NAME}' to scheme's TestAction"

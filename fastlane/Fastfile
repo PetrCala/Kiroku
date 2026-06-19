@@ -115,22 +115,25 @@ platform :android do
   lane :screenshots do
     ENV["ENVFILE"] = ".env.production"
 
-    # Build the production APK + the androidTest APK. screengrab needs both.
-    # Limit native compilation to x86_64 — the only ABI the CI emulator runs.
-    # The gradle.properties default builds all four ABIs, which compiles the
-    # New-Arch native C++ (nitro, reanimated, skia, …) four times over and blows
-    # past the job timeout (~40 min in and still on the first ABI).
+    # Build the production *debug* APK + the androidTest APK. screengrab needs
+    # both. Debug (not release) on purpose: it signs with the committed
+    # debug.keystore (the release keystore isn't decrypted in this workflow),
+    # skips R8/minification, and still uses .env.production — the demo account
+    # logs in by email/password, so the unregistered debug SHA is irrelevant.
+    # Limit native compilation to x86_64 — the only ABI the CI emulator runs;
+    # the gradle.properties default builds all four ABIs (New-Arch native C++:
+    # nitro, reanimated, skia, …), quadrupling the slowest step.
     abi = {"reactNativeArchitectures" => "x86_64"}
     gradle(
       project_dir: './android',
       task: 'assemble',
       flavor: 'Production',
-      build_type: 'Release',
+      build_type: 'Debug',
       properties: abi,
     )
     gradle(
       project_dir: './android',
-      task: 'assembleProductionReleaseAndroidTest',
+      task: 'assembleProductionDebugAndroidTest',
       properties: abi,
     )
 
