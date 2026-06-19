@@ -127,6 +127,9 @@ type ButtonProps = Partial<ChildrenProps> & {
   /** Accessibility label for the component */
   accessibilityLabel?: string;
 
+  /** Test identifier, surfaced as `data-testid` on web for E2E selectors */
+  testID?: string;
+
   /** The icon asset to display to the left of the text */
   icon?: IconAsset | null;
 
@@ -252,6 +255,7 @@ function Button(
 
     id = '',
     accessibilityLabel = '',
+    testID,
     isSplitButton = false,
     link = false,
     isContentCentered = false,
@@ -463,6 +467,7 @@ function Button(
         ]}
         id={id}
         accessibilityLabel={accessibilityLabel}
+        testID={testID}
         role={CONST.ROLE.BUTTON}
         hoverDimmingValue={1}
         onHoverIn={() => setIsHovered(true)}

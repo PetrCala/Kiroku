@@ -327,6 +327,7 @@ function SessionSummaryScreen({route}: SessionSummaryScreenProps) {
               style={styles.bgTransparent}
               icon={KirokuIcons.Edit}
               onPress={onEditSessionPress}
+              testID="summary-edit-session"
             />
           )
         }

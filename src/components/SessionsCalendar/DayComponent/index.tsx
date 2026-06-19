@@ -32,6 +32,9 @@ function DayComponent({
     <View>
       <PressableWithFeedback
         accessibilityLabel=""
+        testID={
+          date?.dateString ? `calendar-day-${date.dateString}` : undefined
+        }
         disabled={isDisabled}
         onPress={() => onPress && date && onPress(date)}
         onLongPress={onLongPress ? () => date && onLongPress(date) : undefined}>

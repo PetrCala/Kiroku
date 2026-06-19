@@ -1,0 +1,74 @@
+# UNVERIFIED STARTER FLOW — see ../README.md.
+#
+# This is the native mirror of the web `session-lifecycle` test: launch ->
+# email/password sign-in -> clear dev gates -> start a live session -> log a
+# drink -> save, asserting the saved unit count. It is written against the real
+# app (reusing the same testIDs the web suite uses as Maestro `id:` matchers),
+# but it has NOT yet been run on a simulator/emulator. Validate and adjust
+# selectors with `maestro studio` before wiring it into CI.
+#
+# Run:
+#   export MAESTRO_APP_ID=com.alcohol_tracker.dev   # confirm iOS bundle id
+#   export E2E_TEST_EMAIL=... E2E_TEST_PASSWORD=...
+#   maestro test e2e/native/flows/sign_in_log_session.yaml
+
+appId: ${MAESTRO_APP_ID}
+env:
+  EMAIL: ${E2E_TEST_EMAIL}
+  PASSWORD: ${E2E_TEST_PASSWORD}
+---
+- launchApp:
+    clearState: true
+
+# --- Sign in (email / password) ---------------------------------------------
+# The welcome screen defaults to sign-up; switch to log-in mode first.
+- tapOn:
+    text: 'Log in'
+- tapOn:
+    text: 'Email'
+- inputText: ${EMAIL}
+- tapOn:
+    text: 'Password'
+- inputText: ${PASSWORD}
+- tapOn:
+    text: 'Log in'
+
+# --- Clear dev-build gates (mirror e2e/web/fixtures/devGates.ts) --------------
+# Best-effort: an already-verified account that has accepted the current terms
+# goes straight to Home, so these are optional.
+- runFlow:
+    when:
+      visible: 'Skip verification (dev only)'
+    commands:
+      - tapOn: 'Skip verification (dev only)'
+- runFlow:
+    when:
+      visible: 'Confirm'
+    commands:
+      - tapOn: 'Confirm'
+
+- assertVisible:
+    id: 'Home Screen'
+
+# --- Start a live session, log a drink, save ---------------------------------
+- tapOn:
+    text: 'Start a session (Floating action)' # the FAB's accessibility label
+- tapOn:
+    text: 'Live' # popover: start a live session
+- assertVisible:
+    id: 'Live Session Screen'
+
+# Unit count starts at 0; logging a drink moves it off 0 and enables Save.
+- assertVisible:
+    id: 'session-total-units'
+    text: '0'
+- tapOn:
+    id: 'add-drink-beer' # any add-drink-<key> stepper; adjust per DrinkData
+- assertNotVisible:
+    id: 'session-total-units'
+    text: '0'
+
+- tapOn:
+    text: 'Save Session'
+- assertVisible:
+    id: 'Session Summary Screen'
