@@ -1,7 +1,39 @@
 # Web E2E (Playwright)
 
-Smoke suite for the react-native-web build: email/password sign-in plus
-navigation across the four bottom tabs (Home, Friends, Statistics, Settings).
+End-to-end suite for the react-native-web build, covering the launch-critical
+flows the web surface can exercise:
+
+- **Sign-in & boot** (`smoke.spec.ts`) — email/password sign-in, booting an
+  authenticated session straight to Home, and navigating the four bottom tabs
+  (Home, Friends, Statistics, Settings) console-clean.
+- **Drinking session lifecycle** (`session-lifecycle.spec.ts`) — the core flow:
+  start a live session, log a drink, save it, re-open it through its summary to
+  confirm the drink persisted across the save round-trip, then delete it; plus a
+  start → log → discard path. Both self-clean, so the shared dev account never
+  accumulates sessions.
+- **Calendar navigation** (`calendar.spec.ts`) — tapping a day on the Home
+  calendar opens that day's overview (a known nav-freeze transition) and backs
+  out to Home.
+- **Friends tab** (`friends.spec.ts`) — the friend list tab settles into a
+  determinate, console-clean state and the Friend List / Friend Requests inner
+  tabs are switchable (guards the first-run empty-state races).
+- **Offline resilience** (`offline.spec.ts`) — the app stays navigable across
+  the cached tab roots while offline and after reconnecting. See the note on the
+  offline indicator below.
+- **Desktop phone frame** (`desktop-frame.spec.ts`) — the wide-window centered
+  phone-frame layout (#1219 / #1224).
+
+Several flows rely on `testID`s added to app components (the drink steppers, the
+session unit headline, the summary edit button, and calendar day cells), which
+surface as `data-testid` on web and double as Maestro `id:` matchers for the
+proposed native suite (see [`../native/README.md`](../native/README.md)).
+
+> **Offline indicator caveat.** `offline.spec.ts` asserts navigability, not the
+> `OfflineIndicator` banner. Under Playwright's simulated offline (which flips
+> `navigator.onLine` and fires the offline events), the banner did **not**
+> appear within 30s on the web dev build — the NetInfo → NETWORK bridge does not
+> seem to react to browser offline state on web. Whether the deployed web app
+> behaves the same is unconfirmed; flagged as a follow-up rather than asserted.
 
 - **Run locally:** copy `.env.e2e.example` to `.env.e2e`, fill in a dev-backend
   account, then `npm run test:e2e:web` from the repo root. With no

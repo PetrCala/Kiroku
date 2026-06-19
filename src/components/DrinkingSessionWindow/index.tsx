@@ -213,6 +213,7 @@ function DrinkingSessionWindow({
             styles.justifyContentCenter,
           ]}>
           <Text
+            testID="session-total-units"
             style={[
               styles.sessionUnitCountText(sessionColor),
               styles.shadowStrong,

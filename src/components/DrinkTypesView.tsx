@@ -102,6 +102,7 @@ function DrinkTypesView({session}: DrinkTypesViewProps) {
                 onPress={() => handleRemoveDrinks(drinkKey, 1)}
                 icon={KirokuIcons.Minus}
                 iconFill={theme.text}
+                testID={`remove-drink-${drinkKey}`}
               />
               <SessionDrinksInputWindow
                 drinks={session?.drinks}
@@ -113,6 +114,7 @@ function DrinkTypesView({session}: DrinkTypesViewProps) {
                 onPress={() => handleAddDrinks(drinkKey, 1)}
                 icon={KirokuIcons.Plus}
                 iconFill={theme.text}
+                testID={`add-drink-${drinkKey}`}
               />
             </View>
           );
