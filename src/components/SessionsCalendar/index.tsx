@@ -362,6 +362,40 @@ function SessionsCalendar({
     }
   }, [mode, loadUpTo, initialMonthYear, initialDay, hasPersistedFloor]);
 
+  // Compact calendar: keep the loaded window covering whatever month is
+  // currently visible, plus the same look-ahead buffer the page-back handler
+  // uses. The visible month can change three ways — left arrow, swipe, or a
+  // last-viewed restore (`NVP_LAST_VIEWED_CALENDAR_DATE`, set when the user
+  // scrolled the fullscreen calendar / day-overview, e.g. while logging a
+  // back-dated session). Only the first two flow through `handleLeftArrowPress`'s
+  // proactive `loadUpTo`; the restore path sets `visibleDate` directly. Without
+  // this effect a restored month deeper than the loaded window derives zero
+  // markedDates and renders blank — even though the "This month" summary card
+  // above reads the FULL (unwindowed) session history and shows the right
+  // numbers (the card-vs-grid window asymmetry). Keying on the visible month
+  // closes that gap so the visible month always renders regardless of HOW it
+  // was selected (Rule 1: data is always rendered — what PR #1297 left open for
+  // the last-viewed-restore path).
+  //
+  // Compact-only: fullscreen derives its whole range up front
+  // (`deriveFullRangeToFloor`). Referenced via the stable primitive
+  // `visibleDate.timestamp` so the effect re-runs only on a real month change.
+  // `loadUpTo` is monotonic and capped at the user's earliest tracked month for
+  // self, so re-requesting once already deep enough is a safe no-op and it never
+  // derives empty pre-tracking months.
+  const visibleTimestamp = visibleDate.timestamp;
+  useEffect(() => {
+    if (mode !== 'compact') {
+      return;
+    }
+    loadUpTo(
+      getCompactCalendarLoadTarget(
+        new Date(visibleTimestamp),
+        COMPACT_LOAD_AHEAD_BUFFER_MONTHS,
+      ),
+    );
+  }, [mode, visibleTimestamp, loadUpTo]);
+
   const onDayPress = useCallback(
     (dateData: DateData) => {
       const date = dateData.dateString as DateString;
