@@ -118,7 +118,7 @@ jobs:
         uses: ./.github/actions/composite/seedDemoSession
         with:
           demo-email: ${{ secrets.APPLE_DEMO_EMAIL }}
-          cli-token: ${{ secrets.KIROKU_CLI_PAT }}
+          cli-token: ${{ secrets.KIROKU_ADMIN_TOKEN }}
           admin-sdk-prod: ${{ secrets.KIROKU_ADMIN_SDK_PROD }}
 
       - name: Run Fastlane - Capture iOS screenshots
@@ -224,7 +224,7 @@ jobs:
         uses: ./.github/actions/composite/seedDemoSession
         with:
           demo-email: ${{ secrets.APPLE_DEMO_EMAIL }}
-          cli-token: ${{ secrets.KIROKU_CLI_PAT }}
+          cli-token: ${{ secrets.KIROKU_ADMIN_TOKEN }}
           admin-sdk-prod: ${{ secrets.KIROKU_ADMIN_SDK_PROD }}
 
       # Builds the production + androidTest APKs and runs screengrab on a booted

@@ -24,7 +24,7 @@ calendar month** — otherwise the test fails on a missing `DayMarking`.
 The CI workflow **auto-seeds** this: a "Seed demo session" step runs the
 kiroku-cli `seedDemoSession` command (idempotent) before capture, gated by the
 `seed` input (default on) and best-effort (`continue-on-error`). It needs the
-`KIROKU_CLI_PAT` and `KIROKU_ADMIN_SDK_PROD` secrets; until those are configured
+`KIROKU_ADMIN_TOKEN` and `KIROKU_ADMIN_SDK_PROD` secrets; until those are configured
 (and for local runs), seed manually: sign in to the demo account and log one
 session this month.
 
@@ -57,7 +57,7 @@ session this month.
 | `APPLE_DEMO_PASSWORD`     | Demo account password                                         |
 | `PRODUCTION_ENV_FILE`     | Contents of `.env.production`                                 |
 | `LARGE_SECRET_PASSPHRASE` | Decrypts the ASC / Play API keys (only when `upload != none`) |
-| `KIROKU_CLI_PAT`          | Read access to the private kiroku-cli repo (seed step)        |
+| `KIROKU_ADMIN_TOKEN`      | Read access to the private kiroku-cli repo (seed step)        |
 | `KIROKU_ADMIN_SDK_PROD`   | Prod Firebase admin SDK JSON (seed step)                      |
 
 `KIROKU_DEMO_EMAIL` / `KIROKU_DEMO_PASSWORD` (used inside the UI test) are
@@ -281,7 +281,7 @@ makes a few assumptions that may need adjustment after the first run:
   only proven by a real iOS + Android dispatch; expect to iterate on the first
   run. The `deliver` `screenshots_path` points at the nested `framed/ios/<locale>/<device>/`
   tree (device inferred by dimensions) — if a run rejects it, flatten per locale.
-- **Seed secrets** — the auto-seed step needs `KIROKU_CLI_PAT` +
+- **Seed secrets** — the auto-seed step needs `KIROKU_ADMIN_TOKEN` +
   `KIROKU_ADMIN_SDK_PROD`; until set it's a non-blocking skip (seed manually).
 - **`frameit` device bezels** — uncomment the line in the iOS lane once
   you've installed it (`bundle exec fastlane frameit setup`).

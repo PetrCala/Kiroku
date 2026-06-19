@@ -7,7 +7,7 @@ description: >-
 
 # Requires three secrets on the calling workflow (configure once):
 #   - the demo account email (passed in as `demo-email`)
-#   - KIROKU_CLI_PAT       — a PAT with read access to the private kiroku-cli repo
+#   - KIROKU_ADMIN_TOKEN   — a PAT with read access to the private kiroku-cli repo
 #   - KIROKU_ADMIN_SDK_PROD — contents of the prod Firebase admin SDK JSON
 # The caller runs this with continue-on-error so an unconfigured seed degrades
 # gracefully to the documented manual prerequisite instead of blocking capture.
