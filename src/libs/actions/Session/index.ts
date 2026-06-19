@@ -8,6 +8,7 @@ import Onyx from 'react-native-onyx';
 // import type {OnyxEntry, OnyxUpdate} from 'react-native-onyx';
 // import type {ValueOf} from 'type-fest';
 import * as ErrorUtils from '@libs/ErrorUtils';
+import {KEYS_TO_PRESERVE} from '@userActions/App';
 import * as PersistedRequests from '@userActions/PersistedRequests';
 import * as Subscriptions from '@userActions/Subscriptions';
 // import * as API from '@libs/API';
@@ -669,47 +670,39 @@ function cleanupSession() {
   Timers.clearAll();
   // PriorityMode.resetHasReadRequiredDataFromStorage();
   // HttpUtils.cancelPendingRequests();
+  // Drop any queued/in-flight writes so the previous user's pending requests are
+  // never replayed under the next account that signs in on this device.
   PersistedRequests.clear();
   // NetworkConnection.clearReconnectionCallbacks();
   // SessionUtils.resetDidUserLogInDuringSession();
   resetHomeRouteParams();
-  // Drop any in-flight OAuth-link state so credentials don't leak across users.
-  Onyx.set(ONYXKEYS.PENDING_OAUTH_CREDENTIAL, null);
-  // Clear verification-email cooldown so the next user on this device can
-  // immediately receive a fresh verification email without hitting the
-  // previous user's send timestamp.
-  Onyx.set(ONYXKEYS.VERIFY_EMAIL_SENT, null);
-  // Drop the cached drinking sessions snapshot so the next account on this
-  // device can't briefly render the previous user's data on cold launch.
-  Onyx.set(ONYXKEYS.CACHED_DRINKING_SESSIONS, null);
-  // Reset the last visited path so re-login always starts at Home, not wherever
-  // the user happened to be when they signed out.
-  Onyx.set(ONYXKEYS.LAST_VISITED_PATH, null);
-  // Reset the OpenApp bootstrap signals: the onboarding/terms readiness gates
-  // read these as "this auth session's bootstrap completed / delivered the user
-  // record", so a leftover value must not carry into the next sign-in on this
-  // device.
-  Onyx.set(ONYXKEYS.IS_LOADING_APP, null);
-  Onyx.set(ONYXKEYS.USER_DATA_HYDRATED, false);
-  // Drop ALL user records on sign-out, same rationale as the cached-sessions
-  // clear above but more critical: the onboarding/terms gates read
-  // `USER_DATA_LIST[uid]` the moment the next session's bootstrap completes,
-  // and a stale entry from a previous session (e.g. a poisoned or
-  // mid-onboarding record) re-routes an already-onboarded user back into the
-  // one-way onboarding flow (2026-06-11 field repro). Friends' records are
-  // refetched by the next session's app/open + friend reads.
-  Onyx.set(ONYXKEYS.USER_DATA_LIST, null);
-  // The server's update sequence (lastUpdateID) is PER USER, but this client
-  // key is global: after switching from a high-counter account to a
-  // low-counter one, every update for the new account compares as "older than
-  // current state" and its onyxData is silently skipped (only OpenApp
-  // survives, via its explicit exemption in OnyxUpdates.apply). Reset on
-  // sign-out so the next account starts from its own baseline.
-  Onyx.set(ONYXKEYS.ONYX_UPDATES_LAST_UPDATE_ID_APPLIED_TO_CLIENT, null);
-  // Per-account onboarding/terms mirrors written by app/open — must not leak
-  // into the next account's session on this device.
-  Onyx.set(ONYXKEYS.NVP_ONBOARDING, null);
-  Onyx.set(ONYXKEYS.NVP_TERMS_ACCEPTED_VERSION, null);
+  // Wipe the entire Onyx store except the device-/build-level allowlist
+  // (`KEYS_TO_PRESERVE`). This is the security-critical step of sign-out and of
+  // account deletion (CloseAccount routes through this same path): every per-user
+  // key is cleared by DEFAULT rather than by a hand-maintained denylist, so a key
+  // added later can't silently leak across an account switch. This subsumes the
+  // keys we used to null out by hand and adds the ones that previously survived —
+  // USER_LOCATION, USER_PRIVATE_DATA (incl. DOB), DATA_VISIBILITY, PREFERENCES,
+  // USER, the drinking-session/drinks/session-location collections, and the
+  // admin-only feedback/bug lists — plus the SESSION token + email and the
+  // CREDENTIALS key. Notable knock-on effects that the old explicit clears
+  // covered and `Onyx.clear` keeps covering:
+  //  - IS_LOADING_APP is removed, so a stale `false` can't open the
+  //    onboarding/terms readiness gates before the next bootstrap finishes.
+  //  - USER_DATA_HYDRATED is removed: the onboarding gate reads it as `=== true`,
+  //    so a removed key and an explicit `false` are equivalent — this session's
+  //    "app/open delivered the user record" proof can't carry into the next
+  //    sign-in (the returning-user fix, #1435).
+  //  - USER_DATA_LIST is removed, so a poisoned/mid-onboarding record can't
+  //    re-route an already-onboarded user back into onboarding (2026-06-11 repro).
+  //  - ONYX_UPDATES_LAST_UPDATE_ID_APPLIED_TO_CLIENT is removed, so the next
+  //    (per-user) update sequence isn't compared against the prior account's
+  //    counter and silently skipped.
+  // `Onyx.clear` re-applies the preserved keys' initial states, so the next
+  // sign-in's `openApp` rehydrates a clean store. On native this complements the
+  // `clearCache()` below, which wipes the on-disk image cache Onyx doesn't own;
+  // on web `Onyx.clear` is what actually purges the store (clearCache is a no-op).
+  Onyx.clear(KEYS_TO_PRESERVE);
   clearCache().then(() => {
     Log.info('Cleared all cache data', true, {}, true);
   });
