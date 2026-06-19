@@ -19,7 +19,8 @@ there, not the SVGs):
 
 - `assets/images/app-logo.svg` — full-color mascot (tilted writing pose) →
   app icons, adaptive foreground vector, favicon, apple-touch-icon, og
-  preview, and the in-app logo (`logoShapes.ts` mirrors it).
+  preview, `app-logo.png` (README raster), and the in-app logo
+  (`logoShapes.ts` mirrors it).
 - `assets/images/app-logo-splash.svg` — the same mascot on a **white rounded
   chip** → boot splashes + env splash logos (the splash backdrop is the brand
   yellow, which the bare yellow pencil body would vanish into).
@@ -32,7 +33,8 @@ The script rasterizes these into every platform target — iOS app icon sets
 icon foregrounds as **Vector Drawable XML** (one per flavor), Android legacy
 launcher PNGs across four source sets, the per-prod themed-icon monochrome
 PNG, Android boot splash drawables, Android notification icons (main only),
-web favicon / apple-touch-icon / og-preview, the PWA manifest, and four
+web favicon / apple-touch-icon / og-preview, the PWA manifest, the
+`assets/images/app-logo.png` README raster, and four
 env-specific in-app SVG logos inlined into the web boot splash. Non-production
 variants get a colored corner triangle badge so dev / staging / adhoc builds
 are visually distinguishable; the badge label is baked to glyph paths via
@@ -66,6 +68,7 @@ master instead (face as holes — a colored face would vanish into the tint;
 | Android boot splash (`drawable-*/bootsplash_logo.png`)                            | chip master             | transparent — `bootsplash_background` provides the yellow         |
 | Android notification (`drawable-*/ic_notification.png`)                           | silhouette (face holes) | transparent — system tints to white/gray                          |
 | Web `favicon.png` / `apple-touch-icon.png` / `og-preview-image.png`               | mascot, full color      | baked-in `ICON_BG` white (renders standalone on page chrome)      |
+| Brand raster (`assets/images/app-logo.png`, 1024²)                                | mascot, full color      | baked-in `ICON_BG` white (embedded by the GitHub README)          |
 | Splash SVGs (`app-logo--{prod,dev,staging,adhoc}.svg`)                            | chip master             | rendered as-is — **no theme tinting** (web splash, splash hider)  |
 
 ## Android canvas specs (important — don't conflate them)

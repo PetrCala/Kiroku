@@ -31,8 +31,9 @@ and are emitted by
 
 - [`assets/images/app-logo.svg`](../assets/images/app-logo.svg) — the mascot
   (tilted writing pose, full color). Drives the app icons, the adaptive
-  foreground vector, favicon, apple-touch-icon, the og preview image, and the
-  in-app logo (`logoShapes.ts` mirrors it).
+  foreground vector, favicon, apple-touch-icon, the og preview image,
+  `app-logo.png` (the README raster), and the in-app logo (`logoShapes.ts`
+  mirrors it).
 - [`assets/images/app-logo-splash.svg`](../assets/images/app-logo-splash.svg)
   — the same mascot on a **white rounded chip**. Drives the boot splashes and
   the env splash logos: the splash backdrop is the brand yellow, which the
@@ -64,6 +65,7 @@ See [Color model](#color-model) for the per-surface table.
 | In-app SVG logos               | `assets/images/app-logo--{prod,dev,staging,adhoc}.svg` (used by [`src/components/KirokuLogo.tsx`](../src/components/KirokuLogo.tsx))                                        |
 | Web                            | `web/{favicon.png,apple-touch-icon.png,og-preview-image.png}`                                                                                                               |
 | Web manifest                   | `web/manifest.json` (created on first run only; preserved on subsequent runs)                                                                                               |
+| Brand raster (README)          | `assets/images/app-logo.png` (1024×1024 mascot on the white icon field; embedded by the GitHub README)                                                                      |
 
 #### Android themed icons (the prod-only monochrome decision)
 
