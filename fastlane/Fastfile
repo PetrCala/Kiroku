@@ -310,8 +310,15 @@ platform :ios do
 
   desc "Move app to App Store Review"
   lane :production do
+    # The binary was already built and uploaded to TestFlight by the staging
+    # `beta` lane, so this lane must NOT rebuild/re-upload — it only distributes
+    # that existing build externally. `distribute_only: true` tells pilot to
+    # skip the upload and act on the build identified by app_version/build_number;
+    # without it pilot looks for an IPA to upload and fails with
+    # "No ipa or pkg file given" (see `deliver(skip_binary_upload: true)` below).
     upload_to_testflight(
         api_key_path: "./ios/ios-fastlane-json-key.json",
+        distribute_only: true,
         distribute_external: true,
         notify_external_testers: true,
         changelog: ENV.fetch("TESTFLIGHT_CHANGELOG", "Improvements and bug fixes."),
