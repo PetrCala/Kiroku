@@ -43,7 +43,7 @@ jobs:
   ios:
     name: Capture iOS App Store screenshots
     runs-on: macos-26
-    timeout-minutes: 60
+    timeout-minutes: 90
     env:
       DEVELOPER_DIR: /Applications/Xcode_26.1.1.app/Contents/Developer
     steps:
@@ -124,6 +124,11 @@ jobs:
       - name: Run Fastlane - Capture iOS screenshots
         run: bundle exec fastlane ios screenshots
         env:
+          # snapshot runs `xcodebuild -showBuildSettings` before building; the
+          # 3s default timeout is too short for this RN workspace on a cold
+          # runner, so it exhausts its retries and aborts. Give it more headroom.
+          FASTLANE_XCODEBUILD_SETTINGS_TIMEOUT: '120'
+          FASTLANE_XCODEBUILD_SETTINGS_RETRIES: '5'
           APPLE_DEMO_EMAIL: ${{ secrets.APPLE_DEMO_EMAIL }}
           APPLE_DEMO_PASSWORD: ${{ secrets.APPLE_DEMO_PASSWORD }}
           KIROKU_DEMO_EMAIL: ${{ secrets.APPLE_DEMO_EMAIL }}
@@ -188,7 +193,7 @@ jobs:
   android:
     name: Capture Play Store screenshots
     runs-on: ubuntu-latest
-    timeout-minutes: 60
+    timeout-minutes: 120
     steps:
       - name: Checkout
         uses: actions/checkout@v5
