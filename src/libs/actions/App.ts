@@ -67,17 +67,37 @@ Onyx.connect({
   callback: val => (preferredLocale = val),
 });
 
+/**
+ * The allowlist of Onyx keys that survive a sign-out. `Session.cleanupSession()`
+ * calls `Onyx.clear(KEYS_TO_PRESERVE)`, which wipes EVERYTHING else — the model
+ * is inverted on purpose: a newly added key is cleared-by-default, and only the
+ * device-/build-level, non-sensitive keys below are kept. Anything carrying user
+ * PII (location, private data incl. DOB, data-visibility, preferences, drinking
+ * sessions/drinks/locations, admin feedback/bug lists, …) must NOT be added here.
+ *
+ * Deliberately NOT preserved — diverges from upstream Expensify, whose
+ * `KEYS_TO_PRESERVE` keeps `SESSION`/`CREDENTIALS` because its auth gate reads
+ * `SESSION.authToken`. Kiroku authenticates against Firebase
+ * (`onAuthStateChanged` for the gate, `getIdToken()` for the API Bearer), so the
+ * Onyx `SESSION`/`CREDENTIALS` keys are NOT the source of truth for auth — they
+ * only hold the previous user's email/token, which is exactly the cross-account
+ * leak we want gone. The next sign-in's `openApp` response repopulates `SESSION`.
+ * `IS_LOADING_APP` is likewise cleared (not preserved) so a stale `false` can't
+ * open the onboarding/terms readiness gates before the next bootstrap runs.
+ */
 const KEYS_TO_PRESERVE: OnyxKey[] = [
-  // ONYXKEYS.ACCOUNT,
-  ONYXKEYS.IS_LOADING_APP,
-  ONYXKEYS.IS_SIDEBAR_LOADED,
-  ONYXKEYS.MODAL,
+  // Device identity — documented to survive logout (see Device/generateDeviceID).
+  ONYXKEYS.DEVICE_ID,
+  // Connectivity drives the offline request queue + OfflineIndicator; its sole
+  // writer (UserConnectionProvider) sits above AuthScreens and doesn't re-emit on
+  // sign-out, so clearing it could strand the queue mid-transition.
   ONYXKEYS.NETWORK,
-  ONYXKEYS.SESSION,
-  ONYXKEYS.SHOULD_SHOW_COMPOSE_INPUT,
+  // Visual/locale preferences are device-level: keep the login screen on the
+  // user's theme and language instead of flashing back to the defaults.
   ONYXKEYS.PREFERRED_THEME,
   ONYXKEYS.NVP_PREFERRED_LOCALE,
-  ONYXKEYS.CREDENTIALS,
+  // Build-channel flag derived from the installed binary, not the account.
+  ONYXKEYS.IS_BETA,
 ];
 
 let resolveIsReadyPromise: () => void;
