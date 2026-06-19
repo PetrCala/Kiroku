@@ -35,6 +35,7 @@ import ForceUpdateModal from './components/Modals/ForceUpdateModal';
 import VerifyEmailModal from './components/VerifyEmailModal';
 import AccountSuspendedModal from './components/Modals/AccountSuspendedModal';
 import FullScreenLoadingIndicator from './components/FullscreenLoadingIndicator';
+import DevMenuButton from './components/DevMenuButton';
 import useNativeAppearanceSync from './hooks/useNativeAppearanceSync';
 import useCurrentUserData from './hooks/useCurrentUserData';
 import colors from './styles/theme/colors';
@@ -406,6 +407,13 @@ function Kiroku() {
             lastVisitedPath={lastVisitedPath as Route}
             initialUrl={initialUrl}
           />
+          {/*
+            Dev-only floating button that opens the Test Tools modal. Painted
+            over NavigationRoot but declared before the splash guard/hider
+            below, so the splash still covers it during boot. Renders null in
+            production via its own `isDevelopment` gate.
+          */}
+          <DevMenuButton />
         </>
       )}
       {/*
