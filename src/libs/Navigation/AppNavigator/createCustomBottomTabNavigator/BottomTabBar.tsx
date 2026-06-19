@@ -6,11 +6,12 @@ import useThemeStyles from '@hooks/useThemeStyles';
 import BOTTOM_TAB_CONFIG from '@navigation/AppNavigator/Navigators/bottomTabConfig';
 
 /**
- * Custom JS tab bar for the web bottom tab navigator. The native
- * (`react-native-bottom-tabs`) bar is not available on web, so this renders the
- * four tabs from `bottomTabConfig` with a live selected state. Tab switching is
- * tap-only — matching the native bar — and is instant because all tab roots stay
- * mounted.
+ * Custom JS tab bar for the bottom tab navigator on every platform (web, iOS,
+ * Android). It renders the four tabs from `bottomTabConfig` with a live selected
+ * state. Tab switching is tap-only and instant because all tab roots stay
+ * mounted (frozen while blurred). The bar height mirrors upstream Expensify's
+ * `NavigationTabBar`: a flat `variables.bottomTabHeight` with no extra
+ * safe-area inset.
  */
 function BottomTabBar({state, navigation}: BottomTabBarProps) {
   const styles = useThemeStyles();
