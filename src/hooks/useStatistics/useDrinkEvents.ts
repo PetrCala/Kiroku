@@ -1,4 +1,4 @@
-import {useEffect, useMemo, useState} from 'react';
+import {useEffect, useState} from 'react';
 import {InteractionManager} from 'react-native';
 import {useOnyx} from 'react-native-onyx';
 import {buildDrinkEvents} from '@libs/Statistics';
@@ -9,34 +9,11 @@ import useCurrentUserData from '@hooks/useCurrentUserData';
 import useCurrentUserPreferences from '@hooks/useCurrentUserPreferences';
 import CONST from '@src/CONST';
 import ONYXKEYS from '@src/ONYXKEYS';
-import type {
-  DrinkingSessionList,
-  UserDrinkingSessionsList,
-} from '@src/types/onyx/DrinkingSession';
 import type {UserID} from '@src/types/onyx/OnyxCommon';
-
-type UseDrinkEventsOptions = {
-  /**
-   * Restrict the materialised stream to sessions whose `start_time` (ms) falls
-   * inside `[startMs, endMs]`. The home scorecard passes its visible + previous
-   * month so the launch-path walk stays ~2 months wide instead of the whole
-   * history (it only ever reads those two months — see `buildMonthlyStats`).
-   * Full-stream consumers (Statistics tabs, Badges, drill-down) omit it.
-   */
-  window?: {startMs: number; endMs: number};
-};
 
 type UseDrinkEventsResult = {
   events: DrinkEvent[];
   isLoading: boolean;
-  /**
-   * The viewed user's first-ever session `start_time` (ms), computed from the
-   * full session list with a cheap numeric scan (no `Intl`). Only populated
-   * when a `window` is supplied — it lets a windowed caller keep a correct
-   * comparison baseline even though the event stream itself is scoped. Falls
-   * back to `undefined` (no sessions / no window).
-   */
-  earliestStartMs?: number;
 };
 
 const WEEK_START_BY_LABEL: Record<string, WeekStart> = {
@@ -90,10 +67,7 @@ function resolveWeekStart(label: string | undefined): WeekStart {
  * `events` is `[]`. Callers should render a layout-faithful skeleton, not
  * the empty-state.
  */
-function useDrinkEvents(
-  userIds?: UserID[],
-  options?: UseDrinkEventsOptions,
-): UseDrinkEventsResult {
+function useDrinkEvents(userIds?: UserID[]): UseDrinkEventsResult {
   const {auth} = useFirebase();
   const preferences = useCurrentUserPreferences();
   const userData = useCurrentUserData();
@@ -107,64 +81,6 @@ function useDrinkEvents(
   const weekStart = resolveWeekStart(preferences?.first_day_of_week);
   const drinksToUnits = preferences?.drinks_to_units;
   const isHydrated = allSessionsMeta.status === 'loaded';
-
-  // Scope the sessions fed to the heavy walk to the requested window, if any.
-  // `buildDrinkEvents` (and `buildMonthlyStats` downstream) window by a
-  // session's `start_time`, so filtering the input by the same numeric bound is
-  // lossless — the windowed input yields a byte-identical monthly summary while
-  // turning the launch-path walk from O(whole history) into O(window). With no
-  // window we return the original `allSessions` reference untouched, so the
-  // full-stream consumers and the `backfillSessionTimeParts` contract are
-  // unchanged. The pass also tracks the current user's all-time earliest
-  // `start_time` (numeric only, no `Intl`) for the comparison-baseline fallback.
-  const windowStartMs = options?.window?.startMs;
-  const windowEndMs = options?.window?.endMs;
-  const {scopedSessions, earliestStartMs} = useMemo<{
-    scopedSessions: UserDrinkingSessionsList | undefined;
-    earliestStartMs: number | undefined;
-  }>(() => {
-    if (
-      windowStartMs === undefined ||
-      windowEndMs === undefined ||
-      !allSessions
-    ) {
-      return {scopedSessions: allSessions, earliestStartMs: undefined};
-    }
-    let earliest = Infinity;
-    const scoped: UserDrinkingSessionsList = {};
-    for (const uid of Object.keys(allSessions)) {
-      const userSessions = allSessions[uid];
-      if (!userSessions) {
-        continue;
-      }
-      const kept: DrinkingSessionList = {};
-      let keptAny = false;
-      for (const sessionId of Object.keys(userSessions)) {
-        const session = userSessions[sessionId];
-        if (!session) {
-          continue;
-        }
-        const startMs = Number(session.start_time);
-        if (!Number.isFinite(startMs)) {
-          continue;
-        }
-        if (uid === currentUserID && startMs < earliest) {
-          earliest = startMs;
-        }
-        if (startMs >= windowStartMs && startMs <= windowEndMs) {
-          kept[sessionId] = session;
-          keptAny = true;
-        }
-      }
-      if (keptAny) {
-        scoped[uid] = kept;
-      }
-    }
-    return {
-      scopedSessions: scoped,
-      earliestStartMs: earliest === Infinity ? undefined : earliest,
-    };
-  }, [allSessions, windowStartMs, windowEndMs, currentUserID]);
 
   const [allEvents, setAllEvents] = useState<DrinkEvent[]>(EMPTY_EVENTS);
   const [isCompiled, setIsCompiled] = useState(false);
@@ -193,7 +109,7 @@ function useDrinkEvents(
       }
 
       const next = buildDrinkEvents(
-        scopedSessions,
+        allSessions,
         drinksToUnits,
         CONST.DRINK_DEFAULTS,
         timezone,
@@ -206,13 +122,10 @@ function useDrinkEvents(
       // the next cold open reads them with zero `Intl`. Reconstructed from the
       // events above (no extra `Intl`); the merge re-fires this effect, which
       // then reads the stored fields and produces an empty patch — so it
-      // converges in one step and never loops. Scoped to `scopedSessions`: a
-      // windowed caller only backfills the sessions it walked, keeping
-      // whole-history `Intl` off the launch path (the rest is backfilled when a
-      // full-stream consumer such as the Statistics tab runs).
+      // converges in one step and never loops.
       Statistics.backfillSessionTimeParts(
         next,
-        scopedSessions,
+        allSessions,
         timezone,
         weekStart,
       );
@@ -228,7 +141,7 @@ function useDrinkEvents(
         clearTimeout(backstop);
       }
     };
-  }, [isHydrated, scopedSessions, drinksToUnits, timezone, weekStart]);
+  }, [isHydrated, allSessions, drinksToUnits, timezone, weekStart]);
 
   const resolvedUserIds = userIds ?? (currentUserID ? [currentUserID] : []);
 
@@ -245,7 +158,7 @@ function useDrinkEvents(
 
   const isLoading = !isHydrated || !isCompiled;
 
-  return {events, isLoading, earliestStartMs};
+  return {events, isLoading};
 }
 
 export default useDrinkEvents;
