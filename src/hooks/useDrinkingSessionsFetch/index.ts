@@ -7,6 +7,7 @@ import {startOfMonth, subMonths} from 'date-fns';
 import {useEffect, useRef, useState} from 'react';
 import {useOnyx} from 'react-native-onyx';
 import useNetwork from '@hooks/useNetwork';
+import StatsPerf from '@libs/StatsPerf';
 
 type UseDrinkingSessionsFetchReturn = {
   /** Last-good snapshot of the windowed session list. Stays populated across
@@ -79,9 +80,15 @@ function useDrinkingSessionsFetch(
     // and Onyx hydration is fast. Wait for the saved depth to hydrate so we
     // don't fetch the default 3 months and then immediately re-fetch wider.
     if (!userID || monthsLoadedMeta.status !== 'loaded') {
+      // DIAGNOSTIC: the fetch is gated. For a friend, a stuck `monthsMeta` here
+      // (never 'loaded') would keep `isLoading` true forever → stuck skeleton.
+      StatsPerf.note(
+        `fetch skip uid=${userID || '(self)'} monthsMeta=${monthsLoadedMeta.status}`,
+      );
       return;
     }
 
+    StatsPerf.note(`fetch run uid=${userID} monthsBack=${sessionsMonthsBack}`);
     const token = ++currentTokenRef.current;
     const prev = prevSessionsMonthsBackRef.current;
     const isWiden = prev !== null && sessionsMonthsBack > prev;
@@ -98,6 +105,9 @@ function useDrinkingSessionsFetch(
     ).getTime();
 
     const finalize = () => {
+      StatsPerf.note(
+        `fetch resolved uid=${userID} stale=${token !== currentTokenRef.current}`,
+      );
       if (token !== currentTokenRef.current) {
         return;
       }

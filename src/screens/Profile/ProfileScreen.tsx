@@ -33,6 +33,7 @@ import ScreenWrapper from '@components/ScreenWrapper';
 import HeaderWithBackButton from '@components/HeaderWithBackButton';
 import useLocalize from '@hooks/useLocalize';
 import useReadyAfterScreenTransition from '@hooks/useReadyAfterScreenTransition';
+import StatsPerf from '@libs/StatsPerf';
 import FlexibleLoadingIndicator from '@components/FlexibleLoadingIndicator';
 import useThemeStyles from '@hooks/useThemeStyles';
 import Button from '@components/Button';
@@ -85,6 +86,21 @@ function ProfileScreen({route}: ProfileScreenProps) {
   // indexing on first render, which otherwise blocks the push slide-in.
   const {isReady: didScreenTransitionEnd, onEntryTransitionEnd} =
     useReadyAfterScreenTransition();
+
+  // DIAGNOSTIC (StatsPerf): trace the profile loading gate. The last line while
+  // stuck names the holdout (profileFetch / prefs / sessions).
+  useEffect(() => {
+    StatsPerf.note(
+      `profile self=${isSelf} txEnd=${didScreenTransitionEnd} profileFetch=${isProfileFetchLoading} prefs=${isPrefsLoading} sessions=${isSessionsLoading} isLoading=${isLoading}`,
+    );
+  }, [
+    isSelf,
+    didScreenTransitionEnd,
+    isProfileFetchLoading,
+    isPrefsLoading,
+    isSessionsLoading,
+    isLoading,
+  ]);
   const [userDataList] = useOnyx(ONYXKEYS.USER_DATA_LIST);
   const [friendCount, setFriendCount] = useState(0);
   const [commonFriendCount, setCommonFriendCount] = useState(0);

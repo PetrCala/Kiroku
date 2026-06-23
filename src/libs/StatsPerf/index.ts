@@ -110,6 +110,19 @@ function pushReportLine(line: string): void {
   }
 }
 
+/**
+ * Emit an ad-hoc event line immediately (prefixed `~`), independent of the
+ * periodic counter flush. Used to trace loading-gate / fetch state transitions
+ * — the things that gate a screen *before* any instrumented compute runs, which
+ * the counters can't see. No-op when disabled.
+ */
+function note(message: string): void {
+  if (!enabled) {
+    return;
+  }
+  pushReportLine(`~ ${message}`);
+}
+
 /** Current readout, oldest first (polled by the Test Tools panel). */
 function getReportLines(): string[] {
   return reportLines;
@@ -135,6 +148,7 @@ export default {
   measureFrom,
   snapshotDelta,
   pushReportLine,
+  note,
   getReportLines,
   reset,
 };

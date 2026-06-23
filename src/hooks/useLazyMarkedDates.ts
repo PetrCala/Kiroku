@@ -14,6 +14,7 @@ import type {MarkedDates} from 'react-native-calendars/src/types';
 import {useOnyx} from 'react-native-onyx';
 import ONYXKEYS from '@src/ONYXKEYS';
 import * as Calendar from '@userActions/Calendar';
+import StatsPerf from '@libs/StatsPerf';
 import * as DSUtils from '@libs/DrinkingSessionUtils';
 import {
   getDerivedCalendarMonth,
@@ -391,6 +392,17 @@ function useLazyMarkedDates(
   useEffect(() => {
     loadedFrom.current = loadedFromDate;
   }, [loadedFromDate]);
+
+  // DIAGNOSTIC (StatsPerf): if `months`/`marked` stay 0 while a calendar is
+  // mounted, the week-list has no row to scroll to → `onInitialScrollReady`
+  // never fires → the fullscreen screen hangs on its skeleton.
+  const markedCount = Object.keys(markedDates).length;
+  const monthCount = calendarMonths.length;
+  useEffect(() => {
+    StatsPerf.note(
+      `lazyMarked uid=${userID} months=${monthCount} marked=${markedCount} effMonths=${effectiveMonths} floor=${hasPersistedFloor}`,
+    );
+  }, [userID, monthCount, markedCount, effectiveMonths, hasPersistedFloor]);
 
   // Debounce the Onyx write so a rapid left-arrow scroll fires only one
   // listener-resubscribe / one friend-fetcher refetch at the end of the run.

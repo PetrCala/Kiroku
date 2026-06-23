@@ -1,5 +1,6 @@
-import React, {useCallback, useState} from 'react';
+import React, {useCallback, useEffect, useState} from 'react';
 import {StyleSheet, View} from 'react-native';
+import StatsPerf from '@libs/StatsPerf';
 import type {StackScreenProps} from '@react-navigation/stack';
 import type {DateData} from 'react-native-calendars';
 import SessionsCalendar from '@components/SessionsCalendar';
@@ -100,6 +101,26 @@ function SessionsCalendarScreen({route}: SessionsCalendarScreenProps) {
 
   const showLoader =
     !didScreenTransitionEnd || isLoading || !preferences || !isScrollReady;
+
+  // DIAGNOSTIC (StatsPerf): trace the gate inputs. The last line while stuck on
+  // the skeleton names the holdout (e.g. scrollReady=false). hasData/hasPrefs
+  // are booleans so the effect only fires on a real gate transition.
+  const hasData = drinkingSessionData !== undefined;
+  const hasPrefs = !!preferences;
+  useEffect(() => {
+    StatsPerf.note(
+      `calScreen self=${isSelf} txEnd=${didScreenTransitionEnd} loading=${isLoading} prefs=${hasPrefs} data=${hasData} scrollReady=${isScrollReady} fetchingOlder=${isFetchingOlderMonths} showLoader=${showLoader}`,
+    );
+  }, [
+    isSelf,
+    didScreenTransitionEnd,
+    isLoading,
+    hasPrefs,
+    hasData,
+    isScrollReady,
+    isFetchingOlderMonths,
+    showLoader,
+  ]);
 
   return (
     <ScreenWrapper
