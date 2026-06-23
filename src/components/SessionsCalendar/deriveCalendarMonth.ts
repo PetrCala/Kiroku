@@ -1,7 +1,7 @@
 import {endOfMonth} from 'date-fns';
-import {toZonedTime} from 'date-fns-tz';
 import type {MarkingProps} from 'react-native-calendars/src/calendar/day/marking';
 import {sessionsToDayMarking} from '@libs/DataHandling';
+import {resolveLocalParts} from '@libs/Statistics/localParts';
 import {resolvePalette} from '@libs/SessionColorPalettes';
 import type {DrinkingSessionList, Preferences} from '@src/types/onyx';
 import type {DateString} from '@src/types/onyx/OnyxCommon';
@@ -79,12 +79,27 @@ function groupSessionsByMonth(
 ): Map<string, Map<DateString, DrinkingSessionKeyValue[]>> {
   const byMonth = new Map<string, Map<DateString, DrinkingSessionKeyValue[]>>();
   Object.entries(sessions).forEach(([sessionId, session]) => {
-    const zonedDate = toZonedTime(
-      session.start_time,
+    // Resolve the session's zoned calendar day via the shared cached-offset
+    // resolver (one `Intl` probe per timezone-month, then pure `Date.UTC`
+    // arithmetic) instead of `toZonedTime`, which calls `Intl.formatToParts`
+    // once *per session*. On Hermes each such call is ~1-3 ms; across a
+    // multi-year history this O(N) pass re-runs on every `CACHED_DRINKING_SESSIONS`
+    // identity change at launch (disk hydrate → time-parts backfill → app/open
+    // merge), so the per-session `Intl` blocked the JS thread for seconds right
+    // after the home screen painted — the calendar scrolled (UI thread) but taps
+    // were dead (JS thread). `resolveLocalParts` is the same resolver
+    // `buildDrinkEvents` and the session write-path use, so the calendar's day
+    // bucketing now matches the stats engine exactly. Returns null only on an
+    // invalid timezone — skip that session rather than bucket it under "NaN".
+    const parts = resolveLocalParts(
+      Number(session.start_time),
       session.timezone ?? defaultTimezone,
     );
-    const dayKey = toDateKey(zonedDate);
-    const monthKey = dayKey.slice(0, 7);
+    if (!parts) {
+      return;
+    }
+    const dayKey = parts.localDay as DateString;
+    const monthKey = parts.localMonth;
     let dayMap = byMonth.get(monthKey);
     if (!dayMap) {
       dayMap = new Map();
