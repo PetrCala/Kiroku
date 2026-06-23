@@ -1,3 +1,4 @@
+import StatsPerf from '@libs/StatsPerf';
 import CONST from '@src/CONST';
 import type {DrinkKey, DrinksList} from '@src/types/onyx/Drinks';
 import type DrinkingSession from '@src/types/onyx/DrinkingSession';
@@ -94,6 +95,7 @@ function localPartsFor(
   stored: unknown,
 ): LocalParts | null {
   if (isStoredLocalParts(stored)) {
+    StatsPerf.inc('bde.storedHit');
     return {
       localDay: stored.d,
       localMonth: stored.d.slice(0, 7),
@@ -102,6 +104,9 @@ function localPartsFor(
       calendarDow: stored.dow,
     };
   }
+  // Cache miss — recompute (one `Intl` probe per zone-month via resolveLocalParts).
+  // This counter is the proxy for "lost backfill" cost on the cold read path.
+  StatsPerf.inc('bde.resolveFallback');
   return resolveLocalParts(ts, sessionTz);
 }
 
@@ -191,6 +196,7 @@ function buildDrinkEvents(
   timezone: SelectedTimezone,
   weekStart: WeekStart,
 ): DrinkEvent[] {
+  StatsPerf.inc('buildDrinkEvents.call');
   if (
     lastCall &&
     lastCall.sessions === sessions &&
@@ -199,9 +205,11 @@ function buildDrinkEvents(
     lastCall.timezone === timezone &&
     lastCall.weekStart === weekStart
   ) {
+    StatsPerf.inc('buildDrinkEvents.cacheHit');
     return lastCall.result;
   }
 
+  const span = StatsPerf.mark();
   const events: DrinkEvent[] = [];
   if (!sessions) {
     lastCall = {
@@ -245,6 +253,7 @@ function buildDrinkEvents(
       if (!drinks) {
         continue;
       }
+      StatsPerf.inc('buildDrinkEvents.session');
       // Stored fields are trusted only when they were computed under the
       // session's current timezone; on a mismatch every timestamp falls back to
       // recomputing, so a stale tag can never serve a wrong value.
@@ -331,6 +340,8 @@ function buildDrinkEvents(
     weekStart,
     result: events,
   };
+  StatsPerf.inc('buildDrinkEvents.events', events.length);
+  StatsPerf.measureFrom('buildDrinkEvents', span);
   return events;
 }
 

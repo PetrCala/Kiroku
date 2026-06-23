@@ -3,6 +3,7 @@ import {InteractionManager} from 'react-native';
 import {useOnyx} from 'react-native-onyx';
 import {buildDrinkEvents} from '@libs/Statistics';
 import type {DrinkEvent, WeekStart} from '@libs/Statistics';
+import StatsPerf from '@libs/StatsPerf';
 import Statistics from '@libs/actions/Statistics';
 import {useFirebase} from '@context/global/FirebaseContext';
 import useCurrentUserData from '@hooks/useCurrentUserData';
@@ -108,6 +109,15 @@ function useDrinkEvents(
   const drinksToUnits = preferences?.drinks_to_units;
   const isHydrated = allSessionsMeta.status === 'loaded';
 
+  // DIAGNOSTIC A/B lever (StatsPerf): `full` restores the pre-#1414 whole-history
+  // backfill even on a windowed caller, so we can test whether dropping it is
+  // what slowed profile/friends/calendar — without a rebuild. Defaults to the
+  // current (`window`) behaviour.
+  const [perfDebug] = useOnyx(ONYXKEYS.NVP_STATS_PERF_DEBUG, {
+    canBeMissing: true,
+  });
+  const backfillFullHistory = perfDebug?.backfillScope === 'full';
+
   // Scope the sessions fed to the heavy walk to the requested window, if any.
   // `buildDrinkEvents` (and `buildMonthlyStats` downstream) window by a
   // session's `start_time`, so filtering the input by the same numeric bound is
@@ -166,6 +176,11 @@ function useDrinkEvents(
     };
   }, [allSessions, windowStartMs, windowEndMs, currentUserID]);
 
+  // Sessions the launch-time backfill covers. Same ref as `scopedSessions` in
+  // the default (`window`) mode, so behaviour is unchanged; the full set only
+  // when the diagnostic lever is flipped.
+  const backfillSessions = backfillFullHistory ? allSessions : scopedSessions;
+
   const [allEvents, setAllEvents] = useState<DrinkEvent[]>(EMPTY_EVENTS);
   const [isCompiled, setIsCompiled] = useState(false);
 
@@ -173,6 +188,10 @@ function useDrinkEvents(
     if (!isHydrated) {
       return;
     }
+    // Counts every effect run — a runaway here (see the LOOP flag in the
+    // readout) is the JS-thread-saturation signature behind the stuck-skeleton
+    // / slow-screen symptoms.
+    StatsPerf.inc('useDrinkEvents.effectFire');
     let done = false;
     let handle: {cancel?: () => void} | undefined;
     let backstop: ReturnType<typeof setTimeout> | undefined;
@@ -182,7 +201,7 @@ function useDrinkEvents(
     // the navigation-transition frame) but can't depend on it alone: a leaked
     // interaction handle starves its queue indefinitely, which would silently
     // drop a post-save recompute and leave Home/Stats stale until an app reload.
-    const rebuild = () => {
+    const rebuild = (via: 'interaction' | 'backstop') => {
       if (done) {
         return;
       }
@@ -191,6 +210,11 @@ function useDrinkEvents(
       if (backstop) {
         clearTimeout(backstop);
       }
+      // Which timer won: a high `via.backstop` rate means the InteractionManager
+      // queue is starved (interactions never settle) — the deferred-work
+      // starvation that would also strand the calendar's scroll-ready callback.
+      StatsPerf.inc('useDrinkEvents.rebuild');
+      StatsPerf.inc(`useDrinkEvents.via.${via}`);
 
       const next = buildDrinkEvents(
         scopedSessions,
@@ -212,14 +236,16 @@ function useDrinkEvents(
       // full-stream consumer such as the Statistics tab runs).
       Statistics.backfillSessionTimeParts(
         next,
-        scopedSessions,
+        backfillSessions,
         timezone,
         weekStart,
       );
     };
 
-    handle = InteractionManager.runAfterInteractions(rebuild);
-    backstop = setTimeout(rebuild, REBUILD_BACKSTOP_MS);
+    handle = InteractionManager.runAfterInteractions(() =>
+      rebuild('interaction'),
+    );
+    backstop = setTimeout(() => rebuild('backstop'), REBUILD_BACKSTOP_MS);
 
     return () => {
       done = true;
@@ -228,7 +254,14 @@ function useDrinkEvents(
         clearTimeout(backstop);
       }
     };
-  }, [isHydrated, scopedSessions, drinksToUnits, timezone, weekStart]);
+  }, [
+    isHydrated,
+    scopedSessions,
+    backfillSessions,
+    drinksToUnits,
+    timezone,
+    weekStart,
+  ]);
 
   const resolvedUserIds = userIds ?? (currentUserID ? [currentUserID] : []);
 

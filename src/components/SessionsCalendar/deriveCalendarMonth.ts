@@ -1,6 +1,7 @@
 import {endOfMonth} from 'date-fns';
 import type {MarkingProps} from 'react-native-calendars/src/calendar/day/marking';
 import {sessionsToDayMarking} from '@libs/DataHandling';
+import StatsPerf from '@libs/StatsPerf';
 import {resolveLocalParts} from '@libs/Statistics/localParts';
 import {resolvePalette} from '@libs/SessionColorPalettes';
 import type {DrinkingSessionList, Preferences} from '@src/types/onyx';
@@ -77,6 +78,8 @@ function groupSessionsByMonth(
   sessions: DrinkingSessionList,
   defaultTimezone: string,
 ): Map<string, Map<DateString, DrinkingSessionKeyValue[]>> {
+  const span = StatsPerf.mark();
+  StatsPerf.inc('groupSessionsByMonth.sessions', Object.keys(sessions).length);
   const byMonth = new Map<string, Map<DateString, DrinkingSessionKeyValue[]>>();
   Object.entries(sessions).forEach(([sessionId, session]) => {
     // Resolve the session's zoned calendar day via the shared cached-offset
@@ -112,6 +115,7 @@ function groupSessionsByMonth(
       dayMap.set(dayKey, [{sessionId, session}]);
     }
   });
+  StatsPerf.measureFrom('groupSessionsByMonth', span);
   return byMonth;
 }
 

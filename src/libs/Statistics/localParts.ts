@@ -26,6 +26,8 @@
  * session and drink regardless of how the timestamps are distributed.
  */
 
+import StatsPerf from '@libs/StatsPerf';
+
 /**
  * One `Intl.DateTimeFormat` per timezone. Constructing the formatter is the
  * expensive part, so we build it once and reuse it for every offset probe in
@@ -61,6 +63,10 @@ function getOffsetFormatter(timeZone: string): Intl.DateTimeFormat {
  * the caller skips that timestamp.
  */
 function probeOffsetMs(ts: number, timeZone: string): number {
+  // The single most diagnostic counter: every increment is one real
+  // `Intl.formatToParts` call (~1-3ms on Hermes). A spike here on profile /
+  // calendar is the signature of the lost whole-history time-parts backfill.
+  StatsPerf.inc('intl.probe');
   const fields: Record<string, string> = {};
   for (const part of getOffsetFormatter(timeZone).formatToParts(ts)) {
     fields[part.type] = part.value;
@@ -152,6 +158,7 @@ type LocalParts = {
  * invalid timezone (the caller skips).
  */
 function resolveLocalParts(ts: number, timeZone: string): LocalParts | null {
+  StatsPerf.inc('resolveLocalParts.call');
   const wall = new Date(ts + getTzOffsetMs(ts, timeZone));
   const year = wall.getUTCFullYear();
   const month = wall.getUTCMonth() + 1;

@@ -32,9 +32,17 @@ function useHomeStats(visibleDate: DateData): MonthlyStats {
     return {startMs: prevStart.getTime(), endMs: monthEnd.getTime()};
   }, [year, month]);
 
-  const {events, isLoading, earliestStartMs} = useDrinkEvents(undefined, {
-    window: eventWindow,
+  // DIAGNOSTIC A/B lever (StatsPerf): `full` reverts #1414's compute windowing
+  // (passes no window → whole-history walk) so the windowing's contribution can
+  // be isolated on-device. Defaults to the current (`window`) behaviour.
+  const [perfDebug] = useOnyx(ONYXKEYS.NVP_STATS_PERF_DEBUG, {
+    canBeMissing: true,
   });
+  const computeFullHistory = perfDebug?.computeScope === 'full';
+  const {events, isLoading, earliestStartMs} = useDrinkEvents(
+    undefined,
+    computeFullHistory ? undefined : {window: eventWindow},
+  );
   const preferences = useCurrentUserPreferences();
   const currentUserData = useCurrentUserData();
   const [ongoingSessionData] = useOnyx(ONYXKEYS.ONGOING_SESSION_DATA);

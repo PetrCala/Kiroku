@@ -35,6 +35,7 @@ import ForceUpdateModal from './components/Modals/ForceUpdateModal';
 import VerifyEmailModal from './components/VerifyEmailModal';
 import AccountSuspendedModal from './components/Modals/AccountSuspendedModal';
 import FullScreenLoadingIndicator from './components/FullscreenLoadingIndicator';
+import StatsPerfDebugButton from './components/StatsPerfDebugButton';
 import useNativeAppearanceSync from './hooks/useNativeAppearanceSync';
 import useCurrentUserData from './hooks/useCurrentUserData';
 import colors from './styles/theme/colors';
@@ -425,6 +426,9 @@ function Kiroku() {
           onHide={onSplashHide}
         />
       )}
+      {/* Web-only, non-prod: one-click opener for the StatsPerf diagnostics
+          panel (diagnostic branch only). No-op on native/production. */}
+      <StatsPerfDebugButton />
     </>
   );
 }

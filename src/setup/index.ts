@@ -9,6 +9,7 @@ import ONYXKEYS from '@src/ONYXKEYS';
 import intlPolyfill from '@libs/IntlPolyfill';
 import {initFirebaseAuth} from '@libs/Firebase/FirebaseApp';
 import StartupMetrics from '@libs/StartupMetrics';
+import StatsPerfConnect from '@libs/StatsPerf/connect';
 import initializeLastVisitedPath from './initializeLastVisitedPath';
 import platformSetup from './platformSetup';
 import suppressSkiaPathDeprecationWarnings from './suppressSkiaPathDeprecationWarnings';
@@ -97,4 +98,8 @@ export default function () {
   // and log them in the same `Timing:` format as Timing.ts so Grafana picks
   // them up.
   StartupMetrics.init();
+
+  // Diagnostic Statistics/calendar profiler. No-op on the production build;
+  // defaults on for ad-hoc/staging/dev. See `@libs/StatsPerf`.
+  StatsPerfConnect.init();
 }

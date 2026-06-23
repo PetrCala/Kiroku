@@ -10,6 +10,8 @@ import type Download from './Download';
 import type DrinkingSession from './DrinkingSession';
 import type FeatureAccessOverrides from './FeatureAccessOverrides';
 import type {FeatureOverride} from './FeatureAccessOverrides';
+import type StatsPerfDebug from './StatsPerfDebug';
+import type {StatsComputeScope, StatsBackfillScope} from './StatsPerfDebug';
 import type {
   DrinkingSessionId,
   DrinkingSessionArray,
@@ -148,6 +150,9 @@ export type {
   RangePreset,
   StartSession,
   StatisticsFilters,
+  StatsPerfDebug,
+  StatsComputeScope,
+  StatsBackfillScope,
   Theme,
   UnconfirmedDayKey,
   UnconfirmedDays,

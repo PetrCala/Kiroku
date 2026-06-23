@@ -158,7 +158,7 @@ function ScreenWrapper(
   const {initialHeight} = useInitialDimensions();
   const styles = useThemeStyles();
   const keyboardState = useKeyboardState();
-  const {isDevelopment} = useEnvironment();
+  const {isDevelopment, isProduction} = useEnvironment();
   const {isOffline} = useNetwork();
   const [didScreenTransitionEnd, setDidScreenTransitionEnd] = useState(false);
   const maxHeight = shouldEnableMaxHeight ? windowHeight : undefined;
@@ -172,12 +172,13 @@ function ScreenWrapper(
 
   const panResponder = useRef(
     PanResponder.create({
-      // Gate the gesture to dev only, matching where `<TestToolsModal />` is
-      // actually rendered (see `isDevelopment &&` below). Outside dev the modal
-      // never mounts, so capturing the multi-touch gesture would only fire a
-      // no-op toggle.
+      // Gate the gesture to non-production, matching where `<TestToolsModal />`
+      // is rendered (see `!isProduction &&` below). On the store build the modal
+      // never mounts, so capturing the gesture would only fire a no-op toggle.
+      // Widened from dev-only so the StatsPerf diagnostics are reachable on the
+      // ad-hoc device build.
       onStartShouldSetPanResponderCapture: (_e, gestureState) =>
-        isDevelopment &&
+        !isProduction &&
         gestureState.numberActiveTouches === CONST.TEST_TOOL.NUMBER_OF_TAPS,
       onPanResponderRelease: toggleTestToolsModal,
     }),
@@ -303,7 +304,7 @@ function ScreenWrapper(
                   }
                   enabled={shouldEnablePickerAvoiding}> */}
                 <HeaderGap styles={headerGapStyles} />
-                {isDevelopment && <TestToolsModal />}
+                {!isProduction && <TestToolsModal />}
                 {isDevelopment && <CustomDevMenu />}
                 <ScreenWrapperStatusContext.Provider value={contextValue}>
                   {

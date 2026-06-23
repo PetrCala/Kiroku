@@ -1,4 +1,5 @@
 import Onyx from 'react-native-onyx';
+import StatsPerf from '@libs/StatsPerf';
 import {buildTimePartsPatchFromEvents} from '@libs/Statistics/sessionTimeParts';
 import type {DrinkEvent, WeekStart} from '@libs/Statistics';
 import ONYXKEYS from '@src/ONYXKEYS';
@@ -36,7 +37,18 @@ function backfillSessionTimeParts(
     weekStart,
   );
   if (patch) {
+    // Each merge bumps CACHED_DRINKING_SESSIONS identity → re-renders/re-derives
+    // every subscriber. A high merge rate here is the signature of a backfill
+    // write loop (non-converging patch). `sessions` = the per-merge session count.
+    StatsPerf.inc('backfill.merge');
+    let sessionCount = 0;
+    for (const userId of Object.keys(patch)) {
+      sessionCount += Object.keys(patch[userId] ?? {}).length;
+    }
+    StatsPerf.inc('backfill.sessions', sessionCount);
     Onyx.merge(ONYXKEYS.CACHED_DRINKING_SESSIONS, patch);
+  } else {
+    StatsPerf.inc('backfill.empty');
   }
 }
 

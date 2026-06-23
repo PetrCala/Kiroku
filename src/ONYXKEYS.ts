@@ -137,6 +137,11 @@ const ONYXKEYS = {
    *  read/written outside production — see `@libs/actions/FeatureAccess`. */
   FEATURE_ACCESS_OVERRIDES: 'featureAccessOverrides',
 
+  /** Diagnostic StatsPerf instrumentation: logging toggle, the compute/backfill
+   *  A/B levers, and the rolling profiler readout rendered in Test Tools. Only
+   *  read/written outside production — see `@libs/actions/StatsPerfDebug`. */
+  NVP_STATS_PERF_DEBUG: 'nvp_statsPerfDebug',
+
   /** Whether we should show the compose input or not */
   SHOULD_SHOW_COMPOSE_INPUT: 'shouldShowComposeInput',
 
@@ -323,6 +328,7 @@ type OnyxValuesMapping = {
   [ONYXKEYS.IS_LOADING_APP]: boolean;
   [ONYXKEYS.IS_TEST_TOOLS_MODAL_OPEN]: boolean;
   [ONYXKEYS.FEATURE_ACCESS_OVERRIDES]: OnyxTypes.FeatureAccessOverrides;
+  [ONYXKEYS.NVP_STATS_PERF_DEBUG]: OnyxTypes.StatsPerfDebug;
   [ONYXKEYS.SHOULD_SHOW_COMPOSE_INPUT]: boolean;
   [ONYXKEYS.APP_UPDATE_DISMISSED]: Timestamp;
   [ONYXKEYS.VERIFY_EMAIL_SENT]: Timestamp;
