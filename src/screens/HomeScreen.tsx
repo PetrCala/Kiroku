@@ -12,7 +12,7 @@ import CONST from '@src/CONST';
 import ROUTES from '@src/ROUTES';
 import Navigation from '@navigation/Navigation';
 import type {StackScreenProps} from '@react-navigation/stack';
-import {useFocusEffect} from '@react-navigation/native';
+import {useFocusEffect, useIsFocused} from '@react-navigation/native';
 import type {BottomTabNavigatorParamList} from '@libs/Navigation/types';
 import type SCREENS from '@src/SCREENS';
 import MonthlyOverviewCard, {
@@ -84,6 +84,11 @@ function HomeScreen({route}: HomeScreenProps) {
   const preferences = useCurrentUserPreferences();
   const drinkingSessionData = useCurrentUserDrinkingSessions();
   const {isOffline} = useNetwork();
+  // Whether Home is the focused screen. Used to stop the (heavy, colored)
+  // compact calendar from PAINTING while Home sits blurred underneath an RHP
+  // (e.g. a friend's profile) or another tab — see the calendar's visibility
+  // gate in `renderMainContent`.
+  const isFocused = useIsFocused();
   const [localVisibleDate, setLocalVisibleDate] = useState<DateData>(
     dateToDateData(new Date()),
   );
@@ -220,13 +225,24 @@ function HomeScreen({route}: HomeScreenProps) {
           showWeeklyUnits={false}
           showMonthComparison
         />
-        <SessionsCalendar
-          userID={user.uid}
-          visibleDate={visibleDate}
-          onDateChange={onDateChange}
-          drinkingSessionData={drinkingSessionData}
-          preferences={preferences}
-        />
+        {/* Keep the compact calendar mounted across blur (preserving its heavy
+            `useLazyMarkedDates` index — see the loadingText overlay note below)
+            but stop it PAINTING while Home isn't the focused screen. When an RHP
+            such as a friend's profile opens over Home, the tab briefly
+            re-renders / unfreezes during the transition; without this gate the
+            viewer's own day tiles flash at unsettled positions before they're
+            clipped offscreen — the stray "orphan tiles" on the profile's entry.
+            Gating visibility (not mounting) avoids both that flash and a
+            skeleton swap when Home regains focus. */}
+        <View style={isFocused ? undefined : styles.opacity0}>
+          <SessionsCalendar
+            userID={user.uid}
+            visibleDate={visibleDate}
+            onDateChange={onDateChange}
+            drinkingSessionData={drinkingSessionData}
+            preferences={preferences}
+          />
+        </View>
       </>
     );
   };
