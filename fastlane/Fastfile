@@ -318,6 +318,7 @@ platform :ios do
     # "No ipa or pkg file given" (see `deliver(skip_binary_upload: true)` below).
     upload_to_testflight(
         api_key_path: "./ios/ios-fastlane-json-key.json",
+        app_platform: "ios",
         distribute_only: true,
         distribute_external: true,
         notify_external_testers: true,
