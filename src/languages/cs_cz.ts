@@ -21,6 +21,7 @@ import type {
   FriendRequestsCountParams,
   LastSessionSummaryParams,
   OnboardingStepCounterParams,
+  OverviewNarrativeParams,
   RelativeTimeAgoParams,
   SessionConfirmTimezoneChangeParams,
   SessionStartTimeParams,
@@ -1116,6 +1117,10 @@ export default {
         delta: {
           vsPrevious: 'vs předchozí',
         },
+        narrative: ({units, sessions, afDays, days}: OverviewNarrativeParams) =>
+          `${units} jednotek v ${sessions} ${
+            sessions === 1 ? 'relaci' : 'relacích'
+          }, z toho ${afDays} z ${days} dní bez alkoholu.`,
         sections: {
           highlights: 'Hlavní body',
           consumption: 'Konzumace',
