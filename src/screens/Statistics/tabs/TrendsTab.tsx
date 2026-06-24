@@ -1,7 +1,7 @@
 import React, {useMemo} from 'react';
 import {StyleSheet, View} from 'react-native';
+import {AfRateLine} from '@components/Charts/AfRateLine';
 import {ChartCard} from '@components/Charts/ChartCard';
-import {CumulativeLine} from '@components/Charts/CumulativeLine';
 import {StackedArea} from '@components/Charts/StackedArea';
 import {TrendLine, WeeklyTrendLegend} from '@components/Charts/TrendLine';
 import ScrollView from '@components/ScrollView';
@@ -33,7 +33,7 @@ const CAPTION_KEYS: Record<string, TranslationPaths> = {
 function TrendsTab() {
   const {translate} = useLocalize();
   const themeStyles = useThemeStyles();
-  const {hero, afCumulative, stack, isLoading} = useTrendsTabData();
+  const {hero, afRate, stack, isLoading} = useTrendsTabData();
   const {openDrillDown} = useStatsDrillDown();
 
   const heroComparisonShown = !!hero.comparison;
@@ -81,24 +81,35 @@ function TrendsTab() {
           />
         </ChartCard>
 
-        {afCumulative.hidden ? null : (
+        {afRate.hidden ? null : (
           <ChartCard
-            title={translate('statistics.tabs.trends.cumulativeAf.title')}
+            title={translate('statistics.tabs.trends.afRate.title')}
             footer={
-              afCumulative.comparisonPoints ? (
+              <View style={{rowGap: 4}}>
+                {afRate.points.length > 0 ? (
+                  <Text style={themeStyles.textMicroSupporting}>
+                    {translate(
+                      'statistics.tabs.trends.afRate.summary',
+                      afRate.summary,
+                    )}
+                  </Text>
+                ) : null}
                 <Text style={themeStyles.textMicroSupporting}>
-                  {comparisonLegend}
+                  {translate('statistics.tabs.trends.afRate.legend')}
                 </Text>
-              ) : undefined
+                {afRate.comparisonPoints ? (
+                  <Text style={themeStyles.textMicroSupporting}>
+                    {comparisonLegend}
+                  </Text>
+                ) : null}
+              </View>
             }>
-            <CumulativeLine
-              points={afCumulative.points}
-              comparisonPoints={afCumulative.comparisonPoints}
-              emptyLabel={translate(
-                'statistics.tabs.trends.cumulativeAf.emptyLabel',
-              )}
+            <AfRateLine
+              points={afRate.points}
+              comparisonPoints={afRate.comparisonPoints}
+              emptyLabel={translate('statistics.tabs.trends.afRate.emptyLabel')}
               accessibilityLabel={translate(
-                'statistics.tabs.trends.cumulativeAf.title',
+                'statistics.tabs.trends.afRate.title',
               )}
               isLoading={isLoading}
             />
