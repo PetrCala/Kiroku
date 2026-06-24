@@ -19,6 +19,16 @@ import type {
 // alert), so a trip here always has an accompanying breadcrumb of the offender.
 const FORCE_HIDE_TIMEOUT_MS = CONST.BOOT_SPLASH_FORCE_HIDE_TIMEOUT_MS;
 
+// Floor for how long the splash stays up, so a fast boot can't flash it for a
+// couple of frames. See CONST for the rationale. Mirrors the native hider.
+const MIN_VISIBLE_DURATION_MS = CONST.BOOT_SPLASH_MIN_VISIBLE_DURATION_MS;
+
+// Captured once when this module is first evaluated, during the initial bundle
+// load — the closest JS-side proxy for "splash became visible". A slight
+// underestimate (the #splash div is painted before the bundle runs), which only
+// ever makes the enforced minimum more conservative, never less.
+const SPLASH_VISIBLE_SINCE = Date.now();
+
 function SplashScreenHider({
   onHide = () => {},
   shouldHideSplash,
@@ -30,7 +40,21 @@ function SplashScreenHider({
       return;
     }
     hideHasBeenCalled.current = true;
-    BootSplash.hide().then(() => onHide());
+
+    // Enforce a minimum on-screen duration: if the splash has been up for less
+    // than the floor when it's ready to hide, defer the hide for the remainder
+    // so a fast boot reads as an intentional beat rather than a flicker. The
+    // 15s force-hide net sits far above this, so the two never collide.
+    const runHide = () => {
+      BootSplash.hide().then(() => onHide());
+    };
+    const remainingMs =
+      MIN_VISIBLE_DURATION_MS - (Date.now() - SPLASH_VISIBLE_SINCE);
+    if (remainingMs > 0) {
+      setTimeout(runHide, remainingMs);
+    } else {
+      runHide();
+    }
   }, [onHide]);
 
   useEffect(() => {

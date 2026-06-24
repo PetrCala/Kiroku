@@ -760,6 +760,15 @@ const CONST = {
   // a warm listener (typically <500 ms) and shorter than the safety net.
   BOOT_SPLASH_AUTH_DATA_TIMEOUT_MS: 3 * 1000,
 
+  // Minimum time the boot splash stays on screen, measured from app launch.
+  // On a fast boot (warm cache, little data to hydrate) the gates resolve
+  // almost immediately and the splash would otherwise flash for only a few
+  // frames — long enough to register as a flicker, too short to actually see.
+  // If the splash has been up less than this when it's ready to hide, the hide
+  // is deferred for the remainder so the logo reads as an intentional beat
+  // rather than a blink. Tune freely; this is the single source of truth.
+  BOOT_SPLASH_MIN_VISIBLE_DURATION_MS: 500,
+
   // Last-resort safety net (SplashScreenHider): force-hide the splash if the
   // gates never resolve, so a stuck boot can't pin the (untappable) overlay.
   BOOT_SPLASH_FORCE_HIDE_TIMEOUT_MS: 15 * 1000,

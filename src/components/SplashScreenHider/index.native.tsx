@@ -26,6 +26,16 @@ import type {
 // never flips and the user is left staring at the yellow overlay indefinitely.
 const FORCE_HIDE_TIMEOUT_MS = CONST.BOOT_SPLASH_FORCE_HIDE_TIMEOUT_MS;
 
+// Floor for how long the splash stays up, so a fast boot can't flash it for a
+// couple of frames. See CONST for the rationale.
+const MIN_VISIBLE_DURATION_MS = CONST.BOOT_SPLASH_MIN_VISIBLE_DURATION_MS;
+
+// Captured once when this module is first evaluated, which happens during the
+// initial bundle load — the closest JS-side proxy for "splash became visible".
+// It's a slight underestimate (the native splash is already up before JS runs),
+// which only ever makes the enforced minimum more conservative, never less.
+const SPLASH_VISIBLE_SINCE = Date.now();
+
 // Storyboard asset is 108pt (108/216/324 at 1×/2×/3×). The JS overlay
 // renders the logo at the same size so the native → JS handoff is seamless.
 const LOGO_SIZE = 108;
@@ -72,16 +82,12 @@ function SplashScreenHider({
 
   const hideHasBeenCalled = useRef(false);
 
-  const hide = useCallback(() => {
-    if (hideHasBeenCalled.current) {
-      return;
-    }
-
-    hideHasBeenCalled.current = true;
-
-    // The unchanged shrink-out: logo scales to nothing while the overlay fades.
-    // Every non-handoff path lands here, and it never depends on the logo slot,
-    // so it can't be stranded waiting for a target that never arrives.
+  // The actual hide sequence. Split out from hide() so the minimum-visible
+  // gate can defer the whole thing (native dissolve and all) on a fast boot.
+  const runHide = useCallback(() => {
+    // The shrink-out: logo scales to nothing while the overlay fades. Every
+    // non-handoff path lands here, and it never depends on the logo slot, so it
+    // can't be stranded waiting for a target that never arrives.
     const shrinkOut = () => {
       Animated.parallel([
         Animated.timing(scale, {
@@ -200,6 +206,25 @@ function SplashScreenHider({
     logoHandoffTargetRef,
     setIsLogoHandoffActive,
   ]);
+
+  const hide = useCallback(() => {
+    if (hideHasBeenCalled.current) {
+      return;
+    }
+    hideHasBeenCalled.current = true;
+
+    // Enforce a minimum on-screen duration: if the splash has been up for less
+    // than the floor when it's ready to hide, defer the hide for the remainder
+    // so a fast boot reads as an intentional beat rather than a flicker. The
+    // 15s force-hide net sits far above this, so the two never collide.
+    const remainingMs =
+      MIN_VISIBLE_DURATION_MS - (Date.now() - SPLASH_VISIBLE_SINCE);
+    if (remainingMs > 0) {
+      setTimeout(runHide, remainingMs);
+    } else {
+      runHide();
+    }
+  }, [runHide]);
 
   useEffect(() => {
     if (!shouldHideSplash) {
