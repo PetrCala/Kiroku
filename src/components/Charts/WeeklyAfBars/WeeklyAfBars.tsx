@@ -85,6 +85,7 @@ function WeeklyAfBars({
       accessibilityLabel={accessibilityLabel}
       emptyLabel={emptyLabel}
       height={height}
+      domainY={[0, DAYS_PER_WEEK]}
       axis={{
         font: axisFont,
         tickValues: {x: dateTicks.indices, y: yTicks},

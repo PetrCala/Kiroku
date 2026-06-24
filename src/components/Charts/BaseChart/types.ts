@@ -82,6 +82,13 @@ type BaseChartProps<TYKey extends string = 'y'> = {
   /** Optional axis customization. When omitted, axis behavior is unchanged. */
   axis?: ChartAxisOptions;
   /**
+   * Pin the y-axis to a fixed `[min, max]` instead of letting victory derive
+   * `[0, dataMax]` from the data. Use for charts whose axis carries meaning
+   * independent of the data range (e.g. days out of 7). When omitted, the
+   * domain auto-fits the data as before.
+   */
+  domainY?: [number, number];
+  /**
    * When true, short-circuits to a layout-faithful skeleton matching
    * `height` instead of rendering the Skia canvas. Used during the
    * Statistics first-paint window so the tab transition stays on a single

@@ -42,6 +42,7 @@ function BaseChart<TYKey extends string = 'y'>({
   height = DEFAULT_HEIGHT,
   hideAxes = false,
   axis,
+  domainY,
   loading = false,
   children,
 }: BaseChartProps<TYKey>) {
@@ -132,7 +133,8 @@ function BaseChart<TYKey extends string = 'y'>({
           xKey="x"
           yKeys={castedYKeys as never}
           axisOptions={axisOptions}
-          domainPadding={domainPadding}>
+          domainPadding={domainPadding}
+          domain={domainY ? {y: domainY} : undefined}>
           {ctx =>
             children?.({...ctx, theme} as unknown as ChartRenderCtx<TYKey>)
           }
