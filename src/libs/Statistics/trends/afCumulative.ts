@@ -6,6 +6,15 @@ type AfCumulativePoint = {
   count: number;
 };
 
+type AfCumulativeSummary = {
+  /** Alcohol-free days in the window (the final cumulative count). */
+  afDays: number;
+  /** Total elapsed days in the window. */
+  totalDays: number;
+  /** Alcohol-free share of the window, 0–100, rounded to a whole percent. */
+  ratePct: number;
+};
+
 /**
  * Cumulative alcohol-free-days series over the inclusive window
  * `[start, end]`. The counter accumulates across the entire window and never
@@ -51,5 +60,21 @@ function buildAfCumulativeSeries(
   return out;
 }
 
+/**
+ * Collapse a cumulative AF-days series into headline numbers for the chart
+ * caption: how many of the window's days were alcohol-free, and what share
+ * that is. The final point already holds the running total, so this is an O(1)
+ * read of the tail rather than a re-scan. An empty series reports all zeros.
+ */
+function summarizeAfCumulative(
+  points: AfCumulativePoint[],
+): AfCumulativeSummary {
+  const totalDays = points.length;
+  const afDays = totalDays > 0 ? points[totalDays - 1].count : 0;
+  const ratePct = totalDays > 0 ? Math.round((afDays / totalDays) * 100) : 0;
+  return {afDays, totalDays, ratePct};
+}
+
 export default buildAfCumulativeSeries;
-export type {AfCumulativePoint};
+export {summarizeAfCumulative};
+export type {AfCumulativePoint, AfCumulativeSummary};

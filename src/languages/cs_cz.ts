@@ -36,6 +36,7 @@ import type {
   UpdateEmailSentEmailParams,
   VerifyEmailScreenEmailParmas,
   WeekOfParams,
+  AfCumulativeSummaryParams,
 } from './params';
 
 export default {
@@ -1186,6 +1187,9 @@ export default {
         cumulativeAf: {
           title: 'Dny bez alkoholu v čase',
           emptyLabel: 'Každý den bez alkoholu se počítá.',
+          idealLegend: 'Kdyby byl každý den bez alkoholu',
+          summary: ({afDays, totalDays, ratePct}: AfCumulativeSummaryParams) =>
+            `Bez alkoholu ${afDays} z ${totalDays} dní (${ratePct} %).`,
         },
         drinkTypeStack: {
           title: 'Mix drinků v čase',

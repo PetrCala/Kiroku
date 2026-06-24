@@ -6,8 +6,12 @@ import {
   buildWeeklyStackedSeries,
   buildWeeklyUnits,
   shiftRange,
+  summarizeAfCumulative,
 } from '@libs/Statistics/trends';
-import type {AfCumulativePoint} from '@libs/Statistics/trends';
+import type {
+  AfCumulativePoint,
+  AfCumulativeSummary,
+} from '@libs/Statistics/trends';
 import useStatsContext from '@hooks/useStatsContext';
 import CONST from '@src/CONST';
 import type {DrinkKey} from '@src/types/onyx/Drinks';
@@ -36,6 +40,7 @@ type TrendsTabData = {
   afCumulative: {
     points: AfCumulativePoint[];
     comparisonPoints?: AfCumulativePoint[];
+    summary: AfCumulativeSummary;
     hidden: boolean;
   };
   stack: Stack;
@@ -125,9 +130,14 @@ function useTrendsTabData(): TrendsTabData {
   const afCumulative = useMemo(() => {
     const hidden = range.preset === 'W';
     if (hidden) {
-      return {points: [] as AfCumulativePoint[], hidden};
+      return {
+        points: [] as AfCumulativePoint[],
+        summary: {afDays: 0, totalDays: 0, ratePct: 0},
+        hidden,
+      };
     }
     const points = buildAfCumulativeSeries(events, range.start, range.end);
+    const summary = summarizeAfCumulative(points);
     let comparisonPoints: AfCumulativePoint[] | undefined;
     if (comparisonRange) {
       const raw = buildAfCumulativeSeries(
@@ -152,7 +162,7 @@ function useTrendsTabData(): TrendsTabData {
         comparisonPoints = [...pad, ...raw];
       }
     }
-    return {points, comparisonPoints, hidden};
+    return {points, comparisonPoints, summary, hidden};
   }, [events, range.start, range.end, range.preset, comparisonRange]);
 
   // Drink-type stacked area.

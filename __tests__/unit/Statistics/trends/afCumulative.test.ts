@@ -2,7 +2,9 @@
  * @jest-environment node
  */
 
-import buildAfCumulativeSeries from '@libs/Statistics/trends/afCumulative';
+import buildAfCumulativeSeries, {
+  summarizeAfCumulative,
+} from '@libs/Statistics/trends/afCumulative';
 import type {DrinkEvent} from '@libs/Statistics';
 
 function event(localDay: string): DrinkEvent {
@@ -74,5 +76,39 @@ describe('buildAfCumulativeSeries', () => {
       '2026-01-01',
       '2026-01-02',
     ]);
+  });
+});
+
+describe('summarizeAfCumulative', () => {
+  test('reports all zeros for an empty series', () => {
+    expect(summarizeAfCumulative([])).toEqual({
+      afDays: 0,
+      totalDays: 0,
+      ratePct: 0,
+    });
+  });
+
+  test('reads AF-days off the final point and computes the rate', () => {
+    const series = buildAfCumulativeSeries(
+      [event('2026-05-02'), event('2026-05-03')],
+      new Date('2026-05-01T00:00:00.000Z'),
+      new Date('2026-05-04T00:00:00.000Z'),
+    );
+    // 4 days in the window, 2 with drinks -> 2 alcohol-free days (50%).
+    expect(summarizeAfCumulative(series)).toEqual({
+      afDays: 2,
+      totalDays: 4,
+      ratePct: 50,
+    });
+  });
+
+  test('rounds the percentage to a whole number', () => {
+    const series = buildAfCumulativeSeries(
+      [event('2026-05-01')],
+      new Date('2026-05-01T00:00:00.000Z'),
+      new Date('2026-05-03T00:00:00.000Z'),
+    );
+    // 2 alcohol-free of 3 days -> 66.67% -> 67%.
+    expect(summarizeAfCumulative(series).ratePct).toBe(67);
   });
 });

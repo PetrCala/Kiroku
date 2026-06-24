@@ -36,6 +36,7 @@ import type {
   UpdateEmailSentEmailParams,
   VerifyEmailScreenEmailParmas,
   WeekOfParams,
+  AfCumulativeSummaryParams,
 } from './params';
 
 export default {
@@ -1180,6 +1181,9 @@ export default {
         cumulativeAf: {
           title: 'Alcohol-free days over time',
           emptyLabel: 'Every alcohol-free day adds up.',
+          idealLegend: 'If every day were alcohol-free',
+          summary: ({afDays, totalDays, ratePct}: AfCumulativeSummaryParams) =>
+            `Alcohol-free ${afDays} of ${totalDays} days (${ratePct}%).`,
         },
         drinkTypeStack: {
           title: 'Drink mix over time',

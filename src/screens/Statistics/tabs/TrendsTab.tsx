@@ -85,15 +85,29 @@ function TrendsTab() {
           <ChartCard
             title={translate('statistics.tabs.trends.cumulativeAf.title')}
             footer={
-              afCumulative.comparisonPoints ? (
+              <View style={{rowGap: 4}}>
+                {afCumulative.summary.totalDays > 0 ? (
+                  <Text style={themeStyles.textMicroSupporting}>
+                    {translate(
+                      'statistics.tabs.trends.cumulativeAf.summary',
+                      afCumulative.summary,
+                    )}
+                  </Text>
+                ) : null}
                 <Text style={themeStyles.textMicroSupporting}>
-                  {comparisonLegend}
+                  {translate('statistics.tabs.trends.cumulativeAf.idealLegend')}
                 </Text>
-              ) : undefined
+                {afCumulative.comparisonPoints ? (
+                  <Text style={themeStyles.textMicroSupporting}>
+                    {comparisonLegend}
+                  </Text>
+                ) : null}
+              </View>
             }>
             <CumulativeLine
               points={afCumulative.points}
               comparisonPoints={afCumulative.comparisonPoints}
+              showIdeal
               emptyLabel={translate(
                 'statistics.tabs.trends.cumulativeAf.emptyLabel',
               )}
