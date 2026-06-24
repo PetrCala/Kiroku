@@ -1,9 +1,9 @@
 import React, {useMemo} from 'react';
 import {StyleSheet, View} from 'react-native';
 import {ChartCard} from '@components/Charts/ChartCard';
-import {CumulativeLine} from '@components/Charts/CumulativeLine';
 import {StackedArea} from '@components/Charts/StackedArea';
 import {TrendLine, WeeklyTrendLegend} from '@components/Charts/TrendLine';
+import {WeeklyAfBars} from '@components/Charts/WeeklyAfBars';
 import ScrollView from '@components/ScrollView';
 import StatsFilterToolbar from '@components/Statistics/StatsFilterToolbar';
 import Text from '@components/Text';
@@ -33,7 +33,7 @@ const CAPTION_KEYS: Record<string, TranslationPaths> = {
 function TrendsTab() {
   const {translate} = useLocalize();
   const themeStyles = useThemeStyles();
-  const {hero, afCumulative, stack, isLoading} = useTrendsTabData();
+  const {hero, weeklyAf, stack, isLoading} = useTrendsTabData();
   const {openDrillDown} = useStatsDrillDown();
 
   const heroComparisonShown = !!hero.comparison;
@@ -81,24 +81,35 @@ function TrendsTab() {
           />
         </ChartCard>
 
-        {afCumulative.hidden ? null : (
+        {weeklyAf.hidden ? null : (
           <ChartCard
-            title={translate('statistics.tabs.trends.cumulativeAf.title')}
+            title={translate('statistics.tabs.trends.weeklyAf.title')}
             footer={
-              afCumulative.comparisonPoints ? (
-                <Text style={themeStyles.textMicroSupporting}>
-                  {comparisonLegend}
-                </Text>
-              ) : undefined
+              <View style={{rowGap: 4}}>
+                {weeklyAf.summary.totalDays > 0 ? (
+                  <Text style={themeStyles.textMicroSupporting}>
+                    {translate(
+                      'statistics.tabs.trends.weeklyAf.summary',
+                      weeklyAf.summary,
+                    )}
+                  </Text>
+                ) : null}
+                {weeklyAf.comparison ? (
+                  <Text style={themeStyles.textMicroSupporting}>
+                    {comparisonLegend}
+                  </Text>
+                ) : null}
+              </View>
             }>
-            <CumulativeLine
-              points={afCumulative.points}
-              comparisonPoints={afCumulative.comparisonPoints}
+            <WeeklyAfBars
+              weeks={weeklyAf.weeks}
+              afDays={weeklyAf.afDays}
+              comparison={weeklyAf.comparison}
               emptyLabel={translate(
-                'statistics.tabs.trends.cumulativeAf.emptyLabel',
+                'statistics.tabs.trends.weeklyAf.emptyLabel',
               )}
               accessibilityLabel={translate(
-                'statistics.tabs.trends.cumulativeAf.title',
+                'statistics.tabs.trends.weeklyAf.title',
               )}
               isLoading={isLoading}
             />

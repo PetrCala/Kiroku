@@ -2,6 +2,11 @@ export {default as buildAfCumulativeSeries} from './afCumulative';
 export type {AfCumulativePoint} from './afCumulative';
 export {default as buildWeeklyUnits} from './weeklyUnits';
 export type {WeeklyUnitsPoint} from './weeklyUnits';
+export {
+  default as buildWeeklyAfDays,
+  summarizeWeeklyAfDays,
+} from './weeklyAfDays';
+export type {WeeklyAfDaysPoint, WeeklyAfDaysSummary} from './weeklyAfDays';
 export {default as buildWeeklyStackedSeries} from './weeklyStacked';
 export type {StackedWeek} from './weeklyStacked';
 export {default as percentileBand} from './percentileBand';

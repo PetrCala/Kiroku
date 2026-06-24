@@ -71,6 +71,12 @@ type WeekOfParams = {
   date: string;
 };
 
+type WeeklyAfDaysSummaryParams = {
+  afDays: number;
+  totalDays: number;
+  ratePct: number;
+};
+
 type UnitCountParams = {
   unitCount: number;
 };
@@ -148,6 +154,7 @@ export type {
   StatsDrillDownTitleParams,
   StatsThresholdParams,
   WeekOfParams,
+  WeeklyAfDaysSummaryParams,
   SupporterCancelledStatusParams,
   SupporterPriceParams,
   SupporterPurchaseCtaParams,

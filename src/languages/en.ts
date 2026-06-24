@@ -36,6 +36,7 @@ import type {
   UpdateEmailSentEmailParams,
   VerifyEmailScreenEmailParmas,
   WeekOfParams,
+  WeeklyAfDaysSummaryParams,
 } from './params';
 
 export default {
@@ -1177,9 +1178,11 @@ export default {
               'Keep logging. Your trend will surface as data builds.',
           },
         },
-        cumulativeAf: {
-          title: 'Alcohol-free days over time',
-          emptyLabel: 'Every alcohol-free day adds up.',
+        weeklyAf: {
+          title: 'Alcohol-free days each week',
+          emptyLabel: 'Your alcohol-free weeks will show as data builds.',
+          summary: ({afDays, totalDays, ratePct}: WeeklyAfDaysSummaryParams) =>
+            `Alcohol-free ${afDays} of ${totalDays} days (${ratePct}%).`,
         },
         drinkTypeStack: {
           title: 'Drink mix over time',

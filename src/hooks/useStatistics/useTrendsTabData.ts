@@ -2,12 +2,13 @@ import {useMemo} from 'react';
 import {DRINK_KEY_COLORS} from '@libs/Statistics/drinkKeyMeta';
 import {ewma, mannKendall} from '@libs/Statistics/stats';
 import {
-  buildAfCumulativeSeries,
+  buildWeeklyAfDays,
   buildWeeklyStackedSeries,
   buildWeeklyUnits,
   shiftRange,
+  summarizeWeeklyAfDays,
 } from '@libs/Statistics/trends';
-import type {AfCumulativePoint} from '@libs/Statistics/trends';
+import type {WeeklyAfDaysSummary} from '@libs/Statistics/trends';
 import useStatsContext from '@hooks/useStatsContext';
 import CONST from '@src/CONST';
 import type {DrinkKey} from '@src/types/onyx/Drinks';
@@ -31,13 +32,17 @@ type Stack = {
   comparisonTotal?: number[];
 };
 
+type WeeklyAf = {
+  weeks: string[];
+  afDays: number[];
+  comparison?: number[];
+  summary: WeeklyAfDaysSummary;
+  hidden: boolean;
+};
+
 type TrendsTabData = {
   hero: Hero;
-  afCumulative: {
-    points: AfCumulativePoint[];
-    comparisonPoints?: AfCumulativePoint[];
-    hidden: boolean;
-  };
+  weeklyAf: WeeklyAf;
   stack: Stack;
   isLoading: boolean;
 };
@@ -52,8 +57,8 @@ const ALL_DRINK_KEYS: readonly DrinkKey[] = Object.values(CONST.DRINKS.KEYS);
  * once, then derives:
  *
  *   - Hero weekly-units series (raw + EWMA + band + Mann–Kendall caption).
- *   - Cumulative AF-days series over the range (and its comparison twin when
- *     enabled).
+ *   - Weekly alcohol-free-days series over the range (and its comparison twin
+ *     when enabled).
  *   - Per-DrinkKey weekly stack (respecting the active `drinkTypeFilter`).
  *
  * All series are zero-filled and index-aligned with their comparison
@@ -121,38 +126,46 @@ function useTrendsTabData(): TrendsTabData {
     };
   }, [events, range.start, range.end, comparisonRange]);
 
-  // Cumulative AF-days.
-  const afCumulative = useMemo(() => {
+  // Weekly alcohol-free days.
+  const weeklyAf = useMemo<WeeklyAf>(() => {
+    // A single week of bars is trivial; keep this chart for the longer presets.
     const hidden = range.preset === 'W';
     if (hidden) {
-      return {points: [] as AfCumulativePoint[], hidden};
+      return {
+        weeks: [],
+        afDays: [],
+        summary: {afDays: 0, totalDays: 0, ratePct: 0},
+        hidden,
+      };
     }
-    const points = buildAfCumulativeSeries(events, range.start, range.end);
-    let comparisonPoints: AfCumulativePoint[] | undefined;
+
+    const points = buildWeeklyAfDays(events, range.start, range.end);
+    const weeks = points.map(p => p.isoWeek);
+    const afDays = points.map(p => p.afDays);
+    const summary = summarizeWeeklyAfDays(points);
+
+    let comparisonAf: number[] | undefined;
     if (comparisonRange) {
-      const raw = buildAfCumulativeSeries(
+      const raw = buildWeeklyAfDays(
         events,
         comparisonRange.start,
         comparisonRange.end,
-      );
-      // Pad to match `points.length` so the chart layer can index in lock-
-      // step. Drop oldest or pad with the leading count, mirroring the hero
-      // alignment policy.
-      if (raw.length === points.length) {
-        comparisonPoints = raw;
-      } else if (raw.length > points.length) {
-        comparisonPoints = raw.slice(raw.length - points.length);
-      } else if (raw.length > 0) {
-        const padCount = points.length - raw.length;
-        const head = raw[0];
-        const pad: AfCumulativePoint[] = Array.from(
-          {length: padCount},
-          () => head,
-        );
-        comparisonPoints = [...pad, ...raw];
+      ).map(p => p.afDays);
+      // Pad / trim to match weeks.length so the chart can index by position,
+      // mirroring the hero alignment policy.
+      if (raw.length === weeks.length) {
+        comparisonAf = raw;
+      } else if (raw.length > weeks.length) {
+        comparisonAf = raw.slice(raw.length - weeks.length);
+      } else {
+        comparisonAf = [
+          ...new Array<number>(weeks.length - raw.length).fill(0),
+          ...raw,
+        ];
       }
     }
-    return {points, comparisonPoints, hidden};
+
+    return {weeks, afDays, comparison: comparisonAf, summary, hidden};
   }, [events, range.start, range.end, range.preset, comparisonRange]);
 
   // Drink-type stacked area.
@@ -217,8 +230,8 @@ function useTrendsTabData(): TrendsTabData {
     };
   }, [events, range.start, range.end, drinkTypeFilter, comparisonRange]);
 
-  return {hero, afCumulative, stack, isLoading};
+  return {hero, weeklyAf, stack, isLoading};
 }
 
 export default useTrendsTabData;
-export type {CaptionKey, Hero, Stack, TrendsTabData};
+export type {CaptionKey, Hero, Stack, TrendsTabData, WeeklyAf};
