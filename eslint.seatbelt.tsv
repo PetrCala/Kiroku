@@ -923,8 +923,6 @@
 "src/screens/Settings/SettingsScreen.tsx"	"arrow-body-style"	3
 "src/screens/SignUp/AuthScreen.tsx"	"react/jsx-no-leaked-render"	1
 "src/screens/SignUp/SignUpScreenLayout/index.tsx"	"rulesdir/prefer-narrow-hook-dependencies"	1
-"src/screens/Social/FriendListScreen.tsx"	"react-hooks/set-state-in-effect"	1
-"src/screens/Social/FriendListScreen.tsx"	"rulesdir/prefer-narrow-hook-dependencies"	1
 "src/screens/Social/FriendRequestScreen.tsx"	"@typescript-eslint/switch-exhaustiveness-check"	1
 "src/screens/Social/FriendRequestScreen.tsx"	"react-hooks/set-state-in-effect"	2
 "src/screens/Social/FriendSearchScreen.tsx"	"react-hooks/set-state-in-render"	2
