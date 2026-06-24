@@ -13,7 +13,6 @@ import useLocalize from '@hooks/useLocalize';
 import useOverviewTabData from '@hooks/useStatistics/useOverviewTabData';
 import useTheme from '@hooks/useTheme';
 import useThemeStyles from '@hooks/useThemeStyles';
-import type {ChartDatum} from '@libs/Statistics';
 
 type DeltaShape = NonNullable<KpiCardProps['delta']>;
 
@@ -25,9 +24,16 @@ function formatUnits(value: number): string {
 /**
  * Total-alcohol scorecard for the selected range. Reads the shared range +
  * comparison from the toolbar and tells a period story top-to-bottom:
- * verdict (units) → wins (restraint) → load (consumption) → risk (threshold
- * days) → texture (shape + intensity mix). Every tile carries a
- * previous-period delta when a comparison is active.
+ * verdict (units) → day mix (how the days split) → wins (restraint) → load
+ * (consumption) → risk (threshold days) → shape (units by period).
+ *
+ * The hero's old inline sparkline (an axis-less curve with no labels that
+ * collapsed to a few points at any range) is replaced as the at-a-glance
+ * visual by the day-intensity distribution bar, promoted to sit right under
+ * the headline number. The segmented bar is labeled and readable: it answers
+ * "how were my days?" instantly — alcohol-free vs light vs moderate vs heavy.
+ * The labeled "Units by period" bar chart still closes the tab with the
+ * consumption shape.
  */
 function OverviewTab() {
   const {translate} = useLocalize();
@@ -85,11 +91,6 @@ function OverviewTab() {
     }
     return {value: diff, direction, label: vsPrevious};
   };
-
-  const sparkline: ChartDatum[] = subPeriods.map(point => ({
-    x: point.label,
-    y: point.units,
-  }));
 
   const winsCards: KpiCardProps[] = [
     {
@@ -234,13 +235,25 @@ function OverviewTab() {
             value={formatUnits(current.totalUnits)}
             unit={translate('statistics.tabs.overview.hero.unit')}
             delta={makeDelta(current.totalUnits, previous?.totalUnits ?? 0)}
-            sparkline={sparkline}
             polarity="lower-is-supportive"
             isLoading={isLoading}
           />
         </View>
 
-        <View style={styles.mb3}>
+        <ChartCard
+          title={translate(
+            'statistics.tabs.overview.texture.distribution.title',
+          )}>
+          <DistributionBar
+            segments={distribution}
+            accessibilityLabel={translate(
+              'statistics.tabs.overview.texture.distribution.a11y',
+            )}
+            isLoading={isLoading}
+          />
+        </ChartCard>
+
+        <View style={[styles.mb3, styles.mt2]}>
           {sectionLabel('statistics.tabs.overview.sections.highlights')}
           <KpiCardGroup cards={winsCards} isLoading={isLoading} />
         </View>
@@ -262,19 +275,6 @@ function OverviewTab() {
             granularity={granularity}
             accessibilityLabel={translate(
               'statistics.tabs.overview.texture.series.a11y',
-            )}
-            isLoading={isLoading}
-          />
-        </ChartCard>
-
-        <ChartCard
-          title={translate(
-            'statistics.tabs.overview.texture.distribution.title',
-          )}>
-          <DistributionBar
-            segments={distribution}
-            accessibilityLabel={translate(
-              'statistics.tabs.overview.texture.distribution.a11y',
             )}
             isLoading={isLoading}
           />
