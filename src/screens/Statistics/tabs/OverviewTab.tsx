@@ -5,7 +5,6 @@ import {DistributionBar} from '@components/Charts/DistributionBar';
 import type {DistributionSegment} from '@components/Charts/DistributionBar';
 import {KpiCard, KpiCardGroup} from '@components/Charts/KpiCard';
 import type {KpiCardProps} from '@components/Charts/KpiCard';
-import {PeriodBarList} from '@components/Charts/PeriodBarList';
 import ScrollView from '@components/ScrollView';
 import StatsFilterToolbar from '@components/Statistics/StatsFilterToolbar';
 import Text from '@components/Text';
@@ -13,7 +12,6 @@ import useLocalize from '@hooks/useLocalize';
 import useOverviewTabData from '@hooks/useStatistics/useOverviewTabData';
 import useTheme from '@hooks/useTheme';
 import useThemeStyles from '@hooks/useThemeStyles';
-import type {ChartDatum} from '@libs/Statistics';
 
 type DeltaShape = NonNullable<KpiCardProps['delta']>;
 
@@ -26,23 +24,22 @@ function formatUnits(value: number): string {
  * Total-alcohol scorecard for the selected range. Reads the shared range +
  * comparison from the toolbar and tells a period story top-to-bottom:
  * verdict (units) → wins (restraint) → load (consumption) → risk (threshold
- * days) → texture (shape + intensity mix). Every tile carries a
- * previous-period delta when a comparison is active.
+ * days) → texture (intensity mix). Every tile carries a previous-period delta
+ * when a comparison is active.
+ *
+ * This is the lean, glanceable version: the Overview tab is a pure number
+ * scorecard. The old hero sparkline (an axis-less curve with no labels) and
+ * the per-period "Units by period" bar chart are both gone. Trajectory and
+ * shape already have a richer home on the Trends tab, so Overview stays the
+ * fast "where do I stand right now" read — headline number, three tile rows,
+ * and one compact day-intensity bar to close.
  */
 function OverviewTab() {
   const {translate} = useLocalize();
   const styles = useThemeStyles();
   const theme = useTheme();
-  const {
-    isLoading,
-    hasEverLogged,
-    isSparse,
-    thresholds,
-    current,
-    previous,
-    subPeriods,
-    granularity,
-  } = useOverviewTabData();
+  const {isLoading, hasEverLogged, isSparse, thresholds, current, previous} =
+    useOverviewTabData();
 
   // Skip the never-logged copy while loading — the tiles render skeletons.
   if (!isLoading && !hasEverLogged) {
@@ -85,11 +82,6 @@ function OverviewTab() {
     }
     return {value: diff, direction, label: vsPrevious};
   };
-
-  const sparkline: ChartDatum[] = subPeriods.map(point => ({
-    x: point.label,
-    y: point.units,
-  }));
 
   const winsCards: KpiCardProps[] = [
     {
@@ -234,7 +226,6 @@ function OverviewTab() {
             value={formatUnits(current.totalUnits)}
             unit={translate('statistics.tabs.overview.hero.unit')}
             delta={makeDelta(current.totalUnits, previous?.totalUnits ?? 0)}
-            sparkline={sparkline}
             polarity="lower-is-supportive"
             isLoading={isLoading}
           />
@@ -254,18 +245,6 @@ function OverviewTab() {
           {sectionLabel('statistics.tabs.overview.sections.heavyDays')}
           <KpiCardGroup cards={riskCards} isLoading={isLoading} />
         </View>
-
-        <ChartCard
-          title={translate('statistics.tabs.overview.texture.series.title')}>
-          <PeriodBarList
-            points={subPeriods}
-            granularity={granularity}
-            accessibilityLabel={translate(
-              'statistics.tabs.overview.texture.series.a11y',
-            )}
-            isLoading={isLoading}
-          />
-        </ChartCard>
 
         <ChartCard
           title={translate(
