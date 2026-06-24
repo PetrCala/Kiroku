@@ -2,7 +2,7 @@ import {View} from 'react-native';
 import {useOnyx} from 'react-native-onyx';
 import SearchWindow from '@components/Social/SearchWindow';
 import type {UserIDToNicknameMapping} from '@src/types/various/Search';
-import React, {useCallback, useEffect, useMemo, useState} from 'react';
+import React, {useCallback, useState} from 'react';
 import {objKeys} from '@libs/DataHandling';
 import {getNicknameMapping, searchArrayByText} from '@libs/Search';
 import {filterBlockedUsers} from '@libs/BlockUtils';
@@ -16,6 +16,7 @@ import NoFriendInfo from '@components/Social/NoFriendInfo';
 import useLocalize from '@hooks/useLocalize';
 import useThemeStyles from '@hooks/useThemeStyles';
 import useNetwork from '@hooks/useNetwork';
+import {isEmptyObject} from '@src/types/utils/EmptyObject';
 import ONYXKEYS from '@src/ONYXKEYS';
 import ERRORS from '@src/ERRORS';
 
@@ -25,24 +26,43 @@ function FriendListScreen() {
   const styles = useThemeStyles();
   const {isOffline} = useNetwork();
   const [isLoadingApp] = useOnyx(ONYXKEYS.IS_LOADING_APP);
-  const [friends, setFriends] = useState<UserArray>([]);
-  const [friendsToDisplay, setFriendsToDisplay] = useState<UserArray>([]);
-  const [userHasFriends, setUserHasFriends] = useState<boolean>(false);
+
+  // Derive the friend set straight from the signed-in user's own record. Doing
+  // this at render time (rather than copying it into state via a useEffect)
+  // keeps the list, its empty/loading gates, and the record in lockstep: a
+  // useEffect copy lags `userData` by a render, and that one-frame gap is part
+  // of the window where a "No friends" flash slips through on a cold load.
+  // Left unmemoized on purpose — the React Compiler handles it (CLEAN-REACT-0).
+  const friends = filterBlockedUsers(
+    objKeys(userData?.friends),
+    userData?.blocked,
+  );
+  const userHasFriends = friends.length > 0;
+
   const {
     profileList,
     userStatusList,
     isLoading: isLoadingFriends,
   } = useFriendsData(friends);
-  const [isSearching, setIsSearching] = useState<boolean>(false);
 
-  // `friends` is empty until app/open delivers the friend list (or a warm cache
-  // hydrates). `IS_LOADING_APP === false` marks that bootstrap as settled, but it
-  // only flips in app/open's finallyData, which is deferred while offline, so it
-  // stays `true` offline. Online with nothing yet: keep the list loading so the
-  // first-boot "no friends" flash never shows. Offline with nothing cached:
-  // bootstrap can't settle, so show an offline notice rather than spinning
-  // forever or falsely claiming the user has no friends.
-  const isBootstrapPending = isLoadingApp !== false && friends.length === 0;
+  // `null` means no active search; otherwise the narrowed subset to display.
+  const [searchResults, setSearchResults] = useState<UserArray | null>(null);
+  const [isSearching, setIsSearching] = useState<boolean>(false);
+  const friendsToDisplay = searchResults ?? friends;
+
+  // Stay in the cold-load state until BOTH the OpenApp bootstrap has settled
+  // (`IS_LOADING_APP === false`, set in app/open's finallyData) AND the
+  // signed-in user's own record has hydrated into `USER_DATA_LIST`. The
+  // bootstrap flag alone is insufficient: it is a tiny merge that can commit a
+  // beat before the large user record lands (the two commit independently
+  // inside one Onyx batch), and in that gap an already-friended user would
+  // momentarily read as having no friends. `IS_LOADING_APP` stays `true` while
+  // offline (its finallyData is deferred), so once nothing is cached and we are
+  // offline, surface an offline notice rather than spinning forever or falsely
+  // claiming the user has no friends.
+  const isUserRecordLoaded = !isEmptyObject(userData);
+  const isBootstrapPending =
+    (isLoadingApp !== false || !isUserRecordLoaded) && !userHasFriends;
   const isInitialFriendsLoad = isBootstrapPending && !isOffline;
   const isFriendsUnavailableOffline = isBootstrapPending && isOffline;
 
@@ -59,7 +79,7 @@ function FriendListScreen() {
           searchText,
           searchMapping,
         );
-        setFriendsToDisplay(relevantResults); // Hide irrelevant
+        setSearchResults(relevantResults); // Hide irrelevant
       } catch (error) {
         ErrorUtils.raiseAppError(ERRORS.DATABASE.SEARCH_FAILED, error);
       } finally {
@@ -70,44 +90,25 @@ function FriendListScreen() {
   );
 
   const resetSearch = () => {
-    setFriendsToDisplay(friends);
+    setSearchResults(null);
   };
 
-  const emptyListComponent = useMemo(() => {
-    if (isFriendsUnavailableOffline) {
-      return (
-        <Text style={styles.noResultsText}>
-          {translate('friendListScreen.offlineNoData')}
-        </Text>
-      );
-    }
-    if (!userHasFriends) {
-      return <NoFriendInfo />;
-    }
-    return (
+  let emptyListComponent: React.JSX.Element;
+  if (isFriendsUnavailableOffline) {
+    emptyListComponent = (
+      <Text style={styles.noResultsText}>
+        {translate('friendListScreen.offlineNoData')}
+      </Text>
+    );
+  } else if (!userHasFriends) {
+    emptyListComponent = <NoFriendInfo />;
+  } else {
+    emptyListComponent = (
       <Text style={styles.noResultsText}>
         {`${translate('userList.noFriendsFound')}\n\n${translate('userList.tryModifyingSearch')}`}
       </Text>
     );
-  }, [
-    isFriendsUnavailableOffline,
-    userHasFriends,
-    styles.noResultsText,
-    translate,
-  ]);
-
-  useEffect(() => {
-    // Consumption filter (#760): a block severs the friendship server-side, so
-    // a blocked user normally won't be in `friends` at all. Filter on the
-    // signed-in user's own block list anyway to cover any cached/edge case.
-    const friendsArray = filterBlockedUsers(
-      objKeys(userData?.friends),
-      userData?.blocked,
-    );
-    setFriends(friendsArray);
-    setFriendsToDisplay(friendsArray);
-    setUserHasFriends(friendsArray.length > 0);
-  }, [userData]);
+  }
 
   return (
     <View style={styles.flex1}>
