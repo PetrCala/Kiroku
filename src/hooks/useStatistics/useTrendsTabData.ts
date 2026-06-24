@@ -2,12 +2,13 @@ import {useMemo} from 'react';
 import {DRINK_KEY_COLORS} from '@libs/Statistics/drinkKeyMeta';
 import {ewma, mannKendall} from '@libs/Statistics/stats';
 import {
-  buildAfCumulativeSeries,
+  buildAfRateSeries,
   buildWeeklyStackedSeries,
   buildWeeklyUnits,
   shiftRange,
+  summarizeAfRate,
 } from '@libs/Statistics/trends';
-import type {AfCumulativePoint} from '@libs/Statistics/trends';
+import type {AfRatePoint, AfRateSummary} from '@libs/Statistics/trends';
 import useStatsContext from '@hooks/useStatsContext';
 import CONST from '@src/CONST';
 import type {DrinkKey} from '@src/types/onyx/Drinks';
@@ -31,13 +32,16 @@ type Stack = {
   comparisonTotal?: number[];
 };
 
+type AfRate = {
+  points: AfRatePoint[];
+  comparisonPoints?: AfRatePoint[];
+  summary: AfRateSummary;
+  hidden: boolean;
+};
+
 type TrendsTabData = {
   hero: Hero;
-  afCumulative: {
-    points: AfCumulativePoint[];
-    comparisonPoints?: AfCumulativePoint[];
-    hidden: boolean;
-  };
+  afRate: AfRate;
   stack: Stack;
   isLoading: boolean;
 };
@@ -52,8 +56,8 @@ const ALL_DRINK_KEYS: readonly DrinkKey[] = Object.values(CONST.DRINKS.KEYS);
  * once, then derives:
  *
  *   - Hero weekly-units series (raw + EWMA + band + Mann–Kendall caption).
- *   - Cumulative AF-days series over the range (and its comparison twin when
- *     enabled).
+ *   - Rolling alcohol-free-rate series over the range (and its comparison twin
+ *     when enabled).
  *   - Per-DrinkKey weekly stack (respecting the active `drinkTypeFilter`).
  *
  * All series are zero-filled and index-aligned with their comparison
@@ -121,22 +125,28 @@ function useTrendsTabData(): TrendsTabData {
     };
   }, [events, range.start, range.end, comparisonRange]);
 
-  // Cumulative AF-days.
-  const afCumulative = useMemo(() => {
+  // Rolling alcohol-free rate.
+  const afRate = useMemo<AfRate>(() => {
+    // The 30-day window is meaningless inside a single-week view; hide it.
     const hidden = range.preset === 'W';
     if (hidden) {
-      return {points: [] as AfCumulativePoint[], hidden};
+      return {
+        points: [] as AfRatePoint[],
+        summary: {currentRate: 0},
+        hidden,
+      };
     }
-    const points = buildAfCumulativeSeries(events, range.start, range.end);
-    let comparisonPoints: AfCumulativePoint[] | undefined;
+    const points = buildAfRateSeries(events, range.start, range.end);
+    const summary = summarizeAfRate(points);
+    let comparisonPoints: AfRatePoint[] | undefined;
     if (comparisonRange) {
-      const raw = buildAfCumulativeSeries(
+      const raw = buildAfRateSeries(
         events,
         comparisonRange.start,
         comparisonRange.end,
       );
       // Pad to match `points.length` so the chart layer can index in lock-
-      // step. Drop oldest or pad with the leading count, mirroring the hero
+      // step. Drop oldest or pad with the leading point, mirroring the hero
       // alignment policy.
       if (raw.length === points.length) {
         comparisonPoints = raw;
@@ -145,14 +155,11 @@ function useTrendsTabData(): TrendsTabData {
       } else if (raw.length > 0) {
         const padCount = points.length - raw.length;
         const head = raw[0];
-        const pad: AfCumulativePoint[] = Array.from(
-          {length: padCount},
-          () => head,
-        );
+        const pad: AfRatePoint[] = Array.from({length: padCount}, () => head);
         comparisonPoints = [...pad, ...raw];
       }
     }
-    return {points, comparisonPoints, hidden};
+    return {points, comparisonPoints, summary, hidden};
   }, [events, range.start, range.end, range.preset, comparisonRange]);
 
   // Drink-type stacked area.
@@ -217,8 +224,8 @@ function useTrendsTabData(): TrendsTabData {
     };
   }, [events, range.start, range.end, drinkTypeFilter, comparisonRange]);
 
-  return {hero, afCumulative, stack, isLoading};
+  return {hero, afRate, stack, isLoading};
 }
 
 export default useTrendsTabData;
-export type {CaptionKey, Hero, Stack, TrendsTabData};
+export type {AfRate, CaptionKey, Hero, Stack, TrendsTabData};
