@@ -118,6 +118,34 @@ function makeSessions(): UserDrinkingSessionsList {
   };
 }
 
+// Sessions spanning two calendar months for the `window` option: one inside a
+// May–June window, one in the prior January that the window must exclude.
+const TS_IN_WINDOW = Date.UTC(2025, 5, 12, 15, 0, 0); // 2025-06-12
+const TS_PRE_WINDOW = Date.UTC(2025, 0, 5, 10, 0, 0); // 2025-01-05
+
+function makeWindowSessions(): UserDrinkingSessionsList {
+  return {
+    u1: {
+      jun: {
+        start_time: TS_IN_WINDOW,
+        end_time: TS_IN_WINDOW + 60 * 60_000,
+        timezone: 'Africa/Abidjan',
+        drinks: {[TS_IN_WINDOW]: {beer: 2}},
+      },
+      jan: {
+        start_time: TS_PRE_WINDOW,
+        timezone: 'Africa/Abidjan',
+        drinks: {[TS_PRE_WINDOW]: {wine: 1}},
+      },
+    },
+  };
+}
+
+const WINDOW_MAY_JUNE = {
+  startMs: Date.UTC(2025, 4, 1),
+  endMs: Date.UTC(2025, 5, 30, 23, 59, 59, 999),
+};
+
 describe('useDrinkEvents', () => {
   let runAfterSpy: jest.SpyInstance;
 
@@ -293,5 +321,86 @@ describe('useDrinkEvents', () => {
     expect(passedSessions).toBe(sessions);
     expect(tz).toBe('Africa/Abidjan');
     expect(weekStart).toBe(1);
+  });
+
+  test('window option materialises only sessions whose start_time is in range', () => {
+    setOnyx(makeWindowSessions(), 'loaded');
+
+    const {result} = renderHook(() =>
+      useDrinkEvents(['u1'], {window: WINDOW_MAY_JUNE}),
+    );
+
+    const anchors = new Set(result.current.events.map(e => e.anchorTs));
+    expect(anchors.has(TS_IN_WINDOW)).toBe(true);
+    expect(anchors.has(TS_PRE_WINDOW)).toBe(false);
+    expect(result.current.events.every(e => e.anchorTs === TS_IN_WINDOW)).toBe(
+      true,
+    );
+  });
+
+  test('window option reports earliestStartMs from the full history, not the window', () => {
+    setOnyx(makeWindowSessions(), 'loaded');
+
+    const {result} = renderHook(() =>
+      useDrinkEvents(['u1'], {window: WINDOW_MAY_JUNE}),
+    );
+
+    // The January session is outside the window but is still the user's
+    // earliest — the comparison-baseline fallback must still see it.
+    expect(result.current.earliestStartMs).toBe(TS_PRE_WINDOW);
+  });
+
+  test('window option scopes the time-parts backfill to the windowed sessions', () => {
+    setOnyx(makeWindowSessions(), 'loaded');
+
+    renderHook(() => useDrinkEvents(['u1'], {window: WINDOW_MAY_JUNE}));
+
+    const backfill = jest.mocked(Statistics.backfillSessionTimeParts);
+    expect(backfill).toHaveBeenCalledTimes(1);
+    // Only the in-window session is backfilled — whole-history Intl stays off
+    // the launch path.
+    const passedSessions = backfill.mock.calls[0][1];
+    expect(Object.keys(passedSessions?.u1 ?? {})).toEqual(['jun']);
+  });
+
+  test('omitting the window leaves earliestStartMs undefined (full-stream path)', () => {
+    const {result} = renderHook(() => useDrinkEvents(['u1']));
+
+    expect(result.current.earliestStartMs).toBeUndefined();
+  });
+
+  test('a fresh-but-equal window object does NOT re-fire the rebuild (loop guard)', () => {
+    setOnyx(makeWindowSessions(), 'loaded');
+
+    // Each render passes a BRAND-NEW window object with identical bounds —
+    // exactly what `useHomeStats` does (`{window: eventWindow}` is fresh each
+    // render). The rebuild must depend on the numeric bounds, not the object
+    // identity; if it re-fires on every render the app loops itself into JS-thread
+    // starvation (the #1414 regression, Kiroku #1417). Asserting the backfill
+    // count stays flat across re-renders pins that invariant.
+    const {rerender} = renderHook(
+      ({win}) => useDrinkEvents(['u1'], {window: win}),
+      {
+        initialProps: {
+          win: {
+            startMs: WINDOW_MAY_JUNE.startMs,
+            endMs: WINDOW_MAY_JUNE.endMs,
+          },
+        },
+      },
+    );
+
+    const backfill = jest.mocked(Statistics.backfillSessionTimeParts);
+    const callsAfterMount = backfill.mock.calls.length;
+    expect(callsAfterMount).toBeGreaterThan(0);
+
+    rerender({
+      win: {startMs: WINDOW_MAY_JUNE.startMs, endMs: WINDOW_MAY_JUNE.endMs},
+    });
+    rerender({
+      win: {startMs: WINDOW_MAY_JUNE.startMs, endMs: WINDOW_MAY_JUNE.endMs},
+    });
+
+    expect(backfill.mock.calls.length).toBe(callsAfterMount);
   });
 });

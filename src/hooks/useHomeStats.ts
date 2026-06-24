@@ -18,7 +18,23 @@ import ONYXKEYS from '@src/ONYXKEYS';
  * friend/profile equivalent.
  */
 function useHomeStats(visibleDate: DateData): MonthlyStats {
-  const {events, isLoading} = useDrinkEvents();
+  const {year, month} = visibleDate;
+
+  // The scorecard reads only the visible month and the previous month (the
+  // current/previous summaries and the per-week sub-period series — see
+  // `buildMonthlyStats`). Scope the event stream to exactly that window so the
+  // launch-path walk stays ~2 months wide instead of materialising the whole
+  // history. Bounds mirror `buildMonthlyStats` (`month` is 1-based): the
+  // previous month's start through the end of the visible month.
+  const eventWindow = useMemo(() => {
+    const prevStart = new Date(year, month - 2, 1);
+    const monthEnd = new Date(year, month, 0, 23, 59, 59, 999);
+    return {startMs: prevStart.getTime(), endMs: monthEnd.getTime()};
+  }, [year, month]);
+
+  const {events, isLoading, earliestStartMs} = useDrinkEvents(undefined, {
+    window: eventWindow,
+  });
   const preferences = useCurrentUserPreferences();
   const currentUserData = useCurrentUserData();
   const [ongoingSessionData] = useOnyx(ONYXKEYS.ONGOING_SESSION_DATA);
@@ -32,8 +48,11 @@ function useHomeStats(visibleDate: DateData): MonthlyStats {
   // Snapshot `now` once per mount so the current/previous clamps agree.
   const now = useMemo(() => new Date(), []);
 
-  const {year, month} = visibleDate;
-  const earliestSessionAt = currentUserData?.earliest_session_at;
+  // Prefer the persisted first-activity floor; fall back to the windowed hook's
+  // cheap all-history minimum so `comparisonAvailable` stays correct even before
+  // `earliest_session_at` has hydrated.
+  const earliestSessionAt =
+    currentUserData?.earliest_session_at ?? earliestStartMs;
   const {current, previous, subPeriods, isCurrentMonth, comparisonAvailable} =
     useMemo(
       () =>
