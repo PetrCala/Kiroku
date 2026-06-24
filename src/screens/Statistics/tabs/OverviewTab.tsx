@@ -13,7 +13,6 @@ import useLocalize from '@hooks/useLocalize';
 import useOverviewTabData from '@hooks/useStatistics/useOverviewTabData';
 import useTheme from '@hooks/useTheme';
 import useThemeStyles from '@hooks/useThemeStyles';
-import type {ChartDatum} from '@libs/Statistics';
 
 type DeltaShape = NonNullable<KpiCardProps['delta']>;
 
@@ -24,10 +23,17 @@ function formatUnits(value: number): string {
 
 /**
  * Total-alcohol scorecard for the selected range. Reads the shared range +
- * comparison from the toolbar and tells a period story top-to-bottom:
- * verdict (units) → wins (restraint) → load (consumption) → risk (threshold
- * days) → texture (shape + intensity mix). Every tile carries a
- * previous-period delta when a comparison is active.
+ * comparison from the toolbar and tells a period story with a wins-forward
+ * arc: verdict (units) → wins (restraint) → reality check (heavy days, then
+ * the day-intensity bar that pictures them) → load detail (consumption) →
+ * shape (units by period).
+ *
+ * The hero's old inline sparkline (an axis-less curve with no labels that
+ * collapsed to a few points at any range) is gone. Instead of leading with a
+ * chart, this version leads with the user's wins right under the headline
+ * number, then pairs the "heavy days" counts with the labeled day-intensity
+ * bar that visualizes them. The consumption detail and the "Units by period"
+ * shape close the tab, so nothing about consumption is lost.
  */
 function OverviewTab() {
   const {translate} = useLocalize();
@@ -85,11 +91,6 @@ function OverviewTab() {
     }
     return {value: diff, direction, label: vsPrevious};
   };
-
-  const sparkline: ChartDatum[] = subPeriods.map(point => ({
-    x: point.label,
-    y: point.units,
-  }));
 
   const winsCards: KpiCardProps[] = [
     {
@@ -234,7 +235,6 @@ function OverviewTab() {
             value={formatUnits(current.totalUnits)}
             unit={translate('statistics.tabs.overview.hero.unit')}
             delta={makeDelta(current.totalUnits, previous?.totalUnits ?? 0)}
-            sparkline={sparkline}
             polarity="lower-is-supportive"
             isLoading={isLoading}
           />
@@ -246,26 +246,9 @@ function OverviewTab() {
         </View>
 
         <View style={styles.mb3}>
-          {sectionLabel('statistics.tabs.overview.sections.consumption')}
-          <KpiCardGroup cards={loadCards} isLoading={isLoading} />
-        </View>
-
-        <View style={styles.mb3}>
           {sectionLabel('statistics.tabs.overview.sections.heavyDays')}
           <KpiCardGroup cards={riskCards} isLoading={isLoading} />
         </View>
-
-        <ChartCard
-          title={translate('statistics.tabs.overview.texture.series.title')}>
-          <PeriodBarList
-            points={subPeriods}
-            granularity={granularity}
-            accessibilityLabel={translate(
-              'statistics.tabs.overview.texture.series.a11y',
-            )}
-            isLoading={isLoading}
-          />
-        </ChartCard>
 
         <ChartCard
           title={translate(
@@ -275,6 +258,23 @@ function OverviewTab() {
             segments={distribution}
             accessibilityLabel={translate(
               'statistics.tabs.overview.texture.distribution.a11y',
+            )}
+            isLoading={isLoading}
+          />
+        </ChartCard>
+
+        <View style={[styles.mb3, styles.mt2]}>
+          {sectionLabel('statistics.tabs.overview.sections.consumption')}
+          <KpiCardGroup cards={loadCards} isLoading={isLoading} />
+        </View>
+
+        <ChartCard
+          title={translate('statistics.tabs.overview.texture.series.title')}>
+          <PeriodBarList
+            points={subPeriods}
+            granularity={granularity}
+            accessibilityLabel={translate(
+              'statistics.tabs.overview.texture.series.a11y',
             )}
             isLoading={isLoading}
           />
