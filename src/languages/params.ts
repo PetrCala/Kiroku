@@ -63,6 +63,14 @@ type StatsThresholdParams = {
   threshold: number;
 };
 
+type OverviewNarrativeParams = {
+  /** Pre-formatted total units for the range (e.g. "12.5"). */
+  units: string;
+  sessions: number;
+  afDays: number;
+  days: number;
+};
+
 type StatsDrillDownTitleParams = {
   label: string;
 };
@@ -141,6 +149,7 @@ export type {
   FriendRequestsCountParams,
   LastSessionSummaryParams,
   OnboardingStepCounterParams,
+  OverviewNarrativeParams,
   RelativeTimeAgoParams,
   SessionConfirmTimezoneChangeParams,
   SessionStartTimeParams,

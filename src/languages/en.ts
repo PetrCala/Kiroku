@@ -21,6 +21,7 @@ import type {
   FriendRequestsCountParams,
   LastSessionSummaryParams,
   OnboardingStepCounterParams,
+  OverviewNarrativeParams,
   RelativeTimeAgoParams,
   SessionConfirmTimezoneChangeParams,
   SessionStartTimeParams,
@@ -1110,6 +1111,10 @@ export default {
         delta: {
           vsPrevious: 'vs previous',
         },
+        narrative: ({units, sessions, afDays, days}: OverviewNarrativeParams) =>
+          `${units} units across ${sessions} ${
+            sessions === 1 ? 'session' : 'sessions'
+          }, with ${afDays} of ${days} days alcohol-free.`,
         sections: {
           highlights: 'Highlights',
           consumption: 'Consumption',

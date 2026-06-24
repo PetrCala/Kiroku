@@ -13,7 +13,6 @@ import useLocalize from '@hooks/useLocalize';
 import useOverviewTabData from '@hooks/useStatistics/useOverviewTabData';
 import useTheme from '@hooks/useTheme';
 import useThemeStyles from '@hooks/useThemeStyles';
-import type {ChartDatum} from '@libs/Statistics';
 
 type DeltaShape = NonNullable<KpiCardProps['delta']>;
 
@@ -25,9 +24,15 @@ function formatUnits(value: number): string {
 /**
  * Total-alcohol scorecard for the selected range. Reads the shared range +
  * comparison from the toolbar and tells a period story top-to-bottom:
- * verdict (units) → wins (restraint) → load (consumption) → risk (threshold
- * days) → texture (shape + intensity mix). Every tile carries a
- * previous-period delta when a comparison is active.
+ * verdict (units) → narrative (one plain-language line) → wins (restraint) →
+ * load (consumption) → risk (threshold days) → texture (shape + intensity).
+ *
+ * The hero's old inline sparkline (an axis-less curve with no labels that
+ * collapsed to a few points at any range) is replaced by a single computed
+ * sentence under the headline number. It names the things a curve never
+ * could — units, sessions, and alcohol-free days — so the period reads as a
+ * story before the tiles break it down. The labeled "Units by period" bar
+ * chart lower in the tab still carries the consumption shape.
  */
 function OverviewTab() {
   const {translate} = useLocalize();
@@ -85,11 +90,6 @@ function OverviewTab() {
     }
     return {value: diff, direction, label: vsPrevious};
   };
-
-  const sparkline: ChartDatum[] = subPeriods.map(point => ({
-    x: point.label,
-    y: point.units,
-  }));
 
   const winsCards: KpiCardProps[] = [
     {
@@ -221,6 +221,11 @@ function OverviewTab() {
     </Text>
   );
 
+  // One plain-language line that frames the period before the tiles break it
+  // down. Only shown when there's something to narrate; the all-AF case is
+  // covered by the dedicated footer below.
+  const showNarrative = !isLoading && current.sessions > 0;
+
   return (
     <View style={styles.flex1}>
       <StatsFilterToolbar showDrinkTypeFilter={false} />
@@ -234,10 +239,24 @@ function OverviewTab() {
             value={formatUnits(current.totalUnits)}
             unit={translate('statistics.tabs.overview.hero.unit')}
             delta={makeDelta(current.totalUnits, previous?.totalUnits ?? 0)}
-            sparkline={sparkline}
             polarity="lower-is-supportive"
             isLoading={isLoading}
           />
+          {showNarrative ? (
+            <Text
+              style={[
+                styles.textNormal,
+                styles.mt2,
+                {color: theme.textSupporting},
+              ]}>
+              {translate('statistics.tabs.overview.narrative', {
+                units: formatUnits(current.totalUnits),
+                sessions: current.sessions,
+                afDays: current.afDays,
+                days: current.elapsedDays,
+              })}
+            </Text>
+          ) : null}
         </View>
 
         <View style={styles.mb3}>
