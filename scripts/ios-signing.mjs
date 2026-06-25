@@ -445,32 +445,37 @@ async function ensureBundleId(bundleId, name) {
   return res.data.id;
 }
 
-// Enable a capability on an App ID, idempotently. Push + Sign in with Apple are
-// plain enables (no extra settings).
-async function ensureBundleCapabilities(bundleResId, capabilityTypes) {
+// Enable capabilities on an App ID, idempotently. Each descriptor is
+// {type, settings?}: Push is a bare enable; Sign in with Apple REQUIRES a
+// configuration ("primary App ID"), or the API rejects it with a 409
+// "select at least one configuration".
+async function ensureBundleCapabilities(bundleResId, capabilities) {
   const existing = await apiList(
     `/v1/bundleIds/${bundleResId}/bundleIdCapabilities?limit=200`,
   ).catch(() => []);
   const have = new Set(existing.map(c => c.attributes.capabilityType));
-  for (const cap of capabilityTypes) {
-    if (have.has(cap)) {
-      L(`  capability ${cap}: already enabled.`);
+  for (const cap of capabilities) {
+    if (have.has(cap.type)) {
+      L(`  capability ${cap.type}: already enabled.`);
       continue;
     }
     if (!OPTS.yes) {
-      L(`  capability ${cap}: would enable.`);
+      L(`  capability ${cap.type}: would enable.`);
       continue;
     }
     await api('POST', '/v1/bundleIdCapabilities', {
       data: {
         type: 'bundleIdCapabilities',
-        attributes: {capabilityType: cap},
+        attributes: {
+          capabilityType: cap.type,
+          ...(cap.settings ? {settings: cap.settings} : {}),
+        },
         relationships: {
           bundleId: {data: {type: 'bundleIds', id: bundleResId}},
         },
       },
     });
-    L(`  capability ${cap}: enabled ✓`);
+    L(`  capability ${cap.type}: enabled ✓`);
   }
 }
 async function listEnabledDeviceIds() {
@@ -1132,8 +1137,17 @@ async function cmdAdhocSetup() {
   // Step 1 — App ID + capabilities (idempotent).
   const bundleResId = await ensureBundleId(adhocBundle, 'Kiroku AdHoc');
   await ensureBundleCapabilities(bundleResId, [
-    'PUSH_NOTIFICATIONS',
-    'APPLE_ID_AUTH',
+    {type: 'PUSH_NOTIFICATIONS'},
+    {
+      type: 'APPLE_ID_AUTH',
+      // "Enable as a primary App ID" — the default Sign in with Apple config.
+      settings: [
+        {
+          key: 'APPLE_ID_AUTH_APP_CONSENT',
+          options: [{key: 'PRIMARY_APP_CONSENT'}],
+        },
+      ],
+    },
   ]);
   bundleResCache.set(adhocBundle, bundleResId);
 
