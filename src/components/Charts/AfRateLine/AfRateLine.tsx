@@ -26,6 +26,18 @@ type AfRateRow = {x: number; y: number; cmp: number};
 const COMPARISON_DASH: number[] = [4, 4];
 /** The rate is a 0–100 percentage, so the axis is fixed. */
 const RATE_TICKS: number[] = [0, 25, 50, 75, 100];
+/**
+ * Gentle smoothing. `monotoneX` rounds off the daily stair-stepping of an
+ * already-averaged series without overshooting past the pinned 0–100 domain or
+ * inventing bumps between points (which `natural`/`cardinal` would).
+ */
+const CURVE_TYPE = 'monotoneX' as const;
+/**
+ * Morph the path on data changes so switching periods animates instead of
+ * snapping to the next values. Both the line and its fill share this so they
+ * move together.
+ */
+const LINE_ANIMATION = {type: 'timing', duration: 300} as const;
 
 /** Format a rolling-rate y tick as a whole-number percentage. */
 function pctTick(value: number): string {
@@ -101,18 +113,23 @@ function AfRateLine({
             points={linePoints.y}
             y0={chartBounds.bottom}
             color={theme.bandFill}
-            animate={{type: 'timing', duration: 200}}
+            curveType={CURVE_TYPE}
+            animate={LINE_ANIMATION}
           />
           <Line
             points={linePoints.y}
             color={theme.primaryStroke}
             strokeWidth={2}
+            curveType={CURVE_TYPE}
+            animate={LINE_ANIMATION}
           />
           {showComparison ? (
             <Line
               points={linePoints.cmp}
               color={theme.comparisonStroke}
-              strokeWidth={1.5}>
+              strokeWidth={1.5}
+              curveType={CURVE_TYPE}
+              animate={LINE_ANIMATION}>
               <DashPathEffect intervals={COMPARISON_DASH} />
             </Line>
           ) : null}

@@ -71,10 +71,6 @@ type WeekOfParams = {
   date: string;
 };
 
-type AfRateSummaryParams = {
-  currentRate: number;
-};
-
 type UnitCountParams = {
   unitCount: number;
 };
@@ -152,7 +148,6 @@ export type {
   StatsDrillDownTitleParams,
   StatsThresholdParams,
   WeekOfParams,
-  AfRateSummaryParams,
   SupporterCancelledStatusParams,
   SupporterPriceParams,
   SupporterPurchaseCtaParams,
