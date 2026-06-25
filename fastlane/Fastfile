@@ -203,7 +203,11 @@ platform :ios do
           export_options: {
               method: "ad-hoc",
               provisioningProfiles: {
-                "org.reactjs.native.example.alcohol-tracker" => "Kiroku_AdHoc",
+                # Distinct bundle id (.adhoc suffix) so the ad-hoc build installs
+                # side by side with the App Store build — mirrors Android's
+                # applicationIdSuffix ".adhoc". The Kiroku_AdHoc profile is bound to
+                # this id in the portal (see scripts/ios-signing.mjs adhoc-setup).
+                "org.reactjs.native.example.alcohol-tracker.adhoc" => "Kiroku_AdHoc",
               },
               manageAppVersionAndBuildNumber: false
           }
