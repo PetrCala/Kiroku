@@ -497,6 +497,15 @@ async function signInWithOAuth(
     photo_url: user.photoURL ?? '',
     username_chosen: false,
   };
+  // Drop any persisted record for this user before the new session bootstraps.
+  // Sign-out's `cleanupSession` normally clears `USER_DATA_LIST`, but a
+  // force-quit never unmounts `AuthScreens`, so a stale record (e.g. a
+  // new-account skeleton with `username_chosen: false` and no onboarding/terms
+  // stamps) can survive on disk into the next sign-in. Left in place, the
+  // onboarding gate could read it as "needs onboarding" and strand a returning
+  // user. `openApp` re-hydrates the authoritative record below; until it
+  // succeeds, `USER_DATA_HYDRATED` keeps the gate shut.
+  Onyx.merge(ONYXKEYS.USER_DATA_LIST, {[user.uid]: null});
   try {
     // Speculative: optimistic Onyx defaults are intentionally NOT applied (see
     // `provisionUser`) because a returning user reaches this on every sign-in

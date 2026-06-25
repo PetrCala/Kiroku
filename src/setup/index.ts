@@ -65,11 +65,11 @@ export default function () {
   // clears it before any screen subscribes, so there's no month flip.
   Calendar.resetCalendarStateForColdLaunch();
 
-  // Reset the OpenApp bootstrap flag for the same reason: it is persisted, and
-  // the onboarding/terms readiness gates read `isLoadingApp === false` as
-  // "this session's bootstrap completed". A stale `false` from a previous
-  // session would open those gates before `openApp` runs.
-  App.resetIsLoadingAppForColdLaunch();
+  // Reset the OpenApp bootstrap signals for the same reason: they are
+  // persisted, and the onboarding/terms readiness gates read them as "this
+  // session's bootstrap completed / delivered the user record". A stale value
+  // from a previous session would open those gates before `openApp` runs.
+  App.resetBootstrapStateForColdLaunch();
 
   // Capture client logs into Onyx from launch on every non-production build, so
   // diagnostics that fire before any debug menu is reachable (e.g. the Apple

@@ -38,6 +38,11 @@ function useOnboardingFlow(): OnboardingFlowState {
   const userID = auth?.currentUser?.uid;
   const {config} = useConfig();
   const [isLoadingApp] = useOnyx(ONYXKEYS.IS_LOADING_APP);
+  // Positive proof that THIS session's `app/open` succeeded and delivered the
+  // user record. Set only by OpenApp's `successData` (reset on cold launch and
+  // sign-out), so unlike `isLoadingApp === false` it can't be flipped by a
+  // cancelled/early-failed bootstrap.
+  const [userDataHydrated] = useOnyx(ONYXKEYS.USER_DATA_HYDRATED);
   // `useCurrentUserData` returns {} (truthy) while loading / after the Onyx
   // record is wiped on account close; the readiness gate and selectors below
   // expect `undefined` to mean "not loaded yet", so map empty → undefined.
@@ -47,17 +52,21 @@ function useOnboardingFlow(): OnboardingFlowState {
   const flowState = useMemo<OnboardingFlowState>(() => {
     const skipOnboarding = CONFIG.SKIP_ONBOARDING;
     const isAuthenticated = !!userID;
-    // Defer the decision until the OpenApp bootstrap has fully completed
-    // (`IS_LOADING_APP` flips to `false` in its finallyData) AND the user's
-    // record is present. `USER_DATA_LIST` is assembled incrementally — the
-    // app/open snapshot, Pusher deltas, and optimistic writes each land
-    // separately — so "the record is non-empty" does NOT imply "fully loaded".
-    // A partial record observed mid-bootstrap would otherwise be read as "needs
-    // onboarding" (and the one-way OnboardingGuard would then strand the user).
-    // Gating on the explicit bootstrap-complete signal restores the
-    // all-or-nothing guarantee the old Firebase listener gave implicitly.
+    // Defer the decision until THIS session's `app/open` has SUCCEEDED
+    // (`USER_DATA_HYDRATED === true`) AND the user's record is present.
+    //
+    // We deliberately gate on `USER_DATA_HYDRATED` rather than
+    // `isLoadingApp === false`: the latter is flipped by OpenApp's `finallyData`,
+    // which also runs when the request is cancelled or fails fast, so it can
+    // read "bootstrap done" while no record was ever delivered. In that window a
+    // stale/persisted `USER_DATA_LIST` skeleton (e.g. left behind when a
+    // force-quit skipped the sign-out `cleanupSession`) would be read as "needs
+    // onboarding", and the one-way OnboardingGuard would strand a returning user
+    // in the flow (the returning-Apple-user bug). `USER_DATA_HYDRATED` is set
+    // only by OpenApp's `successData`, which lands together with the real record,
+    // so it is true only once the authoritative record is in hand.
     const isReady =
-      !isAuthenticated || (isLoadingApp === false && userData !== undefined);
+      !isAuthenticated || (userDataHydrated === true && userData !== undefined);
 
     if (skipOnboarding || !isAuthenticated || !isReady) {
       return {
@@ -98,7 +107,7 @@ function useOnboardingFlow(): OnboardingFlowState {
       lastVisitedPath: getOnboardingLastVisitedPath(userData),
       skipOnboarding,
     };
-  }, [userID, userData, config, isLoadingApp]);
+  }, [userID, userData, config, userDataHydrated]);
 
   // TEMP diagnostic (Apple returning-user "onboarding + no friends" race):
   // capture the exact gate inputs the instant onboarding is decided to fire.
@@ -119,6 +128,7 @@ function useOnboardingFlow(): OnboardingFlowState {
     if (flowState.shouldFireOnboarding && !prevShouldFireRef.current) {
       Log.info('[useOnboardingFlow] shouldFireOnboarding -> true', false, {
         isLoadingApp: String(isLoadingApp),
+        userDataHydrated: String(userDataHydrated),
         hasRecord: String(userData !== undefined),
         usernameChosen: String(userData?.profile?.username_chosen),
         hasCompletedOnboarding: String(hasCompletedOnboarding(userData)),
@@ -132,6 +142,7 @@ function useOnboardingFlow(): OnboardingFlowState {
     flowState.shouldFireOnboarding,
     flowState.currentOnboardingRoute,
     isLoadingApp,
+    userDataHydrated,
     userData,
     config,
   ]);
