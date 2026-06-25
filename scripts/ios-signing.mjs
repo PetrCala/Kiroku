@@ -22,6 +22,7 @@
  *   node scripts/ios-signing.mjs check  [--deep] [--days 21]
  *   node scripts/ios-signing.mjs renew  [--yes] [--p12 <path> --p12-password <pw>] [--profile-suffix .test]
  *   node scripts/ios-signing.mjs finalize [--yes]
+ *   node scripts/ios-signing.mjs adhoc-setup [--yes]
  *
  * Commands:
  *   check    Report expiry + state for the Distribution cert and the Kiroku /
@@ -35,6 +36,13 @@
  *   finalize DRY RUN unless --yes. POST-MERGE: rotates the IOS_CERTIFICATE_PASSWORD
  *            secret to the new P12 password and revokes the old expired cert /
  *            deletes the old profiles, then clears the scratch state.
+ *   adhoc-setup DRY RUN unless --yes. ONE-TIME side-by-side install setup: ensures
+ *            the explicit .adhoc App ID exists with Push + Sign in with Apple
+ *            enabled, then (re)mints the Kiroku_AdHoc ad-hoc profile bound to it
+ *            (incl. all enabled devices) against the existing valid Distribution
+ *            cert and re-encrypts ios/Kiroku_AdHoc.mobileprovision.gpg. Does NOT
+ *            mint a cert, touch the P12 / Kiroku profile, or git-commit — review
+ *            the .gpg diff and commit it yourself. Idempotent.
  *
  * Flags:
  *   --yes               actually execute (renew/finalize are dry-run otherwise)
@@ -49,6 +57,7 @@
  *   --bundle-wwdr       renew: bundle the Apple WWDR G6 intermediate into the P12
  *   --profile-suffix <s> renew: append to profile names + write to scratch paths (end-to-end test; does NOT touch ios/*.gpg)
  *   --bundle-id <id>    app bundle id (default: org.reactjs.native.example.alcohol-tracker)
+ *   --adhoc-bundle-id <id> ad-hoc App ID the Kiroku_AdHoc profile binds to (default: <bundle-id>.adhoc)
  *   --repo <owner/repo> GitHub repo for the PR + secret (default: PetrCala/Kiroku)
  *   --help, -h          show this help
  */
@@ -63,32 +72,16 @@ const ROOT = path.join(path.dirname(fileURLToPath(import.meta.url)), '..');
 const IOS_DIR = path.join(ROOT, 'ios');
 const BASE = 'https://api.appstoreconnect.apple.com';
 const DEFAULT_BUNDLE_ID = 'org.reactjs.native.example.alcohol-tracker';
+// The ad-hoc build ships under a distinct bundle id (".adhoc" suffix) so it
+// installs side by side with the App Store build — mirrors Android's
+// applicationIdSuffix ".adhoc". The Kiroku_AdHoc profile binds to THIS id.
+const DEFAULT_ADHOC_BUNDLE_ID = `${DEFAULT_BUNDLE_ID}.adhoc`;
 const STATE_FILE = path.join(IOS_DIR, '.signing-renew-state.json');
 const KEY_PLAIN = path.join(IOS_DIR, 'ios-fastlane-json-key.json');
 const KEY_GPG = path.join(IOS_DIR, 'ios-fastlane-json-key.json.gpg');
 const P12_FILE = 'Certificates.p12';
 // Apple WWDR G6 — the current intermediate for 2023+ Apple Distribution leaves.
 const WWDR_URL = 'https://www.apple.com/certificateauthority/AppleWWDRCAG6.cer';
-
-// The CI-critical profile set. Kiroku (platformDeploy.yml `beta`) and
-// Kiroku_AdHoc (testBuild.yml `build_internal`) are bound BY NAME in the
-// Fastfile export_options, so regenerated profiles MUST keep these names. Both
-// are distribution-signed, so one new cert covers both. Dev/watch profiles are
-// intentionally out of scope (not CI-consumed; dev needs a separate cert).
-const PROFILES = [
-  {
-    name: 'Kiroku',
-    file: 'Kiroku.mobileprovision',
-    type: 'IOS_APP_STORE',
-    devices: false,
-  },
-  {
-    name: 'Kiroku_AdHoc',
-    file: 'Kiroku_AdHoc.mobileprovision',
-    type: 'IOS_APP_ADHOC',
-    devices: true,
-  },
-];
 
 const L = (s = '') => console.log(s);
 
@@ -103,6 +96,10 @@ function flag(name, def) {
 }
 const OPTS = {
   bundleId: flag('bundle-id', process.env.ASC_BUNDLE_ID || DEFAULT_BUNDLE_ID),
+  adhocBundleId: flag(
+    'adhoc-bundle-id',
+    process.env.ASC_ADHOC_BUNDLE_ID || DEFAULT_ADHOC_BUNDLE_ID,
+  ),
   keyPath: flag('key', process.env.ASC_KEY_JSON),
   passphrase: flag('passphrase', process.env.LARGE_SECRET_PASSPHRASE),
   days: Number(flag('days', 21)),
@@ -117,6 +114,33 @@ const OPTS = {
   yes: argv.includes('--yes'),
   help: argv.includes('--help') || argv.includes('-h'),
 };
+
+// The CI-critical profile set. Kiroku (platformDeploy.yml `beta`) and
+// Kiroku_AdHoc (testBuild.yml `build_internal`) are bound BY NAME in the
+// Fastfile export_options, so regenerated profiles MUST keep these names. Both
+// are distribution-signed, so one new cert covers both. Dev/watch profiles are
+// intentionally out of scope (not CI-consumed; dev needs a separate cert).
+//
+// `bundle` returns the App ID each profile binds to. Kiroku → the App Store
+// bundle id; Kiroku_AdHoc → the distinct ".adhoc" id (side-by-side install).
+// Resolving per-profile (not one global bundle id) is what keeps every yearly
+// `renew` coexistence-aware.
+const PROFILES = [
+  {
+    name: 'Kiroku',
+    file: 'Kiroku.mobileprovision',
+    type: 'IOS_APP_STORE',
+    devices: false,
+    bundle: () => OPTS.bundleId,
+  },
+  {
+    name: 'Kiroku_AdHoc',
+    file: 'Kiroku_AdHoc.mobileprovision',
+    type: 'IOS_APP_ADHOC',
+    devices: true,
+    bundle: () => OPTS.adhocBundleId,
+  },
+];
 
 function usage() {
   L(
@@ -366,16 +390,88 @@ async function listManagedProfiles() {
   const wanted = PROFILES.map(p => p.name + OPTS.profileSuffix);
   return all.filter(p => wanted.includes(p.attributes.name));
 }
-async function resolveBundleResourceId() {
+async function findBundleResource(bundleId) {
   const ids = await apiList(
-    `/v1/bundleIds?filter[identifier]=${encodeURIComponent(OPTS.bundleId)}&limit=200`,
+    `/v1/bundleIds?filter[identifier]=${encodeURIComponent(bundleId)}&limit=200`,
   );
-  const exact = ids.find(b => b.attributes.identifier === OPTS.bundleId);
+  return ids.find(b => b.attributes.identifier === bundleId) || null;
+}
+async function resolveBundleResourceId(bundleId = OPTS.bundleId) {
+  const exact = await findBundleResource(bundleId);
   if (!exact)
     throw new Error(
-      `No bundleId resource matching ${OPTS.bundleId} (found: ${ids.map(b => b.attributes.identifier).join(', ') || 'none'})`,
+      `No bundleId resource matching ${bundleId}. Register it first (adhoc-setup creates the .adhoc App ID automatically).`,
     );
   return exact.id;
+}
+// Cache so a single run resolves each App ID once across all profiles.
+const bundleResCache = new Map();
+async function resolveBundleResIdCached(bundleId) {
+  if (!bundleResCache.has(bundleId))
+    bundleResCache.set(bundleId, await resolveBundleResourceId(bundleId));
+  return bundleResCache.get(bundleId);
+}
+
+// Create the explicit App ID if it doesn't exist yet. iOS bundle ids carry a
+// human name (no spaces/special chars in the API); we derive a readable one.
+async function ensureBundleId(bundleId, name) {
+  const existing = await findBundleResource(bundleId);
+  if (existing) {
+    L(`App ID ${bundleId} already registered (${existing.id}).`);
+    return existing.id;
+  }
+  if (!OPTS.yes) {
+    L(`Would CREATE App ID ${bundleId} (name "${name}", platform IOS).`);
+    return null;
+  }
+  let res;
+  try {
+    res = await api('POST', '/v1/bundleIds', {
+      data: {
+        type: 'bundleIds',
+        attributes: {identifier: bundleId, name, platform: 'IOS'},
+      },
+    });
+  } catch (e) {
+    if (e.status === 403)
+      throw new Error(
+        'ASC API key lacks Admin rights — App ID creation requires the Admin role.\n' +
+          `Create the App ID ${bundleId} manually in the portal (Identifiers → +), enable Push Notifications + Sign in with Apple, then re-run adhoc-setup (it will find it and mint the profile).`,
+      );
+    throw e;
+  }
+  bundleResCache.set(bundleId, res.data.id);
+  L(`Created App ID ${bundleId} (${res.data.id}).`);
+  return res.data.id;
+}
+
+// Enable a capability on an App ID, idempotently. Push + Sign in with Apple are
+// plain enables (no extra settings).
+async function ensureBundleCapabilities(bundleResId, capabilityTypes) {
+  const existing = await apiList(
+    `/v1/bundleIds/${bundleResId}/bundleIdCapabilities?limit=200`,
+  ).catch(() => []);
+  const have = new Set(existing.map(c => c.attributes.capabilityType));
+  for (const cap of capabilityTypes) {
+    if (have.has(cap)) {
+      L(`  capability ${cap}: already enabled.`);
+      continue;
+    }
+    if (!OPTS.yes) {
+      L(`  capability ${cap}: would enable.`);
+      continue;
+    }
+    await api('POST', '/v1/bundleIdCapabilities', {
+      data: {
+        type: 'bundleIdCapabilities',
+        attributes: {capabilityType: cap},
+        relationships: {
+          bundleId: {data: {type: 'bundleIds', id: bundleResId}},
+        },
+      },
+    });
+    L(`  capability ${cap}: enabled ✓`);
+  }
 }
 async function listEnabledDeviceIds() {
   return (await apiList('/v1/devices?filter[status]=ENABLED&limit=200')).map(
@@ -693,6 +789,7 @@ async function ensureProfiles(ctx) {
   STATE.oldProfiles = STATE.oldProfiles || {};
   const existing = await listManagedProfiles();
   for (const want of PROFILES) {
+    if (ctx.only && !ctx.only.has(want.name)) continue;
     const fullName = want.name + OPTS.profileSuffix;
     if (STATE.profiles[fullName]) {
       L(
@@ -705,8 +802,9 @@ async function ensureProfiles(ctx) {
       STATE.oldProfiles[fullName] = old.id; // retained for finalize
       saveState();
     }
+    const bundleResId = await resolveBundleResIdCached(want.bundle());
     const relationships = {
-      bundleId: {data: {type: 'bundleIds', id: ctx.bundleResId}},
+      bundleId: {data: {type: 'bundleIds', id: bundleResId}},
       certificates: {data: [{type: 'certificates', id: ctx.certId}]},
     };
     if (want.devices)
@@ -760,8 +858,8 @@ async function cmdRenew() {
     L('DRY RUN — no changes will be made (pass --yes to execute).\n');
   else L('EXECUTING renew (--yes).\n');
 
-  // Step 0 — read current state of the world.
-  const bundleResId = await resolveBundleResourceId();
+  // Step 0 — read current state of the world. Each profile resolves its own
+  // App ID (Kiroku → app bundle, Kiroku_AdHoc → .adhoc) inside ensureProfiles.
   const deviceIds = await listEnabledDeviceIds();
   const certs = await listDistributionCerts();
   // Default to Apple Distribution (DISTRIBUTION) — the modern type Xcode expects
@@ -772,7 +870,6 @@ async function cmdRenew() {
   const existingProfiles = await listManagedProfiles();
 
   L('Plan:');
-  L(`  bundleId resource: ${bundleResId} (${OPTS.bundleId})`);
   L(`  enabled devices:   ${deviceIds.length}`);
   L(
     `  cert type:         ${certType}${OPTS.certType ? ' (forced)' : ' (default Apple Distribution)'}`,
@@ -788,7 +885,7 @@ async function cmdRenew() {
     const fullName = want.name + OPTS.profileSuffix;
     const old = existingProfiles.find(p => p.attributes.name === fullName);
     L(
-      `  profile ${fullName} (${want.type}${want.devices ? `, +${deviceIds.length} devices` : ''}): ${old ? `replace ${old.id}` : 'create'} → ${OPTS.profileSuffix ? '<scratch>' : `ios/${want.file}`}`,
+      `  profile ${fullName} (${want.type}, bundle ${want.bundle()}${want.devices ? `, +${deviceIds.length} devices` : ''}): ${old ? `replace ${old.id}` : 'create'} → ${OPTS.profileSuffix ? '<scratch>' : `ios/${want.file}`}`,
     );
   }
   if (!OPTS.profileSuffix)
@@ -819,7 +916,7 @@ async function cmdRenew() {
         'Scratch mode needs an existing valid distribution cert to reference.',
       );
     loadState();
-    await ensureProfiles({bundleResId, certId: validCert.id, deviceIds});
+    await ensureProfiles({certId: validCert.id, deviceIds});
     clearState();
     L(
       `\nScratch run complete. Test profiles created (suffix "${OPTS.profileSuffix}") against cert ${validCert.id}; delete them manually. Nothing committed.`,
@@ -846,7 +943,7 @@ async function cmdRenew() {
     throw new Error(
       'No valid distribution cert id available for the profile relationship.',
     );
-  await ensureProfiles({bundleResId, certId: effCertId, deviceIds});
+  await ensureProfiles({certId: effCertId, deviceIds});
 
   // Step 6 — re-encrypt the committed assets (overwrite the .gpg).
   fs.copyFileSync(p12.path, path.join(IOS_DIR, P12_FILE));
@@ -977,6 +1074,94 @@ async function cmdFinalize() {
   L('\nfinalize complete — re-run the deploy to confirm the iOS build signs.');
 }
 
+// ===========================================================================
+// adhoc-setup (one-time: side-by-side install of the ad-hoc build)
+// ===========================================================================
+async function cmdAdhocSetup() {
+  const adhoc = PROFILES.find(p => p.name === 'Kiroku_AdHoc');
+  const adhocBundle = adhoc.bundle();
+
+  L(
+    OPTS.yes
+      ? 'EXECUTING adhoc-setup (--yes).\n'
+      : 'DRY RUN — no changes will be made (pass --yes to execute).\n',
+  );
+
+  // Step 0 — survey.
+  const deviceIds = await listEnabledDeviceIds();
+  const validCert = (await listDistributionCerts())
+    .filter(c => daysUntil(c.attributes.expirationDate) >= 0)
+    .sort(
+      (a, b) =>
+        new Date(b.attributes.expirationDate) -
+        new Date(a.attributes.expirationDate),
+    )[0];
+  const existingBundle = await findBundleResource(adhocBundle);
+  const existingProfile = (await listManagedProfiles()).find(
+    p => p.attributes.name === `Kiroku_AdHoc${OPTS.profileSuffix}`,
+  );
+
+  L('Plan:');
+  L(
+    `  ad-hoc App ID:     ${adhocBundle} ${existingBundle ? `(exists ${existingBundle.id})` : '→ CREATE'}`,
+  );
+  L('  capabilities:      Push Notifications, Sign in with Apple');
+  L(`  enabled devices:   ${deviceIds.length}`);
+  L(
+    `  signing cert:      ${validCert ? `${validCert.id} (${validCert.attributes.certificateType}, ${daysUntil(validCert.attributes.expirationDate)}d left)` : '✗ NONE valid'}`,
+  );
+  L(
+    `  Kiroku_AdHoc prof: ${existingProfile ? `replace ${existingProfile.id}` : 'create'} → ios/${adhoc.file}`,
+  );
+  L(
+    '  re-encrypt:        ios/Kiroku_AdHoc.mobileprovision.gpg (review + commit it yourself — no git here)',
+  );
+
+  if (!validCert)
+    throw new Error(
+      'No valid Apple Distribution certificate on the account — run `renew --yes` first, then re-run adhoc-setup.',
+    );
+
+  if (!OPTS.yes) {
+    L(
+      '\nNext (with --yes): create App ID + capabilities → mint Kiroku_AdHoc bound to the .adhoc id → re-encrypt ios/Kiroku_AdHoc.mobileprovision.gpg.',
+    );
+    return;
+  }
+
+  // Step 1 — App ID + capabilities (idempotent).
+  const bundleResId = await ensureBundleId(adhocBundle, 'Kiroku AdHoc');
+  await ensureBundleCapabilities(bundleResId, [
+    'PUSH_NOTIFICATIONS',
+    'APPLE_ID_AUTH',
+  ]);
+  bundleResCache.set(adhocBundle, bundleResId);
+
+  // Step 2 — mint ONLY the Kiroku_AdHoc profile against the valid dist cert.
+  // (ensureProfiles deletes + recreates if a same-named profile already exists,
+  // so the old id-bound Kiroku_AdHoc is replaced by the .adhoc-bound one.)
+  loadState();
+  await ensureProfiles({
+    certId: validCert.id,
+    deviceIds,
+    only: new Set(['Kiroku_AdHoc']),
+  });
+  clearState();
+
+  // Step 3 — re-encrypt the committed asset, scrub the plaintext.
+  const plain = path.join(IOS_DIR, adhoc.file);
+  if (!fs.existsSync(plain))
+    throw new Error(
+      `Expected a freshly minted ${plain}, but it is missing — profile creation failed.`,
+    );
+  gpgEncryptOverwrite(plain);
+  fs.rmSync(plain, {force: true});
+  L(`\nRe-encrypted ios/${adhoc.file}.gpg ✓`);
+  L(
+    'Review `git diff --stat` and commit ios/Kiroku_AdHoc.mobileprovision.gpg with the coexistence change.',
+  );
+}
+
 // ---- main -----------------------------------------------------------------
 (async () => {
   if (OPTS.help || !cmd) return usage();
@@ -985,6 +1170,7 @@ async function cmdFinalize() {
   if (cmd === 'check') return cmdCheck();
   if (cmd === 'renew') return cmdRenew();
   if (cmd === 'finalize') return cmdFinalize();
+  if (cmd === 'adhoc-setup') return cmdAdhocSetup();
   usage();
   process.exitCode = 1;
 })()
