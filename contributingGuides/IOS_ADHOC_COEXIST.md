@@ -54,8 +54,9 @@ for them).
 
 `ios/kiroku/Info.plist`: removed the hardcoded `CFBundleDisplayName` (`Kiroku`) so
 the per-config `INFOPLIST_KEY_CFBundleDisplayName` build setting wins (`Kiroku AdHoc`
-for ad hoc, `Kiroku` elsewhere). The ad hoc Google reversed-client-id URL scheme is
-added once the dedicated Firebase app exists (see Phase 2 below).
+for ad hoc, `Kiroku` elsewhere). The ad hoc Google reversed-client-id URL scheme
+(`com.googleusercontent.apps.806896865950-getgjeb0…`) is added to `CFBundleURLSchemes`
+so Google Sign-In completes in the ad hoc build.
 
 ### 3. Fastlane
 
@@ -82,12 +83,18 @@ changed.
 `ios/kiroku.xcodeproj/project.pbxproj` `[User] Copy GoogleService-Info.plist`
 phase: an `*AdHoc*` case now selects `GoogleService-Info.adhoc.plist`, **falling
 back to the dev plist** if that file isn't present, so the ad hoc build never breaks
-on a missing plist. `ios/config/GoogleService-Info.adhoc.plist` is added in Phase 2.
+on a missing plist. `ios/config/GoogleService-Info.adhoc.plist` (dev Firebase iOS app
+`1:806896865950:ios:11a4360a6aae76a5b1618f`) is committed.
 
-## One-time console steps (not in the repo)
+## One-time console steps
 
 These are the irreversible Apple Developer / Firebase actions. Run them against the
 correct team (`L357YP9W28`) and the **dev** Firebase project (`dev-alcohol-tracker-db`).
+
+> **Status — done for the current setup:** App ID `39523ZTDUZ`
+> (`org.reactjs.native.example.alcohol-tracker.adhoc`, Push + Sign in with Apple),
+> ad hoc profile `Kiroku_AdHoc` `949GBAD675`, and Firebase iOS app
+> `1:806896865950:ios:11a4360a6aae76a5b1618f`. The steps below are the reusable runbook.
 
 ### Apple Developer — driven by the tooling
 
@@ -103,7 +110,7 @@ key lacks Admin rights to create an App ID, create
 `org.reactjs.native.example.alcohol-tracker.adhoc` manually in
 Identifiers → +, enable Push + Sign in with Apple, then re-run `adhoc-setup`.)
 
-### Firebase (dev project) — Phase 2
+### Firebase (dev project)
 
 1. Register a **new iOS app** in `dev-alcohol-tracker-db` for the bundle id
    `org.reactjs.native.example.alcohol-tracker.adhoc`.
@@ -115,9 +122,11 @@ Identifiers → +, enable Push + Sign in with Apple, then re-run `adhoc-setup`.)
 
 ### Backend — Apple Sign-In `aud`
 
-Sign in with Apple uses the bundle id as the client id. If `kiroku-api` validates the
-Apple `aud`/client, teach it to accept `….adhoc` (or gate Apple sign-in out of ad
-hoc builds).
+Sign in with Apple uses the bundle id as the client id. **No backend change is
+needed for Kiroku:** `kiroku-api` does not validate the Apple `aud`/client (auth is
+Firebase-gated), and Apple sign-in is Firebase-native, so registering the `.adhoc`
+iOS app in Firebase (above) is what makes the `.adhoc` `aud` acceptable. (If a future
+backend ever validates the Apple client, teach it to accept `….adhoc`.)
 
 ## Definition of done
 
