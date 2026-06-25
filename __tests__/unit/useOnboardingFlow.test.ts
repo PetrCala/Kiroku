@@ -45,15 +45,32 @@ function setAuth(uid: string | undefined): void {
   } as unknown as ReturnType<typeof useFirebase>);
 }
 
-// `IS_LOADING_APP` is `true` while the OpenApp bootstrap is in flight and
-// `false` once it settles; the readiness gate requires the explicit `false`.
-function setIsLoadingApp(value: boolean | undefined): void {
+// The two OpenApp bootstrap signals the hook reads via `useOnyx`:
+//   - `USER_DATA_HYDRATED`: positive proof that THIS session's app/open
+//     succeeded and delivered the user record. The readiness gate keys on this.
+//   - `IS_LOADING_APP`: in-flight flag, retained only for the diagnostic
+//     snapshot (it can be flipped `false` by a cancelled bootstrap, which is
+//     exactly why the gate no longer trusts it).
+let bootstrapState: {isLoadingApp?: boolean; userDataHydrated?: boolean} = {};
+
+function applyOnyxMock(): void {
   mockedUseOnyx.mockImplementation(((key: string) => {
     if (key === ONYXKEYS.IS_LOADING_APP) {
-      return [value, {status: 'loaded'}];
+      return [bootstrapState.isLoadingApp, {status: 'loaded'}];
+    }
+    if (key === ONYXKEYS.USER_DATA_HYDRATED) {
+      return [bootstrapState.userDataHydrated, {status: 'loaded'}];
     }
     return [undefined, {status: 'loaded'}];
   }) as unknown as typeof useOnyx);
+}
+
+function setBootstrap(state: {
+  isLoadingApp?: boolean;
+  userDataHydrated?: boolean;
+}): void {
+  bootstrapState = state;
+  applyOnyxMock();
 }
 
 // `userData` comes from `useCurrentUserData` (Onyx), which returns {} (not
@@ -78,7 +95,8 @@ describe('useOnboardingFlow', () => {
   beforeEach(() => {
     jest.clearAllMocks();
     (CONFIG as {SKIP_ONBOARDING: boolean}).SKIP_ONBOARDING = false;
-    setIsLoadingApp(false);
+    // Baseline: this session's app/open has succeeded and delivered the record.
+    setBootstrap({isLoadingApp: false, userDataHydrated: true});
     setUserData(undefined);
   });
 
@@ -102,9 +120,9 @@ describe('useOnboardingFlow', () => {
     expect(result.current.shouldFireOnboarding).toBe(false);
   });
 
-  test('authenticated + OpenApp still in flight (isLoadingApp true) → not ready, no fire', () => {
+  test('authenticated + OpenApp still in flight (userDataHydrated false) → not ready, no fire', () => {
     setAuth(TEST_UID);
-    setIsLoadingApp(true);
+    setBootstrap({isLoadingApp: true, userDataHydrated: false});
     // Even a complete, already-onboarded record must not be acted on until the
     // bootstrap settles — the record may still be mid-assembly.
     setUserData(
@@ -123,6 +141,34 @@ describe('useOnboardingFlow', () => {
 
     expect(result.current.isReady).toBe(false);
     expect(result.current.shouldFireOnboarding).toBe(false);
+  });
+
+  test('returning user, stale skeleton in USER_DATA_LIST, app/open NOT yet succeeded → not ready, no fire (force-quit skeleton race)', () => {
+    setAuth(TEST_UID);
+    // The exact reproduced bug (2026-06-25): `isLoadingApp` was flipped `false`
+    // by OpenApp's finallyData (cancel/early-fail) while a persisted new-account
+    // skeleton — username_chosen:false, no terms/onboarding stamps, left behind
+    // when a force-quit skipped the sign-out cleanup — sat in USER_DATA_LIST and
+    // app/open had NOT delivered the real record. The old gate
+    // (`isLoadingApp === false && userData !== undefined`) fired here and
+    // stranded the returning user in onboarding. Gating on `userDataHydrated`
+    // keeps it shut until app/open actually succeeds.
+    setBootstrap({isLoadingApp: false, userDataHydrated: false});
+    setUserData(
+      makeUserData({
+        profile: {
+          display_name: 'lacapetr',
+          photo_url: '',
+          username_chosen: false,
+        },
+      }),
+    );
+
+    const {result} = renderHook(() => useOnboardingFlow());
+
+    expect(result.current.isReady).toBe(false);
+    expect(result.current.shouldFireOnboarding).toBe(false);
+    expect(result.current.currentOnboardingRoute).toBeNull();
   });
 
   test('established user, no completed_at, username chosen, terms current → no fire (undefined onboarding = completed)', () => {

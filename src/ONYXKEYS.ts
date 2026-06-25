@@ -127,6 +127,17 @@ const ONYXKEYS = {
   /** Is the app loading? */
   IS_LOADING_APP: 'isLoadingApp',
 
+  /**
+   * Has THIS auth session's `app/open` bootstrap successfully delivered the
+   * signed-in user's record? Set only by `openApp`/`reconnectApp` success
+   * (never their `finallyData`, which also runs on cancel/early-fail), reset on
+   * cold launch and sign-out. The onboarding/terms readiness gates use this as
+   * positive proof of hydration instead of `isLoadingApp === false`, which a
+   * cancelled bootstrap flips while leaving a stale/persisted `USER_DATA_LIST`
+   * record readable (the returning-Apple-user onboarding bug).
+   */
+  USER_DATA_HYDRATED: 'userDataHydrated',
+
   /** Text to show when the app is loading */
   APP_LOADING_TEXT: 'appLoadingText',
 
@@ -321,6 +332,7 @@ type OnyxValuesMapping = {
   [ONYXKEYS.CACHED_DRINKING_SESSIONS]: OnyxTypes.UserDrinkingSessionsList;
   [ONYXKEYS.APP_LOADING_TEXT]: string;
   [ONYXKEYS.IS_LOADING_APP]: boolean;
+  [ONYXKEYS.USER_DATA_HYDRATED]: boolean;
   [ONYXKEYS.IS_TEST_TOOLS_MODAL_OPEN]: boolean;
   [ONYXKEYS.FEATURE_ACCESS_OVERRIDES]: OnyxTypes.FeatureAccessOverrides;
   [ONYXKEYS.SHOULD_SHOW_COMPOSE_INPUT]: boolean;

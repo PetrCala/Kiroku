@@ -685,10 +685,12 @@ function cleanupSession() {
   // Reset the last visited path so re-login always starts at Home, not wherever
   // the user happened to be when they signed out.
   Onyx.set(ONYXKEYS.LAST_VISITED_PATH, null);
-  // Reset the OpenApp bootstrap flag: the onboarding/terms readiness gates read
-  // `isLoadingApp === false` as "this auth session's bootstrap completed", so a
-  // leftover `false` must not carry into the next sign-in on this device.
+  // Reset the OpenApp bootstrap signals: the onboarding/terms readiness gates
+  // read these as "this auth session's bootstrap completed / delivered the user
+  // record", so a leftover value must not carry into the next sign-in on this
+  // device.
   Onyx.set(ONYXKEYS.IS_LOADING_APP, null);
+  Onyx.set(ONYXKEYS.USER_DATA_HYDRATED, false);
   // Drop ALL user records on sign-out, same rationale as the cached-sessions
   // clear above but more critical: the onboarding/terms gates read
   // `USER_DATA_LIST[uid]` the moment the next session's bootstrap completes,

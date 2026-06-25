@@ -184,6 +184,20 @@ function getOnyxDataForOpenOrReconnect(isOpenApp = false): OnyxData {
         value: true,
       },
     ],
+    // `USER_DATA_HYDRATED` is set in `successData`, NOT `finallyData`, on
+    // purpose: it is the readiness gates' positive proof that this session's
+    // `app/open` actually delivered the user record. `finallyData` runs even
+    // when the request is cancelled or fails fast (OpenApp is `canCancel`), so
+    // pairing the flag with it would re-introduce the exact race we are closing
+    // — the flag would flip true with no record in hand, and the onboarding
+    // gate would then read a stale/persisted `USER_DATA_LIST` skeleton.
+    successData: [
+      {
+        onyxMethod: Onyx.METHOD.MERGE,
+        key: ONYXKEYS.USER_DATA_HYDRATED,
+        value: true,
+      },
+    ],
     finallyData: [
       ...defaultData.finallyData,
       {
@@ -196,17 +210,24 @@ function getOnyxDataForOpenOrReconnect(isOpenApp = false): OnyxData {
 }
 
 /**
- * Reset `IS_LOADING_APP` on cold launch. The key is persisted, so without this
- * a `false` from a PREVIOUS session survives the restart, and the onboarding /
- * terms readiness gates (which treat `isLoadingApp === false` as "THIS
- * session's OpenApp bootstrap finished") open before `openApp` has even been
- * dispatched — re-exposing the partial-hydration window those gates exist to
- * close. Can't go in `initialKeyStates`: Onyx drops `null` defaults
+ * Reset the per-session bootstrap signals on cold launch. Both keys are
+ * persisted, so without this a value from a PREVIOUS session survives the
+ * restart and the onboarding / terms readiness gates open before this launch's
+ * `openApp` has even been dispatched — re-exposing the partial-hydration window
+ * those gates exist to close:
+ *   - `IS_LOADING_APP`: a stale `false` reads as "THIS session's bootstrap
+ *     finished".
+ *   - `USER_DATA_HYDRATED`: a stale `true` reads as "this session's app/open
+ *     already delivered the user record", letting the gate act on a persisted
+ *     `USER_DATA_LIST` skeleton (e.g. left behind when a force-quit skipped the
+ *     sign-out `cleanupSession`).
+ * Can't go in `initialKeyStates`: Onyx drops `null` defaults
  * (shouldRemoveNestedNulls), so the persisted value would survive hydration.
- * `Onyx.merge` clears it; called from `setup` before the React tree mounts.
+ * Called from `setup` before the React tree mounts.
  */
-function resetIsLoadingAppForColdLaunch(): void {
+function resetBootstrapStateForColdLaunch(): void {
   Onyx.merge(ONYXKEYS.IS_LOADING_APP, null);
+  Onyx.set(ONYXKEYS.USER_DATA_HYDRATED, false);
 }
 
 /**
@@ -589,7 +610,7 @@ export {
   redirectThirdPartyDesktopSignIn,
   isReadyToOpenApp,
   openApp,
-  resetIsLoadingAppForColdLaunch,
+  resetBootstrapStateForColdLaunch,
   reconnectApp,
   confirmReadyToOpenApp,
   handleRestrictedEvent,

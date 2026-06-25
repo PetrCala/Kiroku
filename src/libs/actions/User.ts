@@ -497,6 +497,15 @@ async function signInWithOAuth(
     photo_url: user.photoURL ?? '',
     username_chosen: false,
   };
+  // Drop any persisted record for this user before the new session bootstraps.
+  // Sign-out's `cleanupSession` normally clears `USER_DATA_LIST`, but a
+  // force-quit never unmounts `AuthScreens`, so a stale record (e.g. a
+  // new-account skeleton with `username_chosen: false` and no onboarding/terms
+  // stamps) can survive on disk into the next sign-in. Left in place, the
+  // onboarding gate could read it as "needs onboarding" and strand a returning
+  // user. `openApp` re-hydrates the authoritative record below; until it
+  // succeeds, `USER_DATA_HYDRATED` keeps the gate shut.
+  Onyx.merge(ONYXKEYS.USER_DATA_LIST, {[user.uid]: null});
   try {
     // Speculative: optimistic Onyx defaults are intentionally NOT applied (see
     // `provisionUser`) because a returning user reaches this on every sign-in
@@ -517,14 +526,11 @@ async function signInWithOAuth(
     const jsonCode = (response as Response | undefined)?.jsonCode;
     if (jsonCode === 200) {
       // Seed the default user data into Onyx now that the `200` has confirmed a
-      // genuinely new account. Without a local write the post-auth OnboardingGuard
-      // has no `userData` to gate on (its readiness check is
-      // `isLoadingApp === false && userData !== undefined`) and depends entirely on
-      // the server echoing `onyxData` winning a race against `openApp` — on native
-      // that race is routinely lost, leaving the new account stranded on the auth
-      // screen instead of being redirected into onboarding. This mirrors the
-      // synchronous optimistic write the email/password signup already does, making
-      // the OAuth redirect deterministic.
+      // genuinely new account, mirroring the synchronous optimistic write the
+      // email/password signup already does. The post-auth OnboardingGuard reads
+      // the user's record to route a brand-new account into onboarding; seeding
+      // here makes that record available locally rather than depending solely on
+      // the server's `onyxData` echo racing `openApp`.
       await Onyx.update(getNewUserOnyxData(user.uid, profileData));
       await updateProfile(user, {displayName: name});
     } else {
@@ -551,6 +557,8 @@ async function signInWithOAuth(
     ) {
       throw error;
     }
+    // A `409 Conflict` is the expected returning-user replay outcome: the
+    // account already exists, so no seed runs and we fall through to sign-in.
   }
   Session.clearSignInData();
   // Post-auth routing is owned by OnboardingGuard. Navigating here would
