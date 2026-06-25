@@ -525,25 +525,12 @@ async function signInWithOAuth(
     // seeding, and treat anything else as "already provisioned".
     const jsonCode = (response as Response | undefined)?.jsonCode;
     if (jsonCode === 200) {
-      // TEMP diagnostic (Apple returning-user "onboarding + no friends" repro):
-      // log whenever the new-user seed actually fires. A RETURNING user must
-      // never reach this branch — if a repro of the bug shows this line, the
-      // skeleton (`username_chosen: false`, no `friends`) is coming from here
-      // and shadowing their real app/open record. Remove once root-caused.
-      Log.info(
-        '[signInWithOAuth] provisioning returned a 200 creation signal; seeding new-user defaults',
-        false,
-        {uid: user.uid, jsonCode: String(jsonCode)},
-      );
       // Seed the default user data into Onyx now that the `200` has confirmed a
-      // genuinely new account. Without a local write the post-auth OnboardingGuard
-      // has no `userData` to gate on (its readiness check is
-      // `isLoadingApp === false && userData !== undefined`) and depends entirely on
-      // the server echoing `onyxData` winning a race against `openApp` — on native
-      // that race is routinely lost, leaving the new account stranded on the auth
-      // screen instead of being redirected into onboarding. This mirrors the
-      // synchronous optimistic write the email/password signup already does, making
-      // the OAuth redirect deterministic.
+      // genuinely new account, mirroring the synchronous optimistic write the
+      // email/password signup already does. The post-auth OnboardingGuard reads
+      // the user's record to route a brand-new account into onboarding; seeding
+      // here makes that record available locally rather than depending solely on
+      // the server's `onyxData` echo racing `openApp`.
       await Onyx.update(getNewUserOnyxData(user.uid, profileData));
       await updateProfile(user, {displayName: name});
     } else {
@@ -570,16 +557,8 @@ async function signInWithOAuth(
     ) {
       throw error;
     }
-    // TEMP diagnostic (Apple returning-user "onboarding + no friends" repro):
-    // the EXPECTED returning-user path — provisioning rejected with 409, so no
-    // new-user seed runs. If a repro shows the bug WITH this line present (and
-    // no seed log above), the skeleton is not coming from provisioning and the
-    // investigation moves to the app/open delivery path. Remove once root-caused.
-    Log.info(
-      '[signInWithOAuth] provisioning rejected with 409 (returning user); skipping new-user seed',
-      false,
-      {uid: user.uid},
-    );
+    // A `409 Conflict` is the expected returning-user replay outcome: the
+    // account already exists, so no seed runs and we fall through to sign-in.
   }
   Session.clearSignInData();
   // Post-auth routing is owned by OnboardingGuard. Navigating here would

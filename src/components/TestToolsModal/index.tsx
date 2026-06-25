@@ -18,7 +18,6 @@ import * as FeatureAccess from '@userActions/FeatureAccess';
 import toggleTestToolsModal from '@userActions/TestTool';
 import CONST from '@src/CONST';
 import ONYXKEYS from '@src/ONYXKEYS';
-import ClientLogs from './ClientLogs';
 
 // Auto = no override (resolver decides); the other two force the state.
 const OVERRIDE_OPTIONS: Array<{
@@ -158,9 +157,6 @@ function TestToolsModal() {
             {translate('testTools.howToOpen')}
           </Text>
         </View>
-
-        <ClientLogs />
-
         <Button
           large
           success

@@ -1,9 +1,8 @@
-import {useEffect, useMemo, useRef} from 'react';
+import {useMemo} from 'react';
 import {useOnyx} from 'react-native-onyx';
 import {useConfig} from '@context/global/ConfigContext';
 import {useFirebase} from '@context/global/FirebaseContext';
 import useCurrentUserData from '@hooks/useCurrentUserData';
-import Log from '@libs/Log';
 import {
   getOnboardingLastVisitedPath,
   hasAcceptedCurrentTerms,
@@ -37,7 +36,6 @@ function useOnboardingFlow(): OnboardingFlowState {
   const {auth} = useFirebase();
   const userID = auth?.currentUser?.uid;
   const {config} = useConfig();
-  const [isLoadingApp] = useOnyx(ONYXKEYS.IS_LOADING_APP);
   // Positive proof that THIS session's `app/open` succeeded and delivered the
   // user record. Set only by OpenApp's `successData` (reset on cold launch and
   // sign-out), so unlike `isLoadingApp === false` it can't be flipped by a
@@ -108,75 +106,6 @@ function useOnboardingFlow(): OnboardingFlowState {
       skipOnboarding,
     };
   }, [userID, userData, config, userDataHydrated]);
-
-  // TEMP diagnostic (Apple returning-user "onboarding + no friends" race):
-  // capture the exact gate inputs the instant onboarding is decided to fire.
-  // The reproduced log (2026-06-25) showed OnboardingGuard redirecting to
-  // onboarding/terms before OpenApp hydrated the real record, so this snapshot
-  // pins which factor opened the gate:
-  //   - `isLoadingApp:false` here while OpenApp has not delivered data ==
-  //     premature "bootstrap done" (the only `false` writer is OpenApp's
-  //     finallyData, which also runs on cancel/early-fail).
-  //   - `hasRecord:true` with `hasCompletedOnboarding:false` / `username_chosen`
-  //     unset == a stale/partial USER_DATA_LIST record being read (this sign-in
-  //     wrote none; the 409 path seeds nothing).
-  //   - `configLoaded:false` flipping `hasAcceptedTerms` false can also route to
-  //     terms even for an already-onboarded user.
-  // Remove once root-caused.
-  const prevShouldFireRef = useRef(false);
-  useEffect(() => {
-    if (flowState.shouldFireOnboarding && !prevShouldFireRef.current) {
-      Log.info('[useOnboardingFlow] shouldFireOnboarding -> true', false, {
-        isLoadingApp: String(isLoadingApp),
-        userDataHydrated: String(userDataHydrated),
-        hasRecord: String(userData !== undefined),
-        usernameChosen: String(userData?.profile?.username_chosen),
-        hasCompletedOnboarding: String(hasCompletedOnboarding(userData)),
-        hasAcceptedTerms: String(hasAcceptedCurrentTerms(userData, config)),
-        configLoaded: String(!!config),
-        route: String(flowState.currentOnboardingRoute),
-      });
-    }
-    prevShouldFireRef.current = flowState.shouldFireOnboarding;
-  }, [
-    flowState.shouldFireOnboarding,
-    flowState.currentOnboardingRoute,
-    isLoadingApp,
-    userDataHydrated,
-    userData,
-    config,
-  ]);
-
-  // TEMP diagnostic: log the FULL gate state on every change (not just the
-  // shouldFire edge). The 2026-06-25 fix-build repro showed OnboardingGuard
-  // redirecting while the edge snapshot above stayed silent and `userData` had
-  // been cleared at sign-in — which the gate logic makes impossible. Logging
-  // the readiness inputs continuously distinguishes a real logic bug (these
-  // values explain the fire) from a stale/mixed JS bundle (these never show
-  // userDataHydrated/isReady transitioning the way the redirect implies).
-  // Remove once the bug is confirmed fixed on-device.
-  const prevStateRef = useRef('');
-  useEffect(() => {
-    const snapshot = JSON.stringify({
-      auth: !!userID,
-      userDataHydrated: userDataHydrated ?? null,
-      isLoadingApp: isLoadingApp ?? null,
-      hasRecord: userData !== undefined,
-      isReady: flowState.isReady,
-      shouldFire: flowState.shouldFireOnboarding,
-    });
-    if (snapshot !== prevStateRef.current) {
-      prevStateRef.current = snapshot;
-      Log.info(`[useOnboardingFlow] state ${snapshot}`);
-    }
-  }, [
-    userID,
-    userDataHydrated,
-    isLoadingApp,
-    userData,
-    flowState.isReady,
-    flowState.shouldFireOnboarding,
-  ]);
 
   return flowState;
 }

@@ -158,11 +158,7 @@ function ScreenWrapper(
   const {initialHeight} = useInitialDimensions();
   const styles = useThemeStyles();
   const keyboardState = useKeyboardState();
-  const {isProduction} = useEnvironment();
-  // Expose the Test Tools menu (and its four-finger-tap trigger) everywhere
-  // except production. Ad-hoc/staging builds need it to reach the in-app client
-  // log viewer for on-device diagnostics; production users never see it.
-  const canUseTestTools = !isProduction;
+  const {isDevelopment} = useEnvironment();
   const {isOffline} = useNetwork();
   const [didScreenTransitionEnd, setDidScreenTransitionEnd] = useState(false);
   const maxHeight = shouldEnableMaxHeight ? windowHeight : undefined;
@@ -176,12 +172,12 @@ function ScreenWrapper(
 
   const panResponder = useRef(
     PanResponder.create({
-      // Gate the gesture to non-production, matching where `<TestToolsModal />`
-      // is actually rendered (see `canUseTestTools &&` below). In production the
-      // modal never mounts, so capturing the multi-touch gesture would only fire
-      // a no-op toggle.
+      // Gate the gesture to dev only, matching where `<TestToolsModal />` is
+      // actually rendered (see `isDevelopment &&` below). Outside dev the modal
+      // never mounts, so capturing the multi-touch gesture would only fire a
+      // no-op toggle.
       onStartShouldSetPanResponderCapture: (_e, gestureState) =>
-        canUseTestTools &&
+        isDevelopment &&
         gestureState.numberActiveTouches === CONST.TEST_TOOL.NUMBER_OF_TAPS,
       onPanResponderRelease: toggleTestToolsModal,
     }),
@@ -307,8 +303,8 @@ function ScreenWrapper(
                   }
                   enabled={shouldEnablePickerAvoiding}> */}
                 <HeaderGap styles={headerGapStyles} />
-                {canUseTestTools && <TestToolsModal />}
-                {canUseTestTools && <CustomDevMenu />}
+                {isDevelopment && <TestToolsModal />}
+                {isDevelopment && <CustomDevMenu />}
                 <ScreenWrapperStatusContext.Provider value={contextValue}>
                   {
                     // If props.children is a function, call it to provide the insets to the children.

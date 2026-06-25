@@ -24,21 +24,6 @@ jest.mock('@hooks/useCurrentUserData', () => ({
   default: jest.fn(),
 }));
 
-// The hook imports `@libs/Log` for its temporary onboarding-race diagnostics.
-// `Log` transitively pulls in `@libs/Console`, which calls `Onyx.connect` at
-// module load — and this suite swaps in the real `react-native-onyx` (via
-// `requireActual`) where that connect isn't wired. Stub the logger so the
-// import has no side effects; the diagnostics are fire-and-forget anyway.
-jest.mock('@libs/Log', () => ({
-  __esModule: true,
-  default: {
-    info: jest.fn(),
-    warn: jest.fn(),
-    alert: jest.fn(),
-    hmmm: jest.fn(),
-  },
-}));
-
 jest.mock('react-native-onyx', () => {
   const actual = jest.requireActual<typeof RNOnyx>('react-native-onyx');
   return {
