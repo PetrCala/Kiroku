@@ -24,14 +24,16 @@ function formatUnits(value: number): string {
 /**
  * Total-alcohol scorecard for the selected range. Reads the shared range +
  * comparison from the toolbar and tells a period story top-to-bottom:
- * verdict (units) → shape (units by period) → wins (restraint) → load
- * (consumption) → risk (threshold days) → texture (intensity mix).
+ * verdict + shape (units this period, broken down by sub-period) → wins
+ * (restraint) → load (consumption) → risk (threshold days) → texture
+ * (intensity mix).
  *
- * The headline number is followed immediately by the labeled "Units by
- * period" bar chart: it carries the same trajectory the old inline hero
- * sparkline tried to show, but with readable per-bucket labels and values.
- * The sparkline (an axis-less curve that collapsed to a handful of points
- * at any range) is gone — the bar chart is the readable replacement.
+ * The headline number and the labeled "Units by period" bars live in one
+ * card: the big total sits above a divider, the per-bucket bars below it,
+ * so the number and its breakdown read as a single unit instead of a
+ * lonely full-width value stacked on a separate chart. The old inline hero
+ * sparkline (an axis-less curve that collapsed to a handful of points at
+ * any range) is gone — these readable, labeled bars are its replacement.
  */
 function OverviewTab() {
   const {translate} = useLocalize();
@@ -235,22 +237,27 @@ function OverviewTab() {
             delta={makeDelta(current.totalUnits, previous?.totalUnits ?? 0)}
             polarity="lower-is-supportive"
             isLoading={isLoading}
+            chart={
+              <View
+                style={{
+                  borderTopWidth: 1,
+                  borderTopColor: theme.border,
+                  paddingTop: 12,
+                }}>
+                <PeriodBarList
+                  points={subPeriods}
+                  granularity={granularity}
+                  accessibilityLabel={translate(
+                    'statistics.tabs.overview.texture.series.a11y',
+                  )}
+                  isLoading={isLoading}
+                />
+              </View>
+            }
           />
         </View>
 
-        <ChartCard
-          title={translate('statistics.tabs.overview.texture.series.title')}>
-          <PeriodBarList
-            points={subPeriods}
-            granularity={granularity}
-            accessibilityLabel={translate(
-              'statistics.tabs.overview.texture.series.a11y',
-            )}
-            isLoading={isLoading}
-          />
-        </ChartCard>
-
-        <View style={[styles.mb3, styles.mt2]}>
+        <View style={styles.mb3}>
           {sectionLabel('statistics.tabs.overview.sections.highlights')}
           <KpiCardGroup cards={winsCards} isLoading={isLoading} />
         </View>
