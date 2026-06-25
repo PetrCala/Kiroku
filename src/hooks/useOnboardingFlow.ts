@@ -147,6 +147,37 @@ function useOnboardingFlow(): OnboardingFlowState {
     config,
   ]);
 
+  // TEMP diagnostic: log the FULL gate state on every change (not just the
+  // shouldFire edge). The 2026-06-25 fix-build repro showed OnboardingGuard
+  // redirecting while the edge snapshot above stayed silent and `userData` had
+  // been cleared at sign-in — which the gate logic makes impossible. Logging
+  // the readiness inputs continuously distinguishes a real logic bug (these
+  // values explain the fire) from a stale/mixed JS bundle (these never show
+  // userDataHydrated/isReady transitioning the way the redirect implies).
+  // Remove once the bug is confirmed fixed on-device.
+  const prevStateRef = useRef('');
+  useEffect(() => {
+    const snapshot = JSON.stringify({
+      auth: !!userID,
+      userDataHydrated: userDataHydrated ?? null,
+      isLoadingApp: isLoadingApp ?? null,
+      hasRecord: userData !== undefined,
+      isReady: flowState.isReady,
+      shouldFire: flowState.shouldFireOnboarding,
+    });
+    if (snapshot !== prevStateRef.current) {
+      prevStateRef.current = snapshot;
+      Log.info(`[useOnboardingFlow] state ${snapshot}`);
+    }
+  }, [
+    userID,
+    userDataHydrated,
+    isLoadingApp,
+    userData,
+    flowState.isReady,
+    flowState.shouldFireOnboarding,
+  ]);
+
   return flowState;
 }
 

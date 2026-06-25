@@ -92,7 +92,15 @@ function OnboardingGuard() {
           return;
         }
         lastTargetRef.current = target;
-        Log.info(`[OnboardingGuard] Redirecting to ${target}`);
+        // TEMP diagnostic: capture the exact gate state this navigate acted on.
+        // If this logs with shouldFireOnboarding:true but useOnboardingFlow's
+        // own snapshot never logged the transition, the running JS bundle is
+        // stale/mixed (the gate fix isn't actually executing). Remove once the
+        // returning-Apple-user bug is confirmed fixed on-device.
+        Log.info(`[OnboardingGuard] Redirecting to ${target}`, false, {
+          isReady: String(isReady),
+          shouldFireOnboarding: String(shouldFireOnboarding),
+        });
         Navigation.navigate(target);
       }, NAVIGATE_SETTLE_MS);
     });

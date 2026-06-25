@@ -21,7 +21,12 @@ import ONYXKEYS from '@src/ONYXKEYS';
 // Diagnostic prefixes that get pulled to the top of the panel for at-a-glance
 // reading on-device. Covers the Apple sign-in provisioning path plus the
 // onboarding-race instrumentation (the OpenApp dispatch and the gate snapshot).
-const MARKERS = ['signInWithOAuth', 'useOnboardingFlow', 'openApp'];
+const MARKERS = [
+  'signInWithOAuth',
+  'useOnboardingFlow',
+  'OnboardingGuard',
+  'openApp',
+];
 
 function toMillis(time: Log['time']): number {
   const date = time instanceof Date ? time : new Date(time);
