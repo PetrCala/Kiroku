@@ -35,7 +35,8 @@ will need `….adhoc.watch` + `COMPANION_IDENTIFIER = ….adhoc` at that time.)
 
 - `DebugAdHoc` + `ReleaseAdHoc`:
   `"PRODUCT_BUNDLE_IDENTIFIER[sdk=iphoneos*]" = "….alcohol-tracker.adhoc"`.
-- `INFOPLIST_KEY_CFBundleDisplayName = "Kiroku AdHoc"` (home-screen label) for both.
+- Home-screen label via a `KIROKU_DISPLAY_NAME` build setting (see §2): `Kiroku AdHoc`
+  on the two AdHoc configs, `Kiroku` on the other six.
 - `DebugAdHoc` switched to `CODE_SIGN_STYLE = Automatic` (was manual, pinned to the
   `Kiroku_Development` profile). `Kiroku_Development` is **shared** by `Debug`,
   `DebugDevelopment` and `DebugProduction`, so it can't be re-pointed to `.adhoc`;
@@ -45,18 +46,21 @@ will need `….adhoc.watch` + `COMPANION_IDENTIFIER = ….adhoc` at that time.)
 - `ReleaseAdHoc` stays **manual** against `Kiroku_AdHoc` (the CI/IPA path) — only
   its bundle id + display name changed.
 
-All `Release/Debug/*Production/*Development` configs are untouched. Production's
-display name is still `Kiroku` (every config sets `INFOPLIST_KEY_CFBundleDisplayName`,
-so removing the hardcoded `CFBundleDisplayName` from `Info.plist` is value-neutral
-for them).
+All `Release/Debug/*Production/*Development` configs keep their identity, profile
+and `KIROKU_DISPLAY_NAME = Kiroku`, so production is unaffected.
 
-### 2. `Info.plist`
+### 2. `Info.plist` — display name + Google URL scheme
 
-`ios/kiroku/Info.plist`: removed the hardcoded `CFBundleDisplayName` (`Kiroku`) so
-the per-config `INFOPLIST_KEY_CFBundleDisplayName` build setting wins (`Kiroku AdHoc`
-for ad hoc, `Kiroku` elsewhere). The ad hoc Google reversed-client-id URL scheme
-(`com.googleusercontent.apps.806896865950-getgjeb0…`) is added to `CFBundleURLSchemes`
-so Google Sign-In completes in the ad hoc build.
+`ios/kiroku/Info.plist`: `CFBundleDisplayName` is set to `$(KIROKU_DISPLAY_NAME)`,
+a per-config build setting defined on all eight `kiroku` configs (`Kiroku AdHoc` on
+AdHoc, `Kiroku` elsewhere). **Why a custom variable and not
+`INFOPLIST_KEY_CFBundleDisplayName`:** the `INFOPLIST_KEY_*` settings only take
+effect when `GENERATE_INFOPLIST_FILE = YES`, which this target does **not** set (it
+ships a real `Info.plist`), so those settings are silently ignored here. A `$(...)`
+variable in the plist _is_ expanded (same mechanism as `CFBundleIdentifier =
+$(PRODUCT_BUNDLE_IDENTIFIER)`). The ad hoc Google reversed-client-id URL scheme
+(`com.googleusercontent.apps.806896865950-getgjeb0…`) is also added to
+`CFBundleURLSchemes` so Google Sign-In completes in the ad hoc build.
 
 ### 3. Fastlane
 
