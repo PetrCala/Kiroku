@@ -18,7 +18,10 @@ import ONYXKEYS from '@src/ONYXKEYS';
 // can reach any menu (e.g. the Apple sign-in provisioning logs) are viewable and
 // shareable straight from an ad-hoc device, with no Mac/Xcode tether.
 
-const MARKER = 'signInWithOAuth';
+// Diagnostic prefixes that get pulled to the top of the panel for at-a-glance
+// reading on-device. Covers the Apple sign-in provisioning path plus the
+// onboarding-race instrumentation (the OpenApp dispatch and the gate snapshot).
+const MARKERS = ['signInWithOAuth', 'useOnboardingFlow', 'openApp'];
 
 function toMillis(time: Log['time']): number {
   const date = time instanceof Date ? time : new Date(time);
@@ -59,9 +62,12 @@ function ClientLogs() {
   }, [logs]);
 
   const text = lines.join('\n');
-  // The Apple sign-in provisioning markers are the reason this panel exists —
-  // pull them to the top so they're readable on-device without scrolling.
-  const markerLines = lines.filter(line => line.includes(MARKER));
+  // The Apple sign-in / onboarding-race markers are the reason this panel
+  // exists — pull them to the top so they're readable on-device without
+  // scrolling.
+  const markerLines = lines.filter(line =>
+    MARKERS.some(marker => line.includes(marker)),
+  );
 
   const onShare = () => {
     if (!text) {
@@ -100,7 +106,9 @@ function ClientLogs() {
 
       {markerLines.length > 0 ? (
         <View style={styles.gap1}>
-          <Text style={styles.textMicroSupporting}>Apple sign-in markers:</Text>
+          <Text style={styles.textMicroSupporting}>
+            Sign-in / onboarding markers:
+          </Text>
           {markerLines.map((line, index) => (
             <Text
               // eslint-disable-next-line react/no-array-index-key

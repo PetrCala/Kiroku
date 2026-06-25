@@ -1,8 +1,9 @@
-import {useMemo} from 'react';
+import {useEffect, useMemo, useRef} from 'react';
 import {useOnyx} from 'react-native-onyx';
 import {useConfig} from '@context/global/ConfigContext';
 import {useFirebase} from '@context/global/FirebaseContext';
 import useCurrentUserData from '@hooks/useCurrentUserData';
+import Log from '@libs/Log';
 import {
   getOnboardingLastVisitedPath,
   hasAcceptedCurrentTerms,
@@ -98,6 +99,42 @@ function useOnboardingFlow(): OnboardingFlowState {
       skipOnboarding,
     };
   }, [userID, userData, config, isLoadingApp]);
+
+  // TEMP diagnostic (Apple returning-user "onboarding + no friends" race):
+  // capture the exact gate inputs the instant onboarding is decided to fire.
+  // The reproduced log (2026-06-25) showed OnboardingGuard redirecting to
+  // onboarding/terms before OpenApp hydrated the real record, so this snapshot
+  // pins which factor opened the gate:
+  //   - `isLoadingApp:false` here while OpenApp has not delivered data ==
+  //     premature "bootstrap done" (the only `false` writer is OpenApp's
+  //     finallyData, which also runs on cancel/early-fail).
+  //   - `hasRecord:true` with `hasCompletedOnboarding:false` / `username_chosen`
+  //     unset == a stale/partial USER_DATA_LIST record being read (this sign-in
+  //     wrote none; the 409 path seeds nothing).
+  //   - `configLoaded:false` flipping `hasAcceptedTerms` false can also route to
+  //     terms even for an already-onboarded user.
+  // Remove once root-caused.
+  const prevShouldFireRef = useRef(false);
+  useEffect(() => {
+    if (flowState.shouldFireOnboarding && !prevShouldFireRef.current) {
+      Log.info('[useOnboardingFlow] shouldFireOnboarding -> true', false, {
+        isLoadingApp: String(isLoadingApp),
+        hasRecord: String(userData !== undefined),
+        usernameChosen: String(userData?.profile?.username_chosen),
+        hasCompletedOnboarding: String(hasCompletedOnboarding(userData)),
+        hasAcceptedTerms: String(hasAcceptedCurrentTerms(userData, config)),
+        configLoaded: String(!!config),
+        route: String(flowState.currentOnboardingRoute),
+      });
+    }
+    prevShouldFireRef.current = flowState.shouldFireOnboarding;
+  }, [
+    flowState.shouldFireOnboarding,
+    flowState.currentOnboardingRoute,
+    isLoadingApp,
+    userData,
+    config,
+  ]);
 
   return flowState;
 }

@@ -22,7 +22,7 @@ import type {
 import {SIDE_EFFECT_REQUEST_COMMANDS, WRITE_COMMANDS} from '@libs/API/types';
 // import * as Browser from '@libs/Browser';
 // import DateUtils from '@libs/DateUtils';
-// import Log from '@libs/Log';
+import Log from '@libs/Log';
 import getCurrentUrl from '@libs/Navigation/currentUrl';
 import Navigation from '@libs/Navigation/Navigation';
 import setCalendarLocale from '@libs/setCalendarLocale';
@@ -213,6 +213,15 @@ function resetIsLoadingAppForColdLaunch(): void {
  * Fetches data needed for app initialization
  */
 function openApp() {
+  // TEMP diagnostic (Apple returning-user "onboarding + no friends" race):
+  // mark the OpenApp dispatch so a repro can be lined up against the
+  // `[useOnboardingFlow]` gate snapshot and the existing
+  // `[Network] Finished API request {OpenApp}` line. OpenApp's optimisticData
+  // sets `isLoadingApp=true` and its finallyData sets it back to `false` on
+  // completion OR cancel; if the gate fires with `isLoadingApp:false` but no
+  // "Finished … OpenApp" line landed first, OpenApp flipped the flag without
+  // delivering the user record. Remove once root-caused.
+  Log.info('[openApp] dispatching OpenApp bootstrap request');
   // getPolicyParamsForOpenOrReconnect().then(
   // (policyParams: PolicyParamsForOpenOrReconnect) => {
   const params: OpenAppParams = {
