@@ -2,8 +2,10 @@ import {I18nManager} from 'react-native';
 import Onyx from 'react-native-onyx';
 import * as App from '@userActions/App';
 import * as Calendar from '@userActions/Calendar';
+import * as Console from '@userActions/Console';
 import * as Device from '@userActions/Device';
 import * as Subscriptions from '@userActions/Subscriptions';
+import CONFIG from '@src/CONFIG';
 import CONST from '@src/CONST';
 import ONYXKEYS from '@src/ONYXKEYS';
 import intlPolyfill from '@libs/IntlPolyfill';
@@ -68,6 +70,17 @@ export default function () {
   // "this session's bootstrap completed". A stale `false` from a previous
   // session would open those gates before `openApp` runs.
   App.resetIsLoadingAppForColdLaunch();
+
+  // Capture client logs into Onyx from launch on every non-production build, so
+  // diagnostics that fire before any debug menu is reachable (e.g. the Apple
+  // sign-in provisioning logs) are recorded and viewable via the in-app log
+  // viewer in TestToolsModal. Gate on the build VARIANT, not `IS_IN_PRODUCTION`
+  // (which is NODE_ENV-based and therefore `true` for a release-mode ad-hoc
+  // build); ad-hoc/staging are the variants that need this. Production never
+  // collects logs this way.
+  if (CONFIG.ENVIRONMENT !== CONST.ENVIRONMENT.PROD) {
+    Console.setShouldStoreLogs(true);
+  }
 
   Device.setDeviceID();
 

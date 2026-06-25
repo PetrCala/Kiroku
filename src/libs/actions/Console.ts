@@ -30,6 +30,15 @@ function disableLoggingAndFlushLogs() {
 }
 
 /**
+ * Clear the captured logs without disabling collection. Used by the in-app
+ * debug log viewer so a fresh repro can be captured without toggling capture
+ * off and on.
+ */
+function clearLogs() {
+  Onyx.set(ONYXKEYS.LOGS, {});
+}
+
+/**
  * Clears the persisted logs on app launch,
  * so that we have fresh logs for the new app session.
  */
@@ -47,4 +56,5 @@ export {
   setShouldStoreLogs,
   disableLoggingAndFlushLogs,
   flushAllLogsOnAppLaunch,
+  clearLogs,
 };
