@@ -36,7 +36,6 @@ import type {
   UpdateEmailSentEmailParams,
   VerifyEmailScreenEmailParmas,
   WeekOfParams,
-  AfRateSummaryParams,
 } from './params';
 
 export default {
@@ -1181,9 +1180,6 @@ export default {
         afRate: {
           title: 'Alcohol-free rate',
           emptyLabel: 'Your alcohol-free rate will show as data builds.',
-          legend: 'Share of the last 30 days alcohol-free',
-          summary: ({currentRate}: AfRateSummaryParams) =>
-            `Now at ${currentRate}% alcohol-free.`,
         },
         drinkTypeStack: {
           title: 'Drink mix over time',

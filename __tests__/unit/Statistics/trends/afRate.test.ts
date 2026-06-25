@@ -2,9 +2,7 @@
  * @jest-environment node
  */
 
-import buildAfRateSeries, {
-  summarizeAfRate,
-} from '@libs/Statistics/trends/afRate';
+import buildAfRateSeries from '@libs/Statistics/trends/afRate';
 import type {DrinkEvent} from '@libs/Statistics';
 
 function event(localDay: string): DrinkEvent {
@@ -44,50 +42,54 @@ describe('buildAfRateSeries', () => {
     expect(out.map(p => p.rate)).toEqual([100, 100, 100, 100]);
   });
 
-  test('expanding window before it fills, then trailing', () => {
-    // Window = 2 days. Drinks on day 2 and day 4.
-    // day1: AF -> 1/1 = 100
-    // day2: drink -> [d1,d2] = 1/2 = 50
-    // day3: AF -> [d2,d3] = 1/2 = 50
-    // day4: drink -> [d3,d4] = 1/2 = 50
-    // day5: AF -> [d4,d5] = 1/2 = 50
+  test('pre-roll gives the first point a full trailing window', () => {
+    // Window = 3. With no events anywhere, the first point already averages the
+    // two pre-roll days plus itself (all alcohol-free) -> a flat 100, never a
+    // one-day 0/100 spike.
     const out = buildAfRateSeries(
-      [event('2026-05-02'), event('2026-05-04')],
+      [],
       new Date('2026-05-01T00:00:00.000Z'),
-      new Date('2026-05-05T00:00:00.000Z'),
-      2,
+      new Date('2026-05-03T00:00:00.000Z'),
+      3,
     );
-    expect(out.map(p => p.rate)).toEqual([100, 50, 50, 50, 50]);
-    expect(out[0].date).toBe('2026-05-01');
+    expect(out.map(p => p.date)).toEqual([
+      '2026-05-01',
+      '2026-05-02',
+      '2026-05-03',
+    ]);
+    expect(out.map(p => p.rate)).toEqual([100, 100, 100]);
+  });
+
+  test('a drink just before the range carries into the first point', () => {
+    // Window = 3, range 05-10..05-12, with one drink the day before start.
+    // First point window = [05-08, 05-09(drink), 05-10] -> 2/3 = 67, not 100.
+    const out = buildAfRateSeries(
+      [event('2026-05-09')],
+      new Date('2026-05-10T00:00:00.000Z'),
+      new Date('2026-05-12T00:00:00.000Z'),
+      3,
+    );
+    expect(out.map(p => p.date)).toEqual([
+      '2026-05-10',
+      '2026-05-11',
+      '2026-05-12',
+    ]);
+    // 05-10:[08,09,10]=2/3=67, 05-11:[09,10,11]=2/3=67, 05-12:[10,11,12]=3/3=100
+    expect(out.map(p => p.rate)).toEqual([67, 67, 100]);
   });
 
   test('rate falls during drinking and recovers during abstinence', () => {
-    // Window = 3. Drinks on days 2,3,4; clean afterwards.
+    // Window = 3. Drinks on days 2,3,4; clean afterwards. Pre-roll fills the
+    // first window with alcohol-free days before 05-01.
     const out = buildAfRateSeries(
       [event('2026-05-02'), event('2026-05-03'), event('2026-05-04')],
       new Date('2026-05-01T00:00:00.000Z'),
       new Date('2026-05-08T00:00:00.000Z'),
       3,
     );
-    // d1:100, d2:[d1,d2]1/2=50, d3:[d1..d3]1/3=33, d4:[d2..d4]0/3=0,
-    // d5:[d3..d5]1/3=33, d6:[d4..d6]2/3=67, d7:[d5..d7]3/3=100, d8:[d6..d8]3/3=100
-    expect(out.map(p => p.rate)).toEqual([100, 50, 33, 0, 33, 67, 100, 100]);
-  });
-});
-
-describe('summarizeAfRate', () => {
-  test('reads the final point', () => {
-    const out = buildAfRateSeries(
-      [event('2026-05-02')],
-      new Date('2026-05-01T00:00:00.000Z'),
-      new Date('2026-05-03T00:00:00.000Z'),
-      30,
-    );
-    // 2 alcohol-free of 3 elapsed days -> 67%.
-    expect(summarizeAfRate(out)).toEqual({currentRate: 67});
-  });
-
-  test('reports zero for an empty series', () => {
-    expect(summarizeAfRate([])).toEqual({currentRate: 0});
+    // 05-01:[04-29,04-30,05-01]3/3=100, 05-02:[04-30,05-01,05-02]2/3=67,
+    // 05-03:1/3=33, 05-04:0/3=0, 05-05:1/3=33, 05-06:2/3=67, 05-07:3/3=100,
+    // 05-08:3/3=100
+    expect(out.map(p => p.rate)).toEqual([100, 67, 33, 0, 33, 67, 100, 100]);
   });
 });

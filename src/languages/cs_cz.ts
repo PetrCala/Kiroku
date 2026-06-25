@@ -36,7 +36,6 @@ import type {
   UpdateEmailSentEmailParams,
   VerifyEmailScreenEmailParmas,
   WeekOfParams,
-  AfRateSummaryParams,
 } from './params';
 
 export default {
@@ -1188,9 +1187,6 @@ export default {
           title: 'Míra dnů bez alkoholu',
           emptyLabel:
             'Vaše míra dnů bez alkoholu se ukáže, jak budou přibývat data.',
-          legend: 'Podíl posledních 30 dní bez alkoholu',
-          summary: ({currentRate}: AfRateSummaryParams) =>
-            `Aktuálně ${currentRate} % bez alkoholu.`,
         },
         drinkTypeStack: {
           title: 'Mix drinků v čase',

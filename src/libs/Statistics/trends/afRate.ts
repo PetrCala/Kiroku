@@ -1,15 +1,10 @@
-import {addDays, format, startOfDay} from 'date-fns';
+import {addDays, format, startOfDay, subDays} from 'date-fns';
 import type {DrinkEvent} from '@libs/Statistics/types';
 
 type AfRatePoint = {
   date: string;
   /** Alcohol-free share of the trailing window ending on `date`, 0–100. */
   rate: number;
-};
-
-type AfRateSummary = {
-  /** Most recent rolling rate (the last point), 0–100. */
-  currentRate: number;
 };
 
 /** Trailing-window length, in days, for the rolling alcohol-free rate. */
@@ -23,10 +18,14 @@ const AF_RATE_WINDOW_DAYS = 30;
  * Where the cumulative line only ever climbs, this rate *falls* during a
  * drinking stretch and *rises* during abstinence, so the curve carries the
  * user's current momentum: a relapse pulls it down within days, a clean streak
- * lifts it back toward 100. The window is clamped to the range start (it never
- * looks at days before `start`), so early points use a shorter, expanding
- * window rather than inventing pre-history — the denominator is
- * `min(elapsedDays, window)`.
+ * lifts it back toward 100.
+ *
+ * The trailing window is *pre-rolled* `windowDays - 1` days before `start`
+ * using the full event history, so the very first emitted point already sits on
+ * a full window — it reads as the rate the user was *carrying into* the period
+ * (continuous with what came before) rather than a stiff 0%/100% from a
+ * one-day window. Days with no logged drink count as alcohol-free here, exactly
+ * as the cumulative and weekly builders treat them.
  *
  * Computed with a single sliding-window pass (O(days)). Reads `localDay`
  * directly to avoid re-deriving the session timezone here.
@@ -48,42 +47,37 @@ function buildAfRateSeries(
     eventDays.add(event.localDay);
   }
 
-  // Alcohol-free flag (1/0) per day across the range, in order.
-  const afFlags: number[] = [];
-  const dates: string[] = [];
-  let cursor = startDay;
-  while (cursor.getTime() <= endDay.getTime()) {
-    const key = format(cursor, 'yyyy-MM-dd');
-    dates.push(key);
-    afFlags.push(eventDays.has(key) ? 0 : 1);
-    cursor = addDays(cursor, 1);
-  }
+  // Begin the scan before the visible range so the first emitted point already
+  // has a full trailing window (the rate carried into the period).
+  const scanStart = subDays(startDay, windowDays - 1);
 
   const out: AfRatePoint[] = [];
+  const flags: number[] = [];
   let windowSum = 0;
-  for (let i = 0; i < afFlags.length; i += 1) {
-    windowSum += afFlags[i];
+  let cursor = scanStart;
+  let i = 0;
+  while (cursor.getTime() <= endDay.getTime()) {
+    const key = format(cursor, 'yyyy-MM-dd');
+    const af = eventDays.has(key) ? 0 : 1;
+    flags.push(af);
+    windowSum += af;
     if (i >= windowDays) {
-      windowSum -= afFlags[i - windowDays];
+      windowSum -= flags[i - windowDays];
     }
     const windowCount = Math.min(i + 1, windowDays);
-    out.push({
-      date: dates[i],
-      rate: Math.round((windowSum / windowCount) * 100),
-    });
+    // Only emit once inside the visible range; earlier days are pre-roll.
+    if (cursor.getTime() >= startDay.getTime()) {
+      out.push({
+        date: key,
+        rate: Math.round((windowSum / windowCount) * 100),
+      });
+    }
+    cursor = addDays(cursor, 1);
+    i += 1;
   }
   return out;
 }
 
-/**
- * Headline number for the chart caption: the most recent rolling rate. An empty
- * series reports zero.
- */
-function summarizeAfRate(points: AfRatePoint[]): AfRateSummary {
-  const currentRate = points.length > 0 ? points[points.length - 1].rate : 0;
-  return {currentRate};
-}
-
 export default buildAfRateSeries;
-export {summarizeAfRate, AF_RATE_WINDOW_DAYS};
-export type {AfRatePoint, AfRateSummary};
+export {AF_RATE_WINDOW_DAYS};
+export type {AfRatePoint};

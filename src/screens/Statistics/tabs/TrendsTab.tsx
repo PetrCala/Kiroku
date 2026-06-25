@@ -85,24 +85,11 @@ function TrendsTab() {
           <ChartCard
             title={translate('statistics.tabs.trends.afRate.title')}
             footer={
-              <View style={{rowGap: 4}}>
-                {afRate.points.length > 0 ? (
-                  <Text style={themeStyles.textMicroSupporting}>
-                    {translate(
-                      'statistics.tabs.trends.afRate.summary',
-                      afRate.summary,
-                    )}
-                  </Text>
-                ) : null}
+              afRate.comparisonPoints ? (
                 <Text style={themeStyles.textMicroSupporting}>
-                  {translate('statistics.tabs.trends.afRate.legend')}
+                  {comparisonLegend}
                 </Text>
-                {afRate.comparisonPoints ? (
-                  <Text style={themeStyles.textMicroSupporting}>
-                    {comparisonLegend}
-                  </Text>
-                ) : null}
-              </View>
+              ) : undefined
             }>
             <AfRateLine
               points={afRate.points}

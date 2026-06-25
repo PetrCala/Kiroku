@@ -6,9 +6,8 @@ import {
   buildWeeklyStackedSeries,
   buildWeeklyUnits,
   shiftRange,
-  summarizeAfRate,
 } from '@libs/Statistics/trends';
-import type {AfRatePoint, AfRateSummary} from '@libs/Statistics/trends';
+import type {AfRatePoint} from '@libs/Statistics/trends';
 import useStatsContext from '@hooks/useStatsContext';
 import CONST from '@src/CONST';
 import type {DrinkKey} from '@src/types/onyx/Drinks';
@@ -35,7 +34,6 @@ type Stack = {
 type AfRate = {
   points: AfRatePoint[];
   comparisonPoints?: AfRatePoint[];
-  summary: AfRateSummary;
   hidden: boolean;
 };
 
@@ -132,12 +130,10 @@ function useTrendsTabData(): TrendsTabData {
     if (hidden) {
       return {
         points: [] as AfRatePoint[],
-        summary: {currentRate: 0},
         hidden,
       };
     }
     const points = buildAfRateSeries(events, range.start, range.end);
-    const summary = summarizeAfRate(points);
     let comparisonPoints: AfRatePoint[] | undefined;
     if (comparisonRange) {
       const raw = buildAfRateSeries(
@@ -159,7 +155,7 @@ function useTrendsTabData(): TrendsTabData {
         comparisonPoints = [...pad, ...raw];
       }
     }
-    return {points, comparisonPoints, summary, hidden};
+    return {points, comparisonPoints, hidden};
   }, [events, range.start, range.end, range.preset, comparisonRange]);
 
   // Drink-type stacked area.
