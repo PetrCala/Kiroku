@@ -195,6 +195,13 @@ platform :ios do
           path: "./ios/Kiroku_AdHoc.mobileprovision"
       )
 
+      # The embedded watchOS app signs with its own ad-hoc profile (distinct
+      # .adhoc.watchkitapp App ID, same Apple Distribution cert). Bound by name
+      # in export_options below; (re)minted by scripts/ios-signing.mjs watch-setup.
+      install_provisioning_profile(
+          path: "./ios/KirokuWatch_AdHoc.mobileprovision"
+      )
+
       build_app(
           workspace: "./ios/kiroku.xcworkspace",
           skip_profile_detection: true,
@@ -208,6 +215,8 @@ platform :ios do
                 # applicationIdSuffix ".adhoc". The Kiroku_AdHoc profile is bound to
                 # this id in the portal (see scripts/ios-signing.mjs adhoc-setup).
                 "org.reactjs.native.example.alcohol-tracker.adhoc" => "Kiroku_AdHoc",
+                # Embedded Apple Watch app (ad-hoc).
+                "org.reactjs.native.example.alcohol-tracker.adhoc.watchkitapp" => "KirokuWatch_AdHoc",
               },
               manageAppVersionAndBuildNumber: false
           }
@@ -253,6 +262,13 @@ platform :ios do
         path: "./ios/Kiroku.mobileprovision"
     )
 
+    # The embedded watchOS app signs with its own App Store profile (.watchkitapp
+    # App ID, same Apple Distribution cert). Bound by name in export_options below;
+    # (re)minted by scripts/ios-signing.mjs watch-setup and kept fresh by `renew`.
+    install_provisioning_profile(
+        path: "./ios/KirokuWatch.mobileprovision"
+    )
+
     # Xcode will handle JS bundling via bundle-react-native-code-and-images.sh (uses rock bundler)
     build_app(
         workspace: "./ios/kiroku.xcworkspace",
@@ -261,6 +277,8 @@ platform :ios do
         export_options: {
             provisioningProfiles: {
               "org.reactjs.native.example.alcohol-tracker" => "Kiroku",
+              # Embedded Apple Watch app (App Store).
+              "org.reactjs.native.example.alcohol-tracker.watchkitapp" => "KirokuWatch",
             },
             manageAppVersionAndBuildNumber: false
         }

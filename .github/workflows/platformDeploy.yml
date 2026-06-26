@@ -185,6 +185,11 @@ jobs:
         env:
           LARGE_SECRET_PASSPHRASE: ${{ secrets.LARGE_SECRET_PASSPHRASE }}
 
+      - name: Decrypt watch AppStore profile
+        run: cd ios && gpg --quiet --batch --yes --decrypt --passphrase="$LARGE_SECRET_PASSPHRASE" --output KirokuWatch.mobileprovision KirokuWatch.mobileprovision.gpg
+        env:
+          LARGE_SECRET_PASSPHRASE: ${{ secrets.LARGE_SECRET_PASSPHRASE }}
+
       - name: Decrypt certificate
         run: cd ios && gpg --quiet --batch --yes --decrypt --passphrase="$LARGE_SECRET_PASSPHRASE" --output Certificates.p12 Certificates.p12.gpg
         env:
@@ -213,6 +218,18 @@ jobs:
           # "Unable to connect to simulator." (exit 70) when CoreSimulator
           # isn't ready yet on a fresh runner. Retry instead of failing the deploy.
           command: xcodebuild -downloadPlatform iOS
+
+      - name: Install watchOS platform SDK
+        uses: nick-fields/retry@3f757583fb1b1f940bc8ef4bf4734c8dc02a5847
+        with:
+          timeout_minutes: 20
+          max_attempts: 3
+          retry_wait_seconds: 30
+          # The app archive embeds the Apple Watch app, so xcodebuild refuses to
+          # archive the scheme unless the matching watchOS platform is installed
+          # ("watchOS … must be installed in order to archive the scheme"). Same
+          # flaky "Unable to connect to simulator." retry rationale as iOS above.
+          command: xcodebuild -downloadPlatform watchOS
 
       - name: Generate release notes
         if: ${{ inputs.SHOULD_DEPLOY_PRODUCTION }}
