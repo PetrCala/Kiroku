@@ -516,12 +516,12 @@
 				96EE1767D138A900D6E3A4421BAD14EF /* Frameworks */,
 				B9F8269ED055C5C64E7601A97DC265CB /* Resources */,
 				A93D5E4D4B3C14C35A07B0AB64D8AFE8 /* [User] Copy GoogleService-Info.plist */,
+				99C9732089753FE060B2B9AB /* Embed Watch Content */,
 				F3EDCA035BBAB0CF568F51A01F8CD5C4 /* Bundle React Native code and images */,
 				D30FCE1E350F4965931BD17D /* [CP] Embed Pods Frameworks */,
 				F4913D0151294198FC1A8191 /* [CP] Copy Pods Resources */,
 				E2C265C970ACF793BCF15D2D /* [CP-User] [RNFB] Core Configuration */,
 				9D897891346AC1496A589F0D /* [CP-User] [RNFB] Crashlytics Configuration */,
-				99C9732089753FE060B2B9AB /* Embed Watch Content */,
 			);
 			buildRules = (
 			);
