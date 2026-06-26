@@ -23,16 +23,22 @@
  *   node scripts/ios-signing.mjs renew  [--yes] [--p12 <path> --p12-password <pw>] [--profile-suffix .test]
  *   node scripts/ios-signing.mjs finalize [--yes]
  *   node scripts/ios-signing.mjs adhoc-setup [--yes]
+ *   node scripts/ios-signing.mjs watch-setup [--yes]
  *
  * Commands:
  *   check    Report expiry + state for the Distribution cert and the Kiroku /
- *            Kiroku_AdHoc profiles via the ASC API. --deep also decrypts the
- *            committed ios/*.gpg and inspects the embedded certs (the authoritative
- *            "will CI build" verdict). Exits non-zero if expired or within --days.
- *   renew    DRY RUN unless --yes. Mints a new Distribution cert + the two
- *            CI-critical profiles, rebuilds Certificates.p12, re-encrypts the
- *            ios/*.gpg, commits on a new branch and opens a PR. Additive and
- *            reversible — never revokes, never rotates the secret.
+ *            Kiroku_AdHoc (+ the KirokuWatch* watch) profiles via the ASC API.
+ *            --deep also decrypts the committed ios/*.gpg and inspects the
+ *            embedded certs (the authoritative "will CI build" verdict). Exits
+ *            non-zero if expired or within --days. A watch profile that has not
+ *            been set up yet (no .gpg) is informational, never a failure.
+ *   renew    DRY RUN unless --yes. Mints a new Distribution cert + the CI-critical
+ *            profiles (Kiroku, Kiroku_AdHoc, and — once watch-setup has registered
+ *            the watch App IDs — KirokuWatch, KirokuWatch_AdHoc), rebuilds
+ *            Certificates.p12, re-encrypts the ios/*.gpg, commits on a new branch
+ *            and opens a PR. Additive and reversible — never revokes, never
+ *            rotates the secret. Watch profiles whose App IDs are not yet
+ *            registered are skipped cleanly (run watch-setup first).
  *   finalize DRY RUN unless --yes. POST-MERGE: rotates the IOS_CERTIFICATE_PASSWORD
  *            secret to the new P12 password and revokes the old expired cert /
  *            deletes the old profiles, then clears the scratch state.
@@ -43,6 +49,15 @@
  *            cert and re-encrypts ios/Kiroku_AdHoc.mobileprovision.gpg. Does NOT
  *            mint a cert, touch the P12 / Kiroku profile, or git-commit — review
  *            the .gpg diff and commit it yourself. Idempotent.
+ *   watch-setup DRY RUN unless --yes. ONE-TIME watch setup: registers the two
+ *            watch App IDs (.watchkitapp + .adhoc.watchkitapp, no capabilities),
+ *            mints KirokuWatch (App Store) + KirokuWatch_AdHoc (ad-hoc) against
+ *            the existing valid Distribution cert, plus KirokuWatch_Development
+ *            best-effort if an Apple Development cert exists, and re-encrypts the
+ *            ios/KirokuWatch*.mobileprovision.gpg. Does NOT mint a dist cert,
+ *            touch the P12 / phone profiles, or git-commit — review + commit the
+ *            .gpg yourself. After this, `renew` covers the two distribution watch
+ *            profiles automatically. Idempotent.
  *
  * Flags:
  *   --yes               actually execute (renew/finalize are dry-run otherwise)
@@ -58,6 +73,8 @@
  *   --profile-suffix <s> renew: append to profile names + write to scratch paths (end-to-end test; does NOT touch ios/*.gpg)
  *   --bundle-id <id>    app bundle id (default: org.reactjs.native.example.alcohol-tracker)
  *   --adhoc-bundle-id <id> ad-hoc App ID the Kiroku_AdHoc profile binds to (default: <bundle-id>.adhoc)
+ *   --watch-bundle-id <id> watch App ID for KirokuWatch / _Development (default: <bundle-id>.watchkitapp)
+ *   --watch-adhoc-bundle-id <id> watch ad-hoc App ID for KirokuWatch_AdHoc (default: <adhoc-bundle-id>.watchkitapp)
  *   --repo <owner/repo> GitHub repo for the PR + secret (default: PetrCala/Kiroku)
  *   --help, -h          show this help
  */
@@ -76,6 +93,11 @@ const DEFAULT_BUNDLE_ID = 'org.reactjs.native.example.alcohol-tracker';
 // installs side by side with the App Store build — mirrors Android's
 // applicationIdSuffix ".adhoc". The Kiroku_AdHoc profile binds to THIS id.
 const DEFAULT_ADHOC_BUNDLE_ID = `${DEFAULT_BUNDLE_ID}.adhoc`;
+// The embedded watchOS app's PRODUCT_BUNDLE_IDENTIFIER is the phone id +
+// ".watchkitapp" (and the ad-hoc watch id is the .adhoc phone id +
+// ".watchkitapp"). The KirokuWatch / KirokuWatch_AdHoc profiles bind to these.
+const DEFAULT_WATCH_BUNDLE_ID = `${DEFAULT_BUNDLE_ID}.watchkitapp`;
+const DEFAULT_WATCH_ADHOC_BUNDLE_ID = `${DEFAULT_ADHOC_BUNDLE_ID}.watchkitapp`;
 const STATE_FILE = path.join(IOS_DIR, '.signing-renew-state.json');
 const KEY_PLAIN = path.join(IOS_DIR, 'ios-fastlane-json-key.json');
 const KEY_GPG = path.join(IOS_DIR, 'ios-fastlane-json-key.json.gpg');
@@ -100,6 +122,14 @@ const OPTS = {
     'adhoc-bundle-id',
     process.env.ASC_ADHOC_BUNDLE_ID || DEFAULT_ADHOC_BUNDLE_ID,
   ),
+  watchBundleId: flag(
+    'watch-bundle-id',
+    process.env.ASC_WATCH_BUNDLE_ID || DEFAULT_WATCH_BUNDLE_ID,
+  ),
+  watchAdhocBundleId: flag(
+    'watch-adhoc-bundle-id',
+    process.env.ASC_WATCH_ADHOC_BUNDLE_ID || DEFAULT_WATCH_ADHOC_BUNDLE_ID,
+  ),
   keyPath: flag('key', process.env.ASC_KEY_JSON),
   passphrase: flag('passphrase', process.env.LARGE_SECRET_PASSPHRASE),
   days: Number(flag('days', 21)),
@@ -117,14 +147,21 @@ const OPTS = {
 
 // The CI-critical profile set. Kiroku (platformDeploy.yml `beta`) and
 // Kiroku_AdHoc (testBuild.yml `build_internal`) are bound BY NAME in the
-// Fastfile export_options, so regenerated profiles MUST keep these names. Both
-// are distribution-signed, so one new cert covers both. Dev/watch profiles are
-// intentionally out of scope (not CI-consumed; dev needs a separate cert).
+// Fastfile export_options, so regenerated profiles MUST keep these names. All
+// of these are distribution-signed, so one new cert covers them.
+//
+// The two KirokuWatch* profiles sign the EMBEDDED Apple Watch app (same lanes,
+// same Apple Distribution cert). They are `optional`: `renew`/`check` skip them
+// cleanly until their App IDs are registered by the one-time `watch-setup`, so a
+// plain renew never breaks on a not-yet-set-up watch. Once set up, every yearly
+// `renew` keeps them fresh alongside the phone profiles. The development-only
+// KirokuWatch_Development profile is NOT here (it needs a separate Apple
+// Development cert); `watch-setup` mints it best-effort.
 //
 // `bundle` returns the App ID each profile binds to. Kiroku → the App Store
-// bundle id; Kiroku_AdHoc → the distinct ".adhoc" id (side-by-side install).
-// Resolving per-profile (not one global bundle id) is what keeps every yearly
-// `renew` coexistence-aware.
+// bundle id; *_AdHoc → the distinct ".adhoc" id (side-by-side install); the
+// watch ids append ".watchkitapp". Resolving per-profile (not one global bundle
+// id) is what keeps every yearly `renew` coexistence- and watch-aware.
 const PROFILES = [
   {
     name: 'Kiroku',
@@ -140,7 +177,31 @@ const PROFILES = [
     devices: true,
     bundle: () => OPTS.adhocBundleId,
   },
+  {
+    name: 'KirokuWatch',
+    file: 'KirokuWatch.mobileprovision',
+    type: 'IOS_APP_STORE',
+    devices: false,
+    bundle: () => OPTS.watchBundleId,
+    optional: true,
+  },
+  {
+    name: 'KirokuWatch_AdHoc',
+    file: 'KirokuWatch_AdHoc.mobileprovision',
+    type: 'IOS_APP_ADHOC',
+    devices: true,
+    bundle: () => OPTS.watchAdhocBundleId,
+    optional: true,
+  },
 ];
+// The watch development profile is minted by `watch-setup` (best-effort, needs
+// an Apple Development cert) and is not part of the distribution `renew` set.
+const WATCH_DEV_PROFILE = {
+  name: 'KirokuWatch_Development',
+  file: 'KirokuWatch_Development.mobileprovision',
+  type: 'IOS_APP_DEVELOPMENT',
+  bundle: () => OPTS.watchBundleId,
+};
 
 function usage() {
   L(
@@ -385,6 +446,11 @@ const isDistribution = c =>
 async function listDistributionCerts() {
   return (await apiList('/v1/certificates?limit=200')).filter(isDistribution);
 }
+const isDevelopment = c =>
+  /DEVELOPMENT/.test(c.attributes.certificateType || '');
+async function listDevelopmentCerts() {
+  return (await apiList('/v1/certificates?limit=200')).filter(isDevelopment);
+}
 async function listManagedProfiles() {
   const all = await apiList('/v1/profiles?limit=200');
   const wanted = PROFILES.map(p => p.name + OPTS.profileSuffix);
@@ -555,6 +621,22 @@ async function cmdCheck() {
   for (const want of PROFILES) {
     const name = want.name + OPTS.profileSuffix;
     const p = profiles.find(x => x.attributes.name === name);
+    // An optional (watch) profile only counts once its .gpg is committed (i.e.
+    // adopted into CI). Until then it's purely informational — `check` must not
+    // cry wolf before watch-setup runs, even if a stale portal profile lingers.
+    const adopted =
+      !want.optional || fs.existsSync(path.join(IOS_DIR, `${want.file}.gpg`));
+    if (!adopted) {
+      if (!p) {
+        L(`  Profile ${name}: – not set up (run watch-setup)`);
+      } else {
+        const d = daysUntil(p.attributes.expirationDate);
+        L(
+          `  Profile ${name}: – not set up (portal has a ${d < 0 ? 'stale expired' : 'pre-existing'} profile; watch-setup will replace it)`,
+        );
+      }
+      continue;
+    }
     if (!p) {
       L(`  Profile ${name}: ✗ NONE`);
       bad = true;
@@ -802,6 +884,19 @@ async function ensureProfiles(ctx) {
       );
       continue;
     }
+    // Optional profiles (the watch set) are only minted once their App ID is
+    // registered (one-time `watch-setup`). Skip cleanly otherwise so a plain
+    // `renew` never fails on a watch that hasn't been set up yet.
+    if (want.optional && !bundleResCache.has(want.bundle())) {
+      const res = await findBundleResource(want.bundle());
+      if (!res) {
+        L(
+          `  ${fullName}: App ID ${want.bundle()} not registered — skipping (run \`watch-setup\`).`,
+        );
+        continue;
+      }
+      bundleResCache.set(want.bundle(), res.id);
+    }
     const old = existing.find(p => p.attributes.name === fullName);
     if (old) {
       STATE.oldProfiles[fullName] = old.id; // retained for finalize
@@ -886,16 +981,25 @@ async function cmdRenew() {
     L(`  revoke first:      ${OPTS.revokeCert} (to free a cap slot)`);
   if (OPTS.p12) L(`  cert source:       BYO --p12 ${OPTS.p12}`);
   else L('  cert source:       mint a new Apple Distribution cert via ASC API');
+  const plannedFiles = [];
   for (const want of PROFILES) {
     const fullName = want.name + OPTS.profileSuffix;
+    // Optional (watch) profiles only mint once their App ID is registered.
+    if (want.optional && !(await findBundleResource(want.bundle()))) {
+      L(
+        `  profile ${fullName} (${want.type}, bundle ${want.bundle()}): SKIP — App ID not registered (run \`watch-setup\`)`,
+      );
+      continue;
+    }
     const old = existingProfiles.find(p => p.attributes.name === fullName);
     L(
       `  profile ${fullName} (${want.type}, bundle ${want.bundle()}${want.devices ? `, +${deviceIds.length} devices` : ''}): ${old ? `replace ${old.id}` : 'create'} → ${OPTS.profileSuffix ? '<scratch>' : `ios/${want.file}`}`,
     );
+    plannedFiles.push(want.file);
   }
   if (!OPTS.profileSuffix)
     L(
-      `  re-encrypt + commit: ios/${P12_FILE}.gpg, ios/Kiroku.mobileprovision.gpg, ios/Kiroku_AdHoc.mobileprovision.gpg → PR to ${OPTS.repo}`,
+      `  re-encrypt + commit: ${[`ios/${P12_FILE}.gpg`, ...plannedFiles.map(f => `ios/${f}.gpg`)].join(', ')} → PR to ${OPTS.repo}`,
     );
   else
     L(
@@ -950,15 +1054,17 @@ async function cmdRenew() {
     );
   await ensureProfiles({certId: effCertId, deviceIds});
 
-  // Step 6 — re-encrypt the committed assets (overwrite the .gpg).
+  // Step 6 — re-encrypt the committed assets (overwrite the .gpg). Only the
+  // profiles actually minted this run (the watch set is included only when its
+  // App IDs are registered — see ensureProfiles' optional skip).
   fs.copyFileSync(p12.path, path.join(IOS_DIR, P12_FILE));
   STATE.p12PasswordForFinalize = p12.password;
   saveState();
-  for (const f of [
-    P12_FILE,
-    'Kiroku.mobileprovision',
-    'Kiroku_AdHoc.mobileprovision',
-  ]) {
+  const mintedProfiles = PROFILES.filter(
+    p => STATE.profiles[p.name + OPTS.profileSuffix],
+  );
+  const mintedFiles = mintedProfiles.map(p => p.file);
+  for (const f of [P12_FILE, ...mintedFiles]) {
     const plain = path.join(IOS_DIR, f);
     gpgEncryptOverwrite(plain);
     fs.rmSync(plain, {force: true}); // scrub plaintext (gitignored anyway)
@@ -974,8 +1080,7 @@ async function cmdRenew() {
     ROOT,
     'add',
     `ios/${P12_FILE}.gpg`,
-    'ios/Kiroku.mobileprovision.gpg',
-    'ios/Kiroku_AdHoc.mobileprovision.gpg',
+    ...mintedFiles.map(f => `ios/${f}.gpg`),
   ]);
   run('git', [
     '-C',
@@ -986,7 +1091,7 @@ async function cmdRenew() {
   ]);
   run('git', ['-C', ROOT, 'push', 'origin', `HEAD:refs/heads/${branch}`]);
   const prBody = [
-    'Regenerates the expired iOS Apple Distribution certificate and the `Kiroku` / `Kiroku_AdHoc` provisioning profiles via the App Store Connect API, and re-encrypts the committed `ios/*.gpg`.',
+    `Regenerates the expired iOS Apple Distribution certificate and the \`${mintedProfiles.map(p => p.name).join('` / `')}\` provisioning profiles via the App Store Connect API, and re-encrypts the committed \`ios/*.gpg\`.`,
     '',
     `New cert: \`${STATE.newCert ? STATE.newCert.id : 'BYO'}\`.`,
     '',
@@ -1176,6 +1281,167 @@ async function cmdAdhocSetup() {
   );
 }
 
+// ===========================================================================
+// watch-setup (one-time: register the watch App IDs + mint the watch profiles)
+// ===========================================================================
+// Mint the watch development profile (one-off; NOT part of the distribution
+// `renew` set — it needs a separate Apple Development cert). Replaces a
+// same-named profile if one already exists.
+async function mintWatchDevProfile(devCertId, bundleResId, deviceIds) {
+  const name = WATCH_DEV_PROFILE.name + OPTS.profileSuffix;
+  const existing = (await apiList('/v1/profiles?limit=200')).find(
+    p => p.attributes.name === name,
+  );
+  if (existing) await api('DELETE', `/v1/profiles/${existing.id}`);
+  const res = await api('POST', '/v1/profiles', {
+    data: {
+      type: 'profiles',
+      attributes: {name, profileType: WATCH_DEV_PROFILE.type},
+      relationships: {
+        bundleId: {data: {type: 'bundleIds', id: bundleResId}},
+        certificates: {data: [{type: 'certificates', id: devCertId}]},
+        devices: {data: deviceIds.map(id => ({type: 'devices', id}))},
+      },
+    },
+  });
+  const outPath = path.join(IOS_DIR, WATCH_DEV_PROFILE.file);
+  fs.writeFileSync(
+    outPath,
+    Buffer.from(res.data.attributes.profileContent, 'base64'),
+  );
+  L(
+    `Created profile ${name} (${res.data.id}) → ${path.relative(ROOT, outPath)}`,
+  );
+  return outPath;
+}
+
+async function cmdWatchSetup() {
+  const watchStore = PROFILES.find(p => p.name === 'KirokuWatch');
+  const watchAdhoc = PROFILES.find(p => p.name === 'KirokuWatch_AdHoc');
+  const watchBundle = watchStore.bundle();
+  const watchAdhocBundle = watchAdhoc.bundle();
+  const newest = list =>
+    list
+      .filter(c => daysUntil(c.attributes.expirationDate) >= 0)
+      .sort(
+        (a, b) =>
+          new Date(b.attributes.expirationDate) -
+          new Date(a.attributes.expirationDate),
+      )[0];
+
+  L(
+    OPTS.yes
+      ? 'EXECUTING watch-setup (--yes).\n'
+      : 'DRY RUN — no changes will be made (pass --yes to execute).\n',
+  );
+
+  // Step 0 — survey.
+  const deviceIds = await listEnabledDeviceIds();
+  const validCert = newest(await listDistributionCerts());
+  const devCert = newest(await listDevelopmentCerts());
+  const existingStoreBundle = await findBundleResource(watchBundle);
+  const existingAdhocBundle = await findBundleResource(watchAdhocBundle);
+  const managed = await listManagedProfiles();
+  const prof = n =>
+    managed.find(p => p.attributes.name === n + OPTS.profileSuffix);
+
+  L('Plan:');
+  L(
+    `  watch App ID:        ${watchBundle} ${existingStoreBundle ? `(exists ${existingStoreBundle.id})` : '→ CREATE'}`,
+  );
+  L(
+    `  watch ad-hoc App ID: ${watchAdhocBundle} ${existingAdhocBundle ? `(exists ${existingAdhocBundle.id})` : '→ CREATE'}`,
+  );
+  L(
+    '  capabilities:        none (the MVP watch gets its token from the phone)',
+  );
+  L(`  enabled devices:     ${deviceIds.length}`);
+  L(
+    `  distribution cert:   ${validCert ? `${validCert.id} (${validCert.attributes.certificateType}, ${daysUntil(validCert.attributes.expirationDate)}d left)` : '✗ NONE valid'}`,
+  );
+  L(
+    `  development cert:    ${devCert ? `${devCert.id} (${devCert.attributes.certificateType}, ${daysUntil(devCert.attributes.expirationDate)}d left)` : '— none → KirokuWatch_Development will be skipped'}`,
+  );
+  L(
+    `  KirokuWatch (store): ${prof('KirokuWatch') ? `replace ${prof('KirokuWatch').id}` : 'create'} → ios/${watchStore.file}`,
+  );
+  L(
+    `  KirokuWatch_AdHoc:   ${prof('KirokuWatch_AdHoc') ? `replace ${prof('KirokuWatch_AdHoc').id}` : 'create'} → ios/${watchAdhoc.file}`,
+  );
+  L(
+    `  KirokuWatch_Devel.:  ${devCert ? `${prof('KirokuWatch_Development') ? `replace ${prof('KirokuWatch_Development').id}` : 'create'} → ios/${WATCH_DEV_PROFILE.file}` : 'SKIP (no Apple Development cert)'}`,
+  );
+  L(
+    '  re-encrypt:          the minted ios/KirokuWatch*.mobileprovision.gpg (review + commit yourself — no git here)',
+  );
+
+  if (!validCert)
+    throw new Error(
+      'No valid Apple Distribution certificate on the account — run `renew --yes` first, then re-run watch-setup.',
+    );
+
+  if (!OPTS.yes) {
+    L(
+      '\nNext (with --yes): create the 2 watch App IDs → mint KirokuWatch + KirokuWatch_AdHoc (and KirokuWatch_Development if a dev cert exists) → re-encrypt the watch .gpg files.',
+    );
+    L(
+      'Then commit the new ios/KirokuWatch*.mobileprovision.gpg. Future `renew` runs keep the two distribution watch profiles fresh automatically.',
+    );
+    return;
+  }
+
+  // Step 1 — register both watch App IDs (no capabilities) + seed the cache so
+  // ensureProfiles' optional-skip resolves them from cache.
+  const storeResId = await ensureBundleId(watchBundle, 'Kiroku Watch');
+  const adhocResId = await ensureBundleId(
+    watchAdhocBundle,
+    'Kiroku Watch AdHoc',
+  );
+  bundleResCache.set(watchBundle, storeResId);
+  bundleResCache.set(watchAdhocBundle, adhocResId);
+
+  // Step 2 — mint the two distribution watch profiles against the valid cert.
+  loadState();
+  await ensureProfiles({
+    certId: validCert.id,
+    deviceIds,
+    only: new Set(['KirokuWatch', 'KirokuWatch_AdHoc']),
+  });
+  clearState();
+
+  // Step 3 — best-effort development profile (local Debug builds). Needs a
+  // separate Apple Development cert; skipped with a clear note when absent.
+  const reencrypt = [watchStore.file, watchAdhoc.file];
+  if (devCert) {
+    const devFile = await mintWatchDevProfile(
+      devCert.id,
+      storeResId,
+      deviceIds,
+    );
+    reencrypt.push(path.basename(devFile));
+  } else {
+    L(
+      '\nKirokuWatch_Development: SKIPPED — no Apple Development certificate on the account.\n  Local Debug watch builds need it; create one (Xcode → Settings → Accounts → Manage Certificates → +) and re-run watch-setup, or let Xcode auto-manage Debug signing.',
+    );
+  }
+
+  // Step 4 — re-encrypt every minted profile, scrub the plaintext.
+  L('');
+  for (const file of reencrypt) {
+    const plain = path.join(IOS_DIR, file);
+    if (!fs.existsSync(plain))
+      throw new Error(
+        `Expected a freshly minted ${plain}, but it is missing — profile creation failed.`,
+      );
+    gpgEncryptOverwrite(plain);
+    fs.rmSync(plain, {force: true});
+    L(`Re-encrypted ios/${file}.gpg ✓`);
+  }
+  L(
+    '\nReview `git diff --stat` and commit the new ios/KirokuWatch*.mobileprovision.gpg.\nFuture `renew` runs now cover KirokuWatch + KirokuWatch_AdHoc automatically.',
+  );
+}
+
 // ---- main -----------------------------------------------------------------
 (async () => {
   if (OPTS.help || !cmd) return usage();
@@ -1185,6 +1451,7 @@ async function cmdAdhocSetup() {
   if (cmd === 'renew') return cmdRenew();
   if (cmd === 'finalize') return cmdFinalize();
   if (cmd === 'adhoc-setup') return cmdAdhocSetup();
+  if (cmd === 'watch-setup') return cmdWatchSetup();
   usage();
   process.exitCode = 1;
 })()

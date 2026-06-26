@@ -86,8 +86,11 @@ secret rotation + revocation, after the matching P12 is merged.
   with a 403, either elevate the key in ASC → Users and Access → Integrations, or
   use the bring-your-own-cert path: `renew --yes --p12 <path> --p12-password <pw>`
   (create the cert/P12 in Xcode or the Developer Portal, the tool does the rest).
-- **Profiles are bound by name.** `Kiroku` / `Kiroku_AdHoc` must keep their exact
-  names — the Fastfile `export_options` maps the bundle id to those names.
+- **Profiles are bound by name.** `Kiroku` / `Kiroku_AdHoc` (and the watch
+  `KirokuWatch` / `KirokuWatch_AdHoc`) must keep their exact names — the Fastfile
+  `export_options.provisioningProfiles` maps each bundle id to a profile name, and
+  the watch target's `PROVISIONING_PROFILE_SPECIFIER[sdk=watchos*]` references them
+  in the pbxproj.
 - **The scratch state file** (`ios/.signing-renew-state.json`, gitignored) holds
   the in-flight private key + new P12 password so `finalize` can apply them and a
   re-run can resume instead of minting a duplicate cert. It's cleared on
@@ -98,11 +101,49 @@ secret rotation + revocation, after the matching P12 is merged.
   slot with `--revoke-cert <id>` (revokes one explicitly named cert — never an
   automatic pick). `finalize` only ever revokes already-expired certs.
 
+## Apple Watch profiles
+
+The embedded watchOS app (`Kiroku Watch App`, revived in the Apple Watch MVP) is
+signed by three profiles that mirror the phone set, bound to two watch App IDs:
+
+| Profile                   | App ID                               | Cert               | Consumed by                                                     |
+| ------------------------- | ------------------------------------ | ------------------ | --------------------------------------------------------------- |
+| `KirokuWatch`             | `…alcohol-tracker.watchkitapp`       | Apple Distribution | `platformDeploy.yml` → Fastfile `beta` (App Store / TestFlight) |
+| `KirokuWatch_AdHoc`       | `…alcohol-tracker.adhoc.watchkitapp` | Apple Distribution | `testBuild.yml` → Fastfile `build_internal` (ad-hoc)            |
+| `KirokuWatch_Development` | `…alcohol-tracker.watchkitapp`       | Apple Development  | local Debug builds only (not CI)                                |
+
+**One-time bootstrap** (registers the two watch App IDs + mints all three
+profiles against the existing valid certs, then re-encrypts the
+`ios/KirokuWatch*.mobileprovision.gpg`):
+
+```bash
+node scripts/ios-signing.mjs watch-setup            # dry run — prints the plan
+node scripts/ios-signing.mjs watch-setup --yes      # execute (no git commit)
+```
+
+It does **not** mint a distribution cert, touch the P12 or phone profiles, or
+commit — review `git diff --stat` and commit the new `ios/KirokuWatch*.gpg`
+yourself. The `KirokuWatch_Development` step is **best-effort**: skipped with a
+clear note if no Apple Development cert exists (local Debug only; CI never builds
+the Debug configs).
+
+**Yearly renewal is automatic.** Once `watch-setup` has registered the App IDs,
+`renew` regenerates the two **distribution** watch profiles (`KirokuWatch`,
+`KirokuWatch_AdHoc`) alongside `Kiroku` / `Kiroku_AdHoc` off the same new cert,
+and re-encrypts their `.gpg`. Before `watch-setup` has run, `renew`/`check` skip
+the watch profiles cleanly (so the phone-only flow never breaks). The
+`KirokuWatch_Development` profile is **not** part of `renew` (separate dev cert);
+re-mint it with `watch-setup` when it expires.
+
+`check` reports the watch profiles too, but treats one whose `.gpg` is not yet
+committed as informational (not a failure) — even if a stale portal profile
+lingers from the old orphaned watch app.
+
 ## Out of scope
 
-- `Kiroku_Development` and the `KirokuWatch*` profiles — not consumed by any CI
-  scheme, and dev needs a separate Apple Development cert. Renew those manually if
-  the dev/watch targets are revived.
+- `Kiroku_Development` — the phone's development profile is not consumed by any CI
+  scheme and needs a separate Apple Development cert; renew it manually in Xcode
+  if you build the phone Debug config locally.
 - **Never wire this into CI** — it commits and sets secrets; it's a
   local / skill-invoked tool. The eventual `workflow_dispatch` automation is a
   separate, deliberate follow-up.

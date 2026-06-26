@@ -194,6 +194,11 @@ jobs:
         env:
           LARGE_SECRET_PASSPHRASE: ${{ secrets.LARGE_SECRET_PASSPHRASE }}
 
+      - name: Decrypt watch provisioning profile
+        run: cd ios && gpg --quiet --batch --yes --decrypt --passphrase="$LARGE_SECRET_PASSPHRASE" --output KirokuWatch_AdHoc.mobileprovision KirokuWatch_AdHoc.mobileprovision.gpg
+        env:
+          LARGE_SECRET_PASSPHRASE: ${{ secrets.LARGE_SECRET_PASSPHRASE }}
+
       - name: Decrypt certificate
         run: cd ios && gpg --quiet --batch --yes --decrypt --passphrase="$LARGE_SECRET_PASSPHRASE" --output Certificates.p12 Certificates.p12.gpg
         env:
