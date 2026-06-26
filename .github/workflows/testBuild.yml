@@ -224,6 +224,18 @@ jobs:
           # isn't ready yet on a fresh runner. Retry instead of failing the build.
           command: xcodebuild -downloadPlatform iOS
 
+      - name: Install watchOS platform SDK
+        uses: nick-fields/retry@ad984534de44a9489a53aefd81eb77f87c70dc60 # v4.0.0
+        with:
+          timeout_minutes: 20
+          max_attempts: 3
+          retry_wait_seconds: 30
+          # The app archive embeds the Apple Watch app, so xcodebuild refuses to
+          # archive the scheme unless the matching watchOS platform is installed
+          # ("watchOS … must be installed in order to archive the scheme"). Same
+          # flaky "Unable to connect to simulator." retry rationale as iOS above.
+          command: xcodebuild -downloadPlatform watchOS
+
       - name: Run Fastlane
         run: bundle exec fastlane ios build_internal
         env:

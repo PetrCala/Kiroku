@@ -219,6 +219,18 @@ jobs:
           # isn't ready yet on a fresh runner. Retry instead of failing the deploy.
           command: xcodebuild -downloadPlatform iOS
 
+      - name: Install watchOS platform SDK
+        uses: nick-fields/retry@3f757583fb1b1f940bc8ef4bf4734c8dc02a5847
+        with:
+          timeout_minutes: 20
+          max_attempts: 3
+          retry_wait_seconds: 30
+          # The app archive embeds the Apple Watch app, so xcodebuild refuses to
+          # archive the scheme unless the matching watchOS platform is installed
+          # ("watchOS … must be installed in order to archive the scheme"). Same
+          # flaky "Unable to connect to simulator." retry rationale as iOS above.
+          command: xcodebuild -downloadPlatform watchOS
+
       - name: Generate release notes
         if: ${{ inputs.SHOULD_DEPLOY_PRODUCTION }}
         continue-on-error: true
