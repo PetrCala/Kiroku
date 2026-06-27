@@ -109,6 +109,20 @@ android {
         resConfigs "en", "cs"
     }
 
+    // Extract native libraries to the install's nativeLibraryDir at install time
+    // (extractNativeLibs=true) instead of loading them compressed from inside the APK.
+    // SoLoader's DirectApkSoSource (the default, uncompressed path) fails with
+    // "couldn't find DSO to load: libc++_shared.so" in environments where the OS-selected
+    // ABI and the runtime-reported primary ABI disagree (x86/x86_64 devices with ARM
+    // translation, emulators, cloud phones, app cloners, partial Play installs). Forcing
+    // extraction lets those installs resolve the lib via ApplicationSoSource. Trade-off:
+    // slightly larger on-disk install size.
+    packagingOptions {
+        jniLibs {
+            useLegacyPackaging = true
+        }
+    }
+
     flavorDimensions "default"
     productFlavors {
         // we need to define a production flavor but since it has default config, we can leave it empty
