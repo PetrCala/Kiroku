@@ -27775,7 +27775,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", ({ value: true }));
-exports.PLIST_PATH_TEST = exports.PLIST_PATH = exports.BUILD_GRADLE_PATH = void 0;
+exports.PLIST_PATH_WATCH = exports.PLIST_PATH_TEST = exports.PLIST_PATH = exports.BUILD_GRADLE_PATH = void 0;
 exports.updateiOSVersion = updateiOSVersion;
 exports.updateAndroidVersion = updateAndroidVersion;
 exports.generateAndroidVersionCode = generateAndroidVersionCode;
@@ -27792,6 +27792,11 @@ const PLIST_PATH = './ios/kiroku/Info.plist';
 exports.PLIST_PATH = PLIST_PATH;
 const PLIST_PATH_TEST = './ios/kirokuTests/Info.plist';
 exports.PLIST_PATH_TEST = PLIST_PATH_TEST;
+// The embedded Apple Watch app must carry the exact same CFBundleShortVersionString
+// and CFBundleVersion as its containing iOS app, or App Store Connect rejects the
+// upload with a "CFBundleVersion Mismatch" (409) validation error.
+const PLIST_PATH_WATCH = './ios/Kiroku Watch App/Kiroku-Watch-App-Info.plist';
+exports.PLIST_PATH_WATCH = PLIST_PATH_WATCH;
 /**
  * Pad a number to be two digits (with leading zeros if necessary).
  */
@@ -27842,6 +27847,9 @@ function updateiOSVersion(version) {
     (0, child_process_1.execSync)(`/usr/libexec/PlistBuddy -c "Set :CFBundleShortVersionString ${shortVersion}" ${PLIST_PATH_TEST}`);
     (0, child_process_1.execSync)(`/usr/libexec/PlistBuddy -c "Set :CFBundleVersion ${cfVersion}" ${PLIST_PATH}`);
     (0, child_process_1.execSync)(`/usr/libexec/PlistBuddy -c "Set :CFBundleVersion ${cfVersion}" ${PLIST_PATH_TEST}`);
+    // Single-quote the watch plist path because it contains spaces.
+    (0, child_process_1.execSync)(`/usr/libexec/PlistBuddy -c "Set :CFBundleShortVersionString ${shortVersion}" '${PLIST_PATH_WATCH}'`);
+    (0, child_process_1.execSync)(`/usr/libexec/PlistBuddy -c "Set :CFBundleVersion ${cfVersion}" '${PLIST_PATH_WATCH}'`);
     // Return the cfVersion so we can set the NEW_IOS_VERSION in ios.yml
     return cfVersion;
 }
