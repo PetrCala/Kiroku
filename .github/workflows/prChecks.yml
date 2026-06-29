@@ -1,0 +1,56 @@
+# Single entry point for pull-request CI.
+#
+# Triggers on EVERY pull request (no path filter) so the `all-green` gate always reports a status —
+# which makes it a reliable required check for branch protection (a path-filtered required check would
+# hang a docs-only PR on "Expected — waiting for status"). It fans out to the same reusable workflows
+# the master pipeline (preDeploy.yml) runs, so PR CI and master CI stay in lockstep. Those reusable
+# workflows no longer trigger on `pull_request` themselves, so nothing double-runs.
+name: PR checks
+
+on:
+  pull_request:
+    types: [opened, synchronize]
+    branches-ignore: [staging, production]
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  typecheck:
+    uses: ./.github/workflows/typecheck.yml
+
+  lint:
+    uses: ./.github/workflows/lint.yml
+
+  test:
+    uses: ./.github/workflows/test.yml
+
+  react-compiler:
+    uses: ./.github/workflows/react-compiler-compliance.yml
+
+  all-green:
+    name: all-green
+    runs-on: ubuntu-latest
+    needs: [typecheck, lint, test, react-compiler]
+    if: ${{ always() }}
+    steps:
+      - name: Require all PR checks to pass
+        env:
+          TYPECHECK: ${{ needs.typecheck.result }}
+          LINT: ${{ needs.lint.result }}
+          TEST: ${{ needs.test.result }}
+          REACT_COMPILER: ${{ needs.react-compiler.result }}
+        run: |
+          echo "typecheck=$TYPECHECK lint=$LINT test=$TEST react-compiler=$REACT_COMPILER"
+          failed=0
+          for status in "$TYPECHECK" "$LINT" "$TEST" "$REACT_COMPILER"; do
+            if [[ "$status" == "failure" || "$status" == "cancelled" ]]; then
+              failed=1
+            fi
+          done
+          if [[ "$failed" -ne 0 ]]; then
+            echo "::error::One or more required PR checks did not pass."
+            exit 1
+          fi
+          echo "All required PR checks passed (skipped checks are allowed)."

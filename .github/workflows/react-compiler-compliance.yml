@@ -1,11 +1,9 @@
 name: React Compiler Compliance Check
 
+# PR CI runs via prChecks.yml (the all-green gate); master CI via preDeploy.yml. Both call this
+# reusable workflow, so it has no standalone pull_request trigger (avoids double-runs).
 on:
   workflow_call:
-  pull_request:
-    types: [opened, synchronize]
-    branches-ignore: [staging, production]
-    paths: ['**.ts', '**.tsx']
 
 concurrency:
   group: ${{ github.ref == 'refs/heads/master' && format('{0}-{1}', github.ref, github.sha) || github.ref }}-react-compiler-compliance
