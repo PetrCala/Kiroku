@@ -82,11 +82,22 @@ class ScreenshotTest {
     private fun logIn() {
         device.wait(Until.findObject(By.desc("AuthScreen")), 30_000)
 
-        // RN TextInput → Android EditText. Match by index since there are no testIDs.
-        val edits = device.findObjects(By.clazz("android.widget.EditText"))
-        check(edits.size >= 2) { "Expected email + password fields on AuthScreen" }
-        edits[0].text = email
-        edits[1].text = password
+        // The inputs carry testIDs (loginEmail / loginPassword). RN exposes testID
+        // as the view resource-id; prefer that, and WAIT for the fields to mount —
+        // the AuthScreen container appears before its inputs do (the original cause
+        // of "found 0 EditTexts"). Fall back to matching EditTexts by index.
+        val emailById = device.wait(Until.findObject(By.res("loginEmail")), 15_000)
+        val passwordById = device.findObject(By.res("loginPassword"))
+        if (emailById != null && passwordById != null) {
+            emailById.text = email
+            passwordById.text = password
+        } else {
+            device.wait(Until.findObject(By.clazz("android.widget.EditText")), 15_000)
+            val edits = device.findObjects(By.clazz("android.widget.EditText"))
+            check(edits.size >= 2) { "Expected email + password fields on AuthScreen, found ${edits.size}" }
+            edits[0].text = email
+            edits[1].text = password
+        }
 
         // Submit button — matched by its localized text.
         clickByText(listOf("Log In", "Přihlásit se", "Sign In"))

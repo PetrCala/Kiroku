@@ -249,10 +249,10 @@ and
 [`android/app/src/androidTest/.../ScreenshotTest.kt`](../android/app/src/androidTest/java/com/alcohol_tracker/screenshots/ScreenshotTest.kt)
 makes a few assumptions that may need adjustment after the first run:
 
-- **Inputs lack `testID`s.** The login fields are matched by `firstMatch` on
-  text/secure text fields. If a future screen change reorders them, login
-  breaks. Long-term fix: add `testID="loginEmail"` / `testID="loginPassword"`
-  on the inputs in `src/screens/SignUp/AuthScreen.tsx`.
+- **Login inputs** now carry `testID="loginEmail"` / `testID="loginPassword"`
+  (in `src/screens/SignUp/AuthScreen.tsx`); both `logIn()` helpers prefer those
+  ids and wait for the fields to mount, falling back to the old positional
+  match (iOS `firstMatch`, Android EditText-by-index) for older builds.
 
 - **Bottom tab bar buttons lack `testID`s.** Matched by their localized
   labels (`"Start"`, `"Settings"`, `"Nastavení"`…). If translations change

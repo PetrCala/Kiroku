@@ -52,13 +52,16 @@ final class ScreenshotTests: XCTestCase {
         let auth = app.otherElements["AuthScreen"]
         XCTAssertTrue(auth.waitForExistence(timeout: 30), "AuthScreen never appeared")
 
-        // Inputs lack testIDs — match by their containing TextField/SecureTextField.
-        // The first text field in the form is email, then password (secure).
-        let emailField = app.textFields.firstMatch
+        // The inputs carry testIDs (loginEmail / loginPassword) that RN maps to the
+        // accessibility identifier. Prefer them; fall back to the first text /
+        // secure-text field if a build predates the testIDs.
+        let emailById = app.textFields["loginEmail"]
+        let emailField = emailById.waitForExistence(timeout: 10) ? emailById : app.textFields.firstMatch
         emailField.tap()
         emailField.typeText(ProcessInfo.processInfo.environment["APPLE_DEMO_EMAIL"] ?? "")
 
-        let passwordField = app.secureTextFields.firstMatch
+        let passwordById = app.secureTextFields["loginPassword"]
+        let passwordField = passwordById.exists ? passwordById : app.secureTextFields.firstMatch
         passwordField.tap()
         passwordField.typeText(ProcessInfo.processInfo.environment["APPLE_DEMO_PASSWORD"] ?? "")
 
