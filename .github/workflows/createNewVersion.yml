@@ -104,12 +104,27 @@ jobs:
 
       - name: Commit new version
         run: |
-          git add \
-            ./package.json \
-            ./package-lock.json \
-            ./android/app/build.gradle \
-            ./ios/kiroku/Info.plist \
-            ./ios/kirokuTests/Info.plist
+          set -eo pipefail
+
+          # Stage every tracked file the bump modified. This job runs on a fresh
+          # master checkout where only the bumpVersion action edits tracked files
+          # (package.json, package-lock.json, android/app/build.gradle, and the
+          # iOS Info.plists incl. the embedded Watch app), so `-u` captures
+          # exactly them — without a hardcoded allow-list that silently drops a
+          # newly added native version file (the cause of the watch-app version
+          # mismatch that broke the iOS upload).
+          git add -u
+
+          # A bump must change something; fail loudly rather than erroring out on
+          # an empty commit if bumpVersion produced no diff.
+          if git diff --cached --quiet; then
+            echo "::error::No version files changed; bumpVersion produced no diff to commit."
+            exit 1
+          fi
+
+          echo "Committing version bump for:" >> "$GITHUB_STEP_SUMMARY"
+          git diff --cached --name-only | sed 's/^/- /' >> "$GITHUB_STEP_SUMMARY"
+
           git commit -m "chore: release $NEW_VERSION"
 
       - name: Push version bump branch
