@@ -400,8 +400,16 @@ describe('getEffectiveAutoCloseHours', () => {
     expect(DSUtils.getEffectiveAutoCloseHours(12, 24)).toBe(12);
   });
 
+  it('treats the "never" sentinel user preference as a terminal opt-out', () => {
+    // The canonical opt-out (kiroku-api wire format) wins even when a global
+    // default exists.
+    expect(
+      DSUtils.getEffectiveAutoCloseHours(CONST.SESSION.AUTO_CLOSE.NEVER, 24),
+    ).toBeNull();
+  });
+
   it('treats an explicit null user preference as a terminal opt-out', () => {
-    // "Never" wins even when a global default exists.
+    // `null` is still accepted defensively (legacy/local values).
     expect(DSUtils.getEffectiveAutoCloseHours(null, 24)).toBeNull();
   });
 

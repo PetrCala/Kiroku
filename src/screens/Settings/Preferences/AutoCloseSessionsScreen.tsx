@@ -15,9 +15,11 @@ import * as Preferences from '@userActions/Preferences';
 import CONST from '@src/CONST';
 import ONYXKEYS from '@src/ONYXKEYS';
 
+type AutoCloseValue = number | typeof CONST.SESSION.AUTO_CLOSE.NEVER;
+
 type AutoCloseOption = {
-  /** The hours threshold, or `null` for the "Never" opt-out. */
-  value: number | null;
+  /** The hours threshold, or the `'never'` opt-out sentinel. */
+  value: AutoCloseValue;
   text: string;
   keyForList: string;
   isSelected: boolean;
@@ -33,13 +35,18 @@ function AutoCloseSessionsScreen() {
   const configDefault = config?.auto_close_default_hours;
 
   // When the user has no stored preference, show the resolved default as the
-  // current selection without materializing it into their prefs. An explicit
-  // `null` (Never) is shown as-is. `getEffectiveAutoCloseHours` returns a number
-  // of hours or `null` (never).
-  const selectedValue =
-    userPref === undefined
-      ? getEffectiveAutoCloseHours(undefined, configDefault)
-      : userPref;
+  // current selection without materializing it into their prefs. The stored
+  // opt-out is the `'never'` sentinel (kiroku-api wire format), shown as-is.
+  // getEffectiveAutoCloseHours returns a number or `null` (never); map that
+  // `null` back to the sentinel so the matching "Never" row is selected.
+  // `userPref` is never `null` (only number | 'never' | undefined), so `??`
+  // falls through to the resolved default exactly when the user has no pref.
+  const resolvedDefaultHours = getEffectiveAutoCloseHours(
+    undefined,
+    configDefault,
+  );
+  const selectedValue: AutoCloseValue =
+    userPref ?? resolvedDefaultHours ?? CONST.SESSION.AUTO_CLOSE.NEVER;
 
   const options: AutoCloseOption[] = [
     ...CONST.SESSION.AUTO_CLOSE.OPTIONS.map(hours => ({
@@ -49,14 +56,14 @@ function AutoCloseSessionsScreen() {
       isSelected: selectedValue === hours,
     })),
     {
-      value: null,
+      value: CONST.SESSION.AUTO_CLOSE.NEVER,
       text: translate('autoCloseSessionsScreen.never'),
       keyForList: CONST.SESSION.AUTO_CLOSE.NEVER,
-      isSelected: selectedValue === null,
+      isSelected: selectedValue === CONST.SESSION.AUTO_CLOSE.NEVER,
     },
   ];
 
-  const onSelectRow = (value: number | null) => {
+  const onSelectRow = (value: AutoCloseValue) => {
     Preferences.updateAutoCloseSessionsAfterHours(value);
   };
 

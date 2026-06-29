@@ -528,24 +528,34 @@ function calculateSessionLength(
 }
 
 /**
- * Resolve the effective auto-close threshold (in hours) for a user.
+ * Resolve the effective auto-close threshold (in hours) for DISPLAY in the
+ * settings UI.
  *
  * Resolution chain: the user's own preference, then the global config default,
  * then the compile-time fallback (`CONST.SESSION.AUTO_CLOSE.DEFAULT_HOURS`).
- * An explicit `null` (the "Never" choice) is a terminal opt-out and short
- * circuits the chain, so a user who opted out is never overridden by a global
- * default. A non-positive number is treated the same as opting out.
+ * The `'never'` sentinel (`CONST.SESSION.AUTO_CLOSE.NEVER`, the kiroku-api wire
+ * form of the opt-out) is a terminal opt-out and short-circuits the chain, so a
+ * user who opted out is never overridden by a global default. `null` and a
+ * non-positive number are treated the same as opting out.
+ *
+ * NOTE: the compile-time 24h fallback exists only so the settings screen always
+ * has a concrete value to display. It is NOT a close-decision gate. The server
+ * sweep (kiroku-api `resolveThresholdHours`) and PR3's client lazy-close must
+ * treat "no user pref AND no config default" as DISABLED (no implicit 24h), so
+ * the feature stays dark until `config/auto_close_default_hours` is set. Use
+ * this resolver for the UI; gate the actual close on the config default being
+ * present.
  *
  * Returns the number of hours, or `null` when the session should never be
- * auto-closed. Shared by the (future) client lazy-close and the server sweep so
- * both honor the same threshold.
+ * auto-closed (displayed as "Never").
  */
 function getEffectiveAutoCloseHours(
-  userPref: number | null | undefined,
+  userPref: number | typeof CONST.SESSION.AUTO_CLOSE.NEVER | null | undefined,
   configDefault: number | null | undefined,
 ): number | null {
-  // Explicit user opt-out wins over any default.
-  if (userPref === null) {
+  // Explicit user opt-out wins over any default. The canonical opt-out is the
+  // `'never'` sentinel; `null` is also accepted defensively.
+  if (userPref === CONST.SESSION.AUTO_CLOSE.NEVER || userPref === null) {
     return null;
   }
   if (typeof userPref === 'number') {
