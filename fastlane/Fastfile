@@ -373,8 +373,7 @@ platform :ios do
       # app_version needs to be set to the short version, without the last digit e.g. '1.0.92'
       app_version: ENV["VERSION"].rpartition(".")[0],
 
-      # We want to submit the version for Apple to review
-      submit_for_review: true,
+      submit_for_review: false,
 
       # Do NOT auto-release on approval — keep the approved build as Pending
       # Developer Release so we control the public launch date.
