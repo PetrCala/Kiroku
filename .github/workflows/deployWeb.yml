@@ -25,6 +25,14 @@ name: Deploy web
 # After the preview channel deploys, a `playwright` job runs the web smoke suite
 # (e2e/web) against the preview URL. It needs two repo secrets holding a
 # dev-backend test account: E2E_TEST_EMAIL and E2E_TEST_PASSWORD.
+#
+# After a `staging` push deploy, a separate `playwrightStaging` job runs the
+# same suite against the live app-dev.kiroku.cz site as a non-gating post-deploy
+# canary (the deploy already happened by the time this runs; a red run is a
+# signal picked up by the repo's failure-notifier/Discord alerting, not a
+# block -- `deployLive` never depends on it). It reuses the same two secrets.
+# `production` pushes never run Playwright: the test account only exists on the
+# DEV Firebase project, and the suite writes data that must never hit prod.
 on:
   push:
     branches: [staging, production]
@@ -82,6 +90,18 @@ jobs:
       - name: Stage .env.adhoc from secret
         if: ${{ github.ref_name == 'staging' }}
         run: echo "${{ secrets.ADHOC_ENV_FILE }}" > .env.adhoc
+
+      # .env.adhoc points at the same Firebase project (dev-alcohol-tracker-db)
+      # as .env.development, which the deployPreview job builds with this same
+      # bypass for the same reason: the E2E test account may lack
+      # onboarding.completed_at, so without it OnboardingGuard redirects the
+      # post-deploy Playwright run (job `playwrightStaging`, below) into an
+      # unhandled onboarding screen and it times out. This flag is baked into
+      # the live build, so it also affects real visitors to app-dev.kiroku.cz --
+      # acceptable for a dev-only site, but worth knowing before touching this.
+      - name: Enable onboarding bypass for Playwright build
+        if: ${{ github.ref_name == 'staging' }}
+        run: echo "SKIP_ONBOARDING=true" >> .env.adhoc
 
       - name: Setup Node
         uses: ./.github/actions/composite/setupNode
@@ -184,7 +204,9 @@ jobs:
   # Smoke-tests the freshly deployed preview channel. `needs: [deployPreview]`
   # both supplies the preview URL and scopes this to the preview path only: when
   # deployPreview is skipped (the staging/production push paths) this job is
-  # skipped too, so live deploys are never gated on a smoke run.
+  # skipped too, so live deploys are never gated on a smoke run. See
+  # `playwrightStaging` below for the equivalent post-deploy canary on staging
+  # pushes.
   playwright:
     name: Playwright web smoke
     needs: [deployPreview]
@@ -229,5 +251,50 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: playwright-report
+          path: e2e/web/playwright-report/
+          retention-days: 7
+
+  # Post-deploy smoke canary for the `staging` push path. `needs: [deployLive]`
+  # alone is not enough to scope this to staging -- deployLive also runs on
+  # `production` pushes -- so the branch check lives in `if:`. Deliberately
+  # excludes `production`: the E2E test account only exists on the DEV Firebase
+  # project auth (dev-alcohol-tracker-db), and the suite writes data that must
+  # never land in the prod DB. Non-gating by design: the deploy has already
+  # happened by the time this runs, so a red run here is a signal (surfaced via
+  # the repo's failure-notifier/Discord alerting), not a block -- deployLive
+  # never depends on this job.
+  playwrightStaging:
+    name: Playwright web smoke (staging)
+    needs: [deployLive]
+    if: ${{ github.event_name == 'push' && github.ref_name == 'staging' }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+
+      - name: Setup Node
+        uses: ./.github/actions/composite/setupNode
+
+      - name: Install Playwright browser (Chromium)
+        run: npx playwright install --with-deps chromium
+
+      # PLAYWRIGHT_BASE_URL points the suite at the live site deployLive just
+      # published. E2E_TEST_EMAIL / E2E_TEST_PASSWORD are the same dev-backend
+      # test account secrets the preview-path `playwright` job uses above (the
+      # adhoc build shares the same DEV Firebase project as the preview build --
+      # see the "Enable onboarding bypass" step in deployLive for why
+      # SKIP_ONBOARDING is also needed here).
+      - name: Run web smoke suite against app-dev.kiroku.cz
+        env:
+          PLAYWRIGHT_BASE_URL: https://app-dev.kiroku.cz
+          E2E_TEST_EMAIL: ${{ secrets.E2E_TEST_EMAIL }}
+          E2E_TEST_PASSWORD: ${{ secrets.E2E_TEST_PASSWORD }}
+        run: npm run test:e2e:web
+
+      - name: Upload Playwright report
+        if: ${{ !cancelled() }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report-staging
           path: e2e/web/playwright-report/
           retention-days: 7
