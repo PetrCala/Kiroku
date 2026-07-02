@@ -108,9 +108,14 @@ jobs:
       - name: Run Fastlane
         uses: nick-fields/retry@3f757583fb1b1f940bc8ef4bf4734c8dc02a5847
         with:
-          timeout_minutes: 40
+          # A cold build compiles RN, Hermes, Skia, etc. from source (~65-75 min);
+          # a timeout below that kills attempt 1 mid-build and retries resume on its intermediates
+          timeout_minutes: 90
           max_attempts: 3
           command: bundle exec fastlane android ${{ inputs.SHOULD_DEPLOY_PRODUCTION && 'production' || 'beta' }}
+          # A killed attempt can leave native intermediates Gradle wrongly considers
+          # up-to-date (truncated prefab .so files); retries must not reuse them
+          on_retry_command: rm -rf node_modules/*/android/build android/app/.cxx
         env:
           MYAPP_UPLOAD_STORE_PASSWORD: ${{ secrets.MYAPP_UPLOAD_STORE_PASSWORD }}
           MYAPP_UPLOAD_KEY_PASSWORD: ${{ secrets.MYAPP_UPLOAD_KEY_PASSWORD }}
