@@ -74,6 +74,7 @@ const SCREENS = {
       DRINKS_TO_UNITS: 'Settings_Preferences_DrinksToUnits',
       COLOR_PALETTE: 'Settings_Preferences_ColorPalette',
       COLOR_PALETTE_CUSTOM: 'Settings_Preferences_ColorPalette_Custom',
+      AUTO_CLOSE_SESSIONS: 'Settings_Preferences_AutoCloseSessions',
     },
 
     PRIVACY: {

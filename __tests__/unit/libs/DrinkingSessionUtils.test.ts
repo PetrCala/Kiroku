@@ -392,3 +392,167 @@ describe('isDifferentDay', () => {
     expect(DSUtils.isDifferentDay(session, UTC)).toBe(false);
   });
 });
+
+const HOUR_MS = 60 * 60 * 1000;
+
+describe('getEffectiveAutoCloseHours', () => {
+  it('uses the user preference when set to a positive number', () => {
+    expect(DSUtils.getEffectiveAutoCloseHours(12, 24)).toBe(12);
+  });
+
+  it('treats the "never" sentinel user preference as a terminal opt-out', () => {
+    // The canonical opt-out (kiroku-api wire format) wins even when a global
+    // default exists.
+    expect(
+      DSUtils.getEffectiveAutoCloseHours(CONST.SESSION.AUTO_CLOSE.NEVER, 24),
+    ).toBeNull();
+  });
+
+  it('treats an explicit null user preference as a terminal opt-out', () => {
+    // `null` is still accepted defensively (legacy/local values).
+    expect(DSUtils.getEffectiveAutoCloseHours(null, 24)).toBeNull();
+  });
+
+  it('inherits the config default when the user has no preference', () => {
+    expect(DSUtils.getEffectiveAutoCloseHours(undefined, 48)).toBe(48);
+  });
+
+  it('falls back to the compile-time default when neither is set', () => {
+    expect(DSUtils.getEffectiveAutoCloseHours(undefined, undefined)).toBe(
+      CONST.SESSION.AUTO_CLOSE.DEFAULT_HOURS,
+    );
+  });
+
+  it('honors a null config default (global never) when the user is unset', () => {
+    expect(DSUtils.getEffectiveAutoCloseHours(undefined, null)).toBeNull();
+  });
+
+  it('treats a non-positive user preference as opting out', () => {
+    expect(DSUtils.getEffectiveAutoCloseHours(0, 24)).toBeNull();
+    expect(DSUtils.getEffectiveAutoCloseHours(-5, 24)).toBeNull();
+  });
+
+  it('treats a non-positive config default as opting out when inherited', () => {
+    expect(DSUtils.getEffectiveAutoCloseHours(undefined, 0)).toBeNull();
+  });
+});
+
+describe('getLastDrinkTimestamp', () => {
+  it('returns the maximum drink timestamp', () => {
+    const session: DrinkingSession = {
+      start_time: 1000,
+      drinks: {
+        2000: {beer: 1},
+        5000: {wine: 1},
+        3000: {beer: 2},
+      },
+    };
+    expect(DSUtils.getLastDrinkTimestamp(session)).toBe(5000);
+  });
+
+  it('falls back to start_time when there are no drinks', () => {
+    const session: DrinkingSession = {start_time: 1234, drinks: {}};
+    expect(DSUtils.getLastDrinkTimestamp(session)).toBe(1234);
+  });
+
+  it('falls back to start_time when drinks are undefined', () => {
+    const session: DrinkingSession = {start_time: 4321};
+    expect(DSUtils.getLastDrinkTimestamp(session)).toBe(4321);
+  });
+});
+
+describe('isSessionStale', () => {
+  const start = Date.UTC(2026, 0, 1, 18, 0); // a fixed start
+
+  it('is stale when last activity is older than the threshold', () => {
+    const session: DrinkingSession = {
+      start_time: start,
+      drinks: {[start + HOUR_MS]: {beer: 1}},
+    };
+    // Last activity = start + 1h; 25h later exceeds a 24h threshold.
+    const now = start + HOUR_MS + 25 * HOUR_MS;
+    expect(DSUtils.isSessionStale(session, 24, now)).toBe(true);
+  });
+
+  it('is not stale when within the threshold', () => {
+    const session: DrinkingSession = {
+      start_time: start,
+      drinks: {[start + HOUR_MS]: {beer: 1}},
+    };
+    const now = start + HOUR_MS + 23 * HOUR_MS;
+    expect(DSUtils.isSessionStale(session, 24, now)).toBe(false);
+  });
+
+  it('measures from last activity, not start_time (a long active night)', () => {
+    // Started 30h ago but a drink was logged 1h ago → not stale at 24h.
+    const now = start + 30 * HOUR_MS;
+    const session: DrinkingSession = {
+      start_time: start,
+      drinks: {[now - HOUR_MS]: {beer: 1}},
+    };
+    expect(DSUtils.isSessionStale(session, 24, now)).toBe(false);
+  });
+
+  it('uses start_time as activity when the session has no drinks', () => {
+    const session: DrinkingSession = {start_time: start, drinks: {}};
+    expect(DSUtils.isSessionStale(session, 24, start + 25 * HOUR_MS)).toBe(
+      true,
+    );
+    expect(DSUtils.isSessionStale(session, 24, start + 23 * HOUR_MS)).toBe(
+      false,
+    );
+  });
+
+  it('is never stale when the threshold is null (never)', () => {
+    const session: DrinkingSession = {start_time: start, drinks: {}};
+    expect(DSUtils.isSessionStale(session, null, start + 1000 * HOUR_MS)).toBe(
+      false,
+    );
+  });
+
+  it('is stale exactly at the threshold boundary', () => {
+    const session: DrinkingSession = {start_time: start, drinks: {}};
+    expect(DSUtils.isSessionStale(session, 24, start + 24 * HOUR_MS)).toBe(
+      true,
+    );
+  });
+});
+
+describe('buildAutoClosedSession', () => {
+  it('sets ongoing false, the auto_closed marker, and end_time to the last drink', () => {
+    const session: DrinkingSession = {
+      id: 'abc',
+      start_time: 1000,
+      ongoing: true,
+      drinks: {2000: {beer: 1}, 6000: {wine: 1}},
+    };
+    const closed = DSUtils.buildAutoClosedSession(session);
+    expect(closed.ongoing).toBe(false);
+    expect(closed.auto_closed).toBe(true);
+    expect(closed.end_time).toBe(6000);
+  });
+
+  it('uses start_time as end_time when there are no drinks', () => {
+    const session: DrinkingSession = {
+      id: 'abc',
+      start_time: 1000,
+      ongoing: true,
+      drinks: {},
+    };
+    const closed = DSUtils.buildAutoClosedSession(session);
+    expect(closed.end_time).toBe(1000);
+  });
+
+  it('does not mutate the input session', () => {
+    const session: DrinkingSession = {
+      id: 'abc',
+      start_time: 1000,
+      ongoing: true,
+      drinks: {2000: {beer: 1}},
+    };
+    DSUtils.buildAutoClosedSession(session);
+    expect(session.ongoing).toBe(true);
+    expect(session.auto_closed).toBeUndefined();
+    expect(session.end_time).toBeUndefined();
+  });
+});
