@@ -76,13 +76,20 @@ function isUsingStagingApi(): boolean {
 
 /**
  * Base URL for the kiroku-api HTTPS function, selected by environment. Prod
- * builds hit the prod project; everything else (dev/staging/adhoc) hits dev.
+ * and staging builds hit the prod project; dev/adhoc builds hit dev.
  * Route paths (see `libs/API/kirokuRoutes.ts`) include the `/v1` prefix and are
  * appended to this root.
  */
 function getKirokuApiRoot(): string {
+  // Staging builds carry the production Firebase config baked in at build time
+  // (a Play internal-track build is the production flavor that merely
+  // runtime-classifies as STAGING via the beta checker), so they must talk to
+  // the prod API: a prod-issued ID token gets a 401 from the dev API, which
+  // triggers an immediate sign-out. Only dev/adhoc builds, whose env files
+  // bake the dev Firebase project, use the dev root.
   const root =
-    ENV_NAME === CONST.ENVIRONMENT.PROD
+    ENV_NAME === CONST.ENVIRONMENT.PROD ||
+    ENV_NAME === CONST.ENVIRONMENT.STAGING
       ? CONFIG.KIROKU_API.PROD_ROOT
       : CONFIG.KIROKU_API.DEV_ROOT;
   return root.replace(/\/+$/, '');
