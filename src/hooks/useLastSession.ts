@@ -1,14 +1,10 @@
 import {useMemo} from 'react';
-import {
-  differenceInCalendarDays,
-  differenceInCalendarMonths,
-  differenceInCalendarYears,
-} from 'date-fns';
 import useCurrentUserDrinkingSessions from '@hooks/useCurrentUserDrinkingSessions';
 import useCurrentUserPreferences from '@hooks/useCurrentUserPreferences';
 import useLocalize from '@hooks/useLocalize';
 import {timestampToDateString} from '@libs/DataHandling';
 import * as DSUtils from '@libs/DrinkingSessionUtils';
+import getRelativeDayTier from '@libs/getRelativeDayTier';
 import type {DrinkingSessionId} from '@src/types/onyx/DrinkingSession';
 import type {DateString} from '@src/types/onyx/OnyxCommon';
 
@@ -34,7 +30,8 @@ function formatUnits(value: number): string {
  * or only an ongoing session) — the caller renders no banner in that case.
  *
  * Relative time is rounded to whole days (Today / Yesterday / N days ago) and
- * then months / years — it never shows hours.
+ * escalates to months / years only after a full month / year has elapsed —
+ * see `getRelativeDayTier`. It never shows hours.
  */
 function useLastSession(): LastSessionView | null {
   const drinkingSessionData = useCurrentUserDrinkingSessions();
@@ -50,26 +47,31 @@ function useLastSession(): LastSessionView | null {
     const {sessionId, session} = lastSession;
 
     const date = new Date(session.start_time);
-    const now = new Date();
-    const days = differenceInCalendarDays(now, date);
-    const months = differenceInCalendarMonths(now, date);
-    const years = differenceInCalendarYears(now, date);
+    const tier = getRelativeDayTier(date, new Date());
 
     let when: string;
-    if (years >= 1) {
-      when = translate('homeScreen.banners.lastSession.yearsAgo', {
-        count: years,
-      });
-    } else if (months >= 1) {
-      when = translate('homeScreen.banners.lastSession.monthsAgo', {
-        count: months,
-      });
-    } else if (days >= 2) {
-      when = translate('homeScreen.banners.lastSession.daysAgo', {count: days});
-    } else if (days === 1) {
-      when = translate('homeScreen.banners.lastSession.yesterday');
-    } else {
-      when = translate('homeScreen.banners.lastSession.today');
+    switch (tier.unit) {
+      case 'years':
+        when = translate('homeScreen.banners.lastSession.yearsAgo', {
+          count: tier.count,
+        });
+        break;
+      case 'months':
+        when = translate('homeScreen.banners.lastSession.monthsAgo', {
+          count: tier.count,
+        });
+        break;
+      case 'days':
+        when = translate('homeScreen.banners.lastSession.daysAgo', {
+          count: tier.count,
+        });
+        break;
+      case 'yesterday':
+        when = translate('homeScreen.banners.lastSession.yesterday');
+        break;
+      case 'today':
+      default:
+        when = translate('homeScreen.banners.lastSession.today');
     }
 
     return {
