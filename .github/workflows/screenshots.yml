@@ -21,6 +21,20 @@ on:
           - all
           - phone-only
           - ipad-only
+      upload:
+        description: 'Upload framed screenshots to the stores? none = artifact only; draft = write to the editable store listing; submit = also submit the iOS version for review.'
+        required: false
+        default: 'none'
+        type: choice
+        options:
+          - none
+          - draft
+          - submit
+      seed:
+        description: 'Seed the demo account with a current-month session before capture (best-effort; needs the kiroku-cli seed secrets).'
+        required: false
+        default: true
+        type: boolean
 
 permissions:
   contents: read
@@ -29,7 +43,7 @@ jobs:
   ios:
     name: Capture iOS App Store screenshots
     runs-on: macos-26
-    timeout-minutes: 60
+    timeout-minutes: 90
     env:
       DEVELOPER_DIR: /Applications/Xcode_26.1.1.app/Contents/Developer
     steps:
@@ -98,19 +112,67 @@ jobs:
           DEVICE_SUBSET: ${{ github.event.inputs.device_subset }}
         run: bundle exec ruby scripts/trim-snapfile-devices.rb "$DEVICE_SUBSET"
 
+      - name: Seed demo session (current-month)
+        if: ${{ inputs.seed }}
+        continue-on-error: true
+        uses: ./.github/actions/composite/seedDemoSession
+        with:
+          demo-email: ${{ secrets.APPLE_DEMO_EMAIL }}
+          cli-token: ${{ secrets.KIROKU_ADMIN_TOKEN }}
+          admin-sdk-prod: ${{ secrets.KIROKU_ADMIN_SDK_PROD }}
+
       - name: Run Fastlane - Capture iOS screenshots
         run: bundle exec fastlane ios screenshots
         env:
+          # snapshot runs `xcodebuild -showBuildSettings` before building; the
+          # 3s default timeout is too short for this RN workspace on a cold
+          # runner, so it exhausts its retries and aborts. Give it more headroom.
+          FASTLANE_XCODEBUILD_SETTINGS_TIMEOUT: '120'
+          FASTLANE_XCODEBUILD_SETTINGS_RETRIES: '5'
           APPLE_DEMO_EMAIL: ${{ secrets.APPLE_DEMO_EMAIL }}
           APPLE_DEMO_PASSWORD: ${{ secrets.APPLE_DEMO_PASSWORD }}
           KIROKU_DEMO_EMAIL: ${{ secrets.APPLE_DEMO_EMAIL }}
           KIROKU_DEMO_PASSWORD: ${{ secrets.APPLE_DEMO_PASSWORD }}
 
-      - name: Upload iOS screenshots
+      # Bridge capture → framing: map the raw captures into the framing inputs,
+      # then render the branded, exact-size store images. (npm scripts from the
+      # store-screenshots pipeline; Node is already set up above.)
+      - name: Ingest captures into the framing inputs
+        run: npm run ingest-screenshots
+
+      - name: Frame store screenshots
+        run: npm run frame-screenshots
+
+      # ---- Upload to App Store Connect (gated on the `upload` input) ----
+      # `draft` writes the framed screenshots to the editable App Store version;
+      # `submit` additionally submits that version for review. Both need the ASC
+      # API key, decrypted the same way platformDeploy.yml does it.
+      - name: Decrypt App Store Connect API key
+        if: ${{ github.event.inputs.upload != 'none' }}
+        run: cd ios && gpg --quiet --batch --yes --decrypt --passphrase="$LARGE_SECRET_PASSPHRASE" --output ios-fastlane-json-key.json ios-fastlane-json-key.json.gpg
+        env:
+          LARGE_SECRET_PASSPHRASE: ${{ secrets.LARGE_SECRET_PASSPHRASE }}
+
+      - name: Upload framed screenshots to App Store Connect
+        if: ${{ github.event.inputs.upload != 'none' }}
+        run: bundle exec fastlane ios upload_screenshots
+        env:
+          SCREENSHOTS_SUBMIT: ${{ github.event.inputs.upload == 'submit' }}
+
+      - name: Upload framed screenshots (artifact)
         if: ${{ always() }}
         uses: actions/upload-artifact@v6
         with:
-          name: ios-screenshots-${{ github.sha }}
+          name: ios-framed-screenshots-${{ github.sha }}
+          path: fastlane/store-screenshots/framed/ios/**/*.png
+          if-no-files-found: warn
+          retention-days: 14
+
+      - name: Upload raw captures (artifact, for triage)
+        if: ${{ always() }}
+        uses: actions/upload-artifact@v6
+        with:
+          name: ios-raw-screenshots-${{ github.sha }}
           path: fastlane/screenshots/ios/**/*.png
           if-no-files-found: warn
           retention-days: 14
@@ -128,10 +190,95 @@ jobs:
           if-no-files-found: ignore
           retention-days: 7
 
-  # TODO: Android screenshot capture. The fastlane `android :screenshots` lane
-  # (Fastfile + Screengrabfile) is in place, but Linux CI needs an Android
-  # emulator (reactivecircus/android-emulator-runner@v2 is the usual choice),
-  # the screengrab Gradle deps wired into android/app/build.gradle (still a
-  # manual step per SCREENSHOTS.md), and the CHANGE_CONFIGURATION permission
-  # in the debug manifest. None of those exist yet — wire them in a follow-up
-  # PR once the iOS flow is proven.
+  android:
+    name: Capture Play Store screenshots
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+
+      - name: Stage .env.production from secret
+        run: echo "${{ secrets.PRODUCTION_ENV_FILE }}" > .env.production
+
+      - name: Setup Node
+        uses: ./.github/actions/composite/setupNode
+
+      - name: Setup Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: Setup Ruby
+        uses: ruby/setup-ruby@v1.310.0
+        with:
+          bundler-cache: true
+
+      # The emulator runner needs hardware acceleration; ubuntu-latest exposes
+      # /dev/kvm but the default udev rules don't grant the runner access.
+      - name: Enable KVM
+        run: |
+          echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
+          sudo udevadm control --reload-rules
+          sudo udevadm trigger --name-match=kvm
+
+      - name: Seed demo session (current-month)
+        if: ${{ inputs.seed }}
+        continue-on-error: true
+        uses: ./.github/actions/composite/seedDemoSession
+        with:
+          demo-email: ${{ secrets.APPLE_DEMO_EMAIL }}
+          cli-token: ${{ secrets.KIROKU_ADMIN_TOKEN }}
+          admin-sdk-prod: ${{ secrets.KIROKU_ADMIN_SDK_PROD }}
+
+      # Builds the production + androidTest APKs and runs screengrab on a booted
+      # emulator (the fastlane `android screenshots` lane does the gradle build).
+      - name: Capture Android screenshots on emulator
+        uses: reactivecircus/android-emulator-runner@62dbb605bba737720e10b196cb4220d374026a6d # v2.33.0
+        with:
+          api-level: 34
+          target: google_apis
+          arch: x86_64
+          profile: pixel_6
+          script: bundle exec fastlane android screenshots
+        env:
+          KIROKU_DEMO_EMAIL: ${{ secrets.APPLE_DEMO_EMAIL }}
+          KIROKU_DEMO_PASSWORD: ${{ secrets.APPLE_DEMO_PASSWORD }}
+
+      - name: Ingest captures into the framing inputs
+        run: npm run ingest-screenshots -- --platform android
+
+      - name: Frame store screenshots
+        run: npm run frame-screenshots -- --platform android
+
+      # ---- Upload to Google Play (gated on the `upload` input) ----
+      # Play screenshots live on the store listing, not a release track, so both
+      # `draft` and `submit` just sync the listing's images (no app submission).
+      - name: Decrypt Google Play API key
+        if: ${{ github.event.inputs.upload != 'none' }}
+        run: cd android/app && gpg --quiet --batch --yes --decrypt --passphrase="$LARGE_SECRET_PASSPHRASE" --output android-fastlane-json-key.json android-fastlane-json-key.json.gpg
+        env:
+          LARGE_SECRET_PASSPHRASE: ${{ secrets.LARGE_SECRET_PASSPHRASE }}
+
+      - name: Upload framed screenshots to Google Play
+        if: ${{ github.event.inputs.upload != 'none' }}
+        run: bundle exec fastlane android upload_play_store_screenshots
+
+      - name: Upload framed screenshots (artifact)
+        if: ${{ always() }}
+        uses: actions/upload-artifact@v6
+        with:
+          name: android-framed-screenshots-${{ github.sha }}
+          path: fastlane/store-screenshots/framed/android/**/*.png
+          if-no-files-found: warn
+          retention-days: 14
+
+      - name: Upload raw captures (artifact, for triage)
+        if: ${{ always() }}
+        uses: actions/upload-artifact@v6
+        with:
+          name: android-raw-screenshots-${{ github.sha }}
+          path: fastlane/screenshots/android/**/*.png
+          if-no-files-found: warn
+          retention-days: 14

@@ -188,6 +188,7 @@ function AuthScreen({route}: AuthScreenProps) {
           <InputWrapper
             InputComponent={TextInput}
             inputID={INPUT_IDS.EMAIL}
+            testID="loginEmail"
             name="email"
             textContentType="emailAddress"
             keyboardType="email-address"
@@ -199,6 +200,7 @@ function AuthScreen({route}: AuthScreenProps) {
           <InputWrapper
             InputComponent={TextInput}
             inputID={INPUT_IDS.PASSWORD}
+            testID="loginPassword"
             name="password"
             label={translate('common.password')}
             aria-label={translate('common.password')}

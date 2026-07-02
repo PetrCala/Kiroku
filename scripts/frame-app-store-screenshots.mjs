@@ -9,12 +9,13 @@
  * generative image model, so output is pixel-perfect and re-runnable.
  *
  * Usage:
- *   node scripts/frame-app-store-screenshots.mjs            # render everything
+ *   node scripts/frame-app-store-screenshots.mjs                 # iOS, render all
+ *   node scripts/frame-app-store-screenshots.mjs --platform android
  *   node scripts/frame-app-store-screenshots.mjs --locale cs --device 6.9
- *   node scripts/frame-app-store-screenshots.mjs --check    # report inputs only
+ *   node scripts/frame-app-store-screenshots.mjs --check         # report inputs only
  *
- * Input:  fastlane/store-screenshots/raw/<locale>/<shot.raw>   (you provide)
- * Output: fastlane/store-screenshots/framed/<locale>/<device>/NN_<name>.png
+ * Input:  fastlane/store-screenshots/raw/<platform>/<locale>/<shot.raw>   (you provide)
+ * Output: fastlane/store-screenshots/framed/<platform>/<locale>/<device>/NN_<name>.png
  *
  * Config: scripts/store-screenshots.config.mjs
  * Requires: sharp, text-to-svg (already in devDependencies).
@@ -32,7 +33,7 @@ import {fileURLToPath} from 'url';
 // eslint-disable-next-line import/extensions -- Node ESM requires the explicit extension
 import config from './store-screenshots.config.mjs';
 
-const {RAW_DIR, OUT_DIR, devices, locales, theme, shots} = config;
+const {RAW_DIR, OUT_DIR, platforms, locales, theme, shots} = config;
 
 const scriptDir = dirname(fileURLToPath(import.meta.url));
 const ROOT = join(scriptDir, '..');
@@ -46,6 +47,18 @@ const flag = name => {
 const onlyLocale = flag('locale');
 const onlyDevice = flag('device');
 const checkOnly = args.includes('--check');
+
+// Which platform's captures/sizes to frame. iOS (default) → App Store sizes;
+// android → Google-Play-safe sizes. raw/ and framed/ are split per platform.
+const platform =
+  typeof flag('platform') === 'string' ? flag('platform') : 'ios';
+if (!platforms[platform]) {
+  console.error(
+    `Unknown --platform "${platform}". Known: ${Object.keys(platforms).join(', ')}`,
+  );
+  process.exit(1);
+}
+const {devices} = platforms[platform];
 
 const font = TextToSVG.loadSync(join(ROOT, theme.captionFont));
 
@@ -129,7 +142,7 @@ function roundedMask(w, h, r) {
 // ─── Render one (shot, locale, device) ──────────────────────────────────────
 async function render(shot, index, locale, device) {
   const {width: W, height: H} = device;
-  const rawPath = join(ROOT, RAW_DIR, locale, shot.raw);
+  const rawPath = join(ROOT, RAW_DIR, platform, locale, shot.raw);
   if (!existsSync(rawPath)) {
     return {status: 'missing', locale, device, raw: shot.raw};
   }
@@ -175,7 +188,7 @@ async function render(shot, index, locale, device) {
     );
   }
 
-  const outDir = join(ROOT, OUT_DIR, locale, device.id);
+  const outDir = join(ROOT, OUT_DIR, platform, locale, device.id);
   mkdirSync(outDir, {recursive: true});
   const name = parse(shot.raw).name;
   const file = `${String(index + 1).padStart(2, '0')}_${name}.png`;
@@ -189,16 +202,16 @@ function runCheck(targetLocales) {
   let missing = 0;
   for (const locale of targetLocales) {
     for (const shot of shots) {
-      const ok = existsSync(join(ROOT, RAW_DIR, locale, shot.raw));
+      const ok = existsSync(join(ROOT, RAW_DIR, platform, locale, shot.raw));
       if (!ok) {
         missing += 1;
       }
-      console.log(`  ${ok ? '✓' : '✗'} ${locale}/${shot.raw}`);
+      console.log(`  ${ok ? '✓' : '✗'} ${platform}/${locale}/${shot.raw}`);
     }
   }
   console.log(
     missing
-      ? `\n${missing} capture(s) missing — drop them in ${RAW_DIR}/<locale>/`
+      ? `\n${missing} capture(s) missing — drop them in ${RAW_DIR}/${platform}/<locale>/`
       : '\nAll captures present.',
   );
 }
@@ -207,7 +220,7 @@ async function runRender(targetLocales, targetDevices) {
   // Start each run from a clean output tree so deleted shots don't linger.
   for (const locale of targetLocales) {
     for (const device of targetDevices) {
-      const dir = join(ROOT, OUT_DIR, locale, device.id);
+      const dir = join(ROOT, OUT_DIR, platform, locale, device.id);
       if (existsSync(dir)) {
         rmSync(dir, {recursive: true, force: true});
       }

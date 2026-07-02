@@ -16,5 +16,7 @@ clear_previous_screenshots(true)
 
 output_directory("./fastlane/screenshots/android")
 
-app_apk_path("android/app/build/outputs/apk/production/release/app-production-release.apk")
-tests_apk_path("android/app/build/outputs/apk/androidTest/production/release/app-production-release-androidTest.apk")
+# Debug variant: signed with the committed debug.keystore (no release key in
+# this workflow) and skips R8. See the android :screenshots lane in the Fastfile.
+app_apk_path("android/app/build/outputs/apk/production/debug/app-production-debug.apk")
+tests_apk_path("android/app/build/outputs/apk/androidTest/production/debug/app-production-debug-androidTest.apk")

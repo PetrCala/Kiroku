@@ -115,19 +115,64 @@ platform :android do
   lane :screenshots do
     ENV["ENVFILE"] = ".env.production"
 
-    # Build the production APK + the androidTest APK. screengrab needs both.
+    # Build the production *debug* APK + the androidTest APK. screengrab needs
+    # both. Debug (not release) on purpose: it signs with the committed
+    # debug.keystore (the release keystore isn't decrypted in this workflow),
+    # skips R8/minification, and still uses .env.production — the demo account
+    # logs in by email/password, so the unregistered debug SHA is irrelevant.
+    # Limit native compilation to x86_64 — the only ABI the CI emulator runs;
+    # the gradle.properties default builds all four ABIs (New-Arch native C++:
+    # nitro, reanimated, skia, …), quadrupling the slowest step.
+    abi = {"reactNativeArchitectures" => "x86_64"}
     gradle(
       project_dir: './android',
       task: 'assemble',
       flavor: 'Production',
-      build_type: 'Release',
+      build_type: 'Debug',
+      properties: abi,
     )
     gradle(
       project_dir: './android',
-      task: 'assembleProductionReleaseAndroidTest',
+      task: 'assembleProductionDebugAndroidTest',
+      properties: abi,
     )
 
     capture_android_screenshots   # reads Screengrabfile
+  end
+
+  desc "Upload framed Play Store screenshots (screenshots only)"
+  lane :upload_play_store_screenshots do
+    # supply reads phone screenshots from
+    #   fastlane/metadata/android/<lang>/images/phoneScreenshots/
+    # so arrange the framed Android images (framed/android/<locale>/phone/*)
+    # into that layout first. `play_lang` mirrors config.captureLocales
+    # (framing `cs` → Play `cs-CZ`). Verified end-to-end by an emulator dispatch.
+    require "fileutils"
+    framed = "./fastlane/store-screenshots/framed/android"
+    play_lang = {"en-US" => "en-US", "cs" => "cs-CZ"}
+    UI.user_error!("No framed Android screenshots at #{framed}") unless Dir.exist?(framed)
+
+    Dir.glob("#{framed}/*").each do |locale_dir|
+      next unless File.directory?(locale_dir)
+      locale = File.basename(locale_dir)
+      lang = play_lang[locale] || locale
+      dest = "./fastlane/metadata/android/#{lang}/images/phoneScreenshots"
+      FileUtils.mkdir_p(dest)
+      FileUtils.rm_f(Dir.glob("#{dest}/*.png"))
+      Dir.glob("#{locale_dir}/phone/*.png").sort.each { |f| FileUtils.cp(f, dest) }
+    end
+
+    ENV["SUPPLY_UPLOAD_MAX_RETRIES"] = "5"
+    upload_to_play_store(
+      package_name: "com.alcohol_tracker",
+      json_key: './android/app/android-fastlane-json-key.json',
+      skip_upload_apk: true,
+      skip_upload_aab: true,
+      skip_upload_metadata: true,
+      skip_upload_changelogs: true,
+      skip_upload_images: true,
+      skip_upload_screenshots: false
+    )
   end
 
   desc "Deploy app to Google Play open beta"
@@ -479,6 +524,39 @@ platform :ios do
       metadata_path: "./fastlane/metadata",
       app_rating_config_path: "./fastlane/metadata/rating_config.json",
       app_review_information: kiroku_review_information,
+      precheck_include_in_app_purchases: false
+    )
+  end
+
+  desc "Upload framed store screenshots to the App Store version (screenshots only)"
+  lane :upload_screenshots do
+    # Screenshots-only deliver: writes the framed images (produced by
+    # `npm run frame-screenshots`) to the App Store version's screenshot set,
+    # touching nothing else. SCREENSHOTS_SUBMIT=true flips it to submit the
+    # version for review; otherwise it only updates the editable draft.
+    submit = ENV["SCREENSHOTS_SUBMIT"] == "true"
+
+    deliver(
+      api_key_path: "./ios/ios-fastlane-json-key.json",
+      force: true,
+      run_precheck_before_submit: false,
+
+      # Target the existing editable version. Override with VERSION if needed.
+      app_version: (ENV["VERSION"] ? ENV["VERSION"].rpartition(".")[0] : nil),
+
+      # Upload screenshots, nothing else. deliver infers each device slot from
+      # the image dimensions; the framed tree is grouped by locale then size.
+      skip_screenshots: false,
+      screenshots_path: "./fastlane/store-screenshots/framed/ios",
+      overwrite_screenshots: true,
+      skip_binary_upload: true,
+      skip_metadata: true,
+
+      # Submission is opt-in. When submitting, never auto-release — keep the
+      # approved version Pending Developer Release (mirrors the :production lane).
+      submit_for_review: submit,
+      automatic_release: false,
+
       precheck_include_in_app_purchases: false
     )
   end
