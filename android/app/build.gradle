@@ -240,6 +240,11 @@ dependencies {
     // This okhttp3 dependency prevents the app from crashing - See https://github.com/plaid/react-native-plaid-link-sdk/issues/74#issuecomment-648435002
     implementation "com.squareup.okhttp3:okhttp-urlconnection:4.+"
 
+    // Up-to-date TLS provider, registered in MainApplication so all Java TLS traffic
+    // (OkHttp networking, WebSockets) bypasses the platform's libssl/libjavacrypto,
+    // which SIGSEGVs on some devices during concurrent socket teardown.
+    implementation "org.conscrypt:conscrypt-android:2.5.3"
+
     implementation("androidx.lifecycle:lifecycle-viewmodel-ktx:2.4.0")
 }
 

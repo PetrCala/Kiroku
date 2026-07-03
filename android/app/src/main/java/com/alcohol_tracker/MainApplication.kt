@@ -18,6 +18,8 @@ import com.facebook.react.modules.i18nmanager.I18nUtil
 import com.google.firebase.crashlytics.FirebaseCrashlytics
 import expo.modules.ApplicationLifecycleDispatcher
 import expo.modules.ReactNativeHostWrapper
+import java.security.Security
+import org.conscrypt.Conscrypt
 
 class MainApplication : MultiDexApplication(), ReactApplication {
     override val reactNativeHost: ReactNativeHost = ReactNativeHostWrapper(this, object : DefaultReactNativeHost(this) {
@@ -44,6 +46,18 @@ class MainApplication : MultiDexApplication(), ReactApplication {
         get() = getDefaultReactHost(applicationContext, reactNativeHost)
 
     override fun onCreate() {
+        // Register the bundled Conscrypt as the preferred TLS provider before any
+        // networking starts. The platform's Conscrypt (libjavacrypto/libssl) has a
+        // use-after-free that crashes with SIGSEGV when a TLS socket is torn down
+        // concurrently with an in-flight read/handshake.
+        try {
+            Security.insertProviderAt(Conscrypt.newProvider(), 1)
+        } catch (t: Throwable) {
+            // If the Conscrypt native library cannot be loaded on this device,
+            // keep the platform TLS provider.
+            t.printStackTrace()
+        }
+
         super.onCreate()
 
         loadReactNative(this)
