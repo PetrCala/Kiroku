@@ -142,21 +142,36 @@ critical path is **0 → 1 → 2 → 3**; Phases 5–7 overlap once the bridge w
   - **Accept:** a unit test round-trips a session against `api-dev` with a pasted
     token.
 
-### Phase 3 — Credential bridge (3–4 days — the meatiest piece)
+### Phase 3 — Credential bridge (3–4 days — the meatiest piece) ← done
 
-- [ ] **3.1** RN iOS native module `WatchBridge` exposing
+- [x] **3.1** RN iOS native module `WatchBridge` exposing
       `updateCredential({ idToken, uid, expiresAt, ongoingSession })` to JS; holds the
       latest and pushes to the watch via `WCSession.updateApplicationContext`.
-- [ ] **3.2** JS wiring: call `WatchBridge.updateCredential(...)` whenever a fresh
-      token exists — on app foreground, after login, after the 407 refresh in
-      `HttpUtils.ts`, and on `ONGOING_SESSION_DATA` change.
-- [ ] **3.3** Watch `SessionConnectivity` (`WCSession` delegate): receive
-      credential + ongoing snapshot, cache the token in Keychain, expose it +
-      staleness to the view model.
-- [ ] **3.4** Token lifecycle: use the cached token until `expiresAt`/`401`; when
-      stale, surface "Open Kiroku on your phone to reconnect."
+      Implemented in [`ios/kiroku/WatchBridge.swift`](../ios/kiroku/WatchBridge.swift)
+      (legacy `RCT_EXTERN_MODULE`; payload also carries `apiEnv` so the watch
+      hits the same backend as the phone).
+- [x] **3.2** JS wiring ([`src/libs/WatchBridge/`](../src/libs/WatchBridge/)):
+      one `auth.onIdTokenChanged` listener covers login, sign-out, and the 407
+      forced refresh (Reauthentication middleware's `getIdToken(true)` fires
+      it), plus `AppStateMonitor` foreground + `ONGOING_SESSION_DATA` Onyx
+      triggers, throttled and deduped. Initialized from `src/setup/index.ts`.
+- [x] **3.3** Watch `SessionConnectivity` (`WCSession` delegate): receives
+      credential + ongoing snapshot, caches the token in the Keychain
+      (`CredentialStore`), exposes it + staleness to the view model
+      ([`ios/Kiroku Watch App/Connectivity/`](../ios/Kiroku%20Watch%20App/Connectivity/)).
+- [x] **3.4** Token lifecycle: the cached token is used until
+      `expiresAt` (60s safety margin) or a server 401/407; when stale, the
+      watch shows "Open Kiroku on your phone to reconnect."
   - **Accept:** sign in on phone → watch receives a token within seconds → a
     watch-initiated start/save succeeds with no token pasted anywhere.
+  - **Limitation (by design):** iOS never runs the RN JS bridge in the
+    background, so tokens are refreshed/pushed only while the phone app is
+    alive (foreground, or briefly while backgrounding). The watch caches the
+    last token in its Keychain and uses it until `expiresAt` (~1h); past that
+    it degrades to the reconnect message until the phone app is opened again.
+    `updateApplicationContext` is last-value-wins and delivered even while the
+    watch app is dead, and `WCSession` persists the last received context, so
+    a cold-started watch always sees the newest credential the phone ever sent.
 
 ### Phase 4 — Wire the UI to a real view model (1–2 days)
 

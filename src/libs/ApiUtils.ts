@@ -95,4 +95,22 @@ function getKirokuApiRoot(): string {
   return root.replace(/\/+$/, '');
 }
 
-export {getApiRoot, getCommandURL, getKirokuApiRoot, isUsingStagingApi};
+/**
+ * Which kiroku-api backend this build talks to, in the watch credential
+ * bridge's vocabulary. Same PROD/STAGING-to-prod rule as `getKirokuApiRoot` so
+ * the watch always hits the same backend as the phone.
+ */
+function getKirokuApiEnv(): 'dev' | 'prod' {
+  return ENV_NAME === CONST.ENVIRONMENT.PROD ||
+    ENV_NAME === CONST.ENVIRONMENT.STAGING
+    ? 'prod'
+    : 'dev';
+}
+
+export {
+  getApiRoot,
+  getCommandURL,
+  getKirokuApiEnv,
+  getKirokuApiRoot,
+  isUsingStagingApi,
+};
