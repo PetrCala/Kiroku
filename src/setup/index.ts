@@ -9,6 +9,7 @@ import ONYXKEYS from '@src/ONYXKEYS';
 import intlPolyfill from '@libs/IntlPolyfill';
 import {initFirebaseAuth} from '@libs/Firebase/FirebaseApp';
 import StartupMetrics from '@libs/StartupMetrics';
+import WatchBridge from '@libs/WatchBridge';
 import initializeLastVisitedPath from './initializeLastVisitedPath';
 import platformSetup from './platformSetup';
 import suppressSkiaPathDeprecationWarnings from './suppressSkiaPathDeprecationWarnings';
@@ -92,6 +93,11 @@ export default function () {
   // (AsyncStorage on native, IndexedDB on web) so the session survives a cold
   // start. Resolves by platform extension, so no platform branching is needed.
   initFirebaseAuth();
+
+  // Feed the Apple Watch companion its credential (iOS-only; a no-op
+  // elsewhere). Needs the auth singleton from initFirebaseAuth() above, since
+  // it installs an onIdTokenChanged listener.
+  WatchBridge.init();
 
   // Capture native cold-start marks (process spawn → first content visible)
   // and log them in the same `Timing:` format as Timing.ts so Grafana picks

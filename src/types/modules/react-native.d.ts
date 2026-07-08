@@ -18,6 +18,7 @@ import type {TargetedEvent} from 'react-native';
 import type {BootSplashModule} from '@libs/BootSplash/types';
 import type {EnvironmentCheckerModule} from '@libs/Environment/betaChecker/types';
 import type {ShortcutManagerModule} from '@libs/ShortcutManager';
+import type {WatchBridgeModule} from '@libs/WatchBridge/types';
 
 type HybridAppModule = {
   closeReactNativeApp: (shouldSignOut: boolean, shouldSetNVP: boolean) => void;
@@ -63,6 +64,7 @@ declare module 'react-native' {
     RNNavBarManager: RNNavBarManagerModule;
     EnvironmentChecker: EnvironmentCheckerModule;
     ShortcutManager: ShortcutManagerModule;
+    WatchBridge: WatchBridgeModule;
   }
 
   namespace Animated {

@@ -51,6 +51,13 @@
 		E7B715AA87095EA0860A562B52B7C0BB /* Info.plist in Resources */ = {isa = PBXBuildFile; fileRef = 7F0F9082C37DDC79066DFE0B03E80EE2 /* Info.plist */; };
 		EF9D890B86812601ABFEC945C2E3E8C7 /* kirokuTests.m in Sources */ = {isa = PBXBuildFile; fileRef = 588A590E6BED68E1F6FD0254E55C2F6C /* kirokuTests.m */; };
 		EFB7AA8916E578EFEB6F9665AF5AF9C7 /* Colors.swift in Sources */ = {isa = PBXBuildFile; fileRef = 49139152A47AFDA44AD894FFDC4658D1 /* Colors.swift */; };
+		FB0000000000000000000001 /* WatchBridge.swift in Sources */ = {isa = PBXBuildFile; fileRef = FA0000000000000000000001 /* WatchBridge.swift */; };
+		FB0000000000000000000002 /* WatchBridge.m in Sources */ = {isa = PBXBuildFile; fileRef = FA0000000000000000000002 /* WatchBridge.m */; };
+		FB0000000000000000000003 /* KirokuAPI.swift in Sources */ = {isa = PBXBuildFile; fileRef = FA0000000000000000000003 /* KirokuAPI.swift */; };
+		FB0000000000000000000004 /* DrinkingSession.swift in Sources */ = {isa = PBXBuildFile; fileRef = FA0000000000000000000004 /* DrinkingSession.swift */; };
+		FB0000000000000000000005 /* PushID.swift in Sources */ = {isa = PBXBuildFile; fileRef = FA0000000000000000000005 /* PushID.swift */; };
+		FB0000000000000000000006 /* SessionConnectivity.swift in Sources */ = {isa = PBXBuildFile; fileRef = FA0000000000000000000006 /* SessionConnectivity.swift */; };
+		FB0000000000000000000007 /* CredentialStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = FA0000000000000000000007 /* CredentialStore.swift */; };
 		F243724B34C5C9FB6F62F24D /* Pods_kiroku.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 0478232408D4311F0113E613 /* Pods_kiroku.framework */; };
 		F47F8A41F5D448D71B54676D1D4404B1 /* Helpers.swift in Sources */ = {isa = PBXBuildFile; fileRef = E1B02FACB14F5B45F97FCC201FB3AF24 /* Helpers.swift */; };
 /* End PBXBuildFile section */
@@ -169,6 +176,13 @@
 		EB96FF0F5A710B1EE53CE4DB /* Pods-kiroku-kirokuTests.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-kiroku-kirokuTests.debug.xcconfig"; path = "Target Support Files/Pods-kiroku-kirokuTests/Pods-kiroku-kirokuTests.debug.xcconfig"; sourceTree = "<group>"; };
 		EED2CAA158622481E69D1D7775C83089 /* AppDelegate.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = AppDelegate.swift; sourceTree = "<group>"; };
 		F90E4662CD4C73E9774EEA208AAE068D /* Kiroku_Watch_AppUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Kiroku_Watch_AppUITests.swift; sourceTree = "<group>"; };
+		FA0000000000000000000001 /* WatchBridge.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; name = WatchBridge.swift; path = kiroku/WatchBridge.swift; sourceTree = "<group>"; };
+		FA0000000000000000000002 /* WatchBridge.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; name = WatchBridge.m; path = kiroku/WatchBridge.m; sourceTree = "<group>"; };
+		FA0000000000000000000003 /* KirokuAPI.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; name = KirokuAPI.swift; path = "KirokuWatchCore/Sources/KirokuWatchCore/KirokuAPI.swift"; sourceTree = SOURCE_ROOT; };
+		FA0000000000000000000004 /* DrinkingSession.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; name = DrinkingSession.swift; path = "KirokuWatchCore/Sources/KirokuWatchCore/DrinkingSession.swift"; sourceTree = SOURCE_ROOT; };
+		FA0000000000000000000005 /* PushID.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; name = PushID.swift; path = "KirokuWatchCore/Sources/KirokuWatchCore/PushID.swift"; sourceTree = SOURCE_ROOT; };
+		FA0000000000000000000006 /* SessionConnectivity.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = SessionConnectivity.swift; sourceTree = "<group>"; };
+		FA0000000000000000000007 /* CredentialStore.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = CredentialStore.swift; sourceTree = "<group>"; };
 		FC94F72FE31465CA8BCABD916FE6A2C6 /* RCTBootSplash.mm */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.objcpp; name = RCTBootSplash.mm; path = kiroku/RCTBootSplash.mm; sourceTree = "<group>"; };
 		FCBF9C1AD1D6D46631D118FD0EFF49A8 /* ExpensifyNeue-Regular.otf */ = {isa = PBXFileReference; includeInIndex = 1; path = "ExpensifyNeue-Regular.otf"; sourceTree = "<group>"; };
 		FCC932AE708BEAD1D1F250D3CC3196F3 /* Kiroku Watch App.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "Kiroku Watch App.app"; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -276,6 +290,8 @@
 				7F0F9082C37DDC79066DFE0B03E80EE2 /* Info.plist */,
 				3FC14E075100224A5C18F4B89B5FDAA8 /* RCTBootSplash.h */,
 				FC94F72FE31465CA8BCABD916FE6A2C6 /* RCTBootSplash.mm */,
+				FA0000000000000000000001 /* WatchBridge.swift */,
+				FA0000000000000000000002 /* WatchBridge.m */,
 				A19095879D0F5A5F11311FBA6371E13F /* kiroku.entitlements */,
 			);
 			name = kiroku;
@@ -365,6 +381,8 @@
 		CC4028DFABA22F2B894CB6ACB0524F51 /* Kiroku Watch App */ = {
 			isa = PBXGroup;
 			children = (
+				FC0000000000000000000001 /* Connectivity */,
+				FC0000000000000000000002 /* KirokuWatchCore */,
 				6131D7EE3500A2D60142FA287C792680 /* Models */,
 				8CBD8A636D60DFCD7C4BA2D998EEDFFB /* Translations */,
 				4171FFEA62094A4054A4BF980B511CA6 /* Utilities */,
@@ -377,6 +395,25 @@
 				D17B18F000F10331F3702AFEF2670158 /* PrivacyInfo.xcprivacy */,
 			);
 			path = "Kiroku Watch App";
+			sourceTree = "<group>";
+		};
+		FC0000000000000000000001 /* Connectivity */ = {
+			isa = PBXGroup;
+			children = (
+				FA0000000000000000000007 /* CredentialStore.swift */,
+				FA0000000000000000000006 /* SessionConnectivity.swift */,
+			);
+			path = Connectivity;
+			sourceTree = "<group>";
+		};
+		FC0000000000000000000002 /* KirokuWatchCore */ = {
+			isa = PBXGroup;
+			children = (
+				FA0000000000000000000004 /* DrinkingSession.swift */,
+				FA0000000000000000000003 /* KirokuAPI.swift */,
+				FA0000000000000000000005 /* PushID.swift */,
+			);
+			name = KirokuWatchCore;
 			sourceTree = "<group>";
 		};
 		D04E6F991354770904E61C4565FB8BC4 /* Supporting Files */ = {
@@ -890,6 +927,8 @@
 				2277E0348F15E2F05F9D299348664B51 /* AppDelegate.swift in Sources */,
 				26D171A980698257B1C52A1C8AC6E6B0 /* ExpoModulesProvider.swift in Sources */,
 				2FC41EC86A043DE6B063268BD4EF74ED /* RCTBootSplash.mm in Sources */,
+				FB0000000000000000000001 /* WatchBridge.swift in Sources */,
+				FB0000000000000000000002 /* WatchBridge.m in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -900,6 +939,11 @@
 				EFB7AA8916E578EFEB6F9665AF5AF9C7 /* Colors.swift in Sources */,
 				0003B1D50D35F4B29CA69A269A654B52 /* Constants.swift in Sources */,
 				5F2594213B6739843D542E9AD460E687 /* ContentView.swift in Sources */,
+				FB0000000000000000000007 /* CredentialStore.swift in Sources */,
+				FB0000000000000000000004 /* DrinkingSession.swift in Sources */,
+				FB0000000000000000000003 /* KirokuAPI.swift in Sources */,
+				FB0000000000000000000005 /* PushID.swift in Sources */,
+				FB0000000000000000000006 /* SessionConnectivity.swift in Sources */,
 				85D3A2428FB7A384E0E90E056C100D01 /* CzechTexts.swift in Sources */,
 				5E4ACD6C1EE6FBC1E05D75AE525E2969 /* EnglishTexts.swift in Sources */,
 				6F3319D785115B5E3BBC9021CD9C847E /* Extensions.swift in Sources */,
@@ -1173,7 +1217,6 @@
 				SDKROOT = watchos;
 				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "DEBUG $(inherited)";
 				SWIFT_EMIT_LOC_STRINGS = NO;
-				SWIFT_OBJC_BRIDGING_HEADER = "kiroku-Bridging-Header.h";
 				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
 				SWIFT_VERSION = 5.0;
 				TARGETED_DEVICE_FAMILY = 4;
@@ -1372,7 +1415,6 @@
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SDKROOT = watchos;
 				SWIFT_EMIT_LOC_STRINGS = NO;
-				SWIFT_OBJC_BRIDGING_HEADER = "kiroku-Bridging-Header.h";
 				SWIFT_VERSION = 5.0;
 				TARGETED_DEVICE_FAMILY = 4;
 				TEST_TARGET_NAME = "Kiroku Watch App";
@@ -1406,7 +1448,6 @@
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SDKROOT = watchos;
 				SWIFT_EMIT_LOC_STRINGS = NO;
-				SWIFT_OBJC_BRIDGING_HEADER = "kiroku-Bridging-Header.h";
 				SWIFT_VERSION = 5.0;
 				TARGETED_DEVICE_FAMILY = 4;
 				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/Kiroku Watch App.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/Kiroku Watch App";
@@ -1441,7 +1482,6 @@
 				SDKROOT = watchos;
 				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "DEBUG $(inherited)";
 				SWIFT_EMIT_LOC_STRINGS = NO;
-				SWIFT_OBJC_BRIDGING_HEADER = "kiroku-Bridging-Header.h";
 				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
 				SWIFT_VERSION = 5.0;
 				TARGETED_DEVICE_FAMILY = 4;
@@ -1545,7 +1585,6 @@
 				SDKROOT = watchos;
 				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "DEBUG $(inherited)";
 				SWIFT_EMIT_LOC_STRINGS = NO;
-				SWIFT_OBJC_BRIDGING_HEADER = "kiroku-Bridging-Header.h";
 				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
 				SWIFT_VERSION = 5.0;
 				TARGETED_DEVICE_FAMILY = 4;
@@ -1688,7 +1727,6 @@
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SDKROOT = watchos;
 				SWIFT_EMIT_LOC_STRINGS = NO;
-				SWIFT_OBJC_BRIDGING_HEADER = "kiroku-Bridging-Header.h";
 				SWIFT_VERSION = 5.0;
 				TARGETED_DEVICE_FAMILY = 4;
 				TEST_TARGET_NAME = "Kiroku Watch App";
@@ -2201,7 +2239,6 @@
 				SDKROOT = watchos;
 				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "DEBUG $(inherited)";
 				SWIFT_EMIT_LOC_STRINGS = NO;
-				SWIFT_OBJC_BRIDGING_HEADER = "kiroku-Bridging-Header.h";
 				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
 				SWIFT_VERSION = 5.0;
 				TARGETED_DEVICE_FAMILY = 4;
@@ -2480,7 +2517,6 @@
 				SDKROOT = watchos;
 				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "DEBUG $(inherited)";
 				SWIFT_EMIT_LOC_STRINGS = NO;
-				SWIFT_OBJC_BRIDGING_HEADER = "kiroku-Bridging-Header.h";
 				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
 				SWIFT_VERSION = 5.0;
 				TARGETED_DEVICE_FAMILY = 4;
@@ -2514,7 +2550,6 @@
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SDKROOT = watchos;
 				SWIFT_EMIT_LOC_STRINGS = NO;
-				SWIFT_OBJC_BRIDGING_HEADER = "kiroku-Bridging-Header.h";
 				SWIFT_VERSION = 5.0;
 				TARGETED_DEVICE_FAMILY = 4;
 				TEST_TARGET_NAME = "Kiroku Watch App";
@@ -2574,7 +2609,6 @@
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SDKROOT = watchos;
 				SWIFT_EMIT_LOC_STRINGS = NO;
-				SWIFT_OBJC_BRIDGING_HEADER = "kiroku-Bridging-Header.h";
 				SWIFT_VERSION = 5.0;
 				TARGETED_DEVICE_FAMILY = 4;
 				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/Kiroku Watch App.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/Kiroku Watch App";
@@ -2700,7 +2734,6 @@
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SDKROOT = watchos;
 				SWIFT_EMIT_LOC_STRINGS = NO;
-				SWIFT_OBJC_BRIDGING_HEADER = "kiroku-Bridging-Header.h";
 				SWIFT_VERSION = 5.0;
 				TARGETED_DEVICE_FAMILY = 4;
 				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/Kiroku Watch App.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/Kiroku Watch App";
@@ -2889,7 +2922,6 @@
 				SDKROOT = watchos;
 				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "DEBUG $(inherited)";
 				SWIFT_EMIT_LOC_STRINGS = NO;
-				SWIFT_OBJC_BRIDGING_HEADER = "kiroku-Bridging-Header.h";
 				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
 				SWIFT_VERSION = 5.0;
 				TARGETED_DEVICE_FAMILY = 4;
@@ -3117,7 +3149,6 @@
 				SDKROOT = watchos;
 				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "DEBUG $(inherited)";
 				SWIFT_EMIT_LOC_STRINGS = NO;
-				SWIFT_OBJC_BRIDGING_HEADER = "kiroku-Bridging-Header.h";
 				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
 				SWIFT_VERSION = 5.0;
 				TARGETED_DEVICE_FAMILY = 4;
@@ -3262,7 +3293,6 @@
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SDKROOT = watchos;
 				SWIFT_EMIT_LOC_STRINGS = NO;
-				SWIFT_OBJC_BRIDGING_HEADER = "kiroku-Bridging-Header.h";
 				SWIFT_VERSION = 5.0;
 				TARGETED_DEVICE_FAMILY = 4;
 				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/Kiroku Watch App.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/Kiroku Watch App";
@@ -3296,7 +3326,6 @@
 				SDKROOT = watchos;
 				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "DEBUG $(inherited)";
 				SWIFT_EMIT_LOC_STRINGS = NO;
-				SWIFT_OBJC_BRIDGING_HEADER = "kiroku-Bridging-Header.h";
 				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
 				SWIFT_VERSION = 5.0;
 				TARGETED_DEVICE_FAMILY = 4;
@@ -3330,7 +3359,6 @@
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SDKROOT = watchos;
 				SWIFT_EMIT_LOC_STRINGS = NO;
-				SWIFT_OBJC_BRIDGING_HEADER = "kiroku-Bridging-Header.h";
 				SWIFT_VERSION = 5.0;
 				TARGETED_DEVICE_FAMILY = 4;
 				TEST_TARGET_NAME = "Kiroku Watch App";
