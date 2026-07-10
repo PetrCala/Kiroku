@@ -107,6 +107,15 @@ const ONYXKEYS = {
   /** Ongoing session data */
   ONGOING_SESSION_DATA: 'ongoingSessionData',
 
+  /** ID of the ongoing (live) session whose local edits have not yet been handed
+   *  to the offline request queue — set when a live edit is buffered into
+   *  `ONGOING_SESSION_DATA`, cleared when the debounced persist flushes those
+   *  edits into a queued `UpdateSession` request. Persisted so that after the app
+   *  is killed before the flush ran (backgrounded apps run no JS timers), the
+   *  next launch knows the local buffer is ahead of the cached snapshot and must
+   *  be re-sent rather than rolled back. */
+  ONGOING_SESSION_UNFLUSHED_EDITS: 'ongoingSessionUnflushedEdits',
+
   /** Edit session data */
   EDIT_SESSION_DATA: 'editSessionData',
 
@@ -326,6 +335,7 @@ type OnyxValuesMapping = {
   [ONYXKEYS.NVP_PREFERRED_LOCALE]: OnyxTypes.Locale;
   [ONYXKEYS.NVP_LAST_VIEWED_CALENDAR_DATE]: Record<string, DateString>;
   [ONYXKEYS.ONGOING_SESSION_DATA]: OnyxTypes.DrinkingSession;
+  [ONYXKEYS.ONGOING_SESSION_UNFLUSHED_EDITS]: OnyxTypes.DrinkingSessionId;
   [ONYXKEYS.EDIT_SESSION_DATA]: OnyxTypes.DrinkingSession;
   [ONYXKEYS.IS_CREATING_NEW_SESSION]: boolean;
   [ONYXKEYS.SESSIONS_CALENDAR_MONTHS_LOADED]: number;

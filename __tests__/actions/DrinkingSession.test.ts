@@ -20,7 +20,7 @@ import * as DS from '@userActions/DrinkingSession';
 // initialized `var` so babel-plugin-jest-hoist lets the hoisted jest.mock factory
 // reference it and so `var` hoisting keeps it defined when DrinkingSession.ts
 // registers its callbacks at import time.
-// eslint-disable-next-line no-var, vars-on-top, @typescript-eslint/init-declarations
+// eslint-disable-next-line no-var
 var mockOnyxConnectCallbacks:
   | Record<string, Array<(value: unknown) => void>>
   | undefined;
@@ -51,10 +51,32 @@ jest.mock('react-native-onyx', () => ({
 
 jest.mock('@libs/API', () => ({write: jest.fn()}));
 
+jest.mock('@libs/Firebase/FirebaseApp', () => ({
+  getFirebaseAuth: () => ({currentUser: {uid: 'uid'}}),
+}));
+
+// Captured AppState 'change' listeners, so tests can drive the background-flush
+// path. Same `mock`-prefixed lazy-var pattern as the Onyx callbacks above.
+// eslint-disable-next-line no-var
+var mockAppStateListeners: Array<(state: string) => void> | undefined;
+
+function emitAppState(state: string) {
+  (mockAppStateListeners ?? []).forEach(listener => listener(state));
+}
+
 // Run the debounced persist's deferred body synchronously when the InteractionManager
 // callback is invoked, and hand back a cancel handle the action layer can call.
 jest.mock('react-native', () => ({
   Alert: {alert: jest.fn()},
+  AppState: {
+    addEventListener: jest.fn(
+      (type: string, listener: (state: string) => void) => {
+        mockAppStateListeners ??= [];
+        mockAppStateListeners.push(listener);
+        return {remove: jest.fn()};
+      },
+    ),
+  },
   InteractionManager: {
     runAfterInteractions: jest.fn((callback: () => void) => {
       callback();
@@ -130,13 +152,14 @@ beforeEach(() => {
   jest.useFakeTimers();
   jest.clearAllMocks();
   jest.clearAllTimers();
-  // Reset the DrinkingSession.ts module cache the flush reads.
+  // Reset the DrinkingSession.ts module caches the flush reads.
   driveOnyx(ONYXKEYS.ONGOING_SESSION_DATA, null);
+  driveOnyx(ONYXKEYS.ONGOING_SESSION_UNFLUSHED_EDITS, null);
   mockedDSUtils.clearOngoingSessionCache.mockReset();
 });
 
 describe('live-session persistence', () => {
-  it('debounces a tap burst into a single UPDATE_SESSION with no optimistic data', () => {
+  it('debounces a tap burst into a single UPDATE_SESSION carrying a clean-replace of the cached snapshot', () => {
     const session = makeOngoing('s1');
     routeTo(ONYXKEYS.ONGOING_SESSION_DATA, session);
     driveOnyx(ONYXKEYS.ONGOING_SESSION_DATA, session);
@@ -156,8 +179,50 @@ describe('live-session persistence', () => {
       session,
       sessionIsLive: true,
     });
-    // No third onyxData arg → no optimistic cachedDrinkingSessions merge.
-    expect(call).toHaveLength(2);
+    // The flush carries an optimistic clean-replace (delete, then re-add) of the
+    // cached snapshot so an offline device — where no server echo can arrive —
+    // still renders and restarts with the current drinks.
+    const onyxData = call[2] as {
+      optimisticData?: Array<{key: string; value: unknown}>;
+    };
+    const cacheWrites = (onyxData?.optimisticData ?? []).filter(
+      update => update.key === ONYXKEYS.CACHED_DRINKING_SESSIONS,
+    );
+    expect(cacheWrites).toHaveLength(2);
+    expect(cacheWrites[0].value).toEqual({uid: {s1: null}});
+    expect(cacheWrites[1].value).toEqual({uid: {s1: session}});
+  });
+
+  it('flushes an armed debounce immediately when the app leaves the foreground', () => {
+    const session = makeOngoing('s1');
+    routeTo(ONYXKEYS.ONGOING_SESSION_DATA, session);
+    driveOnyx(ONYXKEYS.ONGOING_SESSION_DATA, session);
+
+    tap();
+    // The user backgrounds the app right after tapping — JS timers will not run
+    // any more, so waiting out the debounce would lose the write.
+    emitAppState('background');
+
+    expect(liveUpdateCalls()).toHaveLength(1);
+    expect(liveUpdateCalls()[0][1]).toEqual({
+      sessionId: 's1',
+      session,
+      sessionIsLive: true,
+    });
+
+    // The cancelled debounce must not fire a second, duplicate write.
+    jest.advanceTimersByTime(500);
+    expect(liveUpdateCalls()).toHaveLength(1);
+  });
+
+  it('does nothing on backgrounding when no persist is pending', () => {
+    const session = makeOngoing('s1');
+    routeTo(ONYXKEYS.ONGOING_SESSION_DATA, session);
+    driveOnyx(ONYXKEYS.ONGOING_SESSION_DATA, session);
+
+    emitAppState('background');
+
+    expect(mockedWrite).not.toHaveBeenCalled();
   });
 
   it('synchronously caches the composed session so rapid taps compose on the latest', () => {
