@@ -54,20 +54,6 @@
                ReferencedContainer = "container:kiroku.xcodeproj">
             </BuildableReference>
          </BuildActionEntry>
-         <BuildActionEntry
-            buildForTesting = "NO"
-            buildForRunning = "YES"
-            buildForProfiling = "YES"
-            buildForArchiving = "YES"
-            buildForAnalyzing = "YES">
-            <BuildableReference
-               BuildableIdentifier = "primary"
-               BlueprintIdentifier = "1821A5F349D591C181E1BE15261F44F4"
-               BuildableName = "Kiroku Watch App.app"
-               BlueprintName = "Kiroku Watch App"
-               ReferencedContainer = "container:kiroku.xcodeproj">
-            </BuildableReference>
-         </BuildActionEntry>
       </BuildActionEntries>
    </BuildAction>
    <TestAction
