@@ -293,6 +293,14 @@ const KIROKU_DIRECT_PATHS = {
    * `Pusher/kirokuAuthorizer`.
    */
   PUSHER_AUTH: '/v1/pusher/auth',
+
+  /**
+   * Unauthenticated health check. Used as NetInfo's internet-reachability
+   * probe target (see `UserConnectionContext`): the probe is a bare `fetch`
+   * driven by the NetInfo library itself, so it can never go through the
+   * pipeline.
+   */
+  HEALTHZ: '/v1/healthz',
 } as const;
 
 /** Returns the kiroku-api route for a command, or undefined for legacy commands. */
