@@ -107,6 +107,39 @@ target 'kiroku' do
     )
     __apply_Xcode_14_3_RC_post_install_workaround(installer)
 
+    # React Native's ccache integration (enabled above) writes CC/CXX/LD/LDPLUSPLUS
+    # and REACT_NATIVE_PATH onto the *project*-level build settings of kiroku.xcodeproj,
+    # so every target inherits them. Only CocoaPods-integrated targets get a Pods
+    # xcconfig defining PODS_ROOT; in any other target (the pure-Swift watch app,
+    # future widgets/extensions), REACT_NATIVE_PATH ($(PODS_ROOT)/../../node_modules/
+    # react-native) collapses to "/../../node_modules/react-native" and the build fails
+    # with "unable to spawn process '.../ccache-clang.sh' (No such file or directory)".
+    # Invariant: CocoaPods-managed toolchain overrides must not leak into targets
+    # CocoaPods doesn't manage. Clear the compiler/linker overrides on every target
+    # without a Pods base xcconfig so they use the default toolchain. Only matters for
+    # local builds with ccache installed; CI has no ccache, so RN never writes these
+    # settings there.
+    installer.aggregate_targets
+             .map(&:user_project)
+             .compact
+             .uniq { |project| project.path }
+             .each do |project|
+      non_pods_targets = project.native_targets.reject do |target|
+        target.build_configurations.any? do |config|
+          base = config.base_configuration_reference
+          base && File.basename(base.path).start_with?('Pods-')
+        end
+      end
+      next if non_pods_targets.empty?
+
+      non_pods_targets.each do |target|
+        target.build_configurations.each do |config|
+          %w[CC CXX LD LDPLUSPLUS].each { |key| config.build_settings[key] = '' }
+        end
+      end
+      project.save
+    end
+
     # Apple Clang 21+ (Xcode 26+) has stricter consteval evaluation that breaks
     # fmt's FMT_STRING macro. Patch base.h to disable consteval for Clang 21+.
     fmt_base_h = "#{installer.sandbox.root}/fmt/include/fmt/base.h"
