@@ -4,6 +4,7 @@
 
 /* eslint-disable @typescript-eslint/naming-convention -- jest mock factory keys (__esModule) are dictated by Node module shape */
 /* eslint-disable rulesdir/no-api-in-views -- this test asserts on the mocked API.write pipeline; it is not a view */
+/* eslint-disable rulesdir/prefer-actions-set-data -- this test references the mocked Onyx.merge/set to assert what the action issues; it is not app code */
 
 import type {OnyxKey} from 'react-native-onyx';
 import Onyx from 'react-native-onyx';
@@ -359,17 +360,21 @@ describe('finalize is the deterministic last writer', () => {
 
 describe('offline live-session persistence across restarts', () => {
   // The module is fully mocked above; these are the jest.fn instances the
-  // action layer writes through.
+  // action layer writes through. Typed explicitly (not the bare `jest.Mock`
+  // the real `Onyx.set`/`Onyx.merge` declarations widen to) so `.mock.calls`
+  // stays a known tuple instead of `any`.
   const mockedOnyx = {
-    set: Onyx.set as unknown as jest.Mock,
-    merge: Onyx.merge as unknown as jest.Mock,
+    set: Onyx.set as unknown as jest.Mock<Promise<void>, [OnyxKey, unknown]>,
+    merge: Onyx.merge as unknown as jest.Mock<
+      Promise<void>,
+      [OnyxKey, unknown]
+    >,
   };
 
   /** The stamp of the last persisted ONGOING_SESSION_SYNC write. */
   function lastSyncMarker(): {sessionId: string; editedAt: number} {
     const setCalls = mockedOnyx.set.mock.calls.filter(
-      (call: unknown[]) =>
-        call[0] === ONYXKEYS.ONGOING_SESSION_SYNC && call[1] !== null,
+      call => call[0] === ONYXKEYS.ONGOING_SESSION_SYNC && call[1] !== null,
     );
     return setCalls[setCalls.length - 1][1] as {
       sessionId: string;
@@ -384,10 +389,12 @@ describe('offline live-session persistence across restarts', () => {
 
     tap();
 
-    expect(mockedOnyx.set).toHaveBeenCalledWith(
-      ONYXKEYS.ONGOING_SESSION_SYNC,
-      expect.objectContaining({sessionId: 's1', editedAt: expect.any(Number)}),
-    );
+    // Assert via the typed helper (not `expect.any(Number)`, which is `any`
+    // and trips the type-checked lint): a marker for this session with a
+    // numeric edit stamp was persisted.
+    const marker = lastSyncMarker();
+    expect(marker.sessionId).toBe('s1');
+    expect(typeof marker.editedAt).toBe('number');
   });
 
   it('flush stamps enqueuedAt synchronously and acknowledges via successData', () => {
