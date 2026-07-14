@@ -4,6 +4,14 @@ This directory contains patches applied to `node_modules/` by [`patch-package`](
 
 Patches are named `<package>+<version>+<NNN>+<short-description>.patch` so `patch-package` knows which version they apply to.
 
+## `@firebase/auth`
+
+### `@firebase+auth+1.7.8+001+bound-boot-user-reload.patch`
+
+- **Reason**: During auth initialization the SDK reloads the persisted user over the network (`reloadAndSetCurrentUserOrClear` -> `_reloadWithoutSaving`) and only emits the first `onAuthStateChanged` once that settles. The SDK's own `NetworkTimeout` bounds it at 30-60s, so on a network that is up but black-holed (VPN tunnel with no internet behind it, captive portal, dead wifi) a cold start hangs the entire boot sequence (splash gates, InitialScreen auto-login spinner, Home redirect) for that long. The patch races the reload against a 5s rejection carrying `code: 'auth/network-request-failed'`, which takes the SDK's existing "network error: keep the persisted user" branch. A genuinely invalid token is still caught: the first real kiroku-api call returns 401 and signs the user out. Applied to both bundles Kiroku loads: `dist/rn` (native via Metro's `react-native` main field) and `dist/esm2017` (web via webpack's `browser` field).
+- **Upstream PR/issue**: 🛑 (long-standing behavior; see e.g. [firebase/firebase-js-sdk#4635](https://github.com/firebase/firebase-js-sdk/issues/4635))
+- **Removable when**: the SDK exposes a way to skip or bound the initialization-time user reload (or emits the persisted user before revalidating).
+
 ## `expo-modules-core`
 
 ### `expo-modules-core+3.0.18+001+disableViewRecycling.patch`

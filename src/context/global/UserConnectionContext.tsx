@@ -5,6 +5,8 @@ import type {NetInfoState} from '@react-native-community/netinfo';
 import NetInfo from '@react-native-community/netinfo';
 import isBoolean from 'lodash/isBoolean';
 import type {ValueOf} from 'type-fest';
+import * as ApiUtils from '@libs/ApiUtils';
+import {KIROKU_DIRECT_PATHS} from '@libs/API/kirokuRoutes';
 import * as NetworkActions from '@userActions/Network';
 import CONFIG from '@src/CONFIG';
 import CONST from '@src/CONST';
@@ -105,6 +107,33 @@ function UserConnectionProvider({children}: UserConnectionProviderProps) {
     // Treat emulator/local dev as always online so the request queue keeps
     // flushing and dev builds aren't pinned offline.
     const isUsingEmulators = CONFIG.IS_USING_EMULATORS;
+
+    // Point NetInfo's internet-reachability probe at the Kiroku API instead of
+    // the library default (a Google endpoint). The OS can report a "connected"
+    // path that leads nowhere: a VPN tunnel with no internet behind it (utun
+    // interfaces stay up even in airplane mode), a captive portal, dead wifi.
+    // On such a network every request hangs to its full timeout instead of
+    // failing fast, so only an end-to-end probe with a bounded timeout proves
+    // the internet is actually reachable; probing our own API also covers
+    // "internet up, Kiroku down". Skipped for emulators (pinned online below)
+    // and local web (requests can sit in "Pending" and aren't a reliable
+    // offline signal). This must run BEFORE the subscriptions below:
+    // NetInfo.configure() tears down every previously added listener.
+    //
+    // getKirokuApiRoot() may still resolve to the prod root for a moment on
+    // dev/adhoc builds (its environment lookup is async); prod healthz is a
+    // valid, unauthenticated reachability target either way.
+    if (!isUsingEmulators && !CONFIG.IS_USING_LOCAL_WEB) {
+      NetInfo.configure({
+        reachabilityUrl: `${ApiUtils.getKirokuApiRoot()}${KIROKU_DIRECT_PATHS.HEALTHZ}`,
+        reachabilityMethod: 'GET',
+        reachabilityTest: response => Promise.resolve(response.ok),
+        // A probe that can't complete within this window marks the network
+        // unreachable. This bounds how long a black-holed network can
+        // masquerade as online.
+        reachabilityRequestTimeout: CONST.NETWORK.MAX_PENDING_TIME_MS,
+      });
+    }
 
     let recheckTimer: ReturnType<typeof setTimeout> | null = null;
     let recheckAttempts = 0;

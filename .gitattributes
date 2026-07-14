@@ -1,0 +1,5 @@
+# patch-package diffs must be byte-exact: some npm packages ship CRLF files
+# (e.g. @firebase/auth dist bundles), and normalizing the patch's line endings
+# on commit (core.autocrlf) would make its hunks no longer match the pristine
+# package contents, so the patch would fail to apply on postinstall.
+patches/*.patch -text

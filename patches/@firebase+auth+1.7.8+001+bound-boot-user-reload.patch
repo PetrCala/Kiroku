@@ -1,0 +1,42 @@
+diff --git a/node_modules/@firebase/auth/dist/esm2017/index-2788dcb0.js b/node_modules/@firebase/auth/dist/esm2017/index-2788dcb0.js
+index 0379065..13cde59 100644
+--- a/node_modules/@firebase/auth/dist/esm2017/index-2788dcb0.js
++++ b/node_modules/@firebase/auth/dist/esm2017/index-2788dcb0.js
+@@ -2749,7 +2749,13 @@ class AuthImpl {
+     }
+     async reloadAndSetCurrentUserOrClear(user) {
+         try {
+-            await _reloadWithoutSaving(user);
++            // PATCHED (Kiroku): bound the boot-time user reload. See the identical patch in
++            // dist/rn/index-5b9a1803.js for the full rationale (black-holed networks hang
++            // this request for 30-60s and the first onAuthStateChanged emission waits on it).
++            await Promise.race([
++                _reloadWithoutSaving(user),
++                new Promise((_, reject) => setTimeout(() => reject({ code: 'auth/network-request-failed' }), 5000)),
++            ]);
+         }
+         catch (e) {
+             if ((e === null || e === void 0 ? void 0 : e.code) !==
+diff --git a/node_modules/@firebase/auth/dist/rn/index-5b9a1803.js b/node_modules/@firebase/auth/dist/rn/index-5b9a1803.js
+index 52daa6e..0031175 100644
+--- a/node_modules/@firebase/auth/dist/rn/index-5b9a1803.js
++++ b/node_modules/@firebase/auth/dist/rn/index-5b9a1803.js
+@@ -3132,7 +3132,17 @@ var AuthImpl = /** @class */ (function () {
+                 switch (_a.label) {
+                     case 0:
+                         _a.trys.push([0, 2, , 3]);
+-                        return [4 /*yield*/, _reloadWithoutSaving(user)];
++                        // PATCHED (Kiroku): bound the boot-time user reload. On a network that is up but
++                        // black-holed (VPN tunnel with no internet behind it, captive portal) this
++                        // request otherwise hangs for the SDK's 30-60s NetworkTimeout, and the first
++                        // onAuthStateChanged emission (which the whole boot sequence gates on) waits
++                        // for it. Racing a short rejection with code auth/network-request-failed takes
++                        // the same branch as a fast offline failure: keep the persisted user. If the
++                        // token is truly invalid the first real API call returns 401 and signs out.
++                        return [4 /*yield*/, Promise.race([
++                                _reloadWithoutSaving(user),
++                                new Promise(function (_, reject) { setTimeout(function () { reject({ code: 'auth/network-request-failed' }); }, 5000); })
++                            ])];
+                     case 1:
+                         _a.sent();
+                         return [3 /*break*/, 3];
