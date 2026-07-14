@@ -58,4 +58,57 @@ describe('deriveConnectivity', () => {
       deriveConnectivity({isConnected: true, isInternetReachable: null}, false),
     ).toEqual({isOffline: false, isDetermined: true, networkStatus: ONLINE});
   });
+
+  it('is offline when the API probe failed even though the OS reports online', () => {
+    // The VPN black-hole case: utun interfaces keep the path "satisfied" in
+    // airplane mode, so NetInfo reports connected and reachable while every
+    // request hangs. Only the end-to-end probe can catch this.
+    expect(
+      deriveConnectivity(
+        {isConnected: true, isInternetReachable: true},
+        false,
+        false,
+      ),
+    ).toEqual({isOffline: true, isDetermined: true, networkStatus: OFFLINE});
+  });
+
+  it('is determined online when the API probe succeeded while NetInfo is still resolving', () => {
+    expect(
+      deriveConnectivity(
+        {isConnected: null, isInternetReachable: null},
+        false,
+        true,
+      ),
+    ).toEqual({isOffline: false, isDetermined: true, networkStatus: ONLINE});
+  });
+
+  it('keeps interface-down offline even if a probe result claims reachable', () => {
+    expect(
+      deriveConnectivity(
+        {isConnected: false, isInternetReachable: null},
+        false,
+        true,
+      ),
+    ).toEqual({isOffline: true, isDetermined: true, networkStatus: OFFLINE});
+  });
+
+  it('leaves the state undetermined while the probe has not resolved', () => {
+    expect(
+      deriveConnectivity(
+        {isConnected: null, isInternetReachable: null},
+        false,
+        null,
+      ),
+    ).toEqual({isOffline: false, isDetermined: false, networkStatus: UNKNOWN});
+  });
+
+  it('pins emulator/local dev online even when the probe failed', () => {
+    expect(
+      deriveConnectivity(
+        {isConnected: true, isInternetReachable: true},
+        true,
+        false,
+      ),
+    ).toEqual({isOffline: false, isDetermined: true, networkStatus: ONLINE});
+  });
 });
