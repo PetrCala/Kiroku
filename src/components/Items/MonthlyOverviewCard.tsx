@@ -22,8 +22,11 @@ function formatUnits(value: number): string {
   return Number.isInteger(value) ? String(value) : value.toFixed(1);
 }
 
-function directionOf(current: number, previous: number): Direction {
-  const diff = Number((current - previous).toFixed(1));
+function diffOf(current: number, previous: number): number {
+  return Number((current - previous).toFixed(1));
+}
+
+function directionOf(diff: number): Direction {
   if (diff > 0) {
     return 'up';
   }
@@ -39,12 +42,12 @@ type MetricColumnProps = {
   value: string;
   /** Optional unit suffix, e.g. "/29" for alcohol-free days. */
   unit?: string;
-  /** Formatted previous value (shown after the trend arrow). */
-  previous: string;
+  /** Formatted absolute change vs. the previous period (shown after the trend arrow). */
+  delta: string;
   direction: Direction;
   deltaColor: string;
   accentColor: string;
-  /** When false, the trend arrow + previous value row is hidden entirely. */
+  /** When false, the trend arrow + delta row is hidden entirely. */
   showComparison: boolean;
   /**
    * When `showComparison` is on but no comparison is meaningful (future or
@@ -54,12 +57,12 @@ type MetricColumnProps = {
   comparisonAvailable: boolean;
 };
 
-/** One stat in the consolidated home tile: label, current value, arrow + previous. */
+/** One stat in the consolidated home tile: label, current value, arrow + delta. */
 function MetricColumn({
   label,
   value,
   unit,
-  previous,
+  delta,
   direction,
   deltaColor,
   accentColor,
@@ -70,13 +73,13 @@ function MetricColumn({
   const {translate} = useLocalize();
 
   // Blank, height-reserving line when there's nothing to compare (future or
-  // untracked month); otherwise the trend arrow + previous value, or "No change".
+  // untracked month); otherwise the trend arrow + delta, or "No change".
   let comparisonLine = ' ';
   if (comparisonAvailable) {
     comparisonLine =
       direction === 'flat'
         ? translate('homeScreen.stats.noChange')
-        : `${ARROW[direction]} ${previous}`;
+        : `${ARROW[direction]} ${delta}`;
   }
 
   return (
@@ -122,7 +125,7 @@ type MonthlyOverviewCardProps = {
   title?: string;
   /** Show the per-week units bar chart beneath the columns. */
   showWeeklyUnits?: boolean;
-  /** Show the month-over-month comparison (trend arrow + previous value). */
+  /** Show the month-over-month comparison (trend arrow + delta). */
   showMonthComparison?: boolean;
   /**
    * When true (default), the whole card is tappable and opens the Statistics
@@ -136,8 +139,8 @@ type MonthlyOverviewCardProps = {
 /**
  * Reusable "This month" stats card: three columns (Units, Sessions,
  * Alcohol-free) for a month. Each column shows the current value and, when
- * `showMonthComparison` is on, a trend arrow + the previous month's value. An
- * optional per-week bar chart sits below when `showWeeklyUnits` is on. When
+ * `showMonthComparison` is on, a trend arrow + the change vs. the previous
+ * month. An optional per-week bar chart sits below when `showWeeklyUnits` is on. When
  * `interactive` is on (default), the whole card is tappable and opens the
  * Statistics screen. Presentational — the caller supplies `stats` (home or
  * profile), so it works for self and others.
@@ -175,9 +178,12 @@ function MonthlyOverviewCard({
 
   // The hero Units value folds in the live session's units (see useHomeStats).
   const unitsCurrent = current.totalUnits + liveExtraUnits;
-  const unitsDir = directionOf(unitsCurrent, previous.totalUnits);
-  const sessionsDir = directionOf(current.sessions, previous.sessions);
-  const afDir = directionOf(current.afDays, previous.afDays);
+  const unitsDiff = diffOf(unitsCurrent, previous.totalUnits);
+  const unitsDir = directionOf(unitsDiff);
+  const sessionsDiff = diffOf(current.sessions, previous.sessions);
+  const sessionsDir = directionOf(sessionsDiff);
+  const afDiff = diffOf(current.afDays, previous.afDays);
+  const afDir = directionOf(afDiff);
 
   const cardStyle = [
     styles.mv2,
@@ -209,7 +215,7 @@ function MonthlyOverviewCard({
           <MetricColumn
             label={translate('homeScreen.stats.units')}
             value={formatUnits(unitsCurrent)}
-            previous={formatUnits(previous.totalUnits)}
+            delta={formatUnits(Math.abs(unitsDiff))}
             direction={unitsDir}
             deltaColor={deltaColorFor(unitsDir, 'lower-is-supportive')}
             accentColor={theme.text}
@@ -219,7 +225,7 @@ function MonthlyOverviewCard({
           <MetricColumn
             label={translate('homeScreen.stats.sessions')}
             value={String(current.sessions)}
-            previous={String(previous.sessions)}
+            delta={formatUnits(Math.abs(sessionsDiff))}
             direction={sessionsDir}
             deltaColor={deltaColorFor(sessionsDir, 'lower-is-supportive')}
             accentColor={theme.text}
@@ -230,7 +236,7 @@ function MonthlyOverviewCard({
             label={translate('homeScreen.stats.alcoholFree')}
             value={String(current.afDays)}
             unit={`/${current.elapsedDays}`}
-            previous={String(previous.afDays)}
+            delta={formatUnits(Math.abs(afDiff))}
             direction={afDir}
             deltaColor={deltaColorFor(afDir, 'higher-is-supportive')}
             accentColor={theme.successHover}
