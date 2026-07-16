@@ -35,6 +35,7 @@ import type Network from './Network';
 import type NicknameToId from './NicknameToId';
 import type PendingOAuthCredential from './PendingOAuthCredential';
 import type {Nickname, NicknameKey, NicknameToIdList} from './NicknameToId';
+import type OngoingSessionSync from './OngoingSessionSync';
 import type {
   OnyxUpdateEvent,
   OnyxUpdatesFromServer,
@@ -126,6 +127,7 @@ export type {
   NicknameToIdList,
   PendingOAuthCredential,
   OnboardingData,
+  OngoingSessionSync,
   OnyxUpdateEvent,
   OnyxUpdatesFromServer,
   Preferences,

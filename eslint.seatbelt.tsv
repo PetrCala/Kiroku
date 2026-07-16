@@ -881,7 +881,7 @@
 "src/libs/UserUtils.ts"	"rulesdir/no-onyx-connect"	1
 "src/libs/actions/App.ts"	"rulesdir/no-onyx-connect"	3
 "src/libs/actions/Device/index.ts"	"rulesdir/no-onyx-connect"	1
-"src/libs/actions/DrinkingSession.ts"	"rulesdir/no-onyx-connect"	2
+"src/libs/actions/DrinkingSession.ts"	"rulesdir/no-onyx-connect"	3
 "src/libs/actions/OnyxUpdateManager/index.ts"	"rulesdir/no-onyx-connect"	3
 "src/libs/actions/OnyxUpdateManager/utils/__mocks__/applyUpdates.ts"	"rulesdir/no-onyx-connect"	1
 "src/libs/actions/OnyxUpdateManager/utils/index.ts"	"@typescript-eslint/prefer-nullish-coalescing"	1

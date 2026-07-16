@@ -4,8 +4,10 @@
 
 /* eslint-disable @typescript-eslint/naming-convention -- jest mock factory keys (__esModule) are dictated by Node module shape */
 /* eslint-disable rulesdir/no-api-in-views -- this test asserts on the mocked API.write pipeline; it is not a view */
+/* eslint-disable rulesdir/prefer-actions-set-data -- this test references the mocked Onyx.merge/set to assert what the action issues; it is not app code */
 
 import type {OnyxKey} from 'react-native-onyx';
+import Onyx from 'react-native-onyx';
 import * as API from '@libs/API';
 import {WRITE_COMMANDS} from '@libs/API/types';
 import * as DSUtils from '@libs/DrinkingSessionUtils';
@@ -53,6 +55,8 @@ jest.mock('@libs/API', () => ({write: jest.fn()}));
 
 // Run the debounced persist's deferred body synchronously when the InteractionManager
 // callback is invoked, and hand back a cancel handle the action layer can call.
+// The action layer detects this synchronous completion and must not store the
+// handle as a pending task (see scheduleLiveSessionPersist).
 jest.mock('react-native', () => ({
   Alert: {alert: jest.fn()},
   InteractionManager: {
@@ -119,6 +123,15 @@ function liveUpdateCalls() {
   );
 }
 
+/**
+ * Let the debounced live persist run to completion (or prove it has nothing to
+ * run): past the 500ms debounce the mocked InteractionManager runs the flush
+ * synchronously.
+ */
+function runLivePersistDebounce() {
+  jest.advanceTimersByTime(500);
+}
+
 /** Extract the `session` payload from a captured UPDATE_SESSION write call. */
 function sessionOf(
   call: ReturnType<typeof liveUpdateCalls>[number],
@@ -126,12 +139,23 @@ function sessionOf(
   return (call[1] as {session?: DrinkingSession}).session;
 }
 
-beforeEach(() => {
+// Install fake timers ONCE for the whole suite (jest/setupAfterEnv.ts forces
+// real timers per file). Per-test useFakeTimers would re-install and DISCARD
+// pending timers without running them, leaking the module-level persist
+// handles (`hasPendingLiveSessionPersist` would read armed-forever).
+beforeAll(() => {
   jest.useFakeTimers();
+});
+
+beforeEach(() => {
+  // Drain whatever a previous test left armed (debounce and/or interaction
+  // task) so the module-level pending handles reset, then clear the mock calls
+  // that draining produced.
+  jest.runAllTimers();
   jest.clearAllMocks();
-  jest.clearAllTimers();
-  // Reset the DrinkingSession.ts module cache the flush reads.
+  // Reset the DrinkingSession.ts module caches the flush and sync guards read.
   driveOnyx(ONYXKEYS.ONGOING_SESSION_DATA, null);
+  driveOnyx(ONYXKEYS.ONGOING_SESSION_SYNC, null);
   mockedDSUtils.clearOngoingSessionCache.mockReset();
 });
 
@@ -147,7 +171,7 @@ describe('live-session persistence', () => {
     // Debounced: nothing is written until the user pauses.
     expect(mockedWrite).not.toHaveBeenCalled();
 
-    jest.advanceTimersByTime(500);
+    runLivePersistDebounce();
 
     expect(liveUpdateCalls()).toHaveLength(1);
     const call = liveUpdateCalls()[0];
@@ -156,8 +180,16 @@ describe('live-session persistence', () => {
       session,
       sessionIsLive: true,
     });
-    // No third onyxData arg → no optimistic cachedDrinkingSessions merge.
-    expect(call).toHaveLength(2);
+    // No optimistic cachedDrinkingSessions merge; the flush only carries
+    // successData (the sync acknowledgement stamp), which applies off the
+    // touch frame when the response lands.
+    const onyxData = call[2] as
+      | {optimisticData?: unknown; successData?: Array<{key: string}>}
+      | undefined;
+    expect(onyxData?.optimisticData).toBeUndefined();
+    expect(onyxData?.successData).toEqual([
+      expect.objectContaining({key: ONYXKEYS.ONGOING_SESSION_SYNC}),
+    ]);
   });
 
   it('synchronously caches the composed session so rapid taps compose on the latest', () => {
@@ -181,7 +213,7 @@ describe('live-session persistence', () => {
     routeTo(ONYXKEYS.EDIT_SESSION_DATA, session);
 
     tap('e1');
-    jest.advanceTimersByTime(500);
+    runLivePersistDebounce();
 
     expect(mockedWrite).not.toHaveBeenCalled();
   });
@@ -194,7 +226,7 @@ describe('live-session persistence', () => {
     tap();
     // The session is finalized/cleared before the debounce fires.
     driveOnyx(ONYXKEYS.ONGOING_SESSION_DATA, null);
-    jest.advanceTimersByTime(500);
+    runLivePersistDebounce();
 
     expect(mockedWrite).not.toHaveBeenCalled();
   });
@@ -227,7 +259,7 @@ describe('finalize is the deterministic last writer', () => {
     );
 
     // The cancelled debounce must not fire a trailing live write.
-    jest.advanceTimersByTime(500);
+    runLivePersistDebounce();
     expect(liveUpdateCalls()).toHaveLength(1);
   });
 
@@ -289,7 +321,7 @@ describe('finalize is the deterministic last writer', () => {
 
     // A straggler tap whose handler runs after Save must be a no-op.
     tap();
-    jest.advanceTimersByTime(500);
+    runLivePersistDebounce();
 
     const updates = liveUpdateCalls();
     expect(updates).toHaveLength(1);
@@ -316,13 +348,216 @@ describe('finalize is the deterministic last writer', () => {
 
     expect(mockedDSUtils.clearOngoingSessionCache).toHaveBeenCalledTimes(1);
     // Discard issues a DELETE_SESSION, never an UPDATE_SESSION.
-    jest.advanceTimersByTime(500);
+    runLivePersistDebounce();
     expect(liveUpdateCalls()).toHaveLength(0);
     expect(
       mockedWrite.mock.calls.filter(
         call => call[0] === WRITE_COMMANDS.DELETE_SESSION,
       ),
     ).toHaveLength(1);
+  });
+});
+
+describe('offline live-session persistence across restarts', () => {
+  // The module is fully mocked above; these are the jest.fn instances the
+  // action layer writes through. Typed explicitly (not the bare `jest.Mock`
+  // the real `Onyx.set`/`Onyx.merge` declarations widen to) so `.mock.calls`
+  // stays a known tuple instead of `any`.
+  const mockedOnyx = {
+    set: Onyx.set as unknown as jest.Mock<Promise<void>, [OnyxKey, unknown]>,
+    merge: Onyx.merge as unknown as jest.Mock<
+      Promise<void>,
+      [OnyxKey, unknown]
+    >,
+  };
+
+  /** The stamp of the last persisted ONGOING_SESSION_SYNC write. */
+  function lastSyncMarker(): {sessionId: string; editedAt: number} {
+    const setCalls = mockedOnyx.set.mock.calls.filter(
+      call => call[0] === ONYXKEYS.ONGOING_SESSION_SYNC && call[1] !== null,
+    );
+    return setCalls[setCalls.length - 1][1] as {
+      sessionId: string;
+      editedAt: number;
+    };
+  }
+
+  it('stamps a persisted un-synced edit marker on every live tap', () => {
+    const session = makeOngoing('s1');
+    routeTo(ONYXKEYS.ONGOING_SESSION_DATA, session);
+    driveOnyx(ONYXKEYS.ONGOING_SESSION_DATA, session);
+
+    tap();
+
+    // Assert via the typed helper (not `expect.any(Number)`, which is `any`
+    // and trips the type-checked lint): a marker for this session with a
+    // numeric edit stamp was persisted.
+    const marker = lastSyncMarker();
+    expect(marker.sessionId).toBe('s1');
+    expect(typeof marker.editedAt).toBe('number');
+  });
+
+  it('flush stamps enqueuedAt synchronously and acknowledges via successData', () => {
+    const session = makeOngoing('s1');
+    routeTo(ONYXKEYS.ONGOING_SESSION_DATA, session);
+    driveOnyx(ONYXKEYS.ONGOING_SESSION_DATA, session);
+
+    tap();
+    const {editedAt} = lastSyncMarker();
+    // The marker must feed the flush through the synchronous module cache, not
+    // wait on an Onyx.connect round-trip, so no driveOnyx here on purpose.
+    runLivePersistDebounce();
+
+    // Enqueued: stamped at flush time so a restart won't re-enqueue these edits.
+    expect(mockedOnyx.merge).toHaveBeenCalledWith(
+      ONYXKEYS.ONGOING_SESSION_SYNC,
+      {enqueuedAt: editedAt},
+    );
+    // Synced: only a successful response may clear the dirty state.
+    const call = liveUpdateCalls()[0];
+    expect(call[2]).toEqual({
+      successData: [
+        expect.objectContaining({
+          key: ONYXKEYS.ONGOING_SESSION_SYNC,
+          value: {syncedAt: editedAt},
+        }),
+      ],
+    });
+  });
+
+  it('never touches the buffer while the snapshot has not hydrated', async () => {
+    const session = {...makeOngoing('s1'), drinks: {1_000: {beer: 2}}};
+    driveOnyx(ONYXKEYS.ONGOING_SESSION_DATA, session);
+
+    // Cold start: the cached snapshot has not loaded yet (undefined). This used
+    // to Onyx.set(ONGOING_SESSION_DATA, null) and destroy the persisted buffer.
+    await DS.syncLocalLiveSessionData(null, undefined);
+
+    expect(mockedOnyx.set).not.toHaveBeenCalledWith(
+      ONYXKEYS.ONGOING_SESSION_DATA,
+      expect.anything(),
+    );
+  });
+
+  it('keeps un-synced offline edits instead of rolling back to a stale snapshot', async () => {
+    // Restart state: buffer hydrated with offline drinks, marker says the
+    // edits were enqueued but never acknowledged (the queue is waiting for
+    // connectivity), no in-memory debounce (it died with the app).
+    const buffered = {...makeOngoing('s1'), drinks: {1_000: {beer: 2}}};
+    driveOnyx(ONYXKEYS.ONGOING_SESSION_DATA, buffered);
+    driveOnyx(ONYXKEYS.ONGOING_SESSION_SYNC, {
+      sessionId: 's1',
+      editedAt: 100,
+      enqueuedAt: 100,
+    });
+
+    // The snapshot only has the optimistic (empty) session from session start.
+    const stale = makeOngoing('s1');
+    await DS.syncLocalLiveSessionData('s1', {s1: stale});
+
+    expect(mockedOnyx.set).not.toHaveBeenCalledWith(
+      ONYXKEYS.ONGOING_SESSION_DATA,
+      expect.anything(),
+    );
+    expect(mockedDSUtils.setLocalSessionCache).not.toHaveBeenCalled();
+  });
+
+  it('adopts the snapshot once the server has acknowledged every local edit', async () => {
+    const buffered = makeOngoing('s1');
+    driveOnyx(ONYXKEYS.ONGOING_SESSION_DATA, buffered);
+    driveOnyx(ONYXKEYS.ONGOING_SESSION_SYNC, {
+      sessionId: 's1',
+      editedAt: 100,
+      enqueuedAt: 100,
+      syncedAt: 100,
+    });
+
+    const serverSession = {...makeOngoing('s1'), drinks: {2_000: {beer: 3}}};
+    await DS.syncLocalLiveSessionData('s1', {s1: serverSession});
+
+    expect(mockedOnyx.set).toHaveBeenCalledWith(
+      ONYXKEYS.ONGOING_SESSION_DATA,
+      expect.objectContaining({id: 's1', drinks: {2_000: {beer: 3}}}),
+    );
+  });
+
+  it('clears the buffer when the loaded snapshot has no ongoing session and nothing is un-synced', async () => {
+    driveOnyx(ONYXKEYS.ONGOING_SESSION_DATA, {
+      ...makeOngoing('s1'),
+      ongoing: false,
+    });
+
+    await DS.syncLocalLiveSessionData(null, {});
+
+    expect(mockedOnyx.set).toHaveBeenCalledWith(
+      ONYXKEYS.ONGOING_SESSION_DATA,
+      null,
+    );
+  });
+
+  it('keeps an un-synced offline session even when the snapshot lacks it', async () => {
+    const buffered = {...makeOngoing('s1'), drinks: {1_000: {beer: 2}}};
+    driveOnyx(ONYXKEYS.ONGOING_SESSION_DATA, buffered);
+    driveOnyx(ONYXKEYS.ONGOING_SESSION_SYNC, {sessionId: 's1', editedAt: 100});
+
+    await DS.syncLocalLiveSessionData(null, {});
+
+    expect(mockedOnyx.set).not.toHaveBeenCalledWith(
+      ONYXKEYS.ONGOING_SESSION_DATA,
+      null,
+    );
+  });
+
+  it('re-arms the persist on launch for edits killed inside the debounce window', () => {
+    // Restart state: buffer hydrated with drinks whose flush never ran (the
+    // app was killed inside the 500ms debounce), so editedAt > enqueuedAt.
+    const buffered = {...makeOngoing('s1'), drinks: {1_000: {beer: 2}}};
+    driveOnyx(ONYXKEYS.ONGOING_SESSION_DATA, buffered);
+    driveOnyx(ONYXKEYS.ONGOING_SESSION_SYNC, {sessionId: 's1', editedAt: 100});
+
+    runLivePersistDebounce();
+
+    const updates = liveUpdateCalls();
+    expect(updates).toHaveLength(1);
+    expect(sessionOf(updates[0])).toEqual(buffered);
+    expect(mockedOnyx.merge).toHaveBeenCalledWith(
+      ONYXKEYS.ONGOING_SESSION_SYNC,
+      {enqueuedAt: 100},
+    );
+  });
+
+  it('does not re-arm when the queued request already covers the edits', () => {
+    const buffered = {...makeOngoing('s1'), drinks: {1_000: {beer: 2}}};
+    driveOnyx(ONYXKEYS.ONGOING_SESSION_DATA, buffered);
+    driveOnyx(ONYXKEYS.ONGOING_SESSION_SYNC, {
+      sessionId: 's1',
+      editedAt: 100,
+      enqueuedAt: 100,
+    });
+
+    runLivePersistDebounce();
+
+    expect(liveUpdateCalls()).toHaveLength(0);
+  });
+
+  it('clears the sync marker when the live session is finalized', async () => {
+    const session = makeOngoing('s1');
+    routeTo(ONYXKEYS.ONGOING_SESSION_DATA, session);
+    driveOnyx(ONYXKEYS.ONGOING_SESSION_DATA, session);
+    tap();
+
+    await DS.saveDrinkingSessionData(
+      'uid',
+      {...session, ongoing: false},
+      's1',
+      ONYXKEYS.ONGOING_SESSION_DATA,
+      true,
+    );
+
+    expect(mockedOnyx.set).toHaveBeenCalledWith(
+      ONYXKEYS.ONGOING_SESSION_SYNC,
+      null,
+    );
   });
 });
 

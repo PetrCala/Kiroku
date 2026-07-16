@@ -5,6 +5,7 @@ import type {
   DrinkKey,
   DrinksToUnits,
   DrinksTimestamp,
+  OngoingSessionSync,
   UserDataList,
 } from '@src/types/onyx';
 import * as Localize from '@libs/Localize';
@@ -40,6 +41,27 @@ Onyx.connect({
     // debounced live persist reads this cache at flush time; a stale (ongoing:true)
     // copy would let it re-emit the session as ongoing after the finalize.
     ongoingSessionData = value ?? undefined;
+    maybeResumeLiveSessionPersist();
+  },
+});
+
+// Persisted bookkeeping for the live-session persist pipeline: which local edit
+// stamp was enqueued to / acknowledged by the server. Debounce timers die with
+// the JS runtime, so after an app kill this is the only record that the hydrated
+// `ONGOING_SESSION_DATA` buffer holds edits the server has never seen. See
+// `markLiveSessionEdited` / `hasUnsyncedLiveSessionEdits`.
+let ongoingSessionSync: OngoingSessionSync | undefined;
+// Onyx fires the initial connect callback (with undefined for an absent key)
+// only after the storage read resolves. Until then "no marker" is
+// indistinguishable from "marker not hydrated yet", and acting on the latter
+// could roll back or wipe offline edits, so sync decisions wait for this flag.
+let ongoingSessionSyncLoaded = false;
+Onyx.connect({
+  key: ONYXKEYS.ONGOING_SESSION_SYNC,
+  callback: value => {
+    ongoingSessionSync = value ?? undefined;
+    ongoingSessionSyncLoaded = true;
+    maybeResumeLiveSessionPersist();
   },
 });
 
@@ -219,6 +241,82 @@ function cancelLiveSessionPersist(): void {
 }
 
 /**
+ * Record a local edit to the live-session buffer. The stamp is written both to
+ * the synchronous cache and to persisted Onyx so it survives an app kill:
+ * `editedAt > syncedAt` marks the buffer as holding edits the server never
+ * acknowledged, and `editedAt > enqueuedAt` marks edits that never even reached
+ * the request queue (killed inside the debounce window) and so must be
+ * re-enqueued on the next launch. Strictly monotonic (`prev + 1` floor) so an
+ * edit landing in the same millisecond as a flush still reads as newer.
+ */
+function markLiveSessionEdited(sessionId: DrinkingSessionId): void {
+  const previous =
+    ongoingSessionSync?.sessionId === sessionId
+      ? ongoingSessionSync
+      : undefined;
+  const next: OngoingSessionSync = {
+    // A changed session id starts fresh stamps; stale enqueued/synced values
+    // from an older session must not mask the new session's edits.
+    ...(previous ?? {}),
+    sessionId,
+    editedAt: Math.max(Date.now(), (previous?.editedAt ?? 0) + 1),
+  };
+  ongoingSessionSync = next;
+  Onyx.set(ONYXKEYS.ONGOING_SESSION_SYNC, next);
+}
+
+/**
+ * Whether the live-session buffer holds local edits for `sessionId` that no
+ * successful `UPDATE_SESSION` has acknowledged yet. While true, the cached
+ * snapshot cannot reflect those edits (the live persist deliberately writes no
+ * optimistic snapshot data), so the buffer must stay authoritative and must not
+ * be rolled back to the snapshot. Survives restarts, unlike the in-memory
+ * `hasPendingLiveSessionPersist`.
+ */
+function hasUnsyncedLiveSessionEdits(sessionId: DrinkingSessionId): boolean {
+  return (
+    ongoingSessionSync?.sessionId === sessionId &&
+    ongoingSessionSync.editedAt > (ongoingSessionSync.syncedAt ?? 0)
+  );
+}
+
+/**
+ * Clear the live-session sync bookkeeping. Called when the live session stops
+ * existing as such: on start (fresh session, fresh stamps), and on finalize/
+ * discard (those requests carry the full session themselves, so any stamps are
+ * moot and must not linger to shadow a future session).
+ */
+function clearLiveSessionSyncState(): void {
+  ongoingSessionSync = undefined;
+  Onyx.set(ONYXKEYS.ONGOING_SESSION_SYNC, null);
+}
+
+/**
+ * Re-arm the debounced live persist after a restart when the hydrated buffer
+ * holds edits that never reached the request queue (the app was killed inside
+ * the debounce window). Runs from both hydration callbacks above, so it fires
+ * once both the buffer and the sync stamps are available, whichever lands
+ * last. Guarded by `enqueuedAt` (not `syncedAt`): edits that are already
+ * queued offline replay by themselves, and only THIS device's un-enqueued
+ * edits may trigger a write, so a device that merely adopted the session
+ * cross-device never re-emits stale data.
+ */
+function maybeResumeLiveSessionPersist(): void {
+  const session = ongoingSessionData;
+  const sync = ongoingSessionSync;
+  if (!session?.ongoing || !session.id || sync?.sessionId !== session.id) {
+    return;
+  }
+  if (sync.editedAt <= Math.max(sync.enqueuedAt ?? 0, sync.syncedAt ?? 0)) {
+    return;
+  }
+  if (hasPendingLiveSessionPersist()) {
+    return;
+  }
+  scheduleLiveSessionPersist();
+}
+
+/**
  * Persist the current live session via kiroku-api. Reads the latest
  * `ONGOING_SESSION_DATA` at flush time (not a captured snapshot) so it always
  * sends the newest drinks; if the session was finalized/discarded in the
@@ -231,11 +329,50 @@ function flushLiveSessionPersist(): void {
   if (!session?.ongoing || !session.id) {
     return;
   }
-  API.write(WRITE_COMMANDS.UPDATE_SESSION, {
-    sessionId: session.id,
-    session,
-    sessionIsLive: true,
-  });
+  // Stamp how far this flush covers the local edits: `enqueuedAt` synchronously
+  // (the request now exists in the persisted queue, so a restart must not
+  // re-enqueue these edits), `syncedAt` via successData (only a successful
+  // response proves the server, and therefore any future snapshot, has them).
+  const sync = ongoingSessionSync;
+  const coversEditedAt =
+    sync?.sessionId === session.id ? sync.editedAt : undefined;
+  if (sync && coversEditedAt !== undefined) {
+    ongoingSessionSync = {...sync, enqueuedAt: coversEditedAt};
+    Onyx.merge(ONYXKEYS.ONGOING_SESSION_SYNC, {enqueuedAt: coversEditedAt});
+  }
+  API.write(
+    WRITE_COMMANDS.UPDATE_SESSION,
+    {
+      sessionId: session.id,
+      session,
+      sessionIsLive: true,
+    },
+    coversEditedAt === undefined
+      ? {}
+      : {
+          successData: [
+            {
+              onyxMethod: Onyx.METHOD.MERGE,
+              key: ONYXKEYS.ONGOING_SESSION_SYNC,
+              value: {syncedAt: coversEditedAt},
+            },
+          ],
+        },
+  );
+}
+
+/**
+ * Record a local live-session mutation: stamp it as un-synced (so it survives
+ * an app kill as "the server never saw this") and (re)arm the debounced
+ * persist. Every live mutator funnels through this; `sessionId` is always set
+ * when the mutation routed into `ONGOING_SESSION_DATA`, the guard only
+ * satisfies the type system.
+ */
+function recordLiveSessionEdit(sessionId: DrinkingSessionId | undefined): void {
+  if (sessionId) {
+    markLiveSessionEdited(sessionId);
+  }
+  scheduleLiveSessionPersist();
 }
 
 /**
@@ -251,12 +388,19 @@ function scheduleLiveSessionPersist(): void {
   }
   liveSessionPersistTimer = setTimeout(() => {
     liveSessionPersistTimer = null;
-    liveSessionPersistInteraction = InteractionManager.runAfterInteractions(
-      () => {
-        liveSessionPersistInteraction = null;
-        flushLiveSessionPersist();
-      },
-    );
+    let ranSynchronously = false;
+    const interaction = InteractionManager.runAfterInteractions(() => {
+      ranSynchronously = true;
+      liveSessionPersistInteraction = null;
+      flushLiveSessionPersist();
+    });
+    // Store the handle only if the task is still pending. Some environments
+    // (tests mock InteractionManager this way) run the task synchronously
+    // inside runAfterInteractions; storing the handle then would resurrect a
+    // completed task as pending-forever and wedge `hasPendingLiveSessionPersist`.
+    if (!ranSynchronously) {
+      liveSessionPersistInteraction = interaction;
+    }
   }, LIVE_SESSION_PERSIST_DEBOUNCE_MS);
 }
 
@@ -270,7 +414,16 @@ async function syncLocalLiveSessionData(
   ongoingSessionId: DrinkingSessionId | undefined | null,
   drinkingSessionData: DrinkingSessionList | undefined | null,
 ) {
-  if (ongoingSessionId && drinkingSessionData) {
+  // No snapshot at all means it simply has not hydrated/loaded yet (cold start,
+  // or offline before `app/open` ever ran). That transient must never touch the
+  // buffer: clearing it here used to wipe an offline live session's persisted
+  // drinks on every cold boot, before the real snapshot arrived. The same goes
+  // for the sync stamps: until they hydrate we can't tell whether the buffer
+  // holds un-acknowledged offline edits, so no adopt/wipe decision is safe.
+  if (!drinkingSessionData || !ongoingSessionSyncLoaded) {
+    return;
+  }
+  if (ongoingSessionId) {
     const newData = drinkingSessionData[ongoingSessionId];
     if (!newData) {
       return;
@@ -289,12 +442,32 @@ async function syncLocalLiveSessionData(
     ) {
       return;
     }
+    // Same rule across restarts: the in-memory pending flag dies with the app,
+    // but the persisted stamps know the buffer still holds edits no successful
+    // request has acknowledged (e.g. everything queued offline). The snapshot
+    // can only be older than the buffer then, so adopting it would roll the
+    // offline edits back. Once the queued request succeeds, `syncedAt` catches
+    // up and the next sync adopts server truth again.
+    if (hasUnsyncedLiveSessionEdits(ongoingSessionId)) {
+      return;
+    }
     await updateLocalData(
       ONYXKEYS.ONGOING_SESSION_DATA,
       newData,
       ongoingSessionId,
     );
   } else {
+    // The loaded snapshot shows no ongoing session. Keep the buffer anyway if
+    // it holds un-acknowledged local edits (the snapshot may predate an
+    // offline-started session whose create is still queued); otherwise clear
+    // it, e.g. after the session was finalized on another device.
+    if (
+      ongoingSessionData?.ongoing &&
+      ongoingSessionData.id &&
+      hasUnsyncedLiveSessionEdits(ongoingSessionData.id)
+    ) {
+      return;
+    }
     Onyx.set(ONYXKEYS.ONGOING_SESSION_DATA, null);
   }
 }
@@ -340,6 +513,10 @@ async function startLiveDrinkingSession(
     },
   );
 
+  // Fresh session, fresh sync stamps: any leftover marker from a previous
+  // (crashed/stale) session must not shadow this one's edits.
+  clearLiveSessionSyncState();
+
   // Seed the synchronous cache so a tap fired before the Onyx.connect callback
   // lands still composes on the new session instead of an empty base.
   DSUtils.setLocalSessionCache(ONYXKEYS.ONGOING_SESSION_DATA, newSessionData);
@@ -379,9 +556,11 @@ async function saveDrinkingSessionData(
   // writer for it. Cancel any pending debounced live persist, and synchronously
   // drop the cached ongoing copy so a stray tap whose handler runs in this same
   // tick can't re-route into ONGOING_SESSION_DATA and re-create the session.
+  // The sync stamps go too: this request carries every local edit itself.
   if (sessionIsLive) {
     cancelLiveSessionPersist();
     DSUtils.clearOngoingSessionCache();
+    clearLiveSessionSyncState();
   }
 
   const sessionToPersist = withSessionTimeParts(newSessionData);
@@ -426,9 +605,11 @@ async function removeDrinkingSessionData(
   // This delete must be the deterministic last writer for the session. Cancel any
   // pending debounced live persist, and synchronously drop the cached ongoing
   // copy so a stray tap landing in this same tick can't re-create the session.
+  // The sync stamps go too: there is nothing left to persist.
   if (sessionIsLive) {
     cancelLiveSessionPersist();
     DSUtils.clearOngoingSessionCache();
+    clearLiveSessionSyncState();
   }
 
   // The server removes the session and its GPS locations, recomputes the
@@ -501,7 +682,7 @@ function updateDrinks(
   // Live (ongoing) sessions sync to the server through the debounced action-layer
   // persist; edit sessions persist only on save, so don't schedule for them.
   if (onyxKey === ONYXKEYS.ONGOING_SESSION_DATA) {
-    scheduleLiveSessionPersist();
+    recordLiveSessionEdit(sessionId);
   }
 
   if (action !== CONST.DRINKS.ACTIONS.ADD || !drinksList) {
@@ -542,7 +723,7 @@ function updateNote(
       DSUtils.setLocalSessionCache(onyxKey, {...current, note: newNote});
     }
     if (onyxKey === ONYXKEYS.ONGOING_SESSION_DATA) {
-      scheduleLiveSessionPersist();
+      recordLiveSessionEdit(current?.id ?? session?.id);
     }
   }
 }
@@ -561,7 +742,7 @@ function updateBlackout(
       DSUtils.setLocalSessionCache(onyxKey, {...current, blackout});
     }
     if (onyxKey === ONYXKEYS.ONGOING_SESSION_DATA) {
-      scheduleLiveSessionPersist();
+      recordLiveSessionEdit(current?.id ?? session?.id);
     }
   }
 }
@@ -590,7 +771,7 @@ function updateTimezone(
       });
     }
     if (onyxKey === ONYXKEYS.ONGOING_SESSION_DATA) {
-      scheduleLiveSessionPersist();
+      recordLiveSessionEdit(current?.id ?? session?.id);
     }
   }
 }
@@ -630,7 +811,7 @@ async function updateSessionDate(
     : ONYXKEYS.EDIT_SESSION_DATA;
   await updateLocalData(onyxKey, modifiedSession, sessionId);
   if (shouldUpdateLiveSessionData) {
-    scheduleLiveSessionPersist();
+    recordLiveSessionEdit(sessionId);
   }
 }
 

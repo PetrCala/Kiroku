@@ -107,6 +107,13 @@ const ONYXKEYS = {
   /** Ongoing session data */
   ONGOING_SESSION_DATA: 'ongoingSessionData',
 
+  /**
+   * Sync bookkeeping for the live-session buffer: which local edit stamp was
+   * enqueued to / acknowledged by the server. Lets a cold start keep offline
+   * live edits authoritative instead of rolling them back to a stale snapshot.
+   */
+  ONGOING_SESSION_SYNC: 'ongoingSessionSync',
+
   /** Edit session data */
   EDIT_SESSION_DATA: 'editSessionData',
 
@@ -326,6 +333,7 @@ type OnyxValuesMapping = {
   [ONYXKEYS.NVP_PREFERRED_LOCALE]: OnyxTypes.Locale;
   [ONYXKEYS.NVP_LAST_VIEWED_CALENDAR_DATE]: Record<string, DateString>;
   [ONYXKEYS.ONGOING_SESSION_DATA]: OnyxTypes.DrinkingSession;
+  [ONYXKEYS.ONGOING_SESSION_SYNC]: OnyxTypes.OngoingSessionSync;
   [ONYXKEYS.EDIT_SESSION_DATA]: OnyxTypes.DrinkingSession;
   [ONYXKEYS.IS_CREATING_NEW_SESSION]: boolean;
   [ONYXKEYS.SESSIONS_CALENDAR_MONTHS_LOADED]: number;
