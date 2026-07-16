@@ -65,11 +65,16 @@ class ScreenshotTest {
         openCalendarDay()
         Screengrab.screenshot("03_DayOverview")
 
-        openProfile()
-        Screengrab.screenshot("04_Profile")
+        openStatistics()
+        Screengrab.screenshot("04_Statistics")
 
-        openSettings()
-        Screengrab.screenshot("05_Settings")
+        openProfile()
+        Screengrab.screenshot("06_Profile")
+
+        // Badges (the alcohol-free streak) is captured last — it opens over the
+        // Home flow, so nothing after it needs the bottom tab bar.
+        openBadges()
+        Screengrab.screenshot("05_AlcoholFree")
     }
 
     // ---- Login ----------------------------------------------------------------
@@ -77,11 +82,22 @@ class ScreenshotTest {
     private fun logIn() {
         device.wait(Until.findObject(By.desc("AuthScreen")), 30_000)
 
-        // RN TextInput → Android EditText. Match by index since there are no testIDs.
-        val edits = device.findObjects(By.clazz("android.widget.EditText"))
-        check(edits.size >= 2) { "Expected email + password fields on AuthScreen" }
-        edits[0].text = email
-        edits[1].text = password
+        // The inputs carry testIDs (loginEmail / loginPassword). RN exposes testID
+        // as the view resource-id; prefer that, and WAIT for the fields to mount —
+        // the AuthScreen container appears before its inputs do (the original cause
+        // of "found 0 EditTexts"). Fall back to matching EditTexts by index.
+        val emailById = device.wait(Until.findObject(By.res("loginEmail")), 15_000)
+        val passwordById = device.findObject(By.res("loginPassword"))
+        if (emailById != null && passwordById != null) {
+            emailById.text = email
+            passwordById.text = password
+        } else {
+            device.wait(Until.findObject(By.clazz("android.widget.EditText")), 15_000)
+            val edits = device.findObjects(By.clazz("android.widget.EditText"))
+            check(edits.size >= 2) { "Expected email + password fields on AuthScreen, found ${edits.size}" }
+            edits[0].text = email
+            edits[1].text = password
+        }
 
         // Submit button — matched by its localized text.
         clickByText(listOf("Log In", "Přihlásit se", "Sign In"))
@@ -136,6 +152,19 @@ class ScreenshotTest {
     private fun openSettings() {
         clickByText(listOf("Settings", "Nastavení"))
         device.wait(Until.findObject(By.desc("SettingsScreen")), 5_000)
+    }
+
+    private fun openStatistics() {
+        clickByText(listOf("Statistics", "Statistiky"))
+        device.wait(Until.findObject(By.desc("Statistics Screen")), 5_000)
+    }
+
+    private fun openBadges() {
+        // The alcohol-free streak lives on the Badges screen, opened from Home
+        // via the star button (bottomTabBar.badges: "Badges" / "Odznaky").
+        returnToHome()
+        clickByText(listOf("Badges", "Odznaky"))
+        device.wait(Until.findObject(By.desc("Badges Screen")), 5_000)
     }
 
     private fun clickByText(candidates: List<String>) {

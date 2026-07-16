@@ -1,37 +1,35 @@
 #!/usr/bin/env node
 /* eslint-disable no-console -- this is a CLI build script; stdout is its UI */
 /**
- * Ingest fastlane `snapshot` captures into the framing pipeline's raw/ tree.
+ * Ingest fastlane capture output into the framing pipeline's raw/ tree.
  *
- * Bridges the two halves of the store-screenshot pipeline: fastlane `snapshot`
- * (the screenshots.yml CI workflow, or a local run) writes captures named after
- * the UI test's snapshot() calls, while frame-app-store-screenshots.mjs expects
- * differently-named, locale-remapped inputs. This mapper copies + renames the
+ * Bridges the two halves of the store-screenshot pipeline. fastlane `snapshot`
+ * (iOS) and `screengrab` (Android) write captures named after the UI tests'
+ * snapshot() calls; frame-app-store-screenshots.mjs expects differently-named,
+ * locale-remapped, per-platform inputs. This mapper copies + renames the
  * captures into place, driven by the SAME manifest the framer uses
- * (store-screenshots.config.mjs), so the two halves can never silently drift.
+ * (store-screenshots.config.mjs), so the halves can never silently drift.
  *
- * Capture layout (input):
- *   <from>/<captureLocale>/<device>/<snapshot>.png
- *      e.g. en-US/iPhone 17 Pro Max/01_Home.png
+ * Capture layout (input), per platform:
+ *   iOS  (snapshot):      <captureDir>/<captureLocale>/<sourceDevice>/<snapshot>.png
+ *   Android (screengrab): <captureDir>/<captureLocale>/images/<snapshot>.png
  * Raw layout (output, consumed by the framer):
- *   fastlane/store-screenshots/raw/<locale>/<raw>
- *      e.g. raw/en-US/01-home.png
+ *   fastlane/store-screenshots/raw/<platform>/<locale>/<raw>
  *
  * Mapping comes from config.shots[].{snapshot,raw}, config.captureLocales
- * (en-US→en-US, cs→cs-CZ) and config.captureSourceDevice (the 6.9" iPhone the
- * framer derives every size from — the iPad capture is not consumed). Captures
- * with no manifest entry (e.g. 05_Settings) are reported and skipped. Bytes are
- * copied verbatim (Apple Guideline 2.3.3 — never alter the real capture).
+ * (en-US→en-US, cs→cs-CZ) and config.platforms[platform]. Captures with no
+ * manifest entry (e.g. 05_Settings) are reported and skipped. Bytes are copied
+ * verbatim (store guidelines — never alter the real capture).
  *
  * Usage:
- *   node scripts/ingest-store-screenshots.mjs                 # from fastlane/screenshots/ios
+ *   node scripts/ingest-store-screenshots.mjs                     # iOS, from fastlane/screenshots/ios
+ *   node scripts/ingest-store-screenshots.mjs --platform android  # Android, from fastlane/screenshots/android
  *   node scripts/ingest-store-screenshots.mjs --from ~/Downloads/ios-screenshots-<sha>
- *   node scripts/ingest-store-screenshots.mjs --locale cs     # one locale
- *   node scripts/ingest-store-screenshots.mjs --device "iPad Pro 13-inch (M5)"  # override source device folder
- *   node scripts/ingest-store-screenshots.mjs --check         # dry-run report, copy nothing
+ *   node scripts/ingest-store-screenshots.mjs --locale cs         # one locale
+ *   node scripts/ingest-store-screenshots.mjs --device "iPad Pro 13-inch (M5)"  # override source device folder (iOS)
+ *   node scripts/ingest-store-screenshots.mjs --check             # dry-run report, copy nothing
  *
  * Config: scripts/store-screenshots.config.mjs   (shared with the framer)
- * Next step after a real run: npm run frame-screenshots
  */
 
 import {copyFileSync, existsSync, mkdirSync, readdirSync} from 'fs';
@@ -40,7 +38,7 @@ import {fileURLToPath} from 'url';
 // eslint-disable-next-line import/extensions -- Node ESM requires the explicit extension
 import config from './store-screenshots.config.mjs';
 
-const {RAW_DIR, locales, shots, captureLocales, captureSourceDevice} = config;
+const {RAW_DIR, locales, shots, captureLocales, platforms} = config;
 
 const scriptDir = dirname(fileURLToPath(import.meta.url));
 const ROOT = join(scriptDir, '..');
@@ -51,13 +49,23 @@ const flag = name => {
   const i = args.indexOf(`--${name}`);
   return i !== -1 ? args[i + 1] ?? true : undefined;
 };
+const platform =
+  typeof flag('platform') === 'string' ? flag('platform') : 'ios';
+if (!platforms[platform]) {
+  console.error(
+    `Unknown --platform "${platform}". Known: ${Object.keys(platforms).join(', ')}`,
+  );
+  process.exit(1);
+}
+const {captureDir, sourceDevice, captureLayout} = platforms[platform];
+
 const fromArg = flag('from');
 const onlyLocale = flag('locale');
 const deviceOverride =
   typeof flag('device') === 'string' ? flag('device') : undefined;
 const checkOnly = args.includes('--check');
 
-const DEFAULT_FROM = join(ROOT, 'fastlane', 'screenshots', 'ios');
+const DEFAULT_FROM = join(ROOT, ...captureDir.split('/'));
 function resolveFromDir(value) {
   if (typeof value !== 'string') {
     return DEFAULT_FROM;
@@ -67,13 +75,13 @@ function resolveFromDir(value) {
 const fromDir = resolveFromDir(fromArg);
 
 const rel = p => (p.startsWith(`${ROOT}/`) ? p.slice(ROOT.length + 1) : p);
+const isPng = f => f.toLowerCase().endsWith('.png');
 
 // ─── Source resolution ────────────────────────────────────────────────────────
-/** Accept either the capture dir itself (…/ios with <locale>/ as direct
- *  children) or a downloaded-artifact dir that still nests
- *  fastlane/screenshots/ios/. */
+/** Accept either the capture dir itself (<captureLocale>/ as direct children)
+ *  or a downloaded-artifact dir that still nests <captureDir>/. */
 function resolveSourceRoot(base) {
-  const candidates = [base, join(base, 'fastlane', 'screenshots', 'ios')];
+  const candidates = [base, join(base, ...captureDir.split('/'))];
   for (const candidate of candidates) {
     const hasLocale = Object.values(captureLocales).some(cl =>
       existsSync(join(candidate, cl)),
@@ -85,14 +93,19 @@ function resolveSourceRoot(base) {
   return base; // fall through; per-locale warnings report what's missing
 }
 
-/** The device subfolder to read for a given locale's capture dir. */
-function resolveDeviceDir(localeSrcDir, locale) {
+/** The directory that holds a locale's capture PNGs. iOS nests a device
+ *  folder; Android (screengrab) nests an `images/` folder. */
+function resolveCaptureDir(localeSrcDir, locale) {
+  if (captureLayout === 'images') {
+    const imagesDir = join(localeSrcDir, 'images');
+    return existsSync(imagesDir) ? imagesDir : localeSrcDir;
+  }
+  // captureLayout === 'device'
   if (deviceOverride) {
     return join(localeSrcDir, deviceOverride);
   }
-  const preferred = join(localeSrcDir, captureSourceDevice);
-  if (existsSync(preferred)) {
-    return preferred;
+  if (sourceDevice && existsSync(join(localeSrcDir, sourceDevice))) {
+    return join(localeSrcDir, sourceDevice);
   }
   const subdirs = existsSync(localeSrcDir)
     ? readdirSync(localeSrcDir, {withFileTypes: true})
@@ -102,24 +115,41 @@ function resolveDeviceDir(localeSrcDir, locale) {
   const iphones = subdirs.filter(n => /iphone/i.test(n));
   if (iphones.length === 1) {
     console.warn(
-      `  ! ${locale}: "${captureSourceDevice}" not found, using "${iphones[0]}"`,
+      `  ! ${locale}: "${sourceDevice}" not found, using "${iphones[0]}"`,
     );
     return join(localeSrcDir, iphones[0]);
   }
   if (iphones.length > 1) {
     console.warn(
-      `  ! ${locale}: "${captureSourceDevice}" not found; multiple iPhone folders ${JSON.stringify(
+      `  ! ${locale}: "${sourceDevice}" not found; multiple iPhone folders ${JSON.stringify(
         iphones,
       )}. Pass --device "<name>". Skipping.`,
     );
     return null;
   }
   console.warn(
-    `  ✗ ${locale}: no iPhone capture folder under ${rel(
+    `  ✗ ${locale}: no device capture folder under ${rel(
       localeSrcDir,
     )} (found ${JSON.stringify(subdirs)})`,
   );
   return null;
+}
+
+/** Find the capture PNG for a snapshot in `dir`. Tolerant of capture-tool
+ *  naming: exact `<snapshot>.png`, else a file ending `…<snapshot>.png`
+ *  (screengrab may prefix the test-class name). */
+function findCapture(dir, snapshot) {
+  const exact = join(dir, `${snapshot}.png`);
+  if (existsSync(exact)) {
+    return exact;
+  }
+  if (!existsSync(dir)) {
+    return null;
+  }
+  const match = readdirSync(dir).find(
+    f => isPng(f) && f.endsWith(`${snapshot}.png`),
+  );
+  return match ? join(dir, match) : null;
 }
 
 // ─── Main ─────────────────────────────────────────────────────────────────────
@@ -127,20 +157,24 @@ function main() {
   const sourceRoot = resolveSourceRoot(fromDir);
   if (!existsSync(sourceRoot)) {
     console.error(
-      `No capture source at ${rel(
+      `No ${platform} capture source at ${rel(
         sourceRoot,
       )}. Capture first (see the store-screenshots skill) or pass --from <dir>.`,
     );
     process.exit(1);
   }
   console.log(
-    `${checkOnly ? '[check] ' : ''}Ingesting captures from ${rel(sourceRoot)}\n`,
+    `${checkOnly ? '[check] ' : ''}Ingesting ${platform} captures from ${rel(
+      sourceRoot,
+    )}\n`,
   );
 
-  const mapped = new Set(
-    shots.filter(s => s.snapshot).map(s => `${s.snapshot}.png`),
-  );
+  const mappedNames = shots.filter(s => s.snapshot).map(s => s.snapshot);
   const targetLocales = locales.filter(l => !onlyLocale || l === onlyLocale);
+  const frameHint =
+    platform === 'ios'
+      ? 'npm run frame-screenshots'
+      : 'npm run frame-screenshots -- --platform android';
   let copied = 0;
   let missing = 0;
 
@@ -152,16 +186,16 @@ function main() {
       );
     }
     const localeSrcDir = join(sourceRoot, captureLocale);
-    const deviceDir = resolveDeviceDir(localeSrcDir, locale);
-    if (!deviceDir || !existsSync(deviceDir)) {
+    const capturePngDir = resolveCaptureDir(localeSrcDir, locale);
+    if (!capturePngDir || !existsSync(capturePngDir)) {
       missing += shots.length;
       continue;
     }
 
     // Surface captures present in the source that the manifest doesn't map
     // (e.g. 05_Settings) so a skipped screen is visible, not silent.
-    for (const f of readdirSync(deviceDir)) {
-      if (f.endsWith('.png') && !mapped.has(f)) {
+    for (const f of readdirSync(capturePngDir)) {
+      if (isPng(f) && !mappedNames.some(name => f.endsWith(`${name}.png`))) {
         console.log(`  – ${captureLocale}/${f} (not in manifest, skipped)`);
       }
     }
@@ -174,10 +208,12 @@ function main() {
         missing += 1;
         continue;
       }
-      const src = join(deviceDir, `${shot.snapshot}.png`);
-      const dest = join(ROOT, RAW_DIR, locale, shot.raw);
-      if (!existsSync(src)) {
-        console.warn(`  ✗ ${locale}: missing ${rel(src)}`);
+      const src = findCapture(capturePngDir, shot.snapshot);
+      const dest = join(ROOT, RAW_DIR, platform, locale, shot.raw);
+      if (!src) {
+        console.warn(
+          `  ✗ ${locale}: missing ${shot.snapshot}.png in ${rel(capturePngDir)}`,
+        );
         missing += 1;
         continue;
       }
@@ -196,11 +232,11 @@ function main() {
 
   if (checkOnly) {
     console.log(
-      `\n[check] ${missing} missing. Run without --check to copy into ${RAW_DIR}/, then: npm run frame-screenshots`,
+      `\n[check] ${missing} missing. Run without --check to copy into ${RAW_DIR}/${platform}/, then: ${frameHint}`,
     );
   } else {
     console.log(
-      `\nDone. ${copied} copied, ${missing} missing. Next: npm run frame-screenshots`,
+      `\nDone. ${copied} copied, ${missing} missing. Next: ${frameHint}`,
     );
   }
 }
