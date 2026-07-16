@@ -214,11 +214,17 @@ async function runRender(targetLocales, targetDevices) {
     }
   }
 
-  // Build the full task list up front, then render in parallel.
+  // Build the full task list up front, then render in parallel. A shot only
+  // renders on a device whose `kind` matches (default 'phone' on both sides), so
+  // the watch shot stays off the phones and vice versa. Numbering is per device
+  // so each slot starts at 01.
   const tasks = [];
   for (const locale of targetLocales) {
     for (const device of targetDevices) {
-      shots.forEach((shot, index) => tasks.push({shot, index, locale, device}));
+      const deviceKind = device.kind ?? 'phone';
+      shots
+        .filter(shot => (shot.kind ?? 'phone') === deviceKind)
+        .forEach((shot, index) => tasks.push({shot, index, locale, device}));
     }
   }
   const results = await Promise.all(

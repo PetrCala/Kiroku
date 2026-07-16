@@ -129,6 +129,31 @@ changes) lives in the `store-screenshots` skill.
 > unmapped. Growing to the full marketing set (Statistics, an alcohol-free streak)
 > needs new captures plus native-test edits and lands in a follow-up PR.
 
+### Apple Watch screenshot (captured by hand)
+
+The App Store build embeds the watchOS companion, so App Store Connect requires
+an Apple Watch screenshot (`APP_WATCH_SERIES_4`) before the iOS version can be
+submitted for review. The watch shot is **not** part of the fastlane `snapshot`
+matrix: the companion is a phone-tethered remote, so a watchOS UI test on an
+unpaired simulator only shows the "Open Kiroku on your phone" reconnect screen.
+Capture it by hand instead:
+
+1. In Xcode, run the **`Kiroku Watch App`** target on a watch simulator paired
+   with a booted iPhone that is signed in to the demo account (so a credential
+   reaches the watch and it shows a live session, not the reconnect screen).
+2. Start a session and log a couple of units so the screen has real content.
+3. Screenshot the watch simulator (`Cmd-S` in the Simulator, or
+   `xcrun simctl io booted screenshot watch.png`).
+4. Drop the PNG at `fastlane/store-screenshots/raw/<locale>/watch.png` for each
+   locale in the manifest (capture per locale, or reuse the same shot).
+5. Run `npm run frame-screenshots -- --device watch` to render the framed
+   `410×502` output at `framed/<locale>/watch/01_watch.png`.
+
+The framing pipeline scales any watch capture to fit the exact `410×502`
+Series 7+/Ultra slot on the brand background with a caption; the size, caption,
+and per-device scoping (`kind: 'watch'`) live in the manifest. Guideline 2.3.3
+still applies: the capture must be the real shipped watch UI.
+
 ---
 
 ## Local fallback

@@ -230,12 +230,32 @@ critical path is **0 → 1 → 2 → 3**; Phases 5–7 overlap once the bridge w
 
 ### Phase 6 — Signing, CI, store plumbing (1–2 days)
 
-- [ ] **6.1** Register the watch App ID + provisioning profiles (use the
+- [x] **6.1** Register the watch App ID + provisioning profiles (use the
       `ios-signing` skill); re-encrypt into `ios/`. No GoogleService-Info / Firebase
-      pod needed (token comes from the phone).
-- [ ] **6.2** Fastlane: sign + embed the watch in the dev/adhoc/prod lanes;
-      green test build.
-- [ ] **6.3** Store metadata: watch screenshots + App Store watch listing fields.
+      pod needed (token comes from the phone). Done in PR #1447 (two App IDs
+      `…watchkitapp` + `…adhoc.watchkitapp`; profiles minted, gpg-encrypted into
+      `ios/`, covered by `scripts/ios-signing.mjs` renew/check).
+- [x] **6.2** Fastlane: sign + embed the watch in the dev/adhoc/prod lanes;
+      green test build. Done in #1447, reverted in `e5b344a5b` to unblock the App
+      Store submit, then **re-embedded** here (revert of `e5b344a5b`): the
+      "Embed Watch Content" copy-files phase + watch `PBXTargetDependency` are
+      back on the `kiroku` target and the watch build entry is back in all three
+      shared schemes. The #1450 phase ordering (embed right after
+      "[User] Copy GoogleService-Info.plist", before the no-output script phases)
+      and the #1452/#1456 watch↔host version-sync are preserved, so the archive
+      neither cycles nor 409s on upload.
+- [~] **6.3** Store metadata: watch screenshots + App Store watch listing fields.
+  **Framing pipeline wired** here: the Apple Watch device seam
+  (`410×502`, `kind: 'watch'`) is live in
+  [`scripts/store-screenshots.config.mjs`](../scripts/store-screenshots.config.mjs),
+  the framer scopes the watch shot to the watch slot and numbers it `01`, and
+  the ingest mapper skips it. **Remaining (manual, needs ASC + a paired
+  sim):** capture the real watch screen by hand into
+  `raw/<locale>/watch.png` (a watchOS `snapshot` UI test can't drive the
+  phone-tethered remote), `npm run frame-screenshots -- --device watch`,
+  then upload the `410×502` shot to ASC and fill the watchOS listing fields
+  before the next `asc submit`. See
+  [`contributingGuides/SCREENSHOTS.md`](../contributingGuides/SCREENSHOTS.md#apple-watch-screenshot-captured-by-hand).
 
 ### Phase 7 — QA matrix (1 day)
 

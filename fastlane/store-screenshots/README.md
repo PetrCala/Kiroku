@@ -38,6 +38,16 @@ See the `store-screenshots` skill for the full capture → ingest → frame → 
 
 4. Upload `framed/**` to ASC (manually, or wire it into `deliver` later).
 
+## Apple Watch shot
+
+The App Store build embeds the watch app, so ASC requires an Apple Watch
+screenshot before the iOS version can be submitted. It is captured **by hand**
+(the watch is a phone-tethered remote, so a UI test on an unpaired sim shows
+only the reconnect screen): run the `Kiroku Watch App` target on a watch sim
+paired with a signed-in phone, screenshot a live session, drop it at
+`raw/<locale>/watch.png`, then `npm run frame-screenshots -- --device watch`
+renders the exact `410x502` slot. Steps: `contributingGuides/SCREENSHOTS.md`.
+
 `raw/` and `framed/` are git-ignored — they're inputs/outputs, not source.
 
 > **Apple Guideline 2.3.3:** screenshots must depict the real app. This tool

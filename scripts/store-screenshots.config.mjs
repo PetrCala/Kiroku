@@ -17,18 +17,23 @@ const OUT_DIR = 'fastlane/store-screenshots/framed';
 // ─── Output device sizes (portrait, EXACT App Store pixel dimensions) ────────
 // 6.9" satisfies the mandatory largest-iPhone slot and ASC will down-scale it
 // for 6.7"/6.5". Add/remove sizes as needed.
+//
+// `kind` scopes which shots render on a device: a shot renders on a device only
+// when their kinds match ('phone' is the default for both). This keeps the four
+// iPhone shots off the tiny watch slot and the single watch shot off the phones.
 const devices = [
-  {id: '6.9', width: 1320, height: 2868}, // iPhone 16/17 Pro Max
-  {id: '6.7', width: 1290, height: 2796}, // iPhone 15 Pro Max
-  // ─── Apple Watch (DEFERRED — Apple Watch MVP Phase 6.3) ───────────────────
-  // The watchOS companion ships as a non-functional UI shell until the MVP is
-  // wired (Phases 2–5), so watch App Store screenshots are intentionally NOT
-  // captured yet. When the watch app is functional, add the ASC Apple Watch
-  // slot here (confirm the exact size against App Store Connect — Series 7+/
-  // Ultra is 410×502) AND add a watch simulator entry to fastlane/Snapfile so
-  // `snapshot` captures from the watch; the framing/upload pipeline then needs a
-  // watch-shaped frame + caption. Until then this stays commented out.
-  // {id: 'watch', width: 410, height: 502}, // Apple Watch Series 7+/Ultra
+  {id: '6.9', width: 1320, height: 2868, kind: 'phone'}, // iPhone 16/17 Pro Max
+  {id: '6.7', width: 1290, height: 2796, kind: 'phone'}, // iPhone 15 Pro Max
+  // ─── Apple Watch (Apple Watch MVP Phase 6.3) ──────────────────────────────
+  // The watchOS companion is a functional remote (MVP Phases 4 and 5), so the
+  // watch is embedded in the App Store build again and ASC now requires an Apple
+  // Watch screenshot (APP_WATCH_SERIES_4) before the iOS version can be
+  // submitted. Size is the Series 7+/Ultra slot (410×502, portrait). Unlike the
+  // iPhone shots, the watch capture is taken MANUALLY (see the watch shot below
+  // and contributingGuides/SCREENSHOTS.md): a watchOS `snapshot` UI test can't
+  // drive a phone-tethered remote, and an unpaired sim only shows the reconnect
+  // screen. Drop the real capture at RAW_DIR/<locale>/watch.png, then frame.
+  {id: 'watch', width: 410, height: 502, kind: 'watch'}, // Apple Watch Series 7+/Ultra
 ];
 
 // ─── Locales (must match RAW_DIR subfolders and caption keys below) ──────────
@@ -104,6 +109,20 @@ const shots = [
     caption: {
       'en-US': 'Stay on track with friends',
       cs: 'Zůstaňte na správné cestě s přáteli',
+    },
+  },
+  // Apple Watch shot (kind: 'watch'). Renders ONLY on the watch device, and is
+  // skipped by the ingest mapper because it has no fastlane `snapshot` source.
+  // Capture it by hand from the `Kiroku Watch App` target running in a watch
+  // simulator paired with a signed-in phone (so it shows a live session, not the
+  // reconnect screen), then drop it at RAW_DIR/<locale>/watch.png. The Czech
+  // caption is a first pass; run the translation-review skill before shipping.
+  {
+    kind: 'watch',
+    raw: 'watch.png',
+    caption: {
+      'en-US': 'Log a drink from your wrist',
+      cs: 'Zaznamenejte nápoj přímo z hodinek',
     },
   },
 ];
