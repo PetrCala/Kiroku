@@ -137,8 +137,12 @@ function main() {
     `${checkOnly ? '[check] ' : ''}Ingesting captures from ${rel(sourceRoot)}\n`,
   );
 
+  // Only phone-kind shots come from a fastlane `snapshot` capture. Watch shots
+  // (kind: 'watch') are captured by hand straight into raw/ (see the config and
+  // SCREENSHOTS.md), so the mapper never looks for them in the iPhone folder.
+  const phoneShots = shots.filter(s => (s.kind ?? 'phone') === 'phone');
   const mapped = new Set(
-    shots.filter(s => s.snapshot).map(s => `${s.snapshot}.png`),
+    phoneShots.filter(s => s.snapshot).map(s => `${s.snapshot}.png`),
   );
   const targetLocales = locales.filter(l => !onlyLocale || l === onlyLocale);
   let copied = 0;
@@ -154,7 +158,7 @@ function main() {
     const localeSrcDir = join(sourceRoot, captureLocale);
     const deviceDir = resolveDeviceDir(localeSrcDir, locale);
     if (!deviceDir || !existsSync(deviceDir)) {
-      missing += shots.length;
+      missing += phoneShots.length;
       continue;
     }
 
@@ -166,7 +170,7 @@ function main() {
       }
     }
 
-    for (const shot of shots) {
+    for (const shot of phoneShots) {
       if (!shot.snapshot) {
         console.warn(
           `  ! ${locale}: shot ${shot.raw} has no "snapshot" mapping, skipped`,
