@@ -89,8 +89,14 @@ const UNDETERMINED_RECHECK_MAX_ATTEMPTS = 5;
 // the VPN black-hole case); after a failed probe, retry faster so recovery is
 // picked up promptly. NetInfo state changes and app foregrounding also
 // trigger an immediate probe, so these timers are only the fallback cadence.
-const API_PROBE_VERIFY_INTERVAL_MS = 30 * 1000;
+const API_PROBE_VERIFY_INTERVAL_MS = 20 * 1000;
 const API_PROBE_RETRY_DELAY_MS = 10 * 1000;
+
+// How long a probe request may run before it counts as unreachable. Bounds
+// how long a black-holed network can masquerade as online; deliberately
+// tighter than the request pipeline's MAX_PENDING_TIME_MS (10s) because a
+// healthz roundtrip is tiny and device QA found ~10s indicator lag too slow.
+const API_PROBE_TIMEOUT_MS = 6 * 1000;
 
 /**
  * One end-to-end reachability check: GET the unauthenticated kiroku-api
@@ -114,7 +120,7 @@ async function probeApiReachability(): Promise<boolean> {
   const controller = new AbortController();
   const timeoutHandle = setTimeout(
     () => controller.abort(),
-    CONST.NETWORK.MAX_PENDING_TIME_MS,
+    API_PROBE_TIMEOUT_MS,
   );
   try {
     const response = await fetch(
