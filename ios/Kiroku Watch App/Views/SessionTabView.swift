@@ -8,6 +8,10 @@
 import Foundation
 import SwiftUI
 
+/// The active-session UI: paged tabs for save/discard, the unit counter, and the
+/// (decorative, MVP) unit picker. A reconnect banner overlays the session when
+/// the token goes stale mid-session, so the user knows a save will need the
+/// phone (Phase 4, docs/apple-watch-mvp.md).
 struct SessionTabView: View {
     @ObservedObject var viewModel: SessionViewModel
     @State private var selectedTab = 0
@@ -18,7 +22,7 @@ struct SessionTabView: View {
         self.initialTab = initialTab
         self._selectedTab = State(initialValue: initialTab)
     }
-    
+
     var body: some View {
         TabView(selection: $selectedTab) {
             SessionControlView(viewModel: viewModel)
@@ -39,6 +43,11 @@ struct SessionTabView: View {
         }
         .tabViewStyle(PageTabViewStyle())
         .navigationBarBackButtonHidden(true)
+        .overlay {
+            if viewModel.needsReconnect {
+                ReconnectBanner()
+            }
+        }
     }
 }
 
@@ -47,4 +56,3 @@ struct SessionTabView_Previews: PreviewProvider {
         SessionTabView(viewModel: SessionViewModel(), initialTab: 1)
     }
 }
-

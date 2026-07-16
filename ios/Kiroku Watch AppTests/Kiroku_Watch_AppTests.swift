@@ -178,3 +178,227 @@ final class Kiroku_Watch_AppTests: XCTestCase {
         XCTAssertTrue(SessionConnectivity.shared.needsPhoneReconnect)
     }
 }
+
+// MARK: - Phase 4: SessionViewModel
+
+/// Captures what the view model posts, standing in for `KirokuAPI`.
+private final class SpyWriter: SessionWriting, @unchecked Sendable {
+    private(set) var started: [DrinkingSession] = []
+    private(set) var saved: [DrinkingSession] = []
+    private(set) var discarded: [String] = []
+    var errorToThrow: KirokuAPIError?
+
+    func start(_ session: DrinkingSession) async throws -> KirokuAPIResponse {
+        started.append(session)
+        return try result()
+    }
+
+    func save(_ session: DrinkingSession) async throws -> KirokuAPIResponse {
+        saved.append(session)
+        return try result()
+    }
+
+    func discard(sessionId: String) async throws -> KirokuAPIResponse {
+        discarded.append(sessionId)
+        return try result()
+    }
+
+    private func result() throws -> KirokuAPIResponse {
+        if let errorToThrow {
+            throw errorToThrow
+        }
+        return KirokuAPIResponse(statusCode: 200, jsonCode: 200, body: Data())
+    }
+}
+
+private struct NoopHaptics: WatchHaptics {
+    func play(_ type: WatchHapticType) {}
+}
+
+/// Phase 4 (docs/apple-watch-mvp.md): the view model reflects the phone's
+/// ongoing session, keeps a DrinkingSession-backed count, degrades when the
+/// token is missing, and drives the start -> +units -> save happy path.
+@MainActor
+final class SessionViewModelTests: XCTestCase {
+    private var nowMs: Double { Date().timeIntervalSince1970 * 1000 }
+
+    override func setUp() async throws {
+        CredentialStore.clear()
+        // Reset the shared connectivity to signed-out, no ongoing session.
+        SessionConnectivity.shared.apply(["v": 1, "signedIn": false])
+        await drainMain()
+    }
+
+    override func tearDown() async throws {
+        CredentialStore.clear()
+    }
+
+    // MARK: Helpers
+
+    private func drainMain() async {
+        await withCheckedContinuation { (continuation: CheckedContinuation<Void, Never>) in
+            DispatchQueue.main.async { continuation.resume() }
+        }
+    }
+
+    private func waitUntil(_ condition: @escaping () -> Bool, timeout: TimeInterval = 2) async {
+        let deadline = Date().addingTimeInterval(timeout)
+        while !condition() && Date() < deadline {
+            await drainMain()
+        }
+    }
+
+    /// Sign the shared connectivity in (credential -> Keychain), optionally with
+    /// an ongoing-session snapshot.
+    private func signIn(env: String = "dev", ongoingJSON: String? = nil) async {
+        var context: [String: Any] = [
+            "v": 1,
+            "signedIn": true,
+            "idToken": "test-token",
+            "uid": "uid-test",
+            "expiresAt": nowMs + 3_600_000,
+            "apiEnv": env,
+        ]
+        if let ongoingJSON {
+            context["ongoingSession"] = ongoingJSON
+        }
+        SessionConnectivity.shared.apply(context)
+        await drainMain()
+    }
+
+    private func makeViewModel(_ spy: SpyWriter) -> SessionViewModel {
+        SessionViewModel(
+            connectivity: .shared,
+            controller: LiveSessionController(),
+            haptics: NoopHaptics(),
+            makeWriter: { _, _ in spy }
+        )
+    }
+
+    private func ongoingJSON(id: String, beers: Int) -> String {
+        """
+        {"id":"\(id)","start_time":1700000000000,"end_time":1700000000000,\
+        "blackout":false,"note":"","timezone":"Europe/Prague","type":"live",\
+        "ongoing":true,"drinks":{"1700000001000":{"beer":\(beers)}}}
+        """
+    }
+
+    // MARK: Reflecting the phone
+
+    func testReflectsPhoneOngoingSessionOnInit() async {
+        await signIn(ongoingJSON: ongoingJSON(id: "-PhoneLive", beers: 2))
+        let viewModel = makeViewModel(SpyWriter())
+        XCTAssertTrue(viewModel.isActive, "an ongoing phone session shows as active on open")
+        XCTAssertEqual(viewModel.unitCount, 2)
+        XCTAssertFalse(viewModel.needsReconnect)
+    }
+
+    func testReflectAdoptsWhenIdle() async {
+        await signIn()
+        let viewModel = makeViewModel(SpyWriter())
+        XCTAssertFalse(viewModel.isActive)
+
+        var session = DrinkingSession.newLive(id: "-Later", now: 1_700_000_000_000, timezone: "Europe/Prague")
+        session.addDrinks(1, of: .beer, atMillis: 1_700_000_000_000)
+        viewModel.reflect(session)
+        XCTAssertTrue(viewModel.isActive)
+        XCTAssertEqual(viewModel.unitCount, 1)
+    }
+
+    // MARK: Local units
+
+    func testAddAndSubtractUnits() async {
+        await signIn(ongoingJSON: ongoingJSON(id: "-Count", beers: 0))
+        let viewModel = makeViewModel(SpyWriter())
+        // A 0-drink ongoing session still reflects as active.
+        XCTAssertTrue(viewModel.isActive)
+
+        viewModel.addUnit()
+        viewModel.addUnit()
+        viewModel.addUnit()
+        XCTAssertEqual(viewModel.unitCount, 3)
+
+        viewModel.subtractUnit()
+        XCTAssertEqual(viewModel.unitCount, 2)
+    }
+
+    // MARK: Disconnected
+
+    func testStartBlockedWhenDisconnected() async {
+        // setUp left us signed out: no credential in the Keychain.
+        let spy = SpyWriter()
+        let viewModel = makeViewModel(spy)
+        XCTAssertTrue(viewModel.needsReconnect)
+
+        viewModel.startSession()
+        await drainMain()
+        XCTAssertFalse(viewModel.isActive, "no token -> no local session, no write")
+        XCTAssertTrue(spy.started.isEmpty)
+    }
+
+    // MARK: Happy path
+
+    func testStartThenAddThenSaveHappyPath() async {
+        await signIn()
+        let spy = SpyWriter()
+        let viewModel = makeViewModel(spy)
+
+        viewModel.startSession()
+        XCTAssertTrue(viewModel.isActive, "start is optimistic")
+        await waitUntil { spy.started.count == 1 }
+        let started = try? XCTUnwrap(spy.started.first)
+        XCTAssertEqual(started?.ongoing, true)
+        XCTAssertEqual(started?.totalUnits, 0)
+
+        viewModel.addUnit()
+        viewModel.addUnit()
+        viewModel.addUnit()
+        XCTAssertEqual(viewModel.unitCount, 3)
+
+        viewModel.saveSession()
+        await waitUntil { !viewModel.isActive }
+        XCTAssertEqual(spy.saved.count, 1)
+        XCTAssertEqual(spy.saved.first?.ongoing, false, "save finalizes the session")
+        XCTAssertEqual(spy.saved.first?.totalUnits, 3)
+        XCTAssertEqual(spy.saved.first?.id, started?.id, "same session, saved not duplicated")
+        XCTAssertFalse(viewModel.isActive)
+        XCTAssertNil(viewModel.lastError)
+    }
+
+    func testDiscardGoesIdle() async {
+        await signIn(ongoingJSON: ongoingJSON(id: "-Discard", beers: 1))
+        let spy = SpyWriter()
+        let viewModel = makeViewModel(spy)
+        XCTAssertTrue(viewModel.isActive)
+
+        viewModel.discardSession()
+        await waitUntil { !viewModel.isActive }
+        XCTAssertEqual(spy.discarded, ["-Discard"])
+        XCTAssertFalse(viewModel.isActive)
+    }
+
+    // MARK: Failed write
+
+    func testFailedSaveShowsErrorAndKeepsSession() async {
+        await signIn(ongoingJSON: ongoingJSON(id: "-KeepMe", beers: 1))
+        let spy = SpyWriter()
+        spy.errorToThrow = .server(statusCode: 500, jsonCode: nil, message: "boom")
+        let viewModel = makeViewModel(spy)
+
+        viewModel.saveSession()
+        await waitUntil { viewModel.lastError != nil }
+        XCTAssertNotNil(viewModel.lastError, "a failed write surfaces inline")
+        XCTAssertTrue(viewModel.isActive, "the session survives so save can be retried")
+    }
+
+    func testAuthErrorRoutesToReconnect() async {
+        await signIn(ongoingJSON: ongoingJSON(id: "-Revoked", beers: 1))
+        let spy = SpyWriter()
+        spy.errorToThrow = .tokenRevoked
+        let viewModel = makeViewModel(spy)
+
+        viewModel.saveSession()
+        await waitUntil { viewModel.needsReconnect }
+        XCTAssertTrue(viewModel.needsReconnect, "a revoked token drops to the reconnect state")
+    }
+}

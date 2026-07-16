@@ -1,34 +1,46 @@
 import SwiftUI
 
+/// The save/discard tab. Both are blocking writes: while one is in flight the
+/// buttons disable and a spinner shows; a failure surfaces inline and keeps the
+/// session so it can be retried. Success flips `isActive` off, which routes the
+/// UI back to the start screen (Phase 4, docs/apple-watch-mvp.md).
 struct SessionControlView: View {
     @ObservedObject var viewModel: SessionViewModel
-    @Environment(\.dismiss) var dismiss
-    
+
     var body: some View {
         VStack {
-            // MainScreenView(viewModel: viewModel)
-            Button(action: {
-                viewModel.saveSession()
-                dismiss()
-            }) {
-                Text("Save Session")
-                    .foregroundColor(.white)
+            if viewModel.isBusy {
+                ProgressView()
                     .padding()
-                    .cornerRadius(8)
-            }
-            .padding()
+            } else {
+                Button(action: {
+                    viewModel.saveSession()
+                }) {
+                    Text(Translate.getText(for: "saveSession"))
+                        .foregroundColor(.white)
+                        .padding()
+                        .cornerRadius(8)
+                }
+                .padding()
 
-            Button(action: {
-                viewModel.discardSession()
-                dismiss()
-            }) {
-                Text("Discard Session")
-                    .foregroundColor(.white)
-                    .padding()
-                    // .background(Color.gray)
-                    .cornerRadius(8)
+                Button(action: {
+                    viewModel.discardSession()
+                }) {
+                    Text(Translate.getText(for: "discardSession"))
+                        .foregroundColor(.red)
+                        .padding()
+                        .cornerRadius(8)
+                }
+                .padding()
             }
-            .padding()
+
+            if let error = viewModel.lastError {
+                Text(error)
+                    .font(.caption2)
+                    .foregroundColor(.red)
+                    .multilineTextAlignment(.center)
+                    .padding(.horizontal, 8)
+            }
         }
         .navigationBarBackButtonHidden(true)
     }
@@ -39,30 +51,3 @@ struct SessionControlView_Previews: PreviewProvider {
         SessionControlView(viewModel: SessionViewModel())
     }
 }
-
-// class SessionManager {
-
-//     static let shared = SessionManager()
-//     private let sessionRef = Database.database().reference().child("sessions")
-
-//     private init() { }
-
-//     func startSession(for userId: String, completion: @escaping (Error?) -> Void) {
-//         let userSessionRef = sessionRef.child(userId)
-//         userSessionRef.observeSingleEvent(of: .value, with: { snapshot in
-//             if let sessionData = snapshot.value as? [String: Any], sessionData["isActive"] as? Bool == true {
-//                 completion(NSError(domain: "SessionError", code: -1, userInfo: [NSLocalizedDescriptionKey: "Another session is already active."]))
-//             } else {
-//                 userSessionRef.setValue(["isActive": true, "startTime": Date().timeIntervalSince1970])
-//                 completion(nil)
-//             }
-//         })
-//     }
-
-//     func endSession(for userId: String, completion: @escaping (Error?) -> Void) {
-//         let userSessionRef = sessionRef.child(userId)
-//         userSessionRef.updateChildValues(["isActive": false, "endTime": Date().timeIntervalSince1970]) { error, _ in
-//             completion(error)
-//         }
-//     }
-// }

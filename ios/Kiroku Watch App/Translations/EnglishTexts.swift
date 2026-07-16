@@ -15,5 +15,8 @@ struct EnglishTexts {
         "errorMessage": "An error occurred. Please try again.",
         "tapToStartSession": "Tap to Start Session",
         "openPhoneToReconnect": "Open Kiroku on your phone to reconnect.",
+        "connecting": "Connecting…",
+        "saveSession": "Save",
+        "discardSession": "Discard",
     ]
 }

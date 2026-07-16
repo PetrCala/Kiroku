@@ -46,7 +46,6 @@
 		C1EBD956700E09BF2140DEC98EFAF04F /* PrivacyInfo.xcprivacy in Resources */ = {isa = PBXBuildFile; fileRef = 2807A7F093875785C9B9FD52DF99D726 /* PrivacyInfo.xcprivacy */; };
 		D4EB4C4B472CFB5C1C447FC0D70B6A6E /* PrivacyInfo.xcprivacy in Resources */ = {isa = PBXBuildFile; fileRef = D17B18F000F10331F3702AFEF2670158 /* PrivacyInfo.xcprivacy */; };
 		D71B38A9F2A8830AA7E03D95986CE51A /* ExpensifyNeue-Italic.otf in Resources */ = {isa = PBXBuildFile; fileRef = A39E3F7FF983A2F51A9E09DB690AF791 /* ExpensifyNeue-Italic.otf */; };
-		D82DC1221CC00D823D0DE5A65FAD639C /* SessionModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 23D208995320DA55DFBD5707B1041726 /* SessionModel.swift */; };
 		DED6357362BCF4B61ACF65076BD05FDE /* SettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 67409ABB382975A15E2A13689AEBBF4A /* SettingsView.swift */; };
 		E7B715AA87095EA0860A562B52B7C0BB /* Info.plist in Resources */ = {isa = PBXBuildFile; fileRef = 7F0F9082C37DDC79066DFE0B03E80EE2 /* Info.plist */; };
 		EF9D890B86812601ABFEC945C2E3E8C7 /* kirokuTests.m in Sources */ = {isa = PBXBuildFile; fileRef = 588A590E6BED68E1F6FD0254E55C2F6C /* kirokuTests.m */; };
@@ -56,6 +55,7 @@
 		FB0000000000000000000003 /* KirokuAPI.swift in Sources */ = {isa = PBXBuildFile; fileRef = FA0000000000000000000003 /* KirokuAPI.swift */; };
 		FB0000000000000000000004 /* DrinkingSession.swift in Sources */ = {isa = PBXBuildFile; fileRef = FA0000000000000000000004 /* DrinkingSession.swift */; };
 		FB0000000000000000000005 /* PushID.swift in Sources */ = {isa = PBXBuildFile; fileRef = FA0000000000000000000005 /* PushID.swift */; };
+		FB0000000000000000000008 /* LiveSessionController.swift in Sources */ = {isa = PBXBuildFile; fileRef = FA0000000000000000000008 /* LiveSessionController.swift */; };
 		FB0000000000000000000006 /* SessionConnectivity.swift in Sources */ = {isa = PBXBuildFile; fileRef = FA0000000000000000000006 /* SessionConnectivity.swift */; };
 		FB0000000000000000000007 /* CredentialStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = FA0000000000000000000007 /* CredentialStore.swift */; };
 		F243724B34C5C9FB6F62F24D /* Pods_kiroku.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 0478232408D4311F0113E613 /* Pods_kiroku.framework */; };
@@ -117,7 +117,6 @@
 		1777A343F31D8EAE6EB90ABA5CC06332 /* ExpensifyNeue-Bold.otf */ = {isa = PBXFileReference; includeInIndex = 1; path = "ExpensifyNeue-Bold.otf"; sourceTree = "<group>"; };
 		1B6C89C296C5EE51CAEA9F599877E10F /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
 		21DD778E0182447ABC5084CA24728F34 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
-		23D208995320DA55DFBD5707B1041726 /* SessionModel.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = SessionModel.swift; sourceTree = "<group>"; };
 		23F8FAF4E5F3844745702042BF927A6B /* Images.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; name = Images.xcassets; path = kiroku/Images.xcassets; sourceTree = "<group>"; };
 		2807A7F093875785C9B9FD52DF99D726 /* PrivacyInfo.xcprivacy */ = {isa = PBXFileReference; lastKnownFileType = text.xml; name = PrivacyInfo.xcprivacy; path = kiroku/PrivacyInfo.xcprivacy; sourceTree = "<group>"; };
 		2A12276275D9BE012B773C7E /* Pods-kiroku-kirokuTests.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-kiroku-kirokuTests.release.xcconfig"; path = "Target Support Files/Pods-kiroku-kirokuTests/Pods-kiroku-kirokuTests.release.xcconfig"; sourceTree = "<group>"; };
@@ -181,6 +180,7 @@
 		FA0000000000000000000003 /* KirokuAPI.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; name = KirokuAPI.swift; path = "KirokuWatchCore/Sources/KirokuWatchCore/KirokuAPI.swift"; sourceTree = SOURCE_ROOT; };
 		FA0000000000000000000004 /* DrinkingSession.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; name = DrinkingSession.swift; path = "KirokuWatchCore/Sources/KirokuWatchCore/DrinkingSession.swift"; sourceTree = SOURCE_ROOT; };
 		FA0000000000000000000005 /* PushID.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; name = PushID.swift; path = "KirokuWatchCore/Sources/KirokuWatchCore/PushID.swift"; sourceTree = SOURCE_ROOT; };
+		FA0000000000000000000008 /* LiveSessionController.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; name = LiveSessionController.swift; path = "KirokuWatchCore/Sources/KirokuWatchCore/LiveSessionController.swift"; sourceTree = SOURCE_ROOT; };
 		FA0000000000000000000006 /* SessionConnectivity.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = SessionConnectivity.swift; sourceTree = "<group>"; };
 		FA0000000000000000000007 /* CredentialStore.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = CredentialStore.swift; sourceTree = "<group>"; };
 		FC94F72FE31465CA8BCABD916FE6A2C6 /* RCTBootSplash.mm */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.objcpp; name = RCTBootSplash.mm; path = kiroku/RCTBootSplash.mm; sourceTree = "<group>"; };
@@ -312,7 +312,6 @@
 		6131D7EE3500A2D60142FA287C792680 /* Models */ = {
 			isa = PBXGroup;
 			children = (
-				23D208995320DA55DFBD5707B1041726 /* SessionModel.swift */,
 				8CF1DA67722E0F45DD9EAC0BBC5B5960 /* UnitModel.swift */,
 			);
 			path = Models;
@@ -412,6 +411,7 @@
 				FA0000000000000000000004 /* DrinkingSession.swift */,
 				FA0000000000000000000003 /* KirokuAPI.swift */,
 				FA0000000000000000000005 /* PushID.swift */,
+				FA0000000000000000000008 /* LiveSessionController.swift */,
 			);
 			name = KirokuWatchCore;
 			sourceTree = "<group>";
@@ -941,6 +941,7 @@
 				FB0000000000000000000004 /* DrinkingSession.swift in Sources */,
 				FB0000000000000000000003 /* KirokuAPI.swift in Sources */,
 				FB0000000000000000000005 /* PushID.swift in Sources */,
+				FB0000000000000000000008 /* LiveSessionController.swift in Sources */,
 				FB0000000000000000000006 /* SessionConnectivity.swift in Sources */,
 				85D3A2428FB7A384E0E90E056C100D01 /* CzechTexts.swift in Sources */,
 				5E4ACD6C1EE6FBC1E05D75AE525E2969 /* EnglishTexts.swift in Sources */,
@@ -952,7 +953,6 @@
 				019BCBAE783DCC5846936DD88AB03C7C /* KirokuApp.swift in Sources */,
 				1F91B5D9007998E199916D67139B5ED4 /* MainScreenView.swift in Sources */,
 				43B45031E9C37461A97616988D3E4910 /* SessionControlView.swift in Sources */,
-				D82DC1221CC00D823D0DE5A65FAD639C /* SessionModel.swift in Sources */,
 				96AC25BB9F951774C540913B63BFF33E /* SessionTabView.swift in Sources */,
 				99C0C09ABE98934F6A4CE02AAC233123 /* SessionViewModel.swift in Sources */,
 				DED6357362BCF4B61ACF65076BD05FDE /* SettingsView.swift in Sources */,
