@@ -8,6 +8,13 @@ import SwiftUI
 
 @main
 struct KirokuApp: App {
+    init() {
+        // Touch the singleton at launch so WCSession starts activating (and the
+        // last phone-delivered credential/session is restored) before any view
+        // model action needs it.
+        _ = SessionConnectivity.shared
+    }
+
     var body: some Scene {
         WindowGroup {
             ContentView()

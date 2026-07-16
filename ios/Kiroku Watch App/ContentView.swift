@@ -6,33 +6,17 @@
 //
 
 import SwiftUI
-import Foundation
 
+/// Root container: paints the background and hosts the state-driven session UI.
+/// All of loading / no-session / disconnected / active routing lives in
+/// `InitialView`, driven by `SessionViewModel` (Phase 4, docs/apple-watch-mvp.md).
 struct ContentView: View {
-    // Instantiating the singleton here guarantees WCSession activates at watch
-    // app launch, before any view-model action needs the credential.
-    @ObservedObject private var connectivity = SessionConnectivity.shared
-
     var body: some View {
         ZStack {
             AppColors.backgroundColor
-                .edgesIgnoringSafeArea(.all) // This ensures the color covers the entire screen
+                .edgesIgnoringSafeArea(.all)
 
             InitialView()
-
-            if connectivity.needsPhoneReconnect {
-                VStack {
-                    Spacer()
-                    Text(Translate.getText(for: "openPhoneToReconnect"))
-                        .font(.footnote)
-                        .multilineTextAlignment(.center)
-                        .padding(8)
-                        .background(Color.black.opacity(0.75))
-                        .cornerRadius(8)
-                        .padding(.horizontal, 8)
-                }
-                .allowsHitTesting(false)
-            }
         }
     }
 }

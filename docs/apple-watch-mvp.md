@@ -73,7 +73,7 @@ A runnable, documented reproduction of this exact contract lives in
 ## MVP definition
 
 A wrist remote that talks to the real kiroku-api: **start a live session →
-+1 / −1 a unit → save or discard**, posting directly to the API. The auth token
++1 / -1 a unit → save or discard**, posting directly to the API. The auth token
 is handed over from the signed-in phone via WatchConnectivity. It works whenever
 the phone has been recently active and **degrades gracefully** ("Open Kiroku on
 your phone") when the token is stale.
@@ -173,21 +173,36 @@ critical path is **0 → 1 → 2 → 3**; Phases 5–7 overlap once the bridge w
     watch app is dead, and `WCSession` persists the last received context, so
     a cold-started watch always sees the newest credential the phone ever sent.
 
-### Phase 4 — Wire the UI to a real view model (1–2 days)
+### Phase 4 — Wire the UI to a real view model (1–2 days) ← done
 
-- [ ] **4.1** Replace the in-memory `SessionModel`/`SessionViewModel` with one
+- [x] **4.1** Replace the in-memory `SessionModel`/`SessionViewModel` with one
       backed by `KirokuAPI` + `SessionConnectivity`; reflect the ongoing session
-      pushed from the phone.
-- [ ] **4.2** Loading / no-active-session / disconnected states, haptic on tap,
-      inline error on failed write.
+      pushed from the phone. `SessionModel` is deleted; a pure
+      [`LiveSessionController`](../ios/KirokuWatchCore/Sources/KirokuWatchCore/LiveSessionController.swift)
+      holds the single `DrinkingSession` source of truth (adopt-on-open with a
+      no-re-adopt-after-finish guard, and a watch-owned unit bucket so a
+      subtraction never deletes a phone-logged drink), host-unit-tested via
+      `swift test`. `SessionViewModel` is a thin `@MainActor` wrapper: start /
+      save / discard POST through `KirokuAPI`, `+`/`-` stay local (Phase 5 adds
+      debounced update posting).
+- [x] **4.2** Loading / no-active-session / disconnected states, haptic on tap,
+      inline error on failed write. State-driven routing in
+      [`InitialView`](../ios/Kiroku%20Watch%20App/Views/InitialView.swift);
+      auth failures drop to the reconnect state, other write failures show inline
+      and keep the session for retry.
   - **Accept:** full happy path on a real paired device: start → +1 ×3 → save, all
-    visible in the phone app after sync; discard path too.
+    visible in the phone app after sync; discard path too. _(Requires a paired
+    device. The watch app is currently de-embedded from the archive (commit
+    `e5b344a5b`, to keep App Store submission unblocked) and sits in no build
+    scheme, so CI does not compile it; build the `Kiroku Watch App` target
+    directly in Xcode to run this. Re-embedding plus the watch store listing is
+    Phase 6.3.)_
 
 ### Phase 5 — Sync & conflict handling (1–2 days)
 
 - [ ] **5.1** Adopt the phone's ongoing session id when one is active (log into
       the _same_ session, no duplicate); only mint a new id when nothing is active.
-- [ ] **5.2** Coalesce taps — debounce rapid +/− into one `update` (mirror the
+- [ ] **5.2** Coalesce taps — debounce rapid +/- into one `update` (mirror the
       app's ~500ms persist); last-writer-wins on the whole-session PUT.
 - [ ] **5.3** Save/discard clears live status server-side; confirm the phone
       reflects it on next session read.
@@ -206,7 +221,7 @@ critical path is **0 → 1 → 2 → 3**; Phases 5–7 overlap once the bridge w
 ### Phase 7 — QA matrix (1 day)
 
 - [ ] **7.1** Cross-product: phone foreground / background / force-quit; watch in
-      BT range vs not; token fresh vs stale/expired; each of start/+/−/save/discard;
+      BT range vs not; token fresh vs stale/expired; each of start/+/-/save/discard;
       airplane mode on the watch.
   - **Accept:** every cell is correct or shows the right graceful-degradation
     message — no silent data loss.

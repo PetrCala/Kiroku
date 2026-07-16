@@ -1,20 +1,17 @@
 import SwiftUI
 
+/// The unit-counter tab: shows the live session's total and the +/- controls.
+/// The count reads straight off the DrinkingSession-backed view model; each tap
+/// mutates the session and fires a haptic (Phase 4, docs/apple-watch-mvp.md).
 struct MainScreenView: View {
     @ObservedObject var viewModel: SessionViewModel
 
     var body: some View {
         VStack {
-          Text("\(viewModel.session.unitCount)")
+            Text("\(viewModel.unitCount)")
                 .font(.largeTitle)
+
             HStack {
-                Button(action: {
-                    viewModel.addUnit()
-                }) {
-                    Text("+")
-                        .font(.largeTitle)
-                        .padding()
-                }
                 Button(action: {
                     viewModel.subtractUnit()
                 }) {
@@ -22,9 +19,23 @@ struct MainScreenView: View {
                         .font(.largeTitle)
                         .padding()
                 }
+                Button(action: {
+                    viewModel.addUnit()
+                }) {
+                    Text("+")
+                        .font(.largeTitle)
+                        .padding()
+                }
+            }
+
+            if let error = viewModel.lastError {
+                Text(error)
+                    .font(.caption2)
+                    .foregroundColor(.red)
+                    .multilineTextAlignment(.center)
+                    .padding(.horizontal, 8)
             }
         }
-        // .navigationBarTitle("Main Screen")
         .navigationBarBackButtonHidden(true)
     }
 }
@@ -34,25 +45,3 @@ struct MainScreenView_Previews: PreviewProvider {
         MainScreenView(viewModel: SessionViewModel())
     }
 }
-
-// class MainScreenController: WKInterfaceController {
-
-//     override func awake(withContext context: Any?) {
-//         super.awake(withContext: context)
-//         observeSessionState()
-//     }
-
-//     func observeSessionState() {
-//         let userId = Auth.auth().currentUser?.uid ?? "defaultUserId"
-//         let sessionRef = Database.database().reference().child("sessions").child(userId)
-        
-//         sessionRef.observe(.value, with: { snapshot in
-//             if let sessionData = snapshot.value as? [String: Any], let isActive = sessionData["isActive"] as? Bool {
-//                 if !isActive {
-//                     // Handle session end
-//                     self.popToRootController()
-//                 }
-//             }
-//         })
-//     }
-// }
