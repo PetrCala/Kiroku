@@ -198,16 +198,35 @@ critical path is **0 → 1 → 2 → 3**; Phases 5–7 overlap once the bridge w
     directly in Xcode to run this. Re-embedding plus the watch store listing is
     Phase 6.3.)_
 
-### Phase 5 — Sync & conflict handling (1–2 days)
+### Phase 5 — Sync & conflict handling (1–2 days) ← done
 
-- [ ] **5.1** Adopt the phone's ongoing session id when one is active (log into
+- [x] **5.1** Adopt the phone's ongoing session id when one is active (log into
       the _same_ session, no duplicate); only mint a new id when nothing is active.
-- [ ] **5.2** Coalesce taps — debounce rapid +/- into one `update` (mirror the
-      app's ~500ms persist); last-writer-wins on the whole-session PUT.
-- [ ] **5.3** Save/discard clears live status server-side; confirm the phone
-      reflects it on next session read.
+      Done in Phase 4's
+      [`LiveSessionController`](../ios/KirokuWatchCore/Sources/KirokuWatchCore/LiveSessionController.swift)
+      (`begin(adopting:)` reuses the phone's ongoing id, `reflectOngoing` adopts a
+      live phone session when the watch is idle); the finished-id guard keeps a
+      lagging snapshot from resurrecting a just-saved session.
+- [x] **5.2** Coalesce taps. `+`/`−` stay instant locally and are fed to a pure
+      [`LiveUpdateCoalescer`](../ios/KirokuWatchCore/Sources/KirokuWatchCore/LiveUpdateCoalescer.swift)
+      that debounces a burst into a single `/v1/sessions/update` PUT after a
+      ~500ms quiet window (mirroring the app's `LIVE_SESSION_PERSIST_DEBOUNCE_MS`),
+      with a strict single-flight rule so two whole-session PUTs never race or land
+      out of order (last-writer-wins then can't keep a stale body). The coalescer
+      is a Foundation-only state machine (host-unit-tested via `swift test`); the
+      `@MainActor` `SessionViewModel` owns the real `Task.sleep` timer + `KirokuAPI`
+      call and reads the latest session at flush time. Background sync errors are
+      silent except auth failures, which route to reconnect (same as Phase 4); the
+      authoritative persistence stays start + save.
+- [x] **5.3** Save/discard cancels the coalescer and awaits any in-flight update
+      before the finalizing write (so `ongoing:false` / delete is the last write
+      the server sees), which clears live status server-side; the phone reflects it
+      on its next session read (eventual consistency, per #947).
   - **Accept:** starting on phone then bumping on watch updates one session, not
-    two; rapid taps don't spam the API.
+    two; rapid taps don't spam the API. _(Validated by `swift test` in
+    `ios/KirokuWatchCore` and a watchOS-SDK typecheck of the whole watch target;
+    the watch is de-embedded from the archive so CI does not compile it. A paired
+    device/sim run is the remaining manual check, alongside Phase 4.2's.)_
 
 ### Phase 6 — Signing, CI, store plumbing (1–2 days)
 

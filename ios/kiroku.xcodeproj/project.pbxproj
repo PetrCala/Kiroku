@@ -56,6 +56,7 @@
 		FB0000000000000000000004 /* DrinkingSession.swift in Sources */ = {isa = PBXBuildFile; fileRef = FA0000000000000000000004 /* DrinkingSession.swift */; };
 		FB0000000000000000000005 /* PushID.swift in Sources */ = {isa = PBXBuildFile; fileRef = FA0000000000000000000005 /* PushID.swift */; };
 		FB0000000000000000000008 /* LiveSessionController.swift in Sources */ = {isa = PBXBuildFile; fileRef = FA0000000000000000000008 /* LiveSessionController.swift */; };
+		FB0000000000000000000009 /* LiveUpdateCoalescer.swift in Sources */ = {isa = PBXBuildFile; fileRef = FA0000000000000000000009 /* LiveUpdateCoalescer.swift */; };
 		FB0000000000000000000006 /* SessionConnectivity.swift in Sources */ = {isa = PBXBuildFile; fileRef = FA0000000000000000000006 /* SessionConnectivity.swift */; };
 		FB0000000000000000000007 /* CredentialStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = FA0000000000000000000007 /* CredentialStore.swift */; };
 		F243724B34C5C9FB6F62F24D /* Pods_kiroku.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 0478232408D4311F0113E613 /* Pods_kiroku.framework */; };
@@ -181,6 +182,7 @@
 		FA0000000000000000000004 /* DrinkingSession.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; name = DrinkingSession.swift; path = "KirokuWatchCore/Sources/KirokuWatchCore/DrinkingSession.swift"; sourceTree = SOURCE_ROOT; };
 		FA0000000000000000000005 /* PushID.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; name = PushID.swift; path = "KirokuWatchCore/Sources/KirokuWatchCore/PushID.swift"; sourceTree = SOURCE_ROOT; };
 		FA0000000000000000000008 /* LiveSessionController.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; name = LiveSessionController.swift; path = "KirokuWatchCore/Sources/KirokuWatchCore/LiveSessionController.swift"; sourceTree = SOURCE_ROOT; };
+		FA0000000000000000000009 /* LiveUpdateCoalescer.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; name = LiveUpdateCoalescer.swift; path = "KirokuWatchCore/Sources/KirokuWatchCore/LiveUpdateCoalescer.swift"; sourceTree = SOURCE_ROOT; };
 		FA0000000000000000000006 /* SessionConnectivity.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = SessionConnectivity.swift; sourceTree = "<group>"; };
 		FA0000000000000000000007 /* CredentialStore.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = CredentialStore.swift; sourceTree = "<group>"; };
 		FC94F72FE31465CA8BCABD916FE6A2C6 /* RCTBootSplash.mm */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.objcpp; name = RCTBootSplash.mm; path = kiroku/RCTBootSplash.mm; sourceTree = "<group>"; };
@@ -412,6 +414,7 @@
 				FA0000000000000000000003 /* KirokuAPI.swift */,
 				FA0000000000000000000005 /* PushID.swift */,
 				FA0000000000000000000008 /* LiveSessionController.swift */,
+				FA0000000000000000000009 /* LiveUpdateCoalescer.swift */,
 			);
 			name = KirokuWatchCore;
 			sourceTree = "<group>";
@@ -942,6 +945,7 @@
 				FB0000000000000000000003 /* KirokuAPI.swift in Sources */,
 				FB0000000000000000000005 /* PushID.swift in Sources */,
 				FB0000000000000000000008 /* LiveSessionController.swift in Sources */,
+				FB0000000000000000000009 /* LiveUpdateCoalescer.swift in Sources */,
 				FB0000000000000000000006 /* SessionConnectivity.swift in Sources */,
 				85D3A2428FB7A384E0E90E056C100D01 /* CzechTexts.swift in Sources */,
 				5E4ACD6C1EE6FBC1E05D75AE525E2969 /* EnglishTexts.swift in Sources */,
