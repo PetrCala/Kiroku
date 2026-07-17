@@ -12,12 +12,16 @@ import useThemeStyles from '@hooks/useThemeStyles';
 import {View} from 'react-native';
 import FlatList from '@components/FlatList';
 import {PressableWithFeedback} from '@components/Pressable';
-import FlexibleLoadingIndicator from '@components/FlexibleLoadingIndicator';
 import useCurrentUserData from '@hooks/useCurrentUserData';
 import useLocalize from '@hooks/useLocalize';
 import {isEmptyObject} from '@src/types/utils/EmptyObject';
 import FriendOfflineFeedback from './FriendOfflineFeedback';
 import UserOverview from './UserOverview';
+import UserOverviewSkeleton from './UserOverviewSkeleton';
+
+/** Upper bound on cold-load placeholder rows: enough to fill a tall phone
+ *  screen; anything below the fold would render (and animate) unseen. */
+const MAX_SKELETON_ROWS = 10;
 
 type UserListProps = {
   fullUserArray: UserArray;
@@ -130,14 +134,24 @@ function UserListComponent({
   };
 
   if (isLoading) {
+    // Cold load: the first paint of real data should already be live (fresh
+    // ordering + statuses), so hold row-shaped skeletons instead of painting a
+    // stale snapshot that would visibly reshuffle a round trip later. One
+    // skeleton per known friend, bounded to a screenful.
+    const skeletonCount = Math.min(
+      Math.max(fullUserArray.length, 1),
+      initialLoadSize,
+      MAX_SKELETON_ROWS,
+    );
     return (
       <View
-        style={[
-          styles.flex1,
-          styles.justifyContentCenter,
-          styles.alignItemsCenter,
-        ]}>
-        <FlexibleLoadingIndicator />
+        style={[styles.flex1, styles.pt1]}
+        accessibilityLabel={translate('common.loading')}>
+        {Array.from({length: skeletonCount}, (_, index) => (
+          // Static placeholder list: index keys are stable here.
+          // eslint-disable-next-line react/no-array-index-key
+          <UserOverviewSkeleton key={`user-overview-skeleton-${index}`} />
+        ))}
       </View>
     );
   }
