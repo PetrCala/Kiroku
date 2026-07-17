@@ -1051,6 +1051,10 @@ const CONST = {
     SEARCH_OPTION_LIST_DEBOUNCE_TIME: 300,
     TOOLTIP_SENSE: 1000,
     TEST_TOOLS_MODAL_THROTTLE_TIME: 800,
+    /** How long the friend list's first-open-of-run cold gate may hold
+     *  skeletons while waiting for the live sync before falling back to the
+     *  persisted cache (slow networks shouldn't hide data we already have). */
+    FRIENDS_COLD_SYNC_TIMEOUT: 4000,
   },
   TIME_PERIOD: {
     AM: 'AM',
