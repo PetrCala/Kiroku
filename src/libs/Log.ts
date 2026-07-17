@@ -67,6 +67,20 @@ type RequestParams = Merge<
 >;
 
 /**
+ * (Re)arm the 10-minute log-flush timer. The handle is unref'd so it never
+ * holds a Node process (Jest) open; React Native timers have no unref, hence
+ * the optional call.
+ */
+function scheduleLogFlush(logger: Logger): void {
+  clearTimeout(timeout);
+  timeout = setTimeout(
+    () => logger.info('Flushing logs older than 10 minutes', true, {}, true),
+    10 * 60 * 1000,
+  );
+  (timeout as unknown as {unref?: () => void}).unref?.();
+}
+
+/**
  * Network interface for logger.
  */
 function serverLoggingCallback(
@@ -80,11 +94,7 @@ function serverLoggingCallback(
   if (requestParams.parameters) {
     requestParams.parameters = JSON.stringify(requestParams.parameters);
   }
-  clearTimeout(timeout);
-  timeout = setTimeout(
-    () => logger.info('Flushing logs older than 10 minutes', true, {}, true),
-    10 * 60 * 1000,
-  );
+  scheduleLogFlush(logger);
   return LogCommand(requestParams);
 }
 
@@ -111,9 +121,6 @@ const Log = new Logger({
   },
   isDebug: true,
 });
-timeout = setTimeout(
-  () => Log.info('Flushing logs older than 10 minutes', true, {}, true),
-  10 * 60 * 1000,
-);
+scheduleLogFlush(Log);
 
 export default Log;

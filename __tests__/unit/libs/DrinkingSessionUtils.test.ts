@@ -205,8 +205,9 @@ describe('setLocalSessionCache / compose-on-latest', () => {
   });
 
   it('three adds then one remove, each composing on the cache, net +2 (dropped-tap repro)', () => {
-    // Mirrors what updateDrinks does per tap: read the cache, modify, write back
-    // synchronously — without driving any async Onyx.connect refresh in between.
+    // Mirrors what updateDrinks does per tap: read the cache, modify, write
+    // back synchronously, without driving any async Onyx.connect refresh in
+    // between.
     DSUtils.setLocalSessionCache(ONYXKEYS.ONGOING_SESSION_DATA, liveBase);
 
     const sequence = [
@@ -247,7 +248,7 @@ const LA = 'America/Los_Angeles' as SelectedTimezone; // UTC-8 (Jan)
 const NY = 'America/New_York' as SelectedTimezone;
 
 /**
- * Local-noon `Date` whose `yyyy-MM-dd` label is stable under any process tz —
+ * Local-noon `Date` whose `yyyy-MM-dd` label is stable under any process tz:
  * the bucketers read the viewed day via `format(date)`, so a noon anchor keeps
  * that label from drifting while the window is computed in the session tz.
  */
@@ -255,7 +256,7 @@ function viewDay(year: number, monthZeroBased: number, day: number): Date {
   return new Date(year, monthZeroBased, day, 12);
 }
 
-describe('getSingleDayDrinkingSessions — buckets by each session timezone', () => {
+describe('getSingleDayDrinkingSessions buckets by each session timezone', () => {
   // 06:00 UTC on 2024-01-15 is 15:00 (Jan 15) in Tokyo but 22:00 (Jan 14) in LA.
   const crossInstant = Date.UTC(2024, 0, 15, 6, 0);
   const sessions: DrinkingSessionList = {
@@ -309,7 +310,7 @@ describe('getSingleDayDrinkingSessions — buckets by each session timezone', ()
   });
 });
 
-describe('getSingleMonthDrinkingSessions — buckets by each session timezone', () => {
+describe('getSingleMonthDrinkingSessions buckets by each session timezone', () => {
   // 20:00 UTC on 2024-01-31 is 05:00 (Feb 1) in Tokyo but 12:00 (Jan 31) in LA.
   const monthEdgeInstant = Date.UTC(2024, 0, 31, 20, 0);
   const arr: DrinkingSessionArray = [
@@ -334,7 +335,9 @@ describe('getSingleMonthDrinkingSessions — buckets by each session timezone', 
   });
 
   it('untilToday=true drops sessions later than the current instant', () => {
-    // Pin "now" so the until-today clamp is deterministic.
+    // Pin "now" so the until-today clamp is deterministic. The suite baseline
+    // is real timers (jest/setupAfterEnv.ts), so install fake ones just for
+    // this test and restore in the finally.
     jest.useFakeTimers({now: new Date('2024-01-15T12:00:00Z')});
     try {
       const sameMonth: DrinkingSessionArray = [
