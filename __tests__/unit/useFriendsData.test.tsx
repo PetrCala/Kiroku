@@ -12,9 +12,8 @@
  */
 import {act, renderHook} from '@testing-library/react-native';
 import {useOnyx} from 'react-native-onyx';
-import useFriendsData, {
-  resetFriendsDataSessionSyncForTests,
-} from '@hooks/useFriendsData';
+import useFriendsData from '@hooks/useFriendsData';
+import {resetSyncedThisAppRunForTests} from '@hooks/useFriendsData/sessionSync';
 import useNetwork from '@hooks/useNetwork';
 import * as Profile from '@userActions/Profile';
 import CONST from '@src/CONST';
@@ -31,7 +30,9 @@ jest.mock('react-native-onyx', () => ({
 jest.mock('@react-navigation/native', () => ({
   __esModule: true,
   useFocusEffect: (callback: () => void | (() => void)) => {
-    const {useEffect} = require('react') as typeof import('react');
+    const {useEffect} = require('react') as {
+      useEffect: (effect: () => void | (() => void), deps: unknown[]) => void;
+    };
     useEffect(callback, [callback]);
   },
 }));
@@ -74,7 +75,7 @@ function setOnyx(value: UserDataList | undefined): void {
 
 beforeEach(() => {
   jest.clearAllMocks();
-  resetFriendsDataSessionSyncForTests();
+  resetSyncedThisAppRunForTests();
   mockIsOffline = false;
   mockedUseNetwork.mockImplementation(() => ({isOffline: mockIsOffline}));
   mockedFetchUsersData.mockImplementation(

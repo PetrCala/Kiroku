@@ -7,6 +7,7 @@ import CONST from '@src/CONST';
 import ONYXKEYS from '@src/ONYXKEYS';
 import type {ProfileList, UserStatusList} from '@src/types/onyx';
 import type {UserArray} from '@src/types/onyx/OnyxCommon';
+import {hasSyncedThisAppRun, markSyncedThisAppRun} from './sessionSync';
 
 type UseFriendsDataReturn = {
   /** Profile map for `friendIDs`, read back from `USER_DATA_LIST`. */
@@ -21,23 +22,6 @@ type UseFriendsDataReturn = {
    *  blanks back to placeholders. */
   isLoading: boolean;
 };
-
-/**
- * Whether any friends-data batch read has settled during this app run. Module
- * scope on purpose: it resets exactly at the boundary the cold gate cares
- * about (an app restart) with no Onyx write, no persistence, and no cleanup
- * hook. While false, a persisted `USER_DATA_LIST` cache from a previous run is
- * treated as stale-of-unknown-age: the first friend-list open gates on a live
- * fetch (skeleton rows) instead of painting last run's snapshot and visibly
- * reshuffling when fresh statuses land. Once true, later mounts paint the
- * cache instantly and refresh in the background, exactly as before.
- */
-let hasSyncedThisAppRun = false;
-
-/** Test-only: module state would otherwise leak between jest cases. */
-function resetFriendsDataSessionSyncForTests(): void {
-  hasSyncedThisAppRun = false;
-}
 
 /**
  * Single source of truth for a friend list's profile + presence data.
@@ -88,7 +72,7 @@ function useFriendsData(friendIDs: UserArray): UseFriendsDataReturn {
       const token = ++currentTokenRef.current;
       Profile.fetchUsersData(friendIDs)
         .finally(() => {
-          hasSyncedThisAppRun = true;
+          markSyncedThisAppRun();
           if (token === currentTokenRef.current) {
             setHasResolvedInitial(true);
           }
@@ -119,7 +103,7 @@ function useFriendsData(friendIDs: UserArray): UseFriendsDataReturn {
   // this app run (persisted snapshot of unknown age). Either way the gate holds
   // until this mount's fetch settles or times out, except offline with a
   // cache, where nothing fresh can arrive and stale beats blank.
-  const isColdCache = !hasCachedData || !hasSyncedThisAppRun;
+  const isColdCache = !hasCachedData || !hasSyncedThisAppRun();
   const isLoading =
     friendIDs.length > 0 &&
     isColdCache &&
@@ -142,7 +126,7 @@ function useFriendsData(friendIDs: UserArray): UseFriendsDataReturn {
       // already have. The timeout deliberately does NOT mark the run synced;
       // only a settled fetch does.
       let timeoutID: ReturnType<typeof setTimeout> | undefined;
-      if (!hasSyncedThisAppRun) {
+      if (!hasSyncedThisAppRun()) {
         timeoutID = setTimeout(() => {
           if (token === currentTokenRef.current) {
             setHasResolvedInitial(true);
@@ -155,7 +139,7 @@ function useFriendsData(friendIDs: UserArray): UseFriendsDataReturn {
           // must degrade to the cached list, not re-gate every later mount
           // while the API is down. Data still self-heals via the on-focus and
           // reconnect refreshes.
-          hasSyncedThisAppRun = true;
+          markSyncedThisAppRun();
           if (token === currentTokenRef.current) {
             setHasResolvedInitial(true);
           }
@@ -176,4 +160,3 @@ function useFriendsData(friendIDs: UserArray): UseFriendsDataReturn {
 }
 
 export default useFriendsData;
-export {resetFriendsDataSessionSyncForTests};
