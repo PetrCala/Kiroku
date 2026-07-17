@@ -1,3 +1,9 @@
+// CI and `npm test` always run the suite under TZ=utc; several date tests
+// (session day-bucketing, statistics filters) encode UTC expectations. Pin it
+// here too so direct `npx jest` / IDE runs behave the same on any machine,
+// while still honoring an explicitly exported TZ.
+process.env.TZ = process.env.TZ ?? 'utc';
+
 const testFileExtension = '[jt]s?(x)';
 module.exports = {
   preset: 'jest-expo',
