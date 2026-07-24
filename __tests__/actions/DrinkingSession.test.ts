@@ -413,13 +413,21 @@ describe('offline live-session persistence across restarts', () => {
       ONYXKEYS.ONGOING_SESSION_SYNC,
       {enqueuedAt: editedAt},
     );
-    // Synced: only a successful response may clear the dirty state.
+    // Synced: only a successful response may clear the dirty state. Dropped:
+    // if the queue permanently drops the request, failureData re-opens the
+    // "never enqueued" state so the persist re-arms and re-sends.
     const call = liveUpdateCalls()[0];
     expect(call[2]).toEqual({
       successData: [
         expect.objectContaining({
           key: ONYXKEYS.ONGOING_SESSION_SYNC,
           value: {syncedAt: editedAt},
+        }),
+      ],
+      failureData: [
+        expect.objectContaining({
+          key: ONYXKEYS.ONGOING_SESSION_SYNC,
+          value: {enqueuedAt: null, flushDropCount: 1},
         }),
       ],
     });

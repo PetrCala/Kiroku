@@ -114,6 +114,13 @@ const ONYXKEYS = {
    */
   ONGOING_SESSION_SYNC: 'ongoingSessionSync',
 
+  /**
+   * Finalized session writes the request queue permanently dropped (a
+   * deterministic server rejection). Parked here so the data survives; each
+   * app run re-enqueues them once and a successful delivery clears the entry.
+   */
+  UNSYNCED_SESSION_WRITES: 'unsyncedSessionWrites',
+
   /** Edit session data */
   EDIT_SESSION_DATA: 'editSessionData',
 
@@ -334,6 +341,7 @@ type OnyxValuesMapping = {
   [ONYXKEYS.NVP_LAST_VIEWED_CALENDAR_DATE]: Record<string, DateString>;
   [ONYXKEYS.ONGOING_SESSION_DATA]: OnyxTypes.DrinkingSession;
   [ONYXKEYS.ONGOING_SESSION_SYNC]: OnyxTypes.OngoingSessionSync;
+  [ONYXKEYS.UNSYNCED_SESSION_WRITES]: OnyxTypes.UnsyncedSessionWriteList;
   [ONYXKEYS.EDIT_SESSION_DATA]: OnyxTypes.DrinkingSession;
   [ONYXKEYS.IS_CREATING_NEW_SESSION]: boolean;
   [ONYXKEYS.SESSIONS_CALENDAR_MONTHS_LOADED]: number;

@@ -6,8 +6,10 @@ import type {
   DrinksToUnits,
   DrinksTimestamp,
   OngoingSessionSync,
+  UnsyncedSessionWriteList,
   UserDataList,
 } from '@src/types/onyx';
+import Log from '@libs/Log';
 import * as Localize from '@libs/Localize';
 import * as DSUtils from '@libs/DrinkingSessionUtils';
 import type {UserID} from '@src/types/onyx/OnyxCommon';
@@ -64,6 +66,68 @@ Onyx.connect({
     maybeResumeLiveSessionPersist();
   },
 });
+
+// Parked finalize writes (see `UNSYNCED_SESSION_WRITES`): kept in a module
+// cache so the one-shot boot re-send below can read them without a React
+// context, same pattern as the sync marker above.
+let unsyncedSessionWrites: UnsyncedSessionWriteList | undefined;
+let hasProcessedInitialUnsyncedWrites = false;
+// eslint-disable-next-line rulesdir/no-onyx-connect -- module-scope action-layer wiring with no React context to hang a useOnyx on, same as the sync-marker connection above
+Onyx.connect({
+  key: ONYXKEYS.UNSYNCED_SESSION_WRITES,
+  callback: value => {
+    unsyncedSessionWrites = value ?? undefined;
+    // Re-enqueue parked writes exactly once per app run, on first hydration.
+    // Entries parked later in THIS run are deliberately left alone until the
+    // next run: the server just deterministically rejected them, so an
+    // immediate replay would only fail again.
+    if (!hasProcessedInitialUnsyncedWrites) {
+      hasProcessedInitialUnsyncedWrites = true;
+      resendUnsyncedSessionWrites();
+    }
+  },
+});
+
+/**
+ * Re-enqueue every parked session write (a finalize the request queue
+ * permanently dropped in an earlier run; see `saveDrinkingSessionData`). The
+ * optimistic data resurfaces the session in the cached snapshot, and only a
+ * successful delivery clears the parked entry, so the payload survives any
+ * number of further failed runs.
+ */
+function resendUnsyncedSessionWrites(): void {
+  const entries = Object.values(unsyncedSessionWrites ?? {});
+  if (entries.length === 0) {
+    return;
+  }
+  Log.hmmm('[DrinkingSession] Re-enqueueing parked session writes', {
+    count: entries.length,
+  });
+  entries.forEach(entry => {
+    API.write(
+      WRITE_COMMANDS.UPDATE_SESSION,
+      {
+        sessionId: entry.sessionId,
+        session: entry.session,
+        sessionIsLive: entry.sessionIsLive,
+      },
+      {
+        optimisticData: cachedSessionReplace(
+          entry.userID,
+          entry.sessionId,
+          entry.session,
+        ),
+        successData: [
+          {
+            onyxMethod: Onyx.METHOD.MERGE,
+            key: ONYXKEYS.UNSYNCED_SESSION_WRITES,
+            value: {[entry.sessionId]: null},
+          },
+        ],
+      },
+    );
+  });
+}
 
 // Cached copy of the user-data list so the session-write paths can read the
 // current `earliest_session_at` without an extra Firebase round trip on every
@@ -213,6 +277,10 @@ async function updateLocalData(
 // and then write the full session themselves, so a debounced live write can never
 // land after them.
 const LIVE_SESSION_PERSIST_DEBOUNCE_MS = 500;
+// How many consecutive permanent drops of an enqueued live flush (deterministic
+// server rejections after retries) the automatic re-arm tolerates before it
+// stops re-enqueueing the same payload. See `maybeResumeLiveSessionPersist`.
+const MAX_LIVE_FLUSH_DROPS = 3;
 let liveSessionPersistTimer: ReturnType<typeof setTimeout> | null = null;
 let liveSessionPersistInteraction: {cancel: () => void} | null = null;
 
@@ -261,6 +329,9 @@ function markLiveSessionEdited(sessionId: DrinkingSessionId): void {
     sessionId,
     editedAt: Math.max(Date.now(), (previous?.editedAt ?? 0) + 1),
   };
+  // A new edit is a new payload: it gets a fresh drop budget (see
+  // `maybeResumeLiveSessionPersist`).
+  delete next.flushDropCount;
   ongoingSessionSync = next;
   Onyx.set(ONYXKEYS.ONGOING_SESSION_SYNC, next);
 }
@@ -310,6 +381,21 @@ function maybeResumeLiveSessionPersist(): void {
   if (sync.editedAt <= Math.max(sync.enqueuedAt ?? 0, sync.syncedAt ?? 0)) {
     return;
   }
+  // The request queue permanently dropped this payload several times in a row
+  // (deterministic server rejections; transient failures never drop). Stop
+  // auto-re-enqueueing it: the buffer stays guarded locally (`syncedAt` never
+  // advanced), and the next explicit edit or the finalize sends a fresh
+  // full-session payload anyway.
+  if ((sync.flushDropCount ?? 0) >= MAX_LIVE_FLUSH_DROPS) {
+    Log.hmmm(
+      '[DrinkingSession] Live flush dropped too many times; not re-arming',
+      {
+        sessionId: session.id,
+        flushDropCount: sync.flushDropCount,
+      },
+    );
+    return;
+  }
   if (hasPendingLiveSessionPersist()) {
     return;
   }
@@ -355,6 +441,23 @@ function flushLiveSessionPersist(): void {
               onyxMethod: Onyx.METHOD.MERGE,
               key: ONYXKEYS.ONGOING_SESSION_SYNC,
               value: {syncedAt: coversEditedAt},
+            },
+          ],
+          // Applied only if the request queue permanently drops this request
+          // (a deterministic server rejection after retries; transient
+          // failures are never dropped). Clearing `enqueuedAt` re-opens the
+          // "never reached the queue" state, so the next hydration or edit
+          // re-arms the persist and the following full-session flush re-sends
+          // everything; `flushDropCount` caps that loop (see
+          // `maybeResumeLiveSessionPersist`).
+          failureData: [
+            {
+              onyxMethod: Onyx.METHOD.MERGE,
+              key: ONYXKEYS.ONGOING_SESSION_SYNC,
+              value: {
+                enqueuedAt: null,
+                flushDropCount: (sync?.flushDropCount ?? 0) + 1,
+              },
             },
           ],
         },
@@ -583,6 +686,26 @@ async function saveDrinkingSessionData(
         sessionKey,
         sessionToPersist,
       ),
+      // Applied only if the request queue permanently drops this request (a
+      // deterministic server rejection after retries; transient failures are
+      // never dropped). Nothing later re-sends a finalize, so park the full
+      // payload; the next app run re-enqueues it once
+      // (`resendUnsyncedSessionWrites`) and a successful delivery clears it.
+      failureData: [
+        {
+          onyxMethod: Onyx.METHOD.MERGE,
+          key: ONYXKEYS.UNSYNCED_SESSION_WRITES,
+          value: {
+            [sessionKey]: {
+              sessionId: sessionKey,
+              session: sessionToPersist,
+              userID,
+              sessionIsLive: !!sessionIsLive,
+              enqueuedAt: Date.now(),
+            },
+          },
+        },
+      ],
     },
   );
 
@@ -944,6 +1067,7 @@ export {
   navigateToEditSessionScreen,
   navigateToOngoingSessionScreen,
   removeDrinkingSessionData,
+  resendUnsyncedSessionWrites,
   saveDrinkingSessionData,
   setIsCreatingNewSession,
   startLiveDrinkingSession,
