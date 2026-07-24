@@ -31,6 +31,32 @@ let isQueuePaused = false;
 const sequentialQueueRequestThrottle = new RequestThrottle('SequentialQueue');
 
 /**
+ * Whether a request that exhausted its retry budget may be dropped from the
+ * persisted queue. Only a deterministic client error qualifies: an actual
+ * server response with a non-retryable 4xx status, meaning the server
+ * actively rejected this exact payload and replaying it can never succeed.
+ *
+ * Everything else is transient by nature: network-layer failures carry no
+ * response at all (fetch failure, timeout, a reauth attempt while offline),
+ * and 5xx / 429 mean the server itself is unhealthy or throttling. Dropping a
+ * persisted write on those destroys user data that would have delivered once
+ * conditions recovered (an offline-logged drinking session, for example), so
+ * such requests stay queued for the next flush trigger instead.
+ */
+function isDroppableFailure(error: RequestError): boolean {
+  const status = Number(error.status);
+  if (!Number.isFinite(status) || status <= 0) {
+    // No (parseable) server response: a network-layer failure.
+    return false;
+  }
+  return (
+    status >= 400 &&
+    status < 500 &&
+    status !== CONST.HTTP_STATUS.TOO_MANY_REQUESTS
+  );
+}
+
+/**
  * Puts the queue into a paused state so that no requests will be processed
  */
 function pause() {
@@ -130,6 +156,26 @@ function process(): Promise<void> {
         .sleep(error, requestToProcess.command)
         .then(process)
         .catch(() => {
+          // The retry budget is exhausted. Drop the request only when the
+          // server deterministically rejected it (see `isDroppableFailure`);
+          // a transient failure (network-layer, 5xx, 429) keeps the request
+          // persisted and stalls the queue until the next flush trigger
+          // (reconnection, app foreground, a new write) retries it with a
+          // fresh budget. Dropping on transient failures silently destroyed
+          // offline-queued session writes during flaky-network windows.
+          if (!isDroppableFailure(error)) {
+            Log.info(
+              '[SequentialQueue] Request failed too many times; keeping it queued for the next flush trigger.',
+              false,
+              {error, request: requestToProcess},
+            );
+            sequentialQueueRequestThrottle.clear();
+            // Unblock `waitForIdle()` waiters the same way the offline
+            // early-return does: the queue is intentionally stalled, and
+            // holding reads hostage to an unreachable server helps nobody.
+            resolveIsReadyPromise?.();
+            return;
+          }
           Onyx.update(requestToProcess.failureData ?? []);
           Log.info(
             '[SequentialQueue] Removing persisted request because it failed too many times.',
@@ -233,8 +279,16 @@ function isPaused(): boolean {
   return isQueuePaused;
 }
 
-// Flush the queue when the connection resumes
-NetworkStore.onReconnection(flush);
+// Flush the queue when the connection resumes. Each online window also gets a
+// fresh retry budget: the throttle counter only resets on success or drop, so
+// without this, brief dead windows (VPN black-hole, airplane-mode toggles)
+// would each burn a few of the lifetime retries and an offline-queued write
+// could exhaust its budget cumulatively across flaps. `resetBudget` (never
+// `clear`) so an armed retry timer keeps its resolve.
+NetworkStore.onReconnection(() => {
+  sequentialQueueRequestThrottle.resetBudget();
+  flush();
+});
 
 function handleConflictActions(
   conflictAction: ConflictData,

@@ -29,6 +29,17 @@ class RequestThrottle {
     Log.info(`[RequestThrottle - ${this.name}] cleared`);
   }
 
+  /**
+   * Zero the retry budget without touching an armed retry timer. Used on
+   * reconnection so each online window gets a fresh budget; `clear()` is not
+   * safe there, because clearing a pending `sleep` timeout would leave its
+   * promise unsettled and wedge the sequential queue's processing chain.
+   */
+  resetBudget() {
+    this.requestWaitTime = 0;
+    this.requestRetryCount = 0;
+  }
+
   getRequestWaitTime() {
     if (this.requestWaitTime) {
       this.requestWaitTime = Math.min(

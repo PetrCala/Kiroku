@@ -32,6 +32,16 @@ type OngoingSessionSync = {
    * cannot reflect the buffer, so the buffer must not be rolled back to it.
    */
   syncedAt?: Timestamp;
+
+  /**
+   * How many enqueued live flushes in a row the request queue permanently
+   * dropped (a deterministic server rejection after retries; transient
+   * failures are never dropped). Caps the automatic re-arm in
+   * `maybeResumeLiveSessionPersist` so a payload the server always rejects
+   * cannot re-enqueue itself forever. Reset by the next local edit, since a
+   * new payload deserves a fresh budget.
+   */
+  flushDropCount?: number;
 };
 
 export default OngoingSessionSync;

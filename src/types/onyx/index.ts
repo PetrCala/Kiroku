@@ -36,6 +36,8 @@ import type NicknameToId from './NicknameToId';
 import type PendingOAuthCredential from './PendingOAuthCredential';
 import type {Nickname, NicknameKey, NicknameToIdList} from './NicknameToId';
 import type OngoingSessionSync from './OngoingSessionSync';
+import type UnsyncedSessionWrite from './UnsyncedSessionWrite';
+import type {UnsyncedSessionWriteList} from './UnsyncedSessionWrite';
 import type {
   OnyxUpdateEvent,
   OnyxUpdatesFromServer,
@@ -128,6 +130,8 @@ export type {
   PendingOAuthCredential,
   OnboardingData,
   OngoingSessionSync,
+  UnsyncedSessionWrite,
+  UnsyncedSessionWriteList,
   OnyxUpdateEvent,
   OnyxUpdatesFromServer,
   Preferences,
