@@ -100,10 +100,12 @@ const theme = {
 // Captions stay consistent with Kiroku's harm-reduction framing — never
 // anything that celebrates drinking *volume*.
 //
-// This is the current 4-screen set (the screens we already capture). The
-// captured `05_Settings` is intentionally left unmapped. Growing to the full
-// marketing set (Statistics, alcohol-free streak) needs new captures and lands
-// in a follow-up PR alongside a CI capture run.
+// Six store shots, matching what the UI test captures. `07_Settings` is
+// captured but intentionally left unmapped: it sells nothing.
+//
+// Shot order matters on the store page, so it runs from what the app is
+// (calendar, logging, detail) to what it gives back (statistics, alcohol-free
+// days) and only then to the social feature.
 const shots = [
   {
     snapshot: '01_Home',
@@ -130,8 +132,24 @@ const shots = [
     },
   },
   {
-    snapshot: '04_Profile',
-    raw: '04-profile.png',
+    snapshot: '04_Statistics',
+    raw: '04-statistics.png',
+    caption: {
+      'en-US': 'See the patterns behind the numbers',
+      cs: 'Objevte vzorce za čísly',
+    },
+  },
+  {
+    snapshot: '05_AlcoholFree',
+    raw: '05-alcohol-free.png',
+    caption: {
+      'en-US': 'Watch your alcohol-free days add up',
+      cs: 'Sledujte, jak přibývají dny bez alkoholu',
+    },
+  },
+  {
+    snapshot: '06_Friends',
+    raw: '06-friends.png',
     caption: {
       'en-US': 'Stay on track with friends',
       cs: 'Zůstaňte na správné cestě s přáteli',

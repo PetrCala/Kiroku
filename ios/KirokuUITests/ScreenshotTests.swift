@@ -28,17 +28,20 @@ final class ScreenshotTests: XCTestCase {
         openStartSession()
         snapshot("02_LiveSession")
 
-        // Day overview is reached by tapping a past day in the calendar/history.
-        // The exact navigation depends on which screen surfaces the calendar —
-        // adjust if the social/statistics tab doesn't surface it directly.
         openCalendarDay()
         snapshot("03_DayOverview")
 
-        openProfile()
-        snapshot("04_Profile")
+        openStatisticsTab(matching: ["Overview", "Přehled"])
+        snapshot("04_Statistics")
+
+        openStatisticsTab(matching: ["Trends", "Trendy"])
+        snapshot("05_AlcoholFree")
+
+        openFriends()
+        snapshot("06_Friends")
 
         openSettings()
-        snapshot("05_Settings")
+        snapshot("07_Settings")
     }
 
     // MARK: - Login
@@ -122,18 +125,49 @@ final class ScreenshotTests: XCTestCase {
         _ = live.waitForExistence(timeout: 10)
     }
 
+    /// The calendar lives on Home, not on the Statistics tab. Tapping the wrong
+    /// tab used to leave whatever screen was already showing on-screen, and the
+    /// snapshot silently captured that instead of the Day Overview, which is how
+    /// three of the six shipped screenshots ended up being Statistics screens.
+    /// Every step here asserts, so a mis-tap fails the run instead of publishing
+    /// the wrong screen.
     private func openCalendarDay() {
-        tapTabBarButton(matching: ["Statistics", "Statistiky", "Calendar", "Kalendář"])
-        // Tap the first day cell that has a recorded session.
-        app.buttons.matching(identifier: "DayMarking").firstMatch.tap()
-        _ = app.otherElements["Day Overview Screen"].waitForExistence(timeout: 5)
+        returnToHome()
+        let day = app.buttons.matching(identifier: "DayMarking").firstMatch
+        XCTAssertTrue(
+            day.waitForExistence(timeout: 15),
+            "No DayMarking cell on Home. The demo account needs a logged session in the current month."
+        )
+        day.tap()
+        XCTAssertTrue(
+            app.otherElements["Day Overview Screen"].waitForExistence(timeout: 10),
+            "Day Overview Screen never appeared after tapping a calendar day"
+        )
     }
 
-    private func openProfile() {
-        // Profile is typically reached from Home or Settings → Profile.
-        openSettings()
-        tapMenuRow(matching: ["Profile", "Profil"])
-        _ = app.otherElements["Profile Screen"].waitForExistence(timeout: 5)
+    /// Statistics is a bottom tab whose body is a set of inner tabs
+    /// (Overview / Trends / Patterns / Breakdown). `labels` names the inner one.
+    private func openStatisticsTab(matching labels: [String]) {
+        tapTabBarButton(matching: ["Statistics", "Statistiky"])
+        XCTAssertTrue(
+            app.otherElements["Statistics Screen"].waitForExistence(timeout: 15),
+            "Statistics Screen never appeared"
+        )
+        let predicate = NSPredicate(format: "label IN %@", labels)
+        let tab = app.buttons.matching(predicate).firstMatch
+        XCTAssertTrue(
+            tab.waitForExistence(timeout: 10),
+            "Statistics inner tab \(labels) not found"
+        )
+        tab.tap()
+    }
+
+    private func openFriends() {
+        tapTabBarButton(matching: ["Friends", "Přátelé"])
+        XCTAssertTrue(
+            app.otherElements["SocialScreen"].waitForExistence(timeout: 15),
+            "SocialScreen never appeared"
+        )
     }
 
     private func openSettings() {
@@ -144,9 +178,11 @@ final class ScreenshotTests: XCTestCase {
     private func tapTabBarButton(matching labels: [String]) {
         let predicate = NSPredicate(format: "label IN %@", labels)
         let button = app.buttons.matching(predicate).firstMatch
-        if button.waitForExistence(timeout: 5) {
-            button.tap()
-        }
+        XCTAssertTrue(
+            button.waitForExistence(timeout: 10),
+            "Bottom tab \(labels) not found"
+        )
+        button.tap()
     }
 
     private func tapMenuRow(matching labels: [String]) {
