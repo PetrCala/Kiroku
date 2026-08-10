@@ -44,43 +44,43 @@ zde`, `Přidejte si je zde`, `Zkuste hledat zde`.
 
 ## Glossary (canonical terms)
 
-| English                     | Czech (canonical)                                 | Do NOT use     |
-| --------------------------- | ------------------------------------------------- | -------------- |
-| session                     | **relace**                                        | sezení         |
-| drinking session            | **alkoholová relace**                             | relace pití    |
-| live (session)              | **živá** (relace)                                 |                |
-| edit / past (session)       | **zpětná** (relace)                               |                |
-| unit / units                | **jednotka / jednotky / jednotek**                |                |
-| drink / drinks (beverage)   | **drink / drinky** (gen sg drinku, gen pl drinků) | nápoj / nápoje |
-| beer                        | **pivo**                                          |                |
-| small beer                  | **malé pivo**                                     |                |
-| wine                        | **víno**                                          |                |
-| weak shot                   | **malý panák**                                    |                |
-| strong shot                 | **velký panák**                                   |                |
-| cocktail                    | **koktejl**                                       |                |
-| other (drink type)          | **ostatní**                                       |                |
-| statistics / stats          | **statistiky**                                    |                |
-| calendar                    | **kalendář**                                      |                |
-| profile                     | **profil**                                        |                |
-| friend / friends            | **přítel / přátelé**                              |                |
-| friend request              | **žádost o přátelství** (short: "žádost")         |                |
-| supporter (role)            | **podporovatel**                                  |                |
-| badge / badges              | **odznaky**                                       |                |
-| sober                       | **bez pití**                                      |                |
-| alcohol-free day(s)         | **dny bez alkoholu**                              |                |
-| quiet day(s)                | **klidné dny**                                    |                |
-| blackout                    | **Blackout** (loanword)                           | výpadek paměti |
-| streak (alcohol-free)       | **série** (dnů bez alkoholu)                      |                |
-| session intensity: light    | **mírná** (relace)                                | lehká          |
-| session intensity: moderate | **střední** (relace)                              |                |
-| session intensity: heavy    | **náročná** (relace)                              | silná, těžká   |
-| private (status / profile)  | **Soukromé / Soukromý** (agree w/ noun gender)    | Skryté         |
-| report (verb)               | **nahlásit**                                      |                |
-| report (noun)               | **hlášení**                                       |                |
-| inappropriate               | **nevhodné / nevhodný / nevhodná**                |                |
-| harassment                  | **obtěžování**                                    |                |
-| bullying                    | **šikana**                                        |                |
-| moderation team             | **moderátorský tým**                              |                |
+| English                     | Czech (canonical)                                 | Do NOT use          |
+| --------------------------- | ------------------------------------------------- | ------------------- |
+| session                     | **relace**                                        | sezení              |
+| drinking session            | **alkoholová relace**                             | relace pití         |
+| live (session)              | **živá** (relace)                                 |                     |
+| edit / past (session)       | **zpětná** (relace)                               |                     |
+| unit / units                | **jednotka / jednotky / jednotek**                |                     |
+| drink / drinks (beverage)   | **drink / drinky** (gen sg drinku, gen pl drinků) | nápoj / nápoje      |
+| beer                        | **pivo**                                          |                     |
+| small beer                  | **malé pivo**                                     |                     |
+| wine                        | **víno**                                          |                     |
+| weak shot                   | **malý panák**                                    |                     |
+| strong shot                 | **velký panák**                                   |                     |
+| cocktail                    | **koktejl**                                       |                     |
+| other (drink type)          | **ostatní**                                       |                     |
+| statistics / stats          | **statistiky**                                    |                     |
+| calendar                    | **kalendář**                                      |                     |
+| profile                     | **profil**                                        |                     |
+| friend / friends            | **přítel / přátelé**                              |                     |
+| friend request              | **žádost o přátelství** (short: "žádost")         |                     |
+| supporter (role)            | **podporovatel**                                  |                     |
+| badge / badges              | **odznaky**                                       |                     |
+| last session (friend row)   | **poslední relace**                               | bez pití, střízlivý |
+| alcohol-free day(s)         | **dny bez alkoholu**                              |                     |
+| quiet day(s)                | **klidné dny**                                    |                     |
+| blackout                    | **Blackout** (loanword)                           | výpadek paměti      |
+| streak (alcohol-free)       | **série** (dnů bez alkoholu)                      |                     |
+| session intensity: light    | **mírná** (relace)                                | lehká               |
+| session intensity: moderate | **střední** (relace)                              |                     |
+| session intensity: heavy    | **náročná** (relace)                              | silná, těžká        |
+| private (status / profile)  | **Soukromé / Soukromý** (agree w/ noun gender)    | Skryté              |
+| report (verb)               | **nahlásit**                                      |                     |
+| report (noun)               | **hlášení**                                       |                     |
+| inappropriate               | **nevhodné / nevhodný / nevhodná**                |                     |
+| harassment                  | **obtěžování**                                    |                     |
+| bullying                    | **šikana**                                        |                     |
+| moderation team             | **moderátorský tým**                              |                     |
 
 ## Do-not-translate (keep verbatim)
 

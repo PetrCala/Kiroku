@@ -67,6 +67,32 @@ const theme = {
   cornerRadiusRatio: 0.055, // screenshot corner radius (fraction of its width)
 };
 
+// ─── Demo-account data contract (READ BEFORE ANY CAPTURE RUN) ───────────────
+// Captures come from the live `APPLE_DEMO_*` account, so that account's data IS
+// the marketing copy. In 2026-07 the shipped set was captured from an account
+// whose data actively worked against the app: a friend list of seven people each
+// labelled "1h sober" / "2Y sober", a month totalling 84.5 units, single days of
+// 33.2 and 23.5 units, and a session itemising 33 drinks. Apple rejected the
+// version under Guideline 1.4 (Physical Harm) saying the app is "marketed as a
+// blood alcohol content calculator"; a per-person sobriety timer published as a
+// screenshot is the most plausible thing a reviewer read that way.
+//
+// Before dispatching a capture, shape the demo account so every shot shows a
+// person who is MODERATING. Concrete targets (units-to-colors defaults are
+// yellow=5, orange=10, from src/libs/actions/User.ts):
+//
+//   • Alcohol-free days must dominate: >= 20 green days in the captured month.
+//   • 8-10 drinking sessions in the month, ~30 units TOTAL (not 85).
+//   • NO red day tiles (a red tile means >10 units in one day) and NO black
+//     tiles (black = the self-reported blackout flag). Yellow, with at most one
+//     orange, is the look we want.
+//   • The biggest single session stays <= 5 units, i.e. 2-3 drinks. Never
+//     capture a session summary itemising double-digit drink counts.
+//   • Friend rows must read as elapsed time since a logged session ("3h" /
+//     "last session"), never as a claim about anyone's bodily state. If a
+//     capture shows the word "sober" next to a person, the build predates the
+//     fix and MUST NOT be uploaded.
+//
 // ─── Screenshots, in store order ────────────────────────────────────────────
 // `snapshot` is the capture name the UI test emits (ios/KirokuUITests/
 // ScreenshotTests.swift → `<snapshot>.png`); the ingest mapper copies it to

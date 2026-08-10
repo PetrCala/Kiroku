@@ -1526,7 +1526,7 @@ export default {
   userOverview: {
     inSession: 'V relaci',
     from: 'Od',
-    sober: 'Bez pití',
+    lastSession: 'Poslední relace',
     sessionStarted: 'Relace zahájena',
     noSessionsYet: 'Zatím žádné relace',
     private: 'Soukromé',

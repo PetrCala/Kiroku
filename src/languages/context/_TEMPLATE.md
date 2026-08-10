@@ -65,7 +65,7 @@ for terms that were historically translated inconsistently.
 | profile                               |                        |            |
 | friend / friends                      |                        |            |
 | supporter                             |                        |            |
-| sober / alcohol-free day              |                        |            |
+| alcohol-free day                      |                        |            |
 | blackout                              |                        |            |
 
 ## Do-not-translate (keep verbatim)

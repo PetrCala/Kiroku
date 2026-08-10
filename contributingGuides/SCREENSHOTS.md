@@ -13,7 +13,7 @@ committed.
 
 ---
 
-## Prerequisite: demo account must have a session this month
+## Prerequisite: the demo account's data IS the marketing copy
 
 Both the CI and local flows log into a real Kiroku account using the
 `APPLE_DEMO_EMAIL` / `APPLE_DEMO_PASSWORD` credentials (the same demo account
@@ -22,6 +22,21 @@ day cell with a recorded session — so **before triggering a capture, log in to
 the demo account and record at least one drinking session in the current
 calendar month**. Without an in-month session, the test fails with a missing
 `DayMarking` accessibility identifier.
+
+That is the mechanical minimum. The editorial requirement is stricter, and the
+full contract (with target numbers) lives next to the shot list in
+[`scripts/store-screenshots.config.mjs`](../scripts/store-screenshots.config.mjs).
+Read it before dispatching a run. In short: the account must look like someone
+**moderating**, because whatever it contains ends up on the App Store.
+
+The 2026-07 set is the cautionary tale. It was captured from an account showing
+a friend list of seven people each labelled "1h sober" / "2Y sober", a month
+totalling 84.5 units with single days of 33.2 and 23.5, and a session summary
+itemising 33 drinks. App Review rejected that version under Guideline 1.4
+(Physical Harm) for being "marketed as a blood alcohol content calculator", and
+a published screenshot of per-person sobriety timers is the most plausible thing
+a reviewer read that way. Screenshots are not decoration here; they are the
+evidence a reviewer judges the app on.
 
 ---
 

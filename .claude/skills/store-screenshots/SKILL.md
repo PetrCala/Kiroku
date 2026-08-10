@@ -29,12 +29,30 @@ back; only the background/caption layer is synthesized.
 
 ## Runbook
 
-### 0. Prerequisite — the demo account needs an in-month session
+### 0. Prerequisite: shape the demo account first
 
 Capture logs into the `APPLE_DEMO_*` account, and the Day Overview shot taps the
 first calendar day that has a recorded session. **Before capturing, sign in to the
 demo account and log at least one drinking session in the current calendar
 month**, or the run fails ~40 min in on a missing `DayMarking`.
+
+That is only the mechanical minimum. The demo account's data becomes the App
+Store listing, so it also has to pass an editorial bar: it must look like someone
+**moderating**. The binding contract, with target numbers, is the "Demo-account
+data contract" comment block at the top of the `shots` section in
+[`scripts/store-screenshots.config.mjs`](../../../scripts/store-screenshots.config.mjs).
+Read it before dispatching a run, and re-read it if you are tempted to reuse an
+old capture.
+
+Two hard stops, both learned from the 2026-07 Guideline 1.4 rejection:
+
+- **Never publish a shot showing the word "sober" next to a person.** The friend
+  row now reads as elapsed time since a logged session ("3h" / "last session").
+  A capture showing "1h sober" came from a build predating that fix.
+- **Never publish red or black calendar tiles, or a session itemising
+  double-digit drink counts.** Red means >10 units in a day; black is the
+  self-reported blackout flag. Both read as celebrating volume (Guideline 1.4.3)
+  on an app already flagged under 1.4.
 
 ### 1. Capture (slow, uses CI minutes — only when the app UI changed)
 

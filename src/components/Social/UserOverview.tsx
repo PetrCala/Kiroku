@@ -59,7 +59,7 @@ function UserOverview({
 
   function getSessionStatus(): string {
     if (sessionEndTimeVerbose && sessionEndTimeVerbose.trim().length > 0) {
-      return `${sessionEndTimeVerbose}\n${translate('userOverview.sober').toLowerCase()}`;
+      return `${sessionEndTimeVerbose}\n${translate('userOverview.lastSession').toLowerCase()}`;
     }
     if (inSession) {
       return `${translate('userOverview.sessionStarted')}:\n${sessionStartTime}`;
