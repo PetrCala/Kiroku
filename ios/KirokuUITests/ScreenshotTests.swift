@@ -21,6 +21,11 @@ final class ScreenshotTests: XCTestCase {
     func testCaptureAppStoreScreenshots() throws {
         logIn()
         switchLocaleIfNeeded()
+
+        if ProcessInfo.processInfo.environment["KIROKU_DUMP_A11Y"] == "1" {
+            dumpAccessibilityTrees()
+        }
+
         returnToHome()
 
         snapshot("01_Home")
@@ -101,6 +106,42 @@ final class ScreenshotTests: XCTestCase {
         switch code {
         case "cs_cz": return ["Čeština", "Czech"]
         default:      return ["English", "Angličtina"]
+        }
+    }
+
+    // MARK: - Selector discovery
+
+    /// Walks every bottom tab and logs the full element tree for each.
+    ///
+    /// Selector work against this app is otherwise a 30 to 45 minute CI round
+    /// trip per guess, because there is no way to see what a screen actually
+    /// exposes without building and launching it. One run of this prints ground
+    /// truth for every screen at once, so selectors can be written from real
+    /// identifiers instead of inference.
+    ///
+    /// Deliberately never asserts: a screen that fails to open logs the miss and
+    /// the walk continues, so one bad tab cannot abort the run before the other
+    /// trees are collected. Opt in with KIROKU_DUMP_A11Y=1 so normal capture runs
+    /// stay quiet.
+    private func dumpAccessibilityTrees() {
+        let tabs = [
+            ["Home", "Domů"],
+            ["Friends", "Přátelé"],
+            ["Statistics", "Statistiky"],
+            ["Settings", "Nastavení"],
+        ]
+        for labels in tabs {
+            let predicate = NSPredicate(format: "label IN %@", labels)
+            let button = app.buttons.matching(predicate).firstMatch
+            guard button.waitForExistence(timeout: 8) else {
+                NSLog("[a11y-dump] TAB NOT FOUND: \(labels)")
+                continue
+            }
+            button.tap()
+            Thread.sleep(forTimeInterval: 3)
+            NSLog("[a11y-dump] ===== BEGIN \(labels) =====")
+            NSLog("%@", app.debugDescription)
+            NSLog("[a11y-dump] ===== END \(labels) =====")
         }
     }
 
