@@ -89,6 +89,20 @@ jobs:
           # isn't ready yet on a fresh runner. Retry instead of failing the run.
           command: xcodebuild -downloadPlatform iOS
 
+      - name: Install watchOS platform SDK
+        uses: nick-fields/retry@ad984534de44a9489a53aefd81eb77f87c70dc60 # v4.0.0
+        with:
+          timeout_minutes: 20
+          max_attempts: 3
+          retry_wait_seconds: 30
+          # The Kiroku target embeds the Apple Watch app, so building the scheme
+          # compiles the watch target too. Without the matching watchOS platform
+          # the Watch App asset catalog fails with "No simulator runtime version
+          # from [...] available to use with watchsimulator SDK version ...".
+          # testBuild.yml has carried this step since the watch was re-embedded;
+          # this workflow was missed, which is why capture broke silently.
+          command: xcodebuild -downloadPlatform watchOS
+
       # Trim the Snapfile device matrix when the dispatcher asked for a subset.
       # `Snapfile` resolves devices(...) eagerly so we rewrite the file in
       # place — this is throwaway, not committed back.
