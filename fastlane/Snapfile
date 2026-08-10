@@ -44,7 +44,12 @@ clear_previous_screenshots(true)
 # snapshot retries `number_of_retries + 1` times per device/language combo by
 # default. Without the explicit 0, a single misconfigured Xcode SDK can loop
 # for 20+ minutes before the workflow times out.
-stop_after_first_error(true)
+#
+# Set KIROKU_SNAPSHOT_FAIL_FAST=0 to keep going after a failure. Fail-fast is
+# right for a real capture, but wrong while fixing selectors: the first broken
+# one hides every other, so three bad selectors cost three 40-minute round trips
+# instead of one. The screenshots workflow exposes this as the `fail_slow` input.
+stop_after_first_error(ENV["KIROKU_SNAPSHOT_FAIL_FAST"] != "0")
 number_of_retries(0)
 
 # Reinstall the app between runs so each capture starts from a clean state.

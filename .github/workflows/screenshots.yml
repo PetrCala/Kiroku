@@ -26,6 +26,11 @@ on:
         required: false
         default: false
         type: boolean
+      fail_slow:
+        description: 'Keep capturing after a failure instead of stopping at the first one. Surfaces every broken selector in a single run. Leave off for real captures.'
+        required: false
+        default: false
+        type: boolean
 
 permissions:
   contents: read
@@ -125,6 +130,7 @@ jobs:
           KIROKU_DEMO_EMAIL: ${{ secrets.APPLE_DEMO_EMAIL }}
           KIROKU_DEMO_PASSWORD: ${{ secrets.APPLE_DEMO_PASSWORD }}
           KIROKU_DUMP_A11Y: ${{ github.event.inputs.dump_a11y == 'true' && '1' || '0' }}
+          KIROKU_SNAPSHOT_FAIL_FAST: ${{ github.event.inputs.fail_slow == 'true' && '0' || '1' }}
 
       - name: Upload iOS screenshots
         if: ${{ always() }}
