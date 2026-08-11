@@ -39,11 +39,13 @@ const flag = name => {
 };
 
 const fromArg = flag('from');
-const fromDir = fromArg
-  ? isAbsolute(fromArg)
-    ? fromArg
-    : join(ROOT, fromArg)
-  : join(ROOT, 'fastlane', 'screenshots', 'ios');
+function resolveFromDir(value) {
+  if (typeof value !== 'string') {
+    return join(ROOT, 'fastlane', 'screenshots', 'ios');
+  }
+  return isAbsolute(value) ? value : join(ROOT, value);
+}
+const fromDir = resolveFromDir(fromArg);
 
 // A capture that failed mid-render still writes a file, so size is part of the
 // check. A 1320x2868 screenshot of a real screen is hundreds of KB; anything
