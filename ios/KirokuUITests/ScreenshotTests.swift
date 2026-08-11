@@ -115,9 +115,25 @@ final class ScreenshotTests: XCTestCase {
     /// is neither), so querying a single collection silently misses elements
     /// that are plainly on screen.
     private func element(labeled labels: [String], timeout: TimeInterval = 10) -> XCUIElement? {
-        let predicate = NSPredicate(format: "label IN %@", labels)
-        let match = app.descendants(matching: .any).matching(predicate).firstMatch
-        return match.waitForExistence(timeout: timeout) ? match : nil
+        let exact = NSPredicate(format: "label IN %@", labels)
+        let match = app.descendants(matching: .any).matching(exact).firstMatch
+        if match.waitForExistence(timeout: timeout) {
+            return match
+        }
+
+        // When a React Native container is marked accessible, its children are
+        // merged into one element whose label is everything concatenated, so a
+        // menu row can surface as "Preferences, Gear" rather than "Preferences".
+        // Fall back to a substring match. A loose match cannot publish the wrong
+        // screen, because every capture step still verifies its destination
+        // screen appeared before the shutter.
+        let loose = NSCompoundPredicate(
+            orPredicateWithSubpredicates: labels.map {
+                NSPredicate(format: "label CONTAINS[c] %@", $0)
+            }
+        )
+        let fallback = app.descendants(matching: .any).matching(loose).firstMatch
+        return fallback.waitForExistence(timeout: 3) ? fallback : nil
     }
 
     private func screen(_ identifier: String, timeout: TimeInterval = 15) -> Bool {
