@@ -278,13 +278,31 @@ jobs:
         run: |
           set -euo pipefail
           mkdir -p watch-diagnostics
-          PHONE_TYPE=$(xcrun simctl list devicetypes | grep -o 'com\.apple\.CoreSimulator\.SimDeviceType\.iPhone-17-Pro-Max' | head -1)
-          WATCH_TYPE=$(xcrun simctl list devicetypes | grep -o 'com\.apple\.CoreSimulator\.SimDeviceType\.Apple-Watch[^)]*' | tail -1)
+          PHONE_TYPE=com.apple.CoreSimulator.SimDeviceType.iPhone-17-Pro-Max
+          # The flat devicetype list is not sorted by age (a naive tail -1
+          # lands on Apple Watch Series 2, which no installed runtime
+          # supports). Ask the newest available watchOS runtime what it
+          # supports and take its newest devicetype instead.
+          xcrun simctl list -j runtimes > watch-diagnostics/runtimes.json
+          WATCH_RUNTIME=$(node -e '
+            const {runtimes} = require("./watch-diagnostics/runtimes.json");
+            const rts = runtimes.filter(r => r.platform === "watchOS" && r.isAvailable);
+            rts.sort((a, b) => a.version.localeCompare(b.version, undefined, {numeric: true}));
+            if (!rts.length) process.exit(1);
+            console.log(rts.at(-1).identifier);
+          ')
+          WATCH_TYPE=$(node -e '
+            const {runtimes} = require("./watch-diagnostics/runtimes.json");
+            const rt = runtimes.find(r => r.identifier === process.argv[1]);
+            const dts = rt.supportedDeviceTypes;
+            if (!dts.length) process.exit(1);
+            console.log(dts.at(-1).identifier);
+          ' "$WATCH_RUNTIME")
           echo "phone devicetype: $PHONE_TYPE"
-          echo "watch devicetype: $WATCH_TYPE"
+          echo "watch devicetype: $WATCH_TYPE (runtime: $WATCH_RUNTIME)"
           test -n "$PHONE_TYPE" && test -n "$WATCH_TYPE"
           PHONE_UDID=$(xcrun simctl create watchcap-phone "$PHONE_TYPE")
-          WATCH_UDID=$(xcrun simctl create watchcap-watch "$WATCH_TYPE")
+          WATCH_UDID=$(xcrun simctl create watchcap-watch "$WATCH_TYPE" "$WATCH_RUNTIME")
           xcrun simctl pair "$WATCH_UDID" "$PHONE_UDID"
           xcrun simctl boot "$PHONE_UDID"
           xcrun simctl boot "$WATCH_UDID"
