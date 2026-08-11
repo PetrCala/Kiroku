@@ -211,9 +211,10 @@ jobs:
     name: Capture Apple Watch screenshot
     if: ${{ inputs.capture_watch }}
     runs-on: macos-26
-    # The ReleaseProduction build alone takes ~55 min on this runner; 90 min
-    # left the final steps racing the job timeout.
-    timeout-minutes: 120
+    # The ReleaseProduction build alone has taken 55 to 103 min depending on
+    # the runner drawn; anything tighter races the job timeout in the final
+    # capture steps, which is the worst place to die.
+    timeout-minutes: 240
     env:
       DEVELOPER_DIR: /Applications/Xcode_26.1.1.app/Contents/Developer
       DERIVED_DATA: ios/build/watch-capture
