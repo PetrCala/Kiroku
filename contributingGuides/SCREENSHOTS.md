@@ -17,11 +17,12 @@ committed.
 
 Both the CI and local flows log into a real Kiroku account using the
 `APPLE_DEMO_EMAIL` / `APPLE_DEMO_PASSWORD` credentials (the same demo account
-Apple uses for App Store Review). The Day Overview screenshot taps the first
-day cell with a recorded session — so **before triggering a capture, log in to
-the demo account and record at least one drinking session in the current
-calendar month**. Without an in-month session, the test fails with a missing
-`DayMarking` accessibility identifier.
+Apple uses for App Store Review). The Day Overview screenshot opens a calendar
+day cell (`calendar-day-<YYYY-MM-DD>`), so **before triggering a capture,
+confirm the demo account has at least one logged session in the current
+calendar month** and pass those dates in the `demo_session_dates` workflow
+input. Without them the test falls back to whatever day cell it can find,
+which may be an empty day.
 
 That is the mechanical minimum. The editorial requirement is stricter, and the
 full contract (with target numbers) lives next to the shot list in
@@ -44,15 +45,47 @@ evidence a reviewer judges the app on.
 
 1. Go to **Actions → "Capture App Store / Play Store screenshots" → Run
    workflow**.
-2. Pick a branch (usually `master`) and a `device_subset`:
-   - `all` — full matrix (4 devices x 2 locales, ~30-45 min)
-   - `phone-only` — 3 iPhones x 2 locales (~20-30 min)
-   - `ipad-only` — 1 iPad x 2 locales (~10-15 min, fastest for iterating)
-3. When the run finishes, download the `ios-screenshots-<sha>` artifact from
+2. Pick a branch (usually `master`) and the inputs:
+   - `device_subset`: `all`, `phone-only`, or `ipad-only`. The framing
+     pipeline derives every output size from the 6.9" iPhone master, and the
+     live App Store listing has no iPad set, so `phone-only` is normally the
+     right answer.
+   - `demo_session_dates`: comma-separated ISO dates the demo account has
+     sessions on, newest first (for example
+     `2026-08-10,2026-08-06,2026-08-03`). The Day Overview shot opens the
+     first one it finds on the calendar; an empty day would open a Day
+     Overview with nothing in it.
+   - `dump_a11y`: log the full accessibility tree for every screen. Turn this
+     on whenever a selector broke.
+   - `fail_slow`: keep going after a build or launch error.
+3. Budget about an hour. Roughly 12 minutes of setup, ~45 minutes to build the
+   scheme (the app, every pod, and the embedded watch target) before a single
+   screenshot is taken, then a few minutes per device/language pair.
+4. When the run finishes, download the `ios-screenshots-<sha>` artifact from
    the workflow summary page. PNGs are organized as
    `ios/<locale>/<device>/*.png`.
-4. If the run failed, the `ios-fastlane-logs-<sha>` artifact contains
-   `gym`/`snapshot` logs for triage.
+5. `ios-fastlane-logs-<sha>` is uploaded on every run, pass or fail, because
+   the accessibility dump and the `[capture-miss]` lines live in the snapshot
+   log and that is exactly when you want them.
+
+### Why a green UI test is not the signal
+
+The UI test never asserts. A step that cannot reach its screen records a
+`[capture-miss]` line and moves on, for two reasons:
+
+- A missed step must never publish the WRONG screen. The 2026-07 set shipped
+  three shots that were really Statistics screens under other filenames,
+  because the helpers tapped optimistically and `snapshot()` captured whatever
+  was still on screen. Now a step that cannot reach its screen takes no
+  screenshot at all.
+- One broken selector must not hide the other five, given the round trip.
+
+`scripts/verify-captured-screenshots.mjs` is the gate instead. It runs as a
+workflow step, compares the PNGs on disk against the shot manifest in
+`scripts/store-screenshots.config.mjs`, and fails the job on anything missing
+or suspiciously small. Run it yourself with `npm run verify-screenshots`.
+
+When it fails, grep the fastlane log artifact for `[capture-miss]`.
 
 ### Required GitHub secrets
 
@@ -83,7 +116,7 @@ The CI workflow:
 4. Uploads the resulting PNGs as an artifact.
 
 The pbxproj/scheme/`SnapshotHelper.swift` diff produced by the setup script
-is **intentionally throwaway** — the workflow runs on a fresh checkout each
+is **intentionally throwaway**: the workflow runs on a fresh checkout each
 time, so nothing leaks back into the repo.
 
 ### Why we generate the target instead of committing it
@@ -139,10 +172,9 @@ Then upload `framed/**` to App Store Connect. The full runbook (the
 in-month-session prerequisite, the `gh` capture-dispatch commands, and how to make
 changes) lives in the `store-screenshots` skill.
 
-> **Current screen set (4):** Home, LiveSession, DayOverview, Profile — the
-> screens the UI test already captures. The captured `05_Settings` is left
-> unmapped. Growing to the full marketing set (Statistics, an alcohol-free streak)
-> needs new captures plus native-test edits and lands in a follow-up PR.
+> **Current screen set (6):** Home, LiveSession, DayOverview, Statistics,
+> AlcoholFree (the Statistics "Trends" tab), and Friends. `07_Settings` is
+> captured but intentionally left unmapped: it sells nothing.
 
 ### Apple Watch screenshot (captured by hand)
 
@@ -193,7 +225,7 @@ bundle exec fastlane ios screenshots
 ```
 
 The `ios :screenshots` lane invokes `scripts/setup-screenshots-test-target.rb`
-automatically — you don't need to run it by hand. After capture, these files
+automatically, so you do not need to run it by hand. After capture, these files
 will be modified:
 
 - `ios/kiroku.xcodeproj/project.pbxproj`
@@ -262,7 +294,7 @@ are documented but not yet wired into CI:
    ```
 
 An Android CI job (using `reactivecircus/android-emulator-runner`) is a
-planned follow-up — see the TODO at the bottom of `screenshots.yml`.
+planned follow-up; see the TODO at the bottom of `screenshots.yml`.
 
 ---
 
@@ -285,12 +317,12 @@ makes a few assumptions that may need adjustment after the first run:
   [`src/languages/cs_cz.ts`](../src/languages/cs_cz.ts), update the matcher
   arrays in the test files to match.
 
-- **Submit button labels.** Same story — matched on `"Log In"` /
+- **Submit button labels.** Same story, matched on `"Log In"` /
   `"Přihlásit se"`. Update if the strings change.
 
 - **Calendar day cells.** The test taps the first element with the
   accessibility identifier `DayMarking`. If your demo account has no recorded
-  sessions in the current month, this selector will fail — see the
+  sessions in the current month, this selector will fail; see the
   prerequisite at the top of this doc.
 
 - **In-app locale switch flow.** The test navigates
@@ -301,16 +333,16 @@ makes a few assumptions that may need adjustment after the first run:
 
 ## What this doesn't include (yet)
 
-- **Android CI job** — the `android :screenshots` lane works locally but
+- **Android CI job**: the `android :screenshots` lane works locally but
   needs the Gradle setup + AVD wiring + manifest permission landed on master
   before it can be lifted into CI. Follow-up.
-- **`frameit` device bezels** — uncomment the line in the iOS lane once
+- **`frameit` device bezels**: uncomment the line in the iOS lane once
   you've installed it (`bundle exec fastlane frameit setup`).
-- **Auto-upload to App Store Connect / Play Console** — both lanes currently
+- **Auto-upload to App Store Connect / Play Console**: both lanes currently
   stop after capturing PNGs. Wiring them into the existing `production`
   lanes via `deliver` / `supply` with `skip_screenshots: false` is the
   natural next step once you trust the output.
-- **Underlying `kirokuTests` `SWIFT_VERSION` fix** — the workaround lives in
+- **Underlying `kirokuTests` `SWIFT_VERSION` fix**: the workaround lives in
   `fastlane/Snapfile` (`xcargs("SWIFT_VERSION=5.0")`). The root-cause fix
   belongs in a separate PR that edits the `kirokuTests` target in
   `ios/kiroku.xcodeproj`.
