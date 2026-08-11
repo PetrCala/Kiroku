@@ -389,6 +389,42 @@ async function generateWatchIcon(svgBuffer) {
   console.log('  ✓ watchOS AppIcon');
 }
 
+// In-app logo shown on the watch start screen (StartSessionContent clips it
+// to a 100pt circle as the tap target). Rendered exactly like the app icon
+// (mascot on the opaque ICON_BG field) so the button reads as the icon the
+// user tapped to launch. Scales derive from the 1024 master (3x = full res).
+
+const WATCH_APP_IMAGE = {
+  dir: 'ios/Kiroku Watch App/Assets.xcassets/AppImage.imageset',
+  basename: 'AppImage',
+  masterSize: 1024,
+};
+
+async function generateWatchAppImage(svgBuffer) {
+  const dir = join(ROOT, WATCH_APP_IMAGE.dir);
+  ensureDir(dir);
+  cleanPngs(dir);
+
+  const images = [];
+  for (const scale of [1, 2, 3]) {
+    const suffix = scale > 1 ? `@${scale}x` : '';
+    const filename = `${WATCH_APP_IMAGE.basename}${suffix}.png`;
+    const px = Math.round((WATCH_APP_IMAGE.masterSize * scale) / 3);
+    writeFileSync(
+      join(dir, filename),
+      await renderIcon(svgBuffer, px, VARIANTS.prod, {background: ICON_BG}),
+    );
+    images.push({filename, idiom: 'universal', scale: `${scale}x`});
+  }
+
+  writeFileSync(
+    join(dir, 'Contents.json'),
+    JSON.stringify({images, info: {author: 'xcode', version: 1}}, null, 2) +
+      '\n',
+  );
+  console.log('  ✓ watchOS AppImage');
+}
+
 // ─── iOS boot splash ──────────────────────────────────────────────────────────
 
 const IOS_SPLASH_ASSET = {
@@ -1008,6 +1044,7 @@ async function main() {
 
   console.log('\nwatchOS app icon:');
   await generateWatchIcon(logo.buffer);
+  await generateWatchAppImage(logo.buffer);
 
   console.log('\niOS boot splash:');
   await generateIosBootSplash(splash.buffer);
