@@ -18,6 +18,36 @@
 # untracked env) — never hardcode them, the repo is public. Notes are empty.
 # Returns nil when the demo creds are absent so deliver skips review info
 # cleanly (it early-returns on a nil app_review_information).
+# Sent with every App Store submission. Version 0.3.22 was rejected under
+# Guideline 1.4 (Physical Harm) with the reviewer describing Kiroku as
+# "marketed as a blood alcohol content calculator", which it has never been.
+# Nothing in the app computes BAC, so say so up front rather than arguing it
+# after the fact.
+KIROKU_REVIEW_NOTES = <<~NOTES.freeze
+  Kiroku is a personal alcohol-consumption diary. It records only what the
+  user chooses to log, and reports it back as totals, standard units, and
+  alcohol-free days.
+
+  Kiroku does NOT estimate, calculate, or display blood alcohol content, and
+  it makes no claim about a user's level of impairment. There is no BAC
+  formula anywhere in the app: it never asks for body weight, sex, height, or
+  time since the last drink, and it shows no intoxication readout or
+  time-to-sober countdown. "Units" are the WHO standard-drink measure (grams
+  of ethanol per drink), a labelling convention printed on bottles, not a
+  physiological estimate.
+
+  The colour of a day in the calendar reflects the user's own self-set daily
+  limit, not a measured bodily state.
+
+  The app is framed around harm reduction: seeing your own pattern, tracking
+  alcohol-free days, and cutting back. It is for adults (18+), gives no
+  medical advice, and points users to a healthcare professional if they are
+  concerned about their drinking.
+
+  The demo account is pre-populated with several months of logged sessions
+  and a short friends list so every screen has content to show.
+NOTES
+
 def kiroku_review_information
   demo_user = ENV["APPLE_DEMO_EMAIL"]
   demo_password = ENV["APPLE_DEMO_PASSWORD"]
@@ -30,7 +60,7 @@ def kiroku_review_information
     email_address: ENV["APPLE_CONTACT_EMAIL"],
     demo_user: demo_user,
     demo_password: demo_password,
-    notes: ""
+    notes: KIROKU_REVIEW_NOTES
   }
 end
 

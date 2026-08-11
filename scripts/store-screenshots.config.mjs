@@ -7,7 +7,7 @@
  *
  * IMPORTANT (Apple Guideline 2.3.3): the framed output composites your REAL
  * app captures onto a marketing background. Never replace the capture itself
- * with fabricated UI — the screenshot content must match the shipped app.
+ * with fabricated UI: the screenshot content must match the shipped app.
  */
 
 // ─── Paths (relative to the repo root) ──────────────────────────────────────
@@ -26,14 +26,21 @@ const devices = [
   {id: '6.7', width: 1290, height: 2796, kind: 'phone'}, // iPhone 15 Pro Max
   // ─── Apple Watch (Apple Watch MVP Phase 6.3) ──────────────────────────────
   // The watchOS companion is a functional remote (MVP Phases 4 and 5), so the
-  // watch is embedded in the App Store build again and ASC now requires an Apple
-  // Watch screenshot (APP_WATCH_SERIES_4) before the iOS version can be
-  // submitted. Size is the Series 7+/Ultra slot (410×502, portrait). Unlike the
-  // iPhone shots, the watch capture is taken MANUALLY (see the watch shot below
-  // and contributingGuides/SCREENSHOTS.md): a watchOS `snapshot` UI test can't
-  // drive a phone-tethered remote, and an unpaired sim only shows the reconnect
-  // screen. Drop the real capture at RAW_DIR/<locale>/watch.png, then frame.
-  {id: 'watch', width: 410, height: 502, kind: 'watch'}, // Apple Watch Series 7+/Ultra
+  // watch is embedded in the App Store build again and ASC refuses the iOS
+  // submission until an Apple Watch screenshot exists. The refusal names
+  // APP_WATCH_SERIES_4 specifically, so all three watch slots are rendered from
+  // the same capture: uploading the extra two costs nothing and removes the
+  // guesswork about which one Apple is actually asking for.
+  //
+  // Unlike the iPhone shots, the watch capture is taken MANUALLY (see the watch
+  // shot below and contributingGuides/SCREENSHOTS.md): a watchOS `snapshot` UI
+  // test can't drive a phone-tethered remote, and an unpaired sim only shows the
+  // reconnect screen. Drop the real capture at RAW_DIR/<locale>/watch.png, then
+  // frame. Each output is exact-size, which is how `asc.mjs shots` knows the
+  // slot to file it under.
+  {id: 'watch-368', width: 368, height: 448, kind: 'watch'}, // APP_WATCH_SERIES_4
+  {id: 'watch-396', width: 396, height: 484, kind: 'watch'}, // APP_WATCH_SERIES_7
+  {id: 'watch-410', width: 410, height: 502, kind: 'watch'}, // APP_WATCH_ULTRA
 ];
 
 // ─── Locales (must match RAW_DIR subfolders and caption keys below) ──────────
@@ -44,7 +51,7 @@ const locales = ['en-US', 'cs'];
 // `snapshot` output and copies it into RAW_DIR. `captureLocales` maps each
 // framing locale above to the locale folder `snapshot` writes (it emits
 // `en-US` / `cs-CZ`; the framing pipeline uses `en-US` / `cs`).
-// `captureSourceDevice` is the iPhone folder to read from — the 6.9"/1320×2868
+// `captureSourceDevice` is the iPhone folder to read from, the 6.9"/1320×2868
 // master that every output size is derived from, so the iPad capture is not
 // consumed here. Keep this in sync with the first device in fastlane/Snapfile.
 const captureLocales = {'en-US': 'en-US', cs: 'cs-CZ'};
@@ -97,7 +104,7 @@ const theme = {
 // `snapshot` is the capture name the UI test emits (ios/KirokuUITests/
 // ScreenshotTests.swift → `<snapshot>.png`); the ingest mapper copies it to
 // `raw` (the filename inside RAW_DIR/<locale>/). `caption` is keyed by locale.
-// Captions stay consistent with Kiroku's harm-reduction framing — never
+// Captions stay consistent with Kiroku's harm-reduction framing, never
 // anything that celebrates drinking *volume*.
 //
 // Six store shots, matching what the UI test captures. `07_Settings` is
