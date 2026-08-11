@@ -329,14 +329,20 @@ jobs:
 
       # One build covers the app, the embedded watch app, and the UI test
       # runner. SWIFT_VERSION=5.0 for the same legacy-kirokuTests reason as
-      # the Snapfile. Full log goes to the diagnostics artifact; the console
-      # gets the tail only when the build fails.
+      # the Snapfile. ReleaseProduction, NOT the scheme's DebugProduction test
+      # config: ios/bundle-react-native-code-and-images.sh sets SKIP_BUNDLING
+      # for every *Debug* configuration, so a Debug app on a CI simulator has
+      # no JS bundle and no Metro to fall back to (red "No script URL" screen,
+      # no sign-in, no credential push). Release embeds the bundle, the same
+      # path every deploy build exercises. Full log goes to the diagnostics
+      # artifact; the console gets the tail only when the build fails.
       - name: Build the app, watch app, and UI test runner for the simulator
         run: |
           set -uo pipefail
           xcodebuild build-for-testing \
             -workspace ios/kiroku.xcworkspace \
             -scheme "Kiroku (production)" \
+            -configuration ReleaseProduction \
             -destination "id=$PHONE_UDID" \
             -derivedDataPath "$DERIVED_DATA" \
             SWIFT_VERSION=5.0 \
@@ -367,13 +373,17 @@ jobs:
 
       # WatchCaptureSignInTests: signs in (hard failure) and opens a live
       # session (best-effort, so the watch shows the unit counter rather than
-      # the idle start screen). Simulator test processes inherit this env, the
-      # same mechanism the fastlane phone matrix relies on.
+      # the idle start screen). Plain shell env does NOT reach the test runner
+      # when running from an .xctestrun; xcodebuild forwards only variables
+      # prefixed TEST_RUNNER_ (prefix stripped) into the runner process, so
+      # the creds and the KIROKU_WATCH_CAPTURE gate all use that prefix. A
+      # skipped test exits 0, which is how a missing gate once passed this
+      # step silently, so the explicit "passed" grep is load-bearing.
       - name: Sign the phone app in via UI test
         env:
-          APPLE_DEMO_EMAIL: ${{ secrets.APPLE_DEMO_EMAIL }}
-          APPLE_DEMO_PASSWORD: ${{ secrets.APPLE_DEMO_PASSWORD }}
-          KIROKU_WATCH_CAPTURE: '1'
+          TEST_RUNNER_APPLE_DEMO_EMAIL: ${{ secrets.APPLE_DEMO_EMAIL }}
+          TEST_RUNNER_APPLE_DEMO_PASSWORD: ${{ secrets.APPLE_DEMO_PASSWORD }}
+          TEST_RUNNER_KIROKU_WATCH_CAPTURE: '1'
         run: |
           set -uo pipefail
           XCTESTRUN=$(find "$DERIVED_DATA/Build/Products" -maxdepth 1 -name '*.xctestrun' | head -1)
@@ -385,6 +395,8 @@ jobs:
             > watch-diagnostics/xcodebuild-signin.log 2>&1 \
             || { echo "sign-in UI test failed; last 150 lines:"; tail -150 watch-diagnostics/xcodebuild-signin.log; exit 1; }
           grep -E "\[watch-capture\]" watch-diagnostics/xcodebuild-signin.log || true
+          grep -Eq "Test Case .*testSignInAndOpenLiveSession\]?' passed" watch-diagnostics/xcodebuild-signin.log \
+            || { echo "sign-in test did not PASS (skipped?); last 60 lines:"; tail -60 watch-diagnostics/xcodebuild-signin.log; exit 1; }
           echo "sign-in test passed"
 
       # xcodebuild kills the app when the test ends, so relaunch it: a cold
