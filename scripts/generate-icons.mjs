@@ -368,24 +368,22 @@ async function generateWatchIcon(svgBuffer) {
     await sharp(buf).removeAlpha().png().toBuffer(),
   );
 
-  writeFileSync(
-    join(dir, 'Contents.json'),
-    JSON.stringify(
-      {
-        images: [
-          {
-            filename: WATCH_ICON.filename,
-            idiom: 'universal',
-            platform: 'watchos',
-            size: `${WATCH_ICON.size}x${WATCH_ICON.size}`,
-          },
-        ],
-        info: {author: 'xcode', version: 1},
-      },
-      null,
-      2,
-    ) + '\n',
+  const contents = JSON.stringify(
+    {
+      images: [
+        {
+          filename: WATCH_ICON.filename,
+          idiom: 'universal',
+          platform: 'watchos',
+          size: `${WATCH_ICON.size}x${WATCH_ICON.size}`,
+        },
+      ],
+      info: {author: 'xcode', version: 1},
+    },
+    null,
+    2,
   );
+  writeFileSync(join(dir, 'Contents.json'), `${contents}\n`);
   console.log('  ✓ watchOS AppIcon');
 }
 
@@ -417,11 +415,12 @@ async function generateWatchAppImage(svgBuffer) {
     images.push({filename, idiom: 'universal', scale: `${scale}x`});
   }
 
-  writeFileSync(
-    join(dir, 'Contents.json'),
-    JSON.stringify({images, info: {author: 'xcode', version: 1}}, null, 2) +
-      '\n',
+  const contents = JSON.stringify(
+    {images, info: {author: 'xcode', version: 1}},
+    null,
+    2,
   );
+  writeFileSync(join(dir, 'Contents.json'), `${contents}\n`);
   console.log('  ✓ watchOS AppImage');
 }
 
