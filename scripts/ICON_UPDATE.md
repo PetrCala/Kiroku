@@ -55,6 +55,7 @@ See [Color model](#color-model) for the per-surface table.
 | ------------------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | iOS app icons                  | `ios/kiroku/Images.xcassets/AppIcon{,Dev,Staging,AdHoc}.appiconset/*.png` + `Contents.json`                                                                                 |
 | iOS boot splash                | `ios/kiroku/Images.xcassets/BootSplashLogo{,Dev,Staging,AdHoc}.imageset/*.png` + `Contents.json`                                                                            |
+| watchOS app icon               | `ios/Kiroku Watch App/Assets.xcassets/AppIcon.appiconset/AppIcon~ios-watch.png` + `Contents.json` (single 1024, opaque, prod art only; watch target has no build variants)  |
 | Android legacy launcher (PNG)  | `android/app/src/{main,development,staging,adhoc}/res/mipmap-*/ic_launcher.png` (pre-Android-8 fallback only)                                                               |
 | Android adaptive foreground    | `android/app/src/{main,development,staging,adhoc}/res/drawable/ic_launcher_foreground.xml` (vector, badge baked into per-flavor variants)                                   |
 | Android adaptive background    | `@color/ic_launcher_background` from [`values/ic_launcher_background.xml`](../android/app/src/main/res/values/ic_launcher_background.xml) — not regenerated, see brand sync |

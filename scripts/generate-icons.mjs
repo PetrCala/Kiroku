@@ -342,6 +342,53 @@ async function generateIosIcons(svgBuffer) {
   }
 }
 
+// ─── watchOS app icon ─────────────────────────────────────────────────────────
+// The watch companion ships a single 1024x1024 icon (watchOS asset catalogs
+// use one universal size). The watch target has no build-variant appiconsets,
+// so only the production art is emitted. App Store validation rejects watch
+// icons with an alpha channel, so the render is flattened onto ICON_BG and
+// the alpha channel is stripped explicitly.
+
+const WATCH_ICON = {
+  dir: 'ios/Kiroku Watch App/Assets.xcassets/AppIcon.appiconset',
+  filename: 'AppIcon~ios-watch.png',
+  size: 1024,
+};
+
+async function generateWatchIcon(svgBuffer) {
+  const dir = join(ROOT, WATCH_ICON.dir);
+  ensureDir(dir);
+  cleanPngs(dir);
+
+  const buf = await renderIcon(svgBuffer, WATCH_ICON.size, VARIANTS.prod, {
+    background: ICON_BG,
+  });
+  writeFileSync(
+    join(dir, WATCH_ICON.filename),
+    await sharp(buf).removeAlpha().png().toBuffer(),
+  );
+
+  writeFileSync(
+    join(dir, 'Contents.json'),
+    JSON.stringify(
+      {
+        images: [
+          {
+            filename: WATCH_ICON.filename,
+            idiom: 'universal',
+            platform: 'watchos',
+            size: `${WATCH_ICON.size}x${WATCH_ICON.size}`,
+          },
+        ],
+        info: {author: 'xcode', version: 1},
+      },
+      null,
+      2,
+    ) + '\n',
+  );
+  console.log('  ✓ watchOS AppIcon');
+}
+
 // ─── iOS boot splash ──────────────────────────────────────────────────────────
 
 const IOS_SPLASH_ASSET = {
@@ -958,6 +1005,9 @@ async function main() {
 
   console.log('\niOS app icons:');
   await generateIosIcons(logo.buffer);
+
+  console.log('\nwatchOS app icon:');
+  await generateWatchIcon(logo.buffer);
 
   console.log('\niOS boot splash:');
   await generateIosBootSplash(splash.buffer);
