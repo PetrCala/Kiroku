@@ -57,9 +57,12 @@ final class WatchCaptureSignInTests: XCTestCase {
     private func signIn() {
         // A fresh install lands on `Initial Screen` (marketing screen with a
         // "Log in" role="link" pressable); a reinstalled-but-cached state can
-        // land straight on `Auth Screen`.
+        // land straight on `Auth Screen`. The long timeout is for a cold
+        // ReleaseProduction boot on a busy CI simulator, which can sit on the
+        // boot splash for well over a minute before the first screen mounts.
         if !screen("Auth Screen", timeout: 5) {
-            guard screen("Initial Screen", timeout: 45) else {
+            guard screen("Initial Screen", timeout: 120) else {
+                NSLog("[watch-capture] first-screen hierarchy dump: %@", app.debugDescription)
                 XCTFail("[watch-capture] neither Initial Screen nor Auth Screen appeared after launch")
                 return
             }

@@ -211,7 +211,9 @@ jobs:
     name: Capture Apple Watch screenshot
     if: ${{ inputs.capture_watch }}
     runs-on: macos-26
-    timeout-minutes: 90
+    # The ReleaseProduction build alone takes ~55 min on this runner; 90 min
+    # left the final steps racing the job timeout.
+    timeout-minutes: 120
     env:
       DEVELOPER_DIR: /Applications/Xcode_26.1.1.app/Contents/Developer
       DERIVED_DATA: ios/build/watch-capture
@@ -393,7 +395,11 @@ jobs:
             -destination "id=$PHONE_UDID" \
             -only-testing:KirokuUITests/WatchCaptureSignInTests \
             > watch-diagnostics/xcodebuild-signin.log 2>&1 \
-            || { echo "sign-in UI test failed; last 150 lines:"; tail -150 watch-diagnostics/xcodebuild-signin.log; exit 1; }
+            || {
+              echo "sign-in UI test failed; capturing the phone screen for diagnostics"
+              xcrun simctl io "$PHONE_UDID" screenshot watch-diagnostics/phone-at-signin-failure.png || true
+              echo "last 150 lines:"; tail -150 watch-diagnostics/xcodebuild-signin.log; exit 1;
+            }
           grep -E "\[watch-capture\]" watch-diagnostics/xcodebuild-signin.log || true
           grep -Eq "Test Case .*testSignInAndOpenLiveSession\]?' passed" watch-diagnostics/xcodebuild-signin.log \
             || { echo "sign-in test did not PASS (skipped?); last 60 lines:"; tail -60 watch-diagnostics/xcodebuild-signin.log; exit 1; }
@@ -424,6 +430,7 @@ jobs:
           set +e
           xcrun simctl spawn "$WATCH_UDID" log show --last 15m --predicate 'processImagePath CONTAINS "Kiroku"' > watch-diagnostics/watch-app.log 2>&1
           xcrun simctl spawn "$PHONE_UDID" log show --last 20m --predicate 'eventMessage CONTAINS "WatchBridge" OR eventMessage CONTAINS "watch-capture"' > watch-diagnostics/phone-watchbridge.log 2>&1
+          xcrun simctl spawn "$PHONE_UDID" log show --last 30m --predicate 'processImagePath CONTAINS "kiroku"' > watch-diagnostics/phone-app.log 2>&1
           true
 
       - name: Verify the watch screenshot was captured
