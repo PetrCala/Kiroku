@@ -1,14 +1,15 @@
 name: Capture App Store / Play Store screenshots
 
-# Manual trigger only — App Store screenshots are infrequent, expensive
-# (~30-45 min cold build + UI test runs across the device matrix), and require
+# Manual trigger only. App Store screenshots are infrequent, expensive
+# (~45 min cold build + UI test runs across the device matrix), and require
 # demo credentials. Never wire this to `pull_request` or any auto-trigger.
 #
 # Prerequisite: the demo account referenced by APPLE_DEMO_EMAIL /
 # APPLE_DEMO_PASSWORD MUST have at least one logged drinking session in the
-# current calendar month. The Day Overview screenshot taps the first
-# DayMarking cell in the calendar — if no session exists in-month, the test
-# fails. See contributingGuides/SCREENSHOTS.md.
+# current calendar month. The Day Overview screenshot opens a calendar day, and
+# an empty day gives a Day Overview with nothing in it. List the dates that do
+# have sessions in the `demo_session_dates` input below. See
+# contributingGuides/SCREENSHOTS.md.
 on:
   workflow_dispatch:
     inputs:
@@ -31,6 +32,11 @@ on:
         required: false
         default: false
         type: boolean
+      demo_session_dates:
+        description: 'Comma-separated ISO dates (newest first) the demo account has sessions on, e.g. 2026-08-10,2026-08-06. The Day Overview shot opens the first one it finds on the calendar.'
+        required: false
+        default: ''
+        type: string
 
 permissions:
   contents: read
@@ -39,7 +45,12 @@ jobs:
   ios:
     name: Capture iOS App Store screenshots
     runs-on: macos-26
-    timeout-minutes: 60
+    # A cold run is ~12 min of setup plus ~45 min to build the scheme (the app,
+    # every pod, and the embedded watch target) before a single screenshot is
+    # taken, then a few minutes per device/language pair. 60 minutes cancelled a
+    # run that had already done all the building, and a cancellation is not a
+    # failure, so the diagnostic logs were not even uploaded.
+    timeout-minutes: 90
     env:
       DEVELOPER_DIR: /Applications/Xcode_26.1.1.app/Contents/Developer
     steps:
@@ -86,7 +97,7 @@ jobs:
           source "$HOME/.bash_profile"
 
       # Xcode 26.1.1 on the macos-26 runner image ships without the iOS
-      # simulator runtime — xcodebuild crashes with "iOS 26.1 is not installed"
+      # simulator runtime, so xcodebuild crashes with "iOS 26.1 is not installed"
       # otherwise. Same step that testBuild.yml uses.
       - name: Install iOS platform SDK
         uses: nick-fields/retry@ad984534de44a9489a53aefd81eb77f87c70dc60 # v4.0.0
@@ -115,7 +126,7 @@ jobs:
 
       # Trim the Snapfile device matrix when the dispatcher asked for a subset.
       # `Snapfile` resolves devices(...) eagerly so we rewrite the file in
-      # place — this is throwaway, not committed back.
+      # place; this is throwaway, not committed back.
       - name: Trim Snapfile device matrix
         if: ${{ github.event.inputs.device_subset != 'all' }}
         env:
@@ -131,6 +142,7 @@ jobs:
           KIROKU_DEMO_PASSWORD: ${{ secrets.APPLE_DEMO_PASSWORD }}
           KIROKU_DUMP_A11Y: ${{ github.event.inputs.dump_a11y == 'true' && '1' || '0' }}
           KIROKU_SNAPSHOT_FAIL_FAST: ${{ github.event.inputs.fail_slow == 'true' && '0' || '1' }}
+          KIROKU_DEMO_SESSION_DATES: ${{ github.event.inputs.demo_session_dates }}
 
       - name: Upload iOS screenshots
         if: ${{ always() }}
@@ -141,8 +153,18 @@ jobs:
           if-no-files-found: warn
           retention-days: 14
 
-      - name: Upload fastlane logs on failure
-        if: ${{ failure() }}
+      # The UI test never asserts (see the failure-policy comment in
+      # ScreenshotTests.swift), so this is what turns a partial capture into a
+      # red run. Without it a run that captured nothing still goes green.
+      - name: Verify every screenshot was captured
+        if: ${{ always() }}
+        run: node scripts/verify-captured-screenshots.mjs
+
+      # Always, not just on failure: the accessibility dump and every
+      # `[capture-miss]` line live in the snapshot log, and a run that ends
+      # green or cancelled is exactly when they are needed most.
+      - name: Upload fastlane logs
+        if: ${{ always() }}
         uses: actions/upload-artifact@v6
         with:
           name: ios-fastlane-logs-${{ github.sha }}
@@ -159,5 +181,5 @@ jobs:
   # emulator (reactivecircus/android-emulator-runner@v2 is the usual choice),
   # the screengrab Gradle deps wired into android/app/build.gradle (still a
   # manual step per SCREENSHOTS.md), and the CHANGE_CONFIGURATION permission
-  # in the debug manifest. None of those exist yet — wire them in a follow-up
+  # in the debug manifest. None of those exist yet, so wire them in a follow-up
   # PR once the iOS flow is proven.

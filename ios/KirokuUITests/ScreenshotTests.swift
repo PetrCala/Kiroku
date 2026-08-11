@@ -3,96 +3,234 @@ import XCTest
 // Captures App Store screenshots for the device + locale matrix declared in
 // fastlane/Snapfile. fastlane invokes this once per (device, language) pair.
 //
-// IMPORTANT — manual setup required before this file compiles. See SCREENSHOTS.md:
-//   1. Add a "UI Testing Bundle" target named `KirokuUITests` in Xcode.
-//   2. Run `bundle exec fastlane snapshot init` from the repo root to drop
-//      `SnapshotHelper.swift` next to this file; add it to the test target.
-//   3. Set `APPLE_DEMO_EMAIL` / `APPLE_DEMO_PASSWORD` in the shell before
-//      invoking the lane.
+// The `KirokuUITests` target does not live in the committed project file; it is
+// generated at run time by scripts/setup-screenshots-test-target.rb, which also
+// copies fastlane's own SnapshotHelper.swift in next to this file. Run the lane
+// (`bundle exec fastlane ios screenshots`) rather than building the target by
+// hand, and export APPLE_DEMO_EMAIL / APPLE_DEMO_PASSWORD first.
+//
+// ─── Failure policy ──────────────────────────────────────────────────────────
+// Every navigation step is guarded and records a `[capture-miss]` instead of
+// asserting. Two reasons:
+//
+//   1. A missed step must never publish the WRONG screen. The 2026-07 set had
+//      three shots that were really Statistics screens under other filenames,
+//      because the old helpers tapped optimistically and `snapshot()` captured
+//      whatever happened to still be on screen. Here a step that cannot reach
+//      its screen takes no screenshot at all, so a miss loses a file rather
+//      than shipping a lie.
+//   2. One broken selector must not hide the other five. A CI capture round
+//      trip is ~50 minutes, so a run that stops at the first problem costs a
+//      full afternoon to walk six screens.
+//
+// The run therefore ends green even with misses; scripts/verify-captured-
+// screenshots.mjs is what fails the job, by checking the PNGs that actually
+// landed on disk. Grep the log for `[capture-miss]` to see why.
 final class ScreenshotTests: XCTestCase {
     private let app = XCUIApplication()
-
-    override func setUpWithError() throws {
-        continueAfterFailure = false
-        setupSnapshot(app)
-        app.launch()
+    private var misses: [String] = []
+    private var isDumpingAccessibility: Bool {
+        ProcessInfo.processInfo.environment["KIROKU_DUMP_A11Y"] == "1"
     }
 
+    // `setupSnapshot` and `snapshot` are `@MainActor` in fastlane's bundled
+    // SnapshotHelper.swift (2.234.0), so every caller has to be main-actor
+    // isolated or the target does not compile:
+    //   "call to main actor-isolated global function ... in a synchronous
+    //    nonisolated context".
+    // The isolation lives on the test method rather than on the class so that
+    // nothing here overrides an XCTestCase method: an override cannot add
+    // actor isolation its superclass declaration lacks. That is also why there
+    // is no `setUpWithError` override; its two lines run at the top of the test
+    // instead. There is only one test method, so this is equivalent.
+    @MainActor
     func testCaptureAppStoreScreenshots() throws {
-        logIn()
+        continueAfterFailure = true
+        setupSnapshot(app)
+        app.launch()
+
+        if isDumpingAccessibility {
+            dumpTree("launch")
+        }
+
+        guard logIn() else {
+            reportMisses()
+            return
+        }
         switchLocaleIfNeeded()
 
-        if ProcessInfo.processInfo.environment["KIROKU_DUMP_A11Y"] == "1" {
+        if isDumpingAccessibility {
             dumpAccessibilityTrees()
         }
 
-        returnToHome()
+        capture("01_Home") { openHome() }
+        capture("02_LiveSession") { openLiveSession() }
+        capture("03_DayOverview") { openCalendarDay() }
+        capture("04_Statistics") { openStatisticsTab(matching: ["Overview", "Přehled"]) }
+        capture("05_AlcoholFree") { openStatisticsTab(matching: ["Trends", "Trendy"]) }
+        capture("06_Friends") { openFriends() }
+        capture("07_Settings") { openSettings() }
 
-        snapshot("01_Home")
+        reportMisses()
+    }
 
-        openStartSession()
-        snapshot("02_LiveSession")
+    // MARK: - Step plumbing
 
-        openCalendarDay()
-        snapshot("03_DayOverview")
+    /// Runs a navigation step and screenshots only if it actually arrived.
+    @MainActor
+    private func capture(_ name: String, _ navigate: () -> Bool) {
+        guard navigate() else {
+            recordMiss(name, "navigation did not reach the screen")
+            return
+        }
+        snapshot(name)
+    }
 
-        openStatisticsTab(matching: ["Overview", "Přehled"])
-        snapshot("04_Statistics")
+    private func recordMiss(_ name: String, _ reason: String) {
+        misses.append("\(name): \(reason)")
+        NSLog("[capture-miss] \(name): \(reason)")
+        print("[capture-miss] \(name): \(reason)")
+        if isDumpingAccessibility {
+            dumpTree("miss-\(name)")
+        }
+    }
 
-        openStatisticsTab(matching: ["Trends", "Trendy"])
-        snapshot("05_AlcoholFree")
+    private func reportMisses() {
+        guard !misses.isEmpty else {
+            NSLog("[capture-summary] all steps reached their screen")
+            print("[capture-summary] all steps reached their screen")
+            return
+        }
+        let summary = "[capture-summary] \(misses.count) missed: \(misses.joined(separator: " | "))"
+        NSLog("%@", summary)
+        print(summary)
+    }
 
-        openFriends()
-        snapshot("06_Friends")
+    // MARK: - Element lookup
 
-        openSettings()
-        snapshot("07_Settings")
+    /// Matches by accessibility label across every element type.
+    ///
+    /// React Native maps `accessibilityRole` onto different XCUI element types
+    /// (a `role="link"` is not in `app.buttons`, a `react-native-tab-view` tab
+    /// is neither), so querying a single collection silently misses elements
+    /// that are plainly on screen.
+    private func element(labeled labels: [String], timeout: TimeInterval = 10) -> XCUIElement? {
+        let predicate = NSPredicate(format: "label IN %@", labels)
+        let match = app.descendants(matching: .any).matching(predicate).firstMatch
+        return match.waitForExistence(timeout: timeout) ? match : nil
+    }
+
+    private func screen(_ identifier: String, timeout: TimeInterval = 15) -> Bool {
+        app.otherElements[identifier].waitForExistence(timeout: timeout)
+    }
+
+    /// Taps an element, falling back to its centre coordinate when the element
+    /// reports itself as not hittable (common for RN pressables whose child
+    /// text owns the frame).
+    private func tap(_ element: XCUIElement) {
+        if element.isHittable {
+            element.tap()
+            return
+        }
+        element.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.5)).tap()
+    }
+
+    @discardableResult
+    private func tapElement(labeled labels: [String], timeout: TimeInterval = 10) -> Bool {
+        guard let match = element(labeled: labels, timeout: timeout) else {
+            return false
+        }
+        tap(match)
+        return true
     }
 
     // MARK: - Login
 
-    private func logIn() {
-        let auth = app.otherElements["AuthScreen"]
-        XCTAssertTrue(auth.waitForExistence(timeout: 30), "AuthScreen never appeared")
+    /// A fresh install lands on `Initial Screen` (the marketing screen with
+    /// "Create account" plus a "Log in" link), NOT on the login form. The link
+    /// is a `role="link"` pressable, so it is not in `app.buttons`.
+    private func logIn() -> Bool {
+        if !screen("Auth Screen", timeout: 5) {
+            guard screen("Initial Screen", timeout: 45) else {
+                recordMiss("logIn", "neither Initial Screen nor Auth Screen appeared after launch")
+                return false
+            }
+            // common.logInHere
+            guard tapElement(labeled: ["Log in", "Přihlaste se zde"], timeout: 20) else {
+                recordMiss("logIn", "log-in link not found on Initial Screen")
+                return false
+            }
+            guard screen("Auth Screen", timeout: 20) else {
+                recordMiss("logIn", "Auth Screen never appeared after tapping the log-in link")
+                return false
+            }
+        }
 
-        // Inputs lack testIDs — match by their containing TextField/SecureTextField.
-        // The first text field in the form is email, then password (secure).
+        // The form's inputs carry no testID; the first text field is the email
+        // and the only secure field is the password.
         let emailField = app.textFields.firstMatch
+        guard emailField.waitForExistence(timeout: 10) else {
+            recordMiss("logIn", "email field not found on Auth Screen")
+            return false
+        }
         emailField.tap()
         emailField.typeText(ProcessInfo.processInfo.environment["APPLE_DEMO_EMAIL"] ?? "")
 
         let passwordField = app.secureTextFields.firstMatch
+        guard passwordField.waitForExistence(timeout: 5) else {
+            recordMiss("logIn", "password field not found on Auth Screen")
+            return false
+        }
         passwordField.tap()
         passwordField.typeText(ProcessInfo.processInfo.environment["APPLE_DEMO_PASSWORD"] ?? "")
 
-        // Submit button has no testID — matched by its localized title.
-        // Update these strings if the labels change in src/languages/{en,cs_cz}.ts.
-        let submit = app.buttons.matching(NSPredicate(format:
-            "label IN { 'Log In', 'Přihlásit se', 'Sign In' }"
-        )).firstMatch
-        submit.tap()
+        // common.logIn. Note the capitalisation: en.ts says "Log in", not
+        // "Log In", and NSPredicate string comparison is case sensitive.
+        guard tapElement(labeled: ["Log in", "Přihlásit se"], timeout: 10) else {
+            recordMiss("logIn", "submit button not found on Auth Screen")
+            return false
+        }
 
-        let home = app.otherElements["Home Screen"]
-        XCTAssertTrue(home.waitForExistence(timeout: 30), "Home Screen never appeared after login")
+        guard screen("Home Screen", timeout: 60) else {
+            recordMiss("logIn", "Home Screen never appeared after submitting credentials")
+            return false
+        }
+        return true
     }
 
     // MARK: - Locale handling
 
-    /// Kiroku stores locale in Onyx, not OS-level. So even though fastlane sets
-    /// AppleLanguages, the app ignores it — we navigate Settings → Language and
-    /// pick the right option manually based on what fastlane asked for.
+    /// Kiroku stores locale in Onyx, not at OS level, so fastlane's
+    /// `-AppleLanguages` argument is ignored by the app. Switch it in the UI:
+    /// Settings -> Preferences -> Language -> Czech.
+    ///
+    /// The menu is still in English at this point (English is the app default),
+    /// which is why the English row titles are the ones that matter; the Czech
+    /// spellings are listed only so a re-run on an already-switched account
+    /// still works.
     private func switchLocaleIfNeeded() {
         let target = currentSnapshotLanguageInAppCode()
-        guard target != "en" else { return }  // app default
+        guard target != "en" else { return }
 
-        openSettings()
-
-        // Settings → Preferences → Language. Match on localized titles or testIDs
-        // if you add them later. For now, fall back to a row containing the word
-        // "Language" / "Jazyk".
-        tapMenuRow(matching: ["Language", "Jazyk"])
-        tapMenuRow(matching: ["Preferences", "Předvolby"])
-        tapMenuRow(matching: localeRowTitles(for: target))
+        guard openSettings() else {
+            recordMiss("switchLocale", "Settings tab did not open")
+            return
+        }
+        // common.preferences
+        guard tapElement(labeled: ["Preferences", "Předvolby"]) else {
+            recordMiss("switchLocale", "Preferences row not found in Settings")
+            return
+        }
+        // languageScreen.language
+        guard tapElement(labeled: ["Language", "Jazyk"]) else {
+            recordMiss("switchLocale", "Language row not found in Preferences")
+            return
+        }
+        // languageScreen.languages.cs_cz.label, as rendered in either UI language
+        guard tapElement(labeled: localeRowTitles(for: target)) else {
+            recordMiss("switchLocale", "language row \(localeRowTitles(for: target)) not found")
+            return
+        }
     }
 
     private func currentSnapshotLanguageInAppCode() -> String {
@@ -104,25 +242,27 @@ final class ScreenshotTests: XCTestCase {
 
     private func localeRowTitles(for code: String) -> [String] {
         switch code {
-        case "cs_cz": return ["Čeština", "Czech"]
+        case "cs_cz": return ["Czech", "Čeština"]
         default:      return ["English", "Angličtina"]
         }
     }
 
     // MARK: - Selector discovery
 
-    /// Walks every bottom tab and logs the full element tree for each.
-    ///
-    /// Selector work against this app is otherwise a 30 to 45 minute CI round
-    /// trip per guess, because there is no way to see what a screen actually
-    /// exposes without building and launching it. One run of this prints ground
-    /// truth for every screen at once, so selectors can be written from real
-    /// identifiers instead of inference.
-    ///
-    /// Deliberately never asserts: a screen that fails to open logs the miss and
-    /// the walk continues, so one bad tab cannot abort the run before the other
-    /// trees are collected. Opt in with KIROKU_DUMP_A11Y=1 so normal capture runs
-    /// stay quiet.
+    /// Logs the full element tree. Selector work against this app is otherwise
+    /// a ~50 minute CI round trip per guess, because nothing shows what a
+    /// screen exposes without building and launching it.
+    private func dumpTree(_ label: String) {
+        NSLog("[a11y-dump] ===== BEGIN \(label) =====")
+        NSLog("%@", app.debugDescription)
+        NSLog("[a11y-dump] ===== END \(label) =====")
+        print("[a11y-dump] ===== BEGIN \(label) =====")
+        print(app.debugDescription)
+        print("[a11y-dump] ===== END \(label) =====")
+    }
+
+    /// Walks every bottom tab and dumps each one. Never asserts, so a tab that
+    /// fails to open logs the miss and the walk continues.
     private func dumpAccessibilityTrees() {
         let tabs = [
             ["Home", "Domů"],
@@ -131,109 +271,107 @@ final class ScreenshotTests: XCTestCase {
             ["Settings", "Nastavení"],
         ]
         for labels in tabs {
-            let predicate = NSPredicate(format: "label IN %@", labels)
-            let button = app.buttons.matching(predicate).firstMatch
-            guard button.waitForExistence(timeout: 8) else {
+            guard tapElement(labeled: labels, timeout: 8) else {
                 NSLog("[a11y-dump] TAB NOT FOUND: \(labels)")
+                print("[a11y-dump] TAB NOT FOUND: \(labels)")
                 continue
             }
-            button.tap()
             Thread.sleep(forTimeInterval: 3)
-            NSLog("[a11y-dump] ===== BEGIN \(labels) =====")
-            NSLog("%@", app.debugDescription)
-            NSLog("[a11y-dump] ===== END \(labels) =====")
+            dumpTree("tab-\(labels.first ?? "?")")
         }
     }
 
-    // MARK: - Navigation helpers
-    // The bottom tab bar buttons have accessibility labels matching the
-    // translated bottomTabBar.* strings in src/languages/. No testIDs yet.
+    // MARK: - Navigation
+    // Bottom tab buttons carry `accessibilityLabel` = the translated
+    // `bottomTabBar.*` string (see createCustomBottomTabNavigator/BottomTabBar).
+    // There are exactly four: Home, Friends, Statistics, Settings.
 
-    private func returnToHome() {
-        // The "Start Session" central tab button reveals the home flow.
-        tapTabBarButton(matching: ["Start", "Začít", "Home", "Domů"])
+    private func openHome() -> Bool {
+        guard tapElement(labeled: ["Home", "Domů"]) else { return false }
+        return screen("Home Screen")
     }
 
-    private func openStartSession() {
-        tapTabBarButton(matching: ["Start", "Začít"])
-        let live = app.otherElements["Live Session Screen"]
-        if !live.waitForExistence(timeout: 5) {
-            // Tap the start-session popover's confirm button if it appeared.
-            app.buttons.matching(NSPredicate(format:
-                "label IN { 'Start Session', 'Spustit session', 'Begin' }"
-            )).firstMatch.tap()
+    /// A live session starts from the Home FAB, not from a tab: tap the FAB,
+    /// then the "Live" entry in the popover it opens.
+    private func openLiveSession() -> Bool {
+        guard openHome() else { return false }
+        // startSession.newSessionExplained
+        guard tapElement(labeled: [
+            "Start a session (Floating action)",
+            "Spustit relaci (plovoucí tlačítko)",
+        ]) else {
+            recordMiss("02_LiveSession", "start-session FAB not found on Home")
+            return false
         }
-        _ = live.waitForExistence(timeout: 10)
-    }
-
-    /// The calendar lives on Home, not on the Statistics tab. Tapping the wrong
-    /// tab used to leave whatever screen was already showing on-screen, and the
-    /// snapshot silently captured that instead of the Day Overview, which is how
-    /// three of the six shipped screenshots ended up being Statistics screens.
-    /// Every step here asserts, so a mis-tap fails the run instead of publishing
-    /// the wrong screen.
-    private func openCalendarDay() {
-        returnToHome()
-        let day = app.buttons.matching(identifier: "DayMarking").firstMatch
-        XCTAssertTrue(
-            day.waitForExistence(timeout: 15),
-            "No DayMarking cell on Home. The demo account needs a logged session in the current month."
-        )
-        day.tap()
-        XCTAssertTrue(
-            app.otherElements["Day Overview Screen"].waitForExistence(timeout: 10),
-            "Day Overview Screen never appeared after tapping a calendar day"
-        )
-    }
-
-    /// Statistics is a bottom tab whose body is a set of inner tabs
-    /// (Overview / Trends / Patterns / Breakdown). `labels` names the inner one.
-    private func openStatisticsTab(matching labels: [String]) {
-        tapTabBarButton(matching: ["Statistics", "Statistiky"])
-        XCTAssertTrue(
-            app.otherElements["Statistics Screen"].waitForExistence(timeout: 15),
-            "Statistics Screen never appeared"
-        )
-        let predicate = NSPredicate(format: "label IN %@", labels)
-        let tab = app.buttons.matching(predicate).firstMatch
-        XCTAssertTrue(
-            tab.waitForExistence(timeout: 10),
-            "Statistics inner tab \(labels) not found"
-        )
-        tab.tap()
-    }
-
-    private func openFriends() {
-        tapTabBarButton(matching: ["Friends", "Přátelé"])
-        XCTAssertTrue(
-            app.otherElements["SocialScreen"].waitForExistence(timeout: 15),
-            "SocialScreen never appeared"
-        )
-    }
-
-    private func openSettings() {
-        tapTabBarButton(matching: ["Settings", "Nastavení"])
-        _ = app.otherElements["SettingsScreen"].waitForExistence(timeout: 5)
-    }
-
-    private func tapTabBarButton(matching labels: [String]) {
-        let predicate = NSPredicate(format: "label IN %@", labels)
-        let button = app.buttons.matching(predicate).firstMatch
-        XCTAssertTrue(
-            button.waitForExistence(timeout: 10),
-            "Bottom tab \(labels) not found"
-        )
-        button.tap()
-    }
-
-    private func tapMenuRow(matching labels: [String]) {
-        let predicate = NSPredicate(format: "label IN %@", labels)
-        let cell = app.cells.matching(predicate).firstMatch
-        if cell.waitForExistence(timeout: 5) {
-            cell.tap()
-            return
+        // drinkingSession.live.title
+        guard tapElement(labeled: ["Live", "Živá"]) else {
+            recordMiss("02_LiveSession", "Live entry not found in the start-session popover")
+            return false
         }
-        // Some rows are rendered as buttons rather than cells in RN.
-        app.buttons.matching(predicate).firstMatch.tap()
+        return screen("Live Session Screen", timeout: 25)
+    }
+
+    /// Calendar day cells are `calendar-day-<YYYY-MM-DD>` (DayComponent), so a
+    /// day is addressed by date rather than by position. KIROKU_DEMO_SESSION_DATES
+    /// carries a comma-separated list of dates the demo account actually has
+    /// sessions on, newest first, because an empty day opens a Day Overview with
+    /// nothing in it and that is not a screenshot worth shipping. Any date that
+    /// is not on screen (wrong month, data changed) is skipped, and the last
+    /// resort is whatever day cell the calendar is showing.
+    private func openCalendarDay() -> Bool {
+        guard openHome() else { return false }
+
+        let configured = ProcessInfo.processInfo.environment["KIROKU_DEMO_SESSION_DATES"] ?? ""
+        let dates = configured
+            .split(separator: ",")
+            .map { $0.trimmingCharacters(in: .whitespaces) }
+            .filter { !$0.isEmpty }
+
+        for date in dates {
+            let cell = app.descendants(matching: .any)["calendar-day-\(date)"]
+            guard cell.waitForExistence(timeout: 3) else { continue }
+            tap(cell)
+            if screen("Day Overview Screen", timeout: 10) {
+                return true
+            }
+            _ = openHome()
+        }
+
+        let anyDay = app.descendants(matching: .any)
+            .matching(NSPredicate(format: "identifier BEGINSWITH %@", "calendar-day-"))
+            .firstMatch
+        guard anyDay.waitForExistence(timeout: 10) else {
+            recordMiss("03_DayOverview", "no calendar-day-* cell on Home")
+            return false
+        }
+        tap(anyDay)
+        return screen("Day Overview Screen", timeout: 10)
+    }
+
+    /// Statistics is a bottom tab whose body is a `react-native-tab-view` with
+    /// Overview / Trends / Patterns / Breakdown; `labels` names the inner tab.
+    /// The content subtree is dynamically imported behind
+    /// `runAfterInteractions`, so the inner tabs appear a beat after the screen.
+    private func openStatisticsTab(matching labels: [String]) -> Bool {
+        guard tapElement(labeled: ["Statistics", "Statistiky"]) else { return false }
+        guard screen("Statistics Screen") else { return false }
+        guard tapElement(labeled: labels, timeout: 25) else {
+            recordMiss("statistics-tab", "inner tab \(labels) not found")
+            return false
+        }
+        // Give the chart a moment to draw before the shutter.
+        Thread.sleep(forTimeInterval: 2)
+        return true
+    }
+
+    private func openFriends() -> Bool {
+        guard tapElement(labeled: ["Friends", "Přátelé"]) else { return false }
+        return screen("SocialScreen")
+    }
+
+    @discardableResult
+    private func openSettings() -> Bool {
+        guard tapElement(labeled: ["Settings", "Nastavení"]) else { return false }
+        return screen("SettingsScreen")
     }
 }
