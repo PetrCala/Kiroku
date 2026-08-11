@@ -1,11 +1,11 @@
 #!/usr/bin/env node
 /**
- * Kiroku — App Store Connect helper (zero-dependency).
+ * Kiroku App Store Connect helper (zero-dependency).
  *
  * A lightweight CLI over the App Store Connect API for the operations we reach
  * for around a release: inspect state, lint the store listing, and submit a
  * version for review. It reuses the existing fastlane API key
- * (ios/ios-fastlane-json-key.json — bundles key_id / issuer_id / the .p8) and
+ * (ios/ios-fastlane-json-key.json, bundles key_id / issuer_id / the .p8) and
  * mints the ES256 JWT with Node's built-in crypto. It NEVER prints the key.
  *
  * Requires Node 18+ (global fetch). No npm dependencies.
@@ -13,14 +13,19 @@
  * Usage:
  *   node scripts/asc.mjs status
  *   node scripts/asc.mjs scrub  [--version 0.3.14] [--terms supporter,subscription]
+ *   node scripts/asc.mjs shots  --dir <folder> [--locale en-US] [--replace] [--yes]
  *   node scripts/asc.mjs submit [--version 0.3.14] [--yes]
  *
  * Commands:
  *   status   App, versions + states, the editable version's build,
  *            subscription states, and review submissions + their items.
  *   scrub    Lint the version's store-listing text (description / keywords /
- *            promo / what's-new) for forbidden terms. Exit 1 on any hit — usable
+ *            promo / what's-new) for forbidden terms. Exit 1 on any hit, usable
  *            as a pre-submit / CI gate. Default terms = paid-tier words.
+ *   shots    Upload App Store screenshots for one locale from a folder of PNGs,
+ *            in filename order. The display type comes from each PNG's own
+ *            pixel size, so the framing pipeline's exact-size output decides
+ *            which slot it lands in. DRY RUN unless --yes.
  *   submit   Pre-flight (version submittable, build VALID, subs parked, listing
  *            clean) then submit the version for review, app-only (no IAPs).
  *            DRY RUN unless --yes is passed (submit is irreversible).
@@ -31,8 +36,11 @@
  *   --app-id <id>      ASC app id (skips the bundle-id lookup)
  *   --key <path>       ASC API key JSON (default: <repo>/ios/ios-fastlane-json-key.json)
  *   --terms <csv>      scrub: comma-separated forbidden terms
+ *   --dir <path>       shots: folder of PNGs for one locale (sorted by filename)
+ *   --locale <code>    shots: ASC locale to write (default en-US)
+ *   --replace          shots: delete the existing screenshots in each touched set
  *   --platform <p>     default IOS
- *   --yes              submit: actually execute (otherwise dry run)
+ *   --yes              actually execute (otherwise dry run)
  *   --help, -h         show this help
  */
 import fs from 'node:fs';
@@ -63,6 +71,9 @@ function flag(name, def) {
 }
 const OPTS = {
   version: flag('version'),
+  dir: flag('dir'),
+  locale: flag('locale', 'en-US'),
+  replace: argv.includes('--replace'),
   bundleId: flag('bundle-id', process.env.ASC_BUNDLE_ID || DEFAULT_BUNDLE_ID),
   appId: flag('app-id', process.env.ASC_APP_ID),
   keyPath: flag(
@@ -291,6 +302,195 @@ async function cmdScrub(appId) {
   return 1;
 }
 
+// ---- screenshots ----------------------------------------------------------
+
+// ASC picks the slot from the pixel size, and the sizes are exact: an image one
+// pixel off is rejected outright. These are the sizes the framing pipeline
+// emits (scripts/store-screenshots.config.mjs `devices`). Note APP_IPHONE_67 is
+// the current largest-iPhone slot and takes 1320x2868 as well as 1290x2796,
+// which is why the live listing shows 1320x2868 images filed under _67.
+const DISPLAY_TYPES = {
+  '1320x2868': 'APP_IPHONE_67',
+  '1290x2796': 'APP_IPHONE_67',
+  '2064x2752': 'APP_IPAD_PRO_3GEN_129',
+  '368x448': 'APP_WATCH_SERIES_4',
+  '396x484': 'APP_WATCH_SERIES_7',
+  '410x502': 'APP_WATCH_ULTRA',
+};
+
+/** Width/height straight out of the PNG IHDR chunk, so no image dependency. */
+function pngSize(buf) {
+  const isPng =
+    buf.length > 24 &&
+    buf.readUInt32BE(0) === 0x89504e47 &&
+    buf.readUInt32BE(12) === 0x49484452;
+  if (!isPng) throw new Error('not a PNG');
+  return {width: buf.readUInt32BE(16), height: buf.readUInt32BE(20)};
+}
+
+/** Runs one of the `uploadOperations` ASC hands back with the reservation. */
+async function runUploadOperation(op, buf) {
+  const headers = {};
+  for (const h of op.requestHeaders ?? []) headers[h.name] = h.value;
+  const res = await fetch(op.url, {
+    method: op.method,
+    headers,
+    body: buf.subarray(op.offset, op.offset + op.length),
+  });
+  if (!res.ok)
+    throw new Error(
+      `upload part failed: HTTP ${res.status} ${op.method} ${op.url}`,
+    );
+}
+
+async function localizationFor(versionId, locale) {
+  const locs = await api(
+    'GET',
+    `/v1/appStoreVersions/${versionId}/appStoreVersionLocalizations`,
+  );
+  const loc = locs.data.find(l => l.attributes.locale === locale);
+  if (!loc)
+    throw new Error(
+      `locale ${locale} not on this version (have: ${locs.data
+        .map(l => l.attributes.locale)
+        .join(', ')})`,
+    );
+  return loc;
+}
+
+async function cmdShots(appId) {
+  if (typeof OPTS.dir !== 'string')
+    throw new Error('shots: --dir <folder of PNGs> is required');
+  const dir = path.isAbsolute(OPTS.dir)
+    ? OPTS.dir
+    : path.join(process.cwd(), OPTS.dir);
+
+  const files = fs
+    .readdirSync(dir)
+    .filter(f => f.toLowerCase().endsWith('.png'))
+    .sort();
+  if (!files.length) throw new Error(`no PNGs in ${dir}`);
+
+  const v = await pickVersion(appId);
+  L(`Version ${v.attributes.versionString}: ${versState(v)} id=${v.id}`);
+  const loc = await localizationFor(v.id, OPTS.locale);
+  L(`Locale ${OPTS.locale} localization=${loc.id}`);
+
+  // Group the files by the slot their pixel size maps to; each slot is one set.
+  const planned = new Map();
+  for (const file of files) {
+    const buf = fs.readFileSync(path.join(dir, file));
+    const {width, height} = pngSize(buf);
+    const type = DISPLAY_TYPES[`${width}x${height}`];
+    if (!type)
+      throw new Error(
+        `${file} is ${width}x${height}, which is not an App Store size. ` +
+          `Known: ${Object.keys(DISPLAY_TYPES).join(', ')}`,
+      );
+    if (!planned.has(type)) planned.set(type, []);
+    planned.get(type).push({file, buf, width, height});
+  }
+
+  const sets = await api(
+    'GET',
+    `/v1/appStoreVersionLocalizations/${loc.id}/appScreenshotSets`,
+  );
+
+  L('');
+  for (const [type, entries] of planned) {
+    const existing = sets.data.find(
+      s => s.attributes.screenshotDisplayType === type,
+    );
+    const current = existing
+      ? await api('GET', `/v1/appScreenshotSets/${existing.id}/appScreenshots`)
+      : {data: []};
+    L(
+      `${type}: ${current.data.length} live, uploading ${entries.length}` +
+        `${OPTS.replace ? ' (replacing)' : ' (appending)'}`,
+    );
+    entries.forEach((e, i) =>
+      L(
+        `   ${String(i + 1).padStart(2, '0')} ${e.file}  ${e.width}x${e.height}`,
+      ),
+    );
+  }
+
+  if (!OPTS.yes) {
+    L('\nDRY RUN. Pass --yes to write to App Store Connect.');
+    return;
+  }
+
+  for (const [type, entries] of planned) {
+    let set = sets.data.find(s => s.attributes.screenshotDisplayType === type);
+    if (!set) {
+      L(`\nCreating ${type} set`);
+      const created = await api('POST', '/v1/appScreenshotSets', {
+        data: {
+          type: 'appScreenshotSets',
+          attributes: {screenshotDisplayType: type},
+          relationships: {
+            appStoreVersionLocalization: {
+              data: {type: 'appStoreVersionLocalizations', id: loc.id},
+            },
+          },
+        },
+      });
+      set = created.data;
+    }
+
+    if (OPTS.replace) {
+      const current = await api(
+        'GET',
+        `/v1/appScreenshotSets/${set.id}/appScreenshots`,
+      );
+      for (const s of current.data) {
+        await api('DELETE', `/v1/appScreenshots/${s.id}`);
+        L(`  deleted ${s.attributes.fileName}`);
+      }
+    }
+
+    const uploadedIds = [];
+    for (const {file, buf} of entries) {
+      const reserved = await api('POST', '/v1/appScreenshots', {
+        data: {
+          type: 'appScreenshots',
+          attributes: {fileName: file, fileSize: buf.length},
+          relationships: {
+            appScreenshotSet: {data: {type: 'appScreenshotSets', id: set.id}},
+          },
+        },
+      });
+      const id = reserved.data.id;
+      for (const op of reserved.data.attributes.uploadOperations ?? []) {
+        await runUploadOperation(op, buf);
+      }
+      const checksum = crypto.createHash('md5').update(buf).digest('hex');
+      await api('PATCH', `/v1/appScreenshots/${id}`, {
+        data: {
+          type: 'appScreenshots',
+          id,
+          attributes: {uploaded: true, sourceFileChecksum: checksum},
+        },
+      });
+      uploadedIds.push(id);
+      L(`  uploaded ${file}`);
+    }
+
+    // Store order follows this list, not upload order, so pin it explicitly.
+    await api(
+      'PATCH',
+      `/v1/appScreenshotSets/${set.id}/relationships/appScreenshots`,
+      {
+        data: uploadedIds.map(id => ({type: 'appScreenshots', id})),
+      },
+    );
+    L(`  ${type} ordered (${uploadedIds.length})`);
+  }
+
+  L('\nDone. Apple processes each asset asynchronously; re-run `status` or');
+  L('check ASC until every screenshot reports assetDeliveryState COMPLETE.');
+}
+
 async function cmdSubmit(appId) {
   const v = await pickVersion(appId);
   const st = versState(v);
@@ -352,7 +552,7 @@ async function cmdSubmit(appId) {
     return;
   }
   if (!OPTS.yes) {
-    L('\nDRY RUN — pass --yes to submit (irreversible).');
+    L('\nDRY RUN. Pass --yes to submit (irreversible).');
     L('Reminder: confirm the App Privacy / ATT label manually in ASC first.');
     return;
   }
@@ -395,6 +595,7 @@ async function cmdSubmit(appId) {
     process.exitCode = await cmdScrub(appId);
     return;
   }
+  if (cmd === 'shots') return cmdShots(appId);
   if (cmd === 'submit') return cmdSubmit(appId);
   usage();
   process.exitCode = 1;
