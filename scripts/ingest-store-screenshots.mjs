@@ -138,9 +138,11 @@ function main() {
   );
 
   // Only phone-kind shots come from a fastlane `snapshot` capture. Watch shots
-  // (kind: 'watch') are captured by hand straight into raw/ (see the config and
-  // SCREENSHOTS.md), so the mapper never looks for them in the iPhone folder.
+  // (kind: 'watch') come from the `watch` CI job's simctl capture at
+  // <sourceRoot>/watch/<raw> (one file, fanned out to every locale below), or
+  // from a hand capture dropped straight into raw/ (see SCREENSHOTS.md).
   const phoneShots = shots.filter(s => (s.kind ?? 'phone') === 'phone');
+  const watchShots = shots.filter(s => (s.kind ?? 'phone') === 'watch');
   const mapped = new Set(
     phoneShots.filter(s => s.snapshot).map(s => `${s.snapshot}.png`),
   );
@@ -190,6 +192,41 @@ function main() {
           shot.snapshot
         }.png → ${rel(dest)}`,
       );
+      if (!checkOnly) {
+        mkdirSync(dirname(dest), {recursive: true});
+        copyFileSync(src, dest);
+        copied += 1;
+      }
+    }
+  }
+
+  // Watch fan-out: ONE capture serves every locale. The watch UI language
+  // follows the watch simulator's system locale (English on CI), not the
+  // in-app switcher, and the localized caption is added by the framer, so
+  // duplicating the file per locale is correct, not a shortcut. Accept the CI
+  // layout (<sourceRoot>/watch/<raw>) and a flat drop next to the locale
+  // folders (<sourceRoot>/<raw>). Missing is a warning, not a failure: a
+  // hand capture placed directly in raw/ (SCREENSHOTS.md) still works.
+  for (const shot of watchShots) {
+    const candidates = [
+      join(sourceRoot, 'watch', shot.raw),
+      join(sourceRoot, shot.raw),
+    ];
+    const src = candidates.find(c => existsSync(c));
+    if (!src) {
+      console.warn(
+        `  ! watch capture ${shot.raw} not found (looked in ${candidates
+          .map(rel)
+          .join(
+            ', ',
+          )}); drop it at ${RAW_DIR}/<locale>/${shot.raw} by hand if capturing manually`,
+      );
+      missing += targetLocales.length;
+      continue;
+    }
+    for (const locale of targetLocales) {
+      const dest = join(ROOT, RAW_DIR, locale, shot.raw);
+      console.log(`  ${checkOnly ? '·' : '✓'} ${rel(src)} → ${rel(dest)}`);
       if (!checkOnly) {
         mkdirSync(dirname(dest), {recursive: true});
         copyFileSync(src, dest);

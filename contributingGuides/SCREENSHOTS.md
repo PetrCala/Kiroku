@@ -176,14 +176,38 @@ changes) lives in the `store-screenshots` skill.
 > AlcoholFree (the Statistics "Trends" tab), and Friends. `07_Settings` is
 > captured but intentionally left unmapped: it sells nothing.
 
-### Apple Watch screenshot (captured by hand)
+### Apple Watch screenshot (CI job, manual fallback)
 
 The App Store build embeds the watchOS companion, so App Store Connect requires
 an Apple Watch screenshot (`APP_WATCH_SERIES_4`) before the iOS version can be
 submitted for review. The watch shot is **not** part of the fastlane `snapshot`
 matrix: the companion is a phone-tethered remote, so a watchOS UI test on an
 unpaired simulator only shows the "Open Kiroku on your phone" reconnect screen.
-Capture it by hand instead:
+
+The `watch` job of `screenshots.yml` (on by default; `capture_watch` input)
+captures it in CI: it builds the production scheme for testing, installs the
+phone and watch apps on a freshly paired simulator pair, signs the phone in via
+`ios/KirokuUITests/WatchCaptureSignInTests.swift` (which also best-effort opens
+a live session so the watch shows the unit counter), relaunches the phone app so
+`WatchBridge` pushes the credential over WatchConnectivity, launches the watch
+app, and screenshots it with `simctl io`. The capture lands at
+`fastlane/screenshots/ios/watch/watch.png` (the `watch-screenshot-<sha>`
+artifact), `npm run ingest-screenshots` fans it out to every locale's `raw/`
+folder (the watch UI follows the watch simulator's system locale, so one
+English capture serves all locales; only the framed caption is localized), and
+`npm run verify-screenshots -- --require watch` is the job's gate. Two gotchas
+the job handles, for anyone touching it:
+
+- On iphonesimulator the app id resolves to `org.reactjs.native.example.kiroku`
+  while the watch app's `WKCompanionAppBundleIdentifier` expects
+  `...alcohol-tracker`, so the watch app refuses to install;
+  `scripts/set-simulator-bundle-id.rb` scopes the fix to the `kiroku` target
+  (a command-line override would poison the UI-test runner's id, and
+  `-sdk iphonesimulator` breaks the watch asset catalog build).
+- The phone only pushes the credential when WCSession reports the watch app
+  installed, so the install happens before the sign-in test runs.
+
+Manual fallback (e.g. to reshoot a specific watch state):
 
 1. In Xcode, run the **`Kiroku Watch App`** target on a watch simulator paired
    with a booted iPhone that is signed in to the demo account (so a credential
@@ -194,12 +218,12 @@ Capture it by hand instead:
 4. Drop the PNG at `fastlane/store-screenshots/raw/<locale>/watch.png` for each
    locale in the manifest (capture per locale, or reuse the same shot).
 5. Run `npm run frame-screenshots -- --device watch` to render the framed
-   `410×502` output at `framed/<locale>/watch/01_watch.png`.
+   watch outputs at `framed/<locale>/watch/`.
 
-The framing pipeline scales any watch capture to fit the exact `410×502`
-Series 7+/Ultra slot on the brand background with a caption; the size, caption,
-and per-device scoping (`kind: 'watch'`) live in the manifest. Guideline 2.3.3
-still applies: the capture must be the real shipped watch UI.
+The framing pipeline scales any watch capture to fit the exact ASC watch slots
+on the brand background with a caption; the sizes, caption, and per-device
+scoping (`kind: 'watch'`) live in the manifest. Guideline 2.3.3 still applies:
+the capture must be the real shipped watch UI.
 
 ---
 

@@ -242,10 +242,10 @@ def main
   host_target = find_host_target(project)
   target = configure_ui_test_target(project, host_target)
 
-  source_files = [
-    File.join(UI_TESTS_DIR, 'ScreenshotTests.swift'),
-    File.join(UI_TESTS_DIR, 'SnapshotHelper.swift'),
-  ].select { |p| File.exist?(p) }
+  # Every Swift file in the directory: ScreenshotTests.swift, the copied-in
+  # SnapshotHelper.swift, and WatchCaptureSignInTests.swift (used only by the
+  # watch job; it self-skips outside it via KIROKU_WATCH_CAPTURE).
+  source_files = Dir.glob(File.join(UI_TESTS_DIR, '*.swift')).sort
 
   attach_sources(project, target, source_files)
 

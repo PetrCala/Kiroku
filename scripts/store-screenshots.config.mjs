@@ -32,12 +32,13 @@ const devices = [
   // the same capture: uploading the extra two costs nothing and removes the
   // guesswork about which one Apple is actually asking for.
   //
-  // Unlike the iPhone shots, the watch capture is taken MANUALLY (see the watch
-  // shot below and contributingGuides/SCREENSHOTS.md): a watchOS `snapshot` UI
-  // test can't drive a phone-tethered remote, and an unpaired sim only shows the
-  // reconnect screen. Drop the real capture at RAW_DIR/<locale>/watch.png, then
-  // frame. Each output is exact-size, which is how `asc.mjs shots` knows the
-  // slot to file it under.
+  // Unlike the iPhone shots, the watch capture does not come from fastlane
+  // `snapshot` (a watchOS UI test can't drive a phone-tethered remote, and an
+  // unpaired sim only shows the reconnect screen). The `watch` job of
+  // screenshots.yml captures it from a paired simulator pair with `simctl io`
+  // (see contributingGuides/SCREENSHOTS.md; manual capture into
+  // RAW_DIR/<locale>/watch.png stays a valid fallback). Each output is
+  // exact-size, which is how `asc.mjs shots` knows the slot to file it under.
   {id: 'watch-368', width: 368, height: 448, kind: 'watch'}, // APP_WATCH_SERIES_4
   {id: 'watch-396', width: 396, height: 484, kind: 'watch'}, // APP_WATCH_SERIES_7
   {id: 'watch-410', width: 410, height: 502, kind: 'watch'}, // APP_WATCH_ULTRA
@@ -162,12 +163,13 @@ const shots = [
       cs: 'Zůstaňte na správné cestě s přáteli',
     },
   },
-  // Apple Watch shot (kind: 'watch'). Renders ONLY on the watch device, and is
-  // skipped by the ingest mapper because it has no fastlane `snapshot` source.
-  // Capture it by hand from the `Kiroku Watch App` target running in a watch
-  // simulator paired with a signed-in phone (so it shows a live session, not the
-  // reconnect screen), then drop it at RAW_DIR/<locale>/watch.png. The Czech
-  // caption is a first pass; run the translation-review skill before shipping.
+  // Apple Watch shot (kind: 'watch'). Renders ONLY on the watch devices. It has
+  // no fastlane `snapshot` source; the `watch` CI job captures it to
+  // fastlane/screenshots/ios/watch/watch.png and the ingest mapper fans that
+  // one file out to RAW_DIR/<locale>/watch.png for every locale (the watch UI
+  // follows the watch simulator's system locale; only this caption is
+  // localized). The Czech caption is a first pass; run the translation-review
+  // skill before shipping.
   {
     kind: 'watch',
     raw: 'watch.png',
