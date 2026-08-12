@@ -62,7 +62,7 @@ final class WatchCaptureSignInTests: XCTestCase {
         // boot splash for well over a minute before the first screen mounts.
         if !screen("Auth Screen", timeout: 5) {
             guard screen("Initial Screen", timeout: 120) else {
-                NSLog("[watch-capture] first-screen hierarchy dump: %@", app.debugDescription)
+                dumpHierarchy("first screen")
                 XCTFail("[watch-capture] neither Initial Screen nor Auth Screen appeared after launch")
                 return
             }
@@ -79,7 +79,7 @@ final class WatchCaptureSignInTests: XCTestCase {
         // One free dump of the signed-out form, so a broken selector is
         // diagnosable from the first failed run instead of costing another
         // ~70 minute round trip. The whole job is manual dispatch only.
-        NSLog("[watch-capture] Auth Screen hierarchy: %@", app.debugDescription)
+        dumpHierarchy("auth screen")
 
         guard fillField(
             typed: app.textFields,
@@ -100,12 +100,12 @@ final class WatchCaptureSignInTests: XCTestCase {
         }
 
         guard tapElement(labeled: ["Log in", "Přihlásit se"], timeout: 10) else {
-            NSLog("[watch-capture] submit missing, hierarchy: %@", app.debugDescription)
+            dumpHierarchy("submit missing")
             XCTFail("[watch-capture] submit button not found on Auth Screen")
             return
         }
         guard screen("Home Screen", timeout: 60) else {
-            NSLog("[watch-capture] post-submit hierarchy: %@", app.debugDescription)
+            dumpHierarchy("post submit")
             XCTFail("[watch-capture] Home Screen never appeared after submitting credentials")
             return
         }
@@ -159,7 +159,7 @@ final class WatchCaptureSignInTests: XCTestCase {
         }
 
         guard let container = element(labeled: labels, timeout: 5) else {
-            NSLog("[watch-capture] %@ field missing, hierarchy: %@", name, app.debugDescription)
+            dumpHierarchy("\(name) field missing")
             XCTFail("[watch-capture] \(name) field not found on Auth Screen")
             return false
         }
@@ -168,6 +168,24 @@ final class WatchCaptureSignInTests: XCTestCase {
         tap(container)
         app.typeText(text)
         return true
+    }
+
+    /// Logs the accessibility tree in slices.
+    ///
+    /// `NSLog` truncates a single message at roughly a kilobyte, which is a
+    /// dozen lines of hierarchy: enough to look like an empty screen and send
+    /// the next iteration chasing the wrong bug. Slicing keeps the whole tree.
+    private func dumpHierarchy(_ context: String) {
+        let text = app.debugDescription
+        let sliceLength = 800
+        var start = text.startIndex
+        var index = 0
+        while start < text.endIndex {
+            let end = text.index(start, offsetBy: sliceLength, limitedBy: text.endIndex) ?? text.endIndex
+            NSLog("[watch-capture] %@ hierarchy [%d]: %@", context, index, String(text[start..<end]))
+            start = end
+            index += 1
+        }
     }
 
     private func element(labeled labels: [String], timeout: TimeInterval = 10) -> XCUIElement? {

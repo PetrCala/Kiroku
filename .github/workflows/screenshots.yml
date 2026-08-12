@@ -467,6 +467,21 @@ jobs:
           # FormatVersion 2 nests under TestConfigurations.
           /usr/libexec/PlistBuddy -c 'Delete :KirokuUITests:TestingEnvironmentVariables:DYLD_INSERT_LIBRARIES' "$XCTESTRUN" 2>/dev/null || true
           /usr/libexec/PlistBuddy -c 'Delete :TestConfigurations:0:TestTargets:0:TestingEnvironmentVariables:DYLD_INSERT_LIBRARIES' "$XCTESTRUN" 2>/dev/null || true
+          # Photograph the screen every 10s for the length of the test. The
+          # accessibility tree says what elements exist, never what the screen
+          # actually shows, so an unexpected screen (a consent gate, a login
+          # error, a spinner) is otherwise invisible until the next 70 minute
+          # round trip.
+          mkdir -p watch-diagnostics/timeline
+          (
+            for i in $(seq -w 1 40); do
+              xcrun simctl io "$PHONE_UDID" screenshot \
+                "watch-diagnostics/timeline/phone-$i.png" >/dev/null 2>&1 || true
+              sleep 10
+            done
+          ) &
+          TIMELINE_PID=$!
+          trap 'kill "$TIMELINE_PID" 2>/dev/null || true' EXIT
           xcodebuild test-without-building \
             -xctestrun "$XCTESTRUN" \
             -destination "id=$PHONE_UDID" \
