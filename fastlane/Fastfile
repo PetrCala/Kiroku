@@ -482,6 +482,13 @@ platform :ios do
     # Fastlane runs lanes with cwd = ./fastlane, so step up one directory.
     sh "bundle exec ruby ../scripts/setup-screenshots-test-target.rb"
 
+    # The kiroku target embeds a watchOS companion whose WKCompanionAppBundleIdentifier
+    # is the real device bundle id, but iphonesimulator builds resolve the phone
+    # app to a different simulator-only id, so the OS refuses the watch app's
+    # "no matching companion installed" install. Same fix the watch capture job
+    # uses; see the script header for the full story. Throwaway, not committed.
+    sh "bundle exec ruby ../scripts/set-simulator-bundle-id.rb"
+
     capture_ios_screenshots         # reads Snapfile
     # frame_screenshots(white: true) # uncomment once you've installed `frameit`
   end
