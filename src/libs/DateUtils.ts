@@ -47,6 +47,10 @@ import {getFirebaseAuth} from './Firebase/FirebaseApp';
 import * as CurrentDate from './actions/CurrentDate';
 import * as Localize from './Localize';
 import Log from './Log';
+import {
+  getDeviceTimezone as resolveDeviceTimezone,
+  sanitizeTimezone,
+} from './TimezoneUtils';
 
 type CustomStatusTypes = ValueOf<typeof CONST.CUSTOM_STATUS_TYPES>;
 type TimePeriod = 'AM' | 'PM';
@@ -65,7 +69,12 @@ Onyx.connect({
     const currentUserID = auth?.currentUser?.uid;
     const userDataTimezone = value?.[currentUserID]?.timezone;
     timezone = {
-      selected: userDataTimezone?.selected ?? CONST.DEFAULT_TIME_ZONE.selected,
+      // Validate on read, not only on resolve: a zone persisted by an older
+      // build or synced from another device can be a name this engine refuses
+      // as a `timeZone` option, and every formatter below would throw on it.
+      selected: sanitizeTimezone(
+        userDataTimezone?.selected ?? CONST.DEFAULT_TIME_ZONE.selected,
+      ),
       automatic:
         userDataTimezone?.automatic ?? CONST.DEFAULT_TIME_ZONE.automatic,
     };
@@ -119,14 +128,20 @@ function getDateFnsLocale(localeString: Locale): DateFnsLocale {
   return localeString === CONST.LOCALES.CS_CZ ? CS_CZ : enUS;
 }
 
-function getDayStartAndEndUTC(date: Date, tz: SelectedTimezone) {
+function getDayStartAndEndUTC(date: Date, tzInput: SelectedTimezone) {
+  const tz = sanitizeTimezone(tzInput);
   const dateString = format(date, 'yyyy-MM-dd');
   const startOfDayUTC = fromZonedTime(`${dateString} 00:00:00`, tz).getTime();
   const endOfDayUTC = fromZonedTime(`${dateString} 23:59:59.999`, tz).getTime();
   return {startOfDayUTC, endOfDayUTC};
 }
 
-function getMonthStartAndEndUTC(date: Date, tz: string, untilToday: boolean) {
+function getMonthStartAndEndUTC(
+  date: Date,
+  tzInput: string,
+  untilToday: boolean,
+) {
+  const tz = sanitizeTimezone(tzInput);
   // Get the date in the session's timezone
   const zonedDate = toZonedTime(date, tz);
 
@@ -158,8 +173,9 @@ function getMonthStartAndEndUTC(date: Date, tz: string, untilToday: boolean) {
 function getLocalDateFromDatetime(
   locale: Locale,
   datetime?: string,
-  currentSelectedTimezone: SelectedTimezone = timezone.selected,
+  selectedTimezone: SelectedTimezone = timezone.selected,
 ): Date {
+  const currentSelectedTimezone = sanitizeTimezone(selectedTimezone);
   setLocale(locale);
   if (!datetime) {
     const res = toZonedTime(new Date(), currentSelectedTimezone);
@@ -189,7 +205,10 @@ function getLocalDateFromDatetime(
  */
 function isToday(date: Date, timeZone: SelectedTimezone): boolean {
   const currentDate = new Date();
-  const currentDateInTimeZone = toZonedTime(currentDate, timeZone);
+  const currentDateInTimeZone = toZonedTime(
+    currentDate,
+    sanitizeTimezone(timeZone),
+  );
   return isSameDay(date, currentDateInTimeZone);
 }
 
@@ -208,7 +227,11 @@ function getLocalizedTime(
   if (!date) {
     return 'unknown';
   }
-  return formatInTimeZone(date, selectedTimezone, formatString);
+  return formatInTimeZone(
+    date,
+    sanitizeTimezone(selectedTimezone),
+    formatString,
+  );
 }
 
 function getLocalizedDay(
@@ -219,16 +242,15 @@ function getLocalizedDay(
   if (!date) {
     return 'unknown';
   }
-  const day = toZonedTime(date, selectedTimezone);
+  const day = toZonedTime(date, sanitizeTimezone(selectedTimezone));
   return format(day, formatString);
 }
 
 /**
- * Get the device's time zone
+ * Get the device's time zone, validated against what this engine will accept
+ * back as a `timeZone` option (see `TimezoneUtils`).
  */
-const getDeviceTimezone = (): SelectedTimezone => {
-  return Intl.DateTimeFormat().resolvedOptions().timeZone as SelectedTimezone;
-};
+const getDeviceTimezone = (): SelectedTimezone => resolveDeviceTimezone();
 
 /**
  * Checks if a given date is tomorrow in the specified time zone.
@@ -240,7 +262,7 @@ const getDeviceTimezone = (): SelectedTimezone => {
 function isTomorrow(date: Date, timeZone: SelectedTimezone): boolean {
   const currentDate = new Date();
   const tomorrow = addDays(currentDate, 1); // Get the date for tomorrow in the current time zone
-  const tomorrowInTimeZone = toZonedTime(tomorrow, timeZone);
+  const tomorrowInTimeZone = toZonedTime(tomorrow, sanitizeTimezone(timeZone));
   return isSameDay(date, tomorrowInTimeZone);
 }
 
@@ -254,7 +276,10 @@ function isTomorrow(date: Date, timeZone: SelectedTimezone): boolean {
 function isYesterday(date: Date, timeZone: SelectedTimezone): boolean {
   const currentDate = new Date();
   const yesterday = subDays(currentDate, 1); // Get the date for yesterday in the current time zone
-  const yesterdayInTimeZone = toZonedTime(yesterday, timeZone);
+  const yesterdayInTimeZone = toZonedTime(
+    yesterday,
+    sanitizeTimezone(timeZone),
+  );
   return isSameDay(date, yesterdayInTimeZone);
 }
 
@@ -350,7 +375,7 @@ function getZoneAbbreviation(
   datetime: string | Date,
   selectedTimezone: SelectedTimezone,
 ): string {
-  return formatInTimeZone(datetime, selectedTimezone, 'zzz');
+  return formatInTimeZone(datetime, sanitizeTimezone(selectedTimezone), 'zzz');
 }
 
 /**
@@ -401,9 +426,9 @@ function startCurrentDateUpdater() {
 }
 
 function getCurrentTimezone(): Required<Timezone> {
-  const currentTimezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+  const currentTimezone = resolveDeviceTimezone();
   if (timezone.automatic && timezone.selected !== currentTimezone) {
-    return {...timezone, selected: currentTimezone as SelectedTimezone};
+    return {...timezone, selected: currentTimezone};
   }
   return timezone;
 }

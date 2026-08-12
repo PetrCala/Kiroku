@@ -89,8 +89,9 @@ function groupSessionsByMonth(
     // after the home screen painted — the calendar scrolled (UI thread) but taps
     // were dead (JS thread). `resolveLocalParts` is the same resolver
     // `buildDrinkEvents` and the session write-path use, so the calendar's day
-    // bucketing now matches the stats engine exactly. Returns null only on an
-    // invalid timezone — skip that session rather than bucket it under "NaN".
+    // bucketing now matches the stats engine exactly. A session carrying a
+    // timezone this engine will not accept resolves at UTC+0 rather than
+    // throwing, so the calendar renders it instead of dying on it.
     const parts = resolveLocalParts(
       Number(session.start_time),
       session.timezone ?? defaultTimezone,
