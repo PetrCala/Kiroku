@@ -46,10 +46,28 @@ const mockedCanUpdate = jest.mocked(DateUtils.canUpdateTimezone);
 
 const originalDateTimeFormat = Intl.DateTimeFormat;
 
-function setDeviceTimezone(timeZone: string): void {
-  Intl.DateTimeFormat = jest.fn(() => ({
-    resolvedOptions: () => ({timeZone}),
-  })) as unknown as typeof Intl.DateTimeFormat;
+/**
+ * Stand in for the device's engine. `resolvedOptions()` reports `timeZone`, and
+ * a formatter can be built for a name only when the engine knows it: the hook
+ * resolves through `@libs/TimezoneUtils`, which validates a resolved name by
+ * constructing a formatter from it, so the stub has to answer both questions
+ * the way a real engine does. `UTC` is always known because that is where the
+ * resolver falls back to when the resolved name is rejected.
+ */
+function setDeviceTimezone(timeZone: string, isAcceptedByEngine = true): void {
+  const knownNames = isAcceptedByEngine ? [timeZone, 'UTC'] : ['UTC'];
+  Intl.DateTimeFormat = jest.fn(
+    (_locales?: string | string[], options?: Intl.DateTimeFormatOptions) => {
+      const requested = options?.timeZone;
+      if (requested !== undefined && !knownNames.includes(requested)) {
+        throw new RangeError('Invalid timeZoneName');
+      }
+      return {
+        resolvedOptions: () => ({timeZone: requested ?? timeZone}),
+        formatToParts: () => [],
+      };
+    },
+  ) as unknown as typeof Intl.DateTimeFormat;
 }
 
 function setStoredTimezone(timezone?: Timezone, isLoaded = true): void {
@@ -120,6 +138,21 @@ describe('useAutoUpdateTimezone', () => {
     renderHook(() => useAutoUpdateTimezone());
 
     expect(mockedUpdate).not.toHaveBeenCalled();
+  });
+
+  it('never persists a device timezone the engine will not accept back', () => {
+    // Hermes/Apple can resolve a name (e.g. "GMT") that it then rejects as a
+    // `timeZone` option. Storing it would hand every later formatter a value
+    // that throws, so the validated fallback is what gets written.
+    setDeviceTimezone('GMT', false);
+    setStoredTimezone(undefined);
+
+    renderHook(() => useAutoUpdateTimezone());
+
+    expect(mockedUpdate).toHaveBeenCalledWith({
+      automatic: true,
+      selected: 'UTC',
+    });
   });
 
   it('does nothing until user data has loaded', () => {
