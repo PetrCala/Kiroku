@@ -76,27 +76,36 @@ final class WatchCaptureSignInTests: XCTestCase {
             }
         }
 
-        let emailField = app.textFields.firstMatch
-        guard emailField.waitForExistence(timeout: 10) else {
-            XCTFail("[watch-capture] email field not found on Auth Screen")
-            return
-        }
-        emailField.tap()
-        emailField.typeText(ProcessInfo.processInfo.environment["APPLE_DEMO_EMAIL"] ?? "")
+        // One free dump of the signed-out form, so a broken selector is
+        // diagnosable from the first failed run instead of costing another
+        // ~70 minute round trip. The whole job is manual dispatch only.
+        NSLog("[watch-capture] Auth Screen hierarchy: %@", app.debugDescription)
 
-        let passwordField = app.secureTextFields.firstMatch
-        guard passwordField.waitForExistence(timeout: 5) else {
-            XCTFail("[watch-capture] password field not found on Auth Screen")
+        guard fillField(
+            typed: app.textFields,
+            labels: ["Email", "E-mail"],
+            with: ProcessInfo.processInfo.environment["APPLE_DEMO_EMAIL"] ?? "",
+            named: "email"
+        ) else {
             return
         }
-        passwordField.tap()
-        passwordField.typeText(ProcessInfo.processInfo.environment["APPLE_DEMO_PASSWORD"] ?? "")
+
+        guard fillField(
+            typed: app.secureTextFields,
+            labels: ["Password", "Heslo"],
+            with: ProcessInfo.processInfo.environment["APPLE_DEMO_PASSWORD"] ?? "",
+            named: "password"
+        ) else {
+            return
+        }
 
         guard tapElement(labeled: ["Log in", "Přihlásit se"], timeout: 10) else {
+            NSLog("[watch-capture] submit missing, hierarchy: %@", app.debugDescription)
             XCTFail("[watch-capture] submit button not found on Auth Screen")
             return
         }
         guard screen("Home Screen", timeout: 60) else {
+            NSLog("[watch-capture] post-submit hierarchy: %@", app.debugDescription)
             XCTFail("[watch-capture] Home Screen never appeared after submitting credentials")
             return
         }
@@ -125,6 +134,41 @@ final class WatchCaptureSignInTests: XCTestCase {
     }
 
     // MARK: - Element lookup (same rationale as ScreenshotTests.swift)
+
+    /// Types `text` into a form field, preferring the native element type
+    /// (`textFields` / `secureTextFields`) and falling back to the field's
+    /// accessibility label.
+    ///
+    /// The fallback exists because this app's `TextInput` wraps the native
+    /// field in a labelled container. When that container is itself an
+    /// accessibility element it collapses its children, so the inner field
+    /// never appears in `app.textFields` and only the container's label is
+    /// matchable. Tapping the container still focuses the field underneath,
+    /// so the text is typed at the app level, into whatever holds focus.
+    private func fillField(
+        typed: XCUIElementQuery,
+        labels: [String],
+        with text: String,
+        named name: String
+    ) -> Bool {
+        let native = typed.firstMatch
+        if native.waitForExistence(timeout: 10) {
+            tap(native)
+            native.typeText(text)
+            return true
+        }
+
+        guard let container = element(labeled: labels, timeout: 5) else {
+            NSLog("[watch-capture] %@ field missing, hierarchy: %@", name, app.debugDescription)
+            XCTFail("[watch-capture] \(name) field not found on Auth Screen")
+            return false
+        }
+
+        NSLog("[watch-capture] %@ field matched by label, not element type", name)
+        tap(container)
+        app.typeText(text)
+        return true
+    }
 
     private func element(labeled labels: [String], timeout: TimeInterval = 10) -> XCUIElement? {
         let exact = NSPredicate(format: "label IN %@", labels)
