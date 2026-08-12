@@ -65,12 +65,14 @@ jobs:
     name: Capture iOS App Store screenshots
     if: ${{ inputs.capture_phone }}
     runs-on: macos-26
-    # A cold run is ~12 min of setup plus ~45 min to build the scheme (the app,
-    # every pod, and the embedded watch target) before a single screenshot is
-    # taken, then a few minutes per device/language pair. 60 minutes cancelled a
-    # run that had already done all the building, and a cancellation is not a
-    # failure, so the diagnostic logs were not even uploaded.
-    timeout-minutes: 90
+    # A cold run is ~6 min of setup plus ~60 min for the first (cold) build,
+    # then ~90s to actually capture that language's screenshots. Each
+    # additional language reuses the derived data from the first build, so
+    # its own build is only ~15-20 min, plus another ~90s to capture. Two
+    # languages therefore need ~80-85 min end to end; 90 cut a run off right
+    # as the second language's capture test started, and a timeout cancels
+    # the job rather than failing it, so no diagnostic logs even upload.
+    timeout-minutes: 130
     env:
       DEVELOPER_DIR: /Applications/Xcode_26.1.1.app/Contents/Developer
     steps:
