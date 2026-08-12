@@ -374,6 +374,20 @@ jobs:
           echo "APP_BUNDLE_ID=$APP_BUNDLE_ID" >> "$GITHUB_ENV"
           echo "WATCH_BUNDLE_ID=$WATCH_BUNDLE_ID" >> "$GITHUB_ENV"
 
+      # Diagnostic fork for the sign-in step: launch the app plainly (no test
+      # harness, no injected libraries) and screenshot it. Run 6 showed the
+      # app pinned on the boot splash for 125s under the UI test harness with
+      # React never mounting; this screenshot proves whether the app can boot
+      # to the Initial Screen on this simulator AT ALL. If it can, the
+      # harness is the difference; if it can't, the app/simulator combo is.
+      - name: Smoke boot the phone app without the test harness
+        run: |
+          set -euo pipefail
+          xcrun simctl launch "$PHONE_UDID" "$APP_BUNDLE_ID"
+          sleep 35
+          xcrun simctl io "$PHONE_UDID" screenshot watch-diagnostics/phone-smoke-boot.png
+          xcrun simctl terminate "$PHONE_UDID" "$APP_BUNDLE_ID" || true
+
       # WatchCaptureSignInTests: signs in (hard failure) and opens a live
       # session (best-effort, so the watch shows the unit counter rather than
       # the idle start screen). Plain shell env does NOT reach the test runner
@@ -391,6 +405,15 @@ jobs:
           set -uo pipefail
           XCTESTRUN=$(find "$DERIVED_DATA/Build/Products" -maxdepth 1 -name '*.xctestrun' | head -1)
           test -n "$XCTESTRUN" || { echo "no .xctestrun under $DERIVED_DATA/Build/Products"; exit 1; }
+          # Strip the Main Thread Checker dylib injection (the only content of
+          # TestingEnvironmentVariables:DYLD_INSERT_LIBRARIES). It is injected
+          # into the app under test too, flags RCTBootSplash/TurboModule
+          # constants exported from the JS thread, and is the harness's most
+          # invasive difference from a plain launch, where the app boots fine.
+          # Both key paths tried: FormatVersion 1 keys by target name,
+          # FormatVersion 2 nests under TestConfigurations.
+          /usr/libexec/PlistBuddy -c 'Delete :KirokuUITests:TestingEnvironmentVariables:DYLD_INSERT_LIBRARIES' "$XCTESTRUN" 2>/dev/null || true
+          /usr/libexec/PlistBuddy -c 'Delete :TestConfigurations:0:TestTargets:0:TestingEnvironmentVariables:DYLD_INSERT_LIBRARIES' "$XCTESTRUN" 2>/dev/null || true
           xcodebuild test-without-building \
             -xctestrun "$XCTESTRUN" \
             -destination "id=$PHONE_UDID" \
@@ -431,7 +454,7 @@ jobs:
           set +e
           xcrun simctl spawn "$WATCH_UDID" log show --last 15m --predicate 'processImagePath CONTAINS "Kiroku"' > watch-diagnostics/watch-app.log 2>&1
           xcrun simctl spawn "$PHONE_UDID" log show --last 20m --predicate 'eventMessage CONTAINS "WatchBridge" OR eventMessage CONTAINS "watch-capture"' > watch-diagnostics/phone-watchbridge.log 2>&1
-          xcrun simctl spawn "$PHONE_UDID" log show --last 30m --predicate 'processImagePath CONTAINS "kiroku"' > watch-diagnostics/phone-app.log 2>&1
+          xcrun simctl spawn "$PHONE_UDID" log show --last 30m --info --predicate 'processImagePath CONTAINS "kiroku"' > watch-diagnostics/phone-app.log 2>&1
           true
 
       - name: Verify the watch screenshot was captured
