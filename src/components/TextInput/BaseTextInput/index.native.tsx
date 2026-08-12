@@ -332,7 +332,12 @@ function BaseTextInput(
           // When autoGrowHeight is true we calculate the width for the textInput, so it will break lines properly
           // or if multiline is not supplied we calculate the textinput height, using onLayout.
           onLayout={onLayout}
-          accessibilityLabel={label}
+          // Matches upstream. An accessibility label here would make this
+          // wrapper an accessibility element, which collapses its children on
+          // iOS: the text field disappears from the accessibility tree, so
+          // VoiceOver sees a static container and XCUITest sees no text field
+          // to type into. The label belongs on the input itself.
+          accessible={false}
           style={[
             autoGrowHeight &&
               styles.autoGrowHeightInputContainer(
