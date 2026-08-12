@@ -39,11 +39,7 @@ clear_previous_screenshots(true)
 # scheme is taken from the workspace; the test target is referenced by the scheme's Test action.
 
 # Stop the test run on the first failure so you don't waste 15 min finding out
-# screen 2 broke on every device. number_of_retries(0) is also needed because
-# stop_after_first_error only halts after a *test* error; for *build* errors,
-# snapshot retries `number_of_retries + 1` times per device/language combo by
-# default. Without the explicit 0, a single misconfigured Xcode SDK can loop
-# for 20+ minutes before the workflow times out.
+# screen 2 broke on every device.
 #
 # Set KIROKU_SNAPSHOT_FAIL_FAST=0 to keep going after a failure. This now only
 # governs build and launch errors: the UI test itself never fails, it records
@@ -51,7 +47,16 @@ clear_previous_screenshots(true)
 # scripts/verify-captured-screenshots.mjs is what turns a partial capture into a
 # red run. The screenshots workflow exposes this as the `fail_slow` input.
 stop_after_first_error(ENV["KIROKU_SNAPSHOT_FAIL_FAST"] != "0")
-number_of_retries(0)
+
+# 1, not 0: absorbs the odd "Test crashed with signal abrt before establishing
+# connection" relaunch flake seen switching to the second language on a CI
+# simulator. A retry after device/language combo #1 has already built and
+# passed is cheap (just a relaunch, seconds). The real cost is a retry ON
+# combo #1 itself if the build is genuinely broken: that repeats the full
+# ~50-minute cold build once before failing for good, which the 90-minute job
+# timeout still has room for but with less slack than before. Revert to 0 if
+# a run ever needs that slack back.
+number_of_retries(1)
 
 # Reinstall the app between runs so each capture starts from a clean state.
 reinstall_app(true)
