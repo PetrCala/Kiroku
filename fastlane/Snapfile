@@ -17,6 +17,14 @@ devices([
 # Kiroku uses an in-app locale switcher (Settings -> Language), not OS locale.
 # These language codes are mapped to the app's internal codes inside the UI test
 # (en-US -> "en", cs-CZ -> "cs_cz"). See ios/KirokuUITests/ScreenshotTests.swift.
+#
+# Listing more than one language here makes snapshot relaunch the app process
+# between them (new -AppleLanguages args), and that relaunch reliably crashes
+# on macos-26 / Xcode 26.1.1 with this app (embedded WatchKit companion) with
+# "Test crashed with signal abrt before establishing connection." The screenshots
+# workflow's `language_subset` input trims this list to one language per
+# dispatch via scripts/trim-snapfile-languages.rb, so a real capture is two
+# separate runs (en-only, cs-only), never one run with both.
 languages([
   "en-US",
   "cs-CZ",
@@ -48,14 +56,16 @@ clear_previous_screenshots(true)
 # red run. The screenshots workflow exposes this as the `fail_slow` input.
 stop_after_first_error(ENV["KIROKU_SNAPSHOT_FAIL_FAST"] != "0")
 
-# 1, not 0: absorbs the odd "Test crashed with signal abrt before establishing
-# connection" relaunch flake seen switching to the second language on a CI
-# simulator. A retry after device/language combo #1 has already built and
-# passed is cheap (just a relaunch, seconds). The real cost is a retry ON
-# combo #1 itself if the build is genuinely broken: that repeats the full
-# ~50-minute cold build once before failing for good, which the 90-minute job
-# timeout still has room for but with less slack than before. Revert to 0 if
-# a run ever needs that slack back.
+# 1, not 0: a cheap safety net for a genuinely transient CI simulator hiccup.
+#
+# This is NOT what fixes the "Test crashed with signal abrt before establishing
+# connection" crash on the second language: that crash reproduced twice in a
+# row, in the exact same spot (the language-switch relaunch), which means it
+# is deterministic on this runner, not a flake. A retry there just re-runs the
+# whole suite from language 1 and dies at the same wall a second time,
+# wasting ~8 minutes. See the languages() comment above for the real fix
+# (one language per dispatch). Revert to 0 if this retry is ever seen eating
+# the 90-minute job timeout on a build that is genuinely broken.
 number_of_retries(1)
 
 # Reinstall the app between runs so each capture starts from a clean state.

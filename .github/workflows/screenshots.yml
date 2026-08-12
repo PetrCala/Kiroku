@@ -22,6 +22,15 @@ on:
           - all
           - phone-only
           - ipad-only
+      language_subset:
+        description: 'Which language to capture (all | en-only | cs-only). Snapshot relaunches the app between languages, which reliably crashes on this runner, so a real capture needs two separate dispatches (en-only, cs-only) instead of all.'
+        required: false
+        default: 'all'
+        type: choice
+        options:
+          - all
+          - en-only
+          - cs-only
       dump_a11y:
         description: 'Log the full accessibility tree for every tab. Use when a selector broke: one run yields ground truth for every screen instead of guessing across 40-minute round trips.'
         required: false
@@ -156,6 +165,15 @@ jobs:
         env:
           DEVICE_SUBSET: ${{ github.event.inputs.device_subset }}
         run: bundle exec ruby scripts/trim-snapfile-devices.rb "$DEVICE_SUBSET"
+
+      # Snapshot relaunches the app between languages, which crashes reliably
+      # on this runner (see scripts/trim-snapfile-languages.rb). Trim to one
+      # language per dispatch instead of hitting that relaunch at all.
+      - name: Trim Snapfile language matrix
+        if: ${{ github.event.inputs.language_subset != 'all' }}
+        env:
+          LANGUAGE_SUBSET: ${{ github.event.inputs.language_subset }}
+        run: bundle exec ruby scripts/trim-snapfile-languages.rb "$LANGUAGE_SUBSET"
 
       - name: Run Fastlane - Capture iOS screenshots
         run: bundle exec fastlane ios screenshots
