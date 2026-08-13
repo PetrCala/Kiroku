@@ -99,6 +99,13 @@ final class WatchCaptureSignInTests: XCTestCase {
             return
         }
 
+        // The submit button sits directly below the password field, so the
+        // keyboard covers it. XCUITest still finds it and reports it as not
+        // hittable, and a coordinate tap at its centre lands on a keyboard
+        // key instead: the form is never submitted and the failure surfaces
+        // 60 seconds later as a missing Home Screen.
+        dismissKeyboard()
+
         guard tapElement(labeled: ["Log in", "Přihlásit se"], timeout: 10) else {
             dumpHierarchy("submit missing")
             XCTFail("[watch-capture] submit button not found on Auth Screen")
@@ -201,6 +208,19 @@ final class WatchCaptureSignInTests: XCTestCase {
         )
     }
 
+    /// Blurs the focused field so the keyboard stops covering the lower half
+    /// of the form. Taps well above the inputs, where the screen holds only
+    /// the logo, so nothing else is activated on the way.
+    private func dismissKeyboard() {
+        guard app.keyboards.element.exists else {
+            return
+        }
+        app.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.12)).tap()
+        if !app.keyboards.element.waitForNonExistence(timeout: 5) {
+            NSLog("[watch-capture] keyboard still up after tapping away from the form")
+        }
+    }
+
     /// Logs the accessibility tree in slices.
     ///
     /// `NSLog` truncates a single message at roughly a kilobyte, which is a
@@ -243,6 +263,11 @@ final class WatchCaptureSignInTests: XCTestCase {
             element.tap()
             return
         }
+        // A coordinate tap goes through whatever is on top at that point, so
+        // it can silently hit the wrong thing. Worth a log line: it is the
+        // difference between "the button did nothing" and "the tap never
+        // reached the button".
+        NSLog("[watch-capture] tapping %@ by coordinate, it is not hittable", element.label)
         element.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.5)).tap()
     }
 
