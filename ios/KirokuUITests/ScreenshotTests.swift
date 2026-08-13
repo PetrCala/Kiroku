@@ -165,9 +165,15 @@ final class ScreenshotTests: XCTestCase {
     /// A fresh install lands on `Initial Screen` (the marketing screen with
     /// "Create account" plus a "Log in" link), NOT on the login form. The link
     /// is a `role="link"` pressable, so it is not in `app.buttons`.
+    ///
+    /// 120s, not 45: a cold ReleaseProduction boot on a busy CI simulator can
+    /// sit on the boot splash for well over a minute before the first screen
+    /// mounts. Matches WatchCaptureSignInTests.swift's signIn(), which hit
+    /// the same "neither Initial Screen nor Auth Screen appeared" miss at a
+    /// shorter timeout.
     private func logIn() -> Bool {
         if !screen("Auth Screen", timeout: 5) {
-            guard screen("Initial Screen", timeout: 45) else {
+            guard screen("Initial Screen", timeout: 120) else {
                 recordMiss("logIn", "neither Initial Screen nor Auth Screen appeared after launch")
                 return false
             }
@@ -268,12 +274,29 @@ final class ScreenshotTests: XCTestCase {
     /// Logs the full element tree. Selector work against this app is otherwise
     /// a ~50 minute CI round trip per guess, because nothing shows what a
     /// screen exposes without building and launching it.
+    ///
+    /// Slices the body: `NSLog` truncates a single message at roughly a
+    /// kilobyte, which is a dozen lines of hierarchy, silently swallowing the
+    /// rest and leaving only the BEGIN/END markers behind. Mirrors
+    /// WatchCaptureSignInTests.swift's dumpHierarchy.
     private func dumpTree(_ label: String) {
         NSLog("[a11y-dump] ===== BEGIN \(label) =====")
-        NSLog("%@", app.debugDescription)
-        NSLog("[a11y-dump] ===== END \(label) =====")
         print("[a11y-dump] ===== BEGIN \(label) =====")
-        print(app.debugDescription)
+
+        let text = app.debugDescription
+        let sliceLength = 800
+        var start = text.startIndex
+        var index = 0
+        while start < text.endIndex {
+            let end = text.index(start, offsetBy: sliceLength, limitedBy: text.endIndex) ?? text.endIndex
+            let slice = String(text[start..<end])
+            NSLog("[a11y-dump] %@ [%d]: %@", label, index, slice)
+            print("[a11y-dump] \(label) [\(index)]: \(slice)")
+            start = end
+            index += 1
+        }
+
+        NSLog("[a11y-dump] ===== END \(label) =====")
         print("[a11y-dump] ===== END \(label) =====")
     }
 
