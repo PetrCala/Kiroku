@@ -423,6 +423,15 @@ function BaseTextInput(
                 // eslint-disable-next-line
                 {...inputProps}
                 autoCorrect={inputProps.secureTextEntry ? false : autoCorrect}
+                // Same reasoning as autoCorrect above. React Native defaults
+                // to capitalising the first character of a sentence, which a
+                // secure field then hides: the password is submitted with the
+                // wrong first letter and the user only sees it rejected.
+                autoCapitalize={
+                  inputProps.secureTextEntry
+                    ? 'none'
+                    : inputProps.autoCapitalize
+                }
                 placeholder={placeholderValue}
                 placeholderTextColor={theme.placeholderText}
                 underlineColorAndroid="transparent"
