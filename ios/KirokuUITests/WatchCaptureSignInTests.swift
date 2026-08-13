@@ -154,7 +154,8 @@ final class WatchCaptureSignInTests: XCTestCase {
         let native = typed.firstMatch
         if native.waitForExistence(timeout: 10) {
             tap(native)
-            native.typeText(text)
+            typeSlowly(text, into: native)
+            verify(native, holds: text, named: name)
             return true
         }
 
@@ -166,8 +167,38 @@ final class WatchCaptureSignInTests: XCTestCase {
 
         NSLog("[watch-capture] %@ field matched by label, not element type", name)
         tap(container)
-        app.typeText(text)
+        typeSlowly(text, into: app)
         return true
+    }
+
+    /// Types one character at a time.
+    ///
+    /// `typeText` delivers the whole string as fast as the keyboard accepts
+    /// it, which outruns this app's controlled `TextInput`: React re-renders
+    /// the field from a state value that is still several keystrokes behind,
+    /// and every keystroke that lands mid-render is discarded. A 17 character
+    /// address arrived as "T.cz", which the form then rejected as invalid.
+    /// Pacing the keystrokes lets each `onChangeText` round trip finish.
+    private func typeSlowly(_ text: String, into element: XCUIElement) {
+        for character in text {
+            element.typeText(String(character))
+            usleep(80_000)
+        }
+    }
+
+    /// Logs when a field did not keep everything typed into it. Advisory
+    /// only: the submit attempt and its error message are more diagnostic
+    /// than a failure here, and `value` is redacted on secure fields.
+    private func verify(_ field: XCUIElement, holds text: String, named name: String) {
+        guard let actual = field.value as? String, actual != text else {
+            return
+        }
+        NSLog(
+            "[watch-capture] %@ field holds %d of %d characters after typing",
+            name,
+            actual.count,
+            text.count
+        )
     }
 
     /// Logs the accessibility tree in slices.
