@@ -7,7 +7,10 @@ import XCTest
 // generated at run time by scripts/setup-screenshots-test-target.rb, which also
 // copies fastlane's own SnapshotHelper.swift in next to this file. Run the lane
 // (`bundle exec fastlane ios screenshots`) rather than building the target by
-// hand, and export APPLE_DEMO_EMAIL / APPLE_DEMO_PASSWORD first.
+// hand, and export APPLE_DEMO_EMAIL / APPLE_DEMO_PASSWORD (for the lane's
+// preflight check) plus TEST_RUNNER_-prefixed copies of every variable this
+// file reads via ProcessInfo: xcodebuild forwards only TEST_RUNNER_<VAR> into
+// the test runner process, with the prefix stripped.
 //
 // ─── Failure policy ──────────────────────────────────────────────────────────
 // Every navigation step is guarded and records a `[capture-miss]` instead of

@@ -187,6 +187,18 @@ jobs:
           KIROKU_DUMP_A11Y: ${{ github.event.inputs.dump_a11y == 'true' && '1' || '0' }}
           KIROKU_SNAPSHOT_FAIL_FAST: ${{ github.event.inputs.fail_slow == 'true' && '0' || '1' }}
           KIROKU_DEMO_SESSION_DATES: ${{ github.event.inputs.demo_session_dates }}
+          # The UI test runner is a separate simulator process, and xcodebuild
+          # forwards only TEST_RUNNER_-prefixed variables into it (prefix
+          # stripped), for the `test` action just like for an .xctestrun. The
+          # plain APPLE_DEMO_* copies above stay for the Fastfile's preflight
+          # check; ScreenshotTests.swift reads these four via ProcessInfo.
+          # Without the prefixed copies the tests see empty credentials and,
+          # more visibly, KIROKU_DUMP_A11Y never reaches the runner, which is
+          # why dump_a11y runs produced no [a11y-dump] lines.
+          TEST_RUNNER_APPLE_DEMO_EMAIL: ${{ secrets.APPLE_DEMO_EMAIL }}
+          TEST_RUNNER_APPLE_DEMO_PASSWORD: ${{ secrets.APPLE_DEMO_PASSWORD }}
+          TEST_RUNNER_KIROKU_DUMP_A11Y: ${{ github.event.inputs.dump_a11y == 'true' && '1' || '0' }}
+          TEST_RUNNER_KIROKU_DEMO_SESSION_DATES: ${{ github.event.inputs.demo_session_dates }}
           # `xcodebuild -showBuildSettings` right after -resolvePackageDependencies
           # can outrun fastlane's default 3s/4-retry budget (45s total) on a cold
           # runner that is still indexing the workspace. Give it real headroom.

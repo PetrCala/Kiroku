@@ -33,11 +33,23 @@ languages([
 workspace("./ios/kiroku.xcworkspace")
 scheme("Kiroku (production)")
 
-# The legacy `kirokuTests` target has no SWIFT_VERSION set in its buildSettings
-# (pre-existing project bug), which crashes `xcodebuild build test` on Xcode 26+
-# with: "SWIFT_VERSION '' is unsupported". Override globally; every Kiroku
-# Swift target uses 5.0 already, so this is a safe no-op for the others.
-xcargs("SWIFT_VERSION=5.0")
+# SWIFT_VERSION: the legacy `kirokuTests` target has no SWIFT_VERSION set in
+# its buildSettings (pre-existing project bug), which crashes `xcodebuild build
+# test` on Xcode 26+ with: "SWIFT_VERSION '' is unsupported". Override
+# globally; every Kiroku Swift target uses 5.0 already, so this is a safe
+# no-op for the others.
+#
+# -configuration ReleaseProduction: the scheme's Test action builds
+# DebugProduction, and ios/bundle-react-native-code-and-images.sh sets
+# SKIP_BUNDLING for every *Debug* configuration. On CI there is no Metro to
+# fall back to, so a Debug app boots with no JavaScript at all: it sits on the
+# native splash forever and every capture run dies at logIn() with "neither
+# Initial Screen nor Auth Screen appeared after launch". Release embeds the JS
+# bundle, the same path every deploy build exercises, and matches the watch
+# capture job's build-for-testing invocation. Passed through xcargs because
+# snapshot's own `configuration` option is declared but never forwarded to
+# xcodebuild (fastlane 2.234.0).
+xcargs("SWIFT_VERSION=5.0 -configuration ReleaseProduction")
 
 output_directory("./fastlane/screenshots/ios")
 clear_previous_screenshots(true)
