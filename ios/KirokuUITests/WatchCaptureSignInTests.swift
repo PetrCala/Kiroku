@@ -128,12 +128,18 @@ final class WatchCaptureSignInTests: XCTestCase {
             "Start a session (Floating action)",
             "Spustit relaci (plovoucí tlačítko)",
         ]) else {
+            dumpHierarchy("fab missing")
             return false
         }
         guard tapElement(labeled: ["Live", "Živá"]) else {
+            // The menu the button opens is what failed, not the button, so
+            // dump what is actually on screen. Best effort step, so this
+            // stays a log rather than a failure.
+            dumpHierarchy("fab menu")
             return false
         }
         guard screen("Live Session Screen", timeout: 25) else {
+            dumpHierarchy("after live tap")
             return false
         }
         NSLog("[watch-capture] live session open")

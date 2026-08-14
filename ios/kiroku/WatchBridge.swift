@@ -103,7 +103,7 @@ final class WatchBridge: NSObject {
         let session = WCSession.default
         guard session.activationState == .activated,
               session.isPaired,
-              session.isWatchAppInstalled,
+              session.isWatchAppInstalledOrSimulator,
               let latest else {
             return
         }
@@ -119,6 +119,23 @@ final class WatchBridge: NSObject {
             // (foreground, token refresh, session change) retries.
             NSLog("[WatchBridge] updateApplicationContext failed: %@", error.localizedDescription)
         }
+    }
+}
+
+private extension WCSession {
+    /// `isWatchAppInstalled` is the right gate on a device, but a paired
+    /// simulator pair always reports `appInstalled: NO` even with the watch
+    /// app installed and running: the simulator keeps no installation record
+    /// for the companion to read. Gating on it there means the credential is
+    /// never pushed and the watch can only ever show its reconnect screen,
+    /// which is what the App Store screenshot capture needs to get past.
+    /// Compiled out of every device build, so the real gate is untouched.
+    var isWatchAppInstalledOrSimulator: Bool {
+        #if targetEnvironment(simulator)
+            return true
+        #else
+            return isWatchAppInstalled
+        #endif
     }
 }
 
