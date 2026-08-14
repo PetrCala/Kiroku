@@ -1,8 +1,8 @@
 import {useEffect} from 'react';
 import useCurrentUserData from '@hooks/useCurrentUserData';
 import DateUtils from '@libs/DateUtils';
+import {getDeviceTimezone} from '@libs/TimezoneUtils';
 import * as UserData from '@userActions/UserData';
-import type {SelectedTimezone} from '@src/types/onyx/UserData';
 import {isEmptyObject} from '@src/types/utils/EmptyObject';
 import useAppFocusEvent from './useAppFocusEvent';
 
@@ -23,13 +23,10 @@ function useAutoUpdateTimezone() {
   const isUserDataLoaded = !isEmptyObject(currentUserData);
 
   const updateTimezone = () => {
-    const deviceTimezone = Intl.DateTimeFormat().resolvedOptions()
-      .timeZone as SelectedTimezone;
-    const hasValidDeviceTimezone =
-      typeof deviceTimezone === 'string' && deviceTimezone.trim().length > 0;
-    if (!hasValidDeviceTimezone) {
-      return;
-    }
+    // Validated before it is persisted: a name this engine will not accept back
+    // as a `timeZone` option would be written to the user's profile and then
+    // throw out of every formatter that reads it. See `@libs/TimezoneUtils`.
+    const deviceTimezone = getDeviceTimezone();
 
     const proposedTimezone = DateUtils.formatToSupportedTimezone({
       automatic: true,

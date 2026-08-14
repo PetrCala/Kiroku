@@ -26,6 +26,8 @@
  * session and drink regardless of how the timestamps are distributed.
  */
 
+import {sanitizeTimezone} from '@libs/TimezoneUtils';
+
 /**
  * One `Intl.DateTimeFormat` per timezone. Constructing the formatter is the
  * expensive part, so we build it once and reuse it for every offset probe in
@@ -38,7 +40,13 @@ function getOffsetFormatter(timeZone: string): Intl.DateTimeFormat {
   let formatter = offsetFormatters.get(timeZone);
   if (!formatter) {
     formatter = new Intl.DateTimeFormat('en-US', {
-      timeZone,
+      // Sessions carry the zone they were recorded in, so a name written by an
+      // older build or another device lands here unvetted; on Hermes an
+      // unaccepted name throws `RangeError: Invalid timeZoneName` out of the
+      // constructor. Sanitizing keeps the session visible (bucketed at UTC+0)
+      // instead of taking down the calendar and the stats engine with it. The
+      // cache stays keyed by the original name, so the swap costs one probe.
+      timeZone: sanitizeTimezone(timeZone),
       year: 'numeric',
       month: '2-digit',
       day: '2-digit',
@@ -57,8 +65,8 @@ function getOffsetFormatter(timeZone: string): Intl.DateTimeFormat {
  * call. Derived as `wallClock - ts`: the formatter yields the local wall clock,
  * and the difference is the offset. Rounded to the nearest minute because the
  * formatter drops sub-second precision while every real-world offset is a whole
- * number of minutes. Throws on an invalid timezone (formatter construction) —
- * the caller skips that timestamp.
+ * number of minutes. A timezone this engine will not accept resolves at UTC+0
+ * rather than throwing (see `getOffsetFormatter`).
  */
 function probeOffsetMs(ts: number, timeZone: string): number {
   const fields: Record<string, string> = {};
@@ -148,8 +156,9 @@ type LocalParts = {
 /**
  * Resolve a timestamp's local wall-clock fields. The timezone's UTC offset
  * (cached per month) maps the instant onto a local wall clock, and every field
- * is then `Date.UTC` arithmetic — no per-field formatting. Throws only on an
- * invalid timezone (the caller skips).
+ * is then `Date.UTC` arithmetic, with no per-field formatting. A timezone this
+ * engine will not accept falls back to UTC+0 instead of throwing, so a session
+ * carrying a bad zone still resolves.
  */
 function resolveLocalParts(ts: number, timeZone: string): LocalParts | null {
   const wall = new Date(ts + getTzOffsetMs(ts, timeZone));

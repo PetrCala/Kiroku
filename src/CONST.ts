@@ -1,8 +1,8 @@
 import {add as dateAdd, sub as dateSubtract} from 'date-fns';
 import Config from 'react-native-config';
 import * as KeyCommand from 'react-native-key-command';
+import {getDeviceTimezone} from './libs/TimezoneUtils';
 import SCREENS from './SCREENS';
-import type {SelectedTimezone} from './types/onyx/UserData';
 
 // Creating a default array and object this way because objects ({}) and arrays ([]) are not stable types.
 // Freezing the array ensures that it cannot be unintentionally modified.
@@ -821,9 +821,12 @@ const CONST = {
     },
   },
   DEFAULT_TIME_ZONE: {
+    // Resolved through `TimezoneUtils` rather than straight off `Intl`: this
+    // runs at import time, and a device zone the engine will not accept back
+    // (e.g. "GMT" on Hermes/Apple) used to kill the runtime before the first
+    // render. See the module header in `src/libs/TimezoneUtils.ts`.
     automatic: true,
-    selected: Intl.DateTimeFormat().resolvedOptions()
-      .timeZone as SelectedTimezone,
+    selected: getDeviceTimezone(),
   },
   DEFAULT_ACCOUNT_DATA: {errors: null, success: '', isLoading: false},
   DEFAULT_NETWORK_DATA: {isOffline: false},

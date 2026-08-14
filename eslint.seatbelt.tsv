@@ -840,7 +840,6 @@
 "src/libs/Console/index.ts"	"@typescript-eslint/no-base-to-string"	2
 "src/libs/Console/index.ts"	"rulesdir/no-onyx-connect"	1
 "src/libs/DateUtils.ts"	"@typescript-eslint/switch-exhaustiveness-check"	1
-"src/libs/DateUtils.ts"	"arrow-body-style"	1
 "src/libs/DateUtils.ts"	"rulesdir/no-onyx-connect"	2
 "src/libs/DrinkingSessionUtils.ts"	"@typescript-eslint/switch-exhaustiveness-check"	1
 "src/libs/DrinkingSessionUtils.ts"	"rulesdir/no-onyx-connect"	3

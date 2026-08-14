@@ -10,7 +10,8 @@ import useThemeStyles from '@hooks/useThemeStyles';
 import Navigation from '@libs/Navigation/Navigation';
 import CONST from '@src/CONST';
 import ROUTES from '@src/ROUTES';
-import type {SelectedTimezone, Timezone} from '@src/types/onyx/UserData';
+import type {Timezone} from '@src/types/onyx/UserData';
+import {getDeviceTimezone} from '@libs/TimezoneUtils';
 import type {StackScreenProps} from '@react-navigation/stack';
 import type {SettingsNavigatorParamList} from '@libs/Navigation/types';
 import type SCREENS from '@src/SCREENS';
@@ -31,8 +32,9 @@ function TimezoneInitialScreen({route}: TimezoneInitialScreenProps) {
 
   const {translate} = useLocalize();
 
-  const currentTimezone = Intl.DateTimeFormat().resolvedOptions()
-    .timeZone as SelectedTimezone;
+  // Validated device zone: switching back to automatic must not store a name
+  // this engine refuses as a `timeZone` option. See `@libs/TimezoneUtils`.
+  const currentTimezone = getDeviceTimezone();
 
   /**
    * Updates setting for automatic timezone selection.

@@ -15,6 +15,7 @@
  *   node scripts/asc.mjs scrub  [--version 0.3.14] [--terms supporter,subscription]
  *   node scripts/asc.mjs shots  --dir <folder> [--locale en-US] [--replace] [--yes]
  *   node scripts/asc.mjs submit [--version 0.3.14] [--yes]
+ *   node scripts/asc.mjs rename --version 0.3.14 --to 0.3.15
  *
  * Commands:
  *   status   App, versions + states, the editable version's build,
@@ -29,9 +30,12 @@
  *   submit   Pre-flight (version submittable, build VALID, subs parked, listing
  *            clean) then submit the version for review, app-only (no IAPs).
  *            DRY RUN unless --yes is passed (submit is irreversible).
+ *   rename   PATCH an appStoreVersion's versionString (e.g. after a rejection,
+ *            to reopen it for editing). Requires --version and --to.
  *
  * Flags:
  *   --version <str>    target version (default: the lone PREPARE_FOR_SUBMISSION one)
+ *   --to <str>         rename: the new version string
  *   --bundle-id <id>   app bundle id (default: org.reactjs.native.example.alcohol-tracker)
  *   --app-id <id>      ASC app id (skips the bundle-id lookup)
  *   --key <path>       ASC API key JSON (default: <repo>/ios/ios-fastlane-json-key.json)
@@ -74,6 +78,7 @@ const OPTS = {
   dir: flag('dir'),
   locale: flag('locale', 'en-US'),
   replace: argv.includes('--replace'),
+  to: flag('to'),
   bundleId: flag('bundle-id', process.env.ASC_BUNDLE_ID || DEFAULT_BUNDLE_ID),
   appId: flag('app-id', process.env.ASC_APP_ID),
   keyPath: flag(
@@ -581,6 +586,24 @@ async function cmdSubmit(appId) {
   L(`Submitted ✓  submission=${id}  state=${done.data.attributes.state}`);
 }
 
+async function cmdRename(appId) {
+  if (!OPTS.to) throw new Error('rename requires --to <new version string>');
+  const v = await pickVersion(appId);
+  L(
+    `Renaming ${v.attributes.versionString} (${versState(v)}) id=${v.id} -> ${OPTS.to}`,
+  );
+  const done = await api('PATCH', `/v1/appStoreVersions/${v.id}`, {
+    data: {
+      type: 'appStoreVersions',
+      id: v.id,
+      attributes: {versionString: OPTS.to},
+    },
+  });
+  L(
+    `Renamed ✓  ${done.data.attributes.versionString} state=${versState(done.data)}`,
+  );
+}
+
 // ---- main -----------------------------------------------------------------
 (async () => {
   if (OPTS.help || !cmd) return usage();
@@ -597,6 +620,7 @@ async function cmdSubmit(appId) {
   }
   if (cmd === 'shots') return cmdShots(appId);
   if (cmd === 'submit') return cmdSubmit(appId);
+  if (cmd === 'rename') return cmdRename(appId);
   usage();
   process.exitCode = 1;
 })().catch(e => {

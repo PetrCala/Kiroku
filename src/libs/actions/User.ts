@@ -26,7 +26,8 @@ import {
 } from 'firebase/auth';
 import {getOAuthCredential} from '@libs/OAuthCredential';
 import * as Localize from '@libs/Localize';
-import type {SelectedTimezone, Timezone} from '@src/types/onyx/UserData';
+import type {Timezone} from '@src/types/onyx/UserData';
+import {getDeviceTimezone} from '@libs/TimezoneUtils';
 import {validateAppVersion} from '@libs/Validation';
 import type {OnyxEntry, OnyxUpdate} from 'react-native-onyx';
 import Onyx from 'react-native-onyx';
@@ -83,8 +84,7 @@ const getDefaultPreferences = (): Preferences => ({
 const getDefaultUserData = (profileData: Profile): UserData => {
   const userRole = 'open_beta_user';
   const timezone: Timezone = {
-    selected: Intl.DateTimeFormat().resolvedOptions()
-      .timeZone as SelectedTimezone,
+    selected: getDeviceTimezone(),
     automatic: true,
   };
   return {

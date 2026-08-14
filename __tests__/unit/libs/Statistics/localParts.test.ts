@@ -198,10 +198,18 @@ describe('resolveLocalParts — the date-fns-tz failure instant', () => {
   });
 });
 
-describe('resolveLocalParts — invalid timezone', () => {
-  it('throws so the caller can skip the timestamp', () => {
+describe('resolveLocalParts with an invalid timezone', () => {
+  // Sessions carry the zone they were recorded in, and a name written by an
+  // older build or another device can be one this engine refuses. It used to
+  // throw out of the formatter constructor, which took the calendar and the
+  // stats engine down with it; now the zone is sanitized to UTC+0 on read so
+  // the session still resolves. See `@libs/TimezoneUtils`.
+  it('resolves at UTC+0 instead of throwing', () => {
     expect(() =>
       resolveLocalParts(Date.UTC(2024, 0, 1), 'Not/AZone'),
-    ).toThrow();
+    ).not.toThrow();
+    expect(
+      resolveLocalParts(Date.UTC(2024, 0, 1, 10), 'Not/AZone'),
+    ).toMatchObject({localDay: '2024-01-01', localHour: 10});
   });
 });
