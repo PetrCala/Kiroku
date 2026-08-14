@@ -84,7 +84,7 @@ final class WatchCaptureSignInTests: XCTestCase {
         guard fillField(
             typed: app.textFields,
             labels: ["Email", "E-mail"],
-            with: ProcessInfo.processInfo.environment["APPLE_DEMO_EMAIL"] ?? "",
+            with: credential("APPLE_DEMO_EMAIL"),
             named: "email"
         ) else {
             return
@@ -93,7 +93,7 @@ final class WatchCaptureSignInTests: XCTestCase {
         guard fillField(
             typed: app.secureTextFields,
             labels: ["Password", "Heslo"],
-            with: ProcessInfo.processInfo.environment["APPLE_DEMO_PASSWORD"] ?? "",
+            with: credential("APPLE_DEMO_PASSWORD"),
             named: "password"
         ) else {
             return
@@ -176,6 +176,29 @@ final class WatchCaptureSignInTests: XCTestCase {
         tap(container)
         typeSlowly(text, into: app)
         return true
+    }
+
+    /// Reads a credential from the environment, trimming surrounding
+    /// whitespace: a repository secret pasted with a trailing newline would
+    /// otherwise be typed literally and rejected as a wrong password.
+    ///
+    /// Logs lengths only, never any part of the value, so an empty or
+    /// whitespace-padded secret is diagnosable from the run log without
+    /// putting the credential in it.
+    private func credential(_ name: String) -> String {
+        let raw = ProcessInfo.processInfo.environment[name] ?? ""
+        let trimmed = raw.trimmingCharacters(in: .whitespacesAndNewlines)
+        if raw.count != trimmed.count {
+            NSLog(
+                "[watch-capture] %@ had %d characters of surrounding whitespace, trimmed",
+                name,
+                raw.count - trimmed.count
+            )
+        }
+        if trimmed.isEmpty {
+            NSLog("[watch-capture] %@ is empty; the secret is missing from this run", name)
+        }
+        return trimmed
     }
 
     /// Types one character at a time.
