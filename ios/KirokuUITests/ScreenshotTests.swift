@@ -405,7 +405,29 @@ final class ScreenshotTests: XCTestCase {
     // `bottomTabBar.*` string (see createCustomBottomTabNavigator/BottomTabBar).
     // There are exactly four: Home, Friends, Statistics, Settings.
 
+    /// Pops any pushed full-screen back off the stack until the bottom tab
+    /// bar is reachable again. On phones a pushed screen (Live Session, Day
+    /// Overview) covers the tab bar entirely, so a step that starts from a
+    /// tab must first drill out of whatever the previous step left open;
+    /// otherwise every capture after 02_LiveSession misses with the tab
+    /// unreachable.
+    @discardableResult
+    private func popToTabBar() -> Bool {
+        for _ in 1...3 {
+            if element(labeled: ["Home", "Domů"], timeout: 3) != nil {
+                return true
+            }
+            // common.back
+            guard let back = element(labeled: ["Back", "Zpět"], timeout: 3) else {
+                break
+            }
+            tap(back)
+        }
+        return element(labeled: ["Home", "Domů"], timeout: 5) != nil
+    }
+
     private func openHome() -> Bool {
+        popToTabBar()
         guard tapElement(labeled: ["Home", "Domů"]) else { return false }
         return screen("Home Screen")
     }
@@ -472,6 +494,7 @@ final class ScreenshotTests: XCTestCase {
     /// The content subtree is dynamically imported behind
     /// `runAfterInteractions`, so the inner tabs appear a beat after the screen.
     private func openStatisticsTab(matching labels: [String]) -> Bool {
+        popToTabBar()
         guard tapElement(labeled: ["Statistics", "Statistiky"]) else { return false }
         guard screen("Statistics Screen") else { return false }
         guard tapElement(labeled: labels, timeout: 25) else {
@@ -484,12 +507,14 @@ final class ScreenshotTests: XCTestCase {
     }
 
     private func openFriends() -> Bool {
+        popToTabBar()
         guard tapElement(labeled: ["Friends", "Přátelé"]) else { return false }
         return screen("SocialScreen")
     }
 
     @discardableResult
     private func openSettings() -> Bool {
+        popToTabBar()
         guard tapElement(labeled: ["Settings", "Nastavení"]) else { return false }
         return screen("SettingsScreen")
     }
