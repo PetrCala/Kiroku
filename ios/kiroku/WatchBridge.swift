@@ -114,6 +114,8 @@ final class WatchBridge: NSObject {
         do {
             try session.updateApplicationContext(latest)
             lastPushed = candidate
+            // Keys only, never values: the payload carries the auth token.
+            NSLog("[WatchBridge] pushed application context: %@", latest.keys.sorted().joined(separator: ","))
         } catch {
             // Never let a watch push take the app down; the next trigger
             // (foreground, token refresh, session change) retries.
