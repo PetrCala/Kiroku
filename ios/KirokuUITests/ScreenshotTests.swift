@@ -143,6 +143,17 @@ final class ScreenshotTests: XCTestCase {
         app.otherElements[identifier].waitForExistence(timeout: timeout)
     }
 
+    /// Waits for an element to become hittable, i.e. actually on top, not
+    /// merely present in the accessibility tree. `waitForExistence` returns
+    /// while the boot splash is still dissolving over the first screen, and a
+    /// tap in that window hits the overlay instead of the element.
+    private func waitUntilHittable(_ element: XCUIElement, timeout: TimeInterval) {
+        let deadline = Date().addingTimeInterval(timeout)
+        while !element.isHittable && Date() < deadline {
+            usleep(250_000)
+        }
+    }
+
     /// Taps an element, falling back to its centre coordinate when the element
     /// reports itself as not hittable (common for RN pressables whose child
     /// text owns the frame).
@@ -181,11 +192,29 @@ final class ScreenshotTests: XCTestCase {
                 return false
             }
             // common.logInHere
-            guard tapElement(labeled: ["Log in", "Přihlaste se zde"], timeout: 20) else {
+            guard let logInLink = element(labeled: ["Log in", "Přihlaste se zde"], timeout: 20) else {
                 recordMiss("logIn", "log-in link not found on Initial Screen")
                 return false
             }
-            guard screen("Auth Screen", timeout: 20) else {
+            // The screen's testID enters the tree while the native splash is
+            // still dissolving over it and the logo entrance animation is
+            // starting (InitialScreen arms the animation on splash-hidden), so
+            // a single immediate tap can land on the overlay or a still-moving
+            // pressable and silently do nothing: link found, event
+            // synthesized, no navigation. Wait for the link to be genuinely
+            // hittable, then give each tap its own short window to navigate
+            // before retrying.
+            waitUntilHittable(logInLink, timeout: 10)
+            var reachedAuthScreen = false
+            for attempt in 1...3 {
+                tap(logInLink)
+                if screen("Auth Screen", timeout: 10) {
+                    reachedAuthScreen = true
+                    break
+                }
+                NSLog("[capture-retry] logIn: tap %d on the log-in link did not open the Auth Screen", attempt)
+            }
+            guard reachedAuthScreen else {
                 recordMiss("logIn", "Auth Screen never appeared after tapping the log-in link")
                 return false
             }
