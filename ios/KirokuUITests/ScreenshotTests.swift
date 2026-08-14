@@ -143,6 +143,47 @@ final class ScreenshotTests: XCTestCase {
         app.otherElements[identifier].waitForExistence(timeout: timeout)
     }
 
+    /// Reads a secret from the runner's environment, trimmed. CI secrets can
+    /// pick up surrounding whitespace on the way in, and a trailing newline
+    /// typed into the password field submits a wrong credential.
+    private func credential(_ name: String) -> String {
+        let raw = ProcessInfo.processInfo.environment[name] ?? ""
+        let trimmed = raw.trimmingCharacters(in: .whitespacesAndNewlines)
+        if raw.count != trimmed.count {
+            NSLog("[capture-note] %@ had %d characters of surrounding whitespace, trimmed", name, raw.count - trimmed.count)
+        }
+        if trimmed.isEmpty {
+            NSLog("[capture-note] %@ is empty; the secret is missing from this run", name)
+        }
+        return trimmed
+    }
+
+    /// Types one character at a time. `typeText` delivers the whole string as
+    /// fast as the keyboard accepts it, which outruns this app's controlled
+    /// `TextInput`: React re-renders the field from a state value that is
+    /// still several keystrokes behind, and every keystroke that lands
+    /// mid-render is discarded. Pacing lets each `onChangeText` round trip
+    /// finish. Mirrors WatchCaptureSignInTests.
+    private func typeSlowly(_ text: String, into element: XCUIElement) {
+        for character in text {
+            element.typeText(String(character))
+            usleep(80_000)
+        }
+    }
+
+    /// Blurs the focused field so the keyboard stops covering the lower half
+    /// of the form. Taps well above the inputs, where the screen holds only
+    /// the logo, so nothing else is activated on the way.
+    private func dismissKeyboard() {
+        guard app.keyboards.element.exists else {
+            return
+        }
+        app.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.12)).tap()
+        if !app.keyboards.element.waitForNonExistence(timeout: 5) {
+            NSLog("[capture-note] keyboard still up after tapping away from the form")
+        }
+    }
+
     /// Waits for an element to become hittable, i.e. actually on top, not
     /// merely present in the accessibility tree. `waitForExistence` returns
     /// while the boot splash is still dissolving over the first screen, and a
@@ -228,7 +269,7 @@ final class ScreenshotTests: XCTestCase {
             return false
         }
         emailField.tap()
-        emailField.typeText(ProcessInfo.processInfo.environment["APPLE_DEMO_EMAIL"] ?? "")
+        typeSlowly(credential("APPLE_DEMO_EMAIL"), into: emailField)
 
         let passwordField = app.secureTextFields.firstMatch
         guard passwordField.waitForExistence(timeout: 5) else {
@@ -236,7 +277,14 @@ final class ScreenshotTests: XCTestCase {
             return false
         }
         passwordField.tap()
-        passwordField.typeText(ProcessInfo.processInfo.environment["APPLE_DEMO_PASSWORD"] ?? "")
+        typeSlowly(credential("APPLE_DEMO_PASSWORD"), into: passwordField)
+
+        // The submit button sits directly below the password field, so the
+        // keyboard covers it: the button stays findable but not hittable, and
+        // the coordinate-tap fallback lands on a keyboard key instead, which
+        // is why the form was never submitted. Blur the field first, exactly
+        // as WatchCaptureSignInTests does.
+        dismissKeyboard()
 
         // common.logIn. Note the capitalisation: en.ts says "Log in", not
         // "Log In", and NSPredicate string comparison is case sensitive.
