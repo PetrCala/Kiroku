@@ -514,53 +514,23 @@ jobs:
       # via onIdTokenChanged + the Onyx ongoing-session connection. Then
       # launch the watch app and give WCSession time to activate, deliver the
       # persisted application context, and route to the signed-in screen.
-      # A simulator pair reports isWatchAppInstalled == false essentially
-      # forever, and WatchConnectivity enforces it too, rejecting the push
-      # with "Watch app is not installed". The one trigger that does land is
-      # sessionWatchStateDidChange on the phone, which fires when the watch
-      # app starts while the phone app is already running: that is the only
-      # reason any run has ever captured a signed-in watch.
+      # The watch seeds its own signed-in session from -KirokuScreenshotMode
+      # (see ScreenshotMode in ios/Kiroku Watch App/KirokuApp.swift). The
+      # WatchConnectivity handoff cannot carry the credential here: a
+      # simulator pair reports isWatchAppInstalled == false whatever is
+      # installed, and the framework enforces it, so 16 pushes across five
+      # cycles were all rejected with "Watch app is not installed".
       #
-      # So keep the phone running and cycle the watch app, checking after
-      # each cycle whether the push actually went through, rather than
-      # sleeping a fixed time and hoping. Costs seconds when it works on the
-      # first cycle, and still recovers when the daemon is slow to catch up.
-      - name: Bridge the token and capture the watch screenshot
+      # The phone still runs, signed in by the UI test, so phone-at-capture
+      # keeps showing real post-sign-in state next to the watch shot.
+      - name: Capture the watch screenshot
         run: |
-          set -uo pipefail
-          pushed() {
-            xcrun simctl spawn "$PHONE_UDID" log show --last 10m \
-              --predicate 'eventMessage CONTAINS "WatchBridge"' 2>/dev/null \
-              | grep -q "pushed application context"
-          }
-
+          set -euo pipefail
           xcrun simctl launch "$PHONE_UDID" "$APP_BUNDLE_ID"
-          sleep 30
-
-          for attempt in 1 2 3 4 5; do
-            echo "bridge attempt $attempt"
-            xcrun simctl terminate "$WATCH_UDID" "$WATCH_BUNDLE_ID" 2>/dev/null || true
-            sleep 3
-            xcrun simctl launch "$WATCH_UDID" "$WATCH_BUNDLE_ID"
-            sleep 25
-            if pushed; then
-              echo "credential pushed on attempt $attempt"
-              break
-            fi
-            # The other trigger is the phone activating with the watch app
-            # already up, so alternate that in before trying again.
-            xcrun simctl terminate "$PHONE_UDID" "$APP_BUNDLE_ID" 2>/dev/null || true
-            sleep 3
-            xcrun simctl launch "$PHONE_UDID" "$APP_BUNDLE_ID"
-            sleep 20
-            if pushed; then
-              echo "credential pushed on attempt $attempt after relaunching the phone"
-              break
-            fi
-          done
-
+          xcrun simctl launch "$WATCH_UDID" "$WATCH_BUNDLE_ID" -KirokuScreenshotMode
+          sleep 20
           xcrun simctl io "$WATCH_UDID" screenshot watch-diagnostics/watch-early.png
-          # Let the watch render the signed-in screen before the real shot.
+          # Let the counter settle before the real shot.
           sleep 15
           mkdir -p fastlane/screenshots/ios/watch
           xcrun simctl io "$WATCH_UDID" screenshot fastlane/screenshots/ios/watch/watch.png
@@ -578,18 +548,18 @@ jobs:
 
       # The size check below cannot tell a signed-in watch from the reconnect
       # placeholder, and a run that captures the placeholder is worse than a
-      # failed one: it looks shippable. The credential push is the thing that
-      # decides which screen appears, so gate on it directly.
-      - name: Verify the credential reached the watch
+      # failed one: it looks shippable. Seeding is what decides which screen
+      # appears, so gate on it directly.
+      - name: Verify the watch reached its signed-in state
         if: ${{ always() }}
         run: |
           set -uo pipefail
-          if grep -q "\[WatchBridge\] pushed application context" watch-diagnostics/phone-app.log; then
-            echo "credential pushed to the watch"
+          if grep -q "\[ScreenshotMode\] seeded a live session" watch-diagnostics/watch-app.log; then
+            echo "watch seeded its live session"
             exit 0
           fi
-          echo "the phone never pushed the credential, so the watch shows the reconnect screen"
-          grep -E "\[WatchBridge\]" watch-diagnostics/phone-app.log | tail -5 || echo "no WatchBridge log lines at all"
+          echo "the watch never seeded a session, so it is showing the reconnect screen"
+          grep -E "\[ScreenshotMode\]" watch-diagnostics/watch-app.log | tail -5 || echo "no ScreenshotMode log lines at all"
           exit 1
 
       - name: Verify the watch screenshot was captured
