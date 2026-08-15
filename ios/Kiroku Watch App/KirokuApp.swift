@@ -4,8 +4,9 @@
 //
 //  Created by PetrCala on 29.06.2024.
 //
+// KirokuWatchCore is compiled into this target rather than linked as a
+// module, so its types are already in scope with no import.
 import SwiftUI
-import KirokuWatchCore
 
 @main
 struct KirokuApp: App {
