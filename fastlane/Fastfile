@@ -15,7 +15,7 @@
 
 # App Store "App Review Information": sign-in (demo) account + contact for the
 # reviewer. Secrets come from the environment (GitHub Actions secrets / a local
-# untracked env) — never hardcode them, the repo is public. Notes are empty.
+# untracked env), never hardcode them, the repo is public. Notes are empty.
 # Returns nil when the demo creds are absent so deliver skips review info
 # cleanly (it early-returns on a nil app_review_information).
 # Sent with every App Store submission. Version 0.3.22 was rejected under
@@ -241,7 +241,7 @@ platform :ios do
               method: "ad-hoc",
               provisioningProfiles: {
                 # Distinct bundle id (.adhoc suffix) so the ad-hoc build installs
-                # side by side with the App Store build — mirrors Android's
+                # side by side with the App Store build, mirrors Android's
                 # applicationIdSuffix ".adhoc". The Kiroku_AdHoc profile is bound to
                 # this id in the portal (see scripts/ios-signing.mjs adhoc-setup).
                 "org.reactjs.native.example.alcohol-tracker.adhoc" => "Kiroku_AdHoc",
@@ -355,7 +355,7 @@ platform :ios do
       )
     rescue => e
       UI.error("Failed to upload dSYMs to Crashlytics: #{e.message}")
-      UI.important("Continuing — TestFlight upload already succeeded. Symbolicate the affected build manually if needed.")
+      UI.important("Continuing, TestFlight upload already succeeded. Symbolicate the affected build manually if needed.")
     end
 
   end
@@ -363,7 +363,7 @@ platform :ios do
   desc "Move app to App Store Review"
   lane :production do
     # The binary was already built and uploaded to TestFlight by the staging
-    # `beta` lane, so this lane must NOT rebuild/re-upload — it only distributes
+    # `beta` lane, so this lane must NOT rebuild/re-upload, it only distributes
     # that existing build externally. `distribute_only: true` tells pilot to
     # skip the upload and act on the build identified by app_version/build_number;
     # without it pilot looks for an IPA to upload and fails with
@@ -405,7 +405,7 @@ platform :ios do
 
       submit_for_review: false,
 
-      # Do NOT auto-release on approval — keep the approved build as Pending
+      # Do NOT auto-release on approval, keep the approved build as Pending
       # Developer Release so we control the public launch date.
       automatic_release: false,
 
@@ -415,7 +415,7 @@ platform :ios do
       # Define the metadata path
       metadata_path: "./fastlane/metadata",
 
-      # Age-rating questionnaire (App Store Submission Kit §3 — alcohol = Frequent/Intense → 17+)
+      # Age-rating questionnaire (App Store Submission Kit §3, alcohol = Frequent/Intense → 17+)
       app_rating_config_path: "./fastlane/metadata/rating_config.json",
 
       # App Store review: demo sign-in account + contact (notes empty).
@@ -469,14 +469,14 @@ platform :ios do
   lane :screenshots do
     ENV["ENVFILE"] = ".env.production"
 
-    # Demo credentials must be exported in the shell before invoking the lane —
+    # Demo credentials must be exported in the shell before invoking the lane -
     # the same env vars the :production lane already uses for App Store Review.
     UI.user_error!("APPLE_DEMO_EMAIL not set") unless ENV["APPLE_DEMO_EMAIL"]
     UI.user_error!("APPLE_DEMO_PASSWORD not set") unless ENV["APPLE_DEMO_PASSWORD"]
 
     # Generate the KirokuUITests target inside ios/kiroku.xcodeproj at runtime.
     # The resulting pbxproj diff is intentionally throwaway and must not be
-    # committed — committing it bumps objectVersion via Xcode 26 and breaks
+    # committed, committing it bumps objectVersion via Xcode 26 and breaks
     # `bundle exec pod install` for everyone. See the script header and
     # contributingGuides/SCREENSHOTS.md for the full story.
     # Fastlane runs lanes with cwd = ./fastlane, so step up one directory.
@@ -490,6 +490,27 @@ platform :ios do
     sh "bundle exec ruby ../scripts/set-simulator-bundle-id.rb"
 
     capture_ios_screenshots         # reads Snapfile
+
+    # snapshot writes flat files, <locale>/<device>-<shot>.png, but both
+    # scripts/verify-captured-screenshots.mjs and
+    # scripts/ingest-store-screenshots.mjs consume device subfolders,
+    # <locale>/<device>/<shot>.png. Normalize here so every consumer of the
+    # capture (CI verify gate, local ingest) sees one layout. The shot names
+    # all start with two digits (01_Home .. 07_Settings), which is what the
+    # lookahead splits on; device names may themselves contain hyphens
+    # ("iPad Pro 13-inch (M5)") so a plain split on "-" would mangle them.
+    require 'fileutils'
+    screenshots_root = File.expand_path('screenshots/ios', __dir__)
+    Dir.glob(File.join(screenshots_root, '*')).select { |p| File.directory?(p) }.each do |locale_dir|
+      Dir.glob(File.join(locale_dir, '*.png')).each do |png|
+        base = File.basename(png, '.png')
+        match = base.match(/\A(?<device>.+)-(?<shot>\d{2}_.+)\z/)
+        next unless match
+        device_dir = File.join(locale_dir, match[:device])
+        FileUtils.mkdir_p(device_dir)
+        FileUtils.mv(png, File.join(device_dir, "#{match[:shot]}.png"))
+      end
+    end
     # frame_screenshots(white: true) # uncomment once you've installed `frameit`
   end
 
