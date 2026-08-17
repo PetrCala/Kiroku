@@ -3,11 +3,23 @@
  */
 
 import buildDateTicks from '@components/Charts/BaseChart/dateTicks';
+import CONST from '@src/CONST';
+
+type Params = Parameters<typeof buildDateTicks>[0];
+
+/** The English cases below predate localized labels; keep them explicit. */
+function inEnglish(params: Omit<Params, 'preferredLocale'>) {
+  return buildDateTicks({...params, preferredLocale: CONST.LOCALES.EN});
+}
+
+function inCzech(params: Omit<Params, 'preferredLocale'>) {
+  return buildDateTicks({...params, preferredLocale: CONST.LOCALES.CS_CZ});
+}
 
 describe('buildDateTicks', () => {
   describe('day mode (span ≤ 31 days)', () => {
     test('daily series keeps evenly-spaced MMM d ticks', () => {
-      const out = buildDateTicks({
+      const out = inEnglish({
         firstKey: '2026-06-01',
         lastKey: '2026-06-30',
         length: 30,
@@ -21,7 +33,7 @@ describe('buildDateTicks', () => {
 
     test('weekly series labels each tick with its Monday', () => {
       // 2026-W19..W22 — Mondays May 4 through May 25; span 28 days.
-      const out = buildDateTicks({
+      const out = inEnglish({
         firstKey: '2026-W19',
         lastKey: '2026-W22',
         length: 4,
@@ -39,7 +51,7 @@ describe('buildDateTicks', () => {
 
   describe('month mode (32 days – 3 years)', () => {
     test('snaps to month starts within one year and downsamples to 5', () => {
-      const out = buildDateTicks({
+      const out = inEnglish({
         firstKey: '2025-01-01',
         lastKey: '2025-12-31',
         length: 365,
@@ -63,7 +75,7 @@ describe('buildDateTicks', () => {
     test('year-crossing weekly window suffixes years and labels by boundary month', () => {
       // 2025-W46 (Mon Nov 10 2025) .. 2026-W19 (Mon May 4 2026) — a 6M-style
       // trailing window straddling Jan 1.
-      const out = buildDateTicks({
+      const out = inEnglish({
         firstKey: '2025-W46',
         lastKey: '2026-W19',
         length: 26,
@@ -83,7 +95,7 @@ describe('buildDateTicks', () => {
     });
 
     test('multi-year range keeps months with a year suffix', () => {
-      const out = buildDateTicks({
+      const out = inEnglish({
         firstKey: '2024-07-01',
         lastKey: '2026-06-12',
         length: 712,
@@ -100,7 +112,7 @@ describe('buildDateTicks', () => {
 
     test('falls back to day ticks when fewer than 3 month starts exist', () => {
       // 45 days, only Feb 1 and Mar 1 boundaries.
-      const out = buildDateTicks({
+      const out = inEnglish({
         firstKey: '2026-01-20',
         lastKey: '2026-03-05',
         length: 45,
@@ -114,7 +126,7 @@ describe('buildDateTicks', () => {
     test('weekly snapping maps boundaries to unique increasing indices', () => {
       // 2026-W01 starts Mon Dec 29 2025; Jan 1 falls in week 0, Feb 1
       // (a Sunday) in the week of Mon Jan 26 (index 4), Mar 1 in index 8.
-      const out = buildDateTicks({
+      const out = inEnglish({
         firstKey: '2026-W01',
         lastKey: '2026-W10',
         length: 10,
@@ -133,7 +145,7 @@ describe('buildDateTicks', () => {
 
   describe('year mode (span > 3 years)', () => {
     test('ticks on Jan 1 with yyyy labels', () => {
-      const out = buildDateTicks({
+      const out = inEnglish({
         firstKey: '2021-03-15',
         lastKey: '2026-06-12',
         length: 1916,
@@ -151,9 +163,50 @@ describe('buildDateTicks', () => {
     });
   });
 
+  describe('localization', () => {
+    // Regression: every label used to come from a bare date-fns `format()`
+    // with no locale, so a Czech chart rendered English month names ("Týden
+    // od Aug 3"). Two of six Czech App Store screenshots shipped that way.
+    test('day ticks use the locale month name and its day-first order', () => {
+      const out = inCzech({
+        firstKey: '2026-06-01',
+        lastKey: '2026-06-30',
+        length: 30,
+        unit: 'day',
+      });
+      expect(out.labelFor(0)).toBe('1. Čvn');
+      expect(out.labelFor(29)).toBe('30. Čvn');
+    });
+
+    test('snapped month ticks use the locale month name', () => {
+      const out = inCzech({
+        firstKey: '2025-01-01',
+        lastKey: '2025-12-31',
+        length: 365,
+        unit: 'day',
+      });
+      const labels = out.indices.map(i => out.labelFor(i));
+      expect(labels).toEqual(['Led', 'Dub', 'Čvc', 'Zář', 'Pro']);
+    });
+
+    test('year labels are numeric and so identical across locales', () => {
+      const params = {
+        firstKey: '2021-03-15',
+        lastKey: '2026-06-12',
+        length: 1916,
+        unit: 'day',
+      } as const;
+      const czech = inCzech(params);
+      const english = inEnglish(params);
+      expect(czech.indices.map(i => czech.labelFor(i))).toEqual(
+        english.indices.map(i => english.labelFor(i)),
+      );
+    });
+  });
+
   describe('guards', () => {
     test('empty series yields no ticks', () => {
-      const out = buildDateTicks({
+      const out = inEnglish({
         firstKey: '',
         lastKey: '',
         length: 0,
@@ -164,7 +217,7 @@ describe('buildDateTicks', () => {
     });
 
     test('unparseable keys yield no ticks', () => {
-      const out = buildDateTicks({
+      const out = inEnglish({
         firstKey: 'not-a-date',
         lastKey: 'also-not',
         length: 10,
@@ -175,7 +228,7 @@ describe('buildDateTicks', () => {
     });
 
     test('single point gets one MMM d tick', () => {
-      const out = buildDateTicks({
+      const out = inEnglish({
         firstKey: '2026-06-12',
         lastKey: '2026-06-12',
         length: 1,

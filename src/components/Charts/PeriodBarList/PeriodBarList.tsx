@@ -1,5 +1,6 @@
 import {BarList} from '@components/Charts/BarList';
 import useLocalize from '@hooks/useLocalize';
+import {formatSubPeriodLabel} from '@libs/Statistics/overview';
 import type {Granularity, SubPeriodPoint} from '@libs/Statistics/overview';
 
 type PeriodBarListProps = {
@@ -35,16 +36,19 @@ function PeriodBarList({
   liveExtraUnits = 0,
   barColor,
 }: PeriodBarListProps) {
-  const {translate} = useLocalize();
+  const {translate, preferredLocale} = useLocalize();
   const lastIndex = points.length - 1;
 
-  const items = points.map((point, index) => ({
-    label:
-      granularity === 'week'
-        ? translate('statistics.period.weekOf', {date: point.label})
-        : point.label,
-    value: index === lastIndex ? point.units + liveExtraUnits : point.units,
-  }));
+  const items = points.map((point, index) => {
+    const date = formatSubPeriodLabel(granularity, point.key, preferredLocale);
+    return {
+      label:
+        granularity === 'week'
+          ? translate('statistics.period.weekOf', {date})
+          : date,
+      value: index === lastIndex ? point.units + liveExtraUnits : point.units,
+    };
+  });
 
   return (
     <BarList

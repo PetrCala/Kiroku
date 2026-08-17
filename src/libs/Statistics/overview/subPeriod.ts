@@ -1,17 +1,28 @@
-import {format, parseISO} from 'date-fns';
+import {parseISO} from 'date-fns';
+import {dayAndShortMonth, shortMonth, shortWeekday} from '@libs/dateLabels';
+import DateUtils from '@libs/DateUtils';
 import type {Bucketer} from '@libs/Statistics/aggregate';
 import {byDay, byIsoWeek, byMonth, byYear} from '@libs/Statistics/bucketers';
 import {weekKeysInRange} from '@libs/Statistics/trends';
 import type {DrinkEvent} from '@libs/Statistics/types';
 import type {Range} from '@components/StatsContextProvider/types';
+import type Locale from '@src/types/onyx/Locale';
 import {dayKeysInRange, monthKeysInRange, yearKeysInRange} from './keys';
 import collectWindowAggregates from './windowAggregates';
 
 type Granularity = 'day' | 'week' | 'month' | 'year';
 
 type SubPeriodPoint = {
-  /** Short axis label, e.g. `Mon`, `W22`, `May`, `2026`. */
-  label: string;
+  /**
+   * Bucket key for the sub-period: `yyyy-MM-dd` (day), `RRRR-'W'II` (week),
+   * `yyyy-MM` (month) or `yyyy` (year).
+   *
+   * Deliberately NOT a display string. The label depends on the viewer's
+   * language, this model is memoized per data window, and a label baked in
+   * here would survive a language switch unchanged. Render it with
+   * {@link formatSubPeriodLabel}.
+   */
+  key: string;
   units: number;
 };
 
@@ -52,16 +63,27 @@ function pickGranularity(range: Range): Granularity {
   }
 }
 
-function labelFor(granularity: Granularity, key: string): string {
+/**
+ * Short axis label for a bucket key, e.g. `Mon`, `May 5`, `May`, `2026` (or
+ * `Po`, `5. kvě`, `Květen` in Czech). Pure: the locale is injected rather than
+ * read from a global, so a label can never go stale behind a language switch.
+ *
+ * Callers that want a "Week of …" framing add the localized prefix themselves.
+ */
+function formatSubPeriodLabel(
+  granularity: Granularity,
+  key: string,
+  preferredLocale: Locale,
+): string {
+  const locale = DateUtils.getDateFnsLocale(preferredLocale);
   switch (granularity) {
     case 'day':
-      return format(parseISO(key), 'EEE');
+      return shortWeekday(parseISO(key), locale);
     case 'week':
-      // `RRRR-'W'II` → the ISO week's Monday, e.g. `May 5`. Callers that want
-      // a "Week of …" framing add the prefix at render time (it's localized).
-      return format(parseISO(`${key}-1`), 'MMM d');
+      // `RRRR-'W'II` resolves to the ISO week's Monday.
+      return dayAndShortMonth(parseISO(`${key}-1`), locale);
     case 'month':
-      return format(parseISO(`${key}-01`), 'MMM');
+      return shortMonth(parseISO(`${key}-01`), locale);
     case 'year':
     default:
       return key;
@@ -109,7 +131,7 @@ function seriesFromUnits(
   end: Date,
 ): SubPeriodPoint[] {
   return keysFor(granularity, start, end).map(key => ({
-    label: labelFor(granularity, key),
+    key,
     units: unitsBySubPeriod.get(key) ?? 0,
   }));
 }
@@ -146,5 +168,5 @@ function buildSubPeriodSeries(
 }
 
 export default buildSubPeriodSeries;
-export {bucketerFor, pickGranularity, seriesFromUnits};
+export {bucketerFor, formatSubPeriodLabel, pickGranularity, seriesFromUnits};
 export type {Granularity, SubPeriodPoint};

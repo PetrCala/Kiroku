@@ -1,6 +1,10 @@
 export {default as buildPeriodSummary} from './periodSummary';
 export type {BandCounts, PeriodSummary, Thresholds} from './periodSummary';
-export {default as buildSubPeriodSeries, pickGranularity} from './subPeriod';
+export {
+  default as buildSubPeriodSeries,
+  formatSubPeriodLabel,
+  pickGranularity,
+} from './subPeriod';
 export type {Granularity, SubPeriodPoint} from './subPeriod';
 export {
   default as buildMonthlyStats,

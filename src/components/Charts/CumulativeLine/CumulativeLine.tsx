@@ -6,6 +6,7 @@ import {
   valueTicks,
 } from '@components/Charts/BaseChart/axisFormatters';
 import buildDateTicks from '@components/Charts/BaseChart/dateTicks';
+import useLocalize from '@hooks/useLocalize';
 
 type CumulativeLinePoint = {date: string; count: number};
 
@@ -39,6 +40,7 @@ function CumulativeLine({
   isLoading,
 }: CumulativeLineProps) {
   const axisFont = useChartFont();
+  const {preferredLocale} = useLocalize();
   const showComparison =
     !!comparisonPoints && comparisonPoints.length === points.length;
 
@@ -77,8 +79,9 @@ function CumulativeLine({
         lastKey: points[points.length - 1]?.date ?? '',
         length: points.length,
         unit: 'day',
+        preferredLocale,
       }),
-    [points],
+    [points, preferredLocale],
   );
   const yTicks = useMemo(() => valueTicks(maxCount), [maxCount]);
 

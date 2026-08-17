@@ -10,6 +10,10 @@ import {
   startOfMonth,
   startOfYear,
 } from 'date-fns';
+import type {Locale as DateFnsLocale} from 'date-fns';
+import {dayAndShortMonth, shortMonth} from '@libs/dateLabels';
+import DateUtils from '@libs/DateUtils';
+import type Locale from '@src/types/onyx/Locale';
 import {tickIndices} from './axisFormatters';
 
 /** Granularity of the dense series feeding the chart. */
@@ -30,6 +34,12 @@ type BuildDateTicksParams = {
   /** Series length. Keys are assumed dense between `firstKey` and `lastKey`. */
   length: number;
   unit: DateTickUnit;
+  /**
+   * App locale the month and day labels render in. Required rather than
+   * defaulted: a missing locale silently produces English month names inside
+   * an otherwise translated chart, which is exactly the bug this replaced.
+   */
+  preferredLocale: Locale;
 };
 
 type Boundary = {index: number; date: Date};
@@ -48,16 +58,20 @@ function dateAtIndex(start: Date, index: number, unit: DateTickUnit): Date {
   return unit === 'day' ? addDays(start, index) : addWeeks(start, index);
 }
 
-/** Evenly-spaced `MMM d` ticks — the legacy behavior, kept for short spans. */
+/** Evenly-spaced day-and-month ticks, the legacy behavior for short spans. */
 function evenDayTicks(
   start: Date,
   length: number,
   unit: DateTickUnit,
+  locale: DateFnsLocale,
 ): DateTicks {
   const indices = tickIndices(length);
   const labels = new Map<number, string>();
   for (const index of indices) {
-    labels.set(index, format(dateAtIndex(start, index, unit), 'MMM d'));
+    labels.set(
+      index,
+      dayAndShortMonth(dateAtIndex(start, index, unit), locale),
+    );
   }
   return {indices, labelFor: value => labels.get(Math.round(value)) ?? ''};
 }
@@ -100,7 +114,8 @@ function boundaryDates(start: Date, end: Date, mode: 'month' | 'year'): Date[] {
  * days/weeks. All chart series builders gap-fill, so this holds upstream.
  */
 function buildDateTicks(params: BuildDateTicksParams): DateTicks {
-  const {firstKey, lastKey, length, unit} = params;
+  const {firstKey, lastKey, length, unit, preferredLocale} = params;
+  const locale = DateUtils.getDateFnsLocale(preferredLocale);
   if (length <= 0) {
     return {indices: [], labelFor: () => ''};
   }
@@ -117,7 +132,7 @@ function buildDateTicks(params: BuildDateTicksParams): DateTicks {
 
   const spanDays = differenceInCalendarDays(end, start) + 1;
   if (spanDays <= DAY_MODE_MAX_DAYS) {
-    return evenDayTicks(start, length, unit);
+    return evenDayTicks(start, length, unit, locale);
   }
   const mode = end > addYears(start, YEAR_MODE_MIN_YEARS) ? 'year' : 'month';
 
@@ -137,7 +152,7 @@ function buildDateTicks(params: BuildDateTicksParams): DateTicks {
   }
 
   if (boundaries.length < MIN_SNAPPED_TICKS) {
-    return evenDayTicks(start, length, unit);
+    return evenDayTicks(start, length, unit, locale);
   }
   if (boundaries.length > MAX_TICKS) {
     boundaries = tickIndices(boundaries.length, MAX_TICKS).map(
@@ -148,18 +163,18 @@ function buildDateTicks(params: BuildDateTicksParams): DateTicks {
   const crossesYear =
     boundaries[0].date.getFullYear() !==
     boundaries[boundaries.length - 1].date.getFullYear();
-  let pattern: string;
-  if (mode === 'year') {
-    pattern = 'yyyy';
-  } else if (crossesYear) {
-    pattern = "MMM ''yy";
-  } else {
-    pattern = 'MMM';
+
+  function labelAt(date: Date): string {
+    if (mode === 'year') {
+      return format(date, 'yyyy');
+    }
+    const month = shortMonth(date, locale);
+    return crossesYear ? `${month} '${format(date, 'yy')}` : month;
   }
 
   const labels = new Map<number, string>();
   for (const {index, date} of boundaries) {
-    labels.set(index, format(date, pattern));
+    labels.set(index, labelAt(date));
   }
   return {
     indices: boundaries.map(b => b.index),
