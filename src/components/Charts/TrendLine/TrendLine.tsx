@@ -8,6 +8,7 @@ import {
 } from '@components/Charts/BaseChart/axisFormatters';
 import buildDateTicks from '@components/Charts/BaseChart/dateTicks';
 import {PressableWithoutFeedback} from '@components/Pressable';
+import useLocalize from '@hooks/useLocalize';
 
 type TrendLineProps = {
   /** ISO-week labels, one per data point. Drives the chart's x-axis order. */
@@ -62,6 +63,7 @@ function TrendLine({
   isLoading,
 }: TrendLineProps) {
   const axisFont = useChartFont();
+  const {preferredLocale} = useLocalize();
   const showEwma = !!ewma && ewma.length === weeks.length;
   const showComparison =
     !!comparison && comparison.length === weeks.length && weeks.length > 0;
@@ -101,8 +103,9 @@ function TrendLine({
         lastKey: weeks[weeks.length - 1] ?? '',
         length: weeks.length,
         unit: 'week',
+        preferredLocale,
       }),
-    [weeks],
+    [weeks, preferredLocale],
   );
   const yTicks = useMemo(() => valueTicks(maxY), [maxY]);
 

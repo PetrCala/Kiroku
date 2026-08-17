@@ -1524,7 +1524,10 @@ export default {
   userOverview: {
     inSession: 'In session',
     from: 'From',
-    sober: 'Sober',
+    // Describes the logged data ("last session was 3h ago"), never the person's
+    // bodily state. Wording that reads as a sobriety readout about a user is a
+    // App Store Guideline 1.4 hook for an alcohol app; keep it data-facing.
+    lastSession: 'Last session',
     sessionStarted: 'Session started',
     noSessionsYet: 'No sessions yet',
     private: 'Private',

@@ -3,8 +3,8 @@
 # match what the macos-26 GitHub-hosted runner ships (Xcode 26 / iOS 26 SDK).
 # Run `xcrun simctl list devicetypes` on a macos-26 runner to see options.
 #
-#   6.9" — iPhone 17 Pro Max (also satisfies the 6.7" tier)
-#   13"  — iPad Pro 13-inch (M5)  (required if the app supports iPad)
+#   6.9": iPhone 17 Pro Max (also satisfies the 6.7" tier)
+#   13":  iPad Pro 13-inch (M5)  (required if the app supports iPad)
 #
 # Note: the legacy 5.5" tier (iPhone 8 Plus) was deprecated by Apple in 2024
 # and is no longer in the runner image. Add an `iPhone Air` or `iPhone 17e`
@@ -17,6 +17,14 @@ devices([
 # Kiroku uses an in-app locale switcher (Settings -> Language), not OS locale.
 # These language codes are mapped to the app's internal codes inside the UI test
 # (en-US -> "en", cs-CZ -> "cs_cz"). See ios/KirokuUITests/ScreenshotTests.swift.
+#
+# Listing more than one language here makes snapshot relaunch the app process
+# between them (new -AppleLanguages args), and that relaunch reliably crashes
+# on macos-26 / Xcode 26.1.1 with this app (embedded WatchKit companion) with
+# "Test crashed with signal abrt before establishing connection." The screenshots
+# workflow's `language_subset` input trims this list to one language per
+# dispatch via scripts/trim-snapfile-languages.rb, so a real capture is two
+# separate runs (en-only, cs-only), never one run with both.
 languages([
   "en-US",
   "cs-CZ",
@@ -25,27 +33,52 @@ languages([
 workspace("./ios/kiroku.xcworkspace")
 scheme("Kiroku (production)")
 
-# The legacy `kirokuTests` target has no SWIFT_VERSION set in its buildSettings
-# (pre-existing project bug), which crashes `xcodebuild build test` on Xcode 26+
-# with: "SWIFT_VERSION '' is unsupported". Override globally — every Kiroku
-# Swift target uses 5.0 already, so this is a safe no-op for the others.
-xcargs("SWIFT_VERSION=5.0")
+# SWIFT_VERSION: the legacy `kirokuTests` target has no SWIFT_VERSION set in
+# its buildSettings (pre-existing project bug), which crashes `xcodebuild build
+# test` on Xcode 26+ with: "SWIFT_VERSION '' is unsupported". Override
+# globally; every Kiroku Swift target uses 5.0 already, so this is a safe
+# no-op for the others.
+#
+# -configuration ReleaseProduction: the scheme's Test action builds
+# DebugProduction, and ios/bundle-react-native-code-and-images.sh sets
+# SKIP_BUNDLING for every *Debug* configuration. On CI there is no Metro to
+# fall back to, so a Debug app boots with no JavaScript at all: it sits on the
+# native splash forever and every capture run dies at logIn() with "neither
+# Initial Screen nor Auth Screen appeared after launch". Release embeds the JS
+# bundle, the same path every deploy build exercises, and matches the watch
+# capture job's build-for-testing invocation. Passed through xcargs because
+# snapshot's own `configuration` option is declared but never forwarded to
+# xcodebuild (fastlane 2.234.0).
+xcargs("SWIFT_VERSION=5.0 -configuration ReleaseProduction")
 
 output_directory("./fastlane/screenshots/ios")
 clear_previous_screenshots(true)
 
-# UI test target name — must match the target you create in Xcode.
+# UI test target name must match the target you create in Xcode.
 # See SCREENSHOTS.md for the one-time manual setup step.
 # scheme is taken from the workspace; the test target is referenced by the scheme's Test action.
 
 # Stop the test run on the first failure so you don't waste 15 min finding out
-# screen 2 broke on every device. number_of_retries(0) is also needed because
-# stop_after_first_error only halts after a *test* error — for *build* errors,
-# snapshot retries `number_of_retries + 1` times per device/language combo by
-# default. Without the explicit 0, a single misconfigured Xcode SDK can loop
-# for 20+ minutes before the workflow times out.
-stop_after_first_error(true)
-number_of_retries(0)
+# screen 2 broke on every device.
+#
+# Set KIROKU_SNAPSHOT_FAIL_FAST=0 to keep going after a failure. This now only
+# governs build and launch errors: the UI test itself never fails, it records
+# `[capture-miss]` lines and carries on (see ScreenshotTests.swift), and
+# scripts/verify-captured-screenshots.mjs is what turns a partial capture into a
+# red run. The screenshots workflow exposes this as the `fail_slow` input.
+stop_after_first_error(ENV["KIROKU_SNAPSHOT_FAIL_FAST"] != "0")
+
+# 1, not 0: a cheap safety net for a genuinely transient CI simulator hiccup.
+#
+# This is NOT what fixes the "Test crashed with signal abrt before establishing
+# connection" crash on the second language: that crash reproduced twice in a
+# row, in the exact same spot (the language-switch relaunch), which means it
+# is deterministic on this runner, not a flake. A retry there just re-runs the
+# whole suite from language 1 and dies at the same wall a second time,
+# wasting ~8 minutes. See the languages() comment above for the real fix
+# (one language per dispatch). Revert to 0 if this retry is ever seen eating
+# the 90-minute job timeout on a build that is genuinely broken.
+number_of_retries(1)
 
 # Reinstall the app between runs so each capture starts from a clean state.
 reinstall_app(true)

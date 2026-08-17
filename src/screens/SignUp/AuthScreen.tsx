@@ -195,6 +195,7 @@ function AuthScreen({route}: AuthScreenProps) {
             aria-label={translate('login.email')}
             defaultValue=""
             spellCheck={false}
+            autoCapitalize="none"
           />
           <InputWrapper
             InputComponent={TextInput}
@@ -204,6 +205,10 @@ function AuthScreen({route}: AuthScreenProps) {
             aria-label={translate('common.password')}
             defaultValue=""
             spellCheck={false}
+            // Without this the keyboard capitalises the first character, and
+            // a secure field hides the evidence: a password starting with a
+            // lower case letter is silently submitted wrong.
+            autoCapitalize="none"
             secureTextEntry
             autoComplete={
               Browser.getBrowser() === CONST.BROWSER.SAFARI ? 'username' : 'off'

@@ -190,6 +190,31 @@ end
 
 # --- Scheme wiring ------------------------------------------------------------
 
+# The legacy `kirokuTests` unit test bundle is already wired into this
+# scheme's TestAction (skipped="NO"), running in-process against the host app
+# via TEST_HOST. That means every `xcodebuild ... build test` for this scheme
+# runs KirokuUITests AND THEN kirokuTests in the same invocation: the UI
+# tests finish cleanly, xcodebuild moves on to relaunch the app to host
+# kirokuTests, and that second relaunch reliably crashes on this CI runner
+# ("Test crashed with signal abrt before establishing connection", or on
+# retry a native-module load crash), nothing to do with screenshots,
+# languages, or the watch companion. Skip kirokuTests for this scheme edit so
+# a screenshots run only ever launches the app once. Throwaway, not committed.
+def skip_legacy_unit_tests(doc)
+  ref = REXML::XPath.first(
+    doc,
+    "//TestAction/Testables/TestableReference[BuildableReference[@BlueprintName='kirokuTests']]",
+  )
+  return log "no 'kirokuTests' TestableReference found in scheme; nothing to skip" unless ref
+
+  if ref.attributes['skipped'] == 'YES'
+    log "'kirokuTests' is already skipped in scheme"
+  else
+    ref.add_attribute('skipped', 'YES')
+    log "Marked 'kirokuTests' skipped in scheme's TestAction"
+  end
+end
+
 # Add the UI test target to the shared `Kiroku (production)` scheme's
 # TestAction so `xcodebuild test -scheme "Kiroku (production)"` picks it up.
 # We edit the XML directly to avoid xcodeproj's scheme writer reformatting
@@ -201,26 +226,27 @@ def add_testable_to_scheme(target)
   testables = REXML::XPath.first(doc, '//TestAction/Testables')
   abort_with('no <Testables> node in scheme') unless testables
 
+  skip_legacy_unit_tests(doc)
+
   already_present = REXML::XPath.match(testables, "TestableReference/BuildableReference[@BlueprintName='#{UI_TESTS_TARGET_NAME}']").any?
   if already_present
     log "Scheme already references '#{UI_TESTS_TARGET_NAME}'"
-    return
+  else
+    log "Adding '#{UI_TESTS_TARGET_NAME}' to scheme's TestAction"
+
+    testable = REXML::Element.new('TestableReference')
+    testable.add_attribute('skipped', 'NO')
+
+    ref = REXML::Element.new('BuildableReference')
+    ref.add_attribute('BuildableIdentifier', 'primary')
+    ref.add_attribute('BlueprintIdentifier', target.uuid)
+    ref.add_attribute('BuildableName', "#{UI_TESTS_TARGET_NAME}.xctest")
+    ref.add_attribute('BlueprintName', UI_TESTS_TARGET_NAME)
+    ref.add_attribute('ReferencedContainer', 'container:kiroku.xcodeproj')
+
+    testable.add_element(ref)
+    testables.add_element(testable)
   end
-
-  log "Adding '#{UI_TESTS_TARGET_NAME}' to scheme's TestAction"
-
-  testable = REXML::Element.new('TestableReference')
-  testable.add_attribute('skipped', 'NO')
-
-  ref = REXML::Element.new('BuildableReference')
-  ref.add_attribute('BuildableIdentifier', 'primary')
-  ref.add_attribute('BlueprintIdentifier', target.uuid)
-  ref.add_attribute('BuildableName', "#{UI_TESTS_TARGET_NAME}.xctest")
-  ref.add_attribute('BlueprintName', UI_TESTS_TARGET_NAME)
-  ref.add_attribute('ReferencedContainer', 'container:kiroku.xcodeproj')
-
-  testable.add_element(ref)
-  testables.add_element(testable)
 
   formatter = REXML::Formatters::Pretty.new(3)
   formatter.compact = true
@@ -242,10 +268,10 @@ def main
   host_target = find_host_target(project)
   target = configure_ui_test_target(project, host_target)
 
-  source_files = [
-    File.join(UI_TESTS_DIR, 'ScreenshotTests.swift'),
-    File.join(UI_TESTS_DIR, 'SnapshotHelper.swift'),
-  ].select { |p| File.exist?(p) }
+  # Every Swift file in the directory: ScreenshotTests.swift, the copied-in
+  # SnapshotHelper.swift, and WatchCaptureSignInTests.swift (used only by the
+  # watch job; it self-skips outside it via KIROKU_WATCH_CAPTURE).
+  source_files = Dir.glob(File.join(UI_TESTS_DIR, '*.swift')).sort
 
   attach_sources(project, target, source_files)
 

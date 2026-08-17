@@ -1,14 +1,17 @@
 name: Capture App Store / Play Store screenshots
 
-# Manual trigger only — App Store screenshots are infrequent, expensive
-# (~30-45 min cold build + UI test runs across the device matrix), and require
+# Manual trigger only. App Store screenshots are infrequent, expensive
+# (~45 min cold build + UI test runs across the device matrix), and require
 # demo credentials. Never wire this to `pull_request` or any auto-trigger.
 #
 # Prerequisite: the demo account referenced by APPLE_DEMO_EMAIL /
 # APPLE_DEMO_PASSWORD MUST have at least one logged drinking session in the
-# current calendar month. The Day Overview screenshot taps the first
-# DayMarking cell in the calendar — if no session exists in-month, the test
-# fails. See contributingGuides/SCREENSHOTS.md.
+# current calendar month. The Day Overview screenshot opens a calendar day, and
+# an empty day gives a Day Overview centred on some other day. List the dates
+# that do have sessions in the `demo_session_dates` input below; the test now
+# verifies each one against the calendar before tapping it, and logs
+# `[capture-note]` for every date it had to skip. See
+# contributingGuides/SCREENSHOTS.md.
 on:
   workflow_dispatch:
     inputs:
@@ -21,6 +24,40 @@ on:
           - all
           - phone-only
           - ipad-only
+      language_subset:
+        description: 'Which language to capture (all | en-only | cs-only). Snapshot relaunches the app between languages, which reliably crashes on this runner, so a real capture needs two separate dispatches (en-only, cs-only) instead of all.'
+        required: false
+        default: 'all'
+        type: choice
+        options:
+          - all
+          - en-only
+          - cs-only
+      dump_a11y:
+        description: 'Log the full accessibility tree for every tab. Use when a selector broke: one run yields ground truth for every screen instead of guessing across 40-minute round trips.'
+        required: false
+        default: false
+        type: boolean
+      fail_slow:
+        description: 'Keep capturing after a failure instead of stopping at the first one. Surfaces every broken selector in a single run. Leave off for real captures.'
+        required: false
+        default: false
+        type: boolean
+      demo_session_dates:
+        description: 'Comma-separated ISO dates (newest first) the demo account has sessions on, e.g. 2026-08-14,2026-08-09. A preference order: the Day Overview shot opens the first one the calendar confirms has sessions, and falls back to the newest day that does when none of them match.'
+        required: false
+        default: ''
+        type: string
+      capture_phone:
+        description: 'Run the iPhone/iPad fastlane matrix job. Turn off when iterating on the watch capture only; each job costs its own ~60 min macOS runner.'
+        required: false
+        default: true
+        type: boolean
+      capture_watch:
+        description: 'Also run the Apple Watch capture job (paired simulators, its own ~60 min macOS runner). ASC refuses an iOS submission whose build embeds the watch app until an APP_WATCH_SERIES_4 screenshot exists. Turn off when iterating on the phone matrix only.'
+        required: false
+        default: true
+        type: boolean
 
 permissions:
   contents: read
@@ -28,8 +65,22 @@ permissions:
 jobs:
   ios:
     name: Capture iOS App Store screenshots
+    if: ${{ inputs.capture_phone }}
     runs-on: macos-26
-    timeout-minutes: 60
+    # Measured on 2026-08-17, two single-language runs dispatched together
+    # from the same commit: ~6 min of setup, then ~1h38m of cold
+    # ReleaseProduction build (full RN bundling; only the Pods are cached),
+    # then ~10 min to link, install, boot the simulator and launch, and
+    # finally 1m43s to shoot all seven screenshots. The capture phase is
+    # trivial; the build is the whole cost.
+    #
+    # Those two runs took 1h54m and (killed) >2h10m on identical work, i.e.
+    # runner variance alone is ~17 min at the same build milestone. At 130
+    # the cs run cleared by 7.6 min and the en run was cancelled 11 min short
+    # of its first screenshot, so the budget was a coin flip. 180 leaves real
+    # margin. Note a timeout CANCELS the job rather than failing it, so the
+    # diagnostic log upload never runs and a lost run tells you nothing.
+    timeout-minutes: 180
     env:
       DEVELOPER_DIR: /Applications/Xcode_26.1.1.app/Contents/Developer
     steps:
@@ -76,7 +127,7 @@ jobs:
           source "$HOME/.bash_profile"
 
       # Xcode 26.1.1 on the macos-26 runner image ships without the iOS
-      # simulator runtime — xcodebuild crashes with "iOS 26.1 is not installed"
+      # simulator runtime, so xcodebuild crashes with "iOS 26.1 is not installed"
       # otherwise. Same step that testBuild.yml uses.
       - name: Install iOS platform SDK
         uses: nick-fields/retry@ad984534de44a9489a53aefd81eb77f87c70dc60 # v4.0.0
@@ -89,14 +140,50 @@ jobs:
           # isn't ready yet on a fresh runner. Retry instead of failing the run.
           command: xcodebuild -downloadPlatform iOS
 
+      - name: Install watchOS platform SDK
+        uses: nick-fields/retry@ad984534de44a9489a53aefd81eb77f87c70dc60 # v4.0.0
+        with:
+          timeout_minutes: 20
+          max_attempts: 3
+          retry_wait_seconds: 30
+          # The Kiroku target embeds the Apple Watch app, so building the scheme
+          # compiles the watch target too. Without the matching watchOS platform
+          # the Watch App asset catalog fails with "No simulator runtime version
+          # from [...] available to use with watchsimulator SDK version ...".
+          # testBuild.yml has carried this step since the watch was re-embedded;
+          # this workflow was missed, which is why capture broke silently.
+          command: xcodebuild -downloadPlatform watchOS
+
+      # GitHub runners sit at UTC, which the simulator reports back to JS as
+      # "GMT". Hermes validates a timeZone option against
+      # NSTimeZone.knownTimeZoneNames, which has no "GMT" entry, so the first
+      # date formatting call throws "RangeError: Invalid timeZoneName" and the
+      # app dies on the splash screen before rendering anything. The simulator
+      # inherits the host zone, so fixing it here fixes it there. Must run
+      # before any simulator boots.
+      - name: Give the runner a real IANA timezone
+        run: |
+          set -euo pipefail
+          sudo systemsetup -settimezone Europe/Prague
+          sudo systemsetup -gettimezone
+
       # Trim the Snapfile device matrix when the dispatcher asked for a subset.
       # `Snapfile` resolves devices(...) eagerly so we rewrite the file in
-      # place — this is throwaway, not committed back.
+      # place; this is throwaway, not committed back.
       - name: Trim Snapfile device matrix
         if: ${{ github.event.inputs.device_subset != 'all' }}
         env:
           DEVICE_SUBSET: ${{ github.event.inputs.device_subset }}
         run: bundle exec ruby scripts/trim-snapfile-devices.rb "$DEVICE_SUBSET"
+
+      # Snapshot relaunches the app between languages, which crashes reliably
+      # on this runner (see scripts/trim-snapfile-languages.rb). Trim to one
+      # language per dispatch instead of hitting that relaunch at all.
+      - name: Trim Snapfile language matrix
+        if: ${{ github.event.inputs.language_subset != 'all' }}
+        env:
+          LANGUAGE_SUBSET: ${{ github.event.inputs.language_subset }}
+        run: bundle exec ruby scripts/trim-snapfile-languages.rb "$LANGUAGE_SUBSET"
 
       - name: Run Fastlane - Capture iOS screenshots
         run: bundle exec fastlane ios screenshots
@@ -105,6 +192,26 @@ jobs:
           APPLE_DEMO_PASSWORD: ${{ secrets.APPLE_DEMO_PASSWORD }}
           KIROKU_DEMO_EMAIL: ${{ secrets.APPLE_DEMO_EMAIL }}
           KIROKU_DEMO_PASSWORD: ${{ secrets.APPLE_DEMO_PASSWORD }}
+          KIROKU_DUMP_A11Y: ${{ github.event.inputs.dump_a11y == 'true' && '1' || '0' }}
+          KIROKU_SNAPSHOT_FAIL_FAST: ${{ github.event.inputs.fail_slow == 'true' && '0' || '1' }}
+          KIROKU_DEMO_SESSION_DATES: ${{ github.event.inputs.demo_session_dates }}
+          # The UI test runner is a separate simulator process, and xcodebuild
+          # forwards only TEST_RUNNER_-prefixed variables into it (prefix
+          # stripped), for the `test` action just like for an .xctestrun. The
+          # plain APPLE_DEMO_* copies above stay for the Fastfile's preflight
+          # check; ScreenshotTests.swift reads these four via ProcessInfo.
+          # Without the prefixed copies the tests see empty credentials and,
+          # more visibly, KIROKU_DUMP_A11Y never reaches the runner, which is
+          # why dump_a11y runs produced no [a11y-dump] lines.
+          TEST_RUNNER_APPLE_DEMO_EMAIL: ${{ secrets.APPLE_DEMO_EMAIL }}
+          TEST_RUNNER_APPLE_DEMO_PASSWORD: ${{ secrets.APPLE_DEMO_PASSWORD }}
+          TEST_RUNNER_KIROKU_DUMP_A11Y: ${{ github.event.inputs.dump_a11y == 'true' && '1' || '0' }}
+          TEST_RUNNER_KIROKU_DEMO_SESSION_DATES: ${{ github.event.inputs.demo_session_dates }}
+          # `xcodebuild -showBuildSettings` right after -resolvePackageDependencies
+          # can outrun fastlane's default 3s/4-retry budget (45s total) on a cold
+          # runner that is still indexing the workspace. Give it real headroom.
+          FASTLANE_XCODEBUILD_SETTINGS_TIMEOUT: '120'
+          FASTLANE_XCODEBUILD_SETTINGS_RETRIES: '5'
 
       - name: Upload iOS screenshots
         if: ${{ always() }}
@@ -115,8 +222,19 @@ jobs:
           if-no-files-found: warn
           retention-days: 14
 
-      - name: Upload fastlane logs on failure
-        if: ${{ failure() }}
+      # The UI test never asserts (see the failure-policy comment in
+      # ScreenshotTests.swift), so this is what turns a partial capture into a
+      # red run. Without it a run that captured nothing still goes green.
+      # --require phone: the watch capture is the `watch` job's own gate.
+      - name: Verify every screenshot was captured
+        if: ${{ always() }}
+        run: node scripts/verify-captured-screenshots.mjs --require phone
+
+      # Always, not just on failure: the accessibility dump and every
+      # `[capture-miss]` line live in the snapshot log, and a run that ends
+      # green or cancelled is exactly when they are needed most.
+      - name: Upload fastlane logs
+        if: ${{ always() }}
         uses: actions/upload-artifact@v6
         with:
           name: ios-fastlane-logs-${{ github.sha }}
@@ -128,10 +246,356 @@ jobs:
           if-no-files-found: ignore
           retention-days: 7
 
+  # Apple Watch capture: one raw screenshot of the watch app, taken from a
+  # paired iPhone+watch simulator pair. ASC refuses an iOS submission whose
+  # build embeds the watch app until the version has an APP_WATCH_SERIES_4
+  # screenshot; the framing pipeline renders all three ASC watch sizes from
+  # this single capture (scripts/store-screenshots.config.mjs).
+  #
+  # Why not fastlane snapshot: the watch app is a phone-tethered remote that
+  # receives its credential from the phone over WatchConnectivity, so a
+  # watchOS-side UI test on an unpaired simulator only ever shows the
+  # reconnect screen. Instead: build once for testing, install both apps on a
+  # paired pair, sign the phone in via a scoped UI test (the phone then pushes
+  # the token to the watch), launch the watch app, and screenshot it with
+  # simctl. A separate job so a phone-matrix failure and a watch failure are
+  # never tangled in one log.
+  watch:
+    name: Capture Apple Watch screenshot
+    if: ${{ inputs.capture_watch }}
+    runs-on: macos-26
+    # The ReleaseProduction build alone has taken 55 to 103 min depending on
+    # the runner drawn; anything tighter races the job timeout in the final
+    # capture steps, which is the worst place to die.
+    timeout-minutes: 240
+    env:
+      DEVELOPER_DIR: /Applications/Xcode_26.1.1.app/Contents/Developer
+      DERIVED_DATA: ios/build/watch-capture
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+
+      - name: Stage .env.production from secret
+        run: echo "${{ secrets.PRODUCTION_ENV_FILE }}" > .env.production
+
+      - name: Setup Node
+        id: setup-node
+        uses: ./.github/actions/composite/setupNode
+
+      - name: Setup Ruby
+        uses: ruby/setup-ruby@v1.310.0
+        with:
+          bundler-cache: true
+
+      - name: Cache Pod dependencies
+        uses: actions/cache@v5
+        id: pods-cache
+        with:
+          path: |
+            ios/Pods
+            ios/build/generated
+          key: ${{ runner.os }}-pods-cache-${{ hashFiles('ios/Podfile.lock', 'firebase.json', 'package-lock.json') }}
+          restore-keys: ${{ runner.os }}-pods-cache-
+
+      - name: Compare Podfile.lock and Manifest.lock
+        id: compare-podfile-and-manifest
+        run: echo "IS_PODFILE_SAME_AS_MANIFEST=${{ hashFiles('ios/Podfile.lock') == hashFiles('ios/Pods/Manifest.lock') }}" >> "$GITHUB_OUTPUT"
+
+      - name: Install cocoapods
+        uses: nick-fields/retry@ad984534de44a9489a53aefd81eb77f87c70dc60 # v4.0.0
+        if: steps.pods-cache.outputs.cache-hit != 'true' || steps.compare-podfile-and-manifest.outputs.IS_PODFILE_SAME_AS_MANIFEST != 'true' || steps.setup-node.outputs.cache-hit != 'true'
+        with:
+          timeout_minutes: 10
+          max_attempts: 5
+          command: cd ios && bundle exec pod install
+
+      - name: Set up environment for Xcode
+        run: |
+          echo "export NODE_BINARY=$(which node)" >> "$HOME/.bash_profile"
+          source "$HOME/.bash_profile"
+
+      - name: Install iOS platform SDK
+        uses: nick-fields/retry@ad984534de44a9489a53aefd81eb77f87c70dc60 # v4.0.0
+        with:
+          timeout_minutes: 15
+          max_attempts: 3
+          retry_wait_seconds: 30
+          command: xcodebuild -downloadPlatform iOS
+
+      - name: Install watchOS platform SDK
+        uses: nick-fields/retry@ad984534de44a9489a53aefd81eb77f87c70dc60 # v4.0.0
+        with:
+          timeout_minutes: 20
+          max_attempts: 3
+          retry_wait_seconds: 30
+          command: xcodebuild -downloadPlatform watchOS
+
+      # See the matching step in the iOS job: a UTC runner makes the simulator
+      # report "GMT", which Hermes rejects as a timeZone, killing the app on
+      # the splash screen. Must run before the pair boots.
+      - name: Give the runner a real IANA timezone
+        run: |
+          set -euo pipefail
+          sudo systemsetup -settimezone Europe/Prague
+          sudo systemsetup -gettimezone
+
+      # A paired pair is required: WCSession between the phone app and the
+      # watch app only exists across a simctl pairing, and the credential push
+      # is gated on it. The phone devicetype matches the Snapfile matrix; the
+      # watch is the newest watch devicetype on the image (the framer scales
+      # one capture to every ASC watch slot, so the exact model is free).
+      - name: Create and boot a paired iPhone + Apple Watch simulator pair
+        run: |
+          set -euo pipefail
+          mkdir -p watch-diagnostics
+          PHONE_TYPE=com.apple.CoreSimulator.SimDeviceType.iPhone-17-Pro-Max
+          # The flat devicetype list is not sorted by age (a naive tail -1
+          # lands on Apple Watch Series 2, which no installed runtime
+          # supports). Ask the newest available watchOS runtime what it
+          # supports and take its newest devicetype instead.
+          xcrun simctl list -j runtimes > watch-diagnostics/runtimes.json
+          WATCH_RUNTIME=$(node -e '
+            const {runtimes} = require("./watch-diagnostics/runtimes.json");
+            const rts = runtimes.filter(r => r.platform === "watchOS" && r.isAvailable);
+            rts.sort((a, b) => a.version.localeCompare(b.version, undefined, {numeric: true}));
+            if (!rts.length) process.exit(1);
+            console.log(rts.at(-1).identifier);
+          ')
+          WATCH_TYPE=$(node -e '
+            const {runtimes} = require("./watch-diagnostics/runtimes.json");
+            const rt = runtimes.find(r => r.identifier === process.argv[1]);
+            const dts = rt.supportedDeviceTypes;
+            if (!dts.length) process.exit(1);
+            console.log(dts.at(-1).identifier);
+          ' "$WATCH_RUNTIME")
+          echo "phone devicetype: $PHONE_TYPE"
+          echo "watch devicetype: $WATCH_TYPE (runtime: $WATCH_RUNTIME)"
+          test -n "$PHONE_TYPE" && test -n "$WATCH_TYPE"
+          PHONE_UDID=$(xcrun simctl create watchcap-phone "$PHONE_TYPE")
+          WATCH_UDID=$(xcrun simctl create watchcap-watch "$WATCH_TYPE" "$WATCH_RUNTIME")
+          xcrun simctl pair "$WATCH_UDID" "$PHONE_UDID"
+          xcrun simctl boot "$PHONE_UDID"
+          xcrun simctl boot "$WATCH_UDID"
+          xcrun simctl bootstatus "$PHONE_UDID" -b
+          xcrun simctl bootstatus "$WATCH_UDID" -b
+          xcrun simctl list pairs | tee watch-diagnostics/simctl-pairs.txt
+          echo "PHONE_UDID=$PHONE_UDID" >> "$GITHUB_ENV"
+          echo "WATCH_UDID=$WATCH_UDID" >> "$GITHUB_ENV"
+
+      # Same generated-target flow as fastlane snapshot uses, plus the
+      # simulator bundle-id fix: on iphonesimulator the app id would resolve
+      # to org.reactjs.native.example.kiroku while the watch app's
+      # WKCompanionAppBundleIdentifier expects ...alcohol-tracker, and the
+      # watch app then refuses to install. Both pbxproj diffs are throwaway.
+      - name: Generate the UI test target and fix the simulator bundle id
+        run: |
+          bundle exec ruby scripts/setup-screenshots-test-target.rb
+          bundle exec ruby scripts/set-simulator-bundle-id.rb
+
+      # One build covers the app, the embedded watch app, and the UI test
+      # runner. SWIFT_VERSION=5.0 for the same legacy-kirokuTests reason as
+      # the Snapfile. ReleaseProduction, NOT the scheme's DebugProduction test
+      # config: ios/bundle-react-native-code-and-images.sh sets SKIP_BUNDLING
+      # for every *Debug* configuration, so a Debug app on a CI simulator has
+      # no JS bundle and no Metro to fall back to (red "No script URL" screen,
+      # no sign-in, no credential push). Release embeds the bundle, the same
+      # path every deploy build exercises. Full log goes to the diagnostics
+      # artifact; the console gets the tail only when the build fails.
+      - name: Build the app, watch app, and UI test runner for the simulator
+        run: |
+          set -uo pipefail
+          xcodebuild build-for-testing \
+            -workspace ios/kiroku.xcworkspace \
+            -scheme "Kiroku (production)" \
+            -configuration ReleaseProduction \
+            -destination "id=$PHONE_UDID" \
+            -derivedDataPath "$DERIVED_DATA" \
+            SWIFT_VERSION=5.0 \
+            > watch-diagnostics/xcodebuild-build.log 2>&1 \
+            || { echo "build-for-testing failed; last 200 lines:"; tail -200 watch-diagnostics/xcodebuild-build.log; exit 1; }
+          echo "build-for-testing succeeded"
+
+      # The watch app ships inside the phone app bundle (Watch/). It must be
+      # on the watch simulator BEFORE the sign-in test runs: the phone only
+      # pushes the credential when WCSession reports the watch app installed.
+      - name: Install the phone and watch apps on the pair
+        run: |
+          set -euo pipefail
+          APP=$(find "$DERIVED_DATA/Build/Products" -maxdepth 2 -name kiroku.app | head -1)
+          test -n "$APP" || { echo "kiroku.app not found under $DERIVED_DATA/Build/Products"; exit 1; }
+          WATCH_APP="$APP/Watch/Kiroku Watch App.app"
+          test -d "$WATCH_APP" || { echo "embedded watch app not found at $WATCH_APP"; ls "$APP"; exit 1; }
+          APP_BUNDLE_ID=$(/usr/libexec/PlistBuddy -c 'Print :CFBundleIdentifier' "$APP/Info.plist")
+          WATCH_BUNDLE_ID=$(/usr/libexec/PlistBuddy -c 'Print :CFBundleIdentifier' "$WATCH_APP/Info.plist")
+          COMPANION_ID=$(/usr/libexec/PlistBuddy -c 'Print :WKCompanionAppBundleIdentifier' "$WATCH_APP/Info.plist")
+          echo "phone app:   $APP_BUNDLE_ID"
+          echo "watch app:   $WATCH_BUNDLE_ID (companion: $COMPANION_ID)"
+          test "$APP_BUNDLE_ID" = "$COMPANION_ID" || { echo "companion id mismatch; scripts/set-simulator-bundle-id.rb did not take"; exit 1; }
+          xcrun simctl install "$PHONE_UDID" "$APP"
+          xcrun simctl install "$WATCH_UDID" "$WATCH_APP"
+          echo "APP_BUNDLE_ID=$APP_BUNDLE_ID" >> "$GITHUB_ENV"
+          echo "WATCH_BUNDLE_ID=$WATCH_BUNDLE_ID" >> "$GITHUB_ENV"
+
+      # Diagnostic fork for the sign-in step: launch the app plainly (no test
+      # harness, no injected libraries) and screenshot it. Run 6 showed the
+      # app pinned on the boot splash for 125s under the UI test harness with
+      # React never mounting; this screenshot proves whether the app can boot
+      # to the Initial Screen on this simulator AT ALL. If it can, the
+      # harness is the difference; if it can't, the app/simulator combo is.
+      # Boots the app with no test harness attached, so a startup crash is
+      # attributed to the app rather than to XCUITest. Fails the job right
+      # here on an unhandled JS exception: the sign-in test would otherwise
+      # spend two minutes staring at a splash screen before reporting a
+      # useless "no screen appeared" timeout.
+      - name: Smoke boot the phone app without the test harness
+        run: |
+          set -euo pipefail
+          xcrun simctl launch "$PHONE_UDID" "$APP_BUNDLE_ID"
+          sleep 35
+          xcrun simctl io "$PHONE_UDID" screenshot watch-diagnostics/phone-smoke-boot.png
+          xcrun simctl spawn "$PHONE_UDID" log show --last 3m --predicate \
+            'processImagePath CONTAINS "kiroku"' > watch-diagnostics/phone-smoke-boot.log 2>&1 || true
+          xcrun simctl terminate "$PHONE_UDID" "$APP_BUNDLE_ID" || true
+          if grep -n "Unhandled JS Exception" watch-diagnostics/phone-smoke-boot.log; then
+            echo "the app crashed in JS during startup; see the line above"
+            exit 1
+          fi
+
+      # WatchCaptureSignInTests: signs in (hard failure) and opens a live
+      # session (best-effort, so the watch shows the unit counter rather than
+      # the idle start screen). Plain shell env does NOT reach the test runner
+      # when running from an .xctestrun; xcodebuild forwards only variables
+      # prefixed TEST_RUNNER_ (prefix stripped) into the runner process, so
+      # the creds and the KIROKU_WATCH_CAPTURE gate all use that prefix. A
+      # skipped test exits 0, which is how a missing gate once passed this
+      # step silently, so the explicit "passed" grep is load-bearing.
+      - name: Sign the phone app in via UI test
+        env:
+          TEST_RUNNER_APPLE_DEMO_EMAIL: ${{ secrets.APPLE_DEMO_EMAIL }}
+          TEST_RUNNER_APPLE_DEMO_PASSWORD: ${{ secrets.APPLE_DEMO_PASSWORD }}
+          TEST_RUNNER_KIROKU_WATCH_CAPTURE: '1'
+        run: |
+          set -uo pipefail
+          XCTESTRUN=$(find "$DERIVED_DATA/Build/Products" -maxdepth 1 -name '*.xctestrun' | head -1)
+          test -n "$XCTESTRUN" || { echo "no .xctestrun under $DERIVED_DATA/Build/Products"; exit 1; }
+          # Strip the Main Thread Checker dylib injection (the only content of
+          # TestingEnvironmentVariables:DYLD_INSERT_LIBRARIES). It is injected
+          # into the app under test too, flags RCTBootSplash/TurboModule
+          # constants exported from the JS thread, and is the harness's most
+          # invasive difference from a plain launch, where the app boots fine.
+          # Both key paths tried: FormatVersion 1 keys by target name,
+          # FormatVersion 2 nests under TestConfigurations.
+          /usr/libexec/PlistBuddy -c 'Delete :KirokuUITests:TestingEnvironmentVariables:DYLD_INSERT_LIBRARIES' "$XCTESTRUN" 2>/dev/null || true
+          /usr/libexec/PlistBuddy -c 'Delete :TestConfigurations:0:TestTargets:0:TestingEnvironmentVariables:DYLD_INSERT_LIBRARIES' "$XCTESTRUN" 2>/dev/null || true
+          # Photograph the screen every 10s for the length of the test. The
+          # accessibility tree says what elements exist, never what the screen
+          # actually shows, so an unexpected screen (a consent gate, a login
+          # error, a spinner) is otherwise invisible until the next 70 minute
+          # round trip.
+          mkdir -p watch-diagnostics/timeline
+          (
+            for i in $(seq -w 1 40); do
+              xcrun simctl io "$PHONE_UDID" screenshot \
+                "watch-diagnostics/timeline/phone-$i.png" >/dev/null 2>&1 || true
+              sleep 10
+            done
+          ) &
+          TIMELINE_PID=$!
+          trap 'kill "$TIMELINE_PID" 2>/dev/null || true' EXIT
+          xcodebuild test-without-building \
+            -xctestrun "$XCTESTRUN" \
+            -destination "id=$PHONE_UDID" \
+            -only-testing:KirokuUITests/WatchCaptureSignInTests \
+            > watch-diagnostics/xcodebuild-signin.log 2>&1 \
+            || {
+              echo "sign-in UI test failed; capturing the phone screen for diagnostics"
+              xcrun simctl io "$PHONE_UDID" screenshot watch-diagnostics/phone-at-signin-failure.png || true
+              echo "last 150 lines:"; tail -150 watch-diagnostics/xcodebuild-signin.log; exit 1;
+            }
+          grep -E "\[watch-capture\]" watch-diagnostics/xcodebuild-signin.log || true
+          grep -Eq "Test Case .*testSignInAndOpenLiveSession\]?' passed" watch-diagnostics/xcodebuild-signin.log \
+            || { echo "sign-in test did not PASS (skipped?); last 60 lines:"; tail -60 watch-diagnostics/xcodebuild-signin.log; exit 1; }
+          echo "sign-in test passed"
+
+      # xcodebuild kills the app when the test ends, so relaunch it: a cold
+      # start re-pushes the credential (and any ongoing session) to the watch
+      # via onIdTokenChanged + the Onyx ongoing-session connection. Then
+      # launch the watch app and give WCSession time to activate, deliver the
+      # persisted application context, and route to the signed-in screen.
+      # The watch seeds its own signed-in session from -KirokuScreenshotMode
+      # (see ScreenshotMode in ios/Kiroku Watch App/KirokuApp.swift). The
+      # WatchConnectivity handoff cannot carry the credential here: a
+      # simulator pair reports isWatchAppInstalled == false whatever is
+      # installed, and the framework enforces it, so 16 pushes across five
+      # cycles were all rejected with "Watch app is not installed".
+      #
+      # The phone still runs, signed in by the UI test, so phone-at-capture
+      # keeps showing real post-sign-in state next to the watch shot.
+      - name: Capture the watch screenshot
+        run: |
+          set -euo pipefail
+          xcrun simctl launch "$PHONE_UDID" "$APP_BUNDLE_ID"
+          xcrun simctl launch "$WATCH_UDID" "$WATCH_BUNDLE_ID" -KirokuScreenshotMode
+          sleep 20
+          xcrun simctl io "$WATCH_UDID" screenshot watch-diagnostics/watch-early.png
+          # Let the counter settle before the real shot.
+          sleep 15
+          mkdir -p fastlane/screenshots/ios/watch
+          xcrun simctl io "$WATCH_UDID" screenshot fastlane/screenshots/ios/watch/watch.png
+          xcrun simctl io "$PHONE_UDID" screenshot watch-diagnostics/phone-at-capture.png
+          ls -l fastlane/screenshots/ios/watch watch-diagnostics
+
+      - name: Collect simulator logs
+        if: ${{ always() }}
+        run: |
+          set +e
+          xcrun simctl spawn "$WATCH_UDID" log show --last 15m --predicate 'processImagePath CONTAINS "Kiroku"' > watch-diagnostics/watch-app.log 2>&1
+          xcrun simctl spawn "$PHONE_UDID" log show --last 20m --predicate 'eventMessage CONTAINS "WatchBridge" OR eventMessage CONTAINS "watch-capture"' > watch-diagnostics/phone-watchbridge.log 2>&1
+          xcrun simctl spawn "$PHONE_UDID" log show --last 30m --info --predicate 'processImagePath CONTAINS "kiroku"' > watch-diagnostics/phone-app.log 2>&1
+          true
+
+      # The size check below cannot tell a signed-in watch from the reconnect
+      # placeholder, and a run that captures the placeholder is worse than a
+      # failed one: it looks shippable. Seeding is what decides which screen
+      # appears, so gate on it directly.
+      - name: Verify the watch reached its signed-in state
+        if: ${{ always() }}
+        run: |
+          set -uo pipefail
+          if grep -q "\[ScreenshotMode\] seeded a live session" watch-diagnostics/watch-app.log; then
+            echo "watch seeded its live session"
+            exit 0
+          fi
+          echo "the watch never seeded a session, so it is showing the reconnect screen"
+          grep -E "\[ScreenshotMode\]" watch-diagnostics/watch-app.log | tail -5 || echo "no ScreenshotMode log lines at all"
+          exit 1
+
+      - name: Verify the watch screenshot was captured
+        if: ${{ always() }}
+        run: node scripts/verify-captured-screenshots.mjs --require watch
+
+      - name: Upload watch screenshot
+        if: ${{ always() }}
+        uses: actions/upload-artifact@v6
+        with:
+          name: watch-screenshot-${{ github.sha }}
+          path: fastlane/screenshots/ios/watch/*.png
+          if-no-files-found: warn
+          retention-days: 14
+
+      - name: Upload watch diagnostics
+        if: ${{ always() }}
+        uses: actions/upload-artifact@v6
+        with:
+          name: watch-diagnostics-${{ github.sha }}
+          path: watch-diagnostics/**
+          if-no-files-found: ignore
+          retention-days: 7
+
   # TODO: Android screenshot capture. The fastlane `android :screenshots` lane
   # (Fastfile + Screengrabfile) is in place, but Linux CI needs an Android
   # emulator (reactivecircus/android-emulator-runner@v2 is the usual choice),
   # the screengrab Gradle deps wired into android/app/build.gradle (still a
   # manual step per SCREENSHOTS.md), and the CHANGE_CONFIGURATION permission
-  # in the debug manifest. None of those exist yet — wire them in a follow-up
+  # in the debug manifest. None of those exist yet, so wire them in a follow-up
   # PR once the iOS flow is proven.

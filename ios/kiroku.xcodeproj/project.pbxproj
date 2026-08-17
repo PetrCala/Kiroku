@@ -47,7 +47,6 @@
 		D4EB4C4B472CFB5C1C447FC0D70B6A6E /* PrivacyInfo.xcprivacy in Resources */ = {isa = PBXBuildFile; fileRef = D17B18F000F10331F3702AFEF2670158 /* PrivacyInfo.xcprivacy */; };
 		D71B38A9F2A8830AA7E03D95986CE51A /* ExpensifyNeue-Italic.otf in Resources */ = {isa = PBXBuildFile; fileRef = A39E3F7FF983A2F51A9E09DB690AF791 /* ExpensifyNeue-Italic.otf */; };
 		DED6357362BCF4B61ACF65076BD05FDE /* SettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 67409ABB382975A15E2A13689AEBBF4A /* SettingsView.swift */; };
-		E7B715AA87095EA0860A562B52B7C0BB /* Info.plist in Resources */ = {isa = PBXBuildFile; fileRef = 7F0F9082C37DDC79066DFE0B03E80EE2 /* Info.plist */; };
 		EF9D890B86812601ABFEC945C2E3E8C7 /* kirokuTests.m in Sources */ = {isa = PBXBuildFile; fileRef = 588A590E6BED68E1F6FD0254E55C2F6C /* kirokuTests.m */; };
 		EFB7AA8916E578EFEB6F9665AF5AF9C7 /* Colors.swift in Sources */ = {isa = PBXBuildFile; fileRef = 49139152A47AFDA44AD894FFDC4658D1 /* Colors.swift */; };
 		FB0000000000000000000001 /* WatchBridge.swift in Sources */ = {isa = PBXBuildFile; fileRef = FA0000000000000000000001 /* WatchBridge.swift */; };
@@ -684,7 +683,6 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				E7B715AA87095EA0860A562B52B7C0BB /* Info.plist in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -1139,6 +1137,7 @@
 				BUNDLE_LOADER = "$(TEST_HOST)";
 				COPY_PHASE_STRIP = NO;
 				DEVELOPMENT_TEAM = L357YP9W28;
+				ENABLE_USER_SCRIPT_SANDBOXING = NO;
 				INFOPLIST_FILE = kirokuTests/Info.plist;
 				IPHONEOS_DEPLOYMENT_TARGET = 15.1;
 				LD_RUNPATH_SEARCH_PATHS = (
@@ -1322,6 +1321,7 @@
 			buildSettings = {
 				BUNDLE_LOADER = "$(TEST_HOST)";
 				DEVELOPMENT_TEAM = L357YP9W28;
+				ENABLE_USER_SCRIPT_SANDBOXING = NO;
 				GCC_PREPROCESSOR_DEFINITIONS = (
 					"DEBUG=1",
 					"$(inherited)",
@@ -1500,6 +1500,7 @@
 			buildSettings = {
 				BUNDLE_LOADER = "$(TEST_HOST)";
 				DEVELOPMENT_TEAM = L357YP9W28;
+				ENABLE_USER_SCRIPT_SANDBOXING = NO;
 				GCC_PREPROCESSOR_DEFINITIONS = (
 					"DEBUG=1",
 					"$(inherited)",
@@ -1785,6 +1786,7 @@
 				BUNDLE_LOADER = "$(TEST_HOST)";
 				COPY_PHASE_STRIP = NO;
 				DEVELOPMENT_TEAM = L357YP9W28;
+				ENABLE_USER_SCRIPT_SANDBOXING = NO;
 				INFOPLIST_FILE = kirokuTests/Info.plist;
 				IPHONEOS_DEPLOYMENT_TARGET = 15.1;
 				LD_RUNPATH_SEARCH_PATHS = (
@@ -2568,6 +2570,7 @@
 				BUNDLE_LOADER = "$(TEST_HOST)";
 				COPY_PHASE_STRIP = NO;
 				DEVELOPMENT_TEAM = L357YP9W28;
+				ENABLE_USER_SCRIPT_SANDBOXING = NO;
 				INFOPLIST_FILE = kirokuTests/Info.plist;
 				IPHONEOS_DEPLOYMENT_TARGET = 15.1;
 				LD_RUNPATH_SEARCH_PATHS = (
@@ -2626,6 +2629,7 @@
 			buildSettings = {
 				BUNDLE_LOADER = "$(TEST_HOST)";
 				DEVELOPMENT_TEAM = L357YP9W28;
+				ENABLE_USER_SCRIPT_SANDBOXING = NO;
 				GCC_PREPROCESSOR_DEFINITIONS = (
 					"DEBUG=1",
 					"$(inherited)",
@@ -2656,6 +2660,7 @@
 				BUNDLE_LOADER = "$(TEST_HOST)";
 				COPY_PHASE_STRIP = NO;
 				DEVELOPMENT_TEAM = L357YP9W28;
+				ENABLE_USER_SCRIPT_SANDBOXING = NO;
 				INFOPLIST_FILE = kirokuTests/Info.plist;
 				IPHONEOS_DEPLOYMENT_TARGET = 15.1;
 				LD_RUNPATH_SEARCH_PATHS = (
@@ -3103,6 +3108,7 @@
 			buildSettings = {
 				BUNDLE_LOADER = "$(TEST_HOST)";
 				DEVELOPMENT_TEAM = L357YP9W28;
+				ENABLE_USER_SCRIPT_SANDBOXING = NO;
 				GCC_PREPROCESSOR_DEFINITIONS = (
 					"DEBUG=1",
 					"$(inherited)",

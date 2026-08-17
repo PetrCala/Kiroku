@@ -7,6 +7,7 @@ import {
   useChartFont,
 } from '@components/Charts/BaseChart';
 import buildDateTicks from '@components/Charts/BaseChart/dateTicks';
+import useLocalize from '@hooks/useLocalize';
 
 type AfRateLinePoint = {date: string; rate: number};
 
@@ -62,6 +63,7 @@ function AfRateLine({
   isLoading,
 }: AfRateLineProps) {
   const axisFont = useChartFont();
+  const {preferredLocale} = useLocalize();
   const showComparison =
     !!comparisonPoints && comparisonPoints.length === points.length;
 
@@ -87,8 +89,9 @@ function AfRateLine({
         lastKey: points[points.length - 1]?.date ?? '',
         length: points.length,
         unit: 'day',
+        preferredLocale,
       }),
-    [points],
+    [points, preferredLocale],
   );
 
   return (

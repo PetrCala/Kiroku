@@ -11,6 +11,7 @@ import {
   valueTicks,
 } from '@components/Charts/BaseChart/axisFormatters';
 import buildDateTicks from '@components/Charts/BaseChart/dateTicks';
+import useLocalize from '@hooks/useLocalize';
 import type {DrinkKey} from '@src/types/onyx/Drinks';
 
 type StackedAreaProps = {
@@ -58,6 +59,7 @@ function StackedArea({
   isLoading,
 }: StackedAreaProps) {
   const axisFont = useChartFont();
+  const {preferredLocale} = useLocalize();
   const showComparison =
     !!comparisonTotal && comparisonTotal.length === weeks.length;
 
@@ -111,8 +113,9 @@ function StackedArea({
         lastKey: weeks[weeks.length - 1] ?? '',
         length: weeks.length,
         unit: 'week',
+        preferredLocale,
       }),
-    [weeks],
+    [weeks, preferredLocale],
   );
   const yTicks = useMemo(() => valueTicks(maxStack), [maxStack]);
 
