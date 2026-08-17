@@ -27,9 +27,24 @@ function DayComponent({
     !isDimmed && units !== undefined && units > 0
       ? (Number.isInteger(units) ? units : units.toFixed(1)).toString()
       : '';
+  // A second identifier, carried only by days that actually have sessions.
+  // `units` is the signal: it is populated per day only where sessions exist
+  // (see `useLazyMarkedDates`), unlike `marking`, which every in-range day gets
+  // (sober days included). The pressable's own `calendar-day-<date>` testID
+  // cannot answer "does this day hold anything?", because the grid renders a
+  // cell for every day of the month, so the App Store screenshot UI test had no
+  // way to open a day with real data (ios/KirokuUITests/ScreenshotTests.swift).
+  // It lives on the wrapper rather than the pressable because the pressable's
+  // testID is also the web e2e selector, and because the pressable is an
+  // accessibility element, which hides its own subtree from XCUITest. A testID
+  // is only an accessibility identifier, so nothing a user sees changes.
+  const hasSessionsTestID =
+    date?.dateString && units !== undefined
+      ? `calendar-day-${date.dateString}-has-sessions`
+      : undefined;
 
   return (
-    <View>
+    <View testID={hasSessionsTestID}>
       <PressableWithFeedback
         accessibilityLabel=""
         testID={
