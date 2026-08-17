@@ -119,6 +119,17 @@ jobs:
         with:
           timeout_minutes: 10
           max_attempts: 5
+          # A cold `pod install` populates the CocoaPods trunk spec repo from
+          # raw.githubusercontent.com, which rate-limits per runner IP. The
+          # action defaults to 10s between attempts, which puts all five inside
+          # the same four-minute window: on 2026-08-17 a 429 burned every
+          # attempt and killed the run seven minutes in, before a single
+          # screenshot. A minute between attempts outlasts the limit.
+          #
+          # This bites on the first run of a new branch. The Pods cache key is
+          # branch-scoped, so a branch that has never run installs cold even
+          # though every earlier run restored the cache and skipped this step.
+          retry_wait_seconds: 60
           command: cd ios && bundle exec pod install
 
       - name: Set up environment for Xcode
@@ -307,6 +318,17 @@ jobs:
         with:
           timeout_minutes: 10
           max_attempts: 5
+          # A cold `pod install` populates the CocoaPods trunk spec repo from
+          # raw.githubusercontent.com, which rate-limits per runner IP. The
+          # action defaults to 10s between attempts, which puts all five inside
+          # the same four-minute window: on 2026-08-17 a 429 burned every
+          # attempt and killed the run seven minutes in, before a single
+          # screenshot. A minute between attempts outlasts the limit.
+          #
+          # This bites on the first run of a new branch. The Pods cache key is
+          # branch-scoped, so a branch that has never run installs cold even
+          # though every earlier run restored the cache and skipped this step.
+          retry_wait_seconds: 60
           command: cd ios && bundle exec pod install
 
       - name: Set up environment for Xcode
