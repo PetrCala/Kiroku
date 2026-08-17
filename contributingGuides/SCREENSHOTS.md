@@ -21,8 +21,15 @@ Apple uses for App Store Review). The Day Overview screenshot opens a calendar
 day cell (`calendar-day-<YYYY-MM-DD>`), so **before triggering a capture,
 confirm the demo account has at least one logged session in the current
 calendar month** and pass those dates in the `demo_session_dates` workflow
-input. Without them the test falls back to whatever day cell it can find,
-which may be an empty day.
+input. Without them the test falls back to the newest day the calendar reports
+sessions on, which is not necessarily the day the shot should show.
+
+The grid renders a cell for every day of the month, so a cell existing proves
+nothing about that day's data. Days that hold sessions carry a second
+identifier, `calendar-day-<YYYY-MM-DD>-has-sessions` (see `DayComponent`), and
+the test checks that before tapping. Every date it skips is logged as a
+`[capture-note]`, so a stale `demo_session_dates` shows up in the run log
+instead of quietly producing a Day Overview centred on some other day.
 
 That is the mechanical minimum. The editorial requirement is stricter, and the
 full contract (with target numbers) lives next to the shot list in
@@ -52,9 +59,9 @@ evidence a reviewer judges the app on.
      right answer.
    - `demo_session_dates`: comma-separated ISO dates the demo account has
      sessions on, newest first (for example
-     `2026-08-10,2026-08-06,2026-08-03`). The Day Overview shot opens the
-     first one it finds on the calendar; an empty day would open a Day
-     Overview with nothing in it.
+     `2026-08-14,2026-08-09,2026-08-05`). The Day Overview shot opens the
+     first one the calendar confirms has sessions; dates with no data are
+     skipped, and if none of them have any, the newest day that does is used.
    - `dump_a11y`: log the full accessibility tree for every screen. Turn this
      on whenever a selector broke.
    - `fail_slow`: keep going after a build or launch error.

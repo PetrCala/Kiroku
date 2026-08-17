@@ -452,13 +452,26 @@ final class ScreenshotTests: XCTestCase {
         return screen("Live Session Screen", timeout: 25)
     }
 
+    private static let dayCellPrefix = "calendar-day-"
+    private static let hasSessionsSuffix = "-has-sessions"
+
     /// Calendar day cells are `calendar-day-<YYYY-MM-DD>` (DayComponent), so a
-    /// day is addressed by date rather than by position. KIROKU_DEMO_SESSION_DATES
-    /// carries a comma-separated list of dates the demo account actually has
-    /// sessions on, newest first, because an empty day opens a Day Overview with
-    /// nothing in it and that is not a screenshot worth shipping. Any date that
-    /// is not on screen (wrong month, data changed) is skipped, and the last
-    /// resort is whatever day cell the calendar is showing.
+    /// day is addressed by date rather than by position. A cell's EXISTENCE says
+    /// nothing about that day's data, though: the grid renders a cell for every
+    /// day of the month, sessions or not. Days that do have sessions carry a
+    /// second identifier on the cell's wrapper view,
+    /// `calendar-day-<YYYY-MM-DD>-has-sessions`, and that is the check this step
+    /// makes. Opening an empty day is close to invisible in the result, because
+    /// the Day Overview is a continuous list of the days that have sessions,
+    /// centred on the nearest one at or before the day tapped: the shot silently
+    /// shows some other day, and the miss goes unnoticed until someone compares
+    /// the capture with the dates that were asked for.
+    ///
+    /// KIROKU_DEMO_SESSION_DATES carries a comma-separated list of dates the demo
+    /// account is expected to have sessions on, newest first. It is a preference
+    /// order, not a source of truth: a date the calendar reports no sessions for
+    /// is skipped (wrong month, data changed, stale input), and the fallback is
+    /// the newest day the calendar itself reports sessions on.
     private func openCalendarDay() -> Bool {
         guard openHome() else { return false }
 
@@ -468,25 +481,127 @@ final class ScreenshotTests: XCTestCase {
             .map { $0.trimmingCharacters(in: .whitespaces) }
             .filter { !$0.isEmpty }
 
-        for date in dates {
-            let cell = app.descendants(matching: .any)["calendar-day-\(date)"]
-            guard cell.waitForExistence(timeout: 3) else { continue }
+        guard let firstCell = anyDayCell(timeout: 10) else {
+            recordMiss("03_DayOverview", "no calendar-day-* cell on Home")
+            return false
+        }
+
+        // Wait for the first marked day, not for each configured date in turn.
+        // The grid renders before the session data lands, so a per-date check
+        // run the moment the grid appears would read every day as empty; once
+        // any day is marked the data is in, and the per-date checks below can
+        // read the tree as it stands with no further waiting.
+        var candidates: [String] = []
+        if anyDayHasSessions(timeout: 15) {
+            var withoutSessions: [String] = []
+            for date in dates {
+                if dayHasSessions(date) {
+                    candidates.append(date)
+                } else {
+                    withoutSessions.append(date)
+                }
+            }
+            if !withoutSessions.isEmpty {
+                NSLog("[capture-note] KIROKU_DEMO_SESSION_DATES: the calendar reports no sessions on \(withoutSessions.joined(separator: ", ")), skipped")
+            }
+            // Backstop, also the whole answer when the input is empty or stale.
+            // Not today: step 02 starts a live session, so today's tile is marked
+            // even on an account with nothing logged, and that Day Overview holds
+            // just the empty live session.
+            if let newest = newestDayWithSessions(excluding: today()), !candidates.contains(newest) {
+                candidates.append(newest)
+            }
+        } else {
+            NSLog("[capture-note] no calendar day reports sessions: either the demo account has none in the loaded window, or the has-sessions identifier is not reaching the tree")
+        }
+
+        for date in candidates {
+            guard let cell = dayCell(for: date) else { continue }
             tap(cell)
             if screen("Day Overview Screen", timeout: 10) {
+                NSLog("[capture-note] 03_DayOverview opened \(date)")
                 return true
             }
             _ = openHome()
         }
 
-        let anyDay = app.descendants(matching: .any)
-            .matching(NSPredicate(format: "identifier BEGINSWITH %@", "calendar-day-"))
-            .firstMatch
-        guard anyDay.waitForExistence(timeout: 10) else {
-            recordMiss("03_DayOverview", "no calendar-day-* cell on Home")
-            return false
-        }
-        tap(anyDay)
+        // Last resort: open whatever day the calendar is showing. The shot may
+        // land on an empty list, but a Day Overview centred on a nearby day with
+        // sessions is still likelier than not, and losing the file outright costs
+        // another hour-long run.
+        NSLog("[capture-note] 03_DayOverview falling back to an unverified day cell")
+        tap(firstCell)
         return screen("Day Overview Screen", timeout: 10)
+    }
+
+    /// Today as 'yyyy-MM-dd', in the simulator's own time zone, which is the one
+    /// the app's calendar renders in.
+    private func today() -> String {
+        let formatter = DateFormatter()
+        formatter.locale = Locale(identifier: "en_US_POSIX")
+        formatter.dateFormat = "yyyy-MM-dd"
+        return formatter.string(from: Date())
+    }
+
+    /// Whether the calendar currently shows a day cell for `date` whose wrapper
+    /// reports sessions on it. No timeout: the caller waits for the grid first,
+    /// and a missing marker means "no sessions", not "not rendered yet".
+    private func dayHasSessions(_ date: String) -> Bool {
+        let identifier = "\(Self.dayCellPrefix)\(date)\(Self.hasSessionsSuffix)"
+        return app.descendants(matching: .any)[identifier].exists
+    }
+
+    /// Whether any day on screen reports sessions, i.e. whether the calendar has
+    /// its session data yet.
+    private func anyDayHasSessions(timeout: TimeInterval) -> Bool {
+        let marker = app.descendants(matching: .any)
+            .matching(NSPredicate(format: "identifier ENDSWITH %@", Self.hasSessionsSuffix))
+            .firstMatch
+        return marker.waitForExistence(timeout: timeout)
+    }
+
+    /// The newest day the calendar reports sessions on, `excluding` one date.
+    /// Identifiers embed ISO dates, which sort chronologically, so the newest is
+    /// simply the largest.
+    private func newestDayWithSessions(excluding excluded: String) -> String? {
+        let markers = app.descendants(matching: .any)
+            .matching(NSPredicate(format: "identifier ENDSWITH %@", Self.hasSessionsSuffix))
+        let markedDates = markers.allElementsBoundByIndex
+            .compactMap { markedDate(from: $0.identifier) }
+            .filter { $0 != excluded }
+        return markedDates.max()
+    }
+
+    /// 'YYYY-MM-DD' out of a `calendar-day-<date>-has-sessions` identifier.
+    private func markedDate(from identifier: String) -> String? {
+        guard identifier.hasPrefix(Self.dayCellPrefix),
+              identifier.hasSuffix(Self.hasSessionsSuffix) else {
+            return nil
+        }
+        return String(
+            identifier
+                .dropFirst(Self.dayCellPrefix.count)
+                .dropLast(Self.hasSessionsSuffix.count)
+        )
+    }
+
+    private func dayCell(for date: String, timeout: TimeInterval = 3) -> XCUIElement? {
+        let cell = app.descendants(matching: .any)["\(Self.dayCellPrefix)\(date)"]
+        return cell.waitForExistence(timeout: timeout) ? cell : nil
+    }
+
+    /// Any day cell, never a has-sessions wrapper: the wrapper shares the cell's
+    /// frame, so tapping one would work, but the pressable owns the gesture.
+    private func anyDayCell(timeout: TimeInterval) -> XCUIElement? {
+        let isDayCell = NSPredicate(format: "identifier BEGINSWITH %@", Self.dayCellPrefix)
+        let isMarker = NSPredicate(format: "identifier ENDSWITH %@", Self.hasSessionsSuffix)
+        let cell = app.descendants(matching: .any)
+            .matching(NSCompoundPredicate(andPredicateWithSubpredicates: [
+                isDayCell,
+                NSCompoundPredicate(notPredicateWithSubpredicate: isMarker),
+            ]))
+            .firstMatch
+        return cell.waitForExistence(timeout: timeout) ? cell : nil
     }
 
     /// Statistics is a bottom tab whose body is a `react-native-tab-view` with

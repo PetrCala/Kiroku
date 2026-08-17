@@ -7,8 +7,10 @@ name: Capture App Store / Play Store screenshots
 # Prerequisite: the demo account referenced by APPLE_DEMO_EMAIL /
 # APPLE_DEMO_PASSWORD MUST have at least one logged drinking session in the
 # current calendar month. The Day Overview screenshot opens a calendar day, and
-# an empty day gives a Day Overview with nothing in it. List the dates that do
-# have sessions in the `demo_session_dates` input below. See
+# an empty day gives a Day Overview centred on some other day. List the dates
+# that do have sessions in the `demo_session_dates` input below; the test now
+# verifies each one against the calendar before tapping it, and logs
+# `[capture-note]` for every date it had to skip. See
 # contributingGuides/SCREENSHOTS.md.
 on:
   workflow_dispatch:
@@ -42,7 +44,7 @@ on:
         default: false
         type: boolean
       demo_session_dates:
-        description: 'Comma-separated ISO dates (newest first) the demo account has sessions on, e.g. 2026-08-10,2026-08-06. The Day Overview shot opens the first one it finds on the calendar.'
+        description: 'Comma-separated ISO dates (newest first) the demo account has sessions on, e.g. 2026-08-14,2026-08-09. A preference order: the Day Overview shot opens the first one the calendar confirms has sessions, and falls back to the newest day that does when none of them match.'
         required: false
         default: ''
         type: string

@@ -32,9 +32,12 @@ back; only the background/caption layer is synthesized.
 ### 0. Prerequisite: shape the demo account first
 
 Capture logs into the `APPLE_DEMO_*` account, and the Day Overview shot taps the
-first calendar day that has a recorded session. **Before capturing, sign in to the
-demo account and log at least one drinking session in the current calendar
-month**, or the run fails ~40 min in on a missing `DayMarking`.
+first calendar day the app reports a recorded session on (the
+`calendar-day-<date>-has-sessions` identifier), preferring the dates given in the
+`demo_session_dates` workflow input. **Before capturing, sign in to the demo
+account and log at least one drinking session in the current calendar month**,
+and pass its date: with no session anywhere in the month the shot lands on an
+empty day, which is not publishable.
 
 That is only the mechanical minimum. The demo account's data becomes the App
 Store listing, so it also has to pass an editorial bar: it must look like someone
