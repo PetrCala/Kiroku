@@ -53,21 +53,36 @@ evidence a reviewer judges the app on.
 1. Go to **Actions → "Capture App Store / Play Store screenshots" → Run
    workflow**.
 2. Pick a branch (usually `master`) and the inputs:
+
    - `device_subset`: `all`, `phone-only`, or `ipad-only`. The framing
      pipeline derives every output size from the 6.9" iPhone master, and the
      live App Store listing has no iPad set, so `phone-only` is normally the
      right answer.
    - `demo_session_dates`: comma-separated ISO dates the demo account has
-     sessions on, newest first (for example
-     `2026-08-14,2026-08-09,2026-08-05`). The Day Overview shot opens the
+     sessions on, in preference order (for example
+     `2026-08-02,2026-08-05,2026-08-09`). The Day Overview shot opens the
      first one the calendar confirms has sessions; dates with no data are
      skipped, and if none of them have any, the newest day that does is used.
+
+     List the **oldest** session day first. The day overview is an ascending
+     list that centres whichever day it opens, and it cannot centre its first
+     row, so the oldest day clamps to the top of the list. Opening a later day
+     centres it instead and leaves the 40% bottom spacer exposed underneath:
+     opening the newest of four August sessions measured 43% blank, opening
+     the oldest measured 30% and showed all four session cards.
+
    - `dump_a11y`: log the full accessibility tree for every screen. Turn this
      on whenever a selector broke.
    - `fail_slow`: keep going after a build or launch error.
-3. Budget about an hour. Roughly 12 minutes of setup, ~45 minutes to build the
-   scheme (the app, every pod, and the embedded watch target) before a single
-   screenshot is taken, then a few minutes per device/language pair.
+
+3. Budget two to three hours per dispatch, and remember a capture is two
+   dispatches (`en-only` and `cs-only`) that you can run at the same time.
+   Measured on 2026-08-17 with `phone-only`: ~6 minutes of setup, ~1h40m to
+   build the scheme (the app, every pod, and the embedded watch target) before
+   a single screenshot is taken, ~10 minutes to link, install, boot and launch,
+   then under 2 minutes to shoot all seven. Runner variance between two
+   identical dispatches was ~17 minutes, and the slowest phone job so far took
+   2h51m, hence the 180-minute cap on the job.
 4. When the run finishes, download the `ios-screenshots-<sha>` artifact from
    the workflow summary page. PNGs are organized as
    `ios/<locale>/<device>/*.png`.

@@ -44,7 +44,7 @@ on:
         default: false
         type: boolean
       demo_session_dates:
-        description: 'Comma-separated ISO dates (newest first) the demo account has sessions on, e.g. 2026-08-14,2026-08-09. A preference order: the Day Overview shot opens the first one the calendar confirms has sessions, and falls back to the newest day that does when none of them match.'
+        description: 'Comma-separated ISO dates the demo account has sessions on, in preference order: the Day Overview shot opens the first one the calendar confirms has sessions, and falls back to the newest day that does when none match. List the OLDEST session day first, e.g. 2026-08-02,2026-08-05. The day overview is an ascending list that centres the day it opens, and it cannot centre its first row, so the oldest day clamps to the top and fills the screen with session cards instead of trailing spacer.'
         required: false
         default: ''
         type: string
