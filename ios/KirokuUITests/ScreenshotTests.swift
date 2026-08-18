@@ -640,6 +640,22 @@ final class ScreenshotTests: XCTestCase {
     /// The drag is slow and ends on a hold so the scroll view carries no
     /// momentum past the target. A flick would overshoot by an unpredictable
     /// amount, and nothing here can check the result before the shutter.
+    ///
+    /// Two things measured on the 2026-08-18 English run, for whoever touches
+    /// this next.
+    ///
+    /// The drag under-delivers. Asking for 36pt moved the content 77px where
+    /// 36pt is 108px, so roughly 70% arrives. Do not treat the requested
+    /// offset as the applied one.
+    ///
+    /// More importantly, no scroll value satisfies both ends in English. The
+    /// wrapped row costs 107px of viewport; the English viewport is 1591px and
+    /// the two chart cards need 1656px, a 65px deficit. Something has to be
+    /// clipped, and this scrolls toward the alcohol-free chart because that is
+    /// the one the shot is captioned for. The under-delivery above is the only
+    /// reason the first card keeps its title, so a future run that lands the
+    /// full offset will crop it. The real fix is to stop the chips wrapping
+    /// (see StatsFilterToolbar), not to keep tuning this number.
     private func undoFilterChipWrap() {
         guard let anchor = element(labeled: ["6M"], timeout: 5),
               let wrapped = element(labeled: ["Custom", "Vlastní"], timeout: 5) else {
