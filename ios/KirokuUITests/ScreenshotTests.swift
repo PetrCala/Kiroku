@@ -70,7 +70,11 @@ final class ScreenshotTests: XCTestCase {
         capture("02_LiveSession") { openLiveSession() }
         capture("03_DayOverview") { openCalendarDay() }
         capture("04_Statistics") { openStatisticsTab(matching: ["Overview", "Přehled"]) }
-        capture("05_AlcoholFree") { openStatisticsTab(matching: ["Trends", "Trendy"]) }
+        capture("05_AlcoholFree") {
+            guard openStatisticsTab(matching: ["Trends", "Trendy"]) else { return false }
+            undoFilterChipWrap()
+            return true
+        }
         capture("06_Friends") { openFriends() }
         capture("07_Settings") { openSettings() }
 
@@ -619,6 +623,65 @@ final class ScreenshotTests: XCTestCase {
         // Give the chart a moment to draw before the shutter.
         Thread.sleep(forTimeInterval: 2)
         return true
+    }
+
+    /// The range chips (W / M / 6M / Y / All / Compare / Custom) sit in a
+    /// wrapping row. English does not fit on one line, so "Custom" drops onto a
+    /// second row and pushes the scroll view down by one chip row. On the
+    /// Trends tab the tab bar then slices the x axis off the second chart,
+    /// which is the alcohol-free one the shot is captioned for; Czech fits on
+    /// one line and shows that chart whole.
+    ///
+    /// Scroll back up by the height of the wrapped row, measured off the chips
+    /// rather than hardcoded, so every language frames alike. When nothing
+    /// wrapped the offset is zero and the screen does not move, which is what
+    /// makes this safe to run for every locale.
+    ///
+    /// The drag is slow and ends on a hold so the scroll view carries no
+    /// momentum past the target. A flick would overshoot by an unpredictable
+    /// amount, and nothing here can check the result before the shutter.
+    ///
+    /// Two things measured on the 2026-08-18 English run, for whoever touches
+    /// this next.
+    ///
+    /// The drag under-delivers. Asking for 36pt moved the content 77px where
+    /// 36pt is 108px, so roughly 70% arrives. Do not treat the requested
+    /// offset as the applied one.
+    ///
+    /// More importantly, no scroll value satisfies both ends in English. The
+    /// wrapped row costs 107px of viewport; the English viewport is 1591px and
+    /// the two chart cards need 1656px, a 65px deficit. Something has to be
+    /// clipped, and this scrolls toward the alcohol-free chart because that is
+    /// the one the shot is captioned for. The under-delivery above is the only
+    /// reason the first card keeps its title, so a future run that lands the
+    /// full offset will crop it. The real fix is to stop the chips wrapping
+    /// (see StatsFilterToolbar), not to keep tuning this number.
+    private func undoFilterChipWrap() {
+        guard let anchor = element(labeled: ["6M"], timeout: 5),
+              let wrapped = element(labeled: ["Custom", "Vlastní"], timeout: 5) else {
+            NSLog("[capture-note] range chips not found, leaving the Trends scroll position alone")
+            return
+        }
+
+        let drop = wrapped.frame.minY - anchor.frame.minY
+        guard drop > 1 else { return }
+        // A whole row is ~44pt. Anything larger means the lookup matched some
+        // container rather than the chips, and scrolling by it would be worse
+        // than the clipping it set out to fix.
+        guard drop < 120 else {
+            NSLog("[capture-note] chip row offset of %.0f pt is implausible, not scrolling", Double(drop))
+            return
+        }
+
+        NSLog("[capture-note] range chips wrapped, scrolling back %.0f pt", Double(drop))
+        let start = app.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.75))
+        start.press(
+            forDuration: 0.05,
+            thenDragTo: start.withOffset(CGVector(dx: 0, dy: -drop)),
+            withVelocity: .slow,
+            thenHoldForDuration: 0.3
+        )
+        Thread.sleep(forTimeInterval: 1)
     }
 
     private func openFriends() -> Bool {

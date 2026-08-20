@@ -44,7 +44,7 @@ on:
         default: false
         type: boolean
       demo_session_dates:
-        description: 'Comma-separated ISO dates (newest first) the demo account has sessions on, e.g. 2026-08-14,2026-08-09. A preference order: the Day Overview shot opens the first one the calendar confirms has sessions, and falls back to the newest day that does when none of them match.'
+        description: 'Comma-separated ISO dates the demo account has sessions on, in preference order: the Day Overview shot opens the first one the calendar confirms has sessions, and falls back to the newest day that does when none match. List the OLDEST session day first, e.g. 2026-08-02,2026-08-05. The day overview is an ascending list that centres the day it opens, and it cannot centre its first row, so the oldest day clamps to the top and fills the screen with session cards instead of trailing spacer.'
         required: false
         default: ''
         type: string
@@ -119,6 +119,17 @@ jobs:
         with:
           timeout_minutes: 10
           max_attempts: 5
+          # A cold `pod install` populates the CocoaPods trunk spec repo from
+          # raw.githubusercontent.com, which rate-limits per runner IP. The
+          # action defaults to 10s between attempts, which puts all five inside
+          # the same four-minute window: on 2026-08-17 a 429 burned every
+          # attempt and killed the run seven minutes in, before a single
+          # screenshot. A minute between attempts outlasts the limit.
+          #
+          # This bites on the first run of a new branch. The Pods cache key is
+          # branch-scoped, so a branch that has never run installs cold even
+          # though every earlier run restored the cache and skipped this step.
+          retry_wait_seconds: 60
           command: cd ios && bundle exec pod install
 
       - name: Set up environment for Xcode
@@ -307,6 +318,17 @@ jobs:
         with:
           timeout_minutes: 10
           max_attempts: 5
+          # A cold `pod install` populates the CocoaPods trunk spec repo from
+          # raw.githubusercontent.com, which rate-limits per runner IP. The
+          # action defaults to 10s between attempts, which puts all five inside
+          # the same four-minute window: on 2026-08-17 a 429 burned every
+          # attempt and killed the run seven minutes in, before a single
+          # screenshot. A minute between attempts outlasts the limit.
+          #
+          # This bites on the first run of a new branch. The Pods cache key is
+          # branch-scoped, so a branch that has never run installs cold even
+          # though every earlier run restored the cache and skipped this step.
+          retry_wait_seconds: 60
           command: cd ios && bundle exec pod install
 
       - name: Set up environment for Xcode
