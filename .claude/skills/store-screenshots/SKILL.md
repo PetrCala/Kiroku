@@ -93,9 +93,30 @@ to be exactly the required pixel size before it's written.
 
 ### 4. Upload to App Store Connect
 
-Upload `fastlane/store-screenshots/framed/**` to ASC (manual for now — ASC infers
-the device slot from the image dimensions). Wiring this into fastlane `deliver` is
-a planned follow-up.
+`scripts/asc.mjs shots` uploads one locale from one FLAT folder of PNGs, in
+filename order, and picks each ASC slot from the image's own pixel size. Stage a
+folder per locale first, because the framed tree is one directory per device and
+two of those sizes must not be uploaded:
+
+```bash
+node scripts/asc.mjs shots --version <v> --dir <staged/en-US> --locale en-US --replace          # dry run
+node scripts/asc.mjs shots --version <v> --dir <staged/en-US> --locale en-US --replace --yes    # write
+```
+
+Stage **6.9 plus one watch size**, and nothing else:
+
+- **Skip 6.7.** Both 1320x2868 and 1290x2796 map to `APP_IPHONE_67`, so feeding
+  both puts 12 images in a 6-image slot. Upload the 6.9 set and let Apple scale.
+- **Upload exactly one watch size, the 368x448 `APP_WATCH_SERIES_4`.** A version
+  may carry only one Apple Watch display type; a second set fails with HTTP 409
+  `MULTIPLE_APPLE_WATCH_SCREENSHOT_TYPES_NOT_ALLOWED_IN_VERSION`. SERIES_4 is
+  also the slot ASC demands before it accepts a submission whose build embeds
+  the watch app.
+
+`--replace` deletes what is in each touched set first; without it the upload
+appends to the existing screenshots. Apple processes assets asynchronously, so
+confirm every screenshot reports `assetDeliveryState` `COMPLETE` before
+submitting.
 
 ## Making changes
 

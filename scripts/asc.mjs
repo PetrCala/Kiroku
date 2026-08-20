@@ -314,6 +314,15 @@ async function cmdScrub(appId) {
 // emits (scripts/store-screenshots.config.mjs `devices`). Note APP_IPHONE_67 is
 // the current largest-iPhone slot and takes 1320x2868 as well as 1290x2796,
 // which is why the live listing shows 1320x2868 images filed under _67.
+//
+// A version may carry only ONE Apple Watch display type. Creating a second set
+// alongside an existing one fails with HTTP 409
+// STATE_ERROR.MULTIPLE_APPLE_WATCH_SCREENSHOT_TYPES_NOT_ALLOWED_IN_VERSION, so
+// upload exactly one watch size and let Apple scale it. Use the 368x448
+// SERIES_4 shot: that is the slot ASC demands before it will accept a
+// submission whose build embeds the watch app. The framing pipeline still
+// emits all three sizes, so drop the 396 and 410 files from the upload folder
+// rather than feeding the whole framed tree to `shots`.
 const DISPLAY_TYPES = {
   '1320x2868': 'APP_IPHONE_67',
   '1290x2796': 'APP_IPHONE_67',
