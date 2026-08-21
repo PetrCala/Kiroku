@@ -575,6 +575,16 @@ export default defineConfig([
     'ios/Pods/**',
     'ios/build/**',
     'web-build/**',
+    // Gitignored build/tool outputs. Without these, a local run after a web
+    // build tries to lint dist/'s ~51MB webpack bundles and OOMs the V8 heap.
+    // CI never sees them (clean checkouts), so this only affects local runs.
+    'dist/**',
+    'coverage/**',
+    '.rock/**',
+    '.expo/**',
+    '.firebase/**',
+    '.jest/**',
+    '.jest-cache/**',
     // Playwright web E2E suite -- typed against its own e2e/web/tsconfig.json,
     // follows Playwright's own conventions rather than the app's lint rules.
     'e2e/**',
