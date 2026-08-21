@@ -6,7 +6,17 @@ on:
     types: [opened, synchronize]
     branches-ignore: [staging, production]
     paths:
-      ['**.js', '**.ts', '**.tsx', '**.sh', 'package.json', 'package-lock.json']
+      [
+        '**.js',
+        '**.ts',
+        '**.tsx',
+        '**.sh',
+        'package.json',
+        'package-lock.json',
+        'bun.lock',
+        '.github/workflows/test.yml',
+        '.github/actions/composite/setupBun/**',
+      ]
 
 concurrency:
   group: ${{ github.ref == 'refs/heads/master' && format('{0}-{1}', github.ref, github.sha) || github.ref }}-jest
@@ -27,8 +37,8 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v5
 
-      - name: Setup Node
-        uses: ./.github/actions/composite/setupNode
+      - name: Setup Bun
+        uses: ./.github/actions/composite/setupBun
 
       - name: Get number of CPU cores
         id: cpu-cores
@@ -39,7 +49,7 @@ jobs:
         uses: actions/cache@27d5ce7f107fe9357f9df03efb73ab90386fccae # v5.0.5
         with:
           path: .jest-cache
-          key: ${{ runner.os }}-jest-${{ hashFiles('package-lock.json') }}
+          key: ${{ runner.os }}-jest-${{ hashFiles('bun.lock') }}
           restore-keys: |
             ${{ runner.os }}-jest-
 
