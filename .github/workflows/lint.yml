@@ -45,7 +45,7 @@ jobs:
       # After the baseline lands, this step is inert on subsequent runs.
       #
       # Note: commits made by GITHUB_TOKEN don't trigger downstream workflows,
-      # so the bot push doesn't re-fire this workflow — which is what we want
+      # so the bot push doesn't re-fire this workflow, which is what we want
       # (no infinite loop).
       - name: Check eslint-seatbelt baseline
         id: check_baseline
@@ -59,13 +59,15 @@ jobs:
 
       - name: Bootstrap eslint-seatbelt baseline
         if: steps.check_baseline.outputs.exists == 'false' && github.event_name == 'pull_request'
+        env:
+          HEAD_REF: ${{ github.event.pull_request.head.ref }}
         run: |
           SEATBELT_INCREASE=ALL ./scripts/lint.sh
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add eslint.seatbelt.tsv
           git commit -m "chore(lint): bootstrap eslint-seatbelt baseline"
-          git push origin HEAD:${{ github.event.pull_request.head.ref }}
+          git push origin "HEAD:$HEAD_REF"
 
       # ESLint's cache doesn't track cross-file TypeScript dependencies, which
       # can cause stale errors. If lint fails, clear the cache and retry to
