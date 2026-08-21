@@ -103,8 +103,10 @@ jobs:
         if: ${{ github.ref_name == 'staging' }}
         run: echo "SKIP_ONBOARDING=true" >> .env.adhoc
 
-      - name: Setup Node
-        uses: ./.github/actions/composite/setupNode
+      - name: Setup Bun
+        uses: ./.github/actions/composite/setupBun
+        with:
+          cache: 'false'
 
       - name: Build web
         run: npm run ${{ steps.target.outputs.BUILD_SCRIPT }}
@@ -117,8 +119,11 @@ jobs:
       - name: Deploy to Firebase Hosting (live)
         env:
           GOOGLE_APPLICATION_CREDENTIALS: ${{ runner.temp }}/firebase-sa.json
+        # bunx instead of npx: installing firebase-tools (~1600 packages) is
+        # several times faster through bun, and setupBun already put bun on
+        # the runner.
         run: |
-          npx --yes firebase-tools@13 deploy \
+          bunx firebase-tools@13 deploy \
             --only hosting:app \
             --project ${{ steps.target.outputs.PROJECT }} \
             --non-interactive \
@@ -164,8 +169,10 @@ jobs:
       - name: Enable onboarding bypass for Playwright build
         run: echo "SKIP_ONBOARDING=true" >> .env.development
 
-      - name: Setup Node
-        uses: ./.github/actions/composite/setupNode
+      - name: Setup Bun
+        uses: ./.github/actions/composite/setupBun
+        with:
+          cache: 'false'
 
       - name: Build web
         run: npm run build-web-dev
@@ -181,7 +188,7 @@ jobs:
           GOOGLE_APPLICATION_CREDENTIALS: ${{ runner.temp }}/firebase-sa.json
         run: |
           set -e
-          npx --yes firebase-tools@13 hosting:channel:deploy "pr-${PULL_REQUEST_NUMBER}" \
+          bunx firebase-tools@13 hosting:channel:deploy "pr-${PULL_REQUEST_NUMBER}" \
             --only app \
             --project dev \
             --expires 7d \
@@ -229,11 +236,31 @@ jobs:
         with:
           ref: ${{ github.event.pull_request.head.sha || steps.ref.outputs.REF }}
 
-      - name: Setup Node
-        uses: ./.github/actions/composite/setupNode
+      - name: Setup Bun
+        uses: ./.github/actions/composite/setupBun
+        with:
+          cache: 'false'
+
+      - name: Get Playwright version
+        id: playwright-version
+        run: echo "VERSION=$(node -p "require('@playwright/test/package.json').version")" >> "$GITHUB_OUTPUT"
+
+      - name: Cache Playwright browsers
+        id: playwright-cache
+        uses: actions/cache@v5
+        with:
+          path: ~/.cache/ms-playwright
+          key: ${{ runner.os }}-playwright-${{ steps.playwright-version.outputs.VERSION }}
 
       - name: Install Playwright browser (Chromium)
+        if: steps.playwright-cache.outputs.cache-hit != 'true'
         run: npx playwright install --with-deps chromium
+
+      # The browser binaries were restored from cache, but the runner's apt
+      # packages were not; install-deps is quick and idempotent.
+      - name: Install Playwright system dependencies
+        if: steps.playwright-cache.outputs.cache-hit == 'true'
+        run: npx playwright install-deps chromium
 
       # PLAYWRIGHT_BASE_URL points the suite at the deployed preview channel.
       # E2E_TEST_EMAIL / E2E_TEST_PASSWORD are repo secrets holding a dev-backend
@@ -272,11 +299,31 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v5
 
-      - name: Setup Node
-        uses: ./.github/actions/composite/setupNode
+      - name: Setup Bun
+        uses: ./.github/actions/composite/setupBun
+        with:
+          cache: 'false'
+
+      - name: Get Playwright version
+        id: playwright-version
+        run: echo "VERSION=$(node -p "require('@playwright/test/package.json').version")" >> "$GITHUB_OUTPUT"
+
+      - name: Cache Playwright browsers
+        id: playwright-cache
+        uses: actions/cache@v5
+        with:
+          path: ~/.cache/ms-playwright
+          key: ${{ runner.os }}-playwright-${{ steps.playwright-version.outputs.VERSION }}
 
       - name: Install Playwright browser (Chromium)
+        if: steps.playwright-cache.outputs.cache-hit != 'true'
         run: npx playwright install --with-deps chromium
+
+      # The browser binaries were restored from cache, but the runner's apt
+      # packages were not; install-deps is quick and idempotent.
+      - name: Install Playwright system dependencies
+        if: steps.playwright-cache.outputs.cache-hit == 'true'
+        run: npx playwright install-deps chromium
 
       # PLAYWRIGHT_BASE_URL points the suite at the live site deployLive just
       # published. E2E_TEST_EMAIL / E2E_TEST_PASSWORD are the same dev-backend
