@@ -13,7 +13,10 @@ on:
         '**.tsx',
         'package.json',
         'package-lock.json',
+        'bun.lock',
         'tsconfig.json',
+        '.github/workflows/typecheck.yml',
+        '.github/actions/composite/setupBun/**',
       ]
 
 concurrency:
@@ -27,7 +30,7 @@ jobs:
     steps:
       - uses: actions/checkout@v5
 
-      - uses: ./.github/actions/composite/setupNode
+      - uses: ./.github/actions/composite/setupBun
 
       - name: Type check with TypeScript
         run: npm run typecheck-tsgo

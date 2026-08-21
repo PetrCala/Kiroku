@@ -5,7 +5,14 @@ on:
   pull_request:
     types: [opened, synchronize]
     branches-ignore: [staging, production]
-    paths: ['**.ts', '**.tsx']
+    paths:
+      [
+        '**.ts',
+        '**.tsx',
+        'bun.lock',
+        '.github/workflows/react-compiler-compliance.yml',
+        '.github/actions/composite/setupBun/**',
+      ]
 
 concurrency:
   group: ${{ github.ref == 'refs/heads/master' && format('{0}-{1}', github.ref, github.sha) || github.ref }}-react-compiler-compliance
@@ -29,8 +36,8 @@ jobs:
           # fetch-depth: 0 ensures the base commit's objects are present for the diff.
           fetch-depth: 0
 
-      - name: Setup Node
-        uses: ./.github/actions/composite/setupNode
+      - name: Setup Bun
+        uses: ./.github/actions/composite/setupBun
 
       - name: Run React Compiler Compliance Check
         run: npm run react-compiler-compliance-check check-changed

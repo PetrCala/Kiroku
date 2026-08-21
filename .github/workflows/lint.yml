@@ -5,7 +5,18 @@ on:
   pull_request:
     types: [opened, synchronize]
     branches-ignore: [staging, production]
-    paths: ['**.js', '**.ts', '**.tsx', '**.json', '**.mjs', '**.cjs']
+    paths:
+      [
+        '**.js',
+        '**.ts',
+        '**.tsx',
+        '**.json',
+        '**.mjs',
+        '**.cjs',
+        'bun.lock',
+        '.github/workflows/lint.yml',
+        '.github/actions/composite/setupBun/**',
+      ]
 
 concurrency:
   group: ${{ github.ref == 'refs/heads/master' && format('{0}-{1}', github.ref, github.sha) || github.ref }}-lint
@@ -27,14 +38,14 @@ jobs:
           ref: ${{ github.event.pull_request.head.ref || github.ref }}
           repository: ${{ github.event.pull_request.head.repo.full_name || github.repository }}
 
-      - name: Setup Node
-        uses: ./.github/actions/composite/setupNode
+      - name: Setup Bun
+        uses: ./.github/actions/composite/setupBun
 
       - name: Cache ESLint cache
         uses: actions/cache@v5
         with:
           path: node_modules/.cache/eslint
-          key: ${{ runner.os }}-eslint-${{ hashFiles('package-lock.json', 'eslint.config.mjs') }}
+          key: ${{ runner.os }}-eslint-${{ hashFiles('bun.lock', 'eslint.config.mjs') }}
           restore-keys: |
             ${{ runner.os }}-eslint-
 
@@ -45,7 +56,7 @@ jobs:
       # After the baseline lands, this step is inert on subsequent runs.
       #
       # Note: commits made by GITHUB_TOKEN don't trigger downstream workflows,
-      # so the bot push doesn't re-fire this workflow — which is what we want
+      # so the bot push doesn't re-fire this workflow, which is what we want
       # (no infinite loop).
       - name: Check eslint-seatbelt baseline
         id: check_baseline
