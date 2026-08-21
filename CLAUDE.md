@@ -127,8 +127,10 @@ Key GitHub Actions workflows:
 - `test.yml`: Unit tests
 - `typecheck.yml`: TypeScript validation
 - `lint.yml`: Code quality checks
-- `claude-review.yml`: Automated PR review — **intentionally disabled** (manual `workflow_dispatch` only; do not switch to `pull_request`)
-- `translation-review.yml`: AI review of translation quality — manual `workflow_dispatch` only (the always-on translation gate is the `TranslationContext` unit test)
+- `claude-review.yml`: Automated PR review, **intentionally disabled** (manual `workflow_dispatch` only; do not switch to `pull_request`)
+- `translation-review.yml`: AI review of translation quality, manual `workflow_dispatch` only (the always-on translation gate is the `TranslationContext` unit test)
+
+CI dependency installs are split by workflow: `lint.yml`, `typecheck.yml`, and `react-compiler-compliance.yml` install `node_modules` with Bun (`.github/actions/composite/setupBun`, keyed on `bun.lock`); all other workflows still use npm (`setupNode`, keyed on `package-lock.json`). Node remains the runtime everywhere; Bun is only the installer. When dependencies change, both lockfiles must be updated together: run `npm install` and then `bun install` so `package-lock.json` and `bun.lock` stay in sync.
 
 ### iOS Code Signing
 

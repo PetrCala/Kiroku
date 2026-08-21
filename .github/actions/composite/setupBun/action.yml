@@ -1,5 +1,5 @@
 name: Set up Bun
-description: Set up Bun
+description: Set up Node and Bun, and install node_modules with bun
 
 outputs:
   cache-hit:
@@ -9,18 +9,30 @@ outputs:
 runs:
   using: composite
   steps:
-    - uses: oven-sh/setup-bun@v2
+    # Node is still the runtime for everything (jest, eslint, tsc, scripts);
+    # bun is only the installer. Pin the same version the npm path uses so
+    # gate results don't drift with the runner's default Node.
+    - uses: actions/setup-node@v5
+      with:
+        node-version-file: '.nvmrc'
 
+    - uses: oven-sh/setup-bun@v2
+      with:
+        bun-version: 1.4.0
+
+    # Deliberately a different cache namespace than setupNode's
+    # "<os>-node-modules-*" keys: a bun-installed node_modules must never be
+    # restored into an npm job or vice versa.
     - id: cache-node-modules
       uses: actions/cache@v5
       with:
         path: node_modules
-        key: ${{ runner.os }}-node-modules-${{ hashFiles('package-lock.json', 'patches/**') }}
+        key: ${{ runner.os }}-bun-node-modules-${{ hashFiles('bun.lock', 'patches/**') }}
 
     - name: Install root project node packages
       if: steps.cache-node-modules.outputs.cache-hit != 'true'
       uses: nick-fields/retry@3f757583fb1b1f940bc8ef4bf4734c8dc02a5847
       with:
-        timeout_minutes: 30
+        timeout_minutes: 10
         max_attempts: 3
-        command: bun install
+        command: bun install --frozen-lockfile
