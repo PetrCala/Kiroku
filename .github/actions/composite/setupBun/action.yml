@@ -1,6 +1,12 @@
 name: Set up Bun
 description: Set up Node and Bun, and install node_modules with bun
 
+inputs:
+  cache:
+    description: Cache node_modules between runs. Set 'false' to always install fresh (a cold bun install can be cheaper than restore + save).
+    required: false
+    default: 'true'
+
 outputs:
   cache-hit:
     description: Was there a cache hit on the main node_modules?
@@ -24,6 +30,7 @@ runs:
     # "<os>-node-modules-*" keys: a bun-installed node_modules must never be
     # restored into an npm job or vice versa.
     - id: cache-node-modules
+      if: inputs.cache == 'true'
       uses: actions/cache@v5
       with:
         path: node_modules
