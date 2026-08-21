@@ -130,7 +130,7 @@ Key GitHub Actions workflows:
 - `claude-review.yml`: Automated PR review, **intentionally disabled** (manual `workflow_dispatch` only; do not switch to `pull_request`)
 - `translation-review.yml`: AI review of translation quality, manual `workflow_dispatch` only (the always-on translation gate is the `TranslationContext` unit test)
 
-CI dependency installs are split by workflow: `lint.yml`, `typecheck.yml`, and `react-compiler-compliance.yml` install `node_modules` with Bun (`.github/actions/composite/setupBun`, keyed on `bun.lock`); all other workflows still use npm (`setupNode`, keyed on `package-lock.json`). Node remains the runtime everywhere; Bun is only the installer. When dependencies change, both lockfiles must be updated together: run `npm install` and then `bun install` so `package-lock.json` and `bun.lock` stay in sync.
+CI dependency installs are split by workflow: all JS-only workflows (`lint.yml`, `typecheck.yml`, `react-compiler-compliance.yml`, `test.yml`, `webBuild.yml`, `deployWeb.yml`, `seatbelt-baseline.yml`) install `node_modules` with Bun (`.github/actions/composite/setupBun`, keyed on `bun.lock`); the native-build workflows (`testBuild.yml`, `platformDeploy.yml`, `screenshots.yml`, plus the macOS cache-warming job in `preDeploy.yml`) still use npm (`setupNode`, keyed on `package-lock.json`) because dependency postinstall scripts (e.g. `@shopify/react-native-skia`) and the iOS Pods cache key depend on the npm install. Node remains the runtime everywhere; Bun is only the installer. When dependencies change, both lockfiles must be updated together: run `npm install` and then `bun install` so `package-lock.json` and `bun.lock` stay in sync.
 
 ### iOS Code Signing
 

@@ -20,9 +20,9 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v5
 
-      - name: Setup Node
-        uses: ./.github/actions/composite/setupNode
-
+      # No setupNode/install here: createOrUpdateStagingDeploy is an
+      # ncc-bundled action (self-contained index.js), so node_modules is
+      # never read and a full install would be wasted time.
       - name: Create or update deploy checklist
         uses: ./.github/actions/javascript/createOrUpdateStagingDeploy
         with:

@@ -14,7 +14,9 @@ on:
       - config/webpack/**
       - package.json
       - package-lock.json
+      - bun.lock
       - .github/workflows/webBuild.yml
+      - .github/actions/composite/setupBun/**
   workflow_dispatch:
 
 permissions:
@@ -38,8 +40,10 @@ jobs:
       - name: Stage .env.production from secret
         run: echo "${{ secrets.PRODUCTION_ENV_FILE }}" > .env.production
 
-      - name: Setup Node
-        uses: ./.github/actions/composite/setupNode
+      - name: Setup Bun
+        uses: ./.github/actions/composite/setupBun
+        with:
+          cache: 'false'
 
       - name: Build web
         run: npm run build-web
