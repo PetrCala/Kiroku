@@ -82,7 +82,7 @@ jobs:
     # diagnostic log upload never runs and a lost run tells you nothing.
     timeout-minutes: 180
     env:
-      DEVELOPER_DIR: /Applications/Xcode_26.1.1.app/Contents/Developer
+      DEVELOPER_DIR: /Applications/Xcode_26.6.app/Contents/Developer
     steps:
       - name: Checkout
         uses: actions/checkout@v5
@@ -280,7 +280,7 @@ jobs:
     # capture steps, which is the worst place to die.
     timeout-minutes: 240
     env:
-      DEVELOPER_DIR: /Applications/Xcode_26.1.1.app/Contents/Developer
+      DEVELOPER_DIR: /Applications/Xcode_26.6.app/Contents/Developer
       DERIVED_DATA: ios/build/watch-capture
     steps:
       - name: Checkout
