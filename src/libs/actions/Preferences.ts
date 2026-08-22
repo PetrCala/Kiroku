@@ -75,6 +75,24 @@ function updateTheme(theme: Theme): Promise<void> {
 }
 
 /**
+ * Persist the auto-close threshold (hours of inactivity before an ongoing
+ * session is finalized automatically), then navigate back. The opt-out is the
+ * `'never'` sentinel (`CONST.SESSION.AUTO_CLOSE.NEVER`), matching the kiroku-api
+ * wire format that the server canonicalizes and echoes back; the picker only
+ * ever sends a positive number or `'never'`.
+ *
+ * Server-side validation for this key shipped in kiroku-api PR2; the optimistic
+ * Onyx merge keeps the UI correct regardless.
+ */
+function updateAutoCloseSessionsAfterHours(
+  hours: number | typeof CONST.SESSION.AUTO_CLOSE.NEVER,
+): Promise<void> {
+  const result = updatePreferences({auto_close_sessions_after_hours: hours});
+  Navigation.goBack();
+  return result;
+}
+
+/**
  * Read a FRIEND's rendering preferences (units→colors, drinks→units, palette)
  * via the privacy-enforced `GET /v1/users/:uid/preferences` API — replacing the
  * direct Firebase RTDB read the friend calendar used to do through
@@ -95,4 +113,9 @@ function openFriendPreferences(userID: UserID): Promise<void | Response> {
   );
 }
 
-export {updatePreferences, updateTheme, openFriendPreferences};
+export {
+  updatePreferences,
+  updateTheme,
+  updateAutoCloseSessionsAfterHours,
+  openFriendPreferences,
+};

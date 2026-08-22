@@ -102,6 +102,11 @@ type DrinkingSession = {
   /** Whether or not the session is still going on */
   ongoing?: boolean;
 
+  /** Audit marker set when the session was finalized automatically (because it
+   *  was left ongoing past the user's auto-close threshold) rather than by the
+   *  user. Absent/false means a user finalized it. */
+  auto_closed?: boolean;
+
   /** The type of this session */
   type?: DrinkingSessionType;
 };

@@ -540,6 +540,7 @@ export default {
       title: 'Obecné',
       firstDayOfWeek: 'První den v týdnu',
       theme: 'Motiv aplikace',
+      autoCloseSessions: 'Automatické zavírání relací',
     },
     drinksAndUnitsSection: {
       title: 'Drinky a jednotky',
@@ -709,6 +710,13 @@ export default {
         label: 'Čeština',
       },
     },
+  },
+  autoCloseSessionsScreen: {
+    title: 'Automatické zavírání relací',
+    description:
+      'Pokud u živé relace po tuto dobu nepřibude žádný nový drink, Kiroku ji za vás dokončí a jako čas konce nastaví váš poslední drink. Zvolte „Nikdy“, pokud chcete relace nechávat otevřené, dokud je sami neukončíte.',
+    hoursOption: ({hours}: {hours: number}) => `${hours} h`,
+    never: 'Nikdy',
   },
   themeScreen: {
     theme: 'Motiv',
