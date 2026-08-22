@@ -180,10 +180,6 @@ jobs:
           max_attempts: 5
           command: cd ios && bundle exec pod install
 
-      - name: Reset pods
-        run: |
-          npm run ios:pod:reset
-
       - name: Set up environment for Xcode
         run: |
           echo "export NODE_BINARY=$(which node)" >> "$HOME/.bash_profile"
@@ -209,9 +205,6 @@ jobs:
         with:
           role-to-assume: arn:aws:iam::${{ secrets.AWS_ACCOUNT_ID }}:role/KirokuS3Upload
           aws-region: ${{ secrets.AWS_REGION }}
-
-      - name: Bundle install
-        run: npm run jsbundle
 
       - name: Install iOS platform SDK
         uses: nick-fields/retry@ad984534de44a9489a53aefd81eb77f87c70dc60 # v4.0.0
