@@ -1,0 +1,152 @@
+# Builds the patched `react-android` AAR from source once per patch change and publishes it to
+# GitHub Packages, so that app builds can consume a prebuilt artifact instead of compiling React
+# Native and Hermes from source on every run.
+#
+# Dispatch this whenever `patches/react-native+*.patch` or `patches/@react-native+*.patch` changes,
+# or when React Native itself is upgraded. Until it has run for the current patch hash, Android CI
+# fails loudly rather than silently shipping unpatched React Native.
+#
+# Deliberately `workflow_dispatch` only: publishing rewrites what every future Android build links
+# against, so it stays a decision someone makes, never a side effect of a merge.
+name: Publish React Native Android Artifacts
+
+on:
+  workflow_dispatch:
+    inputs:
+      REACT_NATIVE_ARCHITECTURES:
+        description: ABIs to build. Leave as is unless you know why you are trimming them.
+        required: false
+        default: armeabi-v7a,arm64-v8a,x86,x86_64
+        type: string
+
+permissions:
+  contents: read
+  packages: write
+
+concurrency:
+  group: ${{ github.workflow }}
+  cancel-in-progress: false
+
+jobs:
+  publish:
+    name: Build and publish patched React Native artifacts
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+
+      # Same reclaim the Android deploy does: a from-source React Native plus Hermes build for four
+      # ABIs does not fit in the ~14 GB the runner ships with.
+      - name: Free disk space
+        uses: jlumbroso/free-disk-space@54081f138730dfa15788a46383842cd2f914a1be # v1.3.1
+        with:
+          android: false # keep the Android SDK the build needs
+          dotnet: true
+          haskell: true
+          large-packages: false # apt autoremove purges libicu-dev, breaking Hermes' CMake ICU lookup
+          docker-images: true
+          swap-storage: true
+
+      # node_modules is what gets published: patch-package applies patches/react-native+*.patch
+      # during postinstall, and the AAR is built from the patched sources.
+      - name: Setup Node
+        uses: ./.github/actions/composite/setupNode
+
+      - name: Setup Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'oracle'
+          java-version: '17'
+
+      - name: Set REACT_NATIVE_DOWNLOADS_DIR
+        run: echo "REACT_NATIVE_DOWNLOADS_DIR=$HOME/.rn-downloads" >> "$GITHUB_ENV"
+
+      - name: Resolve artifact coordinates
+        id: coordinates
+        run: |
+          PATCHES_HASH="$(./scripts/computeReactNativePatchesHash.sh)"
+          REACT_NATIVE_VERSION="$(jq -r '.dependencies["react-native"]' package.json)"
+          {
+            echo "PATCHES_HASH=$PATCHES_HASH"
+            echo "REACT_NATIVE_VERSION=$REACT_NATIVE_VERSION"
+            echo "ARTIFACT_VERSION=${REACT_NATIVE_VERSION}-${PATCHES_HASH}"
+          } >> "$GITHUB_OUTPUT"
+
+      # The version is a pure function of the React Native version and the patch hash, so a repeat
+      # dispatch with no patch change has nothing new to publish. GitHub Packages rejects
+      # overwriting an existing Maven version, so skip instead of failing.
+      - name: Check whether this version is already published
+        id: published
+        run: |
+          POM_URL="https://maven.pkg.github.com/${{ github.repository }}/${GROUP_PATH}/react-android/${ARTIFACT_VERSION}/react-android-${ARTIFACT_VERSION}.pom"
+          STATUS="$(curl -sS -o /dev/null -w '%{http_code}' -H "Authorization: Bearer ${{ github.token }}" "$POM_URL")"
+          echo "Probe of $POM_URL returned $STATUS"
+          if [[ "$STATUS" == "200" ]]; then
+            echo "ALREADY_PUBLISHED=true" >> "$GITHUB_OUTPUT"
+            echo "::notice::${ARTIFACT_VERSION} is already published, nothing to do."
+          else
+            echo "ALREADY_PUBLISHED=false" >> "$GITHUB_OUTPUT"
+          fi
+        env:
+          GROUP_PATH: com/kiroku/react
+          ARTIFACT_VERSION: ${{ steps.coordinates.outputs.ARTIFACT_VERSION }}
+
+      - name: Cache Gradle and React Native downloads (Boost, etc.)
+        if: steps.published.outputs.ALREADY_PUBLISHED != 'true'
+        uses: actions/cache@v5
+        with:
+          path: |
+            ~/.gradle/caches
+            ~/.gradle/wrapper
+            ~/.rn-downloads
+          key: ${{ runner.os }}-android-rn-artifacts-${{ hashFiles('android/**/*.gradle*', 'android/gradle/wrapper/gradle-wrapper.properties', 'patches/react-native+*.patch') }}
+          restore-keys: |
+            ${{ runner.os }}-android-rn-artifacts-
+            ${{ runner.os }}-android-gradle-
+
+      - name: Build patched React Native artifacts
+        if: steps.published.outputs.ALREADY_PUBLISHED != 'true'
+        working-directory: android
+        # `assemble`, not `build`: React Native's own lint, ktfmt and unit tests are not ours to run
+        # and would only add minutes and flakiness to a packaging job.
+        run: ./gradlew buildReactNativeArtifacts -PpatchedArtifacts.forceBuildFromSource=true
+        env:
+          # `-P` properties do not reach an included build, environment variables do.
+          ORG_GRADLE_PROJECT_reactNativeArchitectures: ${{ inputs.REACT_NATIVE_ARCHITECTURES }}
+
+      - name: Publish patched React Native artifacts
+        if: steps.published.outputs.ALREADY_PUBLISHED != 'true'
+        working-directory: android
+        run: |
+          ./gradlew publishReactNativeArtifacts \
+            -PpatchedArtifacts.forceBuildFromSource=true \
+            -I ../gradleUtils/publishPatchedReactNative.init.gradle
+        env:
+          ORG_GRADLE_PROJECT_reactNativeArchitectures: ${{ inputs.REACT_NATIVE_ARCHITECTURES }}
+          PATCHED_ARTIFACTS_GROUP: com.kiroku.react
+          PATCHED_ARTIFACTS_VERSION: ${{ steps.coordinates.outputs.ARTIFACT_VERSION }}
+          PATCHED_ARTIFACTS_PATCHES_HASH: ${{ steps.coordinates.outputs.PATCHES_HASH }}
+          PATCHED_ARTIFACTS_REPOSITORY_URL: https://maven.pkg.github.com/${{ github.repository }}
+          PATCHED_ARTIFACTS_REPOSITORY_USER: ${{ github.actor }}
+          PATCHED_ARTIFACTS_REPOSITORY_TOKEN: ${{ github.token }}
+
+      - name: Summary
+        if: ${{ always() }}
+        run: |
+          {
+            echo "### Patched React Native Android artifacts"
+            echo
+            echo "| | |"
+            echo "| --- | --- |"
+            echo "| React Native | \`${{ steps.coordinates.outputs.REACT_NATIVE_VERSION }}\` |"
+            echo "| Patches hash | \`${{ steps.coordinates.outputs.PATCHES_HASH }}\` |"
+            echo "| Coordinates | \`com.kiroku.react:react-android:${{ steps.coordinates.outputs.ARTIFACT_VERSION }}\` |"
+            echo "| Already published | \`${{ steps.published.outputs.ALREADY_PUBLISHED }}\` |"
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Announce failed workflow in Discord
+        if: ${{ failure() }}
+        uses: ./.github/actions/composite/announceFailedWorkflowInDiscord
+        with:
+          DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_URL }}
