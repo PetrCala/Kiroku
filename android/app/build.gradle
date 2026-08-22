@@ -199,17 +199,21 @@ android {
 
 
 afterEvaluate {
-    // As the App is building from source, we need to make sure hermesc is built before the JS bundle is created.
-    // Otherwise the release version of the app will fail to build due to missing hermesc.
-    def hermesCTask = gradle.includedBuild("react-native").task(":packages:react-native:ReactAndroid:hermes-engine:buildHermesC")
+    // When React Native is part of the build as a source build, hermesc has to be built before the
+    // JS bundle is created, otherwise the release build fails on a missing hermesc. With the
+    // prebuilt artifacts there is no included build and the React Native Gradle Plugin uses the
+    // hermesc that ships in node_modules/react-native/sdks/hermesc.
+    if (reactNativeIncludedBuild != null) {
+        def hermesCTask = reactNativeIncludedBuild.task(":packages:react-native:ReactAndroid:hermes-engine:buildHermesC")
 
-    android.applicationVariants.configureEach { variant ->
-        if (variant.buildType.name == "release") {
-            def variantName = variant.name.capitalize()
-            def bundleTask = tasks.named("createBundle${variantName}JsAndAssets").getOrNull()
+        android.applicationVariants.configureEach { variant ->
+            if (variant.buildType.name == "release") {
+                def variantName = variant.name.capitalize()
+                def bundleTask = tasks.named("createBundle${variantName}JsAndAssets").getOrNull()
 
-            if (bundleTask != null) {
-                bundleTask.dependsOn(hermesCTask)
+                if (bundleTask != null) {
+                    bundleTask.dependsOn(hermesCTask)
+                }
             }
         }
     }

@@ -6,6 +6,9 @@ on:
 
 permissions:
   contents: write
+  # platformDeploy inherits this workflow's token: the Android build resolves the prebuilt patched
+  # React Native artifacts from GitHub Packages.
+  packages: read
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}

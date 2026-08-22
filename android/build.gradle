@@ -14,6 +14,9 @@ buildscript {
 
         // Present only when settings.gradle included React Native as a source build.
         reactNativeIncludedBuild = gradle.includedBuilds.find { it.name == 'react-native' }
+
+        // Decided in gradleUtils/patchedArtifactsSettings.gradle, applied from settings.gradle.
+        patchedArtifacts = gradle.ext.patchedArtifacts
     }
     repositories {
         google()
@@ -47,9 +50,36 @@ allprojects {
                     dependency.useTarget 'org.bouncycastle:bcprov-jdk15to18:1.71'
                 }
             }
+
+            // Point every consumer of React Native (the app and every autolinked library) at our
+            // prebuilt, patched artifact instead of the stock one on Maven Central. `hermes-android`
+            // is deliberately not substituted: no patch touches Hermes, so the official artifact is
+            // the right one. When building from source, settings.gradle substitutes both with
+            // projects of the included build instead.
+            if (!patchedArtifacts.buildFromSource) {
+                def patchedReactAndroid = "${patchedArtifacts.group}:react-android:${patchedArtifacts.version}"
+                dependencySubstitution {
+                    substitute(module('com.facebook.react:react-native')).using(module(patchedReactAndroid))
+                    substitute(module('com.facebook.react:react-android')).using(module(patchedReactAndroid))
+                }
+                force patchedReactAndroid
+            }
         }
     }
     repositories {
+        if (!patchedArtifacts.buildFromSource) {
+            maven {
+                url patchedArtifacts.repositoryUrl
+                // Nothing else lives in this repository, and GitHub Packages is slow to say 404.
+                content { includeGroup patchedArtifacts.group }
+                if (patchedArtifacts.username && patchedArtifacts.password) {
+                    credentials {
+                        username = patchedArtifacts.username
+                        password = patchedArtifacts.password
+                    }
+                }
+            }
+        }
         maven {
             // All of React Native (JS, Obj-C sources, Android binaries) is installed from npm
             url("$rootDir/../node_modules/react-native/android")

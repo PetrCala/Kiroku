@@ -24,6 +24,13 @@ Patches are named `<package>+<version>+<NNN>+<short-description>.patch` so `patc
 
 ### `react-native+0.81.4.patch`
 
+> **Android builds consume this patch as a prebuilt artifact.** Two hunks touch Kotlin under
+> `ReactAndroid` (`AlertFragment.kt`, `ReactScrollViewHelper.kt`), so the patched `react-android`
+> AAR is built and published once per patch set by the `Publish React Native Android Artifacts`
+> workflow, keyed on a hash of every `react-native+*.patch` file. If you edit, add or remove a React
+> Native patch, dispatch that workflow before merging: Android CI fails on purpose while no
+> published artifact matches the new hash. See `gradleUtils/patchedArtifactsSettings.gradle`.
+
 - **Reason**: Pre-existing core-RN patch carried since the RN 0.81 upgrade. Multi-purpose. _TODO: split into named single-purpose patches and document each section._
 - **Upstream PR/issue**: 🛑
 - **Removable when**: each contained workaround is fixed upstream or moved to a more targeted patch.
