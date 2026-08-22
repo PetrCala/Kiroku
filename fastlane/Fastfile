@@ -117,11 +117,9 @@ platform :android do
     upload_android_to_s3
   end
 
-  desc "Build and upload app to Google Play"
-  lane :beta do
+  desc "Build Android app bundle for Google Play (no upload)"
+  lane :build_beta do
     ENV["ENVFILE"]=".env.production"
-    # Google is very unreliable, so we retry a few times
-    ENV["SUPPLY_UPLOAD_MAX_RETRIES"]="5"
 
     gradle(
         project_dir: './android',
@@ -129,6 +127,12 @@ platform :android do
         flavor: 'Production',
         build_type: 'Release',
     )
+  end
+
+  desc "Upload the built Android app bundle to Google Play"
+  lane :upload_beta_to_play_store do
+    # Google is very unreliable, so we retry a few times
+    ENV["SUPPLY_UPLOAD_MAX_RETRIES"]="5"
 
     upload_to_play_store(
         package_name: "com.alcohol_tracker",
@@ -138,6 +142,12 @@ platform :android do
         rollout: '1.0',
         skip_upload_apk: true,
     )
+  end
+
+  desc "Build and upload app to Google Play"
+  lane :beta do
+    build_beta
+    upload_beta_to_play_store
   end
 
 
