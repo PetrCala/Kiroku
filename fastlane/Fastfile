@@ -89,6 +89,17 @@ platform :android do
       task: 'assemble',
       flavor: 'Adhoc',
       build_type: 'Release',
+      # Ad hoc builds only ever land on arm64 phones, so building the other
+      # ABIs from android/gradle.properties (armeabi-v7a, x86) is wasted native
+      # compile. x86_64 stays: it's what CI/local Android emulators run (see
+      # e2e/native/README.md, which installs this same ad-hoc APK via
+      # reactivecircus/android-emulator-runner), and dropping it would make
+      # the test build emulator-only-uninstallable for no CI-time gain, since
+      # x86_64 already builds fastest of the four. Scoped to this lane only,
+      # the release AAB keeps the full ABI set from gradle.properties.
+      properties: {
+        "reactNativeArchitectures" => "arm64-v8a,x86_64"
+      },
     )
 
     # Persist APK path for the separate upload step (avoids AWS token expiry
