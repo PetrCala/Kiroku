@@ -40,6 +40,23 @@ buildscript {
 
 
 allprojects {
+    if (!patchedArtifacts.buildFromSource) {
+        // The React Native Gradle Plugin registers its own substitution for the legacy
+        // `com.facebook.react:react-native` coordinates, and it does so in an afterEvaluate, which
+        // means after ours and pointing at the stock `com.facebook.react:react-android`. Most
+        // autolinked libraries still declare `implementation 'com.facebook.react:react-native:+'`,
+        // so without this the unpatched artifact lands in the graph next to the patched one:
+        // duplicate React Native classes, and no guarantee about which of them wins.
+        // Declaring the two as the same component makes conflict resolution collapse them onto
+        // ours, whatever order the substitution rules end up being registered in.
+        dependencies {
+            modules {
+                module('com.facebook.react:react-android') {
+                    replacedBy("${patchedArtifacts.group}:react-android", 'Kiroku builds against a patched React Native')
+                }
+            }
+        }
+    }
     configurations.all {
         resolutionStrategy {
             force 'org.xerial:sqlite-jdbc:3.34.0'
