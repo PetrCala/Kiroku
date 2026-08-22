@@ -1,0 +1,68 @@
+/*
+ * Retargets the Maven coordinates of React Native's `ReactAndroid` publication so the
+ * *patched* AAR we build from source can be published under our own group id.
+ *
+ * Applied with `-I` by .github/workflows/publishReactNativeAndroidArtifacts.yml (and by
+ * anyone reproducing that publish locally against a file:// repository). An init script
+ * is applied to every build in the composite, including the `includeBuild` of
+ * node_modules/react-native, which is how we reach a project we do not own without
+ * having to patch node_modules or add a patch file of our own.
+ *
+ * Everything is read from the environment rather than from Gradle properties: `-P`
+ * properties are not propagated into included builds, environment variables are.
+ */
+
+def REACT_ANDROID_PROJECT_PATH = ':packages:react-native:ReactAndroid'
+
+def requireEnv = { String name ->
+    def value = System.getenv(name)
+    if (value == null || value.trim().isEmpty()) {
+        throw new GradleException("publishPatchedReactNative: $name must be set")
+    }
+    return value.trim()
+}
+
+gradle.beforeProject { project ->
+    if (project.path != REACT_ANDROID_PROJECT_PATH) {
+        return
+    }
+
+    project.afterEvaluate {
+        def groupId = requireEnv('PATCHED_ARTIFACTS_GROUP')
+        def artifactVersion = requireEnv('PATCHED_ARTIFACTS_VERSION')
+        def patchesHash = requireEnv('PATCHED_ARTIFACTS_PATCHES_HASH')
+        def repositoryUrl = requireEnv('PATCHED_ARTIFACTS_REPOSITORY_URL')
+        def repositoryUser = System.getenv('PATCHED_ARTIFACTS_REPOSITORY_USER')
+        def repositoryToken = System.getenv('PATCHED_ARTIFACTS_REPOSITORY_TOKEN')
+        def reactNativeVersion = project.version.toString()
+
+        project.publishing {
+            publications.named('release', MavenPublication) { publication ->
+                publication.groupId = groupId
+                publication.version = artifactVersion
+
+                // Recorded so a published artifact can always be traced back to the exact
+                // patch set it was built from, without having to decompile the AAR.
+                publication.pom.properties.put('patchesHash', patchesHash)
+                publication.pom.properties.put('reactNativeVersion', reactNativeVersion)
+            }
+
+            repositories {
+                maven { repository ->
+                    repository.name = 'patchedArtifacts'
+                    repository.url = repositoryUrl
+                    if (repositoryUser && repositoryToken) {
+                        repository.credentials { credentials ->
+                            credentials.username = repositoryUser
+                            credentials.password = repositoryToken
+                        }
+                    }
+                }
+            }
+        }
+
+        project.logger.lifecycle(
+            "publishPatchedReactNative: publishing ${groupId}:react-android:${artifactVersion} " +
+                "(react-native ${reactNativeVersion}, patches ${patchesHash}) to ${repositoryUrl}")
+    }
+}

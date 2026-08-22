@@ -11,6 +11,9 @@ buildscript {
         multiDexEnabled = true
         googlePlayServicesVersion = "17.0.0"
         kotlinVersion = "2.1.20"
+
+        // Present only when settings.gradle included React Native as a source build.
+        reactNativeIncludedBuild = gradle.includedBuilds.find { it.name == 'react-native' }
     }
     repositories {
         google()
@@ -55,3 +58,22 @@ allprojects {
 }
 
 apply plugin: "com.facebook.react.rootproject"
+
+// Entry points used by .github/workflows/publishReactNativeAndroidArtifacts.yml to build and
+// publish the patched React Native artifacts. They only exist when React Native is part of the
+// build as a source build, which the publish workflow forces with
+// -PpatchedArtifacts.forceBuildFromSource=true.
+tasks.register('buildReactNativeArtifacts') {
+    description = 'Builds the patched react-android AAR from source.'
+    if (reactNativeIncludedBuild != null) {
+        dependsOn(reactNativeIncludedBuild.task(':packages:react-native:ReactAndroid:assemble'))
+    }
+}
+
+tasks.register('publishReactNativeArtifacts') {
+    description = 'Publishes the patched react-android AAR to the configured Maven repository.'
+    if (reactNativeIncludedBuild != null) {
+        dependsOn(reactNativeIncludedBuild.task(
+                ':packages:react-native:ReactAndroid:publishReleasePublicationToPatchedArtifactsRepository'))
+    }
+}
