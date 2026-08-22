@@ -47,6 +47,22 @@ Upload built Android APK to S3 (requires fresh AWS credentials)
 
 Build app for testing
 
+### android build_beta
+
+```sh
+[bundle exec] fastlane android build_beta
+```
+
+Build Android app bundle for Google Play (no upload)
+
+### android upload_beta_to_play_store
+
+```sh
+[bundle exec] fastlane android upload_beta_to_play_store
+```
+
+Upload the built Android app bundle to Google Play
+
 ### android beta
 
 ```sh
