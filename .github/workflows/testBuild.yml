@@ -88,12 +88,29 @@ jobs:
         with:
           distribution: 'oracle'
           java-version: '17'
-          cache: 'gradle'
 
       - name: Setup Ruby
         uses: ruby/setup-ruby@v1.310.0
         with:
           bundler-cache: true
+
+      - name: Set REACT_NATIVE_DOWNLOADS_DIR
+        run: echo "REACT_NATIVE_DOWNLOADS_DIR=$HOME/.rn-downloads" >> "$GITHUB_ENV"
+
+      - name: Cache Gradle and React Native downloads (Boost, etc.)
+        uses: actions/cache@v5
+        with:
+          path: |
+            ~/.gradle/caches
+            ~/.gradle/wrapper
+            ~/.rn-downloads
+          # normalized-package-lock.json is written by setupNode (above); it strips the
+          # version fields npm rewrites on every release bump so the key doesn't miss
+          # on a version-only change. Same key shape as platformDeploy.yml's Android
+          # job, so a build on either workflow can seed the other's cache.
+          key: ${{ runner.os }}-android-gradle-${{ hashFiles('android/**/*.gradle*', 'android/gradle/wrapper/gradle-wrapper.properties', 'normalized-package-lock.json', 'patches/**') }}
+          restore-keys: |
+            ${{ runner.os }}-android-gradle-
 
       - name: Decrypt keystore
         run: cd android/app && gpg --quiet --batch --yes --decrypt --passphrase="$LARGE_SECRET_PASSPHRASE" --output kiroku-play-key.keystore kiroku-play-key.keystore.gpg
@@ -165,7 +182,10 @@ jobs:
           path: |
             ios/Pods
             ios/build/generated
-          key: ${{ runner.os }}-pods-cache-${{ hashFiles('ios/Podfile.lock', 'firebase.json', 'package-lock.json') }}
+          # normalized-package-lock.json is written by setupNode (above); it strips the
+          # version fields npm rewrites on every release bump so the key doesn't miss
+          # on a version-only change.
+          key: ${{ runner.os }}-pods-cache-${{ hashFiles('ios/Podfile.lock', 'firebase.json', 'normalized-package-lock.json') }}
           restore-keys: ${{ runner.os }}-pods-cache-
 
       - name: Compare Podfile.lock and Manifest.lock
