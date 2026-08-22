@@ -1,0 +1,167 @@
+import java.util.concurrent.TimeUnit
+
+/*
+ * Decides whether this Android build links against the prebuilt patched React Native artifacts
+ * published by .github/workflows/publishReactNativeAndroidArtifacts.yml, or compiles React Native
+ * and Hermes from source.
+ *
+ * Prebuilt is the default. The source build costs 40 to 55 minutes per Android build and exists
+ * only to carry the two Kotlin hunks of patches/react-native+0.81.4.patch.
+ *
+ * The artifact version is `<reactNativeVersion>-<patchesHash>`, so the coordinates this build asks
+ * for change the moment anyone touches a React Native patch. When no artifact exists for the
+ * current hash:
+ *   - on CI the build fails right here, loudly. Falling back to a source build would be slow *and*
+ *     silent, and a silent fallback is how unpatched React Native would end up in a release.
+ *   - locally it falls back to a source build with a warning, so a contributor with no GitHub token
+ *     still gets a working build.
+ *
+ * Escape hatch, for an offline source build or to unblock CI without publishing:
+ *   ./gradlew <task> -PpatchedArtifacts.forceBuildFromSource=true
+ */
+
+class PatchedArtifactsConfig {
+    boolean buildFromSource = true
+    String group = null
+    String version = null
+    String repositoryUrl = null
+    String username = null
+    String password = null
+}
+
+def config = new PatchedArtifactsConfig()
+
+def info = { String message -> println "[patchedArtifacts] $message" }
+def warn = { String message -> println "[patchedArtifacts] WARNING: $message" }
+
+def repoRootDir = new File(settings.rootDir, '..')
+
+def gradleProperty = { String name, String defaultValue ->
+    def provider = settings.providers.gradleProperty(name)
+    return provider.isPresent() ? provider.get().trim() : defaultValue
+}
+
+def runCommand = { List<String> command ->
+    try {
+        def process = new ProcessBuilder(command).start()
+        def output = process.inputStream.text
+        process.waitFor(30, TimeUnit.SECONDS)
+        return [output: output?.trim(), exitCode: process.exitValue()]
+    } catch (Exception exception) {
+        return [output: null, exitCode: -1]
+    }
+}
+
+// GitHub Actions (and every other CI worth the name) sets CI.
+def isCI = System.getenv('CI') != null
+
+if (gradleProperty('patchedArtifacts.forceBuildFromSource', 'false') == 'true') {
+    info 'patchedArtifacts.forceBuildFromSource is set, building React Native from source.'
+    gradle.ext.patchedArtifacts = config
+    return
+}
+
+// The same script the publish workflow uses, so the version this build asks for and the version
+// that gets published can never drift apart.
+def versionResult = runCommand([new File(repoRootDir, 'scripts/getPatchedReactNativeVersion.sh').absolutePath])
+if (versionResult.exitCode != 0 || !versionResult.output) {
+    throw new GradleException(
+            'patchedArtifacts: scripts/getPatchedReactNativeVersion.sh failed, so we cannot tell ' +
+            'which prebuilt React Native artifact matches this checkout.')
+}
+
+config.version = versionResult.output
+config.group = gradleProperty('patchedArtifacts.group', 'com.kiroku.react')
+config.repositoryUrl = gradleProperty('patchedArtifacts.repositoryUrl', 'https://maven.pkg.github.com/PetrCala/Kiroku')
+
+def pomPath = "${config.group.replace('.', '/')}/react-android/${config.version}/react-android-${config.version}.pom"
+
+// CI authenticates with the workflow token. A local build uses an explicit Gradle property (handy
+// in ~/.gradle/gradle.properties) and otherwise borrows the GitHub CLI login, which every other
+// local tool here already relies on.
+def resolveCredentials = { ->
+    def propertyUsername = gradleProperty('patchedArtifacts.githubUsername', null)
+    def propertyToken = gradleProperty('patchedArtifacts.githubToken', null)
+    if (propertyUsername && propertyToken) {
+        return [username: propertyUsername, password: propertyToken]
+    }
+
+    def envUsername = System.getenv('GITHUB_ACTOR')
+    def envToken = System.getenv('GITHUB_TOKEN')
+    if (envUsername && envToken) {
+        return [username: envUsername, password: envToken]
+    }
+
+    if (isCI) {
+        return null
+    }
+
+    def token = runCommand(['gh', 'auth', 'token'])
+    def user = runCommand(['gh', 'api', 'user', '--jq', '.login'])
+    if (token.exitCode != 0 || !token.output || user.exitCode != 0 || !user.output) {
+        return null
+    }
+    return [username: user.output, password: token.output]
+}
+
+// Cheap existence probe, so a missing artifact is reported as a build failure with an explanation
+// rather than as a dependency resolution error 20 lines deep in a Gradle stack trace.
+def artifactStatus = { ->
+    if (config.repositoryUrl.startsWith('file:')) {
+        def pomFile = new File(new URI("${config.repositoryUrl}/${pomPath}"))
+        return pomFile.exists() ? 'present' : "missing, no such file ${pomFile}"
+    }
+
+    def credentials = resolveCredentials()
+    if (credentials == null) {
+        return 'no GitHub credentials with read:packages'
+    }
+    config.username = credentials.username
+    config.password = credentials.password
+
+    try {
+        def connection = new URL("${config.repositoryUrl}/${pomPath}").openConnection()
+        connection.setRequestMethod('GET')
+        connection.setRequestProperty('Authorization', "Bearer ${config.password}")
+        connection.setConnectTimeout(15000)
+        connection.setReadTimeout(15000)
+        def responseCode = connection.getResponseCode()
+        connection.disconnect()
+        return responseCode == 200 ? 'present' : "HTTP $responseCode"
+    } catch (Exception exception) {
+        return "request failed, ${exception.message}"
+    }
+}
+
+def status = artifactStatus()
+
+if (status == 'present') {
+    config.buildFromSource = false
+    info "Using prebuilt React Native artifacts: ${config.group}:react-android:${config.version}"
+} else if (isCI) {
+    throw new GradleException("""
+        No prebuilt React Native artifact for this checkout.
+
+          wanted: ${config.group}:react-android:${config.version}
+          from:   ${config.repositoryUrl}
+          result: ${status}
+
+        The version is the React Native version plus a hash of patches/react-native+*.patch, so
+        either a React Native patch changed or React Native itself was upgraded, and no artifact has
+        been published for the new hash yet.
+
+        Publish it by dispatching "Publish React Native Android Artifacts" on this branch:
+        https://github.com/PetrCala/Kiroku/actions/workflows/publishReactNativeAndroidArtifacts.yml
+
+        This build deliberately refuses to fall back to compiling React Native from source: that
+        would hide a patch change behind a 45 minute build, and a fallback that silently drops the
+        patches is how unpatched React Native reaches users.
+    """.stripIndent().trim())
+} else {
+    warn "No prebuilt React Native artifact for ${config.group}:react-android:${config.version} ($status)."
+    warn 'Falling back to compiling React Native from source. Correct, just slow.'
+    warn 'If that is unexpected: gh auth status, and make sure the token has read:packages.'
+    config.buildFromSource = true
+}
+
+gradle.ext.patchedArtifacts = config

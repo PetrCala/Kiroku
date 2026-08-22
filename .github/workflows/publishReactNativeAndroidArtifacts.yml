@@ -65,12 +65,16 @@ jobs:
       - name: Resolve artifact coordinates
         id: coordinates
         run: |
+          # Both halves of the mechanism take the version from the same script, so what an Android
+          # build asks for and what gets published here cannot drift. package.json holds the semver
+          # range ("^0.81.4"), which is not a Maven version and is not what is installed.
           PATCHES_HASH="$(./scripts/computeReactNativePatchesHash.sh)"
-          REACT_NATIVE_VERSION="$(jq -r '.dependencies["react-native"]' package.json)"
+          REACT_NATIVE_VERSION="$(node --print "require('./node_modules/react-native/package.json').version")"
+          ARTIFACT_VERSION="$(./scripts/getPatchedReactNativeVersion.sh)"
           {
             echo "PATCHES_HASH=$PATCHES_HASH"
             echo "REACT_NATIVE_VERSION=$REACT_NATIVE_VERSION"
-            echo "ARTIFACT_VERSION=${REACT_NATIVE_VERSION}-${PATCHES_HASH}"
+            echo "ARTIFACT_VERSION=$ARTIFACT_VERSION"
           } >> "$GITHUB_OUTPUT"
 
       # The version is a pure function of the React Native version and the patch hash, so a repeat
