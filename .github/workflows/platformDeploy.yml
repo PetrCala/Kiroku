@@ -155,8 +155,15 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v5
 
+      # The production promote lane (`fastlane ios production`) only calls
+      # upload_to_testflight/deliver against the App Store Connect API for a
+      # build that TestFlight already has (distribute_only: true, see the
+      # Fastfile), it never runs gym/pod install and never touches JS. Skip
+      # both setup steps on that path; the staging `beta` lane below, which
+      # does build and needs them, is unaffected.
       - name: Setup Node
         id: setup-node
+        if: ${{ !inputs.SHOULD_DEPLOY_PRODUCTION }}
         uses: ./.github/actions/composite/setupNode
 
       - name: Setup Ruby
@@ -167,6 +174,7 @@ jobs:
       - name: Cache Pod dependencies
         uses: actions/cache@v5
         id: pods-cache
+        if: ${{ !inputs.SHOULD_DEPLOY_PRODUCTION }}
         with:
           path: |
             ios/Pods
@@ -175,11 +183,12 @@ jobs:
 
       - name: Compare Podfile.lock and Manifest.lock
         id: compare-podfile-and-manifest
+        if: ${{ !inputs.SHOULD_DEPLOY_PRODUCTION }}
         run: echo "IS_PODFILE_SAME_AS_MANIFEST=${{ hashFiles('ios/Podfile.lock') == hashFiles('ios/Pods/Manifest.lock') }}" >> "$GITHUB_OUTPUT"
 
       - name: Install cocoapods
         uses: nick-fields/retry@3f757583fb1b1f940bc8ef4bf4734c8dc02a5847
-        if: steps.pods-cache.outputs.cache-hit != 'true' || steps.compare-podfile-and-manifest.outputs.IS_PODFILE_SAME_AS_MANIFEST != 'true' || steps.setup-node.outputs.cache-hit != 'true'
+        if: ${{ !inputs.SHOULD_DEPLOY_PRODUCTION && (steps.pods-cache.outputs.cache-hit != 'true' || steps.compare-podfile-and-manifest.outputs.IS_PODFILE_SAME_AS_MANIFEST != 'true' || steps.setup-node.outputs.cache-hit != 'true') }}
         with:
           timeout_minutes: 10
           max_attempts: 5
