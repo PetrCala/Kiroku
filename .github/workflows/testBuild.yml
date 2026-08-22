@@ -27,6 +27,8 @@ permissions:
   id-token: write
   pull-requests: write
   contents: write
+  # The Android build resolves the prebuilt patched React Native artifacts from GitHub Packages.
+  packages: read
 
 jobs:
   getBranchRef:
@@ -127,6 +129,8 @@ jobs:
         env:
           MYAPP_UPLOAD_STORE_PASSWORD: ${{ secrets.MYAPP_UPLOAD_STORE_PASSWORD }}
           MYAPP_UPLOAD_KEY_PASSWORD: ${{ secrets.MYAPP_UPLOAD_KEY_PASSWORD }}
+          # Reads the prebuilt patched React Native artifacts from GitHub Packages.
+          GITHUB_TOKEN: ${{ github.token }}
 
       - name: Configure AWS Credentials
         uses: aws-actions/configure-aws-credentials@v6
