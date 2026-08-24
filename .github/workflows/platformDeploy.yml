@@ -127,6 +127,10 @@ jobs:
         env:
           MYAPP_UPLOAD_STORE_PASSWORD: ${{ secrets.MYAPP_UPLOAD_STORE_PASSWORD }}
           MYAPP_UPLOAD_KEY_PASSWORD: ${{ secrets.MYAPP_UPLOAD_KEY_PASSWORD }}
+          # Resolves the prebuilt patched React Native artifacts from GitHub Packages,
+          # which rejects anonymous reads even on public packages. The staging path
+          # builds here, not in the upload step below.
+          GITHUB_TOKEN: ${{ github.token }}
 
       - name: Upload Android build to Google Play
         uses: nick-fields/retry@3f757583fb1b1f940bc8ef4bf4734c8dc02a5847
