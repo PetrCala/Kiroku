@@ -168,6 +168,11 @@ const ONYXKEYS = {
   /** The last time a user has dismissed the app update modal */
   APP_UPDATE_DISMISSED: 'appUpdateDismissed',
 
+  /** Count of tip-jar tips given on this device. Cosmetic only: it drives the
+   *  thank-you line on the Support screen and nothing reads it to decide what
+   *  the user may do (a tip unlocks nothing). Device-level, survives sign-out. */
+  TIPS_GIVEN: 'tipsGiven',
+
   /** The last time a user has sent a verification email */
   VERIFY_EMAIL_SENT: 'verifyEmailSent',
 
@@ -353,6 +358,7 @@ type OnyxValuesMapping = {
   [ONYXKEYS.FEATURE_ACCESS_OVERRIDES]: OnyxTypes.FeatureAccessOverrides;
   [ONYXKEYS.SHOULD_SHOW_COMPOSE_INPUT]: boolean;
   [ONYXKEYS.APP_UPDATE_DISMISSED]: Timestamp;
+  [ONYXKEYS.TIPS_GIVEN]: number;
   [ONYXKEYS.VERIFY_EMAIL_SENT]: Timestamp;
   [ONYXKEYS.IS_BETA]: boolean;
   [ONYXKEYS.HAS_CHECKED_AUTO_LOGIN]: boolean;

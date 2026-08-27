@@ -5,8 +5,10 @@ import type {
   CustomerInfo,
   PurchasesOffering,
   PurchasesPackage,
+  PurchasesStoreProduct,
 } from 'react-native-purchases';
 import CONFIG from '@src/CONFIG';
+import CONST from '@src/CONST';
 import ONYXKEYS from '@src/ONYXKEYS';
 import Log from '@libs/Log';
 import type {SupporterStatus, UserPrivateData} from '@src/types/onyx/UserData';
@@ -198,6 +200,54 @@ async function purchaseSupporterPackage(
   }
 }
 
+/**
+ * Fetches the tip-jar consumable products from the store. Empty when the SDK
+ * is not configured (web, missing keys), the store is unreachable, or the
+ * products are not yet approved in App Store Connect. All of those are normal
+ * states, not errors: the tip jar renders its unavailable state.
+ */
+async function fetchTipProducts(): Promise<PurchasesStoreProduct[]> {
+  if (!isConfigured) {
+    return [];
+  }
+  try {
+    return await Purchases.getProducts(
+      [...CONST.TIPS.PRODUCT_IDS],
+      Purchases.PRODUCT_CATEGORY.NON_SUBSCRIPTION,
+    );
+  } catch (error) {
+    Log.warn('[Subscriptions] getProducts failed', {error});
+    return [];
+  }
+}
+
+/**
+ * Buys one tip. Consumable and entitlement-free: RevenueCat finishes the
+ * transaction itself and no supporter status changes. The only side effect is
+ * the device-local thank-you counter, which the caller bumps on success.
+ */
+async function purchaseTip(
+  product: PurchasesStoreProduct,
+): Promise<PurchaseOutcome> {
+  if (!isConfigured) {
+    return {status: 'error', message: 'SDK not configured'};
+  }
+  try {
+    const result = await Purchases.purchaseStoreProduct(product);
+    return {status: 'success', customerInfo: result.customerInfo};
+  } catch (error) {
+    const rcError = error as {userCancelled?: boolean; message?: string};
+    if (rcError?.userCancelled) {
+      return {status: 'cancelled'};
+    }
+    Log.warn('[Subscriptions] purchaseStoreProduct failed', {error});
+    return {
+      status: 'error',
+      message: rcError?.message ?? 'Unknown error',
+    };
+  }
+}
+
 async function restoreSupporterPurchases(): Promise<RestoreOutcome> {
   if (!isConfigured) {
     return {status: 'error', message: 'SDK not configured'};
@@ -221,10 +271,12 @@ async function restoreSupporterPurchases(): Promise<RestoreOutcome> {
 
 export {
   fetchCurrentOffering,
+  fetchTipProducts,
   forget,
   identify,
   initialize,
   purchaseSupporterPackage,
+  purchaseTip,
   restoreSupporterPurchases,
   syncSupporterStatusFromCustomerInfo,
   SUPPORTER_ENTITLEMENT_ID,

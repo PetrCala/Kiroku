@@ -81,6 +81,8 @@ zde`, `Přidejte si je zde`, `Zkuste hledat zde`.
 | harassment                  | **obtěžování**                                    |                     |
 | bullying                    | **šikana**                                        |                     |
 | moderation team             | **moderátorský tým**                              |                     |
+| tip jar                     | **kasička**                                       | sklenice na dýška   |
+| tip (money, noun)           | **příspěvek**                                     | dýško, spropitné    |
 
 ## Do-not-translate (keep verbatim)
 

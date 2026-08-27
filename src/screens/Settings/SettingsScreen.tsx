@@ -80,8 +80,9 @@ function SettingsScreen() {
   const userIsAdmin = userData?.role === 'admin';
   const [privateData] = useOnyx(ONYXKEYS.USER_PRIVATE_DATA);
   const supporter = UserUtils.getCurrentUserSupporterStatus(privateData);
-  // Hidden entirely in production builds until v1.1 launch clears Apple's
-  // first-subscription gate (see `SupporterUtils.isSupporterTierVisible`).
+  // Gates the subscription-related surfaces (Manage Subscription) until the
+  // v1.1 launch clears Apple's first-subscription gate. The "Support Kiroku"
+  // entry itself is always visible: it carries the tip jar.
   const shouldShowSupporterMenu = SupporterUtils.isSupporterTierVisible();
   // Surface "Manage Subscription" only once the user has interacted with the
   // supporter tier — never-subscribed users should keep seeing just the
@@ -187,18 +188,14 @@ function SettingsScreen() {
           icon: KirokuIcons.Info,
           routeName: ROUTES.SETTINGS_ABOUT,
         },
-        ...(shouldShowSupporterMenu
-          ? [
-              {
-                translationKey: 'supporter.menuEntry',
-                icon: KirokuIcons.Beer,
-                routeName: ROUTES.SETTINGS_SUPPORT,
-              } as MenuData,
-            ]
-          : []),
+        {
+          translationKey: 'supporter.menuEntry',
+          icon: KirokuIcons.Beer,
+          routeName: ROUTES.SETTINGS_SUPPORT,
+        },
       ],
     };
-  }, [styles.generalSettingsSectionContainer, shouldShowSupporterMenu]);
+  }, [styles.generalSettingsSectionContainer]);
 
   /**
    * Retuns a list of menu items data for authentication section

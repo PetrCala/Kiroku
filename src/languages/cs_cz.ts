@@ -815,6 +815,23 @@ export default {
     description:
       'Podpořte Kiroku a získejte odznak podporovatele 🍺 na svém profilu.',
     menuEntry: 'Podpořit Kiroku',
+    tipJar: {
+      title: 'Kasička',
+      subtitle:
+        'Kiroku je zdarma a bez reklam. Pokud vám pomáhá, můžete nám koupit pivo.',
+      tierSmallBeer: 'Malé pivo',
+      tierPint: 'Velké pivo',
+      tierRound: 'Runda pro tým',
+      unlocksNothing:
+        'Příspěvky jsou dobrovolné a nic neodemykají. Aplikace zůstává stejná pro všechny.',
+      thanks: 'Děkujeme za pivo! Opravdu to pomáhá.',
+      loading: 'Načítám kasičku…',
+      unavailable:
+        'Kasičku se teď nepodařilo načíst. Zkontrolujte připojení a zkuste to znovu.',
+      webUnavailable: 'Příspěvky jsou dostupné v mobilní aplikaci.',
+      purchaseError: ({message}: SupporterPurchaseErrorParams) =>
+        `Nákup se nezdařil: ${message}. Zkuste to prosím znovu.`,
+    },
     paywallScreen: {
       title: 'Podpořit Kiroku',
       heroPill: 'Odznak podporovatele',

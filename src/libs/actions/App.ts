@@ -98,6 +98,9 @@ const KEYS_TO_PRESERVE: OnyxKey[] = [
   ONYXKEYS.NVP_PREFERRED_LOCALE,
   // Build-channel flag derived from the installed binary, not the account.
   ONYXKEYS.IS_BETA,
+  // Device-level count of tip-jar tips given; cosmetic only (drives the
+  // thank-you line on the Support screen) and carries no user data.
+  ONYXKEYS.TIPS_GIVEN,
 ];
 
 let resolveIsReadyPromise: () => void;
