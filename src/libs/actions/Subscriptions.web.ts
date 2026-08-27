@@ -2,6 +2,7 @@ import type {
   CustomerInfo,
   PurchasesOffering,
   PurchasesPackage,
+  PurchasesStoreProduct,
 } from 'react-native-purchases';
 
 /**
@@ -69,12 +70,26 @@ function restoreSupporterPurchases(): Promise<RestoreOutcome> {
   return Promise.resolve({status: 'error', message: WEB_UNAVAILABLE_MESSAGE});
 }
 
+function fetchTipProducts(): Promise<PurchasesStoreProduct[]> {
+  // No store on web: the tip jar renders its unavailable state.
+  return Promise.resolve([]);
+}
+
+function purchaseTip(
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  _product: PurchasesStoreProduct,
+): Promise<PurchaseOutcome> {
+  return Promise.resolve({status: 'error', message: WEB_UNAVAILABLE_MESSAGE});
+}
+
 export {
   fetchCurrentOffering,
+  fetchTipProducts,
   forget,
   identify,
   initialize,
   purchaseSupporterPackage,
+  purchaseTip,
   restoreSupporterPurchases,
   syncSupporterStatusFromCustomerInfo,
   SUPPORTER_ENTITLEMENT_ID,

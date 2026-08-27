@@ -134,6 +134,18 @@ const CONST = {
   PREMIUM_FEATURES: {
     CUSTOM_COLOR_PALETTE: {tier: 'plus'},
   },
+  // Tip-jar consumable IAP product ids, cheapest first: the order here is the
+  // display order on the Support screen. Must stay in step with the products
+  // created in App Store Connect by `scripts/asc-tips.mjs`, because StoreKit
+  // silently omits any id it does not recognize. A tip unlocks nothing; see
+  // contributingGuides/TIP_JAR.md.
+  TIPS: {
+    PRODUCT_IDS: [
+      'kiroku.tip.small_beer',
+      'kiroku.tip.pint',
+      'kiroku.tip.round',
+    ],
+  },
   APP_UPDATE: {
     // How long the dismiss update button should hide the window for
     DISMISS_TIME: 1000 * 60 * 60 * 24 * 1, // 1 day

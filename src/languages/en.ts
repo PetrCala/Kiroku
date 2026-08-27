@@ -810,6 +810,23 @@ export default {
     description:
       'Support Kiroku and get the 🍺 supporter badge on your profile.',
     menuEntry: 'Support Kiroku',
+    tipJar: {
+      title: 'Tip jar',
+      subtitle:
+        'Kiroku is free and has no ads. If it helps you, you can buy us a beer.',
+      tierSmallBeer: 'A small beer',
+      tierPint: 'A pint',
+      tierRound: 'A round for the team',
+      unlocksNothing:
+        'Tips are optional and unlock nothing. The app stays the same for everyone.',
+      thanks: 'Thank you for the beer! It genuinely helps.',
+      loading: 'Reaching the tip jar...',
+      unavailable:
+        "The tip jar can't be reached right now. Check your connection and try again.",
+      webUnavailable: 'Tips are available in the mobile app.',
+      purchaseError: ({message}: SupporterPurchaseErrorParams) =>
+        `Purchase failed: ${message}. Please try again.`,
+    },
     paywallScreen: {
       title: 'Support Kiroku',
       heroPill: 'Supporter badge',
