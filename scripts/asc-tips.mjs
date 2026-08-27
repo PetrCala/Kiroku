@@ -321,15 +321,32 @@ async function setPrice(tip, id) {
 }
 
 async function setup(appId) {
-  // An in-app purchase can only be sold where the app is sold.
-  const availability = await api('GET', `/v1/apps/${appId}/appAvailabilityV2`);
-  const page = await api(
-    'GET',
-    `/v2/appAvailabilities/${availability.data.id}/territoryAvailabilities?limit=200&include=territory`,
-  );
-  const territories = page.data
-    .filter(t => t.attributes.available)
-    .map(t => t.relationships.territory.data.id);
+  // An in-app purchase can only be sold where the app is sold. An app whose
+  // availability was never explicitly edited has NO appAvailabilityV2 resource
+  // (the endpoint 404s) and is sold everywhere by default, so fall back to the
+  // full territory list in that case.
+  let territories;
+  const availability = await optional(`/v1/apps/${appId}/appAvailabilityV2`);
+  if (availability) {
+    const page = await api(
+      'GET',
+      `/v2/appAvailabilities/${availability.data.id}/territoryAvailabilities?limit=200&include=territory`,
+    );
+    territories = page.data
+      .filter(t => t.attributes.available)
+      .map(t => t.relationships.territory.data.id);
+  } else {
+    territories = [];
+    let url = '/v1/territories?limit=200';
+    while (url) {
+      const page = await api('GET', url);
+      territories.push(...page.data.map(t => t.id));
+      url = page.links?.next?.replace(BASE, '') ?? null;
+    }
+    L(
+      `app availability not explicitly set; using all ${territories.length} territories`,
+    );
+  }
 
   const existing = await productsById(appId);
   for (const tip of TIPS) {
