@@ -584,19 +584,35 @@ async function cmdSubmit(appId) {
         problems.push(`IAP ${productId} not found`);
         continue;
       }
+      // Two state machines: the IAP's own state says whether metadata is
+      // complete (READY_TO_SUBMIT vs MISSING_METADATA), while its version
+      // resource has app-version-like states and no READY_TO_SUBMIT at all.
+      // The attachable version is the editable one.
+      if (iap.attributes.state !== 'READY_TO_SUBMIT') {
+        L(`IAP ${productId}: ${iap.attributes.state}`);
+        problems.push(
+          `IAP ${productId} is ${iap.attributes.state}, expected READY_TO_SUBMIT`,
+        );
+        continue;
+      }
       const vers = await api(
         'GET',
         `/v2/inAppPurchases/${iap.id}/versions?limit=10`,
       );
-      const ready = vers.data.find(
-        x => x.attributes.state === 'READY_TO_SUBMIT',
+      const editableStates = [
+        'PREPARE_FOR_SUBMISSION',
+        'DEVELOPER_REJECTED',
+        'REJECTED',
+      ];
+      const ready = vers.data.find(x =>
+        editableStates.includes(x.attributes.state),
       );
       L(
-        `IAP ${productId}: ${iap.attributes.state}${ready ? '' : ' (no READY_TO_SUBMIT version)'}`,
+        `IAP ${productId}: ${iap.attributes.state}${ready ? ` (version ${ready.attributes.state})` : ' (no editable version)'}`,
       );
       if (!ready) {
         problems.push(
-          `IAP ${productId} has no READY_TO_SUBMIT version (states: ${vers.data.map(x => x.attributes.state).join(', ') || 'none'})`,
+          `IAP ${productId} has no editable version (states: ${vers.data.map(x => x.attributes.state).join(', ') || 'none'})`,
         );
         continue;
       }
