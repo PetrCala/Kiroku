@@ -15,7 +15,7 @@ JWT itself with Node's built-in `crypto`. It never prints the key. Requires Node
 ```bash
 node scripts/asc.mjs status                              # app, versions + states, build, subscriptions, review submissions
 node scripts/asc.mjs scrub  [--version X] [--terms a,b]  # lint store listing for forbidden terms; exit 1 on any hit (CI-friendly)
-node scripts/asc.mjs submit [--version X] [--yes]        # dry run unless --yes; submits the version for review, app-only (no IAPs)
+node scripts/asc.mjs submit [--version X] [--iaps a,b,c] [--yes]  # dry run unless --yes; submits the version for review, optionally attaching IAPs by product id
 ```
 
 Run from the repo root. Useful flags: `--version` (defaults to the lone
@@ -45,10 +45,13 @@ working from a git worktree where the gitignored key isn't present), `--terms`
 - **Submissions are per-version `reviewSubmissions`.** A version is submitted by
   creating a reviewSubmission, adding the appStoreVersion as its item, then
   PATCHing `submitted=true`. `submit` does exactly that.
-- **IAPs/subscriptions are NOT reviewSubmission items** — Apple reviews them in a
-  separate flow. So submitting a version cannot drag a subscription along; you
-  only need the subscriptions _parked_. Conversely, the **first** subscription
-  must be submitted _with_ an app version (but a version may ship with none).
+- **IAPs join a submission as `inAppPurchaseVersion` items**, not as the IAP
+  resource itself (an `inAppPurchaseV2` relationship on reviewSubmissionItems
+  is a 409: unknown relationship). `submit --iaps <productId,...>` resolves
+  each product to its `READY_TO_SUBMIT` inAppPurchaseVersion and attaches it.
+  The **first** IAP/subscription must be submitted _with_ an app version whose
+  binary actually contains the purchase UI (a version may ship with none);
+  when shipping without subscriptions, they only need to be _parked_.
 - **In a rejected / "unresolved issues" state, the version page's "In-App
   Purchases and Subscriptions" section disappears** and you can't add items.
   Manage it from the App Review submission, or just cut a fresh version and

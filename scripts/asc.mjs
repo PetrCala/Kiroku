@@ -14,7 +14,7 @@
  *   node scripts/asc.mjs status
  *   node scripts/asc.mjs scrub  [--version 0.3.14] [--terms supporter,subscription]
  *   node scripts/asc.mjs shots  --dir <folder> [--locale en-US] [--replace] [--yes]
- *   node scripts/asc.mjs submit [--version 0.3.14] [--yes]
+ *   node scripts/asc.mjs submit [--version 0.3.14] [--iaps a,b,c] [--yes]
  *   node scripts/asc.mjs rename --version 0.3.14 --to 0.3.15
  *
  * Commands:
@@ -28,8 +28,10 @@
  *            pixel size, so the framing pipeline's exact-size output decides
  *            which slot it lands in. DRY RUN unless --yes.
  *   submit   Pre-flight (version submittable, build VALID, subs parked, listing
- *            clean) then submit the version for review, app-only (no IAPs).
- *            DRY RUN unless --yes is passed (submit is irreversible).
+ *            clean) then submit the version for review. Pass --iaps to also
+ *            attach in-app purchases (required for the FIRST IAP submission,
+ *            which must ride an app version). DRY RUN unless --yes is passed
+ *            (submit is irreversible).
  *   rename   PATCH an appStoreVersion's versionString (e.g. after a rejection,
  *            to reopen it for editing). Requires --version and --to.
  *
@@ -40,6 +42,8 @@
  *   --app-id <id>      ASC app id (skips the bundle-id lookup)
  *   --key <path>       ASC API key JSON (default: <repo>/ios/ios-fastlane-json-key.json)
  *   --terms <csv>      scrub: comma-separated forbidden terms
+ *   --iaps <csv>       submit: product ids of in-app purchases to attach to the
+ *                      review submission (each must be READY_TO_SUBMIT)
  *   --dir <path>       shots: folder of PNGs for one locale (sorted by filename)
  *   --locale <code>    shots: ASC locale to write (default en-US)
  *   --replace          shots: delete the existing screenshots in each touched set
@@ -88,6 +92,7 @@ const OPTS = {
   ),
   platform: flag('platform', 'IOS'),
   terms: flag('terms'),
+  iaps: flag('iaps'),
   yes: argv.includes('--yes'),
   help: argv.includes('--help') || argv.includes('-h'),
 };
@@ -519,7 +524,9 @@ async function cmdSubmit(appId) {
   );
 
   const problems = [];
-  if (st !== 'PREPARE_FOR_SUBMISSION')
+  // DEVELOPER_REJECTED (a version pulled from review by us) is editable and
+  // resubmittable, same as PREPARE_FOR_SUBMISSION.
+  if (!['PREPARE_FOR_SUBMISSION', 'DEVELOPER_REJECTED'].includes(st))
     problems.push(`version state is ${st}, expected PREPARE_FOR_SUBMISSION`);
   if (!build) problems.push('no build attached');
   else if (build.processingState !== 'VALID')
@@ -557,8 +564,48 @@ async function cmdSubmit(appId) {
     }
   }
 
+  // Resolve --iaps product ids to their editable inAppPurchaseVersion ids.
+  // IAPs join a review submission as inAppPurchaseVersion items (NOT the IAP
+  // itself; posting an inAppPurchaseV2 relationship is a 409). Apple requires
+  // the FIRST IAP to be submitted together with an app version.
+  const iapItems = [];
+  if (OPTS.iaps) {
+    const wanted = String(OPTS.iaps)
+      .split(',')
+      .map(s => s.trim())
+      .filter(Boolean);
+    const all = await api(
+      'GET',
+      `/v1/apps/${appId}/inAppPurchasesV2?limit=200`,
+    );
+    for (const productId of wanted) {
+      const iap = all.data.find(i => i.attributes.productId === productId);
+      if (!iap) {
+        problems.push(`IAP ${productId} not found`);
+        continue;
+      }
+      const vers = await api(
+        'GET',
+        `/v2/inAppPurchases/${iap.id}/versions?limit=10`,
+      );
+      const ready = vers.data.find(
+        x => x.attributes.state === 'READY_TO_SUBMIT',
+      );
+      L(
+        `IAP ${productId}: ${iap.attributes.state}${ready ? '' : ' (no READY_TO_SUBMIT version)'}`,
+      );
+      if (!ready) {
+        problems.push(
+          `IAP ${productId} has no READY_TO_SUBMIT version (states: ${vers.data.map(x => x.attributes.state).join(', ') || 'none'})`,
+        );
+        continue;
+      }
+      iapItems.push({productId, versionId: ready.id});
+    }
+  }
+
   L(
-    '\nPlan: POST reviewSubmissions → POST reviewSubmissionItems(appStoreVersion) → PATCH submitted=true',
+    `\nPlan: POST reviewSubmissions → POST reviewSubmissionItems(appStoreVersion${iapItems.length ? ` + ${iapItems.length} inAppPurchaseVersion` : ''}) → PATCH submitted=true`,
   );
   if (problems.length) {
     L(`\nBLOCKED:\n${problems.map(p => `  - ${p}`).join('\n')}`);
@@ -572,14 +619,34 @@ async function cmdSubmit(appId) {
   }
 
   L('\nSubmitting…');
-  const sub = await api('POST', '/v1/reviewSubmissions', {
-    data: {
-      type: 'reviewSubmissions',
-      attributes: {platform: OPTS.platform},
-      relationships: {app: {data: {type: 'apps', id: appId}}},
-    },
-  });
-  const id = sub.data.id;
+  // ASC allows only one open (unsubmitted) submission per platform, and
+  // leftovers from aborted attempts linger in READY_FOR_REVIEW. Reuse one if
+  // present instead of failing on the POST.
+  const existing = await api(
+    'GET',
+    `/v1/reviewSubmissions?filter[app]=${appId}&filter[platform]=${OPTS.platform}&filter[state]=READY_FOR_REVIEW&limit=5`,
+  );
+  let id;
+  if (existing.data.length) {
+    id = existing.data[0].id;
+    L(`Reusing open submission ${id}`);
+    const items = await api(
+      'GET',
+      `/v1/reviewSubmissions/${id}/items?limit=50`,
+    );
+    for (const it of items.data) {
+      await api('DELETE', `/v1/reviewSubmissionItems/${it.id}`);
+    }
+  } else {
+    const sub = await api('POST', '/v1/reviewSubmissions', {
+      data: {
+        type: 'reviewSubmissions',
+        attributes: {platform: OPTS.platform},
+        relationships: {app: {data: {type: 'apps', id: appId}}},
+      },
+    });
+    id = sub.data.id;
+  }
   await api('POST', '/v1/reviewSubmissionItems', {
     data: {
       type: 'reviewSubmissionItems',
@@ -589,6 +656,20 @@ async function cmdSubmit(appId) {
       },
     },
   });
+  for (const item of iapItems) {
+    await api('POST', '/v1/reviewSubmissionItems', {
+      data: {
+        type: 'reviewSubmissionItems',
+        relationships: {
+          reviewSubmission: {data: {type: 'reviewSubmissions', id}},
+          inAppPurchaseVersion: {
+            data: {type: 'inAppPurchaseVersions', id: item.versionId},
+          },
+        },
+      },
+    });
+    L(`  attached IAP ${item.productId}`);
+  }
   const done = await api('PATCH', `/v1/reviewSubmissions/${id}`, {
     data: {type: 'reviewSubmissions', id, attributes: {submitted: true}},
   });
