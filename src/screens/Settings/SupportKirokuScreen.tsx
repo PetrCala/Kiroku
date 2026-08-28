@@ -541,7 +541,8 @@ function SupportKirokuScreen() {
       subtitle={translate('supporter.tipJar.subtitle')}
       isCentralPane
       subtitleMuted
-      titleStyles={styles.accountSettingsSectionTitle}>
+      childrenStyles={styles.pt3}
+      titleStyles={styles.generalSectionTitle}>
       {renderTipJarContent()}
     </Section>
   );
@@ -608,8 +609,10 @@ function SupportKirokuScreen() {
         title={translate('supporter.paywallScreen.title')}
         onBackButtonPress={() => Navigation.goBack()}
       />
-      <ScrollView contentContainerStyle={[styles.pt3, styles.ph5, styles.pb5]}>
-        {isPaywallVisible ? renderBody() : null}
+      <ScrollView contentContainerStyle={[styles.pt3, styles.pb5]}>
+        {isPaywallVisible ? (
+          <View style={styles.ph5}>{renderBody()}</View>
+        ) : null}
         {renderTipJarSection()}
       </ScrollView>
     </ScreenWrapper>
