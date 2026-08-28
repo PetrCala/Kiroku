@@ -1,5 +1,6 @@
 import React, {useCallback, useEffect, useMemo} from 'react';
 import {BackHandler} from 'react-native';
+import {useOnyx} from 'react-native-onyx';
 import useCurrentUserPreferences from '@hooks/useCurrentUserPreferences';
 import type {StackScreenProps} from '@react-navigation/stack';
 import type {SettingsNavigatorParamList} from '@libs/Navigation/types';
@@ -20,7 +21,9 @@ import LocaleUtils from '@libs/LocaleUtils';
 import Section from '@components/Section';
 import MenuItem from '@components/MenuItem';
 import getPlatform from '@libs/getPlatform';
+import {getEffectiveAutoCloseHours} from '@libs/DrinkingSessionUtils';
 import CONST from '@src/CONST';
+import ONYXKEYS from '@src/ONYXKEYS';
 import {
   DEFAULT_PALETTE_ID,
   getPaletteIdFromColors,
@@ -51,7 +54,21 @@ function PreferencesScreen({route}: PreferencesScreenProps) {
   const styles = useThemeStyles();
   const {singleExecution} = useSingleExecution();
   const preferences = useCurrentUserPreferences();
+  const [config] = useOnyx(ONYXKEYS.CONFIG);
   const waitForNavigate = useWaitForNavigation();
+
+  // Show the resolved threshold (user pref, else global default) on the row.
+  // `null` means the user opted out ("Never").
+  const resolvedAutoCloseHours = getEffectiveAutoCloseHours(
+    preferences?.auto_close_sessions_after_hours,
+    config?.auto_close_default_hours,
+  );
+  const autoCloseDescription =
+    resolvedAutoCloseHours === null
+      ? translate('autoCloseSessionsScreen.never')
+      : translate('autoCloseSessionsScreen.hoursOption', {
+          hours: resolvedAutoCloseHours,
+        });
 
   // const handleFirstDayOfWeekToggle = (value: boolean) => {
   //   const newValue = value ? 'Monday' : 'Sunday';
@@ -79,9 +96,16 @@ function PreferencesScreen({route}: PreferencesScreenProps) {
           )}`,
           pageRoute: ROUTES.SETTINGS_THEME,
         },
+        {
+          title: translate(
+            'preferencesScreen.generalSection.autoCloseSessions',
+          ),
+          description: autoCloseDescription,
+          pageRoute: ROUTES.SETTINGS_AUTO_CLOSE_SESSIONS,
+        },
       ],
     }),
-    [translate, preferences?.theme, preferredLocale],
+    [translate, preferences?.theme, preferredLocale, autoCloseDescription],
   ); // Check whether preferred locale does not cause infinite re-render
 
   // A defined palette that matches no preset means the custom slot is active

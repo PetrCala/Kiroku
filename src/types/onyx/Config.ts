@@ -34,6 +34,12 @@ type Config = {
 
   /** A timestamp representing the last update of terms and conditions */
   terms_last_updated?: Timestamp;
+
+  /** Global default threshold (in hours) for auto-closing stale ongoing
+   *  sessions, applied to users who have not set their own
+   *  `auto_close_sessions_after_hours`. Server-tunable at deploy time; when
+   *  absent the client falls back to `CONST.SESSION.AUTO_CLOSE.DEFAULT_HOURS`. */
+  auto_close_default_hours?: number;
 };
 
 export default Config;
