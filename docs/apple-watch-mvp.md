@@ -35,7 +35,7 @@ here` TODO. All Firebase/Auth/Database/AppDelegate code is commented out.
   no scheme builds. It has **never shipped** — no review liability, but reviving
   it means re-wiring into `kiroku` essentially from scratch.
 - Bundle id is still the RN template default
-  (`org.reactjs.native.example.alcohol-tracker.watch`); the watch provisioning
+  (`com.kiroku.app.watch`); the watch provisioning
   profiles in `ios/` are 2–3 years old → expired.
 
 ## Confirmed API contract (what the watch must replicate)
@@ -123,7 +123,7 @@ critical path is **0 → 1 → 2 → 3**; Phases 5–7 overlap once the bridge w
       `KirokuWatch*.mobileprovision.gpg` profiles.
 - [ ] **1.2** Add a fresh modern watchOS App target embedded in `kiroku`. Import
       the existing `.swift` files as source. Real bundle id
-      (`org.reactjs.native.example.alcohol-tracker.watchkitapp`),
+      (`com.kiroku.app.watchkitapp`),
       `WKCompanionAppBundleIdentifier` → the app, watchOS deploy target 10.2+.
 - [ ] **1.3** Add the watch to all three schemes (dev/AdHoc/production) so it
       archives with the app.

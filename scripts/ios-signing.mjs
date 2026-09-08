@@ -42,6 +42,14 @@
  *   finalize DRY RUN unless --yes. POST-MERGE: rotates the IOS_CERTIFICATE_PASSWORD
  *            secret to the new P12 password and revokes the old expired cert /
  *            deletes the old profiles, then clears the scratch state.
+ *   app-setup DRY RUN unless --yes. ONE-TIME bundle-id move: ensures the App
+ *            Store App ID (--bundle-id) exists with Push + Sign in with Apple
+ *            enabled, then (re)mints ONLY the Kiroku profile bound to it against
+ *            the existing valid Distribution cert and re-encrypts
+ *            ios/Kiroku.mobileprovision.gpg. Use this when the bundle id changes
+ *            but the cert is still valid; `renew` also mints Kiroku but couples
+ *            it to rotating the certificate. Does NOT mint a cert, touch the P12
+ *            or the other profiles, or git-commit. Idempotent.
  *   adhoc-setup DRY RUN unless --yes. ONE-TIME side-by-side install setup: ensures
  *            the explicit .adhoc App ID exists with Push + Sign in with Apple
  *            enabled, then (re)mints the Kiroku_AdHoc ad-hoc profile bound to it
@@ -71,7 +79,7 @@
  *   --revoke-cert <id>  renew: revoke this exact distribution cert first to free a cap slot (never automatic)
  *   --bundle-wwdr       renew: bundle the Apple WWDR G6 intermediate into the P12
  *   --profile-suffix <s> renew: append to profile names + write to scratch paths (end-to-end test; does NOT touch ios/*.gpg)
- *   --bundle-id <id>    app bundle id (default: org.reactjs.native.example.alcohol-tracker)
+ *   --bundle-id <id>    app bundle id (default: com.kiroku.app)
  *   --adhoc-bundle-id <id> ad-hoc App ID the Kiroku_AdHoc profile binds to (default: <bundle-id>.adhoc)
  *   --watch-bundle-id <id> watch App ID for KirokuWatch / _Development (default: <bundle-id>.watchkitapp)
  *   --watch-adhoc-bundle-id <id> watch ad-hoc App ID for KirokuWatch_AdHoc (default: <adhoc-bundle-id>.watchkitapp)
@@ -88,7 +96,7 @@ import {fileURLToPath} from 'node:url';
 const ROOT = path.join(path.dirname(fileURLToPath(import.meta.url)), '..');
 const IOS_DIR = path.join(ROOT, 'ios');
 const BASE = 'https://api.appstoreconnect.apple.com';
-const DEFAULT_BUNDLE_ID = 'org.reactjs.native.example.alcohol-tracker';
+const DEFAULT_BUNDLE_ID = 'com.kiroku.app';
 // The ad-hoc build ships under a distinct bundle id (".adhoc" suffix) so it
 // installs side by side with the App Store build — mirrors Android's
 // applicationIdSuffix ".adhoc". The Kiroku_AdHoc profile binds to THIS id.
@@ -1185,6 +1193,105 @@ async function cmdFinalize() {
 }
 
 // ===========================================================================
+// app-setup (one-time: re-bind the App Store profile to a new bundle id)
+// ===========================================================================
+// The sibling of adhoc-setup / watch-setup for the main `Kiroku` profile.
+// `renew` also mints it, but couples that to rotating the distribution
+// certificate; after a bundle-id change the cert is still valid and only the
+// App ID binding is wrong. This registers the App ID (with the capabilities
+// ios/kiroku/kiroku.entitlements declares) and re-mints ONLY `Kiroku` against
+// the existing cert. Idempotent.
+async function cmdAppSetup() {
+  const main = PROFILES.find(p => p.name === 'Kiroku');
+  const mainBundle = main.bundle();
+
+  L(
+    OPTS.yes
+      ? 'EXECUTING app-setup (--yes).\n'
+      : 'DRY RUN: no changes will be made (pass --yes to execute).\n',
+  );
+
+  // Step 0: survey.
+  const deviceIds = await listEnabledDeviceIds();
+  const validCert = (await listDistributionCerts())
+    .filter(c => daysUntil(c.attributes.expirationDate) >= 0)
+    .sort(
+      (a, b) =>
+        new Date(b.attributes.expirationDate) -
+        new Date(a.attributes.expirationDate),
+    )[0];
+  const existingBundle = await findBundleResource(mainBundle);
+  const existingProfile = (await listManagedProfiles()).find(
+    p => p.attributes.name === `Kiroku${OPTS.profileSuffix}`,
+  );
+
+  L('Plan:');
+  L(
+    `  App Store App ID:  ${mainBundle} ${existingBundle ? `(exists ${existingBundle.id})` : '→ CREATE'}`,
+  );
+  L('  capabilities:      Push Notifications, Sign in with Apple');
+  L(
+    `  signing cert:      ${validCert ? `${validCert.id} (${validCert.attributes.certificateType}, ${daysUntil(validCert.attributes.expirationDate)}d left)` : '✗ NONE valid'}`,
+  );
+  L(
+    `  Kiroku profile:    ${existingProfile ? `replace ${existingProfile.id}` : 'create'} → ios/${main.file}`,
+  );
+  L(
+    '  re-encrypt:        ios/Kiroku.mobileprovision.gpg (review + commit it yourself, no git here)',
+  );
+
+  if (!validCert)
+    throw new Error(
+      'No valid Apple Distribution certificate on the account. Run `renew --yes` first, then re-run app-setup.',
+    );
+
+  if (!OPTS.yes) {
+    L(
+      '\nNext (with --yes): create App ID + capabilities → mint Kiroku bound to it → re-encrypt ios/Kiroku.mobileprovision.gpg.',
+    );
+    return;
+  }
+
+  // Step 1: App ID + capabilities (idempotent).
+  const bundleResId = await ensureBundleId(mainBundle, 'Kiroku App identifier');
+  await ensureBundleCapabilities(bundleResId, [
+    {type: 'PUSH_NOTIFICATIONS'},
+    {
+      type: 'APPLE_ID_AUTH',
+      settings: [
+        {
+          key: 'APPLE_ID_AUTH_APP_CONSENT',
+          options: [{key: 'PRIMARY_APP_CONSENT'}],
+        },
+      ],
+    },
+  ]);
+  bundleResCache.set(mainBundle, bundleResId);
+
+  // Step 2: mint ONLY the Kiroku profile against the valid dist cert.
+  loadState();
+  await ensureProfiles({
+    certId: validCert.id,
+    deviceIds,
+    only: new Set(['Kiroku']),
+  });
+  clearState();
+
+  // Step 3: re-encrypt the committed asset, scrub the plaintext.
+  const plain = path.join(IOS_DIR, main.file);
+  if (!fs.existsSync(plain))
+    throw new Error(
+      `Expected a freshly minted ${plain}, but it is missing. Profile creation failed.`,
+    );
+  gpgEncryptOverwrite(plain);
+  fs.rmSync(plain, {force: true});
+  L(`\nRe-encrypted ios/${main.file}.gpg ✓`);
+  L(
+    'Review `git diff --stat` and commit ios/Kiroku.mobileprovision.gpg with the bundle-id change.',
+  );
+}
+
+// ===========================================================================
 // adhoc-setup (one-time: side-by-side install of the ad-hoc build)
 // ===========================================================================
 async function cmdAdhocSetup() {
@@ -1450,6 +1557,7 @@ async function cmdWatchSetup() {
   if (cmd === 'check') return cmdCheck();
   if (cmd === 'renew') return cmdRenew();
   if (cmd === 'finalize') return cmdFinalize();
+  if (cmd === 'app-setup') return cmdAppSetup();
   if (cmd === 'adhoc-setup') return cmdAdhocSetup();
   if (cmd === 'watch-setup') return cmdWatchSetup();
   usage();

@@ -38,7 +38,7 @@
  * Flags:
  *   --version <str>    target version (default: the lone PREPARE_FOR_SUBMISSION one)
  *   --to <str>         rename: the new version string
- *   --bundle-id <id>   app bundle id (default: org.reactjs.native.example.alcohol-tracker)
+ *   --bundle-id <id>   app bundle id (default: com.kiroku.app)
  *   --app-id <id>      ASC app id (skips the bundle-id lookup)
  *   --key <path>       ASC API key JSON (default: <repo>/ios/ios-fastlane-json-key.json)
  *   --terms <csv>      scrub: comma-separated forbidden terms
@@ -58,7 +58,7 @@ import {fileURLToPath} from 'node:url';
 
 const ROOT = path.join(path.dirname(fileURLToPath(import.meta.url)), '..');
 const BASE = 'https://api.appstoreconnect.apple.com';
-const DEFAULT_BUNDLE_ID = 'org.reactjs.native.example.alcohol-tracker';
+const DEFAULT_BUNDLE_ID = 'com.kiroku.app';
 const DEFAULT_TERMS = [
   'supporter',
   'subscription',

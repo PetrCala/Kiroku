@@ -220,9 +220,9 @@ English capture serves all locales; only the framed caption is localized), and
 `npm run verify-screenshots -- --require watch` is the job's gate. Two gotchas
 the job handles, for anyone touching it:
 
-- On iphonesimulator the app id resolves to `org.reactjs.native.example.kiroku`
+- On iphonesimulator the app id resolves to `com.kiroku.app.kiroku`
   while the watch app's `WKCompanionAppBundleIdentifier` expects
-  `...alcohol-tracker`, so the watch app refuses to install;
+  `com.kiroku.app`, so the watch app refuses to install;
   `scripts/set-simulator-bundle-id.rb` scopes the fix to the `kiroku` target
   (a command-line override would poison the UI-test runner's id, and
   `-sdk iphonesimulator` breaks the watch asset catalog build).

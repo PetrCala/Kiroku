@@ -18,7 +18,7 @@
  * retried.
  *
  * Flags:
- *   --bundle-id <id>   app bundle id (default: org.reactjs.native.example.alcohol-tracker)
+ *   --bundle-id <id>   app bundle id (default: com.kiroku.app)
  *   --app-id <id>      ASC app id (skips the bundle-id lookup)
  *   --key <path>       ASC API key JSON (default: <repo>/ios/ios-fastlane-json-key.json)
  */
@@ -31,7 +31,7 @@ import {fileURLToPath} from 'node:url';
 
 const ROOT = path.join(path.dirname(fileURLToPath(import.meta.url)), '..');
 const BASE = 'https://api.appstoreconnect.apple.com';
-const DEFAULT_BUNDLE_ID = 'org.reactjs.native.example.alcohol-tracker';
+const DEFAULT_BUNDLE_ID = 'com.kiroku.app';
 const L = (s = '') => console.log(s);
 
 // Apple's limits: reference name 64 chars, localization name 30, description 45.

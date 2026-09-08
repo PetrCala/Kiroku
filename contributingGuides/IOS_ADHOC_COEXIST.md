@@ -6,7 +6,7 @@ On **Android**, the `Adhoc` and `Production` flavors install side by side becaus
 
 On **iOS**, an app's install identity is its `CFBundleIdentifier`. Until this
 change every device configuration resolved to the **same** bundle id
-(`org.reactjs.native.example.alcohol-tracker`), so iOS treated the ad hoc IPA as a
+(`com.kiroku.app`), so iOS treated the ad hoc IPA as a
 _reinstall_ of the App Store app and refused it (different signing / source).
 
 This document describes the implemented fix: the ad hoc build now ships under a
@@ -34,7 +34,7 @@ will need `….adhoc.watch` + `COMPANION_IDENTIFIER = ….adhoc` at that time.)
 `ios/kiroku.xcodeproj/project.pbxproj`, **`kiroku` target, AdHoc configs only**:
 
 - `DebugAdHoc` + `ReleaseAdHoc`:
-  `"PRODUCT_BUNDLE_IDENTIFIER[sdk=iphoneos*]" = "….alcohol-tracker.adhoc"`.
+  `"PRODUCT_BUNDLE_IDENTIFIER[sdk=iphoneos*]" = "com.kiroku.app.adhoc"`.
 - Home-screen label via a `KIROKU_DISPLAY_NAME` build setting (see §2): `Kiroku AdHoc`
   on the two AdHoc configs, `Kiroku` on the other six.
 - `DebugAdHoc` switched to `CODE_SIGN_STYLE = Automatic` (was manual, pinned to the
@@ -65,7 +65,7 @@ $(PRODUCT_BUNDLE_IDENTIFIER)`). The ad hoc Google reversed-client-id URL scheme
 ### 3. Fastlane
 
 `fastlane/Fastfile` `ios build_internal`: the `export_options.provisioningProfiles`
-map key is now `"….alcohol-tracker.adhoc" => "Kiroku_AdHoc"`. The profile **name**
+map key is now `"com.kiroku.app.adhoc" => "Kiroku_AdHoc"`. The profile **name**
 is unchanged (so nothing else in the pipeline moves); only the bundle id it binds to
 changed.
 
@@ -96,7 +96,7 @@ These are the irreversible Apple Developer / Firebase actions. Run them against 
 correct team (`L357YP9W28`) and the **dev** Firebase project (`dev-alcohol-tracker-db`).
 
 > **Status — done for the current setup:** App ID `39523ZTDUZ`
-> (`org.reactjs.native.example.alcohol-tracker.adhoc`, Push + Sign in with Apple),
+> (`com.kiroku.app.adhoc`, Push + Sign in with Apple),
 > ad hoc profile `Kiroku_AdHoc` `949GBAD675`, and Firebase iOS app
 > `1:806896865950:ios:11a4360a6aae76a5b1618f`. The steps below are the reusable runbook.
 
@@ -111,13 +111,13 @@ LARGE_SECRET_PASSPHRASE=… node scripts/ios-signing.mjs adhoc-setup --yes
 
 Then commit the re-encrypted `ios/Kiroku_AdHoc.mobileprovision.gpg`. (If the ASC API
 key lacks Admin rights to create an App ID, create
-`org.reactjs.native.example.alcohol-tracker.adhoc` manually in
+`com.kiroku.app.adhoc` manually in
 Identifiers → +, enable Push + Sign in with Apple, then re-run `adhoc-setup`.)
 
 ### Firebase (dev project)
 
 1. Register a **new iOS app** in `dev-alcohol-tracker-db` for the bundle id
-   `org.reactjs.native.example.alcohol-tracker.adhoc`.
+   `com.kiroku.app.adhoc`.
 2. Download its `GoogleService-Info.plist` → commit as
    `ios/config/GoogleService-Info.adhoc.plist`.
 3. Add the new app's `REVERSED_CLIENT_ID` to `CFBundleURLSchemes` in
