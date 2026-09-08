@@ -45,7 +45,7 @@ const REVIEW_NOTE =
 // territory from them. Must stay in step with CONST.TIPS.PRODUCT_IDS.
 const TIPS = [
   {
-    productId: 'kiroku.tip.small_beer',
+    productId: 'kiroku.tipjar.small_beer',
     name: 'Tip: small beer',
     czk: 49,
     locales: {
@@ -60,7 +60,7 @@ const TIPS = [
     },
   },
   {
-    productId: 'kiroku.tip.pint',
+    productId: 'kiroku.tipjar.pint',
     name: 'Tip: pint',
     czk: 99,
     locales: {
@@ -75,7 +75,7 @@ const TIPS = [
     },
   },
   {
-    productId: 'kiroku.tip.round',
+    productId: 'kiroku.tipjar.round',
     name: 'Tip: round',
     czk: 249,
     locales: {

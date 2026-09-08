@@ -294,11 +294,35 @@ name the reference `name` field, which must also be unique, rather than the
 product id. A **partial** result, some created and a later one refused, means
 the rule is neither hypothesis; stop and inspect.
 
+#### The new ids: `kiroku.tipjar.*`
+
+`kiroku.tipjar.small_beer` / `.pint` / `.round`. Chosen deliberately, not
+inherited from the bundle-id rename that prompted this:
+
+- **Bundle-independent.** `com.kiroku.app.tip.*` would bake a mutable string
+  into a permanently immutable one, and this migration is the proof that a
+  bundle id can change while product ids cannot follow. QA1329's reverse-DNS
+  advice is about avoiding collisions, which the `kiroku.` prefix already does
+  against the other apps in this account.
+- **Store-independent.** The same ids are intended for Google Play when the tip
+  jar reaches Android, where the iOS bundle id is meaningless (`applicationId`
+  is `com.alcohol_tracker`). `kiroku.tipjar.*` is a valid Play product id
+  as-is, and Play refuses to reuse an id once created, exactly as Apple does.
+- **Not confusable with the burned ids.** `kiroku.tips.*` would sit one
+  character from the dead `kiroku.tip.*`, which stays on the old record, in
+  RevenueCat and in this repo's history. `tipjar` cannot be misread.
+- **Named as the codebase names the feature** (`TIP_JAR.md`, `TipJarUtils`,
+  `supporter.tipJar.*`), and distinct from the dormant supporter subscription
+  on the same screen, which `kiroku.support.*` would have blurred.
+
 Since the ids are blocked:
 
-1. Update `CONST.TIPS.PRODUCT_IDS` in [`src/CONST.ts`](../src/CONST.ts) and the
-   `TIPS` table in [`scripts/asc-tips.mjs`](../scripts/asc-tips.mjs). They must
-   match exactly.
+1. Done in code: `CONST.TIPS.PRODUCT_IDS` in [`src/CONST.ts`](../src/CONST.ts)
+   and the `TIPS` table in [`scripts/asc-tips.mjs`](../scripts/asc-tips.mjs).
+   They must match exactly, as must the `getTipLabel` switch in
+   `SupportKirokuScreen` and the docblock in `src/libs/TipJarUtils.ts`. The
+   locale files need nothing: tier names are keyed as `supporter.tipJar.tier*`,
+   not by product id.
 2. Re-run the whole setup: `node scripts/asc-tips.mjs setup`, then
    `screenshot <png>`. See [`TIP_JAR.md`](./TIP_JAR.md), whose App Store Connect
    traps all still apply.

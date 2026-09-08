@@ -71,11 +71,11 @@ function getTipLabel(id: TipProductId): TranslationPaths {
   // for every TipProductId, which is the compile-time guarantee we want.
   // eslint-disable-next-line default-case
   switch (id) {
-    case 'kiroku.tip.small_beer':
+    case 'kiroku.tipjar.small_beer':
       return 'supporter.tipJar.tierSmallBeer';
-    case 'kiroku.tip.pint':
+    case 'kiroku.tipjar.pint':
       return 'supporter.tipJar.tierPint';
-    case 'kiroku.tip.round':
+    case 'kiroku.tipjar.round':
       return 'supporter.tipJar.tierRound';
   }
 }
