@@ -606,13 +606,103 @@ Since the ids are blocked:
 2. Re-run the whole setup: `node scripts/asc-tips.mjs setup`, then
    `screenshot <png>`. See [`TIP_JAR.md`](./TIP_JAR.md), whose App Store Connect
    traps all still apply.
-3. Re-register the products in the RevenueCat dashboard as non-subscription
-   products under the new ids, and point the RevenueCat iOS app at
-   `com.kiroku.app` with the new App Store shared secret.
+3. Reconfigure RevenueCat. See below: it is three separate dashboard changes,
+   and skipping any one of them fails differently.
+
+#### RevenueCat
+
+The app side is already done. `src/libs/actions/Subscriptions.ts` calls
+`Purchases.configure` on every cold start, and `CONFIG.REVENUECAT.IOS_API_KEY`
+is populated in all four `.env.*` files. The dashboard side is not: RevenueCat
+still describes an iOS app whose bundle id is
+`org.reactjs.native.example.alcohol-tracker` and whose product catalog lists the
+dead `kiroku.tip.*` ids. Nothing in the app can compensate for that, and none of
+it is visible until a real purchase is attempted on a real device.
+
+Do all three before the first build reaches TestFlight on the new record. Each
+is done by hand in a web UI; there is no API script for any of them.
+
+**1. Point the RevenueCat iOS app at `com.kiroku.app`.**
+
+Project settings > Apps > the iOS app > **App Store bundle ID**. Change it to
+`com.kiroku.app` and save.
+
+Prefer editing the existing app to creating a second one. The public SDK key
+(`REVENUECAT_IOS_API_KEY`) belongs to the app, not the bundle id, so an edit
+keeps every `.env.*` file and every GitHub environment secret valid. If
+RevenueCat refuses the edit, create a new iOS app inside the **same** project,
+which mints a **new** public SDK key: put it in all four `.env.*` files and push
+them with `scripts/updateEnvSecrets.sh`, or the binary keeps talking to the old
+RevenueCat app. Never create a new project; the `supporter` entitlement, the
+offerings and the customer history live at project level.
+
+If this is skipped, RevenueCat validates every receipt against the old bundle id
+and rejects the ones the new binary sends. Apple still charges the user, the SDK
+still returns an error, so the app reports a failed tip on a purchase that went
+through, and the transaction is never finished (it is re-presented on the next
+launch). This is the worst of the three failures, because it is the only one
+that takes money and shows an error.
+
+**2. Register `kiroku.tipjar.small_beer` / `.pint` / `.round` as
+non-subscription products.**
+
+Product catalog > Products > New, one per id, attached to the iOS app, type
+**Non-subscription**. No entitlement and no offering: a tip unlocks nothing, and
+the app fetches them by id with
+`Purchases.getProducts([...CONST.TIPS.PRODUCT_IDS], PRODUCT_CATEGORY.NON_SUBSCRIPTION)`
+rather than through an offering. The ids must match `CONST.TIPS.PRODUCT_IDS`
+character for character; `asc.mjs preflight` checks the App Store Connect half
+of that contract, and nothing checks the RevenueCat half.
+
+Leave the old `kiroku.tip.*` entries alone rather than deleting them: they hold
+whatever purchase history the old record produced.
+
+If this is skipped, the tip jar still works. `getProducts` reads StoreKit
+directly, so the products appear and purchase, but RevenueCat has no catalog
+entry to attribute the transactions to, and tip revenue is missing from the
+charts, the exports and the webhooks. A silent reporting hole, not a broken
+feature, which is why it is easy to leave undone.
+
+**3. Set the App Store shared secret for the new record.**
+
+The shared secret is **app-specific**, so record `6670502234` has its own and the
+old one is meaningless for it. In App Store Connect, open the app, then
+**General > App Information > App-Specific Shared Secret** (older layouts put it
+behind In-App Purchases > Manage) and generate or reveal it. Paste it into
+RevenueCat under the iOS app's **App Store Connect shared secret**. The
+account-level secret under Users and Access is a different value and is not the
+one to use here.
+
+RevenueCat's iOS app settings also take an **In-App Purchase Key** (a `.p8` from
+Users and Access > Integrations). It is independent of the bundle id and
+optional today, but it is what StoreKit 2 validation uses in place of the shared
+secret, so set it while you are in there if the dashboard asks for it.
+
+If this is skipped, receipt validation fails the same way as (1): charged user,
+failed purchase in the app.
+
+**What stays broken on purpose.** The dormant supporter subscription's products
+are not recreated here. They live on the old record, the paywall is hidden in
+production behind `SupporterUtils.isSupporterTierVisible()` until v1.1, and
+`fetchCurrentOffering` returning `null` is the state that code already renders.
+Recreate them when the v1.1 flow ships, not now.
+
+**Verifying.** There is nothing to check read-only: RevenueCat reports a
+misconfigured bundle id only when a receipt arrives. Verify with one sandbox
+purchase from a TestFlight build of the new record (TIP_JAR.md section 6), then
+confirm the transaction appears in RevenueCat under the `kiroku.tipjar.*`
+product. Until that has happened once, treat the tip jar as untested.
 
 ### 6. Ship
 
-Build, upload to the new record, and submit with the products attached:
+Check what is still missing first. `preflight` is read-only and covers every
+precondition in one pass, including the ones a fresh record silently lacks:
+
+```bash
+node scripts/asc.mjs preflight --app-id 6670502234
+```
+
+Then build, upload to the new record, and submit with the products attached:
 
 ```bash
 node scripts/asc.mjs submit --iaps <id>,<id>,<id> --yes

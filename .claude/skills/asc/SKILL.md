@@ -14,6 +14,7 @@ JWT itself with Node's built-in `crypto`. It never prints the key. Requires Node
 
 ```bash
 node scripts/asc.mjs status                              # app, versions + states, build, subscriptions, review submissions
+node scripts/asc.mjs preflight [--version X]             # read-only PASS/FAIL report of every submission precondition; exit 1 on any failure
 node scripts/asc.mjs scrub  [--version X] [--terms a,b]  # lint store listing for forbidden terms; exit 1 on any hit (CI-friendly)
 node scripts/asc.mjs submit [--version X] [--iaps a,b,c] [--yes]  # dry run unless --yes; submits the version for review, optionally attaching IAPs by product id
 ```
@@ -26,8 +27,14 @@ working from a git worktree where the gitignored key isn't present), `--terms`
 
 ## How to ship an iOS version (playbook)
 
-1. **`status`** — confirm the target version is `PREPARE_FOR_SUBMISSION` and its
-   build is `processingState=VALID`.
+1. **`preflight`** — one read-only report of every precondition: version state,
+   `versionString` vs `ios/kiroku/Info.plist`, the attached build, export
+   compliance, content rights, the age rating declaration (including
+   `socialMedia`, a question Apple added after both records were last rated),
+   review detail and demo account, screenshots for every required display type
+   (`APP_WATCH_SERIES_4` included, because the build embeds the watch app), the
+   tip products, a colliding review submission, and the `scrub` listing check.
+   Exit 1 on any failure, so it works as a gate. Use `status` for raw state.
 2. **`scrub --version X`** — the store description/keywords must not mention
    anything that isn't actually in this build. Until the paid tier ships that
    means no "supporter / subscription / předplatné / podporovatel". A listing
@@ -36,7 +43,8 @@ working from a git worktree where the gitignored key isn't present), `--terms`
    `WAITING_FOR_REVIEW` / `IN_REVIEW`) when shipping without them.
 4. Fix the **App Privacy / App Tracking Transparency** label in the ASC UI — that
    is not scriptable here and is a common rejection (Guideline 5.1.2(i)).
-5. **`submit --version X`** (dry run) to see the pre-flight, then add `--yes` to
+5. **`preflight`** again if anything was changed, then
+   **`submit --version X`** (dry run) to see the pre-flight, then add `--yes` to
    fire. `submit` refuses if the version isn't submittable, the build isn't VALID,
    a subscription is in review, or the listing scrub finds a hit.
 
