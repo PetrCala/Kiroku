@@ -241,6 +241,29 @@ jobs:
         if: ${{ always() }}
         run: node scripts/verify-captured-screenshots.mjs --require phone
 
+      # The app's UI language is an in-app preference, not the device locale, so
+      # a non-English capture depends on the test walking Settings > Preferences
+      # > Language. When that navigation misses, every screenshot comes out in
+      # English and NOTHING else notices: the shots exist, they are full size,
+      # and verify-captured-screenshots.mjs cannot read what language a PNG is
+      # in. On 2026-09-08 that shipped a complete cs-CZ capture in English on a
+      # green run. This is the gate for that.
+      - name: Fail if the locale switch was missed
+        if: ${{ always() && github.event.inputs.language_subset != 'en-only' }}
+        run: |
+          set -uo pipefail
+          log=~/"Library/Logs/snapshot/kiroku-Kiroku (production).log"
+          if [ ! -f "$log" ]; then
+            echo "::warning::snapshot log not found at $log; cannot check the locale switch"
+            exit 0
+          fi
+          if grep -q "\[capture-miss\] switchLocale" "$log"; then
+            echo "::error::The in-app locale switch failed, so this capture is in English regardless of the folder it landed in. Discard it. Grep the fastlane log artifact for '[capture-miss] switchLocale' for the reason."
+            grep "\[capture-miss\] switchLocale" "$log"
+            exit 1
+          fi
+          echo "Locale switch reached Settings; capture language is trustworthy."
+
       # Always, not just on failure: the accessibility dump and every
       # `[capture-miss]` line live in the snapshot log, and a run that ends
       # green or cancelled is exactly when they are needed most.
