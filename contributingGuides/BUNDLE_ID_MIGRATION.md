@@ -158,6 +158,22 @@ download failed.
 
 #### 3.1 Register the apps (Petr, one command each)
 
+New app entries, not edits. `bundleId` is `Immutable` in the Firebase Management
+API (`displayName`, `appStoreId`, `teamId` and `apiKeyId` are not), so an
+existing iOS app cannot be renamed onto the new id.
+
+That is a smaller change than it sounds. Everything keyed to the _project_
+survives untouched: all auth accounts and their linked providers, Realtime
+Database, Storage, the auth provider configs, the APNs auth key, and the shared
+iOS API key. Only what is keyed to the _app entry_ is recreated: `GOOGLE_APP_ID`,
+the iOS OAuth client (`CLIENT_ID` / `REVERSED_CLIENT_ID`), APNs certificates if
+the project uses those instead of a key, and the Crashlytics and Analytics
+streams. A second app in the same project does get its own OAuth client, which
+is why `Kiroku Dev` and `Kiroku AdHoc` already have different client ids.
+
+Registering them is additive: the old entries keep serving current builds, so
+nothing cuts over until a build ships with the new plists.
+
 The `firebase` CLI does the whole thing. It creates the app and prints the
 finished plist, so nothing in this step needs the console:
 
