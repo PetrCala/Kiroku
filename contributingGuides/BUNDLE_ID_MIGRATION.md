@@ -443,7 +443,10 @@ What `clone-listing` does not copy, and the report says so:
 - **App Privacy (the nutrition labels).** The API does not expose it at all:
   there is no `appDataUsages` resource and no `appPrivacyDetails` relationship,
   both 404. Re-answer it by hand in ASC, matching the old record question for
-  question.
+  question. The old record's answers are transcribed in
+  [`APP_PRIVACY_LABELS.md`](./APP_PRIVACY_LABELS.md), all thirteen data types
+  with their purposes, so this no longer depends on reading a retired record's
+  web UI.
 - **Pricing and availability**, and the in-app purchases (section 5).
 - **TestFlight groups and testers.** A new record starts with neither. The
   `Beta` group that the `production` lane distributes to
