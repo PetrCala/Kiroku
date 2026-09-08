@@ -144,29 +144,180 @@ exposed population is TestFlight testers with an `apple.com` provider linked,
 which is a knowable and probably tiny set. Check it before running, rather than
 inheriting the default because the dry run looked clean.
 
-### 3. Firebase (manual, then commit)
+### 3. Firebase
 
 The three `ios/config/GoogleService-Info.*.plist` files are deliberately
-untouched: they are generated, and `GOOGLE_APP_ID`, `CLIENT_ID`,
-`REVERSED_CLIENT_ID` and `API_KEY` all change together. Hand-editing only
+untouched: they are generated, and `GOOGLE_APP_ID`, `CLIENT_ID` and
+`REVERSED_CLIENT_ID` all change together with `BUNDLE_ID`. Hand-editing only
 `BUNDLE_ID` produces a config that looks right and misroutes at runtime.
 
-Register new iOS apps and download fresh plists:
+`API_KEY` is the exception: it is the project's shared
+`iOS key (auto created by Firebase)`, reused by every iOS app in the project, so
+it survives the move. Do not read an unchanged `API_KEY` as a sign that the
+download failed.
 
-| File                             | Firebase project         | Bundle id              |
-| -------------------------------- | ------------------------ | ---------------------- |
-| `GoogleService-Info.prod.plist`  | `alcohol-tracker-db`     | `com.kiroku.app`       |
-| `GoogleService-Info.dev.plist`   | `dev-alcohol-tracker-db` | `com.kiroku.app`       |
-| `GoogleService-Info.adhoc.plist` | `dev-alcohol-tracker-db` | `com.kiroku.app.adhoc` |
+#### 3.1 Register the apps (Petr, one command each)
 
-Then replace the three `REVERSED_CLIENT_ID` values in the `CFBundleURLSchemes`
-array in [`ios/kiroku/Info.plist`](../ios/kiroku/Info.plist) with the ones from
-the new plists, in the same order. Google Sign-In breaks silently if these drift.
+The `firebase` CLI does the whole thing. It creates the app and prints the
+finished plist, so nothing in this step needs the console:
 
-Auth users are keyed to the Firebase project rather than the iOS app, so
-email/password and Google accounts survive. **Sign in with Apple does not**: see
-the scoping note in section 2, which has to be decided before `app-setup --yes`
-rather than here.
+```bash
+firebase apps:create IOS "Kiroku"           --project alcohol-tracker-db     --bundle-id com.kiroku.app       --app-store-id 6670502234
+firebase apps:create IOS "Kiroku Dev"       --project dev-alcohol-tracker-db --bundle-id com.kiroku.app
+firebase apps:create IOS "Kiroku AdHoc"     --project dev-alcohol-tracker-db --bundle-id com.kiroku.app.adhoc
+```
+
+`apps:create` prints the new `GOOGLE_APP_ID`. Feed each one straight back:
+
+```bash
+firebase apps:sdkconfig IOS <prodAppId>  --project alcohol-tracker-db     -o ios/config/GoogleService-Info.prod.plist
+firebase apps:sdkconfig IOS <devAppId>   --project dev-alcohol-tracker-db -o ios/config/GoogleService-Info.dev.plist
+firebase apps:sdkconfig IOS <adhocAppId> --project dev-alcohol-tracker-db -o ios/config/GoogleService-Info.adhoc.plist
+```
+
+Then propagate the `REVERSED_CLIENT_ID` values into the `CFBundleURLSchemes`
+array in [`ios/kiroku/Info.plist`](../ios/kiroku/Info.plist):
+
+```bash
+npm run sync-ios-url-schemes
+```
+
+Commit the four changed files together. Google Sign-In breaks silently when the
+schemes and the configs disagree, so
+[`scripts/sync-ios-url-schemes.mjs`](../scripts/sync-ios-url-schemes.mjs) owns
+that array now: it writes the schemes in prod/dev/adhoc order,
+`--check` exits non-zero on drift, and `npm test` runs that check.
+
+Notes on the CLI:
+
+- `apps:sdkconfig` output is byte-equivalent to the console download apart from
+  an extra `ANDROID_CLIENT_ID` key, which is harmless.
+- `apps:list` does not print bundle ids. To confirm which app is which:
+  `curl -H "Authorization: Bearer $(gcloud auth print-access-token)" https://firebase.googleapis.com/v1beta1/projects/<projectId>/iosApps`.
+- The old apps stay registered and keep working. Do not delete them until the
+  new record is approved.
+- `--app-store-id` is cosmetic (it drives the Firebase console's App Store link)
+  and only the prod app has one.
+- Auth users are keyed to the Firebase project rather than the iOS app, so
+  email/password and Google accounts survive. **Sign in with Apple does not**:
+  see the scoping note in section 2, which has to be decided before
+  `app-setup --yes` rather than here. 3.2 carries the command that answers it.
+
+#### 3.2 What a fresh plist does not carry
+
+A new app entry starts blank on everything the console stores next to it rather
+than inside the plist. Each of these fails silently: no build error, no crash,
+just a feature that stops working on the new bundle id.
+
+- [ ] **OAuth client exists.** `apps:create` provisions the iOS OAuth client
+      asynchronously. If `apps:sdkconfig` returns a plist with no
+      `REVERSED_CLIENT_ID`, wait and re-run rather than committing it;
+      `npm run sync-ios-url-schemes` refuses that plist with a named error.
+- [ ] **APNs credential.** Console → Project settings → Cloud Messaging. An APNs
+      **auth key** (`.p8`) is stored per project and applies to every iOS app in
+      it, so it carries over untouched. An APNs **certificate** is stored per
+      app and does not: if either project is on certificates, upload one for
+      each new app entry. Push is a real entitlement here
+      ([`ios/kiroku/kiroku.entitlements`](../ios/kiroku/kiroku.entitlements)
+      declares `aps-environment`), so verify by sending a test push to a build
+      signed with the new id, not by reading the console.
+- [ ] **Sign in with Apple: the audience.** The provider config is
+      project-level (team id, key id, private key, Services ID) and is already
+      enabled on both projects with the shared team key, so nothing needs
+      re-entering. What is per-app is the audience: Firebase validates the `aud`
+      of Apple's identity token against the bundle ids of the iOS apps
+      registered in the project. Native Apple Sign-In therefore fails on
+      `com.kiroku.app` until step 3.1 is done, and starts working once it is.
+      Test it on a device before shipping.
+- [ ] **Count the Apple-linked accounts, before section 2.** Section 2's
+      `app-setup --yes` decides whether `com.kiroku.app` becomes its own Sign in
+      with Apple primary, and that choice only costs anything if `apple.com`
+      accounts already exist. The number is knowable, so measure it rather than
+      assuming it is small:
+
+      ```bash
+      firebase auth:export /tmp/users.json --format=json --project alcohol-tracker-db
+      jq '[.users[] | select(.providerUserInfo // [] | any(.providerId == "apple.com"))] | length' /tmp/users.json
+      rm /tmp/users.json
+      ```
+
+      Repeat with `--project dev-alcohol-tracker-db`. The export contains real
+      user records, so write it outside the repo and delete it afterwards. The
+      console's Authentication user list answers the same question by eye if you
+      would rather not have the file at all.
+
+      Measured on 8 September 2026: **zero** on both projects, out of 637
+      accounts on `alcohol-tracker-db` and 63 on `dev-alcohol-tracker-db`. On
+      that number the primary-versus-grouped choice strands nobody and the
+      default is fine. Re-run it immediately before `--yes` rather than trusting
+      this line; one TestFlight tester tapping the Apple button changes the
+      answer.
+
+- [ ] **The Apple Services ID is stale but fine.** Both projects have the
+      provider's `clientId` set to
+      `org.reactjs.native.example.alcohol-tracker.signin.webandroid`, which is a
+      Services ID in the Apple developer portal, not a bundle id. It backs the
+      web and Android code flow only. It keeps working under its current name;
+      renaming it means creating a new Services ID and re-pointing both
+      projects, which is cosmetic and best left out of this migration.
+- [ ] **`GOOGLE_IOS_CLIENT_ID` in the env files.** The one Firebase value the
+      app does not read from a plist. `CONFIG.GOOGLE_SIGN_IN.IOS_CLIENT_ID`
+      ([`src/CONFIG.ts`](../src/CONFIG.ts)) feeds `GoogleSignin.configure` in
+      [`src/libs/OAuthCredential/index.ios.ts`](../src/libs/OAuthCredential/index.ios.ts),
+      and it is sourced from the environment, which comes from the four
+      `*_ENV_FILE` GitHub secrets (`DEV`, `STAGING`, `PRODUCTION`, `ADHOC`). It
+      holds the same value as the plist's `CLIENT_ID`, so it is bundle-bound and
+      must be rotated to the new apps' client ids in every affected secret.
+
+      `sync-ios-url-schemes.mjs` does **not** cover this. It guards the
+      `REVERSED_CLIENT_ID` copy in `Info.plist`; this is a different value in a
+      place that is not in the repo at all, so nothing local can be compared
+      against it. Miss it and Google Sign-In fails on first tap, on a build that
+      went green through CI.
+
+- [ ] **The Crashlytics app id in the Fastfile.**
+      [`fastlane/Fastfile:372`](../fastlane/Fastfile) passes
+      `app_id: "1:665512857657:ios:a07eeddf1f54bac2b4fde8"` to
+      `upload_symbols_to_crashlytics`, byte-identical to the current prod
+      plist's `GOOGLE_APP_ID`. After 3.1 it points at the retired Firebase app,
+      so every dSYM upload lands on a dead Crashlytics record. The call is
+      wrapped in a `rescue` that only logs and continues, so it will not fail
+      the lane. The same call already passes
+      `gsp_path: "./ios/config/GoogleService-Info.prod.plist"`, which carries
+      the correct id, so deriving `app_id` from that plist (or dropping the
+      argument) is the durable fix; otherwise rotate it by hand here.
+- [ ] **API key bundle-id allowlist.** Nothing to do. Both projects' iOS keys
+      are restricted by API target only, with an empty allowed-bundle-ids list,
+      so a new bundle id needs no entry. Confirm it stayed that way with
+      `gcloud services api-keys list --project <projectId> --format="table(displayName, restrictions.iosKeyRestrictions.allowedBundleIds.list())"`
+      If that column is ever non-empty, add both new ids before shipping.
+- [ ] **App Check.** Not enforced today: no service has enforcement configured
+      on `alcohol-tracker-db`, and the App Check API is not even enabled on
+      `dev-alcohol-tracker-db`. If it is ever turned on, the attestation
+      provider is registered per app, and a new app entry starts unattested and
+      fails closed on every request.
+- [ ] **Crashlytics / Analytics history.** A new app id is a new stream. Old
+      crash and event data stays on the old entry and does not migrate. Nothing
+      to fix, just do not read the empty dashboards as breakage.
+
+#### 3.3 Verify
+
+- [ ] `npm run sync-ios-url-schemes -- --check` passes.
+- [ ] All three plists carry the new `BUNDLE_ID` and no file in the repo still
+      matches `org.reactjs.native.example`:
+      `git grep -l 'org\.reactjs\.native\.example'` returns nothing.
+- [ ] `GOOGLE_IOS_CLIENT_ID` in all four `*_ENV_FILE` secrets matches the
+      `CLIENT_ID` of the plist that ships with that variant.
+- [ ] `fastlane/Fastfile` no longer names the retired Crashlytics app id.
+- [ ] Google Sign-In completes on a device build of each variant. This is the
+      check that catches a missed `GOOGLE_IOS_CLIENT_ID`; CI cannot.
+- [ ] Apple Sign-In completes on a device build, and section 2's
+      primary-versus-grouped decision was made against a fresh count, not
+      inherited from the dry run.
+- [ ] A test push arrives on a device build.
+- [ ] A dSYM upload lands on the new Crashlytics record, not the old one. The
+      Fastfile swallows this failure, so read the lane log rather than its exit
+      code.
 
 ### 4. The App Store Connect record
 
