@@ -6,17 +6,30 @@ Kiroku's iOS bundle id was still the React Native template placeholder,
 alongside a clean, build-free App Store Connect record ("Kiroku Placeholder",
 app id `6670502234`, SKU `kiroku-ios-app`).
 
-**Read this first.** The move is not proven necessary. It was proposed because
-the App Store submission of 0.3.24 sat in `WAITING_FOR_REVIEW` for eleven days
-without ever reaching `IN_REVIEW`, and because the placeholder bundle id is the
-most conspicuous anomaly on an app that has failed to clear review seven times
-since May 2026. Nothing technical is broken: the build validates, export
-compliance is answered, and Kyuhachi (the same App Store Connect team) ships
-in-app purchases without trouble. The actual reason, if Apple has given one,
-is in Resolution Center, which the App Store Connect API cannot read. **Check
-there before spending the rest of this guide.** A name collision with the other
-published app called Kiroku, for instance, would not be helped by a new bundle
-id.
+**This is a cleanliness change, not a fix for anything.** It was originally
+proposed as a fix: 0.3.24 had sat in `WAITING_FOR_REVIEW` for eleven days, and
+six earlier submissions appeared to have failed since May 2026, so the
+placeholder bundle id looked like the culprit. That reading was wrong and the
+investigation is worth not repeating.
+
+Resolution Center is empty. Apple has never rejected this app, and on the
+evidence has never reviewed it. The six earlier submissions each end `COMPLETE`
+with their item in state `REMOVED`, never `REJECTED`, which is what withdrawal
+looks like: App Store Connect permits one open submission at a time, so each new
+one required clearing the last. Note that `REMOVED` alone would not prove this,
+since a rejected-then-cleared submission ends in the same state; the empty
+Resolution Center is what carries it.
+
+So there is no history of Apple objecting to anything, and the elaborate
+BAC-and-impairment rebuttal in the review notes is preemptive rather than a
+response to a rejection. What remains is a single long wait on a first-ever
+review with three in-app purchases attached: unusual, but one data point, and
+nothing about it implicates the bundle id.
+
+Do the move because `org.reactjs.native.example.alcohol-tracker` is not an
+identity to carry forever, and because it is cheapest now, while there is no
+public release, no users, no ratings and no purchase history to strand. Do not
+do it expecting review to behave differently afterwards.
 
 You cannot change the bundle id on the existing record: that field locks once a
 build is uploaded, and `6466886157` has build 0.3.24.19 on it. The move means
