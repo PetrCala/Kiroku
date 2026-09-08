@@ -27,9 +27,13 @@ review with three in-app purchases attached: unusual, but one data point, and
 nothing about it implicates the bundle id.
 
 Do the move because `org.reactjs.native.example.alcohol-tracker` is not an
-identity to carry forever, and because it is cheapest now, while there is no
-public release, no users, no ratings and no purchase history to strand. Do not
-do it expecting review to behave differently afterwards.
+identity to carry forever, and because it is cheapest now, while there is no iOS
+release, no ratings and no purchase history to strand. Do not do it expecting
+review to behave differently afterwards.
+
+There are users, despite what an earlier draft of this guide said: 700 accounts
+reach Kiroku through Android and the web, and none of them are affected by an
+iOS bundle id. See Fallout.
 
 You cannot change the bundle id on the existing record: that field locks once a
 build is uploaded, and `6466886157` has build 0.3.24.19 on it. The move means
@@ -564,12 +568,146 @@ node scripts/asc.mjs submit --iaps <id>,<id>,<id> --yes
 Attaching them matters on a first submission: products submitted on their own
 sit in Waiting for Review indefinitely.
 
+## Cross-cutting gaps found by audit
+
+Things a bundle-id change breaks that are not visible from the numbered steps
+above. Each still builds, still passes CI, and only misbehaves once the app runs
+under the new identity. They are collected here rather than edited into steps 2
+and 4, which are owned by other lanes; the owner of each should fold theirs in.
+
+Re-checked against the tree on 8 September 2026, and the line anchors are from
+that reading. Five earlier findings have been dropped from this list because
+their owning sections now carry them, in more detail than the audit did.
+Section 3 took the `GOOGLE_IOS_CLIENT_ID` env-secret rotation, the Crashlytics
+app id in the Fastfile, and the count of Sign in with Apple accounts. Section 4
+took the mandatory `APP_WATCH_SERIES_4` screenshot slot and the TestFlight
+groups and testers that do not transfer, both folded into the `clone-listing`
+checklist where someone executing that step will meet them.
+
+### Belongs in step 2 (signing)
+
+#### `Kiroku_Development` is outside the minted set, and it breaks
+
+The `Debug`, `DebugDevelopment` and `DebugProduction` configs pin
+`PROVISIONING_PROFILE_SPECIFIER[sdk=iphoneos*] = Kiroku_Development`
+(`ios/kiroku.xcodeproj/project.pbxproj:1558`, `:1773`, `:2899`), and the
+committed `ios/Kiroku_Development.mobileprovision.gpg` is bound to the old App
+ID. Nothing in step 2 re-mints it: it is absent from the `PROFILES` table
+(`scripts/ios-signing.mjs:173-204`), `app-setup` re-mints only `Kiroku`, and the
+skill puts it out of scope
+([`.claude/skills/ios-signing/SKILL.md:144`](../.claude/skills/ios-signing/SKILL.md)).
+The watch equivalent is handled, which is what makes the gap easy to miss:
+`watch-setup` mints `KirokuWatch_Development` from its own `WATCH_DEV_PROFILE`
+entry (`scripts/ios-signing.mjs:207-212`). The phone one has no such path.
+
+So local on-device Debug builds stop signing after the move, until you either
+create a development profile for `com.kiroku.app` in Xcode or switch those three
+configs to `CODE_SIGN_STYLE = Automatic`, which is what `DebugAdHoc` already did
+for a related reason ([`IOS_ADHOC_COEXIST.md:40-45`](./IOS_ADHOC_COEXIST.md)).
+CI is unaffected: it builds the AdHoc and production configs only. The skill's
+out-of-scope note says to renew this profile by hand when it expires, but not
+that a bundle-id change invalidates it, which is what happens here.
+
+### Belongs in step 4 (the App Store Connect record)
+
+#### `clone-listing` is not the only thing writing the listing
+
+Section 4 copies the listing across with `clone-listing`, from the old record.
+Fastlane writes most of the same fields from the repo, and nothing sequences the
+two. The `production` and `upload_metadata` lanes both run `deliver` with
+`skip_metadata: false` and `metadata_path: "./fastlane/metadata"`
+([`fastlane/Fastfile:415-446`](../fastlane/Fastfile), `:546-563`), so name,
+subtitle, keywords, description, promotional text, the three URLs, copyright,
+the age-rating questionnaire (`rating_config.json`, via
+`app_rating_config_path`) and the review contact plus demo account are all
+pushed from [`fastlane/metadata`](../fastlane/metadata), in both `en-US` and
+`cs`. The Appfile already resolves to `com.kiroku.app`, so those lanes target
+the new record with no further change and no further prompting.
+
+Two consequences.
+
+**The name.** `clone-listing` deliberately never writes the app name, but
+`deliver` does: `fastlane/metadata/en-US/name.txt` is `Kiroku`. So the first
+`upload_metadata` or `production` run against the new record fails on the name
+collision unless the old record has already given the name up. That is the same
+lock section 1 describes, reached by a path section 4 does not mention.
+
+**Whichever runs last wins.** For every field both mechanisms write, the old
+record's value and the repo's value are not guaranteed to agree, and the loser
+is silent. If they have drifted, the repo is the one under version control and
+should be treated as the source; run `upload_metadata` after `clone-listing`
+rather than before, and read its diff.
+
 ## Fallout
 
 TestFlight testers install a new app rather than updating, because a different
-bundle id is a different app. The review clock restarts. Nothing else is
-affected: the app has never been publicly released, so there are no production
-users, no ratings, and no purchase history to carry over.
+bundle id is a different app. The review clock restarts. There are no ratings
+and no purchase history to carry over, because the app has never been released
+on the App Store.
+
+**"No production users" is false, and the risk conclusions survive on a
+different reason.** There are 700 accounts: 637 on `alcohol-tracker-db` and 63
+on `dev-alcohol-tracker-db`, counted 8 September 2026 (see 3.2). They reach
+Kiroku through Android and the web. The iOS bundle id is meaningless on both:
+Android's `applicationId` is `com.alcohol_tracker` and is not changing, and the
+web build has no bundle id at all. So nothing in this migration touches those
+accounts, but the reason is that they are not on iOS, not that they do not
+exist.
+
+The ad-hoc PR builds behave like the App Store one: `com.kiroku.app.adhoc` lands
+as a second icon next to whatever `…alcohol-tracker.adhoc` a tester already has,
+rather than replacing it. Tell testers to delete the old ones.
+
+**Local state does not survive, and some of it is nowhere else.** The exposed
+population today is TestFlight testers, so this is cheap now; the same mechanism
+would be serious after an iOS release. A fresh install starts with an empty Onyx
+store, and four keys hold data that exists only on the device at the moment of
+the cut-over:
+
+| Key                                               | What is lost                                                                  |
+| ------------------------------------------------- | ----------------------------------------------------------------------------- |
+| `ONGOING_SESSION_DATA` (`src/ONYXKEYS.ts:108`)    | The live session buffer, including drinks the debounced persist never flushed |
+| `ONGOING_SESSION_SYNC` (`src/ONYXKEYS.ts:115`)    | The stamps that tell the next launch those edits were never enqueued          |
+| `UNSYNCED_SESSION_WRITES` (`src/ONYXKEYS.ts:122`) | Parked finalize writes waiting for the boot re-send                           |
+| `PERSISTED_REQUESTS` (`src/ONYXKEYS.ts:21`)       | The offline request queue                                                     |
+
+The live persist deliberately writes no optimistic snapshot, so the sync marker
+is "the only record that the hydrated `ONGOING_SESSION_DATA` buffer holds edits
+the server has never seen"
+([`DrinkingSession.ts:50-53`](../src/libs/actions/DrinkingSession.ts)). A tester
+who has a session open, or who ended one while offline, loses those drinks with
+no error and no way to notice. Ask testers to close and sync any open session
+before installing the new app, and do the cut-over when nobody is mid-session.
+
+Everything else re-hydrates: profile, sessions, preferences, theme and locale
+are all server-side (`user_preferences/$uid` via kiroku-api).
+
+## Doc drift the rename left behind
+
+Mechanical, harmless to the build, and wrong if read literally:
+
+- [`.claude/skills/ios-signing/SKILL.md:111-113`](../.claude/skills/ios-signing/SKILL.md)
+  still lists the watch App IDs as `…alcohol-tracker.watchkitapp` /
+  `…alcohol-tracker.adhoc.watchkitapp`.
+- [`docs/apple-watch-mvp.md:33-35`](../docs/apple-watch-mvp.md) says all three
+  schemes build only `kiroku` + `kirokuTests` and that no scheme builds the
+  watch app. All three do build it, which is what makes the watch screenshot
+  mandatory above.
+- [`docs/apple-watch-mvp.md:38`](../docs/apple-watch-mvp.md) gives the watch
+  bundle id as `com.kiroku.app.watch`. The real one is
+  `com.kiroku.app.watchkitapp`, as the same file says at `:125-126`; the
+  find-and-replace preserved a pre-existing error.
+- [`contributingGuides/IOS_ADHOC_COEXIST.md:7-10`](./IOS_ADHOC_COEXIST.md) now
+  reads "until this change every device configuration resolved to the same
+  bundle id (`com.kiroku.app`)", which rewrites history: that sentence is about
+  the state _before_ the ad-hoc split, when the shared id was
+  `org.reactjs.native.example.alcohol-tracker`.
+- [`docs/app-store-submission-kit.md:36`](../docs/app-store-submission-kit.md)
+  still names `6466886157` as "the app record".
+- [`e2e/native/README.md:78`](../e2e/native/README.md) and
+  [`e2e/native/flows/sign_in_log_session.yaml:11`](../e2e/native/flows/sign_in_log_session.yaml)
+  tell you to set `MAESTRO_APP_ID=com.alcohol_tracker.dev` and "confirm the iOS
+  bundle id". On iOS it is now `com.kiroku.app`.
 
 ## Rolling back
 
