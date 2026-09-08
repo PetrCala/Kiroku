@@ -367,6 +367,15 @@ platform :ios do
       end
     end
 
+    # A build that belongs to no beta group is installable by nobody: App Store
+    # Connect leaves it at READY_FOR_BETA_TESTING and refuses tester invites with
+    # NO_INSTALLABLE_BUILDS, so the deploy goes green and the build reaches no
+    # one. pilot's own `groups:` cannot do this: it switches upload_to_testflight
+    # to external-testing semantics even with distribute_external false, and then
+    # fails on a missing Beta App Description. Assign over the API instead.
+    # Deliberately fatal: a build nobody can install is not a successful deploy.
+    sh("cd .. && node scripts/asc.mjs distribute --groups 'Kiroku Internal Beta Testers' --yes")
+
     begin
       # Read the Firebase app id out of the same plist the upload is keyed to,
       # rather than hardcoding it. A hardcoded id survives a bundle-id move

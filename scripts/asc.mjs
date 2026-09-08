@@ -21,6 +21,7 @@
  *   node scripts/asc.mjs clone-pricing   --from <appId> --to <appId> [--yes]
  *   node scripts/asc.mjs clone-testflight --from <appId> --to <appId> [--groups a,b] [--with-testers] [--yes]
  *   node scripts/asc.mjs age-rating --app-id <appId> [--set field=value,...] [--yes]
+ *   node scripts/asc.mjs distribute --app-id <appId> [--build 1.0.0.1] --groups a,b [--yes]
  *
  * Commands:
  *   status   App, versions + states, the editable version's build,
@@ -66,6 +67,14 @@
  *            DESTINATION's own price points (price point ids are per-app, so the
  *            source's cannot be reused). Also compares territory availability
  *            and reports it. Requires --from and --to. DRY RUN unless --yes.
+ *   distribute
+ *            Assign a build to one or more beta groups, which is what makes it
+ *            installable. A build that belongs to no group sits at
+ *            READY_FOR_BETA_TESTING and tester invites fail with
+ *            NO_INSTALLABLE_BUILDS. Prefer this over pilot's `groups:`, which
+ *            forces external-testing semantics even with
+ *            distribute_external: false and then demands a Beta App
+ *            Description. Idempotent; DRY RUN unless --yes.
  *   clone-testflight
  *            Recreate the source record's TestFlight beta groups on the
  *            destination (a fresh record starts with none, so the group the
@@ -99,7 +108,8 @@
  *                      --set socialMedia=false,socialMediaAgeRestricted=false
  *                      (repeatable; true/false/null are coerced, the rest are
  *                      sent as strings)
- *   --groups <csv>     clone-testflight: only these beta group names
+ *   --groups <csv>     clone-testflight / distribute: beta group names
+ *   --build <str>      distribute: CFBundleVersion to assign (default: newest build)
  *   --with-testers     clone-testflight: also add the source groups' testers,
  *                      which sends them an invitation email
  *   --platform <p>     default IOS
@@ -162,6 +172,7 @@ const OPTS = {
   terms: flag('terms'),
   iaps: flag('iaps'),
   groups: flag('groups'),
+  build: flag('build'),
   withTesters: argv.includes('--with-testers'),
   yes: argv.includes('--yes'),
   help: argv.includes('--help') || argv.includes('-h'),
@@ -1791,6 +1802,72 @@ async function cmdClonePricing() {
   }
 }
 
+// ---- distribute -----------------------------------------------------------
+// A build reaches testers only by belonging to a beta group. Without one App
+// Store Connect reports it READY_FOR_BETA_TESTING and refuses tester invites
+// with NO_INSTALLABLE_BUILDS, so the deploy looks green and nobody can install.
+// pilot's own `groups:` is not a substitute: it switches upload_to_testflight
+// to external-testing semantics even when distribute_external is false, which
+// then fails on a missing Beta App Description.
+async function cmdDistribute(appId) {
+  const names = (OPTS.groups || '')
+    .split(',')
+    .map(n => n.trim())
+    .filter(Boolean);
+  if (!names.length)
+    throw new Error('distribute needs --groups <name>[,<name>...]');
+
+  const app = await api('GET', `/v1/apps/${appId}`);
+  L(
+    `APP: ${app.data.attributes.name} (${app.data.attributes.bundleId}) id=${appId}`,
+  );
+
+  const builds = await api('GET', `/v1/apps/${appId}/builds?limit=200`);
+  const all = builds.data || [];
+  if (!all.length) throw new Error('no builds on this app');
+  const build = OPTS.build
+    ? all.find(b => b.attributes.version === OPTS.build)
+    : all.sort(
+        (a, b) =>
+          new Date(b.attributes.uploadedDate) -
+          new Date(a.attributes.uploadedDate),
+      )[0];
+  if (!build)
+    throw new Error(
+      `no build ${OPTS.build} on this app (have: ${all.map(b => b.attributes.version).join(', ')})`,
+    );
+  L(
+    `BUILD: ${build.attributes.version} processing=${build.attributes.processingState}`,
+  );
+
+  const groups = await api('GET', `/v1/apps/${appId}/betaGroups?limit=200`);
+  const plan = [];
+  for (const name of names) {
+    const g = (groups.data || []).find(d => d.attributes.name === name);
+    if (!g) throw new Error(`no beta group named "${name}" on this app`);
+    const has = await api('GET', `/v1/betaGroups/${g.id}/builds?limit=200`);
+    const already = (has.data || []).some(b => b.id === build.id);
+    plan.push({group: g, already});
+    L(`  ${name}: ${already ? 'already has this build (skip)' : 'ADD'}`);
+  }
+
+  const todo = plan.filter(p => !p.already);
+  if (!todo.length) {
+    L('\nNothing to do; the build is already in every named group ✓');
+    return;
+  }
+  if (!OPTS.yes) {
+    L('\nDRY RUN. Pass --yes to assign the build.');
+    return;
+  }
+  for (const {group} of todo) {
+    await api('POST', `/v1/betaGroups/${group.id}/relationships/builds`, {
+      data: [{type: 'builds', id: build.id}],
+    });
+    L(`Assigned ${build.attributes.version} to "${group.attributes.name}" ✓`);
+  }
+}
+
 // ---- clone-testflight -----------------------------------------------------
 
 /**
@@ -2435,6 +2512,7 @@ async function cmdPreflight(appId) {
   if (cmd === 'submit') return cmdSubmit(appId);
   if (cmd === 'rename') return cmdRename(appId);
   if (cmd === 'age-rating') return cmdAgeRating(appId);
+  if (cmd === 'distribute') return cmdDistribute(appId);
   usage();
   process.exitCode = 1;
 })().catch(e => {
