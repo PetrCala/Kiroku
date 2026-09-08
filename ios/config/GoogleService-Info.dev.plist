@@ -3,11 +3,11 @@
 <plist version="1.0">
 <dict>
 	<key>CLIENT_ID</key>
-	<string>806896865950-0fnpmkppokk0epailj6u83psrfot197s.apps.googleusercontent.com</string>
+	<string>806896865950-7jq4q014d87lg7vg2bs407dpp42g2cob.apps.googleusercontent.com</string>
 	<key>REVERSED_CLIENT_ID</key>
-	<string>com.googleusercontent.apps.806896865950-0fnpmkppokk0epailj6u83psrfot197s</string>
+	<string>com.googleusercontent.apps.806896865950-7jq4q014d87lg7vg2bs407dpp42g2cob</string>
 	<key>ANDROID_CLIENT_ID</key>
-	<string>806896865950-d0uvplo5k964gm1rpfdhojhvb6pr9o4p.apps.googleusercontent.com</string>
+	<string>806896865950-5lt99husb6cr87n4ero57l444gkd7a80.apps.googleusercontent.com</string>
 	<key>API_KEY</key>
 	<string>AIzaSyDGTMdcL1BdnBwC_q2lnKj50rFUnUH5Bnc</string>
 	<key>GCM_SENDER_ID</key>
@@ -15,7 +15,7 @@
 	<key>PLIST_VERSION</key>
 	<string>1</string>
 	<key>BUNDLE_ID</key>
-	<string>org.reactjs.native.example.alcohol-tracker</string>
+	<string>com.kiroku.app</string>
 	<key>PROJECT_ID</key>
 	<string>dev-alcohol-tracker-db</string>
 	<key>STORAGE_BUCKET</key>
@@ -31,7 +31,7 @@
 	<key>IS_SIGNIN_ENABLED</key>
 	<true></true>
 	<key>GOOGLE_APP_ID</key>
-	<string>1:806896865950:ios:e2ccddc1f660a2cfb1618f</string>
+	<string>1:806896865950:ios:3e6a198144a6d4cbb1618f</string>
 	<key>DATABASE_URL</key>
 	<string>https://dev-alcohol-tracker-db-default-rtdb.europe-west1.firebasedatabase.app</string>
 </dict>
