@@ -17,7 +17,10 @@
  *   node scripts/asc.mjs shots  --dir <folder> [--locale en-US] [--replace] [--yes]
  *   node scripts/asc.mjs submit [--version 0.3.14] [--iaps a,b,c] [--yes]
  *   node scripts/asc.mjs rename --version 0.3.14 --to 0.3.15 [--yes]
- *   node scripts/asc.mjs clone-listing --from <appId> --to <appId> [--yes]
+ *   node scripts/asc.mjs clone-listing   --from <appId> --to <appId> [--yes]
+ *   node scripts/asc.mjs clone-pricing   --from <appId> --to <appId> [--yes]
+ *   node scripts/asc.mjs clone-testflight --from <appId> --to <appId> [--groups a,b] [--with-testers] [--yes]
+ *   node scripts/asc.mjs age-rating --app-id <appId> [--set field=value,...] [--yes]
  *
  * Commands:
  *   status   App, versions + states, the editable version's build,
@@ -57,12 +60,29 @@
  *            (both ASC app ids). DRY RUN unless --yes. The app name,
  *            screenshots and the App Privacy labels are NOT copied; the report
  *            says what is left to do by hand, read off both records live.
+ *   clone-pricing
+ *            Replay the source record's price schedule onto the destination:
+ *            the base territory and every manual price, re-resolved against the
+ *            DESTINATION's own price points (price point ids are per-app, so the
+ *            source's cannot be reused). Also compares territory availability
+ *            and reports it. Requires --from and --to. DRY RUN unless --yes.
+ *   clone-testflight
+ *            Recreate the source record's TestFlight beta groups on the
+ *            destination (a fresh record starts with none, so the group the
+ *            fastlane production lane distributes to has to exist before the
+ *            first upload). --groups narrows it to named groups; --with-testers
+ *            also adds the source groups' testers, which EMAILS them an
+ *            invitation. Requires --from and --to. DRY RUN unless --yes.
+ *   age-rating
+ *            Print the age rating declaration question by question and flag the
+ *            unanswered ones (exit 1 if any, so it works as a pre-submit gate).
+ *            With --set, answer them. DRY RUN unless --yes.
  *
  * Flags:
  *   --version <str>    target version (default: the lone PREPARE_FOR_SUBMISSION one)
  *   --to <str>         rename: the new version string
- *                      clone-listing: the DESTINATION ASC app id
- *   --from <id>        clone-listing: the SOURCE ASC app id
+ *                      clone-*: the DESTINATION ASC app id
+ *   --from <id>        clone-*: the SOURCE ASC app id
  *   --from-version <s> clone-listing: source version (default: newest)
  *   --to-version <s>   clone-listing: destination version (default: the lone
  *                      PREPARE_FOR_SUBMISSION one)
@@ -75,6 +95,13 @@
  *   --dir <path>       shots: folder of PNGs for one locale (sorted by filename)
  *   --locale <code>    shots: ASC locale to write (default en-US)
  *   --replace          shots: delete the existing screenshots in each touched set
+ *   --set <pairs>      age-rating: comma-separated field=value answers, e.g.
+ *                      --set socialMedia=false,socialMediaAgeRestricted=false
+ *                      (repeatable; true/false/null are coerced, the rest are
+ *                      sent as strings)
+ *   --groups <csv>     clone-testflight: only these beta group names
+ *   --with-testers     clone-testflight: also add the source groups' testers,
+ *                      which sends them an invitation email
  *   --platform <p>     default IOS
  *   --yes              actually execute (otherwise dry run)
  *   --help, -h         show this help
@@ -105,6 +132,16 @@ function flag(name, def) {
   const v = argv[i + 1];
   return v && !v.startsWith('--') ? v : true;
 }
+/** Every value of a repeatable flag, in the order they were passed. */
+function flagAll(name) {
+  const out = [];
+  for (let i = 0; i < argv.length; i += 1) {
+    if (argv[i] !== `--${name}`) continue;
+    const v = argv[i + 1];
+    if (v && !v.startsWith('--')) out.push(v);
+  }
+  return out;
+}
 const OPTS = {
   version: flag('version'),
   dir: flag('dir'),
@@ -124,6 +161,8 @@ const OPTS = {
   platform: flag('platform', 'IOS'),
   terms: flag('terms'),
   iaps: flag('iaps'),
+  groups: flag('groups'),
+  withTesters: argv.includes('--with-testers'),
   yes: argv.includes('--yes'),
   help: argv.includes('--help') || argv.includes('-h'),
 };
@@ -762,7 +801,9 @@ const CLONE_MANUAL = [
   ],
   [
     'Pricing & availability',
-    'price tier, territories and pre-orders are not copied. Set them in ASC > Pricing and Availability.',
+    'not copied here. Replay the price schedule with\n' +
+      '     `node scripts/asc.mjs clone-pricing --from <src> --to <dst> --yes`, which also\n' +
+      '     reports availability. Pre-orders are not exposed by the API at all.',
   ],
   [
     'In-app purchases',
@@ -771,8 +812,10 @@ const CLONE_MANUAL = [
   [
     'Build & TestFlight',
     'a build reaches a record by being uploaded against its bundle id; nothing to copy.\n' +
-      '     A new record also starts with no TestFlight groups and no testers, so the "Beta"\n' +
-      '     group fastlane/Fastfile distributes to must be recreated and testers re-invited.',
+      '     A new record does start with no TestFlight groups, so the "Beta" group\n' +
+      '     fastlane/Fastfile distributes to has to be recreated:\n' +
+      '     `node scripts/asc.mjs clone-testflight --from <src> --to <dst> --groups Beta --yes`\n' +
+      '     (add --with-testers to carry the testers, which emails them an invitation).',
   ],
 ];
 
@@ -1282,7 +1325,11 @@ async function cmdCloneListing() {
   if (ardUnanswered.length)
     L(
       `  - Age rating questions unanswered on BOTH records: ${ardUnanswered.join(', ')}.\n` +
-        '     Apple added these after the source record was last rated; answer them in ASC.',
+        '     Apple added these after the source record was last rated, so there is nothing\n' +
+        '     to copy. They are writable over the API: answer them with\n' +
+        `     \`node scripts/asc.mjs age-rating --app-id ${dstId} --set ${ardUnanswered
+          .map(f => `${f}=<value>`)
+          .join(',')} --yes\`.`,
     );
   const srcInfoState =
     srcInfo.attributes.state || srcInfo.attributes.appStoreState || 'unknown';
@@ -1380,6 +1427,533 @@ async function cmdCloneListing() {
   }
   if (!okRights || !okRating || !okDemo)
     L('\n⚠ At least one submission blocker is still unresolved (see above).');
+}
+
+// ---- age rating -----------------------------------------------------------
+
+/**
+ * The declaration is reachable only through the appInfo: GET_INSTANCE on
+ * /v1/ageRatingDeclarations/{id} is a 403, so both the id and the attributes
+ * have to come off /v1/appInfos/{id}/ageRatingDeclaration.
+ */
+async function ageRatingFor(appId) {
+  const infos = await api('GET', `/v1/apps/${appId}/appInfos?limit=10`);
+  const info =
+    infos.data.find(
+      i =>
+        (i.attributes.state || i.attributes.appStoreState) ===
+        'PREPARE_FOR_SUBMISSION',
+    ) || infos.data[0];
+  if (!info) throw new Error(`No appInfo on app ${appId}`);
+  const ard = await related('appInfos', info.id, 'ageRatingDeclaration');
+  if (!ard) throw new Error(`No ageRatingDeclaration on appInfo ${info.id}`);
+  return ard;
+}
+
+/** The declaration's required questions that carry no answer yet. */
+const unansweredAgeRating = attrs =>
+  AGE_RATING_FIELDS.filter(
+    f =>
+      !AGE_RATING_OPTIONAL.has(f) &&
+      (attrs?.[f] === null || attrs?.[f] === undefined),
+  );
+
+/**
+ * `--set` values arrive as strings, but the declaration mixes types: the
+ * content questions are enums, while socialMedia and socialMediaAgeRestricted
+ * are BOOLEAN (the API's own ENTITY_ERROR.ATTRIBUTE.TYPE says so). Coerce the
+ * three JSON literals and pass everything else through as the string it is; a
+ * wrong type comes back as ASC's own error naming the field.
+ */
+function parseAgeRatingSet() {
+  const out = {};
+  for (const pair of flagAll('set')
+    .flatMap(v => String(v).split(','))
+    .map(s => s.trim())
+    .filter(Boolean)) {
+    const eq = pair.indexOf('=');
+    if (eq === -1)
+      throw new Error(`--set expects field=value pairs, got "${pair}"`);
+    const field = pair.slice(0, eq).trim();
+    if (!AGE_RATING_FIELDS.includes(field))
+      throw new Error(
+        `--set: "${field}" is not an age rating field.\nKnown fields: ${AGE_RATING_FIELDS.join(', ')}`,
+      );
+    const raw = pair.slice(eq + 1).trim();
+    let value = raw;
+    if (raw === 'true') value = true;
+    else if (raw === 'false') value = false;
+    else if (raw === 'null') value = null;
+    out[field] = value;
+  }
+  return out;
+}
+
+async function cmdAgeRating(appId) {
+  const app = await api('GET', `/v1/apps/${appId}`);
+  L(
+    `APP: ${app.data.attributes.name} (${app.data.attributes.bundleId}) id=${appId}`,
+  );
+  const ard = await ageRatingFor(appId);
+  const attrs = ard.attributes || {};
+  const unanswered = unansweredAgeRating(attrs);
+
+  L(`\nDECLARATION ${ard.id}`);
+  for (const f of AGE_RATING_FIELDS) {
+    const v = attrs[f];
+    const unset = v === null || v === undefined;
+    // '·' = unanswered but optional, '⚠' = unanswered and blocks submission.
+    let mark = ' ';
+    if (unset) mark = AGE_RATING_OPTIONAL.has(f) ? '·' : '⚠';
+    L(`  ${mark} ${f} = ${unset ? '(unanswered)' : v}`);
+  }
+
+  const set = parseAgeRatingSet();
+  if (!Object.keys(set).length) {
+    if (!unanswered.length) {
+      L('\nEvery required question is answered ✓');
+      return;
+    }
+    L(
+      `\nUNANSWERED, blocks submission: ${unanswered.join(', ')}\n` +
+        '  Answer them with --set (dry run first, then --yes):\n' +
+        `  node scripts/asc.mjs age-rating --app-id ${appId} --set ${unanswered
+          .map(f => `${f}=<value>`)
+          .join(',')}`,
+    );
+    process.exitCode = 1;
+    return;
+  }
+
+  L('\nPLAN:');
+  for (const [f, v] of Object.entries(set)) {
+    const before = attrs[f];
+    const unset = before === null || before === undefined;
+    L(`  ${f}: ${unset ? '(unanswered)' : before} -> ${v}`);
+  }
+  if (!OPTS.yes) {
+    L(`\nPlan: PATCH ageRatingDeclarations/${ard.id}`);
+    L('\nDRY RUN. Pass --yes to write to App Store Connect.');
+    return;
+  }
+
+  await api('PATCH', `/v1/ageRatingDeclarations/${ard.id}`, {
+    data: {type: 'ageRatingDeclarations', id: ard.id, attributes: set},
+  });
+  // Read back rather than trusting the write: ASC derives some answers from
+  // others, so what lands is not always what was sent.
+  const after = await ageRatingFor(appId);
+  L('\nWritten ✓');
+  for (const f of Object.keys(set)) L(`  ${f} = ${after.attributes[f]}`);
+  const left = unansweredAgeRating(after.attributes);
+  if (left.length) {
+    L(`\n⚠ Still unanswered: ${left.join(', ')}`);
+    process.exitCode = 1;
+  }
+}
+
+// ---- clone-pricing --------------------------------------------------------
+
+/** GET that yields null instead of throwing when the resource is absent. */
+const optional = p => api('GET', p).catch(() => null);
+
+/** Both --from and --to, for the commands that address two records. */
+function clonePair(command) {
+  if (typeof OPTS.from !== 'string' || typeof OPTS.to !== 'string')
+    throw new Error(
+      `${command} requires --from <source app id> and --to <destination app id>`,
+    );
+  if (OPTS.from === OPTS.to)
+    throw new Error(`${command}: --from and --to are the same record`);
+  return [OPTS.from, OPTS.to];
+}
+
+async function describePair(srcId, dstId) {
+  const [srcApp, dstApp] = await Promise.all([
+    api('GET', `/v1/apps/${srcId}`),
+    api('GET', `/v1/apps/${dstId}`),
+  ]);
+  L(
+    `FROM: ${srcApp.data.attributes.name} (${srcApp.data.attributes.bundleId}) id=${srcId}`,
+  );
+  L(
+    `TO:   ${dstApp.data.attributes.name} (${dstApp.data.attributes.bundleId}) id=${dstId}`,
+  );
+  return [srcApp.data, dstApp.data];
+}
+
+/**
+ * A price schedule's id IS the app id. The manual prices are the ones a human
+ * set; the automatic ones are Apple's derived per-territory equalizations and
+ * are recreated by Apple from the base territory, so only the manual ones are
+ * worth copying.
+ */
+async function readManualPrices(appId) {
+  const r = await optional(
+    `/v1/appPriceSchedules/${appId}/manualPrices?include=appPricePoint,territory&limit=50`,
+  );
+  if (!r) return null; // no schedule at all: the price has never been set
+  const inc = {};
+  (r.included || []).forEach(i => (inc[`${i.type}:${i.id}`] = i));
+  return r.data.map(d => {
+    const pp = d.relationships?.appPricePoint?.data;
+    return {
+      territory: d.relationships?.territory?.data?.id ?? null,
+      customerPrice: pp
+        ? inc[`appPricePoints:${pp.id}`]?.attributes?.customerPrice ?? null
+        : null,
+      startDate: d.attributes?.startDate ?? null,
+      endDate: d.attributes?.endDate ?? null,
+    };
+  });
+}
+
+/** Every price point for one territory on one app, paged. */
+async function pricePointsFor(appId, territory) {
+  const out = [];
+  let url = `/v1/apps/${appId}/appPricePoints?filter[territory]=${encodeURIComponent(territory)}&limit=200`;
+  while (url) {
+    const page = await api('GET', url);
+    out.push(...page.data);
+    url = page.links?.next?.replace(BASE, '') ?? null;
+  }
+  return out;
+}
+
+/**
+ * Territory availability, or null when the record has none. An app whose
+ * availability was never explicitly edited has NO appAvailabilityV2 resource
+ * (the endpoint 404s) and is sold everywhere by default, which is a different
+ * state from an explicit list that happens to cover every territory.
+ */
+async function readAvailability(appId) {
+  const av = await optional(`/v1/apps/${appId}/appAvailabilityV2`);
+  if (!av) return null;
+  const page = await api(
+    'GET',
+    `/v2/appAvailabilities/${av.data.id}/territoryAvailabilities?limit=200&include=territory`,
+  );
+  return {
+    id: av.data.id,
+    availableInNewTerritories: av.data.attributes?.availableInNewTerritories,
+    territories: page.data
+      .filter(t => t.attributes.available)
+      .map(t => t.relationships.territory.data.id),
+  };
+}
+
+async function cmdClonePricing() {
+  const [srcId, dstId] = clonePair('clone-pricing');
+  await describePair(srcId, dstId);
+
+  const [srcBase, dstBase] = await Promise.all([
+    optional(`/v1/appPriceSchedules/${srcId}/baseTerritory`),
+    optional(`/v1/appPriceSchedules/${dstId}/baseTerritory`),
+  ]);
+  const [srcPrices, dstPrices] = await Promise.all([
+    readManualPrices(srcId),
+    readManualPrices(dstId),
+  ]);
+  const baseTerritory = srcBase?.data?.id ?? null;
+
+  L('\nPRICE SCHEDULE:');
+  L(
+    `  source: base=${baseTerritory ?? '(none)'} manual=${
+      srcPrices?.length
+        ? srcPrices.map(p => `${p.territory} ${p.customerPrice}`).join(', ')
+        : '(none)'
+    }`,
+  );
+  L(
+    `  dest:   base=${dstBase?.data?.id ?? '(none)'} manual=${
+      dstPrices?.length
+        ? dstPrices.map(p => `${p.territory} ${p.customerPrice}`).join(', ')
+        : '(none: price never set)'
+    }`,
+  );
+
+  const steps = [];
+  if (!srcPrices?.length) {
+    L('\n  Nothing to copy: the source record carries no manual price.');
+  } else if (dstPrices?.length) {
+    L(
+      '\n  Nothing to copy: the destination already carries a manual price.\n' +
+        '  A price schedule is replaced, never merged, so this command refuses rather\n' +
+        '  than overwriting a price somebody set on purpose. Change it in ASC.',
+    );
+  } else {
+    // Price point ids are per-app (they encode the app id), so the source's
+    // cannot be reused: each price is re-resolved to the DESTINATION's own
+    // price point for the same territory and the same customer price.
+    const resolved = [];
+    for (const price of srcPrices) {
+      if (!price.territory || price.customerPrice === null)
+        throw new Error(
+          `source manual price is missing a territory or price: ${JSON.stringify(price)}`,
+        );
+      const points = await pricePointsFor(dstId, price.territory);
+      const want = Number(price.customerPrice);
+      const match = points.find(
+        p => Number(p.attributes.customerPrice) === want,
+      );
+      if (!match) {
+        const nearest = [
+          ...new Set(points.map(p => Number(p.attributes.customerPrice))),
+        ]
+          .sort((a, b) => Math.abs(a - want) - Math.abs(b - want))
+          .slice(0, 8)
+          .sort((a, b) => a - b);
+        throw new Error(
+          `no ${price.territory} price point for ${want} on app ${dstId}; ` +
+            `nearest: ${nearest.join(', ')}`,
+        );
+      }
+      resolved.push({price, pointId: match.id});
+    }
+    steps.push({
+      label: `create price schedule: base=${baseTerritory}, ${resolved
+        .map(r => `${r.price.territory} ${r.price.customerPrice}`)
+        .join(', ')}`,
+      run: () =>
+        api('POST', '/v1/appPriceSchedules', {
+          data: {
+            type: 'appPriceSchedules',
+            relationships: {
+              app: {data: {type: 'apps', id: dstId}},
+              baseTerritory: {
+                data: {type: 'territories', id: baseTerritory},
+              },
+              // '${priceN}' is an ASC local-id placeholder binding the schedule
+              // to the included appPrices resources, not an interpolation. The
+              // API rejects any other id format for inline creation.
+              manualPrices: {
+                data: resolved.map((r, i) => ({
+                  type: 'appPrices',
+                  id: `\${price${i + 1}}`,
+                })),
+              },
+            },
+          },
+          included: resolved.map((r, i) => ({
+            type: 'appPrices',
+            id: `\${price${i + 1}}`,
+            attributes: {
+              startDate: r.price.startDate,
+              endDate: r.price.endDate,
+            },
+            relationships: {
+              appPricePoint: {
+                data: {type: 'appPricePoints', id: r.pointId},
+              },
+            },
+          })),
+        }),
+    });
+  }
+
+  // Availability is reported, never written: replaying it would mean POSTing a
+  // territory list this migration has never had a live example of, and both
+  // records here have none. Reading it is what tells you whether that is true.
+  const [srcAvail, dstAvail] = await Promise.all([
+    readAvailability(srcId),
+    readAvailability(dstId),
+  ]);
+  L('\nTERRITORY AVAILABILITY:');
+  const describeAvail = a =>
+    a
+      ? `${a.territories.length} territories, availableInNewTerritories=${a.availableInNewTerritories}`
+      : 'not explicitly set (sold in every territory by default)';
+  L(`  source: ${describeAvail(srcAvail)}`);
+  L(`  dest:   ${describeAvail(dstAvail)}`);
+  if (!srcAvail && !dstAvail)
+    L('  Nothing to copy: both records are on the same default.');
+  else if (srcAvail)
+    L(
+      '  The source has an explicit territory list. This command does not write\n' +
+        '  availability: set it in ASC > Pricing and Availability > Availability to match\n' +
+        `  the ${srcAvail.territories.length} territories above.`,
+    );
+
+  L('\nPRE-ORDERS: not exposed by the API (no appPreOrders resource, and the');
+  L('  app has no preOrder relationship). Set them in ASC if you want them.');
+
+  if (!steps.length) return;
+  L('\nPLAN:');
+  steps.forEach(s => L(`  - ${s.label}`));
+  if (!OPTS.yes) {
+    L('\nDRY RUN. Pass --yes to write to App Store Connect.');
+    return;
+  }
+  L('\nAPPLYING…');
+  for (const s of steps) {
+    await s.run();
+    L(`  ✓ ${s.label}`);
+  }
+}
+
+// ---- clone-testflight -----------------------------------------------------
+
+/**
+ * Attributes ASC accepts when creating a beta group. Which ones apply depends
+ * on the kind of group: hasAccessToAllBuilds is an internal-group setting, the
+ * public link fields are external-only, and sending the wrong one takes the
+ * whole request down.
+ */
+function betaGroupAttrs(src) {
+  const a = src.attributes;
+  const out = {
+    name: a.name,
+    feedbackEnabled: a.feedbackEnabled ?? true,
+    isInternalGroup: Boolean(a.isInternalGroup),
+    iosBuildsAvailableForAppleSiliconMac: Boolean(
+      a.iosBuildsAvailableForAppleSiliconMac,
+    ),
+    iosBuildsAvailableForAppleVision: Boolean(
+      a.iosBuildsAvailableForAppleVision,
+    ),
+  };
+  if (a.isInternalGroup)
+    out.hasAccessToAllBuilds = Boolean(a.hasAccessToAllBuilds);
+  else {
+    out.publicLinkEnabled = Boolean(a.publicLinkEnabled);
+    if (a.publicLinkEnabled) {
+      out.publicLinkLimitEnabled = Boolean(a.publicLinkLimitEnabled);
+      if (a.publicLinkLimitEnabled && a.publicLinkLimit)
+        out.publicLinkLimit = a.publicLinkLimit;
+    }
+  }
+  return out;
+}
+
+/** Every beta tester in one group, paged. */
+async function groupTesters(groupId) {
+  const out = [];
+  let url = `/v1/betaGroups/${groupId}/betaTesters?limit=200`;
+  while (url) {
+    const page = await api('GET', url);
+    out.push(...page.data);
+    url = page.links?.next?.replace(BASE, '') ?? null;
+  }
+  return out;
+}
+
+async function cmdCloneTestflight() {
+  const [srcId, dstId] = clonePair('clone-testflight');
+  await describePair(srcId, dstId);
+
+  const [srcGroups, dstGroups] = await Promise.all([
+    api('GET', `/v1/apps/${srcId}/betaGroups?limit=200`),
+    api('GET', `/v1/apps/${dstId}/betaGroups?limit=200`),
+  ]);
+  const wanted = OPTS.groups
+    ? String(OPTS.groups)
+        .split(',')
+        .map(s => s.trim())
+        .filter(Boolean)
+    : null;
+  if (wanted) {
+    const have = srcGroups.data.map(g => g.attributes.name);
+    const missing = wanted.filter(n => !have.includes(n));
+    if (missing.length)
+      throw new Error(
+        `--groups: no such group on the source record: ${missing.join(', ')} (have: ${have.join(', ')})`,
+      );
+  }
+
+  const byName = new Map(dstGroups.data.map(g => [g.attributes.name, g]));
+  const selected = srcGroups.data.filter(
+    g => !wanted || wanted.includes(g.attributes.name),
+  );
+
+  L('\nBETA GROUPS:');
+  const steps = [];
+  for (const g of selected) {
+    const {name} = g.attributes;
+    const kind = g.attributes.isInternalGroup ? 'internal' : 'external';
+    const existing = byName.get(name);
+    const testers = OPTS.withTesters ? await groupTesters(g.id) : null;
+    const testerNote = testers ? `, ${testers.length} tester(s)` : '';
+    if (existing) {
+      L(`  = "${name}" (${kind}) already exists on the destination`);
+    } else {
+      L(`  + "${name}" (${kind}) CREATE${testerNote}`);
+      steps.push({
+        label: `create group "${name}" (${kind})`,
+        run: async () => {
+          const created = await api('POST', '/v1/betaGroups', {
+            data: {
+              type: 'betaGroups',
+              attributes: betaGroupAttrs(g),
+              relationships: {app: {data: {type: 'apps', id: dstId}}},
+            },
+          });
+          return created.data.id;
+        },
+        name,
+      });
+    }
+    if (!OPTS.withTesters) continue;
+    const targetId = existing?.id ?? null;
+    const already = targetId
+      ? new Set((await groupTesters(targetId)).map(t => t.id))
+      : new Set();
+    const toAdd = testers.filter(t => !already.has(t.id));
+    if (!toAdd.length) {
+      if (existing)
+        L(`      testers: all ${testers.length} already in the group`);
+      continue;
+    }
+    L(
+      `      testers: add ${toAdd.length}${kind === 'external' ? ' (EMAILS each one an invitation)' : ''}`,
+    );
+    steps.push({
+      label: `add ${toAdd.length} tester(s) to "${name}"`,
+      // Resolved at apply time: for a group created earlier in this same run
+      // the id does not exist yet when the plan is built.
+      run: async ctx => {
+        const id = targetId ?? ctx.created.get(name);
+        if (!id) throw new Error(`no destination group id for "${name}"`);
+        // Chunked: the relationship endpoint takes a batch, not one call each.
+        for (let i = 0; i < toAdd.length; i += 100)
+          await api('POST', `/v1/betaGroups/${id}/relationships/betaTesters`, {
+            data: toAdd
+              .slice(i, i + 100)
+              .map(t => ({type: 'betaTesters', id: t.id})),
+          });
+      },
+    });
+  }
+
+  if (!selected.length) L('  (no groups on the source record)');
+  if (!steps.length) {
+    L('\nNothing to do: the destination already has these groups.');
+    return;
+  }
+
+  L('\nPLAN:');
+  steps.forEach(s => L(`  - ${s.label}`));
+  if (OPTS.withTesters)
+    L(
+      '\n⚠ Adding a tester to an EXTERNAL group emails them a TestFlight invitation.\n' +
+        '  Testers are account-level, so this grants them the destination app; it does\n' +
+        '  not move them off the source record.',
+    );
+  if (!OPTS.yes) {
+    L('\nDRY RUN. Pass --yes to write to App Store Connect.');
+    return;
+  }
+
+  L('\nAPPLYING…');
+  const ctx = {created: new Map()};
+  for (const s of steps) {
+    const id = await s.run(ctx);
+    if (s.name && id) ctx.created.set(s.name, id);
+    L(`  ✓ ${s.label}`);
+  }
+  L(
+    '\nThe first EXTERNAL build on a new record still has to clear Beta App Review;\n' +
+      'the fastlane beta_app_review_info block already supplies what it needs.',
+  );
 }
 
 async function cmdRename(appId) {
@@ -1821,9 +2395,11 @@ async function cmdPreflight(appId) {
     throw new Error(`Key JSON missing key_id/issuer_id/key: ${OPTS.keyPath}`);
   TOKEN = mintToken(k);
 
-  // clone-listing addresses two records explicitly, so it skips the
+  // The clone-* commands address two records explicitly, so they skip the
   // bundle-id -> app-id lookup every other command starts from.
   if (cmd === 'clone-listing') return cmdCloneListing();
+  if (cmd === 'clone-pricing') return cmdClonePricing();
+  if (cmd === 'clone-testflight') return cmdCloneTestflight();
 
   const appId = await resolveAppId();
 
@@ -1839,6 +2415,7 @@ async function cmdPreflight(appId) {
   if (cmd === 'shots') return cmdShots(appId);
   if (cmd === 'submit') return cmdSubmit(appId);
   if (cmd === 'rename') return cmdRename(appId);
+  if (cmd === 'age-rating') return cmdAgeRating(appId);
   usage();
   process.exitCode = 1;
 })().catch(e => {

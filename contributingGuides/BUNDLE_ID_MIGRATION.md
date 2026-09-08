@@ -446,16 +446,106 @@ What `clone-listing` does not copy, and the report says so:
   question. The old record's answers are transcribed in
   [`APP_PRIVACY_LABELS.md`](./APP_PRIVACY_LABELS.md), all thirteen data types
   with their purposes, so this no longer depends on reading a retired record's
-  web UI.
-- **Pricing and availability**, and the in-app purchases (section 5).
-- **TestFlight groups and testers.** A new record starts with neither. The
-  `Beta` group that the `production` lane distributes to
-  ([`fastlane/Fastfile:396`](../fastlane/Fastfile), `:399`:
-  `distribute_external: true`, `groups: ["Beta"]`) has to be recreated on
-  `6670502234` and the testers re-invited, or the first upload lands with
-  nobody able to install it. The first external build on the new record also has
-  to clear Beta App Review again, which the `beta_app_review_info` block at
-  `:401` already supplies.
+  web UI. This is the one gap with no scripted half.
+- **The in-app purchases** (section 5).
+- **Pricing, and the TestFlight groups**, both of which now have their own
+  commands below.
+
+#### The age rating questions Apple added later
+
+`socialMedia` and `socialMediaAgeRestricted` read `null` on **both** records:
+Apple added them after the old record was last rated, so this is not a
+migration artifact and it blocks submission on either record. There is nothing
+for `clone-listing` to copy, which is why it reports them rather than writing
+them.
+
+They are writable over the API. Both are `BOOLEAN`, not enums, which the API
+says itself when handed a string:
+
+```
+Unexpected json type provided for attribute 'socialMedia'. Expected a BOOLEAN but got STRING
+```
+
+`age-rating` prints the declaration question by question, marks the unanswered
+ones and exits 1 when any required answer is missing, so it doubles as a
+pre-submit gate. `--set` answers them, a dry run until `--yes`:
+
+```bash
+node scripts/asc.mjs age-rating --app-id 6670502234
+node scripts/asc.mjs age-rating --app-id 6670502234 --set socialMedia=false,socialMediaAgeRestricted=false        # plan
+node scripts/asc.mjs age-rating --app-id 6670502234 --set socialMedia=false,socialMediaAgeRestricted=false --yes  # apply
+```
+
+`--set` takes any field on the declaration, not just these two; `true`, `false`
+and `null` are coerced and everything else is sent as the string it is. The
+values above are what the rest of the declaration already implies
+(`messagingAndChat`, `userGeneratedContent` and `unrestrictedWebAccess` are all
+`false`), but they are an answer about the app and so a human's to give. The
+write reads the declaration back afterwards rather than trusting the response.
+
+**The repo does not carry these two answers either.**
+[`fastlane/metadata/rating_config.json`](../fastlane/metadata/rating_config.json)
+lists 21 questions and neither of the new ones, and `deliver` pushes that file
+through `app_rating_config_path` on every `production` and `upload_metadata`
+run (see the audit note below on the two mechanisms that write the listing). So
+an answer given only through `age-rating` lives in the portal alone, and any
+record rebuilt from the repo starts unanswered again. Add both keys to
+`rating_config.json` with whatever answer you give ASC, so the two agree. Left
+undone, it is also a candidate reason for a `deliver` run to start failing, if
+Apple begins requiring the fields it is not sending.
+
+#### Pricing and availability
+
+```bash
+node scripts/asc.mjs clone-pricing --from 6466886157 --to 6670502234        # plan
+node scripts/asc.mjs clone-pricing --from 6466886157 --to 6670502234 --yes  # apply
+```
+
+The old record carries one manual price: base territory `USA`, customer price
+`0.0`, i.e. free. The new record has **no price schedule at all**
+(`manualPrices` 404s), which blocks submission. Price point ids encode the app
+id, so the old record's cannot be replayed directly: each source price is
+re-resolved against the destination's own price points for the same territory
+at the same customer price, then written as one `POST /v1/appPriceSchedules`.
+The command refuses to touch a destination that already carries a manual price,
+because a schedule is replaced rather than merged.
+
+Two things it deliberately reports instead of writing:
+
+- **Territory availability.** Neither record has an `appAvailabilityV2`
+  resource: an app whose availability was never explicitly edited has none and
+  is sold everywhere by default, so both records are already on the same
+  default and there is nothing to replay. If the source ever grows an explicit
+  list, the command prints the territory count and sends you to ASC rather than
+  writing a list nobody has a live example of.
+- **Pre-orders.** Not exposed by the API in any form: no `appPreOrders`
+  resource, and the app has no `preOrder` relationship. Manual, if wanted.
+
+#### TestFlight
+
+A new record starts with no groups and no testers, and the `production` lane
+distributes to a group named `Beta`
+([`fastlane/Fastfile:396`](../fastlane/Fastfile), `:399`:
+`distribute_external: true`, `groups: ["Beta"]`), so the first upload fails at
+distribution until that group exists.
+
+```bash
+node scripts/asc.mjs clone-testflight --from 6466886157 --to 6670502234 --groups Beta        # plan
+node scripts/asc.mjs clone-testflight --from 6466886157 --to 6670502234 --groups Beta --yes  # apply
+```
+
+Group attributes are copied per kind, since sending an internal-only field to
+an external group takes the whole request down: `hasAccessToAllBuilds` for
+internal groups, the public-link fields for external ones. Drop `--groups` to
+recreate all six groups the old record has.
+
+Testers are account-level resources, but group membership is not, so
+`--with-testers` re-adds the source groups' testers by id. **Adding a tester to
+an external group emails them a TestFlight invitation** (343 of them on
+`Kiroku External Beta Testers`), so it is off by default and the dry run says
+which groups would send mail. The first external build on the new record still
+has to clear Beta App Review, which the `beta_app_review_info` block at `:401`
+already supplies.
 
 Keep the old record until the new one is approved. Do not delete it.
 
