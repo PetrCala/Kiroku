@@ -49,10 +49,44 @@ here reaches the network.
 
 ## Still to do
 
-### 1. Cancel the in-flight submission
+### 1. The in-flight submission, and the name it holds
 
 Submission `a1c6951f` on the old record holds version 0.3.24 plus the three tip
-products. Cancel it before building against the new record, or the two compete.
+products, and has been `WAITING_FOR_REVIEW` since 28 August 2026.
+
+**Leave it running for now.** Apple has never actually reviewed this app: every
+earlier submission ends `COMPLETE` with its item `REMOVED` rather than
+`REJECTED`, and Resolution Center is empty. So this is the only experiment that
+can produce a review outcome, and there has never been one to learn from. The
+version's `releaseType` is `MANUAL`, so an approval cannot reach the public on
+its own. If it comes back with a content objection, that objection applies just
+as much to the new record, and it is far cheaper to learn that now than after
+the signing, Firebase, listing and IAP work.
+
+**But it blocks the rename in section 4, so the experiment is bounded.** The app
+name does not live on the app record or on a version. It lives in
+`appInfoLocalizations`, hanging off an `appInfo` whose state tracks the
+submission:
+
+| Record           | `appInfo` state          | `en-US` name         |
+| ---------------- | ------------------------ | -------------------- |
+| Old `6466886157` | `WAITING_FOR_REVIEW`     | `Kiroku`             |
+| New `6670502234` | `PREPARE_FOR_SUBMISSION` | `Kiroku Placeholder` |
+
+The old record has one `appInfo` and no editable sibling, so while the
+submission is in flight its name is locked, and App Store names are unique, so
+the new record cannot take `Kiroku` until the old one gives it up.
+
+Everything else in this guide is independent of that. Run the sections in order
+and stop before the rename in section 4. At that point either the review has
+concluded (you have your answer and the lock is gone) or you decide the answer
+is no longer worth waiting for and cancel then. Cancelling on day one buys
+nothing and throws the experiment away.
+
+Separately, delete the stray review submission `ddac2922`: `READY_FOR_REVIEW`,
+never submitted, zero items, left behind by an aborted `asc.mjs submit --yes`
+run some time after 28 August. It is inert, since the plan never submits against
+the old record again, but it is noise on a record being retired.
 
 ### 2. Signing (automated)
 
@@ -104,9 +138,11 @@ notes plus demo account.
 
 Keep the old record until the new one is approved. Do not delete it.
 
-Two fields on the new record are unset and will block a submission if left that
+One field on the new record is unset and will block a submission if left that
 way: `contentRightsDeclaration` (the old record has
-`DOES_NOT_USE_THIRD_PARTY_CONTENT`) and the age rating declaration.
+`DOES_NOT_USE_THIRD_PARTY_CONTENT`). The age rating declaration does **not**
+need carrying over: it is already populated on the new record and identical to
+the old one, `alcoholTobaccoOrDrugUseOrReferences` included.
 
 #### Reconcile the version string
 
