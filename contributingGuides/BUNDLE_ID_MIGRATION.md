@@ -395,9 +395,10 @@ just a feature that stops working on the new bundle id.
 
 Rename the old record to free the name, then rename `Kiroku Placeholder` to
 `Kiroku`. That step stays manual: App Store names are unique per account, so
-the new record cannot take `Kiroku` while the old one holds it, and the old
-record's `appInfo` is `WAITING_FOR_REVIEW`, which is not editable. Settle the
-name in the portal on its own.
+the new record cannot take `Kiroku` while the old one holds it. Whether the old
+record's `WAITING_FOR_REVIEW` `appInfo` additionally blocks the edit is inferred
+rather than tested, as section 1 sets out. Either way the name gets settled in
+the portal on its own.
 
 `clone-listing` carries the rest of the listing across, a dry run until `--yes`:
 
@@ -430,17 +431,24 @@ What `clone-listing` does not copy, and the report says so:
   schemes embed `Kiroku Watch App.app`, so the new record needs the
   `APP_WATCH_SERIES_4` slot (368x448) filled as a submission prerequisite, not
   as an optional extra. Upload exactly one watch size: a version may carry only
-  one watch display type, and a second set fails with HTTP 409.
+  one watch display type, and a second set fails with HTTP 409. Capturing it
+  means running
+  [`screenshots.yml`](../.github/workflows/screenshots.yml) with `capture_watch`
+  on rather than the phone matrix alone; that job gates itself with
+  `verify-captured-screenshots.mjs --require watch`.
 - **App Privacy (the nutrition labels).** The API does not expose it at all:
   there is no `appDataUsages` resource and no `appPrivacyDetails` relationship,
   both 404. Re-answer it by hand in ASC, matching the old record question for
   question.
 - **Pricing and availability**, and the in-app purchases (section 5).
 - **TestFlight groups and testers.** A new record starts with neither. The
-  `Beta` group that [`fastlane/Fastfile`](../fastlane/Fastfile) distributes to
-  (`groups: ["Beta"]`, `distribute_external: true`) has to be recreated on
+  `Beta` group that the `production` lane distributes to
+  ([`fastlane/Fastfile:396`](../fastlane/Fastfile), `:399`:
+  `distribute_external: true`, `groups: ["Beta"]`) has to be recreated on
   `6670502234` and the testers re-invited, or the first upload lands with
-  nobody able to install it.
+  nobody able to install it. The first external build on the new record also has
+  to clear Beta App Review again, which the `beta_app_review_info` block at
+  `:401` already supplies.
 
 Keep the old record until the new one is approved. Do not delete it.
 
