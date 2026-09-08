@@ -97,12 +97,14 @@ describe('scripts/sync-ios-url-schemes', () => {
   });
 
   it('exits non-zero when a scheme drifts', () => {
+    // Derive the scheme from the file rather than naming one: the committed
+    // configs are regenerated whenever a Firebase app is re-registered, and a
+    // literal that no longer matches would make this test pass vacuously.
+    const original = readInfoPlist(root);
+    const adhoc = schemesIn(original).at(-1) as string;
     writeInfoPlist(
       root,
-      readInfoPlist(root).replace(
-        'com.googleusercontent.apps.806896865950-getgjeb0ncgggrri39ckm2ij2ntfljfp',
-        'com.googleusercontent.apps.806896865950-stale',
-      ),
+      original.replace(adhoc, 'com.googleusercontent.apps.806896865950-stale'),
     );
 
     const result = run(['--check', '--root', root]);
@@ -113,12 +115,10 @@ describe('scripts/sync-ios-url-schemes', () => {
 
   it('rewrites a drifted array back to the plist values, in prod/dev/adhoc order', () => {
     const original = readInfoPlist(root);
+    const adhoc = schemesIn(original).at(-1) as string;
     writeInfoPlist(
       root,
-      original.replace(
-        'com.googleusercontent.apps.806896865950-getgjeb0ncgggrri39ckm2ij2ntfljfp',
-        'com.googleusercontent.apps.806896865950-stale',
-      ),
+      original.replace(adhoc, 'com.googleusercontent.apps.806896865950-stale'),
     );
 
     expect(run(['--root', root]).status).toBe(0);
