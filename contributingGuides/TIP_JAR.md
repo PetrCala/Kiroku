@@ -82,6 +82,17 @@ exactly. Only the CZE price is set by hand: Apple derives every other
 territory from it. Hard-won API facts baked into the script:
 
 - Localization names cap at 30 characters, descriptions at 45.
+- **Product ids are burn-once.** Apple's [In-App Purchase information][iap-info]
+  reference says a product ID "isn't editable after you save the In-App
+  Purchase" and cannot be reused for another product "within the same app, even
+  if you delete the original In-App Purchase with that ID." A typo in an id is
+  therefore not fixable: the product has to be abandoned and a new id created,
+  which means a new build, because the ids are compiled in. Read the table in
+  `asc-tips.mjs` twice before running `setup`. Note that the rule as Apple
+  words it is scoped to the app, not to the developer account; whether an id
+  can be reused on a _different_ record is undocumented, which is why
+  [`BUNDLE_ID_MIGRATION.md`](./BUNDLE_ID_MIGRATION.md) treats it as an open
+  question rather than a settled constraint.
 - A price schedule resource exists as soon as the product does, carrying no
   price; check `manualPrices`, not the schedule's existence.
 - Transient 500s are normal; the script retries them.
@@ -136,3 +147,5 @@ they must not ride along until the v1.1 in-app subscription flow ships.
 - No Restore Purchases button for tips (consumables are not restorable).
 - No App Privacy change: Apple handles the transaction; the app stores only
   a local count of tips given, which never leaves the device.
+
+[iap-info]: https://developer.apple.com/help/app-store-connect/reference/in-app-purchases-and-subscriptions/in-app-purchase-information/
