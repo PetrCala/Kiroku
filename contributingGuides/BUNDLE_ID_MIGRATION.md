@@ -156,7 +156,7 @@ untouched: they are generated, and `GOOGLE_APP_ID`, `CLIENT_ID` and
 it survives the move. Do not read an unchanged `API_KEY` as a sign that the
 download failed.
 
-#### 3.1 Register the apps (Petr, one command each)
+#### 3.1 Register the apps
 
 New app entries, not edits. `bundleId` is `Immutable` in the Firebase Management
 API (`displayName`, `appStoreId`, `teamId` and `apiKeyId` are not), so an
