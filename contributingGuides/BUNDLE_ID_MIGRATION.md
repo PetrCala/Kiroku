@@ -219,40 +219,82 @@ tell which of the two mattered, and the whole migration is already a hypothesis.
 
 ### 5. In-app purchases
 
-**Test whether new ids are needed before assuming they are.** Apple's no-reuse
-rule is documented as scoped within an app, not across an account; the
-account-wide reading traces to third-party sources citing nothing. So the four
-existing ids (`kiroku.tip.small_beer`, `kiroku.tip.pint`, `kiroku.tip.round`,
-`supporter_lifetime`) may simply work on the new record.
+**Tested, and the ids are blocked. New ids are needed.**
 
-The test is `setup` itself, run with the **current** ids. On success it creates
-all three and continues into localizations, territories and price, finishing
-this section outright. On an id conflict it fails on the first create, having
-made nothing.
+```
+node scripts/asc-tips.mjs setup --app-id 6670502234
+-> HTTP 409  ENTITY_ERROR.ATTRIBUTE.INVALID.DUPLICATE
+   detail:  "This product ID has already been used"
+   pointer: /data/attributes/productId
+```
 
-This is the first irreversible call in the whole migration, and `setup` has **no
-dry run**: no `--yes` gate, no plan output. It begins creating as soon as it is
+Cost was zero: it failed on the first create, so nothing was made. All three
+remained not created on the new record afterwards, and the old record's tips
+were untouched.
+
+#### Why it was worth testing
+
+Apple's [In-App Purchase information][iap-info] reference, the page an App Store
+Commerce engineer cites when telling a developer a deleted id is gone
+([thread 821022][t821022]), scopes the rule to the app, not the account: a
+product ID "isn't editable after you save the In-App Purchase" and can't be
+reused "within the same app, even if you delete the original In-App Purchase
+with that ID." A DTS engineer repeats it verbatim in [thread 751812][t751812].
+Nothing in the App Store Connect Help in-app-purchase pages, the
+[configure-IAP overview][overview], [QA1329][qa1329] or TN2413 asserts an
+account-wide reservation; the account-wide reading traces to
+[RevenueCat's docs][rc], which cite nothing. [Thread 779431][cross-app] asks
+this exact case and the reply covers only auto-renewable subscriptions.
+
+So the documented rule left the cross-app case genuinely open, at roughly even
+odds, and undecidable read-only: App Store Connect exposes no id-availability
+endpoint. The test cost nothing and settled it.
+
+#### What it settles, and what it does not
+
+**Settles:** reusing a product id on a second app in the same account is
+blocked _while another app holds that id_. RevenueCat's framing is
+directionally right.
+
+**Does not settle:** whether deleting the products from the old record would
+free them. That branch never arises, since the plan keeps the old record alive,
+and Apple documents that deletion does not free an id even within one app.
+Record it as "blocked while another app holds them", not as "account-wide
+uniqueness proven".
+
+[iap-info]: https://developer.apple.com/help/app-store-connect/reference/in-app-purchases-and-subscriptions/in-app-purchase-information/
+[qa1329]: https://developer.apple.com/library/archive/qa/qa1329/_index.html
+[overview]: https://developer.apple.com/help/app-store-connect/configure-in-app-purchase-settings/overview-for-configuring-in-app-purchases
+[cross-app]: https://developer.apple.com/forums/thread/779431
+[t821022]: https://developer.apple.com/forums/thread/821022
+[t751812]: https://developer.apple.com/forums/thread/751812
+[rc]: https://www.revenuecat.com/docs/getting-started/entitlements/ios-products
+
+#### The guard still applies to the next run
+
+`setup` is still the first irreversible call in the whole migration, and it has
+**no dry run**: no `--yes` gate, no plan output. It begins creating as soon as it is
 invoked. Check the branch and the ids immediately before running it, because
 that is the last verifiable moment:
 
 ```bash
-git rev-parse --abbrev-ref HEAD       # expect feat/ios-bundle-id-com-kiroku-app
-grep -n -A4 PRODUCT_IDS src/CONST.ts  # expect the CURRENT kiroku.tip.* ids
+git rev-parse --abbrev-ref HEAD       # expect the branch carrying the decided ids
+grep -n -A4 PRODUCT_IDS src/CONST.ts  # read the ids; do not trust memory
 node scripts/asc-tips.mjs status --app-id 6670502234   # expect three NOT CREATED
 node scripts/asc-tips.mjs setup  --app-id 6670502234
 ```
 
-Running this from a branch that already carries renamed ids burns the new ids
-without ever testing the old ones, which is the failure worth guarding against.
-It needs no merge: a checkout of the rename branch does it just as permanently.
+Whichever ids sit in the `TIPS` table at that moment are the ones created, and
+they cannot be un-created. It needs no merge: a checkout of any branch does it
+just as permanently.
 
-Read the error before concluding. A non-2xx is not automatically an id
-conflict: `401`/`403` is key access, `404` is the wrong app id, and a `409` may
+Read the error before concluding, as above. A non-2xx is not automatically an
+id conflict: `401`/`403` is key access, `404` is the wrong app id, and a `409` may
 name the reference `name` field, which must also be unique, rather than the
 product id. A **partial** result, some created and a later one refused, means
 the rule is neither hypothesis; stop and inspect.
 
-If the ids are genuinely blocked:
+Since the ids are blocked:
 
 1. Update `CONST.TIPS.PRODUCT_IDS` in [`src/CONST.ts`](../src/CONST.ts) and the
    `TIPS` table in [`scripts/asc-tips.mjs`](../scripts/asc-tips.mjs). They must
