@@ -440,16 +440,40 @@ What `clone-listing` does not copy, and the report says so:
   [`screenshots.yml`](../.github/workflows/screenshots.yml) with `capture_watch`
   on rather than the phone matrix alone; that job gates itself with
   `verify-captured-screenshots.mjs --require watch`.
-- **App Privacy (the nutrition labels).** The API does not expose it at all:
-  there is no `appDataUsages` resource and no `appPrivacyDetails` relationship,
-  both 404. Re-answer it by hand in ASC, matching the old record question for
-  question. The old record's answers are transcribed in
-  [`APP_PRIVACY_LABELS.md`](./APP_PRIVACY_LABELS.md), all thirteen data types
-  with their purposes, so this no longer depends on reading a retired record's
-  web UI. This is the one gap with no scripted half.
+- **App Privacy (the nutrition labels).** ~~Outstanding.~~ **Done, published 8
+  September 2026.** The API does not expose it at all: there is no
+  `appDataUsages` resource and no `appPrivacyDetails` relationship, both 404, so
+  it was re-answered by hand in ASC and verified against
+  [`APP_PRIVACY_LABELS.md`](./APP_PRIVACY_LABELS.md) row for row: thirteen data
+  types, matching purposes, all linked to identity, none used for tracking. That
+  file records the verification. This was the one gap with no scripted half.
 - **The in-app purchases** (section 5).
 - **Pricing, and the TestFlight groups**, both of which now have their own
   commands below.
+
+#### Export compliance is not a thing you can go and answer
+
+`preflight` fails `export compliance answered (usesNonExemptEncryption)` on the
+new record, and it looks like an outstanding form. It is not one, and there is
+nothing to click: **the answer hangs off the build, not off the version or the
+app**, so it cannot exist before a build does.
+
+Verified rather than assumed, on 8 September 2026:
+
+- `usesNonExemptEncryption` is an attribute of `builds`. A live
+  `GET /v1/appStoreVersions/{id}` returns `platform`, `versionString`,
+  `appStoreState`, `appVersionState`, `copyright`, `reviewType`, `releaseType`,
+  `earliestReleaseDate`, `usesIdfa`, `downloadable`, `createdDate` and nothing
+  else. `usesIdfa` is there; export compliance is not, so there is no
+  `PATCH /v1/appStoreVersions/{id}` that could set it.
+- `GET /v1/apps/{id}/appEncryptionDeclarations` is a 404 `PATH_ERROR`.
+- The version's `build` relationship resolves to `null`, and the ASC version
+  page renders no export-compliance section at all.
+
+It resolves itself: [`ios/kiroku/Info.plist`](../ios/kiroku/Info.plist)
+declares `ITSAppUsesNonExemptEncryption` as `false`, which answers the question
+automatically at upload. Expect this check to flip on its own with the first
+build against `com.kiroku.app`, and do not go looking for a form.
 
 #### The age rating questions Apple added later
 
@@ -501,8 +525,12 @@ node scripts/asc.mjs clone-pricing --from 6466886157 --to 6670502234        # pl
 node scripts/asc.mjs clone-pricing --from 6466886157 --to 6670502234 --yes  # apply
 ```
 
+**Applied. Both records now read base territory `USA`, customer price `0.0`,
+free across 175 countries or regions**, which `clone-pricing` reports as
+"nothing to copy" rather than replaying a second time.
+
 The old record carries one manual price: base territory `USA`, customer price
-`0.0`, i.e. free. The new record has **no price schedule at all**
+`0.0`, i.e. free. The new record started with **no price schedule at all**
 (`manualPrices` 404s), which blocks submission. Price point ids encode the app
 id, so the old record's cannot be replayed directly: each source price is
 re-resolved against the destination's own price points for the same territory
@@ -520,6 +548,25 @@ Two things it deliberately reports instead of writing:
   writing a list nobody has a live example of.
 - **Pre-orders.** Not exposed by the API in any form: no `appPreOrders`
   resource, and the app has no `preOrder` relationship. Manual, if wanted.
+
+**The rest of the Pricing and Availability page is outside `clone-pricing`
+entirely, and a fresh record does not default to the old record's answers.**
+Checked by hand on 8 September 2026; everything below now matches
+`6466886157`. Tax category (`App Store software`) and the distribution method
+(`Public`, with the Apple School Manager volume-purchase discount ticked)
+already agreed. Two checkboxes did **not**, because ASC ticks both by default on
+a new record while the old record has them clear:
+
+| Setting                        | Old `6466886157` | New, as created | New, now |
+| ------------------------------ | ---------------- | --------------- | -------- |
+| Apple Silicon Mac Availability | off              | **on**          | off      |
+| Apple Vision Pro Availability  | off              | **on**          | off      |
+
+Both were cleared to match, so the app ships to iPhone and the watch only. This
+is a real divergence rather than a cosmetic one: left as created, the record
+would have published an iPhone build to the Mac App Store and visionOS, neither
+of which Kiroku is tested on. Worth re-checking on any future record rebuild,
+since nothing scripted covers it and nothing about it shows up in `preflight`.
 
 #### TestFlight
 
