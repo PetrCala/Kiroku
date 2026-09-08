@@ -394,10 +394,53 @@ just a feature that stops working on the new bundle id.
 ### 4. The App Store Connect record
 
 Rename the old record to free the name, then rename `Kiroku Placeholder` to
-`Kiroku`. Recreate the listing on the new record: description, keywords,
-screenshots (`npm run frame-screenshots`, see
-[`SCREENSHOTS.md`](./SCREENSHOTS.md)), age rating, privacy, and the review
-notes plus demo account.
+`Kiroku`. That step stays manual: App Store names are unique per account, so
+the new record cannot take `Kiroku` while the old one holds it, and the old
+record's `appInfo` is `WAITING_FOR_REVIEW`, which is not editable. Settle the
+name in the portal on its own.
+
+`clone-listing` carries the rest of the listing across, a dry run until `--yes`:
+
+```bash
+node scripts/asc.mjs clone-listing --from 6466886157 --to 6670502234        # plan
+node scripts/asc.mjs clone-listing --from 6466886157 --to 6670502234 --yes  # apply
+```
+
+It copies the app info localizations (subtitle, privacy policy URL) for every
+locale on the old record, the version localizations (description, keywords,
+promotional text, what's new, marketing and support URLs), the primary and
+secondary categories, `contentRightsDeclaration`, the age rating declaration,
+the version copyright and release type, and the review detail including the
+demo account. Locales the new record does not have yet are created rather than
+skipped, taking the new record's own name. It never writes the app name.
+
+Both records are read on every run, so the plan and the closing
+`SUBMISSION BLOCKERS` block describe the portal as it is at that moment rather
+than as anything written down here. A single attribute ASC rejects would
+otherwise take the rest of its request with it, including the privacy policy
+URL that submission requires, so the write is retried once without the rejected
+attribute and the dropped field is reported under `PARTIALLY COPIED`.
+
+What `clone-listing` does not copy, and the report says so:
+
+- **The app name**, for the reason above.
+- **Screenshots.** Regenerate with `npm run frame-screenshots` and upload with
+  `node scripts/asc.mjs shots --dir <folder> --locale <loc> --replace --yes`,
+  one run per locale. See [`SCREENSHOTS.md`](./SCREENSHOTS.md). All three build
+  schemes embed `Kiroku Watch App.app`, so the new record needs the
+  `APP_WATCH_SERIES_4` slot (368x448) filled as a submission prerequisite, not
+  as an optional extra. Upload exactly one watch size: a version may carry only
+  one watch display type, and a second set fails with HTTP 409.
+- **App Privacy (the nutrition labels).** The API does not expose it at all:
+  there is no `appDataUsages` resource and no `appPrivacyDetails` relationship,
+  both 404. Re-answer it by hand in ASC, matching the old record question for
+  question.
+- **Pricing and availability**, and the in-app purchases (section 5).
+- **TestFlight groups and testers.** A new record starts with neither. The
+  `Beta` group that [`fastlane/Fastfile`](../fastlane/Fastfile) distributes to
+  (`groups: ["Beta"]`, `distribute_external: true`) has to be recreated on
+  `6670502234` and the testers re-invited, or the first upload lands with
+  nobody able to install it.
 
 Keep the old record until the new one is approved. Do not delete it.
 
@@ -427,12 +470,14 @@ confirming on the first upload to the new record rather than trusting it.
 Renaming the record is the cheap side, one call, no code:
 
 ```bash
-node scripts/asc.mjs rename --app-id 6670502234 --to 0.3.24
+node scripts/asc.mjs rename --app-id 6670502234 --to 0.3.24        # plan
+node scripts/asc.mjs rename --app-id 6670502234 --to 0.3.24 --yes  # do it
 ```
 
 `--version` defaults to the lone `PREPARE_FOR_SUBMISSION` version, which is the
-`1.0` one. Note that `rename` is not dry-run by default the way `submit` is: it
-PATCHes immediately.
+`1.0` one. Like `submit` and `shots`, `rename` is a dry run until `--yes`: the
+first form prints the app, the version it resolved and the target string
+without touching anything.
 
 The alternative is to bump the app to `1.0.0`, which a new record and a real
 bundle id arguably invite. Prefer the rename anyway, and treat `1.0.0` as a
