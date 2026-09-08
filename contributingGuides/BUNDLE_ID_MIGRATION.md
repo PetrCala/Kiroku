@@ -86,9 +86,17 @@ submission:
 | Old `6466886157` | `WAITING_FOR_REVIEW`     | `Kiroku`             |
 | New `6670502234` | `PREPARE_FOR_SUBMISSION` | `Kiroku Placeholder` |
 
-The old record has one `appInfo` and no editable sibling, so while the
-submission is in flight its name is locked, and App Store names are unique, so
-the new record cannot take `Kiroku` until the old one gives it up.
+The old record has one `appInfo` and no editable sibling. Two claims stack here
+and they are not equally solid. App Store names being unique is certain, so the
+new record cannot take `Kiroku` while the old record holds it. That
+`WAITING_FOR_REVIEW` on an `appInfo` blocks editing its localizations is
+_inferred from the state's name and has not been tested_, because testing it
+means attempting a PATCH.
+
+The distinction happens not to change what you do. Freeing the name requires
+renaming the old record either way, and that is a mutation to sequence late
+regardless. Recorded so a future reader does not re-derive the question on
+discovering the lock was never actually verified.
 
 Everything else in this guide is independent of that. Run the sections in order
 and stop before the rename in section 4. At that point either the review has
@@ -151,11 +159,17 @@ notes plus demo account.
 
 Keep the old record until the new one is approved. Do not delete it.
 
-One field on the new record is unset and will block a submission if left that
-way: `contentRightsDeclaration` (the old record has
-`DOES_NOT_USE_THIRD_PARTY_CONTENT`). The age rating declaration does **not**
-need carrying over: it is already populated on the new record and identical to
-the old one, `alcoholTobaccoOrDrugUseOrReferences` included.
+**Derive what is missing at runtime. Do not trust a list of fields from any
+document, this one included.** As of 8 September 2026 the new record needs
+nothing carried over: `ageRatingDeclaration` and `contentRightsDeclaration` are
+both populated and match the old record. But `contentRightsDeclaration` read as
+`null` on the new record earlier the same day and was set at some point between
+the two reads, without anyone on the migration touching the portal, most likely
+from a session in the App Store Connect UI.
+
+That is the durable lesson rather than the field list. The portal is live and
+edited by hand, so a snapshot of which fields are unset goes stale without
+warning. Read the target record's state at the time you act on it.
 
 #### Reconcile the version string
 
