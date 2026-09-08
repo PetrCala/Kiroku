@@ -15,7 +15,8 @@
  *   node scripts/asc.mjs scrub  [--version 0.3.14] [--terms supporter,subscription]
  *   node scripts/asc.mjs shots  --dir <folder> [--locale en-US] [--replace] [--yes]
  *   node scripts/asc.mjs submit [--version 0.3.14] [--iaps a,b,c] [--yes]
- *   node scripts/asc.mjs rename --version 0.3.14 --to 0.3.15
+ *   node scripts/asc.mjs rename --version 0.3.14 --to 0.3.15 [--yes]
+ *   node scripts/asc.mjs clone-listing --from <appId> --to <appId> [--yes]
  *
  * Commands:
  *   status   App, versions + states, the editable version's build,
@@ -33,11 +34,27 @@
  *            which must ride an app version). DRY RUN unless --yes is passed
  *            (submit is irreversible).
  *   rename   PATCH an appStoreVersion's versionString (e.g. after a rejection,
- *            to reopen it for editing). Requires --version and --to.
+ *            to reopen it for editing, or to reconcile a fresh record's 1.0
+ *            down to what the app actually builds). Requires --to. DRY RUN
+ *            unless --yes.
+ *   clone-listing
+ *            Copy the store listing from one app record onto another: app info
+ *            localizations (subtitle / privacy policy), version localizations
+ *            (description / keywords / promo / what's new / URLs), categories,
+ *            contentRightsDeclaration, the age rating declaration, and the
+ *            review detail incl. the demo account. Requires --from and --to
+ *            (both ASC app ids). DRY RUN unless --yes. The app name,
+ *            screenshots and the App Privacy labels are NOT copied; the report
+ *            says what is left to do by hand, read off both records live.
  *
  * Flags:
  *   --version <str>    target version (default: the lone PREPARE_FOR_SUBMISSION one)
  *   --to <str>         rename: the new version string
+ *                      clone-listing: the DESTINATION ASC app id
+ *   --from <id>        clone-listing: the SOURCE ASC app id
+ *   --from-version <s> clone-listing: source version (default: newest)
+ *   --to-version <s>   clone-listing: destination version (default: the lone
+ *                      PREPARE_FOR_SUBMISSION one)
  *   --bundle-id <id>   app bundle id (default: com.kiroku.app)
  *   --app-id <id>      ASC app id (skips the bundle-id lookup)
  *   --key <path>       ASC API key JSON (default: <repo>/ios/ios-fastlane-json-key.json)
@@ -83,6 +100,9 @@ const OPTS = {
   locale: flag('locale', 'en-US'),
   replace: argv.includes('--replace'),
   to: flag('to'),
+  from: flag('from'),
+  fromVersion: flag('from-version'),
+  toVersion: flag('to-version'),
   bundleId: flag('bundle-id', process.env.ASC_BUNDLE_ID || DEFAULT_BUNDLE_ID),
   appId: flag('app-id', process.env.ASC_APP_ID),
   keyPath: flag(
@@ -692,12 +712,667 @@ async function cmdSubmit(appId) {
   L(`Submitted ✓  submission=${id}  state=${done.data.attributes.state}`);
 }
 
+// ---- clone-listing --------------------------------------------------------
+
+/**
+ * The App Store Connect API does not expose the App Privacy questionnaire (the
+ * data-collection "nutrition labels") at all: there is no appDataUsages
+ * resource, and neither /v1/apps/{id}/appDataUsages nor
+ * /v1/apps/{id}/appPrivacyDetails exists (both 404 with PATH_ERROR). Same for
+ * pricing/availability territories in any usefully copyable form. Anything in
+ * this list is reported as manual rather than attempted.
+ */
+const CLONE_MANUAL = [
+  [
+    'Screenshots & app previews',
+    'not reimplemented here. Regenerate with `npm run frame-screenshots` and upload with\n' +
+      '     `node scripts/asc.mjs shots --dir <folder> --locale <loc> --replace --yes`\n' +
+      '     (one run per locale). See contributingGuides/SCREENSHOTS.md.\n' +
+      '     The build embeds a watch app, so the APP_WATCH_SERIES_4 slot (368x448) is a\n' +
+      '     submission prerequisite on the new record, not an optional extra.',
+  ],
+  [
+    'App Privacy (nutrition labels)',
+    'the API does not expose it: /v1/appDataUsages and appPrivacyDetails both 404.\n' +
+      '     Re-answer it by hand in ASC > App Privacy, matching the old record question for question.',
+  ],
+  [
+    'Pricing & availability',
+    'price tier, territories and pre-orders are not copied. Set them in ASC > Pricing and Availability.',
+  ],
+  [
+    'In-app purchases',
+    'product ids cannot be reused across records. See section 5 of BUNDLE_ID_MIGRATION.md.',
+  ],
+  [
+    'Build & TestFlight',
+    'a build reaches a record by being uploaded against its bundle id; nothing to copy.\n' +
+      '     A new record also starts with no TestFlight groups and no testers, so the "Beta"\n' +
+      '     group fastlane/Fastfile distributes to must be recreated and testers re-invited.',
+  ],
+];
+
+/** Age rating fields the API accepts on an update. Anything else is derived. */
+const AGE_RATING_FIELDS = [
+  'advertising',
+  'ageAssurance',
+  'ageRatingOverride',
+  'ageRatingOverrideV2',
+  'alcoholTobaccoOrDrugUseOrReferences',
+  'contests',
+  'developerAgeRatingInfoUrl',
+  'gambling',
+  'gamblingSimulated',
+  'gunsOrOtherWeapons',
+  'healthOrWellnessTopics',
+  'horrorOrFearThemes',
+  'kidsAgeBand',
+  'koreaAgeRatingOverride',
+  'lootBox',
+  'matureOrSuggestiveThemes',
+  'medicalOrTreatmentInformation',
+  'messagingAndChat',
+  'parentalControls',
+  'profanityOrCrudeHumor',
+  'sexualContentGraphicAndNudity',
+  'sexualContentOrNudity',
+  'socialMedia',
+  'socialMediaAgeRestricted',
+  'unrestrictedWebAccess',
+  'userGeneratedContent',
+  'violenceCartoonOrFantasy',
+  'violenceRealistic',
+  'violenceRealisticProlongedGraphicOrSadistic',
+];
+/**
+ * Age rating fields where null is a real answer rather than an unanswered
+ * question: kidsAgeBand only applies to Kids Category apps, the info URL is
+ * optional, and the overrides default to NONE.
+ */
+const AGE_RATING_OPTIONAL = new Set([
+  'ageRatingOverride',
+  'ageRatingOverrideV2',
+  'developerAgeRatingInfoUrl',
+  'kidsAgeBand',
+  'koreaAgeRatingOverride',
+]);
+
+/**
+ * The app name is deliberately absent: App Store names are unique per account,
+ * so writing the source's name onto the destination is rejected for as long as
+ * the source holds it. Copying it is a manual decision, reported not attempted.
+ */
+const APP_INFO_LOC_FIELDS = [
+  'subtitle',
+  'privacyPolicyUrl',
+  'privacyPolicyText',
+  'privacyChoicesUrl',
+];
+const VERSION_LOC_FIELDS = [
+  'description',
+  'keywords',
+  'promotionalText',
+  'whatsNew',
+  'marketingUrl',
+  'supportUrl',
+];
+const REVIEW_DETAIL_FIELDS = [
+  'contactFirstName',
+  'contactLastName',
+  'contactPhone',
+  'contactEmail',
+  'demoAccountName',
+  'demoAccountPassword',
+  'demoAccountRequired',
+  'notes',
+];
+const CATEGORY_RELS = [
+  'primaryCategory',
+  'primarySubcategoryOne',
+  'primarySubcategoryTwo',
+  'secondaryCategory',
+  'secondarySubcategoryOne',
+  'secondarySubcategoryTwo',
+];
+/** Credentials are copied but never echoed. */
+const CLONE_SECRET_FIELDS = new Set(['demoAccountPassword']);
+
+/** One-line, quote-safe preview of a listing value for the plan output. */
+function preview(field, v) {
+  if (v === null || v === undefined) return '(unset)';
+  if (CLONE_SECRET_FIELDS.has(field)) return '(set, hidden)';
+  if (typeof v !== 'string') return String(v);
+  if (!v) return '(empty)';
+  const flat = v.replace(/\s+/g, ' ').trim();
+  return `"${flat.length > 58 ? `${flat.slice(0, 58)}…` : flat}"`;
+}
+
+/** Fields whose source value is worth writing and differs from the target. */
+function diffAttrs(fields, src, dst) {
+  const out = {};
+  for (const f of fields) {
+    const from = src?.[f];
+    if (from === null || from === undefined) continue;
+    if (dst && dst[f] === from) continue;
+    out[f] = from;
+  }
+  return out;
+}
+
+/**
+ * ASC rejects the whole request when a single attribute collides, so one bad
+ * field takes every unrelated field in the same call down with it: an app info
+ * localization carries the privacy policy URL, which is itself required for
+ * submission, alongside fields that can be refused. Retry once without the
+ * attribute the error points at, and report which field was dropped.
+ */
+async function writeSalvaging(attrs, send) {
+  try {
+    await send(attrs);
+    return null;
+  } catch (e) {
+    const field = e.message.match(
+      /"pointer"\s*:\s*"\/data\/attributes\/(\w+)"/,
+    )?.[1];
+    const rest = {...attrs};
+    delete rest[field];
+    if (!field || !(field in attrs) || !Object.keys(rest).length) throw e;
+    await send(rest);
+    return field;
+  }
+}
+
+/** The related resource itself (id + attributes), or null if unset. */
+async function related(type, id, rel) {
+  const r = await api('GET', `/v1/${type}/${id}/${rel}`).catch(() => null);
+  return r?.data ?? null;
+}
+const relId = async (type, id, rel) =>
+  (await related(type, id, rel))?.id ?? null;
+
+/**
+ * clone-listing's own version picker. The SOURCE record's version is usually
+ * past PREPARE_FOR_SUBMISSION (it is the live/submitted listing we want to
+ * copy), so pickVersion's editable-only rule does not apply. Default to the
+ * newest version by creation date.
+ */
+async function pickAnyVersion(appId, want, label) {
+  const vs = await listVersions(appId);
+  if (!vs.length) throw new Error(`${label}: no ${OPTS.platform} versions`);
+  if (want) {
+    const v = vs.find(x => x.attributes.versionString === want);
+    if (!v)
+      throw new Error(
+        `${label}: version ${want} not found (have: ${vs.map(x => x.attributes.versionString).join(', ')})`,
+      );
+    return v;
+  }
+  return [...vs].sort((a, b) =>
+    String(b.attributes.createdDate).localeCompare(
+      String(a.attributes.createdDate),
+    ),
+  )[0];
+}
+
+async function cmdCloneListing() {
+  if (typeof OPTS.from !== 'string' || typeof OPTS.to !== 'string')
+    throw new Error(
+      'clone-listing requires --from <source app id> and --to <destination app id>',
+    );
+  if (OPTS.from === OPTS.to)
+    throw new Error('clone-listing: --from and --to are the same record');
+  const [srcId, dstId] = [OPTS.from, OPTS.to];
+
+  const [srcApp, dstApp] = await Promise.all([
+    api('GET', `/v1/apps/${srcId}`),
+    api('GET', `/v1/apps/${dstId}`),
+  ]);
+  L(
+    `FROM: ${srcApp.data.attributes.name} (${srcApp.data.attributes.bundleId}) id=${srcId}`,
+  );
+  L(
+    `TO:   ${dstApp.data.attributes.name} (${dstApp.data.attributes.bundleId}) id=${dstId}`,
+  );
+
+  const [srcInfos, dstInfos] = await Promise.all([
+    api('GET', `/v1/apps/${srcId}/appInfos?limit=10`),
+    api('GET', `/v1/apps/${dstId}/appInfos?limit=10`),
+  ]);
+  const srcInfo = srcInfos.data[0];
+  // The editable appInfo is the one still in PREPARE_FOR_SUBMISSION; a record
+  // mid-review carries a second, frozen one.
+  const dstInfo =
+    dstInfos.data.find(
+      i =>
+        (i.attributes.state || i.attributes.appStoreState) ===
+        'PREPARE_FOR_SUBMISSION',
+    ) || dstInfos.data[0];
+  if (!srcInfo || !dstInfo) throw new Error('appInfo missing on one record');
+
+  const srcVer = await pickAnyVersion(srcId, OPTS.fromVersion, 'source');
+  const dstVer = await pickAnyVersion(dstId, OPTS.toVersion, 'destination');
+  L(
+    `\nVERSION: ${srcVer.attributes.versionString} [${versState(srcVer)}] -> ` +
+      `${dstVer.attributes.versionString} [${versState(dstVer)}]`,
+  );
+  const dstState = versState(dstVer);
+  if (!['PREPARE_FOR_SUBMISSION', 'DEVELOPER_REJECTED'].includes(dstState))
+    L(
+      `  ⚠ destination version is ${dstState}; writes will likely be rejected`,
+    );
+
+  const steps = [];
+  const failures = [];
+  const skipped = [];
+  const add = (section, label, run) => steps.push({section, label, run});
+
+  // ---- app-level: contentRightsDeclaration
+  const srcRights = srcApp.data.attributes.contentRightsDeclaration;
+  const dstRights = dstApp.data.attributes.contentRightsDeclaration;
+  if (srcRights && srcRights !== dstRights)
+    add(
+      'App',
+      `contentRightsDeclaration ${dstRights ?? '(unset)'} -> ${srcRights}`,
+      () =>
+        api('PATCH', `/v1/apps/${dstId}`, {
+          data: {
+            type: 'apps',
+            id: dstId,
+            attributes: {contentRightsDeclaration: srcRights},
+          },
+        }),
+    );
+
+  // ---- app info: categories
+  const cats = {};
+  for (const rel of CATEGORY_RELS) {
+    const [from, to] = await Promise.all([
+      relId('appInfos', srcInfo.id, rel),
+      relId('appInfos', dstInfo.id, rel),
+    ]);
+    if (from && from !== to) cats[rel] = {from, to};
+  }
+  if (Object.keys(cats).length)
+    add(
+      'App info',
+      `categories: ${Object.entries(cats)
+        .map(([k, v]) => `${k} ${v.to ?? '(unset)'} -> ${v.from}`)
+        .join(', ')}`,
+      () =>
+        api('PATCH', `/v1/appInfos/${dstInfo.id}`, {
+          data: {
+            type: 'appInfos',
+            id: dstInfo.id,
+            relationships: Object.fromEntries(
+              Object.entries(cats).map(([rel, v]) => [
+                rel,
+                {data: {type: 'appCategories', id: v.from}},
+              ]),
+            ),
+          },
+        }),
+    );
+
+  // ---- age rating declaration
+  // ageRatingDeclarations is UPDATE-only: GET_INSTANCE is a 403, so the
+  // attributes have to come off the appInfo relationship, not the resource.
+  const [srcArd, dstArd] = await Promise.all([
+    related('appInfos', srcInfo.id, 'ageRatingDeclaration'),
+    related('appInfos', dstInfo.id, 'ageRatingDeclaration'),
+  ]);
+  const dstArdId = dstArd?.id ?? null;
+  const ardAttrs = diffAttrs(
+    AGE_RATING_FIELDS,
+    srcArd?.attributes,
+    dstArd?.attributes,
+  );
+  // Questions Apple has added since the source record last answered them: null
+  // on both sides, so there is nothing to copy and a human must answer them.
+  const ardUnanswered = AGE_RATING_FIELDS.filter(
+    f =>
+      !AGE_RATING_OPTIONAL.has(f) &&
+      srcArd?.attributes?.[f] === null &&
+      dstArd?.attributes?.[f] === null,
+  );
+  if (dstArdId && Object.keys(ardAttrs).length)
+    add(
+      'Age rating',
+      `${Object.keys(ardAttrs).length} field(s): ${Object.entries(ardAttrs)
+        .map(([k, v]) => `${k}=${v}`)
+        .join(', ')}`,
+      () =>
+        api('PATCH', `/v1/ageRatingDeclarations/${dstArdId}`, {
+          data: {
+            type: 'ageRatingDeclarations',
+            id: dstArdId,
+            attributes: ardAttrs,
+          },
+        }),
+    );
+
+  // ---- app info localizations (subtitle, privacy policy; never the name)
+  const [srcInfoLocs, dstInfoLocs] = await Promise.all([
+    api('GET', `/v1/appInfos/${srcInfo.id}/appInfoLocalizations?limit=50`),
+    api('GET', `/v1/appInfos/${dstInfo.id}/appInfoLocalizations?limit=50`),
+  ]);
+  // A new locale cannot be created without a name, so it gets the destination's
+  // own name rather than the source's, which the destination may not take.
+  const dstName =
+    dstInfoLocs.data.find(l => l.attributes.name)?.attributes.name ||
+    dstApp.data.attributes.name;
+  for (const loc of srcInfoLocs.data) {
+    const {locale} = loc.attributes;
+    const existing = dstInfoLocs.data.find(l => l.attributes.locale === locale);
+    const attrs = diffAttrs(
+      APP_INFO_LOC_FIELDS,
+      loc.attributes,
+      existing?.attributes,
+    );
+    if (!Object.keys(attrs).length) continue;
+    const body = Object.entries(attrs)
+      .map(([k, v]) => `${k}=${preview(k, v)}`)
+      .join(', ');
+    if (existing)
+      add('App info localization', `${locale} update: ${body}`, () =>
+        writeSalvaging(attrs, a =>
+          api('PATCH', `/v1/appInfoLocalizations/${existing.id}`, {
+            data: {
+              type: 'appInfoLocalizations',
+              id: existing.id,
+              attributes: a,
+            },
+          }),
+        ),
+      );
+    else
+      add(
+        'App info localization',
+        `${locale} CREATE: ${body}, name=${preview('name', dstName)} (the destination's own)`,
+        () =>
+          writeSalvaging({...attrs, name: dstName}, a =>
+            api('POST', '/v1/appInfoLocalizations', {
+              data: {
+                type: 'appInfoLocalizations',
+                attributes: {...a, locale},
+                relationships: {
+                  appInfo: {data: {type: 'appInfos', id: dstInfo.id}},
+                },
+              },
+            }),
+          ),
+      );
+  }
+
+  // ---- version settings that gate a submission but live on the version itself
+  const verAttrs = diffAttrs(
+    ['copyright', 'releaseType'],
+    srcVer.attributes,
+    dstVer.attributes,
+  );
+  if (Object.keys(verAttrs).length)
+    add(
+      'Version',
+      Object.entries(verAttrs)
+        .map(
+          ([k, v]) =>
+            `${k} ${preview(k, dstVer.attributes[k])} -> ${preview(k, v)}`,
+        )
+        .join(', '),
+      () =>
+        api('PATCH', `/v1/appStoreVersions/${dstVer.id}`, {
+          data: {
+            type: 'appStoreVersions',
+            id: dstVer.id,
+            attributes: verAttrs,
+          },
+        }),
+    );
+
+  // ---- version localizations (description, keywords, promo, what's new, URLs)
+  const [srcVerLocs, dstVerLocs] = await Promise.all([
+    api(
+      'GET',
+      `/v1/appStoreVersions/${srcVer.id}/appStoreVersionLocalizations?limit=50`,
+    ),
+    api(
+      'GET',
+      `/v1/appStoreVersions/${dstVer.id}/appStoreVersionLocalizations?limit=50`,
+    ),
+  ]);
+  for (const loc of srcVerLocs.data) {
+    const {locale} = loc.attributes;
+    const existing = dstVerLocs.data.find(l => l.attributes.locale === locale);
+    const attrs = diffAttrs(
+      VERSION_LOC_FIELDS,
+      loc.attributes,
+      existing?.attributes,
+    );
+    if (!Object.keys(attrs).length) continue;
+    const body = Object.entries(attrs)
+      .map(([k, v]) => `${k}=${preview(k, v)}`)
+      .join(', ');
+    if (existing)
+      add('Version localization', `${locale} update: ${body}`, () =>
+        api('PATCH', `/v1/appStoreVersionLocalizations/${existing.id}`, {
+          data: {
+            type: 'appStoreVersionLocalizations',
+            id: existing.id,
+            attributes: attrs,
+          },
+        }),
+      );
+    else
+      add('Version localization', `${locale} CREATE: ${body}`, () =>
+        api('POST', '/v1/appStoreVersionLocalizations', {
+          data: {
+            type: 'appStoreVersionLocalizations',
+            attributes: {...attrs, locale},
+            relationships: {
+              appStoreVersion: {
+                data: {type: 'appStoreVersions', id: dstVer.id},
+              },
+            },
+          },
+        }),
+      );
+  }
+
+  // ---- review detail (notes, demo account, contact)
+  const [srcDetail, dstDetail] = await Promise.all([
+    api('GET', `/v1/appStoreVersions/${srcVer.id}/appStoreReviewDetail`).catch(
+      () => null,
+    ),
+    api('GET', `/v1/appStoreVersions/${dstVer.id}/appStoreReviewDetail`).catch(
+      () => null,
+    ),
+  ]);
+  const srcDetailAttrs = srcDetail?.data?.attributes;
+  const dstDetailId = dstDetail?.data?.id ?? null;
+  const detailAttrs = diffAttrs(
+    REVIEW_DETAIL_FIELDS,
+    srcDetailAttrs,
+    dstDetail?.data?.attributes,
+  );
+  if (Object.keys(detailAttrs).length) {
+    const body = Object.entries(detailAttrs)
+      .map(([k, v]) => `${k}=${preview(k, v)}`)
+      .join(', ');
+    if (dstDetailId)
+      add('Review detail', `update: ${body}`, () =>
+        api('PATCH', `/v1/appStoreReviewDetails/${dstDetailId}`, {
+          data: {
+            type: 'appStoreReviewDetails',
+            id: dstDetailId,
+            attributes: detailAttrs,
+          },
+        }),
+      );
+    else
+      add('Review detail', `CREATE: ${body}`, () =>
+        api('POST', '/v1/appStoreReviewDetails', {
+          data: {
+            type: 'appStoreReviewDetails',
+            attributes: detailAttrs,
+            relationships: {
+              appStoreVersion: {
+                data: {type: 'appStoreVersions', id: dstVer.id},
+              },
+            },
+          },
+        }),
+      );
+  }
+
+  // ---- plan
+  L('\nCOPY PLAN:');
+  if (!steps.length) L('  (nothing to copy: the destination already matches)');
+  let section = null;
+  for (const s of steps) {
+    if (s.section !== section) {
+      L(`  ${s.section}:`);
+      section = s.section;
+    }
+    L(`    - ${s.label}`);
+  }
+
+  if (OPTS.yes) {
+    L('\nAPPLYING…');
+    for (const s of steps) {
+      try {
+        const dropped = await s.run();
+        if (dropped) skipped.push({step: s, field: dropped});
+        L(
+          `  ${dropped ? '~' : '✓'} ${s.section}: ${s.label.split(':')[0]}` +
+            `${dropped ? ` (everything except ${dropped}, which ASC rejected)` : ''}`,
+        );
+      } catch (e) {
+        failures.push({step: s, message: e.message});
+        L(`  ✗ ${s.section}: ${s.label.split(':')[0]}`);
+      }
+    }
+  }
+
+  // ---- report
+  L('\nNOT COPIED (do these by hand):');
+  for (const [what, why] of CLONE_MANUAL) L(`  - ${what}: ${why}`);
+  if (ardUnanswered.length)
+    L(
+      `  - Age rating questions unanswered on BOTH records: ${ardUnanswered.join(', ')}.\n` +
+        '     Apple added these after the source record was last rated; answer them in ASC.',
+    );
+  const srcInfoState =
+    srcInfo.attributes.state || srcInfo.attributes.appStoreState || 'unknown';
+  L(
+    '  - App name: never copied. App Store names are unique per account, so the\n' +
+      `     destination cannot take "${srcApp.data.attributes.name}" while the source holds it, and the\n` +
+      `     source's appInfo is ${srcInfoState}${srcInfoState === 'PREPARE_FOR_SUBMISSION' ? '' : ' (not editable, so the name cannot be freed there)'}.\n` +
+      `     The destination reads "${dstApp.data.attributes.name}". Settle the name in ASC as its own step.\n` +
+      '     See section 4 of BUNDLE_ID_MIGRATION.md.',
+  );
+  L(
+    `  - Version string: the destination is on ${dstVer.attributes.versionString}. Reconcile it with\n` +
+      `     \`node scripts/asc.mjs rename --app-id ${dstId} --to <version> --yes\`.`,
+  );
+
+  // Each of these blocks a submission on its own and fails late and unhelpfully
+  // in ASC, so say it loudly. Which of them is actually missing is read off the
+  // records on every run: the portal is edited by hand, and a field that was
+  // null earlier in the day can be populated by the time you look again. Never
+  // encode a snapshot of what a fresh record lacks.
+  L('\nSUBMISSION BLOCKERS (live state as of this run):');
+  const willCopy = sec => steps.some(s => s.section === sec);
+  const blockerLine = (name, ok, planned, detail, partial) => {
+    const fixed = OPTS.yes ? 'FIXED' : 'WILL BE FIXED by --yes';
+    // `partial` outranks `ok`: a field that is set but still has unanswered
+    // questions behind it must never report as OK.
+    let state = 'BLOCKED';
+    if (ok && !partial) state = 'OK';
+    else if (ok && partial) state = 'PARTIAL: copied, finish the rest by hand';
+    else if (planned && partial)
+      state = `PARTIAL: ${fixed}, then finish by hand`;
+    else if (planned) state = fixed;
+    L(`  [${state}] ${name}${detail ? ` (${detail})` : ''}`);
+    return (ok || planned) && !partial;
+  };
+  const okRights = blockerLine(
+    'contentRightsDeclaration',
+    Boolean(dstRights),
+    Boolean(srcRights) && srcRights !== dstRights,
+    srcRights ? `source: ${srcRights}` : 'unset on the source record too',
+  );
+  // A record that has never been rated has every question null, so one
+  // answered content question is the tell that the declaration exists at all.
+  const dstRated =
+    dstArd?.attributes?.alcoholTobaccoOrDrugUseOrReferences !== null &&
+    dstArd?.attributes?.alcoholTobaccoOrDrugUseOrReferences !== undefined;
+  const okRating = blockerLine(
+    'age rating declaration',
+    dstRated,
+    Boolean(dstArdId) && Object.keys(ardAttrs).length > 0,
+    ardUnanswered.length
+      ? `${ardUnanswered.join(', ')} unanswered on both records`
+      : '',
+    ardUnanswered.length > 0,
+  );
+  const demoRequired = srcDetailAttrs?.demoAccountRequired === true;
+  const demoPresent = Boolean(
+    dstDetail?.data?.attributes?.demoAccountName &&
+      dstDetail?.data?.attributes?.demoAccountPassword,
+  );
+  const demoCopied =
+    demoRequired &&
+    Boolean(srcDetailAttrs?.demoAccountName) &&
+    willCopy('Review detail');
+  const okDemo = blockerLine(
+    'review detail + demo account',
+    demoPresent || !demoRequired,
+    demoCopied,
+    demoRequired ? 'the source sets demoAccountRequired=true' : '',
+  );
+
+  if (skipped.length) {
+    L('\nPARTIALLY COPIED:');
+    for (const sk of skipped)
+      L(
+        `  ~ ${sk.step.section}: ${sk.step.label.split(':')[0]} went through ` +
+          `without ${sk.field}. Set ${sk.field} by hand once the conflict is cleared.`,
+      );
+  }
+
+  if (failures.length) {
+    L('\nFAILED:');
+    for (const f of failures) {
+      L(`  ✗ ${f.step.section}: ${f.step.label}`);
+      L(`     ${f.message.split('\n')[0]}`);
+      if (/name.*(taken|unique|use)/i.test(f.message))
+        L('     Hint: free the app name on the source record first.');
+    }
+    process.exitCode = 1;
+  }
+
+  if (!OPTS.yes) {
+    L('\nDRY RUN. Pass --yes to write to App Store Connect.');
+    return;
+  }
+  if (!okRights || !okRating || !okDemo)
+    L('\n⚠ At least one submission blocker is still unresolved (see above).');
+}
+
 async function cmdRename(appId) {
   if (!OPTS.to) throw new Error('rename requires --to <new version string>');
   const v = await pickVersion(appId);
+  const app = await api('GET', `/v1/apps/${appId}`);
+  L(
+    `APP: ${app.data.attributes.name} (${app.data.attributes.bundleId}) id=${appId}`,
+  );
   L(
     `Renaming ${v.attributes.versionString} (${versState(v)}) id=${v.id} -> ${OPTS.to}`,
   );
+  if (!OPTS.yes) {
+    L(`\nPlan: PATCH appStoreVersions/${v.id} versionString=${OPTS.to}`);
+    L('\nDRY RUN. Pass --yes to write to App Store Connect.');
+    return;
+  }
   const done = await api('PATCH', `/v1/appStoreVersions/${v.id}`, {
     data: {
       type: 'appStoreVersions',
@@ -717,6 +1392,11 @@ async function cmdRename(appId) {
   if (!k.key_id || !k.issuer_id || !k.key)
     throw new Error(`Key JSON missing key_id/issuer_id/key: ${OPTS.keyPath}`);
   TOKEN = mintToken(k);
+
+  // clone-listing addresses two records explicitly, so it skips the
+  // bundle-id -> app-id lookup every other command starts from.
+  if (cmd === 'clone-listing') return cmdCloneListing();
+
   const appId = await resolveAppId();
 
   if (cmd === 'status') return cmdStatus(appId);
