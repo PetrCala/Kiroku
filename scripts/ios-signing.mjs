@@ -1257,6 +1257,17 @@ async function cmdAppSetup() {
   await ensureBundleCapabilities(bundleResId, [
     {type: 'PUSH_NOTIFICATIONS'},
     {
+      // PRIMARY_APP_CONSENT makes this App ID its OWN Sign in with Apple
+      // primary, which is the right default for a new app and the wrong one
+      // for a rename. Apple scopes the `sub` it returns to the primary App ID,
+      // so a user who signed in under the old bundle id comes back with a
+      // different `sub`, which Firebase reads as a different account. The
+      // alternative is grouping this App ID under the old one as primary, in
+      // the portal's "Group with an existing primary App ID". Kiroku has never
+      // shipped publicly, so the exposed population is TestFlight testers with
+      // an apple.com provider linked, not real users. This is inherited from
+      // adhoc-setup, where it is correct because the ad-hoc build is a separate
+      // app that never shares accounts. Decide it deliberately before --yes.
       type: 'APPLE_ID_AUTH',
       settings: [
         {
