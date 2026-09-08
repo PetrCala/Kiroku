@@ -37,6 +37,21 @@ full contract (with target numbers) lives next to the shot list in
 Read it before dispatching a run. In short: the account must look like someone
 **moderating**, because whatever it contains ends up on the App Store.
 
+Do not shape the account by hand. `kiroku-cli seedDemoSession` (in the
+kiroku-cli repo) writes the contract straight into the demo account's current
+month and prints what it produced; run it with `--dry-run` first, then feed the
+dates it reports into `demo_session_dates`:
+
+```bash
+ENVIRONMENT=production bun run kiroku-cli seedDemoSession --dry-run --yes
+ENVIRONMENT=production bun run kiroku-cli seedDemoSession --yes
+```
+
+It **replaces** the month rather than topping it up, which is the point: a
+month that is already badly shaped is exactly what must not survive. Note
+`seedTestSessions` is not a substitute; it flags 12% of sessions as blackouts
+and itemises double-digit drink counts, both of which the contract forbids.
+
 The 2026-07 set is the cautionary tale. It was captured from an account showing
 a friend list of seven people each labelled "1h sober" / "2Y sober", a month
 totalling 84.5 units with single days of 33.2 and 23.5, and a session summary
