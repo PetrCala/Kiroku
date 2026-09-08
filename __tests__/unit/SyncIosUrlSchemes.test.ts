@@ -101,7 +101,7 @@ describe('scripts/sync-ios-url-schemes', () => {
     // configs are regenerated whenever a Firebase app is re-registered, and a
     // literal that no longer matches would make this test pass vacuously.
     const original = readInfoPlist(root);
-    const adhoc = schemesIn(original).at(-1) as string;
+    const [, , adhoc] = schemesIn(original);
     writeInfoPlist(
       root,
       original.replace(adhoc, 'com.googleusercontent.apps.806896865950-stale'),
@@ -115,7 +115,7 @@ describe('scripts/sync-ios-url-schemes', () => {
 
   it('rewrites a drifted array back to the plist values, in prod/dev/adhoc order', () => {
     const original = readInfoPlist(root);
-    const adhoc = schemesIn(original).at(-1) as string;
+    const [, , adhoc] = schemesIn(original);
     writeInfoPlist(
       root,
       original.replace(adhoc, 'com.googleusercontent.apps.806896865950-stale'),
