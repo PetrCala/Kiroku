@@ -368,10 +368,21 @@ platform :ios do
     end
 
     begin
+      # Read the Firebase app id out of the same plist the upload is keyed to,
+      # rather than hardcoding it. A hardcoded id survives a bundle-id move
+      # silently: the upload keeps succeeding against the retired Firebase app
+      # and the dSYMs never reach the live one.
+      gsp_path = "./ios/config/GoogleService-Info.prod.plist"
+      crashlytics_app_id = sh(
+        "/usr/libexec/PlistBuddy -c 'Print :GOOGLE_APP_ID' '#{gsp_path}'",
+        log: false,
+      ).strip
+      UI.user_error!("GOOGLE_APP_ID missing from #{gsp_path}") if crashlytics_app_id.empty?
+
       upload_symbols_to_crashlytics(
-        app_id: "1:665512857657:ios:a07eeddf1f54bac2b4fde8",
+        app_id: crashlytics_app_id,
         dsym_path: lane_context[SharedValues::DSYM_OUTPUT_PATH],
-        gsp_path: "./ios/config/GoogleService-Info.prod.plist",
+        gsp_path: gsp_path,
         binary_path: "./ios/Pods/FirebaseCrashlytics/upload-symbols",
       )
     rescue => e
