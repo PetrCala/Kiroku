@@ -104,6 +104,37 @@ notes plus demo account.
 
 Keep the old record until the new one is approved. Do not delete it.
 
+Two fields on the new record are unset and will block a submission if left that
+way: `contentRightsDeclaration` (the old record has
+`DOES_NOT_USE_THIRD_PARTY_CONTENT`) and the age rating declaration.
+
+#### Reconcile the version string
+
+The new record's only version is `1.0`, created with the record. The app builds
+`CFBundleShortVersionString` `0.3.24`. App Store Connect offers a version only
+the builds whose short version string matches it, so these have to agree before
+0.3.24 can be submitted there.
+
+This binds at submission, not at upload: a build uploads against the bundle id
+and reaches TestFlight regardless, so the mismatch does not block testing. Worth
+confirming on the first upload to the new record rather than trusting it.
+
+Renaming the record is the cheap side, one call, no code:
+
+```bash
+node scripts/asc.mjs rename --app-id 6670502234 --to 0.3.24
+```
+
+`--version` defaults to the lone `PREPARE_FOR_SUBMISSION` version, which is the
+`1.0` one. Note that `rename` is not dry-run by default the way `submit` is: it
+PATCHes immediately.
+
+The alternative is to bump the app to `1.0.0`, which a new record and a real
+bundle id arguably invite. Prefer the rename anyway, and treat `1.0.0` as a
+separate decision made on its own merits later. Changing the version scheme in
+the same move as the bundle id means that if review still stalls, you cannot
+tell which of the two mattered, and the whole migration is already a hypothesis.
+
 ### 5. In-app purchases
 
 **This is the expensive part.** Product ids are scoped to the developer account
