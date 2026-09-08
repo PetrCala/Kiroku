@@ -19,5 +19,7 @@
   "messagingAndChat": false,
   "parentalControls": false,
   "advertising": false,
-  "userGeneratedContent": false
+  "userGeneratedContent": false,
+  "socialMedia": false,
+  "socialMediaAgeRestricted": false
 }
