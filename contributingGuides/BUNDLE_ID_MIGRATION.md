@@ -291,7 +291,7 @@ just a feature that stops working on the new bundle id.
       web and Android code flow only. It keeps working under its current name;
       renaming it means creating a new Services ID and re-pointing both
       projects, which is cosmetic and best left out of this migration.
-- [ ] **`GOOGLE_IOS_CLIENT_ID` in the env files.** The one Firebase value the
+- [x] **`GOOGLE_IOS_CLIENT_ID` in the env files.** Rotated 8 September 2026. The one Firebase value the
       app does not read from a plist. `CONFIG.GOOGLE_SIGN_IN.IOS_CLIENT_ID`
       ([`src/CONFIG.ts`](../src/CONFIG.ts)) feeds `GoogleSignin.configure` in
       [`src/libs/OAuthCredential/index.ios.ts`](../src/libs/OAuthCredential/index.ios.ts),
@@ -319,6 +319,27 @@ just a feature that stops working on the new bundle id.
         plutil -extract CLIENT_ID raw "ios/config/GoogleService-Info.$f.plist"
       done
       ```
+
+      `PRODUCTION_ENV_FILE`, `DEV_ENV_FILE` and `ADHOC_ENV_FILE` now carry the
+      new client ids. `STAGING_ENV_FILE` was deliberately left alone: no iOS
+      build reads it, so its `GOOGLE_IOS_CLIENT_ID` is inert, and rewriting a
+      secret that feeds the staging web deploy for no functional gain is not
+      worth the risk. It still holds the retired prod client id.
+
+      GitHub secrets are write-only, so rotating one means re-uploading the
+      whole file and trusting the local copy. That was checked rather than
+      assumed: every distinctive value in the local `.env.production` and
+      `.env.development` appears in the deployed bundles at
+      `kiroku-app-prod.web.app` and `kiroku-app-dev.web.app`, which is what
+      confirms the local files still matched the secrets. Do the same check
+      before any future rotation.
+
+      One pre-existing bug fell out of this. `.env.adhoc` held the **dev** app's
+      client id, not the ad-hoc one, left over from when the ad-hoc build fell
+      back to the dev plist (see the fallback still in the
+      `[User] Copy GoogleService-Info.plist` build phase). Ad-hoc Google Sign-In
+      was pointed at the wrong OAuth client before this migration started. It is
+      correct now.
 
       `sync-ios-url-schemes.mjs` does **not** cover this. It guards the
       `REVERSED_CLIENT_ID` copy in `Info.plist`; this is a different value in a
