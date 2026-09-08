@@ -82,4 +82,4 @@ number_of_retries(1)
 
 # Reinstall the app between runs so each capture starts from a clean state.
 reinstall_app(true)
-app_identifier("org.reactjs.native.example.alcohol-tracker")
+app_identifier("com.kiroku.app")

@@ -5,10 +5,10 @@
 # iphonesimulator builds that it has on device builds.
 #
 # The `kiroku` target sets
-#   PRODUCT_BUNDLE_IDENTIFIER = org.reactjs.native.example.$(PRODUCT_NAME:rfc1034identifier)
-# (which resolves to org.reactjs.native.example.kiroku) and scopes the real id
+#   PRODUCT_BUNDLE_IDENTIFIER = com.kiroku.app.$(PRODUCT_NAME:rfc1034identifier)
+# (which resolves to com.kiroku.app.kiroku) and scopes the real id
 # to device builds only:
-#   "PRODUCT_BUNDLE_IDENTIFIER[sdk=iphoneos*]" = org.reactjs.native.example.alcohol-tracker
+#   "PRODUCT_BUNDLE_IDENTIFIER[sdk=iphoneos*]" = com.kiroku.app
 #
 # The embedded watch app's WKCompanionAppBundleIdentifier is the real id, so on
 # a simulator the watch app cannot be installed: its companion id matches no

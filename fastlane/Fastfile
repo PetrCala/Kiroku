@@ -265,9 +265,9 @@ platform :ios do
                 # side by side with the App Store build, mirrors Android's
                 # applicationIdSuffix ".adhoc". The Kiroku_AdHoc profile is bound to
                 # this id in the portal (see scripts/ios-signing.mjs adhoc-setup).
-                "org.reactjs.native.example.alcohol-tracker.adhoc" => "Kiroku_AdHoc",
+                "com.kiroku.app.adhoc" => "Kiroku_AdHoc",
                 # Embedded Apple Watch app (ad-hoc).
-                "org.reactjs.native.example.alcohol-tracker.adhoc.watchkitapp" => "KirokuWatch_AdHoc",
+                "com.kiroku.app.adhoc.watchkitapp" => "KirokuWatch_AdHoc",
               },
               manageAppVersionAndBuildNumber: false
           }
@@ -327,9 +327,9 @@ platform :ios do
         output_name: "kiroku.ipa",
         export_options: {
             provisioningProfiles: {
-              "org.reactjs.native.example.alcohol-tracker" => "Kiroku",
+              "com.kiroku.app" => "Kiroku",
               # Embedded Apple Watch app (App Store).
-              "org.reactjs.native.example.alcohol-tracker.watchkitapp" => "KirokuWatch",
+              "com.kiroku.app.watchkitapp" => "KirokuWatch",
             },
             manageAppVersionAndBuildNumber: false
         }

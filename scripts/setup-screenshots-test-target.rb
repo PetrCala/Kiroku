@@ -104,7 +104,7 @@ end
 def base_ui_test_settings(host_target)
   {
     'PRODUCT_NAME'                 => '$(TARGET_NAME)',
-    'PRODUCT_BUNDLE_IDENTIFIER'    => 'com.alcohol-tracker.kirokuUITests',
+    'PRODUCT_BUNDLE_IDENTIFIER'    => 'com.kiroku.app.kirokuUITests',
     'SWIFT_VERSION'                => '5.0',
     'TEST_TARGET_NAME'             => HOST_APP_TARGET_NAME,
     'IPHONEOS_DEPLOYMENT_TARGET'   => host_build_setting(host_target, 'IPHONEOS_DEPLOYMENT_TARGET', '15.1'),

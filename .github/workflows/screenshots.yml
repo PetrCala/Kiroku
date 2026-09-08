@@ -406,8 +406,8 @@ jobs:
 
       # Same generated-target flow as fastlane snapshot uses, plus the
       # simulator bundle-id fix: on iphonesimulator the app id would resolve
-      # to org.reactjs.native.example.kiroku while the watch app's
-      # WKCompanionAppBundleIdentifier expects ...alcohol-tracker, and the
+      # to com.kiroku.app.kiroku while the watch app's
+      # WKCompanionAppBundleIdentifier expects com.kiroku.app, and the
       # watch app then refuses to install. Both pbxproj diffs are throwaway.
       - name: Generate the UI test target and fix the simulator bundle id
         run: |
