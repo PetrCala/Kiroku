@@ -483,16 +483,16 @@ values above are what the rest of the declaration already implies
 `false`), but they are an answer about the app and so a human's to give. The
 write reads the declaration back afterwards rather than trusting the response.
 
-**The repo does not carry these two answers either.**
-[`fastlane/metadata/rating_config.json`](../fastlane/metadata/rating_config.json)
-lists 21 questions and neither of the new ones, and `deliver` pushes that file
-through `app_rating_config_path` on every `production` and `upload_metadata`
-run (see the audit note below on the two mechanisms that write the listing). So
-an answer given only through `age-rating` lives in the portal alone, and any
-record rebuilt from the repo starts unanswered again. Add both keys to
-`rating_config.json` with whatever answer you give ASC, so the two agree. Left
-undone, it is also a candidate reason for a `deliver` run to start failing, if
-Apple begins requiring the fields it is not sending.
+**The repo carries the same two answers**, so the portal and version control
+agree. [`fastlane/metadata/rating_config.json`](../fastlane/metadata/rating_config.json)
+listed 21 questions and neither of the new ones; both are now in it as `false`.
+`deliver` pushes that file through `app_rating_config_path` on every
+`production` and `upload_metadata` run (see the audit note below on the two
+mechanisms that write the listing), so it is the half that survives a record
+rebuilt from the repo, and the half that keeps a `deliver` run from failing if
+Apple starts requiring fields it was not sending. Change the two together or
+they drift: `age-rating --set` writes the portal, `rating_config.json` writes
+whatever `deliver` runs next.
 
 #### Pricing and availability
 
