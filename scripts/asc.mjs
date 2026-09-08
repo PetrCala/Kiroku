@@ -1794,6 +1794,16 @@ async function cmdClonePricing() {
 // ---- clone-testflight -----------------------------------------------------
 
 /**
+ * The two platform-availability flags are PATCH-only: ASC rejects a create
+ * carrying either with ENTITY_ERROR.ATTRIBUTE.NOT_ALLOWED, so they are set in a
+ * second call once the group exists.
+ */
+const BETA_GROUP_PATCH_ONLY = [
+  'iosBuildsAvailableForAppleSiliconMac',
+  'iosBuildsAvailableForAppleVision',
+];
+
+/**
  * Attributes ASC accepts when creating a beta group. Which ones apply depends
  * on the kind of group: hasAccessToAllBuilds is an internal-group setting, the
  * public link fields are external-only, and sending the wrong one takes the
@@ -1805,12 +1815,6 @@ function betaGroupAttrs(src) {
     name: a.name,
     feedbackEnabled: a.feedbackEnabled ?? true,
     isInternalGroup: Boolean(a.isInternalGroup),
-    iosBuildsAvailableForAppleSiliconMac: Boolean(
-      a.iosBuildsAvailableForAppleSiliconMac,
-    ),
-    iosBuildsAvailableForAppleVision: Boolean(
-      a.iosBuildsAvailableForAppleVision,
-    ),
   };
   if (a.isInternalGroup)
     out.hasAccessToAllBuilds = Boolean(a.hasAccessToAllBuilds);
@@ -1887,6 +1891,21 @@ async function cmdCloneTestflight() {
               relationships: {app: {data: {type: 'apps', id: dstId}}},
             },
           });
+          // The create-forbidden flags, only where the new group does not
+          // already agree with the source.
+          const patch = {};
+          for (const f of BETA_GROUP_PATCH_ONLY) {
+            const want = Boolean(g.attributes[f]);
+            if (Boolean(created.data.attributes?.[f]) !== want) patch[f] = want;
+          }
+          if (Object.keys(patch).length)
+            await api('PATCH', `/v1/betaGroups/${created.data.id}`, {
+              data: {
+                type: 'betaGroups',
+                id: created.data.id,
+                attributes: patch,
+              },
+            });
           return created.data.id;
         },
         name,
