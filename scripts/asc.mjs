@@ -1428,6 +1428,18 @@ const REQUIRED_DISPLAY_TYPES = ['APP_IPHONE_67', 'APP_WATCH_SERIES_4'];
  * declares social media features, so a null there is an answer while
  * `socialMedia` is false, and a blocker once it is true. `socialMedia` itself
  * is unconditional and was found unanswered on both Kiroku records.
+ *
+ * ASC enforces the same dependency on write, which is where the exact rule
+ * came from (both 409s on one PATCH):
+ *   SOCIAL_MEDIA_REQUIRES_USER_GENERATED_CONTENT
+ *     'socialMedia' can only be true when 'userGeneratedContent' is true.
+ *   SOCIAL_MEDIA_AGE_RESTRICTED_REQUIRES_AGE_ASSURANCE_AND_SOCIAL_MEDIA
+ *     'socialMediaAgeRestricted' can only be true when both 'ageAssurance'
+ *     and 'socialMedia' are true.
+ * So Apple treats social media as a subset of user-generated content. Kiroku
+ * answers false to both of those (friends share structured logged sessions,
+ * not authored content, and the app does no age verification), which makes
+ * socialMedia=false the only answer the API will accept here.
  */
 const AGE_RATING_CONDITIONAL = {
   socialMediaAgeRestricted: a => a.socialMedia === true,
