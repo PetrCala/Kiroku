@@ -124,6 +124,22 @@ or suspiciously small. Run it yourself with `npm run verify-screenshots`.
 
 When it fails, grep the fastlane log artifact for `[capture-miss]`.
 
+A second gate covers the one failure that verification cannot see. The app's UI
+language is an in-app preference, not the device locale, so a non-English
+capture depends on the test walking Settings > Preferences > Language. When that
+navigation misses, every screenshot comes out in English, and nothing else
+notices: the files exist, they are full size, and no check can read what
+language a PNG is in. On 2026-09-08 a complete `cs-CZ` capture came out in
+English on a green run, from a single `[capture-miss] switchLocale: Settings tab
+did not open`. The **Fail if the locale switch was missed** step now fails any
+non-`en-only` dispatch that logs it.
+
+The trigger that day was a live session left open on the demo account by an
+earlier run (the capture starts one at step 02 and never ends it). The app
+restores it on launch, and the first interaction after launch, the locale
+switch, could not reach the tab bar. `kiroku-cli seedDemoSession` now clears
+stray live sessions, which is another reason to run it before every dispatch.
+
 ### Required GitHub secrets
 
 | Secret                | Used for                                          |
