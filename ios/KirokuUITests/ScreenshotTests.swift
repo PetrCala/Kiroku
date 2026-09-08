@@ -318,7 +318,32 @@ final class ScreenshotTests: XCTestCase {
         let target = currentSnapshotLanguageInAppCode()
         guard target != "en" else { return }
 
-        guard openSettings() else {
+        // `logIn()` returns as soon as the Home Screen testID enters the tree,
+        // which is well before the account's sessions have hydrated into Onyx
+        // and the calendar has rendered them. Tapping the Settings tab during
+        // that hydration is what failed on 2026-09-08, twice, with "Settings
+        // tab did not open": the same openSettings() succeeds every time at
+        // step 07, once the app has settled. Nothing else in the run reaches
+        // this code (an en capture returns above), so both cs captures came out
+        // entirely in English.
+        //
+        // Wait for the hydration signal the test already knows how to read, a
+        // day cell reporting sessions, then give each tap its own window, as
+        // logIn() does for the log-in link.
+        if !anyDayHasSessions(timeout: 30) {
+            NSLog("[capture-note] switchLocale: no day reported sessions within 30s; trying the Settings tab anyway")
+        }
+
+        var openedSettings = false
+        for attempt in 1...3 {
+            if openSettings() {
+                openedSettings = true
+                break
+            }
+            NSLog("[capture-retry] switchLocale: attempt %d did not open Settings", attempt)
+            _ = openHome()
+        }
+        guard openedSettings else {
             recordMiss("switchLocale", "Settings tab did not open")
             return
         }
