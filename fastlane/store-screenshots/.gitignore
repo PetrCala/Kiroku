@@ -1,3 +1,5 @@
-# Raw captures (you provide) and framed outputs are build artifacts, not versioned.
+# Raw captures (you provide), framed outputs and staged upload folders are
+# build artifacts, not versioned.
 raw/
 framed/
+upload/

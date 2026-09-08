@@ -11,10 +11,19 @@
  * Usage:
  *   node scripts/frame-app-store-screenshots.mjs            # render everything
  *   node scripts/frame-app-store-screenshots.mjs --locale cs --device 6.9
+ *   node scripts/frame-app-store-screenshots.mjs --device watch   # a whole kind
  *   node scripts/frame-app-store-screenshots.mjs --check    # report inputs only
+ *   node scripts/frame-app-store-screenshots.mjs --stage    # + upload folders
  *
  * Input:  fastlane/store-screenshots/raw/<locale>/<shot.raw>   (you provide)
  * Output: fastlane/store-screenshots/framed/<locale>/<device>/NN_<name>.png
+ *
+ * `--stage` additionally writes fastlane/store-screenshots/upload/<locale>/, one
+ * FLAT folder per locale holding exactly the sizes marked `upload` in the config
+ * (the shape `asc.mjs shots --dir` wants). Never hand-assemble that folder:
+ * the framed tree deliberately contains sizes that collide in App Store Connect
+ * (see the `devices` comment in the config), and the collisions are only visible
+ * hours later.
  *
  * Config: scripts/store-screenshots.config.mjs
  * Requires: sharp, text-to-svg (already in devDependencies).
@@ -26,7 +35,14 @@
 
 import sharp from 'sharp';
 import TextToSVG from 'text-to-svg';
-import {readFileSync, mkdirSync, existsSync, rmSync} from 'fs';
+import {
+  readFileSync,
+  mkdirSync,
+  existsSync,
+  rmSync,
+  readdirSync,
+  copyFileSync,
+} from 'fs';
 import {join, dirname, parse} from 'path';
 import {fileURLToPath} from 'url';
 // eslint-disable-next-line import/extensions -- Node ESM requires the explicit extension
@@ -41,11 +57,22 @@ const ROOT = join(scriptDir, '..');
 const args = process.argv.slice(2);
 const flag = name => {
   const i = args.indexOf(`--${name}`);
-  return i !== -1 ? args[i + 1] ?? true : undefined;
+  if (i === -1) {
+    return undefined;
+  }
+  // A following `--something` is the next flag, not this one's value, so a
+  // bare `--stage --locale cs` stays a bare `--stage`.
+  const value = args[i + 1];
+  return value && !value.startsWith('--') ? value : true;
 };
 const onlyLocale = flag('locale');
 const onlyDevice = flag('device');
 const checkOnly = args.includes('--check');
+// `--stage` takes an optional folder; bare `--stage` uses the default below.
+const stageArg = flag('stage');
+const shouldStage = stageArg !== undefined;
+const stageDir =
+  typeof stageArg === 'string' ? stageArg : 'fastlane/store-screenshots/upload';
 
 const font = TextToSVG.loadSync(join(ROOT, theme.captionFont));
 
@@ -250,16 +277,106 @@ async function runRender(targetLocales, targetDevices) {
   }
 }
 
+/**
+ * Staging always writes the COMPLETE upload set, so `--device` must not scope
+ * it: each locale folder is wiped and renumbered, and a scoped run would
+ * quietly leave a folder holding (say) only the watch shot. Checked before any
+ * rendering happens, so the run fails in a second rather than after a minute.
+ */
+function assertStageable(targetDevices) {
+  const staged = new Set(targetDevices.map(d => d.id));
+  const dropped = devices.filter(d => d.upload && !staged.has(d.id));
+  if (dropped.length) {
+    throw new Error(
+      `--stage needs every upload size rendered, but --device excluded ` +
+        `${dropped.map(d => d.id).join(', ')}. Drop --device, or stage in a ` +
+        `separate run.`,
+    );
+  }
+}
+
+/**
+ * Collect the `upload` sizes for each locale into one flat folder, which is the
+ * shape `asc.mjs shots --dir` reads (one locale, filename order, slot chosen
+ * from each PNG's own pixel size). Numbering restarts per device in the framed
+ * tree, so it is reassigned continuously here: the watch shot must not sort
+ * ahead of the phone shots just because it is the first file in its own folder.
+ */
+function runStage(targetLocales) {
+  const uploadDevices = devices.filter(d => d.upload);
+
+  console.log(`\nStaging upload folders in ${stageDir}/`);
+  for (const locale of targetLocales) {
+    const dest = join(ROOT, stageDir, locale);
+    if (existsSync(dest)) {
+      rmSync(dest, {recursive: true, force: true});
+    }
+    mkdirSync(dest, {recursive: true});
+
+    let n = 0;
+    for (const device of uploadDevices) {
+      const src = join(ROOT, OUT_DIR, locale, device.id);
+      if (!existsSync(src)) {
+        continue;
+      }
+      for (const file of readdirSync(src).sort()) {
+        if (!file.endsWith('.png')) {
+          continue;
+        }
+        n += 1;
+        // Drop the per-device NN_ prefix, then renumber across devices.
+        const base = file.replace(/^\d+_/, '');
+        const name = `${String(n).padStart(2, '0')}_${base}`;
+        copyFileSync(join(src, file), join(dest, name));
+        console.log(`  ${locale}/${name}  (${device.id})`);
+      }
+    }
+    if (!n) {
+      console.warn(`  ${locale}: nothing staged (no framed output to copy)`);
+    }
+  }
+  console.log(
+    `\nUpload one locale at a time, e.g.\n` +
+      `  node scripts/asc.mjs shots --app-id <id> --dir ${stageDir}/${targetLocales[0]} ` +
+      `--locale ${targetLocales[0]} --replace`,
+  );
+}
+
 // ─── Main ───────────────────────────────────────────────────────────────────
 async function main() {
   const targetLocales = locales.filter(l => !onlyLocale || l === onlyLocale);
-  const targetDevices = devices.filter(d => !onlyDevice || d.id === onlyDevice);
+  // `--device` takes an id ('6.9', 'watch-368') or a whole kind ('phone',
+  // 'watch'). Matching a kind matters because the watch is three sizes: the
+  // documented `--device watch` used to match no id at all and render nothing,
+  // silently, with exit 0.
+  const targetDevices = devices.filter(
+    d =>
+      !onlyDevice || d.id === onlyDevice || (d.kind ?? 'phone') === onlyDevice,
+  );
+  if (onlyDevice && !targetDevices.length) {
+    throw new Error(
+      `--device ${onlyDevice} matched nothing. Ids: ` +
+        `${devices.map(d => d.id).join(', ')}; kinds: ` +
+        `${[...new Set(devices.map(d => d.kind ?? 'phone'))].join(', ')}`,
+    );
+  }
+  if (onlyLocale && !targetLocales.length) {
+    throw new Error(
+      `--locale ${onlyLocale} matched nothing. Locales: ${locales.join(', ')}`,
+    );
+  }
 
   if (checkOnly) {
     runCheck(targetLocales);
     return;
   }
+  if (shouldStage) {
+    assertStageable(targetDevices);
+  }
   await runRender(targetLocales, targetDevices);
+  if (shouldStage) {
+    runStage(targetLocales);
+  }
 }
 
 main().catch(e => {

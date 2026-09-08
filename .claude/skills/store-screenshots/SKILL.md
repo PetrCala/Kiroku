@@ -60,10 +60,22 @@ Two hard stops, both learned from the 2026-07 Guideline 1.4 rejection:
 ### 1. Capture (slow, uses CI minutes — only when the app UI changed)
 
 ```bash
-gh workflow run screenshots.yml -f device_subset=all   # all | phone-only | ipad-only
+# One dispatch per language: `snapshot` relaunches the app between languages,
+# which reliably crashes the runner, so `all` is not a real capture.
+gh workflow run screenshots.yml -f device_subset=phone-only -f language_subset=en-only \
+  -f demo_session_dates=<oldest-first ISO dates> -f capture_watch=true
+gh workflow run screenshots.yml -f device_subset=phone-only -f language_subset=cs-only \
+  -f demo_session_dates=<same dates> -f capture_watch=false
 gh run watch                                           # wait for the run
-gh run download <run-id> -D /tmp/shots                 # grab the ios-screenshots-<sha> artifact
+gh run download <run-id> -D /tmp/shots                 # ios-screenshots-<sha>
+gh run download <run-id> -D /tmp/watch                 # watch-screenshot-<sha>
 ```
+
+The watch job (`capture_watch`, on by default) is its own ~60-minute runner and
+produces one English capture that ingest fans out to every locale, so run it on
+one dispatch only. Budget 2-3 hours per dispatch, and note artifacts expire:
+re-check `gh api repos/{owner}/{repo}/actions/runs/<id>/artifacts` before
+planning to reuse an old run.
 
 If only captions / theme / locales change (not the app screens), **skip capture**
 and reuse the captures already in `raw/`.
@@ -81,33 +93,41 @@ still has one. It renames `01_Home.png → 01-home.png`, remaps `cs-CZ → cs`, 
 the `iPhone 17 Pro Max` master, and skips captures with no manifest entry (e.g.
 `05_Settings`).
 
-### 3. Frame — render the store-sized images
+### 3. Frame: render the store-sized images and stage the upload folders
 
 ```bash
 npm run frame-screenshots -- --check     # confirm raw inputs are present
-npm run frame-screenshots                # → framed/<locale>/<device>/NN_*.png
+npm run frame-screenshots -- --stage     # framed/<locale>/<device>/ + upload/<locale>/
 ```
 
-Scope while iterating with `--locale cs` / `--device 6.9`. Each output is verified
-to be exactly the required pixel size before it's written.
+Scope while iterating with `--locale cs` / `--device 6.9` (`--device` takes an id
+or a whole kind, e.g. `watch`, and errors out when it matches neither). Each
+output is verified to be exactly the required pixel size before it's written.
+
+`--stage` writes `fastlane/store-screenshots/upload/<locale>/`, one FLAT folder
+per locale holding only the sizes marked `upload: true` in the config, renumbered
+so filename order is store order. It refuses to run under a `--device` scope,
+because it rewrites the whole folder.
 
 ### 4. Upload to App Store Connect
 
 `scripts/asc.mjs shots` uploads one locale from one FLAT folder of PNGs, in
-filename order, and picks each ASC slot from the image's own pixel size. Stage a
-folder per locale first, because the framed tree is one directory per device and
-two of those sizes must not be uploaded:
+filename order, and picks each ASC slot from the image's own pixel size. Point it
+at the staged folder, one locale per run:
 
 ```bash
-node scripts/asc.mjs shots --version <v> --dir <staged/en-US> --locale en-US --replace          # dry run
-node scripts/asc.mjs shots --version <v> --dir <staged/en-US> --locale en-US --replace --yes    # write
+node scripts/asc.mjs shots --app-id <id> --dir fastlane/store-screenshots/upload/en-US --locale en-US --replace          # dry run
+node scripts/asc.mjs shots --app-id <id> --dir fastlane/store-screenshots/upload/en-US --locale en-US --replace --yes    # write
 ```
 
-Stage **6.9 plus one watch size**, and nothing else:
+**Never point it at `framed/**`.\*\* The staged folder is 6.9 plus one watch size
+because the other three rendered sizes collide, and both collisions surface hours
+later rather than as an error:
 
-- **Skip 6.7.** Both 1320x2868 and 1290x2796 map to `APP_IPHONE_67`, so feeding
-  both puts 12 images in a 6-image slot. Upload the 6.9 set and let Apple scale.
-- **Upload exactly one watch size, the 368x448 `APP_WATCH_SERIES_4`.** A version
+- **6.7 is skipped.** Both 1320x2868 and 1290x2796 map to `APP_IPHONE_67`, so
+  feeding both puts 12 images in a 6-image slot. Upload the 6.9 set and let
+  Apple scale.
+- **Exactly one watch size ships, the 368x448 `APP_WATCH_SERIES_4`.** A version
   may carry only one Apple Watch display type; a second set fails with HTTP 409
   `MULTIPLE_APPLE_WATCH_SCREENSHOT_TYPES_NOT_ALLOWED_IN_VERSION`. SERIES_4 is
   also the slot ASC demands before it accepts a submission whose build embeds

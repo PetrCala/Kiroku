@@ -11,16 +11,20 @@
  * Usage:
  *   node scripts/asc-tips.mjs status
  *   node scripts/asc-tips.mjs setup
- *   node scripts/asc-tips.mjs screenshot <path-to-png>
+ *   node scripts/asc-tips.mjs screenshot <path-to-png> [--yes]
  *
  * Every command is idempotent: `setup` skips what already exists, so it is
  * safe to re-run after a failure partway through. Transient 5xx responses are
  * retried.
  *
+ * `screenshot` writes to all three products and deletes whatever is live on
+ * them first, so it is a DRY RUN unless --yes.
+ *
  * Flags:
  *   --bundle-id <id>   app bundle id (default: com.kiroku.app)
  *   --app-id <id>      ASC app id (skips the bundle-id lookup)
  *   --key <path>       ASC API key JSON (default: <repo>/ios/ios-fastlane-json-key.json)
+ *   --yes              screenshot: actually upload (otherwise dry run)
  */
 import {execFileSync} from 'node:child_process';
 import crypto from 'node:crypto';
@@ -102,6 +106,7 @@ function flag(name, def) {
 const OPTS = {
   bundleId: flag('bundle-id', process.env.ASC_BUNDLE_ID || DEFAULT_BUNDLE_ID),
   appId: flag('app-id', process.env.ASC_APP_ID),
+  yes: argv.includes('--yes'),
   keyPath: flag(
     'key',
     process.env.ASC_KEY_JSON ||
@@ -427,7 +432,12 @@ function toReviewSize(file) {
   return padded;
 }
 
-/** Upload one PNG as the review screenshot for every tip product. */
+/**
+ * Upload one PNG as the review screenshot for every tip product. Replacing a
+ * screenshot deletes the live one first and the same image lands on all three
+ * products, so this is a DRY RUN unless --yes: it reports the resize, what is
+ * currently set, and what it would replace.
+ */
 async function screenshot(appId, input) {
   if (!input) throw new Error('usage: asc-tips.mjs screenshot <path-to-png>');
 
@@ -449,6 +459,26 @@ async function screenshot(appId, input) {
     .digest('hex');
 
   const existing = await productsById(appId);
+
+  if (!OPTS.yes) {
+    L('');
+    for (const tip of TIPS) {
+      const iap = existing.get(tip.productId);
+      if (!iap) throw new Error(`${tip.productId} not created yet; run setup`);
+      const current = await optional(
+        `/v2/inAppPurchases/${iap.id}/appStoreReviewScreenshot`,
+      );
+      const live = current?.data
+        ? `replacing ${current.data.attributes.fileName} ` +
+          `(${current.data.attributes.assetDeliveryState?.state})`
+        : 'no screenshot set';
+      L(`${tip.productId}  [${iap.attributes.state}]  ${live}`);
+    }
+    L(`\nWould upload ${fileName} (${fileSize} bytes) to all ${TIPS.length}.`);
+    L('DRY RUN. Pass --yes to write to App Store Connect.');
+    return;
+  }
+
   for (const tip of TIPS) {
     const iap = existing.get(tip.productId);
     if (!iap) throw new Error(`${tip.productId} not created yet; run setup`);
@@ -521,7 +551,10 @@ async function screenshot(appId, input) {
   if (command === 'setup') return setup(appId);
   if (command === 'status') return status(appId);
   if (command === 'screenshot') return screenshot(appId, arg);
-  console.error('usage: asc-tips.mjs <setup|status|screenshot <png>>');
+  console.error(
+    'usage: asc-tips.mjs <setup|status|screenshot <png> [--yes]> ' +
+      '[--app-id <id>]',
+  );
   process.exitCode = 1;
 })().catch(e => {
   console.error('ERROR', e.message);
