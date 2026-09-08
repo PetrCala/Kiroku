@@ -12,6 +12,7 @@
  *
  * Usage:
  *   node scripts/asc.mjs status
+ *   node scripts/asc.mjs preflight --app-id 6670502234
  *   node scripts/asc.mjs scrub  [--version 0.3.14] [--terms supporter,subscription]
  *   node scripts/asc.mjs shots  --dir <folder> [--locale en-US] [--replace] [--yes]
  *   node scripts/asc.mjs submit [--version 0.3.14] [--iaps a,b,c] [--yes]
@@ -21,6 +22,16 @@
  * Commands:
  *   status   App, versions + states, the editable version's build,
  *            subscription states, and review submissions + their items.
+ *   preflight
+ *            Read-only report of every precondition for submitting this
+ *            record: version state and version string vs the repo's
+ *            Info.plist, the attached build, export compliance, content
+ *            rights, the age rating declaration, review detail and demo
+ *            account, screenshots for every required display type (incl. the
+ *            Apple Watch slot the embedded watch app forces), the tip-jar
+ *            products, a colliding review submission, and the `scrub` listing
+ *            check. One PASS/FAIL line each; exit 1 on any failure, so it
+ *            works as a gate. Writes nothing.
  *   scrub    Lint the version's store-listing text (description / keywords /
  *            promo / what's-new) for forbidden terms. Exit 1 on any hit, usable
  *            as a pre-submit / CI gate. Default terms = paid-tier words.
@@ -182,6 +193,13 @@ async function api(method, p, body) {
 // ---- helpers --------------------------------------------------------------
 const versState = v =>
   v.attributes.appStoreState || v.attributes.appVersionState || '?';
+// Version states that still take edits and a (re)submission. DEVELOPER_REJECTED
+// is a version we pulled from review ourselves, and behaves exactly like
+// PREPARE_FOR_SUBMISSION.
+const EDITABLE_VERSION_STATES = [
+  'PREPARE_FOR_SUBMISSION',
+  'DEVELOPER_REJECTED',
+];
 async function resolveAppId() {
   if (OPTS.appId) return OPTS.appId;
   const r = await api(
@@ -247,6 +265,20 @@ async function scanListing(versionId) {
   return hits;
 }
 
+/** The build attached to a version, or null when none is. */
+async function fetchBuild(versionId) {
+  const r = await api('GET', `/v1/appStoreVersions/${versionId}/build`).catch(
+    () => null,
+  );
+  return r?.data ?? null;
+}
+
+/** Every in-app purchase on the record, keyed by product id. */
+async function iapsByProductId(appId) {
+  const r = await api('GET', `/v1/apps/${appId}/inAppPurchasesV2?limit=200`);
+  return new Map(r.data.map(i => [i.attributes.productId, i]));
+}
+
 // ---- commands -------------------------------------------------------------
 async function cmdStatus(appId) {
   const app = await api('GET', `/v1/apps/${appId}`);
@@ -263,11 +295,8 @@ async function cmdStatus(appId) {
   const editable =
     vs.find(x => versState(x) === 'PREPARE_FOR_SUBMISSION') || vs[0];
   if (editable) {
-    const b = await api(
-      'GET',
-      `/v1/appStoreVersions/${editable.id}/build`,
-    ).catch(() => null);
-    const a = b && b.data && b.data.attributes;
+    const b = await fetchBuild(editable.id);
+    const a = b && b.attributes;
     L(
       `\nBUILD (${editable.attributes.versionString}): ${a ? `${a.version} processing=${a.processingState}` : 'none attached'}`,
     );
@@ -535,10 +564,8 @@ async function cmdSubmit(appId) {
   const st = versState(v);
   L(`Version ${v.attributes.versionString}: ${st} id=${v.id}`);
 
-  const b = await api('GET', `/v1/appStoreVersions/${v.id}/build`).catch(
-    () => null,
-  );
-  const build = b && b.data && b.data.attributes;
+  const b = await fetchBuild(v.id);
+  const build = b && b.attributes;
   L(
     `Build: ${build ? `${build.version} processing=${build.processingState}` : 'NONE'}`,
   );
@@ -546,7 +573,7 @@ async function cmdSubmit(appId) {
   const problems = [];
   // DEVELOPER_REJECTED (a version pulled from review by us) is editable and
   // resubmittable, same as PREPARE_FOR_SUBMISSION.
-  if (!['PREPARE_FOR_SUBMISSION', 'DEVELOPER_REJECTED'].includes(st))
+  if (!EDITABLE_VERSION_STATES.includes(st))
     problems.push(`version state is ${st}, expected PREPARE_FOR_SUBMISSION`);
   if (!build) problems.push('no build attached');
   else if (build.processingState !== 'VALID')
@@ -594,12 +621,9 @@ async function cmdSubmit(appId) {
       .split(',')
       .map(s => s.trim())
       .filter(Boolean);
-    const all = await api(
-      'GET',
-      `/v1/apps/${appId}/inAppPurchasesV2?limit=200`,
-    );
+    const all = await iapsByProductId(appId);
     for (const productId of wanted) {
-      const iap = all.data.find(i => i.attributes.productId === productId);
+      const iap = all.get(productId);
       if (!iap) {
         problems.push(`IAP ${productId} not found`);
         continue;
@@ -956,7 +980,7 @@ async function cmdCloneListing() {
       `${dstVer.attributes.versionString} [${versState(dstVer)}]`,
   );
   const dstState = versState(dstVer);
-  if (!['PREPARE_FOR_SUBMISSION', 'DEVELOPER_REJECTED'].includes(dstState))
+  if (!EDITABLE_VERSION_STATES.includes(dstState))
     L(
       `  ⚠ destination version is ${dstState}; writes will likely be rejected`,
     );
@@ -1385,6 +1409,398 @@ async function cmdRename(appId) {
   );
 }
 
+// ---- preflight ------------------------------------------------------------
+
+/**
+ * Screenshot slots App Store Connect refuses a submission without.
+ *
+ * APP_IPHONE_67 is the baseline iPhone slot (it takes 1320x2868 as well as
+ * 1290x2796). APP_WATCH_SERIES_4 (368x448) is required because all three
+ * schemes embed `Kiroku Watch App.app`, and that is the slot ASC names when it
+ * refuses the iOS submission. iPad is deliberately absent: the listing has
+ * never carried an iPad set and the framing pipeline emits none.
+ */
+const REQUIRED_DISPLAY_TYPES = ['APP_IPHONE_67', 'APP_WATCH_SERIES_4'];
+
+/**
+ * Age rating answers that only become required once another answer makes them
+ * apply. Apple's questionnaire hides `socialMediaAgeRestricted` until the app
+ * declares social media features, so a null there is an answer while
+ * `socialMedia` is false, and a blocker once it is true. `socialMedia` itself
+ * is unconditional and was found unanswered on both Kiroku records.
+ */
+const AGE_RATING_CONDITIONAL = {
+  socialMediaAgeRestricted: a => a.socialMedia === true,
+};
+
+/**
+ * Review submission states that make a new submission impossible. A leftover
+ * READY_FOR_REVIEW one is deliberately NOT here: it was created and never
+ * submitted, and `submit` reuses it rather than failing on the POST.
+ */
+const COLLIDING_SUBMISSION_STATES = [
+  'WAITING_FOR_REVIEW',
+  'IN_REVIEW',
+  'UNRESOLVED_ISSUES',
+];
+
+const IOS_INFO_PLIST = path.join(ROOT, 'ios', 'kiroku', 'Info.plist');
+const CONST_TS = path.join(ROOT, 'src', 'CONST.ts');
+
+/** A `<key>k</key><string|true|false/>` value out of the iOS Info.plist. */
+function plistValue(key) {
+  const xml = fs.readFileSync(IOS_INFO_PLIST, 'utf8');
+  const m = xml.match(
+    new RegExp(
+      `<key>${key}</key>\\s*(?:<string>([^<]*)</string>|<(true|false)/>)`,
+    ),
+  );
+  if (!m) return null;
+  return m[1] !== undefined ? m[1].trim() : m[2];
+}
+
+/**
+ * The tip-jar product ids the binary asks StoreKit for. Read out of CONST.ts
+ * rather than restated here: that array is what the app compiles in, StoreKit
+ * silently omits any id App Store Connect does not carry, and the ids are
+ * burn-once, so the record has to match the binary exactly.
+ */
+function tipProductIds() {
+  const src = fs.readFileSync(CONST_TS, 'utf8');
+  const block = src.match(/PRODUCT_IDS:\s*\[([^\]]*)\]/);
+  const ids = block ? [...block[1].matchAll(/'([^']+)'/g)].map(m => m[1]) : [];
+  if (!ids.length)
+    throw new Error(`CONST.TIPS.PRODUCT_IDS not readable from ${CONST_TS}`);
+  return ids;
+}
+
+/**
+ * preflight's own version picker. `pickVersion` throws when the target is
+ * ambiguous, which would take the whole report down with it; preflight would
+ * rather report a bad version as a failed check. Prefers --version, then the
+ * version this repo builds, then the lone editable one, then the newest.
+ */
+function pickPreflightVersion(versions, wanted) {
+  if (OPTS.version)
+    return (
+      versions.find(v => v.attributes.versionString === OPTS.version) ?? null
+    );
+  const byPlist = versions.find(v => v.attributes.versionString === wanted);
+  if (byPlist) return byPlist;
+  const editable = versions.filter(v =>
+    EDITABLE_VERSION_STATES.includes(versState(v)),
+  );
+  if (editable.length === 1) return editable[0];
+  return (
+    [...versions].sort((a, b) =>
+      String(b.attributes.createdDate).localeCompare(
+        String(a.attributes.createdDate),
+      ),
+    )[0] ?? null
+  );
+}
+
+/** Screenshot sets on one version localization, keyed by display type. */
+async function screenshotSets(localizationId) {
+  const sets = await api(
+    'GET',
+    `/v1/appStoreVersionLocalizations/${localizationId}/appScreenshotSets?limit=50`,
+  );
+  const out = new Map();
+  for (const set of sets.data) {
+    const shots = await api(
+      'GET',
+      `/v1/appScreenshotSets/${set.id}/appScreenshots?limit=50`,
+    );
+    out.set(set.attributes.screenshotDisplayType, shots.data);
+  }
+  return out;
+}
+
+/**
+ * Every precondition for a first submission of this record, as one pass/fail
+ * report. Read-only: it issues nothing but GETs, so it is safe to run at any
+ * point and usable as a gate (exit 1 on any failure).
+ */
+async function cmdPreflight(appId) {
+  const app = await api('GET', `/v1/apps/${appId}`);
+  const appAttrs = app.data.attributes;
+  L(`PREFLIGHT: ${appAttrs.name} (${appAttrs.bundleId}) id=${appId}`);
+
+  const rows = [];
+  const check = (name, ok, ...details) => {
+    rows.push({name, ok: Boolean(ok), details: details.flat().filter(Boolean)});
+    return Boolean(ok);
+  };
+  const report = () => {
+    L('');
+    for (const r of rows) {
+      L(`  [${r.ok ? 'PASS' : 'FAIL'}] ${r.name}`);
+      for (const d of r.details) L(`         ${d}`);
+    }
+    L('');
+    L('Not checked here (the API does not expose them):');
+    L(
+      '  - App Privacy nutrition labels: /v1/appDataUsages and appPrivacyDetails both 404.',
+    );
+    L('  - Pricing and availability: set in ASC > Pricing and Availability.');
+    L(
+      '  - RevenueCat dashboard: see section 5 of contributingGuides/BUNDLE_ID_MIGRATION.md.',
+    );
+    const failed = rows.filter(r => !r.ok).length;
+    L(`\n${rows.length - failed}/${rows.length} checks passed.`);
+    if (!failed) {
+      L('Ready to submit.');
+      return 0;
+    }
+    L(`BLOCKED by ${failed} check(s):`);
+    for (const r of rows.filter(x => !x.ok)) L(`  - ${r.name}`);
+    return 1;
+  };
+
+  // ---- version --------------------------------------------------------
+  const wanted = plistValue('CFBundleShortVersionString');
+  const versions = await listVersions(appId);
+  const version = pickPreflightVersion(versions, wanted);
+  const state = version ? versState(version) : null;
+  const known = versions.map(v => v.attributes.versionString).join(', ');
+  let versionDetail = `no ${OPTS.platform} version on this record`;
+  if (version)
+    versionDetail = `${version.attributes.versionString} [${state}] id=${version.id}`;
+  else if (OPTS.version)
+    versionDetail = `version ${OPTS.version} not found (have: ${known || 'none'})`;
+  check(
+    'version exists and is editable',
+    version && EDITABLE_VERSION_STATES.includes(state),
+    versionDetail,
+    version && !EDITABLE_VERSION_STATES.includes(state)
+      ? `expected ${EDITABLE_VERSION_STATES.join(' or ')}`
+      : null,
+  );
+  if (!version) return report();
+
+  const asc = version.attributes.versionString;
+  check(
+    'versionString matches ios/kiroku/Info.plist',
+    asc === wanted,
+    `Info.plist CFBundleShortVersionString=${wanted}, App Store Connect=${asc}`,
+    asc === wanted
+      ? null
+      : `reconcile with: node scripts/asc.mjs rename --app-id ${appId} --to ${wanted} --yes`,
+  );
+
+  // ---- build ----------------------------------------------------------
+  const build = await fetchBuild(version.id);
+  const b = build?.attributes;
+  check(
+    'build attached, VALID and not expired',
+    b && b.processingState === 'VALID' && b.expired !== true,
+    b
+      ? `${b.version} uploaded=${b.uploadedDate ?? '?'} processing=${b.processingState} expired=${b.expired}`
+      : `no build attached to ${asc}`,
+    b
+      ? null
+      : `upload a build built against ${appAttrs.bundleId} and attach it`,
+  );
+
+  // Export compliance rides on the build, so it cannot be answered before one
+  // exists. Info.plist's ITSAppUsesNonExemptEncryption is what answers it
+  // automatically at upload time.
+  const plistEncryption = plistValue('ITSAppUsesNonExemptEncryption');
+  check(
+    'export compliance answered (usesNonExemptEncryption)',
+    b &&
+      b.usesNonExemptEncryption !== null &&
+      b.usesNonExemptEncryption !== undefined,
+    b
+      ? `build usesNonExemptEncryption=${b.usesNonExemptEncryption}`
+      : 'no build attached, so there is nothing to answer it on',
+    `ios/kiroku/Info.plist ITSAppUsesNonExemptEncryption=${plistEncryption ?? '(unset)'}, which answers this at upload`,
+  );
+
+  // ---- app-level declarations -----------------------------------------
+  check(
+    'contentRightsDeclaration set',
+    Boolean(appAttrs.contentRightsDeclaration),
+    appAttrs.contentRightsDeclaration ??
+      'unset (ASC > App Information > Content Rights)',
+  );
+
+  const infos = await api('GET', `/v1/apps/${appId}/appInfos?limit=10`);
+  const info =
+    infos.data.find(
+      i =>
+        (i.attributes.state || i.attributes.appStoreState) ===
+        'PREPARE_FOR_SUBMISSION',
+    ) || infos.data[0];
+  const ard = info
+    ? await related('appInfos', info.id, 'ageRatingDeclaration')
+    : null;
+  const ardAttrs = ard?.attributes ?? {};
+  // Unanswered means null on a question that applies. Apple keeps adding
+  // questions to an existing declaration, so a record rated years ago can go
+  // incomplete without anyone touching it: socialMedia is exactly that case.
+  const unanswered = AGE_RATING_FIELDS.filter(f => {
+    if (AGE_RATING_OPTIONAL.has(f)) return false;
+    const applies = AGE_RATING_CONDITIONAL[f];
+    if (applies && !applies(ardAttrs)) return false;
+    return ardAttrs[f] === null || ardAttrs[f] === undefined;
+  });
+  check(
+    'age rating declaration complete',
+    ard && !unanswered.length,
+    ard ? null : 'no age rating declaration on the editable appInfo',
+    unanswered.length ? `unanswered: ${unanswered.join(', ')}` : null,
+    unanswered.length
+      ? 'answer them in ASC > App Information > Age Rating (the API will not derive them)'
+      : `appStoreAgeRating=${info?.attributes?.appStoreAgeRating ?? '?'}`,
+    ardAttrs.socialMedia === false
+      ? 'socialMedia=false, so socialMediaAgeRestricted does not apply'
+      : null,
+  );
+
+  // ---- review detail ---------------------------------------------------
+  const detail = await api(
+    'GET',
+    `/v1/appStoreVersions/${version.id}/appStoreReviewDetail`,
+  ).catch(() => null);
+  const d = detail?.data?.attributes;
+  const demoRequired = d?.demoAccountRequired === true;
+  const demoPresent = Boolean(d?.demoAccountName && d?.demoAccountPassword);
+  const contactMissing = [
+    'contactFirstName',
+    'contactLastName',
+    'contactEmail',
+    'contactPhone',
+  ].filter(f => !d?.[f]);
+  check(
+    'review detail present, with a demo account when required',
+    d && !contactMissing.length && (!demoRequired || demoPresent),
+    d ? null : 'no appStoreReviewDetail on this version',
+    contactMissing.length
+      ? `missing contact fields: ${contactMissing.join(', ')}`
+      : null,
+    d
+      ? `demoAccountRequired=${d.demoAccountRequired}, demo account ${demoPresent ? 'set' : 'NOT set'}, notes ${d.notes ? `${d.notes.length} chars` : 'empty'}`
+      : null,
+  );
+
+  // ---- screenshots -----------------------------------------------------
+  const locs = await api(
+    'GET',
+    `/v1/appStoreVersions/${version.id}/appStoreVersionLocalizations?limit=50`,
+  );
+  const primary = appAttrs.primaryLocale;
+  const primaryLoc = locs.data.find(l => l.attributes.locale === primary);
+  const sets = primaryLoc ? await screenshotSets(primaryLoc.id) : new Map();
+  const shotDetails = [];
+  let shotsOk = Boolean(primaryLoc);
+  for (const type of REQUIRED_DISPLAY_TYPES) {
+    const shots = sets.get(type) ?? [];
+    const complete = shots.filter(
+      s => s.attributes.assetDeliveryState?.state === 'COMPLETE',
+    );
+    if (!complete.length) shotsOk = false;
+    shotDetails.push(
+      `${type}: ${complete.length} complete of ${shots.length}${complete.length ? '' : ' (MISSING)'}`,
+    );
+  }
+  const extra = [...sets.keys()].filter(
+    t => !REQUIRED_DISPLAY_TYPES.includes(t),
+  );
+  const otherLocales = locs.data
+    .map(l => l.attributes.locale)
+    .filter(l => l !== primary);
+  check(
+    `screenshots for every required display type (${primary})`,
+    shotsOk,
+    primaryLoc ? null : `no ${primary} localization on this version`,
+    shotDetails,
+    extra.length ? `also present (not required): ${extra.join(', ')}` : null,
+    shotsOk
+      ? null
+      : 'upload with: node scripts/asc.mjs shots --dir <folder> --locale ' +
+          `${primary} --replace --yes  (see contributingGuides/SCREENSHOTS.md)`,
+    otherLocales.length
+      ? `${otherLocales.join(', ')} fall back to the ${primary} screenshots unless given their own`
+      : null,
+  );
+
+  // ---- tip products ----------------------------------------------------
+  const wantedIds = tipProductIds();
+  const iaps = await iapsByProductId(appId);
+  const iapDetails = [];
+  let iapsOk = true;
+  for (const productId of wantedIds) {
+    const iap = iaps.get(productId);
+    if (!iap) {
+      iapsOk = false;
+      iapDetails.push(`${productId}: NOT CREATED`);
+      continue;
+    }
+    const shot = await api(
+      'GET',
+      `/v2/inAppPurchases/${iap.id}/appStoreReviewScreenshot`,
+    ).catch(() => null);
+    const shotState = shot?.data?.attributes?.assetDeliveryState?.state;
+    const ok =
+      iap.attributes.state === 'READY_TO_SUBMIT' && shotState === 'COMPLETE';
+    if (!ok) iapsOk = false;
+    iapDetails.push(
+      `${productId}: ${iap.attributes.state}, review screenshot ${shotState ?? 'NOT SET'}`,
+    );
+  }
+  check(
+    'tip products exist, READY_TO_SUBMIT, with review screenshots',
+    iapsOk,
+    iapDetails,
+    iapsOk
+      ? null
+      : 'fix with: node scripts/asc-tips.mjs setup / screenshot <png> (see contributingGuides/TIP_JAR.md)',
+    iapsOk
+      ? null
+      : 'they must ride the app version: node scripts/asc.mjs submit --iaps ' +
+          `${wantedIds.join(',')} --yes`,
+  );
+
+  // ---- open review submissions -----------------------------------------
+  const subs = await api(
+    'GET',
+    `/v1/reviewSubmissions?filter[app]=${appId}&filter[platform]=${OPTS.platform}&limit=20`,
+  );
+  const colliding = subs.data.filter(s =>
+    COLLIDING_SUBMISSION_STATES.includes(s.attributes.state),
+  );
+  const stray = subs.data.filter(
+    s => s.attributes.state === 'READY_FOR_REVIEW',
+  );
+  check(
+    'no open review submission in the way',
+    !colliding.length,
+    colliding.map(
+      s =>
+        `${s.id} state=${s.attributes.state} submitted=${s.attributes.submittedDate ?? '-'}`,
+    ),
+    colliding.length
+      ? 'App Store Connect allows one open submission per platform; withdraw it first'
+      : null,
+    stray.length
+      ? `${stray.length} unsubmitted READY_FOR_REVIEW submission(s) present; \`submit\` reuses and clears them`
+      : null,
+  );
+
+  // ---- listing text ----------------------------------------------------
+  const hits = await scanListing(version.id);
+  check(
+    'listing text free of forbidden terms',
+    !hits.length,
+    `terms: ${termList().join(', ')}`,
+    hits.map(h => `${h.locale} ${h.field}: "${h.term}"`),
+  );
+
+  return report();
+}
+
 // ---- main -----------------------------------------------------------------
 (async () => {
   if (OPTS.help || !cmd) return usage();
@@ -1400,6 +1816,10 @@ async function cmdRename(appId) {
   const appId = await resolveAppId();
 
   if (cmd === 'status') return cmdStatus(appId);
+  if (cmd === 'preflight') {
+    process.exitCode = await cmdPreflight(appId);
+    return;
+  }
   if (cmd === 'scrub') {
     process.exitCode = await cmdScrub(appId);
     return;
