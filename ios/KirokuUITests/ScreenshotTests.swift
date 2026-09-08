@@ -94,10 +94,24 @@ final class ScreenshotTests: XCTestCase {
     /// an unplanned drinking day to the demo account's current month and put
     /// the data outside the contract the capture depends on.
     private func discardTheCapturedLiveSession() {
-        guard openHome() else { return }
-        // startSession.sessionInProgress: absent when step 02 never got a
-        // session open, which is a clean state already.
-        guard tapElement(labeled: ["Resume", "Pokračovat"], timeout: 5) else {
+        guard openHome() else {
+            NSLog("[capture-note] cleanup: could not get back to Home; the live session stays open")
+            return
+        }
+        // HomeScreen passes the banner an accessibilityLabel
+        // (homeScreen.banners.inSession.a11y), which REPLACES the labels of the
+        // children merged into it, so the visible "Resume" is not a label any
+        // query can find: matching on it silently found nothing on 2026-09-08
+        // and left the session open with no line in the log. Match the a11y
+        // label, and the banner's own label as a fallback.
+        let banner = [
+            "You are in a session. Tap to return to it.",
+            "Probíhá relace. Klepnutím se do ní vrátíte.",
+            "In session",
+            "Probíhá relace",
+        ]
+        guard tapElement(labeled: banner, timeout: 5) else {
+            NSLog("[capture-note] cleanup: no in-session banner on Home, so nothing to discard")
             return
         }
         guard screen("Live Session Screen", timeout: 15) else {

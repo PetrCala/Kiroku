@@ -140,11 +140,18 @@ English on a green run, from a single `[capture-miss] switchLocale: Settings tab
 did not open`. The **Fail if the locale switch was missed** step now fails any
 non-`en-only` dispatch that logs it.
 
-The trigger that day was a live session left open on the demo account by an
-earlier run (the capture starts one at step 02 and never ends it). The app
-restores it on launch, and the first interaction after launch, the locale
-switch, could not reach the tab bar. `kiroku-cli seedDemoSession` now clears
-stray live sessions, which is another reason to run it before every dispatch.
+The cause is a race, not a broken selector. `logIn()` returns as soon as the
+Home Screen testID enters the tree, which is well before the account's sessions
+have hydrated into Onyx, and the locale switch is the very first thing that runs
+after it. The same `openSettings()` call succeeds every time at step 07, once
+the app has settled. `switchLocaleIfNeeded()` now waits for a day cell to report
+sessions and retries the tap three times; the retries are logged as
+`[capture-retry] switchLocale`, and seeing attempt 1 fail there is normal.
+
+A stale live session was the first suspect and turned out not to be the cause:
+the failure reproduced on an account with no ongoing session. It is still worth
+clearing (it puts an "In session / Resume" banner on the Home hero shot), which
+`kiroku-cli seedDemoSession` now does.
 
 ### Required GitHub secrets
 
