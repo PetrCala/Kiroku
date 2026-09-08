@@ -134,6 +134,18 @@ get the new record submittable, then take these up on their own.
 
 ## Rebuilding it on record `6670502234`
 
+**Done and published on 8 September 2026.** The label was re-answered by hand
+and verified against the table above row for row, on the published page rather
+than on the draft: the same thirteen data types, the same purpose set on each,
+`Linked to the user's identity` on all thirteen. Tracking re-confirmed the same
+structural way it was established on the old record, and by the same reasoning:
+the Product Page Preview renders only a `Data Linked to You` group, with no
+`Data Used to Track You`, so nothing answers Tracking: Yes.
+
+Nothing below is outstanding. It is kept because the questionnaire is UI-only
+and unbacked by any API, so a record that loses it has to be rebuilt from this
+file again.
+
 App Store Connect > Kiroku > App Privacy > **Get Started**, then work the table
 above. The privacy policy URL is already set, so the questionnaire is the whole
 job.
