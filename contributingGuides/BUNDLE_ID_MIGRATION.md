@@ -998,3 +998,63 @@ The code half is one revert. The portal half is not destructive: the old App
 IDs, profiles and app record all survive, so reverting the commit and re-running
 the three signing commands with the old `--bundle-id` restores the previous
 state.
+
+## External TestFlight is deliberately absent
+
+The new record has no external beta group and the 200 testers on the old record
+were not carried over. That is a decision, not an oversight.
+
+A bundle-id change is a new app, so no existing TestFlight build updates into it.
+Running an external round would mean asking those testers to install a new
+TestFlight app and then, weeks later, asking them again to switch to the App
+Store build. One migration is enough, and the second is the one that matters.
+Their accounts are unaffected: Firebase auth is keyed to the project rather than
+the iOS app, so a tester who installs from the App Store signs in and finds their
+sessions intact. Local state does reset, because a different bundle id is a
+different container.
+
+Removing that step also removes a Beta App Review round, the Beta App Description
+it requires, and an invite email to 200 people that cannot be unsent.
+
+**What this costs.** Nobody but the developer runs the build before it is public,
+and this release changes a lot at once: new bundle id, new signing, regenerated
+Firebase config with new OAuth client ids, new in-app purchase ids, and a
+RevenueCat app pointed at the new bundle. Two of those fail silently.
+
+**The mitigation is one person, not two hundred.** Before submitting, on the
+internal TestFlight build:
+
+1. Buy a tip. StoreKit sandbox works in TestFlight, so the whole
+   `kiroku.tipjar.*` flow is testable end to end while nothing is public. This
+   has never run against the new product ids or the new RevenueCat config.
+2. Sign in with Google. `GOOGLE_IOS_CLIENT_ID` is bundle-bound and lives in the
+   env files rather than the plist, so it fails on first tap if it drifted.
+
+Treat both as release gates rather than nice-to-haves. They cover the two failure
+modes that reach users as refund requests and one-star reviews instead of bug
+reports.
+
+**After going live**, tell the old testers to install from the App Store and
+delete the TestFlight build. There is no hard cutover: their old app keeps
+working until its build expires.
+
+## The release path
+
+| Branch       | Lane             | Effect                                                           |
+| ------------ | ---------------- | ---------------------------------------------------------------- |
+| `staging`    | `ios beta`       | build, upload, assign to the internal group so it is installable |
+| `production` | `ios production` | metadata + submit for review, held for manual release            |
+
+`automatic_release: false` is deliberate: an approved build waits at Pending
+Developer Release so the launch date is a choice.
+
+**The first submission is the exception.** In-app purchases must ride the app
+version or they sit in Waiting for Review indefinitely, and whether `deliver` can
+attach them is unverified. Do the first release by hand:
+
+```bash
+node scripts/asc.mjs preflight --app-id 6670502234
+node scripts/asc.mjs submit --app-id 6670502234 --iaps kiroku.tipjar.small_beer,kiroku.tipjar.pint,kiroku.tipjar.round --yes
+```
+
+From the second release on, merging to `production` is the whole process.

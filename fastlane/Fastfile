@@ -404,33 +404,17 @@ platform :ios do
   desc "Move app to App Store Review"
   lane :production do
     # The binary was already built and uploaded to TestFlight by the staging
-    # `beta` lane, so this lane must NOT rebuild/re-upload, it only distributes
-    # that existing build externally. `distribute_only: true` tells pilot to
-    # skip the upload and act on the build identified by app_version/build_number;
-    # without it pilot looks for an IPA to upload and fails with
-    # "No ipa or pkg file given" (see `deliver(skip_binary_upload: true)` below).
-    upload_to_testflight(
-        api_key_path: "./ios/ios-fastlane-json-key.json",
-        app_platform: "ios",
-        distribute_only: true,
-        distribute_external: true,
-        notify_external_testers: true,
-        changelog: ENV.fetch("TESTFLIGHT_CHANGELOG", "Improvements and bug fixes."),
-        groups: ["Beta"],
-        demo_account_required: true,
-        beta_app_review_info: {
-            contact_email: ENV["APPLE_CONTACT_EMAIL"],
-            contact_first_name: "Petr",
-            contact_last_name: "Čala",
-            contact_phone: ENV["APPLE_CONTACT_PHONE"],
-            demo_account_name: ENV["APPLE_DEMO_EMAIL"],
-            demo_account_password: ENV["APPLE_DEMO_PASSWORD"],
-            notes: "You should be able to login using the provided credentials."
-        },
-        app_version: ENV["VERSION"].rpartition(".")[0],
-        build_number: ENV["VERSION"],
-        skip_waiting_for_build_processing: false
-    )
+    # `beta` lane, so this lane must NOT rebuild or re-upload. It selects that
+    # existing build by app_version/build_number and submits it for App Store
+    # review; `skip_binary_upload: true` below is what tells deliver there is
+    # nothing to upload.
+    #
+    # There is deliberately no TestFlight step here. This lane used to distribute
+    # externally to a beta group first, which meant a Beta App Review round, a
+    # Beta App Description, and an invite blast before anything reached the store.
+    # External TestFlight is not part of the release path: testers install from
+    # the App Store like everyone else. See BUNDLE_ID_MIGRATION.md, "External
+    # TestFlight is deliberately absent".
 
     deliver(
       api_key_path: "./ios/ios-fastlane-json-key.json",
@@ -444,7 +428,16 @@ platform :ios do
       # app_version needs to be set to the short version, without the last digit e.g. '1.0.92'
       app_version: ENV["VERSION"].rpartition(".")[0],
 
-      submit_for_review: false,
+      # Merging to `production` submits for review. The build, metadata,
+      # release notes, rating config and review information are all set by this
+      # same deliver call, so there is nothing left to do by hand.
+      #
+      # FIRST SUBMISSION ONLY: in-app purchases must ride the app version or they
+      # sit in Waiting for Review indefinitely, and it is unverified whether
+      # deliver can attach them. Do the first one with
+      #   node scripts/asc.mjs submit --iaps <ids> --yes
+      # and let this lane take over from the second release on.
+      submit_for_review: true,
 
       # Do NOT auto-release on approval, keep the approved build as Pending
       # Developer Release so we control the public launch date.
