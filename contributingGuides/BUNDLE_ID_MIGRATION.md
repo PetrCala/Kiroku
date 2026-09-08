@@ -127,6 +127,23 @@ Review the plan each prints, re-run with `--yes`, then commit the changed
 `ios/*.mobileprovision.gpg`. Afterwards `node scripts/ios-signing.mjs check --deep`
 should report every profile healthy.
 
+**One decision inside `app-setup` is not automatic, whatever the dry run says.**
+It enables Sign in with Apple as `PRIMARY_APP_CONSENT`, making `com.kiroku.app`
+its own Sign in with Apple primary. Apple scopes the `sub` it returns to the
+primary App ID, so anyone who signed in under the old bundle id returns with a
+different `sub`, and Firebase reads that as a different account. Sign in with
+Apple is wired up (`AppleAuthWrapper` in `src/App.tsx`, `apple.com` throughout
+`ConnectedAccountsScreen`), so this is real rather than theoretical.
+
+The alternative is grouping the new App ID under the old one as primary rather
+than making it a primary itself. The setting cannot be usefully changed once
+accounts have diverged, so it is decided at `--yes` and not afterwards.
+
+What makes it survivable here is that Kiroku has never shipped publicly: the
+exposed population is TestFlight testers with an `apple.com` provider linked,
+which is a knowable and probably tiny set. Check it before running, rather than
+inheriting the default because the dry run looked clean.
+
 ### 3. Firebase (manual, then commit)
 
 The three `ios/config/GoogleService-Info.*.plist` files are deliberately
@@ -146,8 +163,10 @@ Then replace the three `REVERSED_CLIENT_ID` values in the `CFBundleURLSchemes`
 array in [`ios/kiroku/Info.plist`](../ios/kiroku/Info.plist) with the ones from
 the new plists, in the same order. Google Sign-In breaks silently if these drift.
 
-Auth users are keyed to the Firebase project, not the iOS app, so no accounts
-are lost.
+Auth users are keyed to the Firebase project rather than the iOS app, so
+email/password and Google accounts survive. **Sign in with Apple does not**: see
+the scoping note in section 2, which has to be decided before `app-setup --yes`
+rather than here.
 
 ### 4. The App Store Connect record
 
@@ -200,14 +219,40 @@ tell which of the two mattered, and the whole migration is already a hypothesis.
 
 ### 5. In-app purchases
 
-**This is the expensive part.** Product ids are scoped to the developer account
-and Apple does not let you reuse one, even after deleting it. The four existing
-ids (`kiroku.tip.small_beer`, `kiroku.tip.pint`, `kiroku.tip.round`,
-`supporter_lifetime`) belong to the old record, so plan on new ids. Verify the
-no-reuse rule against Apple's current documentation before committing to a
-naming scheme.
+**Test whether new ids are needed before assuming they are.** Apple's no-reuse
+rule is documented as scoped within an app, not across an account; the
+account-wide reading traces to third-party sources citing nothing. So the four
+existing ids (`kiroku.tip.small_beer`, `kiroku.tip.pint`, `kiroku.tip.round`,
+`supporter_lifetime`) may simply work on the new record.
 
-If new ids are needed:
+The test is `setup` itself, run with the **current** ids. On success it creates
+all three and continues into localizations, territories and price, finishing
+this section outright. On an id conflict it fails on the first create, having
+made nothing.
+
+This is the first irreversible call in the whole migration, and `setup` has **no
+dry run**: no `--yes` gate, no plan output. It begins creating as soon as it is
+invoked. Check the branch and the ids immediately before running it, because
+that is the last verifiable moment:
+
+```bash
+git rev-parse --abbrev-ref HEAD       # expect feat/ios-bundle-id-com-kiroku-app
+grep -n -A4 PRODUCT_IDS src/CONST.ts  # expect the CURRENT kiroku.tip.* ids
+node scripts/asc-tips.mjs status --app-id 6670502234   # expect three NOT CREATED
+node scripts/asc-tips.mjs setup  --app-id 6670502234
+```
+
+Running this from a branch that already carries renamed ids burns the new ids
+without ever testing the old ones, which is the failure worth guarding against.
+It needs no merge: a checkout of the rename branch does it just as permanently.
+
+Read the error before concluding. A non-2xx is not automatically an id
+conflict: `401`/`403` is key access, `404` is the wrong app id, and a `409` may
+name the reference `name` field, which must also be unique, rather than the
+product id. A **partial** result, some created and a later one refused, means
+the rule is neither hypothesis; stop and inspect.
+
+If the ids are genuinely blocked:
 
 1. Update `CONST.TIPS.PRODUCT_IDS` in [`src/CONST.ts`](../src/CONST.ts) and the
    `TIPS` table in [`scripts/asc-tips.mjs`](../scripts/asc-tips.mjs). They must
