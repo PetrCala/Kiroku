@@ -27,28 +27,53 @@ See the `store-screenshots` skill for the full capture → ingest → frame → 
    npm run frame-screenshots -- --check
    ```
 
-3. Render the framed, exact-size images:
+3. Render the framed, exact-size images and stage the upload folders:
 
    ```bash
-   npm run frame-screenshots
+   npm run frame-screenshots -- --stage
    ```
 
-   Output lands in `framed/<locale>/<device>/NN_<name>.png`, sized exactly for
-   App Store Connect (6.9" = 1320×2868, 6.7" = 1290×2796).
+   Framed output lands in `framed/<locale>/<device>/NN_<name>.png`, sized
+   exactly for App Store Connect. `--stage` additionally writes
+   `upload/<locale>/`, one FLAT folder per locale holding only the sizes marked
+   `upload: true` in the config.
 
-4. Upload `framed/**` to ASC (manually, or wire it into `deliver` later).
+4. Upload one locale at a time:
+
+   ```bash
+   node scripts/asc.mjs shots --app-id <id> --dir fastlane/store-screenshots/upload/en-US \
+     --locale en-US --replace          # dry run; add --yes to write
+   ```
+
+**Never upload `framed/**` wholesale.\*\* The framed tree deliberately holds sizes
+that collide in App Store Connect, and both collisions surface late:
+
+- 6.7" (1290×2796) files under the same `APP_IPHONE_67` slot as 6.9"
+  (1320×2868), so feeding both puts 12 images in a 6-image slot. Ship 6.9 and
+  let Apple scale it.
+- A version may carry only ONE Apple Watch display type. A second watch set is
+  rejected with HTTP 409
+  `MULTIPLE_APPLE_WATCH_SCREENSHOT_TYPES_NOT_ALLOWED_IN_VERSION`.
+
+`--stage` exists so that choice lives in the config instead of in your hands.
 
 ## Apple Watch shot
 
-The App Store build embeds the watch app, so ASC requires an Apple Watch
-screenshot before the iOS version can be submitted. It is captured **by hand**
-(the watch is a phone-tethered remote, so a UI test on an unpaired sim shows
-only the reconnect screen): run the `Kiroku Watch App` target on a watch sim
-paired with a signed-in phone, screenshot a live session, drop it at
-`raw/<locale>/watch.png`, then `npm run frame-screenshots -- --device watch`
-renders the exact `410x502` slot. Steps: `contributingGuides/SCREENSHOTS.md`.
+The App Store build embeds the watch app, so ASC requires an
+`APP_WATCH_SERIES_4` (368×448) screenshot before the iOS version can be
+submitted. It is **not** part of the fastlane `snapshot` matrix: the watch is a
+phone-tethered remote, so a UI test on an unpaired sim shows only the reconnect
+screen.
 
-`raw/` and `framed/` are git-ignored — they're inputs/outputs, not source.
+The `watch` job of `screenshots.yml` captures it in CI (on by default, via the
+`capture_watch` input) from a paired iPhone + Watch simulator pair. Manual
+fallback: run the `Kiroku Watch App` target on a watch sim paired with a
+signed-in phone, screenshot a live session, drop it at `raw/<locale>/watch.png`,
+then `npm run frame-screenshots -- --device watch` renders all three watch
+sizes. Full steps: `contributingGuides/SCREENSHOTS.md`.
+
+`raw/`, `framed/` and `upload/` are git-ignored: they're inputs/outputs, not
+source.
 
 > **Apple Guideline 2.3.3:** screenshots must depict the real app. This tool
 > only adds marketing chrome around your genuine captures — never fabricate UI.

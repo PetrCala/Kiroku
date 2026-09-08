@@ -184,15 +184,34 @@ so capture and framing can't drift:
    remaps `cs-CZ` → `cs`, reads the `iPhone 17 Pro Max` master, and skips captures
    with no manifest entry. Add `--check` for a dry run.
 
-2. **Frame** renders the store-sized marketing images:
+2. **Frame** renders the store-sized marketing images and stages the upload
+   folders:
 
    ```bash
-   npm run frame-screenshots   # → fastlane/store-screenshots/framed/<locale>/<device>/
+   npm run frame-screenshots -- --stage
    ```
 
-Then upload `framed/**` to App Store Connect. The full runbook (the
-in-month-session prerequisite, the `gh` capture-dispatch commands, and how to make
-changes) lives in the `store-screenshots` skill.
+   Framed output goes to `fastlane/store-screenshots/framed/<locale>/<device>/`;
+   `--stage` also writes `fastlane/store-screenshots/upload/<locale>/`, one flat
+   folder per locale holding only the sizes marked `upload: true` in the config
+   (today: 6.9" and the 368x448 watch shot).
+
+Then upload one locale at a time:
+
+```bash
+node scripts/asc.mjs shots --app-id <id> --dir fastlane/store-screenshots/upload/en-US \
+  --locale en-US --replace          # dry run; add --yes to write
+```
+
+Do **not** point `shots` at `framed/**`. Two of the rendered sizes collide in
+App Store Connect and both failures surface late: 6.7" (1290x2796) files under
+the same `APP_IPHONE_67` slot as 6.9" (1320x2868), putting 12 images in a
+6-image slot, and a second Apple Watch display type is rejected with HTTP 409
+`MULTIPLE_APPLE_WATCH_SCREENSHOT_TYPES_NOT_ALLOWED_IN_VERSION`. `--stage` keeps
+that choice in the config instead of in your hands.
+
+The full runbook (the in-month-session prerequisite, the `gh` capture-dispatch
+commands, and how to make changes) lives in the `store-screenshots` skill.
 
 > **Current screen set (6):** Home, LiveSession, DayOverview, Statistics,
 > AlcoholFree (the Statistics "Trends" tab), and Friends. `07_Settings` is
@@ -240,7 +259,8 @@ Manual fallback (e.g. to reshoot a specific watch state):
 4. Drop the PNG at `fastlane/store-screenshots/raw/<locale>/watch.png` for each
    locale in the manifest (capture per locale, or reuse the same shot).
 5. Run `npm run frame-screenshots -- --device watch` to render the framed
-   watch outputs at `framed/<locale>/watch/`.
+   watch outputs at `framed/<locale>/watch-368|watch-396|watch-410/`. `--device`
+   takes an id or a whole kind, and errors out when it matches neither.
 
 The framing pipeline scales any watch capture to fit the exact ASC watch slots
 on the brand background with a caption; the sizes, caption, and per-device

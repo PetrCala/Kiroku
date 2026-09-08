@@ -21,16 +21,29 @@ const OUT_DIR = 'fastlane/store-screenshots/framed';
 // `kind` scopes which shots render on a device: a shot renders on a device only
 // when their kinds match ('phone' is the default for both). This keeps the four
 // iPhone shots off the tiny watch slot and the single watch shot off the phones.
+//
+// `upload: true` marks the sizes that are actually uploaded to App Store
+// Connect, and `--stage` stages exactly those. The other three are rendered for
+// reference but MUST NOT be fed to `asc.mjs shots`, because ASC derives the slot
+// from the pixel size and two of ours collide:
+//   • 6.7 (1290x2796) maps to the same APP_IPHONE_67 slot as 6.9 (1320x2868),
+//     so uploading both puts 12 images in a 6-image slot. Ship 6.9 and let
+//     Apple scale it down.
+//   • A version may carry only ONE Apple Watch display type; a second set is
+//     rejected with HTTP 409
+//     MULTIPLE_APPLE_WATCH_SCREENSHOT_TYPES_NOT_ALLOWED_IN_VERSION. SERIES_4
+//     (368x448) is the slot ASC demands before it accepts a submission whose
+//     build embeds the watch app, so that is the one that ships.
 const devices = [
-  {id: '6.9', width: 1320, height: 2868, kind: 'phone'}, // iPhone 16/17 Pro Max
+  {id: '6.9', width: 1320, height: 2868, kind: 'phone', upload: true}, // iPhone 16/17 Pro Max
   {id: '6.7', width: 1290, height: 2796, kind: 'phone'}, // iPhone 15 Pro Max
   // ─── Apple Watch (Apple Watch MVP Phase 6.3) ──────────────────────────────
   // The watchOS companion is a functional remote (MVP Phases 4 and 5), so the
   // watch is embedded in the App Store build again and ASC refuses the iOS
   // submission until an Apple Watch screenshot exists. The refusal names
-  // APP_WATCH_SERIES_4 specifically, so all three watch slots are rendered from
-  // the same capture: uploading the extra two costs nothing and removes the
-  // guesswork about which one Apple is actually asking for.
+  // APP_WATCH_SERIES_4 specifically, and only ONE watch display type may exist
+  // on a version, so SERIES_4 is the only one marked `upload`. The other two
+  // sizes still render, as a reference for when Apple moves the goalposts.
   //
   // Unlike the iPhone shots, the watch capture does not come from fastlane
   // `snapshot` (a watchOS UI test can't drive a phone-tethered remote, and an
@@ -39,7 +52,7 @@ const devices = [
   // (see contributingGuides/SCREENSHOTS.md; manual capture into
   // RAW_DIR/<locale>/watch.png stays a valid fallback). Each output is
   // exact-size, which is how `asc.mjs shots` knows the slot to file it under.
-  {id: 'watch-368', width: 368, height: 448, kind: 'watch'}, // APP_WATCH_SERIES_4
+  {id: 'watch-368', width: 368, height: 448, kind: 'watch', upload: true}, // APP_WATCH_SERIES_4
   {id: 'watch-396', width: 396, height: 484, kind: 'watch'}, // APP_WATCH_SERIES_7
   {id: 'watch-410', width: 410, height: 502, kind: 'watch'}, // APP_WATCH_ULTRA
 ];

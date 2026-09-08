@@ -112,11 +112,19 @@ tip revenue.
 
 Each product needs a review screenshot. Products in Missing Metadata ARE
 returned to TestFlight builds, so the easiest source is a real screenshot of
-the Support screen from a TestFlight build. Then:
+the Support screen (Settings > Support Kiroku) from a TestFlight build. A
+simulator build is not a substitute: the simulator has no App Store sandbox, so
+without a StoreKit configuration file `getProducts` returns nothing and the
+screenshot shows the unavailable state instead of the tiers. Then:
 
 ```bash
-node scripts/asc-tips.mjs screenshot path/to/shot.png
+node scripts/asc-tips.mjs screenshot path/to/shot.png --app-id <id>          # dry run
+node scripts/asc-tips.mjs screenshot path/to/shot.png --app-id <id> --yes    # upload
 ```
+
+The same image goes on all three products, replacing whatever is live on them,
+so the command is a dry run unless `--yes`: it prints the resize it will do and
+the current screenshot state of each product first.
 
 App Store Connect accepts review screenshots only at specific dimensions and
 rejects everything else with `IMAGE_INCORRECT_DIMENSIONS`, minutes after the
