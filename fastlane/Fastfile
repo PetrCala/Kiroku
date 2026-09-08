@@ -350,6 +350,17 @@ platform :ios do
       upload_to_testflight(
           api_key_path: "./ios/ios-fastlane-json-key.json",
           distribute_external: false,
+          # Without a group the build uploads and processes but reaches nobody:
+          # App Store Connect reports it READY_FOR_BETA_TESTING and refuses
+          # tester invites with NO_INSTALLABLE_BUILDS. Distributing to an
+          # internal group makes every staging build installable immediately,
+          # with no Beta App Review, which the external "Beta" group the
+          # `production` lane uses does require.
+          # NOTE: a group of this name also exists on the retired "Kiroku
+          # Legacy" record (6466886157); fastlane resolves it against the
+          # app_identifier in the Appfile (com.kiroku.app), so this is the
+          # group on 6670502234.
+          groups: ["Kiroku Internal Beta Testers"],
       )
     rescue => e
       message = e.message.to_s
