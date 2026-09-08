@@ -78,7 +78,46 @@ final class ScreenshotTests: XCTestCase {
         capture("06_Friends") { openFriends() }
         capture("07_Settings") { openSettings() }
 
+        discardTheCapturedLiveSession()
         reportMisses()
+    }
+
+    /// Step 02 opens a live session and, until now, nothing ever closed it, so
+    /// every run left one open on the shared demo account. That is not
+    /// housekeeping: an open session puts an "In session / Resume" banner
+    /// across the top of the Home hero shot, and the app restores the session
+    /// on launch, which is what made the locale switch race its way into two
+    /// English captures. A session left by the run before is also what the
+    /// next run's step 02 resumes instead of starting fresh.
+    ///
+    /// Discarding is deliberate rather than saving: a saved session would add
+    /// an unplanned drinking day to the demo account's current month and put
+    /// the data outside the contract the capture depends on.
+    private func discardTheCapturedLiveSession() {
+        guard openHome() else { return }
+        // startSession.sessionInProgress: absent when step 02 never got a
+        // session open, which is a clean state already.
+        guard tapElement(labeled: ["Resume", "Pokračovat"], timeout: 5) else {
+            return
+        }
+        guard screen("Live Session Screen", timeout: 15) else {
+            NSLog("[capture-note] cleanup: Resume did not reopen the live session; it stays open for the next run")
+            return
+        }
+        // drinkingSession.live.discardSession
+        guard tapElement(labeled: ["Discard Session", "Zahodit relaci"], timeout: 10) else {
+            NSLog("[capture-note] cleanup: Discard Session button not found; the session stays open")
+            return
+        }
+        // The confirmation modal's buttons are common.yes / common.no
+        // (DrinkingSessionWindow passes confirmText={translate('common.yes')}),
+        // not the discard wording.
+        _ = tapElement(labeled: ["Yes", "Ano"], timeout: 5)
+        if screen("Home Screen", timeout: 15) {
+            NSLog("[capture-note] cleanup: discarded the live session opened by step 02")
+        } else {
+            NSLog("[capture-note] cleanup: no Home Screen after discarding; session state is uncertain")
+        }
     }
 
     // MARK: - Step plumbing
@@ -301,7 +340,31 @@ final class ScreenshotTests: XCTestCase {
             recordMiss("logIn", "Home Screen never appeared after submitting credentials")
             return false
         }
+        dismissSavePasswordPrompt()
         return true
+    }
+
+    /// iOS offers to store the credentials we just typed, in a SpringBoard
+    /// alert that sits on top of whatever is on screen. It is not part of the
+    /// app, so no app-level wait notices it, and it does not appear on every
+    /// run: on 2026-09-08 it landed squarely over the calendar in 01_Home and
+    /// made the hero screenshot unusable, having been absent from the run two
+    /// hours earlier.
+    ///
+    /// The alert belongs to SpringBoard, so it has to be dismissed there. Both
+    /// spellings are tried because the button has been "Not Now" and
+    /// "Not now" across iOS versions; a run where it never appears simply
+    /// finds nothing and moves on.
+    private func dismissSavePasswordPrompt() {
+        let springboard = XCUIApplication(bundleIdentifier: "com.apple.springboard")
+        for label in ["Not Now", "Not now", "Nyní ne"] {
+            let button = springboard.buttons[label]
+            if button.waitForExistence(timeout: 3) {
+                button.tap()
+                NSLog("[capture-note] dismissed the iOS save-password prompt (%@)", label)
+                return
+            }
+        }
     }
 
     // MARK: - Locale handling
@@ -478,7 +541,39 @@ final class ScreenshotTests: XCTestCase {
             recordMiss("02_LiveSession", "Live entry not found in the start-session popover")
             return false
         }
-        return screen("Live Session Screen", timeout: 25)
+        guard screen("Live Session Screen", timeout: 25) else { return false }
+        logDrinksForTheShot()
+        return true
+    }
+
+    /// The shot is captioned "Log a drink in seconds", so it has to show a
+    /// drink. Nothing here used to log one: the step opened the screen and
+    /// fired the shutter, and the counter read whatever the session already
+    /// held. For a long time that was a stale live session left open by an
+    /// earlier run, which happened to contain drinks, so the shot looked right
+    /// by accident. Clearing that session on 2026-09-08 revealed the truth and
+    /// produced a screenshot reading 0 for every drink type.
+    ///
+    /// Two beers and a wine: three units, matching the moderate volumes the
+    /// demo-account data contract calls for (see
+    /// scripts/store-screenshots.config.mjs). A miss is a note, not a miss on
+    /// the shot itself, because a counter at 0 is still a truthful screen.
+    private func logDrinksForTheShot() {
+        // src/components/DrinkTypesView.tsx: testID={`add-drink-${drinkKey}`}
+        for (key, taps) in [("beer", 2), ("wine", 1)] {
+            let button = app.descendants(matching: .any)
+                .matching(NSPredicate(format: "identifier == %@", "add-drink-\(key)"))
+                .firstMatch
+            guard button.waitForExistence(timeout: 10) else {
+                NSLog("[capture-note] 02_LiveSession: add-drink-%@ not found; the counter will read low", key)
+                continue
+            }
+            waitUntilHittable(button, timeout: 5)
+            for _ in 1...taps {
+                tap(button)
+                usleep(300_000)
+            }
+        }
     }
 
     private static let dayCellPrefix = "calendar-day-"

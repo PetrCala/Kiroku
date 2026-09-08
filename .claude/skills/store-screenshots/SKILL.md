@@ -72,8 +72,12 @@ Two hard stops, both learned from the 2026-07 Guideline 1.4 rejection:
 ```bash
 # One dispatch per language: `snapshot` relaunches the app between languages,
 # which reliably crashes the runner, so `all` is not a real capture.
+# Run them SEQUENTIALLY. Both sign into the same demo account and step 02 opens
+# a live session on it, so overlapping runs put an "In session" banner on each
+# other's Home shot and resume each other's sessions.
 gh workflow run screenshots.yml -f device_subset=phone-only -f language_subset=en-only \
   -f demo_session_dates=<oldest-first ISO dates> -f capture_watch=true
+gh run watch                                           # let it FINISH first
 gh workflow run screenshots.yml -f device_subset=phone-only -f language_subset=cs-only \
   -f demo_session_dates=<same dates> -f capture_watch=false
 gh run watch                                           # wait for the run

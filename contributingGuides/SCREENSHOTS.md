@@ -91,7 +91,13 @@ evidence a reviewer judges the app on.
    - `fail_slow`: keep going after a build or launch error.
 
 3. Budget two to three hours per dispatch, and remember a capture is two
-   dispatches (`en-only` and `cs-only`) that you can run at the same time.
+   dispatches (`en-only` and `cs-only`). **Run them one after the other, never
+   at the same time.** Both sign into the same demo account, and step 02 opens
+   a live session on it: on 2026-09-08 two concurrent dispatches produced an
+   `In session / Resume` banner across the other run's Home hero shot, and the
+   second run's step 02 resumed the first run's empty session instead of
+   starting its own. The run now discards its session when it finishes, but
+   two runs overlapping still share one account's state.
    Measured on 2026-08-17 with `phone-only`: ~6 minutes of setup, ~1h40m to
    build the scheme (the app, every pod, and the embedded watch target) before
    a single screenshot is taken, ~10 minutes to link, install, boot and launch,
