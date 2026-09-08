@@ -183,13 +183,28 @@ firebase apps:create IOS "Kiroku Dev"       --project dev-alcohol-tracker-db --b
 firebase apps:create IOS "Kiroku AdHoc"     --project dev-alcohol-tracker-db --bundle-id com.kiroku.app.adhoc
 ```
 
-`apps:create` prints the new `GOOGLE_APP_ID`. Feed each one straight back:
+**Done on 8 September 2026.** The three apps exist:
+
+| Variant | `GOOGLE_APP_ID`                             | Bundle id              |
+| ------- | ------------------------------------------- | ---------------------- |
+| prod    | `1:665512857657:ios:0f12781cf0885f4fb4fde8` | `com.kiroku.app`       |
+| dev     | `1:806896865950:ios:3e6a198144a6d4cbb1618f` | `com.kiroku.app`       |
+| adhoc   | `1:806896865950:ios:1491725d909b20a8b1618f` | `com.kiroku.app.adhoc` |
+
+`apps:create` prints that id. Feed each one back to download the config.
+`apps:sdkconfig -o` **refuses to overwrite an existing file**, so write to a
+temporary path and move it in, rather than pointing `-o` at the committed plist:
 
 ```bash
-firebase apps:sdkconfig IOS <prodAppId>  --project alcohol-tracker-db     -o ios/config/GoogleService-Info.prod.plist
-firebase apps:sdkconfig IOS <devAppId>   --project dev-alcohol-tracker-db -o ios/config/GoogleService-Info.dev.plist
-firebase apps:sdkconfig IOS <adhocAppId> --project dev-alcohol-tracker-db -o ios/config/GoogleService-Info.adhoc.plist
+firebase apps:sdkconfig IOS <prodAppId>  --project alcohol-tracker-db     -o /tmp/prod.plist
+firebase apps:sdkconfig IOS <devAppId>   --project dev-alcohol-tracker-db -o /tmp/dev.plist
+firebase apps:sdkconfig IOS <adhocAppId> --project dev-alcohol-tracker-db -o /tmp/adhoc.plist
+for f in prod dev adhoc; do mv "/tmp/$f.plist" "ios/config/GoogleService-Info.$f.plist"; done
 ```
+
+Each app had its OAuth client provisioned by the time `apps:create` returned, so
+the wait warned about in 3.2 did not materialise. `API_KEY` came back unchanged
+on both projects, as expected.
 
 Then propagate the `REVERSED_CLIENT_ID` values into the `CFBundleURLSchemes`
 array in [`ios/kiroku/Info.plist`](../ios/kiroku/Info.plist):
@@ -281,9 +296,29 @@ just a feature that stops working on the new bundle id.
       ([`src/CONFIG.ts`](../src/CONFIG.ts)) feeds `GoogleSignin.configure` in
       [`src/libs/OAuthCredential/index.ios.ts`](../src/libs/OAuthCredential/index.ios.ts),
       and it is sourced from the environment, which comes from the four
-      `*_ENV_FILE` GitHub secrets (`DEV`, `STAGING`, `PRODUCTION`, `ADHOC`). It
-      holds the same value as the plist's `CLIENT_ID`, so it is bundle-bound and
-      must be rotated to the new apps' client ids in every affected secret.
+      `*_ENV_FILE` GitHub secrets. It holds the same value as the plist's
+      `CLIENT_ID`, so it is bundle-bound and must be rotated.
+
+      Which secret needs which value follows from the Xcode configuration that
+      each build uses, since that is what selects the bundled plist (the
+      `[User] Copy GoogleService-Info.plist` build phase):
+
+      | Secret               | Build                                | Plist   |
+      | -------------------- | ------------------------------------ | ------- |
+      | `PRODUCTION_ENV_FILE` | `Kiroku (production)` scheme, iOS release | prod  |
+      | `ADHOC_ENV_FILE`      | `Kiroku (AdHoc)` scheme                   | adhoc |
+      | `DEV_ENV_FILE`        | local `Debug` / `Development`             | dev   |
+      | `STAGING_ENV_FILE`    | web only, no iOS plist involved            | n/a   |
+
+      Read the value to paste out of the plist itself rather than copying it
+      from here, so it cannot drift:
+
+      ```bash
+      for f in prod dev adhoc; do
+        printf '%s\t' "$f"
+        plutil -extract CLIENT_ID raw "ios/config/GoogleService-Info.$f.plist"
+      done
+      ```
 
       `sync-ios-url-schemes.mjs` does **not** cover this. It guards the
       `REVERSED_CLIENT_ID` copy in `Info.plist`; this is a different value in a
