@@ -47,6 +47,16 @@ data contract" comment block at the top of the `shots` section in
 Read it before dispatching a run, and re-read it if you are tempted to reuse an
 old capture.
 
+`kiroku-cli seedDemoSession` (kiroku-cli repo) applies that contract to the demo
+account's current month and prints the dates it wrote, which are what
+`demo_session_dates` wants. Run `--dry-run` first; it replaces the month rather
+than topping it up. Do not reach for `seedTestSessions`: it flags 12% of
+sessions as blackouts and itemises double-digit drink counts.
+
+Note the count is prorated by how far into the month you are. Capturing in the
+first week of a month yields a calendar with only two or three marked days,
+which is honest but a sparse hero shot; mid-month or later fills the grid.
+
 Two hard stops, both learned from the 2026-07 Guideline 1.4 rejection:
 
 - **Never publish a shot showing the word "sober" next to a person.** The friend
