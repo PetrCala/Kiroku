@@ -141,9 +141,9 @@ const CONST = {
   // contributingGuides/TIP_JAR.md.
   TIPS: {
     PRODUCT_IDS: [
-      'kiroku.tip.small_beer',
-      'kiroku.tip.pint',
-      'kiroku.tip.round',
+      'kiroku.tipjar.small_beer',
+      'kiroku.tipjar.pint',
+      'kiroku.tipjar.round',
     ],
   },
   APP_UPDATE: {

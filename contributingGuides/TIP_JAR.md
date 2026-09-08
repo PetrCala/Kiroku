@@ -82,7 +82,11 @@ exactly. Only the CZE price is set by hand: Apple derives every other
 territory from it. Hard-won API facts baked into the script:
 
 - Localization names cap at 30 characters, descriptions at 45.
-- **Product ids are burn-once.** Apple's [In-App Purchase information][iap-info]
+- **Product ids are burn-once.** The ids are `kiroku.tipjar.small_beer` /
+  `.pint` / `.round`, deliberately not prefixed with the bundle id: ids are
+  immutable and bundle ids are not, as the `com.kiroku.app` move proved. They
+  are valid Google Play product ids too, for when the tip jar reaches Android.
+  Apple's [In-App Purchase information][iap-info]
   reference says a product ID "isn't editable after you save the In-App
   Purchase" and cannot be reused for another product "within the same app, even
   if you delete the original In-App Purchase with that ID." A typo in an id is

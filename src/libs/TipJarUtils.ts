@@ -2,7 +2,7 @@ import type {PurchasesStoreProduct} from 'react-native-purchases';
 import type {TupleToUnion} from 'type-fest';
 import CONST from '@src/CONST';
 
-/** One of the tip-jar consumable product ids, e.g. `kiroku.tip.pint`. */
+/** One of the tip-jar consumable product ids, e.g. `kiroku.tipjar.pint`. */
 type TipProductId = TupleToUnion<typeof CONST.TIPS.PRODUCT_IDS>;
 
 /**
