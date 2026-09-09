@@ -827,7 +827,7 @@ export default {
       tierSmallBeerShort: 'Malé pivo',
       tierPintShort: 'Velké pivo',
       tierRoundShort: 'Runda',
-      mostPopular: 'Nejoblíbenější',
+      mostPopular: 'Oblíbené',
       ctaSmallBeer: ({price}: SupporterPriceParams) =>
         `Koupit malé pivo · ${price}`,
       ctaPint: ({price}: SupporterPriceParams) =>

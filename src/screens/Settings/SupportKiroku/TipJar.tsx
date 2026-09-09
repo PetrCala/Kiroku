@@ -106,11 +106,16 @@ function TipJarTier({
           ]}>
           {label}
         </Text>
-        <Text style={styles.tipJarTierPrice}>{product.price}</Text>
+        <Text
+          numberOfLines={1}
+          adjustsFontSizeToFit
+          style={styles.tipJarTierPrice}>
+          {product.price}
+        </Text>
       </PressableWithFeedback>
       {isPopular ? (
         <View style={styles.tipJarPopularPill} pointerEvents="none">
-          <Text style={styles.tipJarPopularPillText}>
+          <Text numberOfLines={1} style={styles.tipJarPopularPillText}>
             {translate('supporter.tipJar.mostPopular')}
           </Text>
         </View>
