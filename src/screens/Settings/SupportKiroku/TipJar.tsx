@@ -95,7 +95,7 @@ function TipJarTier({
             src={icon}
             width={size}
             height={size}
-            fill={isSelected ? theme.appColor : theme.icon}
+            fill={isSelected ? theme.success : theme.icon}
           />
         </View>
         <Text
@@ -247,14 +247,14 @@ function TipJar() {
   return (
     <View style={styles.tipJarCard}>
       <LinearGradient
-        colors={[`${theme.appColor}26`, `${theme.appColor}00`]}
+        colors={[`${theme.success}26`, `${theme.success}00`]}
         style={styles.tipJarHero}>
         <View style={styles.tipJarHeroGlass}>
           <Icon
             src={KirokuIcons.Beer}
             width={variables.iconSizeExtraLarge}
             height={variables.iconSizeExtraLarge}
-            fill={theme.appColor}
+            fill={theme.success}
           />
         </View>
         <Text style={[styles.tipJarHeroTitle, styles.mt3]}>
@@ -265,7 +265,7 @@ function TipJar() {
         </Text>
         {tipJar.tipsGiven > 0 ? (
           <View style={[styles.tipJarThanksChip, styles.mt3]}>
-            <Icon src={KirokuIcons.Checkmark} fill={theme.appColor} small />
+            <Icon src={KirokuIcons.Checkmark} fill={theme.success} small />
             <Text style={styles.tipJarThanksChipText}>
               {translate('supporter.tipJar.thanksCount', {
                 count: tipJar.tipsGiven,
