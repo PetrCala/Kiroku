@@ -831,7 +831,9 @@ export default {
         count === 1 ? 'You bought us a beer' : `You bought us ${count} beers`,
       unlocksNothing:
         'Tips are optional and unlock nothing. The app stays the same for everyone.',
-      thanks: 'Thank you for the beer! It genuinely helps.',
+      thanks: 'Thank you for the beer. It genuinely helps.',
+      cheersTitle: 'Cheers.',
+      receiptNote: 'Every one of them went into the app.',
       loading: 'Reaching the tip jar...',
       unavailable:
         "The tip jar can't be reached right now. Check your connection and try again.",

@@ -26,6 +26,10 @@ type TipJar = {
   purchaseError: string | null;
   /** Tips given on this device, ever. Drives the thank-you line only. */
   tipsGiven: number;
+  /** Whether a tip went through since this screen was opened. Drives the
+   *  one-off "cheers" header; `tipsGiven` alone cannot tell a fresh tip from
+   *  one given months ago. */
+  justTipped: boolean;
   tip: (id: TipProductId) => void;
   retry: () => void;
 };
@@ -37,6 +41,7 @@ export default function useTipJar(): TipJar {
   >(null);
   const [pendingId, setPendingId] = useState<TipProductId | null>(null);
   const [purchaseError, setPurchaseError] = useState<string | null>(null);
+  const [justTipped, setJustTipped] = useState(false);
   const [fetchAttempt, setFetchAttempt] = useState(0);
   const [tipsGiven] = useOnyx(ONYXKEYS.TIPS_GIVEN);
 
@@ -79,6 +84,7 @@ export default function useTipJar(): TipJar {
         setPendingId(null);
         if (outcome.status === 'success') {
           recordTipGiven(tipsGiven ?? 0);
+          setJustTipped(true);
         } else if (outcome.status === 'error') {
           setPurchaseError(outcome.message);
         }
@@ -105,6 +111,7 @@ export default function useTipJar(): TipJar {
     pendingId,
     purchaseError,
     tipsGiven: tipsGiven ?? 0,
+    justTipped,
     tip,
     retry,
   };

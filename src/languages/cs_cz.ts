@@ -837,7 +837,9 @@ export default {
         count === 1 ? 'Koupili jste nám pivo' : `Koupili jste nám ${count} piv`,
       unlocksNothing:
         'Příspěvky jsou dobrovolné a nic neodemykají. Aplikace zůstává stejná pro všechny.',
-      thanks: 'Děkujeme za pivo! Opravdu to pomáhá.',
+      thanks: 'Děkujeme za pivo. Opravdu to pomáhá.',
+      cheersTitle: 'Na zdraví.',
+      receiptNote: 'Každé z nich šlo do aplikace.',
       loading: 'Načítám kasičku…',
       unavailable:
         'Kasičku se teď nepodařilo načíst. Zkontrolujte připojení a zkuste to znovu.',
