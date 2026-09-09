@@ -1,5 +1,5 @@
 import React, {useCallback, useEffect, useState} from 'react';
-import {ActivityIndicator, View} from 'react-native';
+import {View} from 'react-native';
 import {useOnyx} from 'react-native-onyx';
 import type {PurchasesPackage} from 'react-native-purchases';
 import Badge from '@components/Badge';
@@ -13,23 +13,20 @@ import ScreenWrapper from '@components/ScreenWrapper';
 import ScrollView from '@components/ScrollView';
 import Section from '@components/Section';
 import Text from '@components/Text';
+import TipJar from '@screens/Settings/SupportKiroku/TipJar';
 import useLocalize from '@hooks/useLocalize';
 import useTheme from '@hooks/useTheme';
 import useThemeStyles from '@hooks/useThemeStyles';
-import useTipJar from '@hooks/useTipJar';
 import {
   fetchCurrentOffering,
   purchaseSupporterPackage,
   restoreSupporterPurchases,
 } from '@libs/actions/Subscriptions';
-import getPlatform from '@libs/getPlatform';
 import Navigation from '@libs/Navigation/Navigation';
 import SupporterUtils from '@libs/SupporterUtils';
-import type {TipProductId} from '@libs/TipJarUtils';
 import * as UserUtils from '@libs/UserUtils';
 import variables from '@styles/variables';
 import CONST from '@src/CONST';
-import type {TranslationPaths} from '@src/languages/types';
 import ONYXKEYS from '@src/ONYXKEYS';
 import ROUTES from '@src/ROUTES';
 import type IconAsset from '@src/types/utils/IconAsset';
@@ -60,26 +57,6 @@ const FEATURE_BADGE_ICON = KirokuIcons.Beer;
 const FEATURE_SUPPORT_ICON = KirokuIcons.Idea;
 const FEATURE_EARLY_ACCESS_ICON = KirokuIcons.Star;
 
-/**
- * Tip tier names are the app's own i18n strings, not the store's product
- * names: StoreKit localizes product names by the device's storefront, not by
- * the app's language (see `TipJarUtils`). Exhaustive over `TipProductId`, so
- * adding a product id without a label fails to compile.
- */
-function getTipLabel(id: TipProductId): TranslationPaths {
-  // No default on purpose: TypeScript's return-type check then forces a case
-  // for every TipProductId, which is the compile-time guarantee we want.
-  // eslint-disable-next-line default-case
-  switch (id) {
-    case 'kiroku.tipjar.small_beer':
-      return 'supporter.tipJar.tierSmallBeer';
-    case 'kiroku.tipjar.pint':
-      return 'supporter.tipJar.tierPint';
-    case 'kiroku.tipjar.round':
-      return 'supporter.tipJar.tierRound';
-  }
-}
-
 function SupportKirokuScreen() {
   const styles = useThemeStyles();
   const theme = useTheme();
@@ -99,9 +76,6 @@ function SupportKirokuScreen() {
   // the supporter-subscription paywall below stays hidden in production until
   // the v1.1 launch (see `SupporterUtils.isSupporterTierVisible`).
   const isPaywallVisible = SupporterUtils.isSupporterTierVisible();
-
-  const tipJar = useTipJar();
-  const isWeb = getPlatform() === CONST.PLATFORM.WEB;
 
   // Already-supporter UIs don't load offerings; there's nothing to sell.
   const shouldLoadOfferings = isPaywallVisible && !supporter.is_supporter;
@@ -458,95 +432,6 @@ function SupportKirokuScreen() {
     </View>
   );
 
-  const renderTipJarContent = () => {
-    if (isWeb) {
-      return (
-        <Text style={[styles.textLabelSupporting, styles.mt2]}>
-          {translate('supporter.tipJar.webUnavailable')}
-        </Text>
-      );
-    }
-    if (tipJar.status === 'loading') {
-      return (
-        <FlexibleLoadingIndicator
-          style={styles.mt5}
-          text={translate('supporter.tipJar.loading')}
-        />
-      );
-    }
-    if (tipJar.status === 'unavailable') {
-      return (
-        <>
-          <Text style={[styles.textLabelSupporting, styles.mt2]}>
-            {translate('supporter.tipJar.unavailable')}
-          </Text>
-          <View style={styles.mt5}>
-            <Button
-              text={translate('supporter.paywallScreen.retry')}
-              onPress={tipJar.retry}
-            />
-          </View>
-        </>
-      );
-    }
-    return (
-      <>
-        {tipJar.products.map(product => {
-          const isPending = tipJar.pendingId === product.id;
-          return (
-            <PressableWithFeedback
-              key={product.id}
-              accessibilityLabel={translate(getTipLabel(product.id))}
-              role={CONST.ROLE.BUTTON}
-              disabled={!!tipJar.pendingId}
-              wrapperStyle={styles.mt3}
-              onPress={() => tipJar.tip(product.id)}
-              style={styles.supporterPlanCard}>
-              <Text style={[styles.textStrong, styles.flex1]}>
-                {translate(getTipLabel(product.id))}
-              </Text>
-              {isPending ? (
-                <ActivityIndicator
-                  color={theme.spinner}
-                  size={CONST.ACTIVITY_INDICATOR_SIZE.SMALL}
-                />
-              ) : (
-                <Text style={styles.textStrong}>{product.price}</Text>
-              )}
-            </PressableWithFeedback>
-          );
-        })}
-        {tipJar.purchaseError ? (
-          <Text style={[styles.mt3, styles.formError]}>
-            {translate('supporter.tipJar.purchaseError', {
-              message: tipJar.purchaseError,
-            })}
-          </Text>
-        ) : null}
-        {tipJar.tipsGiven > 0 ? (
-          <Text style={[styles.textStrong, styles.mt4]}>
-            {translate('supporter.tipJar.thanks')}
-          </Text>
-        ) : null}
-        <Text style={[styles.textLabelSupporting, styles.mt4]}>
-          {translate('supporter.tipJar.unlocksNothing')}
-        </Text>
-      </>
-    );
-  };
-
-  const renderTipJarSection = () => (
-    <Section
-      title={translate('supporter.tipJar.title')}
-      subtitle={translate('supporter.tipJar.subtitle')}
-      isCentralPane
-      subtitleMuted
-      childrenStyles={styles.pt3}
-      titleStyles={styles.generalSectionTitle}>
-      {renderTipJarContent()}
-    </Section>
-  );
-
   const renderBody = () => {
     if (supporter.is_supporter || state.kind === 'purchase-success') {
       return renderThanks();
@@ -613,7 +498,7 @@ function SupportKirokuScreen() {
         {isPaywallVisible ? (
           <View style={styles.ph5}>{renderBody()}</View>
         ) : null}
-        {renderTipJarSection()}
+        <TipJar />
       </ScrollView>
     </ScreenWrapper>
   );

@@ -32,6 +32,7 @@ import type {
   SupporterPurchaseCtaParams,
   SupporterPurchaseErrorParams,
   SupporterRenewalDateParams,
+  SupporterTipCountParams,
   UnitCountParams,
   UpdateEmailSentEmailParams,
   VerifyEmailScreenEmailParmas,
@@ -819,9 +820,21 @@ export default {
       title: 'Kasička',
       subtitle:
         'Kiroku je zdarma a bez reklam. Pokud vám pomáhá, můžete nám koupit pivo.',
+      heroTitle: 'Kupte nám pivo',
       tierSmallBeer: 'Malé pivo',
       tierPint: 'Velké pivo',
       tierRound: 'Runda pro tým',
+      tierSmallBeerShort: 'Malé pivo',
+      tierPintShort: 'Velké pivo',
+      tierRoundShort: 'Runda',
+      mostPopular: 'Nejoblíbenější',
+      ctaSmallBeer: ({price}: SupporterPriceParams) =>
+        `Koupit malé pivo · ${price}`,
+      ctaPint: ({price}: SupporterPriceParams) =>
+        `Koupit velké pivo · ${price}`,
+      ctaRound: ({price}: SupporterPriceParams) => `Koupit rundu · ${price}`,
+      thanksCount: ({count}: SupporterTipCountParams) =>
+        count === 1 ? 'Koupili jste nám pivo' : `Koupili jste nám ${count} piv`,
       unlocksNothing:
         'Příspěvky jsou dobrovolné a nic neodemykají. Aplikace zůstává stejná pro všechny.',
       thanks: 'Děkujeme za pivo! Opravdu to pomáhá.',
