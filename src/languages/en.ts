@@ -32,6 +32,7 @@ import type {
   SupporterPurchaseCtaParams,
   SupporterPurchaseErrorParams,
   SupporterRenewalDateParams,
+  SupporterTipCountParams,
   UnitCountParams,
   UpdateEmailSentEmailParams,
   VerifyEmailScreenEmailParmas,
@@ -814,9 +815,20 @@ export default {
       title: 'Tip jar',
       subtitle:
         'Kiroku is free and has no ads. If it helps you, you can buy us a beer.',
+      heroTitle: 'Buy us a beer',
       tierSmallBeer: 'A small beer',
       tierPint: 'A pint',
       tierRound: 'A round for the team',
+      tierSmallBeerShort: 'Small beer',
+      tierPintShort: 'Pint',
+      tierRoundShort: 'A round',
+      mostPopular: 'Most popular',
+      ctaSmallBeer: ({price}: SupporterPriceParams) =>
+        `Buy a small beer · ${price}`,
+      ctaPint: ({price}: SupporterPriceParams) => `Buy a pint · ${price}`,
+      ctaRound: ({price}: SupporterPriceParams) => `Buy a round · ${price}`,
+      thanksCount: ({count}: SupporterTipCountParams) =>
+        count === 1 ? 'You bought us a beer' : `You bought us ${count} beers`,
       unlocksNothing:
         'Tips are optional and unlock nothing. The app stays the same for everyone.',
       thanks: 'Thank you for the beer! It genuinely helps.',

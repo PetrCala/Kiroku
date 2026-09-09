@@ -3067,6 +3067,130 @@ const styles = (theme: ThemeColors) =>
       color: theme.textOnBrand,
     },
 
+    // Tip jar (SupportKirokuScreen)
+    tipJarCard: {
+      backgroundColor: theme.cardBG,
+      borderRadius: variables.componentBorderRadiusCard,
+      marginHorizontal: variables.sectionMargin,
+      marginBottom: 20,
+      overflow: 'hidden',
+    },
+
+    tipJarHero: {
+      alignItems: 'center',
+      paddingHorizontal: 20,
+      paddingTop: 24,
+      paddingBottom: 20,
+    },
+
+    tipJarHeroGlass: {
+      width: 80,
+      height: 80,
+      borderRadius: 40,
+      backgroundColor: `${theme.appColor}1F`,
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+
+    tipJarHeroTitle: {
+      ...headlineFont,
+      color: theme.heading,
+      fontSize: variables.fontSizeXLarge,
+      lineHeight: variables.lineHeightSizeh1,
+      textAlign: 'center',
+    },
+
+    tipJarHeroSubtitle: {
+      ...FontUtils.fontFamily.platform.EXP_NEUE,
+      color: theme.textSupporting,
+      fontSize: variables.fontSizeLabel,
+      lineHeight: variables.lineHeightNormal,
+      textAlign: 'center',
+      maxWidth: 320,
+    },
+
+    tipJarThanksChip: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 6,
+      backgroundColor: `${theme.appColor}1F`,
+      borderRadius: variables.componentBorderRadiusLarge,
+      paddingHorizontal: 12,
+      paddingVertical: 6,
+    },
+
+    tipJarThanksChipText: {
+      ...FontUtils.fontFamily.platform.EXP_NEUE_BOLD,
+      color: theme.appColor,
+      fontSize: variables.fontSizeSmall,
+    },
+
+    tipJarBody: {
+      paddingHorizontal: 20,
+      paddingBottom: 20,
+      // Room for the "most popular" pill, which overhangs the tier cards.
+      paddingTop: 10,
+    },
+
+    tipJarTierCard: {
+      alignItems: 'center',
+      borderWidth: 2,
+      borderColor: theme.border,
+      borderRadius: variables.componentBorderRadiusLarge,
+      backgroundColor: theme.appBG,
+      paddingVertical: 14,
+      paddingHorizontal: 6,
+    },
+
+    tipJarTierCardSelected: {
+      borderColor: theme.appColor,
+      backgroundColor: `${theme.appColor}14`,
+    },
+
+    tipJarTierGlass: {
+      height: 44,
+      justifyContent: 'flex-end',
+    },
+
+    tipJarTierName: {
+      ...FontUtils.fontFamily.platform.EXP_NEUE,
+      color: theme.textSupporting,
+      fontSize: variables.fontSizeSmall,
+      marginTop: 8,
+    },
+
+    tipJarTierNameSelected: {
+      color: theme.text,
+    },
+
+    tipJarTierPrice: {
+      ...FontUtils.fontFamily.platform.EXP_NEUE_BOLD,
+      color: theme.text,
+      fontSize: variables.fontSizeNormal,
+      marginTop: 2,
+    },
+
+    tipJarPopularPill: {
+      position: 'absolute',
+      top: -9,
+      alignSelf: 'center',
+      backgroundColor: theme.appColor,
+      borderRadius: variables.componentBorderRadiusLarge,
+      paddingHorizontal: 8,
+      paddingVertical: 2,
+    },
+
+    tipJarPopularPillText: {
+      ...FontUtils.fontFamily.platform.EXP_NEUE_BOLD,
+      color: theme.textOnBrand,
+      fontSize: variables.fontSizeExtraSmall,
+      textTransform: 'uppercase',
+    },
+
+    tipJarCtaText: {
+      color: theme.textOnBrand,
+    },
+
     offlineIndicatorContainer: {
       paddingHorizontal: 20,
       paddingVertical: 8,

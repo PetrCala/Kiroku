@@ -113,6 +113,10 @@ type SupporterPriceParams = {
   price: string;
 };
 
+type SupporterTipCountParams = {
+  count: number;
+};
+
 type SupporterPurchaseErrorParams = {
   message: string;
 };
@@ -153,6 +157,7 @@ export type {
   SupporterPurchaseCtaParams,
   SupporterPurchaseErrorParams,
   SupporterRenewalDateParams,
+  SupporterTipCountParams,
   UnitCountParams,
   UpdateEmailSentEmailParams,
   VerifyEmailScreenEmailParmas,
