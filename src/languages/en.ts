@@ -822,7 +822,7 @@ export default {
       tierSmallBeerShort: 'Small beer',
       tierPintShort: 'Pint',
       tierRoundShort: 'A round',
-      mostPopular: 'Most popular',
+      mostPopular: 'Popular',
       ctaSmallBeer: ({price}: SupporterPriceParams) =>
         `Buy a small beer · ${price}`,
       ctaPint: ({price}: SupporterPriceParams) => `Buy a pint · ${price}`,
