@@ -1,6 +1,5 @@
 import React, {useState} from 'react';
 import {View} from 'react-native';
-import LinearGradient from 'react-native-linear-gradient';
 import Button from '@components/Button';
 import FlexibleLoadingIndicator from '@components/FlexibleLoadingIndicator';
 import Icon from '@components/Icon';
@@ -13,16 +12,14 @@ import useThemeStyles from '@hooks/useThemeStyles';
 import useTipJar from '@hooks/useTipJar';
 import getPlatform from '@libs/getPlatform';
 import type {TipProduct, TipProductId} from '@libs/TipJarUtils';
-import variables from '@styles/variables';
 import CONST from '@src/CONST';
 import type {TranslationPaths} from '@src/languages/types';
-import type IconAsset from '@src/types/utils/IconAsset';
 
 /**
  * Tier names and CTA labels are the app's own i18n strings, not the store's
  * product names: StoreKit localizes product names by the device's storefront,
- * not by the app's language (see `TipJarUtils`). Both helpers are exhaustive
- * over `TipProductId`, so adding a product id without copy fails to compile.
+ * not by the app's language (see `TipJarUtils`). Exhaustive over
+ * `TipProductId`, so adding a product id without copy fails to compile.
  */
 function getTierLabel(id: TipProductId): TranslationPaths {
   // No default on purpose: TypeScript's return-type check then forces a case
@@ -38,22 +35,6 @@ function getTierLabel(id: TipProductId): TranslationPaths {
   }
 }
 
-/**
- * The glass grows with the tier: the ladder is legible before a single price
- * is read, which is the whole point of showing three tiers side by side.
- */
-function getTierIcon(id: TipProductId): {icon: IconAsset; size: number} {
-  // eslint-disable-next-line default-case
-  switch (id) {
-    case 'kiroku.tipjar.small_beer':
-      return {icon: KirokuIcons.Beer, size: 24};
-    case 'kiroku.tipjar.pint':
-      return {icon: KirokuIcons.Beer, size: 32};
-    case 'kiroku.tipjar.round':
-      return {icon: KirokuIcons.AlcoholAssortment, size: 40};
-  }
-}
-
 /** The tier pre-selected when the screen opens, and the one tagged as popular. */
 const DEFAULT_TIER: TipProductId = 'kiroku.tipjar.pint';
 
@@ -65,6 +46,11 @@ type TipJarTierProps = {
   onSelect: (id: TipProductId) => void;
 };
 
+/**
+ * One coaster: a disc with the glass, the tier name, the store's price. The
+ * selection is carried by the ring and the filled disc together, so it reads
+ * without relying on the brand colour alone.
+ */
 function TipJarTier({
   product,
   isSelected,
@@ -75,44 +61,45 @@ function TipJarTier({
   const styles = useThemeStyles();
   const theme = useTheme();
   const {translate} = useLocalize();
-  const {icon, size} = getTierIcon(product.id);
   const label = translate(getTierLabel(product.id));
 
   return (
-    <View style={styles.flex1}>
-      <PressableWithFeedback
-        accessibilityLabel={`${label} ${product.price}`}
-        role={CONST.ROLE.BUTTON}
-        accessibilityState={{checked: isSelected}}
-        disabled={isDisabled}
-        onPress={() => onSelect(product.id)}
+    <PressableWithFeedback
+      accessibilityLabel={`${label} ${product.price}`}
+      role={CONST.ROLE.BUTTON}
+      accessibilityState={{checked: isSelected}}
+      disabled={isDisabled}
+      wrapperStyle={styles.flex1}
+      onPress={() => onSelect(product.id)}
+      style={[
+        styles.tipJarTierCard,
+        isSelected && styles.tipJarTierCardSelected,
+      ]}>
+      <View
         style={[
-          styles.tipJarTierCard,
-          isSelected && styles.tipJarTierCardSelected,
+          styles.tipJarTierDisc,
+          isSelected && styles.tipJarTierDiscSelected,
         ]}>
-        <View style={styles.tipJarTierGlass}>
-          <Icon
-            src={icon}
-            width={size}
-            height={size}
-            fill={isSelected ? theme.success : theme.icon}
-          />
-        </View>
-        <Text
-          numberOfLines={1}
-          style={[
-            styles.tipJarTierName,
-            isSelected && styles.tipJarTierNameSelected,
-          ]}>
-          {label}
-        </Text>
-        <Text
-          numberOfLines={1}
-          adjustsFontSizeToFit
-          style={styles.tipJarTierPrice}>
-          {product.price}
-        </Text>
-      </PressableWithFeedback>
+        <Icon
+          src={KirokuIcons.Beer}
+          fill={isSelected ? theme.textOnBrand : theme.icon}
+          large
+        />
+      </View>
+      <Text
+        numberOfLines={2}
+        style={[
+          styles.tipJarTierName,
+          isSelected && styles.tipJarTierNameSelected,
+        ]}>
+        {label}
+      </Text>
+      <Text
+        numberOfLines={1}
+        adjustsFontSizeToFit
+        style={styles.tipJarTierPrice}>
+        {product.price}
+      </Text>
       {isPopular ? (
         <View style={styles.tipJarPopularPill} pointerEvents="none">
           <Text numberOfLines={1} style={styles.tipJarPopularPillText}>
@@ -120,7 +107,7 @@ function TipJarTier({
           </Text>
         </View>
       ) : null}
-    </View>
+    </PressableWithFeedback>
   );
 }
 
@@ -166,10 +153,54 @@ function TipJar() {
     }
   };
 
+  const renderHeader = () => (
+    <>
+      <Text style={styles.tipJarOverline}>
+        {translate('supporter.tipJar.title')}
+      </Text>
+      <Text style={[styles.tipJarTitle, styles.mt2]}>
+        {tipJar.justTipped
+          ? translate('supporter.tipJar.cheersTitle')
+          : translate('supporter.tipJar.heroTitle')}
+      </Text>
+      <Text style={[styles.tipJarSubtitle, styles.mt2]}>
+        {tipJar.justTipped
+          ? translate('supporter.tipJar.thanks')
+          : translate('supporter.tipJar.subtitle')}
+      </Text>
+    </>
+  );
+
+  // The bar tab: shown to anyone who has tipped from this device before,
+  // fresh tip or not. It states a count and nothing else, because a tip
+  // buys nothing and the copy must not suggest otherwise.
+  const renderReceipt = () => {
+    if (tipJar.tipsGiven === 0) {
+      return null;
+    }
+    return (
+      <View style={[styles.tipJarReceipt, styles.mt5]}>
+        <View style={[styles.tipJarTierDisc, styles.tipJarTierDiscSelected]}>
+          <Icon src={KirokuIcons.Beer} fill={theme.textOnBrand} large />
+        </View>
+        <View style={styles.flex1}>
+          <Text style={styles.tipJarReceiptTitle}>
+            {translate('supporter.tipJar.thanksCount', {
+              count: tipJar.tipsGiven,
+            })}
+          </Text>
+          <Text style={styles.tipJarReceiptNote}>
+            {translate('supporter.tipJar.receiptNote')}
+          </Text>
+        </View>
+      </View>
+    );
+  };
+
   const renderBody = () => {
     if (isWeb) {
       return (
-        <Text style={[styles.textLabelSupporting, styles.textAlignCenter]}>
+        <Text style={[styles.tipJarFinePrint, styles.mt5]}>
           {translate('supporter.tipJar.webUnavailable')}
         </Text>
       );
@@ -178,6 +209,7 @@ function TipJar() {
     if (tipJar.status === 'loading') {
       return (
         <FlexibleLoadingIndicator
+          style={styles.mt5}
           text={translate('supporter.tipJar.loading')}
         />
       );
@@ -186,7 +218,7 @@ function TipJar() {
     if (tipJar.status === 'unavailable' || !selectedProduct) {
       return (
         <>
-          <Text style={[styles.textLabelSupporting, styles.textAlignCenter]}>
+          <Text style={[styles.tipJarFinePrint, styles.mt5]}>
             {translate('supporter.tipJar.unavailable')}
           </Text>
           <View style={styles.mt4}>
@@ -201,7 +233,9 @@ function TipJar() {
 
     return (
       <>
-        <View style={[styles.flexRow, styles.gap2]}>
+        {renderReceipt()}
+
+        <View style={[styles.tipJarTierRow, styles.mt5]}>
           {tipJar.products.map(product => (
             <TipJarTier
               key={product.id}
@@ -222,7 +256,7 @@ function TipJar() {
           </Text>
         ) : null}
 
-        <View style={styles.mt4}>
+        <View style={styles.mt5}>
           <Button
             success
             large
@@ -236,7 +270,7 @@ function TipJar() {
 
         <View style={[styles.flexRow, styles.gap2, styles.mt3]}>
           <Icon src={KirokuIcons.Info} fill={theme.icon} small />
-          <Text style={[styles.textLabelSupporting, styles.flex1]}>
+          <Text style={[styles.tipJarFinePrint, styles.flex1]}>
             {translate('supporter.tipJar.unlocksNothing')}
           </Text>
         </View>
@@ -246,35 +280,8 @@ function TipJar() {
 
   return (
     <View style={styles.tipJarCard}>
-      <LinearGradient
-        colors={[`${theme.success}26`, `${theme.success}00`]}
-        style={styles.tipJarHero}>
-        <View style={styles.tipJarHeroGlass}>
-          <Icon
-            src={KirokuIcons.Beer}
-            width={variables.iconSizeExtraLarge}
-            height={variables.iconSizeExtraLarge}
-            fill={theme.success}
-          />
-        </View>
-        <Text style={[styles.tipJarHeroTitle, styles.mt3]}>
-          {translate('supporter.tipJar.heroTitle')}
-        </Text>
-        <Text style={[styles.tipJarHeroSubtitle, styles.mt2]}>
-          {translate('supporter.tipJar.subtitle')}
-        </Text>
-        {tipJar.tipsGiven > 0 ? (
-          <View style={[styles.tipJarThanksChip, styles.mt3]}>
-            <Icon src={KirokuIcons.Checkmark} fill={theme.success} small />
-            <Text style={styles.tipJarThanksChipText}>
-              {translate('supporter.tipJar.thanksCount', {
-                count: tipJar.tipsGiven,
-              })}
-            </Text>
-          </View>
-        ) : null}
-      </LinearGradient>
-      <View style={styles.tipJarBody}>{renderBody()}</View>
+      {renderHeader()}
+      {renderBody()}
     </View>
   );
 }
