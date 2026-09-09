@@ -3067,6 +3067,128 @@ const styles = (theme: ThemeColors) =>
       color: theme.textOnBrand,
     },
 
+    // Tip jar (SupportKirokuScreen) — the drinks-menu card.
+    tipJarCard: {
+      backgroundColor: theme.cardBG,
+      borderRadius: variables.componentBorderRadiusCard,
+      marginHorizontal: variables.sectionMargin,
+      marginBottom: 20,
+      paddingHorizontal: 20,
+      paddingTop: 24,
+      paddingBottom: 20,
+    },
+
+    tipJarMenuHeader: {
+      alignItems: 'center',
+      paddingBottom: 16,
+      borderBottomWidth: 1,
+      borderBottomColor: theme.border,
+    },
+
+    tipJarOverline: {
+      ...FontUtils.fontFamily.platform.EXP_NEUE_BOLD,
+      color: theme.appColor,
+      fontSize: variables.fontSizeExtraSmall,
+      letterSpacing: 2,
+      textTransform: 'uppercase',
+    },
+
+    tipJarMenuTitle: {
+      ...headlineFont,
+      color: theme.heading,
+      fontSize: variables.fontSizeXLarge,
+      lineHeight: variables.lineHeightSizeh1,
+      textAlign: 'center',
+    },
+
+    tipJarMenuSubtitle: {
+      ...FontUtils.fontFamily.platform.EXP_NEUE,
+      color: theme.textSupporting,
+      fontSize: variables.fontSizeLabel,
+      lineHeight: variables.lineHeightNormal,
+      textAlign: 'center',
+    },
+
+    tipJarMenuList: {
+      paddingVertical: 4,
+    },
+
+    tipJarMenuItem: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 12,
+      paddingVertical: 14,
+    },
+
+    tipJarMenuItemName: {
+      ...FontUtils.fontFamily.platform.EXP_NEUE,
+      color: theme.text,
+      fontSize: variables.fontSizeNormal,
+    },
+
+    // The dotted leader that carries the eye from the name to the price, the
+    // way a printed drinks menu does.
+    tipJarMenuLeader: {
+      flex: 1,
+      alignSelf: 'flex-end',
+      marginBottom: 6,
+      borderBottomWidth: 1,
+      borderStyle: 'dotted',
+      borderColor: theme.border,
+    },
+
+    tipJarMenuItemPrice: {
+      ...FontUtils.fontFamily.platform.EXP_NEUE_BOLD,
+      color: theme.text,
+      fontSize: variables.fontSizeNormal,
+    },
+
+    // The maker's note: a quote block, brand rule down its left edge.
+    tipJarNote: {
+      borderLeftWidth: 3,
+      borderLeftColor: theme.appColor,
+      backgroundColor: theme.appBG,
+      borderTopRightRadius: variables.componentBorderRadiusNormal,
+      borderBottomRightRadius: variables.componentBorderRadiusNormal,
+      paddingVertical: 12,
+      paddingHorizontal: 14,
+      marginTop: 12,
+    },
+
+    tipJarNoteText: {
+      ...FontUtils.fontFamily.platform.EXP_NEUE,
+      color: theme.textSupporting,
+      fontSize: variables.fontSizeLabel,
+      lineHeight: variables.lineHeightNormal,
+    },
+
+    tipJarStamp: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      alignSelf: 'flex-start',
+      gap: 6,
+      marginTop: 12,
+      borderWidth: 1,
+      borderColor: theme.appColor,
+      borderRadius: variables.componentBorderRadiusLarge,
+      paddingHorizontal: 10,
+      paddingVertical: 5,
+    },
+
+    tipJarStampText: {
+      ...FontUtils.fontFamily.platform.EXP_NEUE_BOLD,
+      color: theme.appColor,
+      fontSize: variables.fontSizeSmall,
+    },
+
+    tipJarFinePrint: {
+      ...FontUtils.fontFamily.platform.EXP_NEUE,
+      color: theme.textSupporting,
+      fontSize: variables.fontSizeSmall,
+      lineHeight: variables.lineHeightSmall,
+      marginTop: 16,
+    },
+
     offlineIndicatorContainer: {
       paddingHorizontal: 20,
       paddingVertical: 8,
