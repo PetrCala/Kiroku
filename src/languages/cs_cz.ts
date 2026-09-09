@@ -32,6 +32,7 @@ import type {
   SupporterPurchaseCtaParams,
   SupporterPurchaseErrorParams,
   SupporterRenewalDateParams,
+  SupporterTipCountParams,
   UnitCountParams,
   UpdateEmailSentEmailParams,
   VerifyEmailScreenEmailParmas,
@@ -819,12 +820,21 @@ export default {
       title: 'Kasička',
       subtitle:
         'Kiroku je zdarma a bez reklam. Pokud vám pomáhá, můžete nám koupit pivo.',
+      bannerTitle: 'Kiroku zdarma',
+      bannerSubtitle:
+        'Žádné reklamy, žádné paywally, nic se neprodává dál. Drží to tak vaše příspěvky.',
+      impactServers: 'Servery a zálohy',
+      impactNoAds: 'Nikdy žádné reklamy',
+      impactNext: 'Další funkce',
+      sendCta: ({price}: SupporterPriceParams) => `Poslat ${price}`,
       tierSmallBeer: 'Malé pivo',
       tierPint: 'Velké pivo',
       tierRound: 'Runda pro tým',
       unlocksNothing:
         'Příspěvky jsou dobrovolné a nic neodemykají. Aplikace zůstává stejná pro všechny.',
       thanks: 'Děkujeme za pivo! Opravdu to pomáhá.',
+      thanksCount: ({count}: SupporterTipCountParams) =>
+        count === 1 ? 'Koupili jste nám pivo' : `Koupili jste nám ${count} piv`,
       loading: 'Načítám kasičku…',
       unavailable:
         'Kasičku se teď nepodařilo načíst. Zkontrolujte připojení a zkuste to znovu.',

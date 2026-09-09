@@ -3067,6 +3067,147 @@ const styles = (theme: ThemeColors) =>
       color: theme.textOnBrand,
     },
 
+    // Tip jar (SupportKirokuScreen) — the brand banner card.
+    tipJarCard: {
+      backgroundColor: theme.cardBG,
+      borderRadius: variables.componentBorderRadiusCard,
+      marginHorizontal: variables.sectionMargin,
+      marginBottom: 20,
+      overflow: 'hidden',
+    },
+
+    // Full-bleed brand banner. The brand yellow does not flip between themes,
+    // so everything on it uses the always-dark on-brand foreground.
+    tipJarBanner: {
+      alignItems: 'center',
+      paddingHorizontal: 20,
+      paddingVertical: 24,
+    },
+
+    tipJarBannerTitle: {
+      ...headlineFont,
+      color: theme.textOnBrand,
+      fontSize: variables.fontSizeXXLarge,
+      lineHeight: variables.lineHeightSizeh1,
+      textAlign: 'center',
+    },
+
+    tipJarBannerSubtitle: {
+      ...FontUtils.fontFamily.platform.EXP_NEUE,
+      color: theme.textOnBrand,
+      fontSize: variables.fontSizeLabel,
+      lineHeight: variables.lineHeightNormal,
+      textAlign: 'center',
+      opacity: 0.8,
+    },
+
+    tipJarBannerThanks: {
+      ...FontUtils.fontFamily.platform.EXP_NEUE_BOLD,
+      color: theme.textOnBrand,
+      fontSize: variables.fontSizeSmall,
+      textAlign: 'center',
+    },
+
+    tipJarBody: {
+      padding: 20,
+    },
+
+    tipJarImpactRow: {
+      flexDirection: 'row',
+      gap: 8,
+    },
+
+    tipJarImpact: {
+      flex: 1,
+      alignItems: 'center',
+      gap: 6,
+    },
+
+    tipJarImpactIcon: {
+      width: 32,
+      height: 32,
+      borderRadius: 16,
+      backgroundColor: `${theme.appColor}1F`,
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+
+    tipJarImpactText: {
+      ...FontUtils.fontFamily.platform.EXP_NEUE,
+      color: theme.textSupporting,
+      fontSize: variables.fontSizeSmall,
+      lineHeight: variables.lineHeightSmall,
+      textAlign: 'center',
+    },
+
+    tipJarOption: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 12,
+      borderWidth: 2,
+      borderColor: theme.border,
+      borderRadius: variables.componentBorderRadiusLarge,
+      backgroundColor: theme.appBG,
+      paddingVertical: 14,
+      paddingHorizontal: 16,
+    },
+
+    tipJarOptionSelected: {
+      borderColor: theme.appColor,
+      backgroundColor: `${theme.appColor}14`,
+    },
+
+    tipJarOptionName: {
+      ...FontUtils.fontFamily.platform.EXP_NEUE_BOLD,
+      color: theme.text,
+      fontSize: variables.fontSizeNormal,
+    },
+
+    // Three segments, filled up to the tier's place in the ladder.
+    tipJarMeterSegment: {
+      width: 18,
+      height: 4,
+      borderRadius: 2,
+      backgroundColor: theme.border,
+    },
+
+    tipJarMeterSegmentFilled: {
+      backgroundColor: theme.appColor,
+    },
+
+    tipJarOptionPrice: {
+      ...FontUtils.fontFamily.platform.EXP_NEUE_BOLD,
+      color: theme.text,
+      fontSize: variables.fontSizeMedium,
+    },
+
+    tipJarOptionCheck: {
+      width: variables.iconSizeNormal,
+      height: variables.iconSizeNormal,
+      borderRadius: variables.iconSizeNormal / 2,
+      borderWidth: 2,
+      borderColor: theme.border,
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+
+    tipJarOptionCheckSelected: {
+      borderColor: theme.appColor,
+      backgroundColor: theme.appColor,
+    },
+
+    tipJarCtaText: {
+      color: theme.textOnBrand,
+    },
+
+    tipJarFinePrint: {
+      ...FontUtils.fontFamily.platform.EXP_NEUE,
+      color: theme.textSupporting,
+      fontSize: variables.fontSizeSmall,
+      lineHeight: variables.lineHeightSmall,
+      textAlign: 'center',
+    },
+
     offlineIndicatorContainer: {
       paddingHorizontal: 20,
       paddingVertical: 8,

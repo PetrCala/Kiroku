@@ -32,6 +32,7 @@ import type {
   SupporterPurchaseCtaParams,
   SupporterPurchaseErrorParams,
   SupporterRenewalDateParams,
+  SupporterTipCountParams,
   UnitCountParams,
   UpdateEmailSentEmailParams,
   VerifyEmailScreenEmailParmas,
@@ -814,12 +815,21 @@ export default {
       title: 'Tip jar',
       subtitle:
         'Kiroku is free and has no ads. If it helps you, you can buy us a beer.',
+      bannerTitle: 'Keep Kiroku free',
+      bannerSubtitle:
+        'No ads, no paywalls, nothing sold on. Tips are what keep it that way.',
+      impactServers: 'Servers and backups',
+      impactNoAds: 'No ads, ever',
+      impactNext: 'The next feature',
+      sendCta: ({price}: SupporterPriceParams) => `Send ${price}`,
       tierSmallBeer: 'A small beer',
       tierPint: 'A pint',
       tierRound: 'A round for the team',
       unlocksNothing:
         'Tips are optional and unlock nothing. The app stays the same for everyone.',
       thanks: 'Thank you for the beer! It genuinely helps.',
+      thanksCount: ({count}: SupporterTipCountParams) =>
+        count === 1 ? 'You bought us a beer' : `You bought us ${count} beers`,
       loading: 'Reaching the tip jar...',
       unavailable:
         "The tip jar can't be reached right now. Check your connection and try again.",
