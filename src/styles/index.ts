@@ -3087,7 +3087,7 @@ const styles = (theme: ThemeColors) =>
       width: 80,
       height: 80,
       borderRadius: 40,
-      backgroundColor: `${theme.appColor}1F`,
+      backgroundColor: `${theme.success}1F`,
       alignItems: 'center',
       justifyContent: 'center',
     },
@@ -3113,7 +3113,7 @@ const styles = (theme: ThemeColors) =>
       flexDirection: 'row',
       alignItems: 'center',
       gap: 6,
-      backgroundColor: `${theme.appColor}1F`,
+      backgroundColor: `${theme.success}1F`,
       borderRadius: variables.componentBorderRadiusLarge,
       paddingHorizontal: 12,
       paddingVertical: 6,
@@ -3121,7 +3121,7 @@ const styles = (theme: ThemeColors) =>
 
     tipJarThanksChipText: {
       ...FontUtils.fontFamily.platform.EXP_NEUE_BOLD,
-      color: theme.appColor,
+      color: theme.success,
       fontSize: variables.fontSizeSmall,
     },
 
@@ -3143,8 +3143,8 @@ const styles = (theme: ThemeColors) =>
     },
 
     tipJarTierCardSelected: {
-      borderColor: theme.appColor,
-      backgroundColor: `${theme.appColor}14`,
+      borderColor: theme.success,
+      backgroundColor: `${theme.success}14`,
     },
 
     tipJarTierGlass: {
@@ -3174,7 +3174,7 @@ const styles = (theme: ThemeColors) =>
       position: 'absolute',
       top: -9,
       alignSelf: 'center',
-      backgroundColor: theme.appColor,
+      backgroundColor: theme.success,
       borderRadius: variables.componentBorderRadiusLarge,
       paddingHorizontal: 8,
       paddingVertical: 2,
