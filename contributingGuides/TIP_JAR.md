@@ -101,12 +101,41 @@ territory from it. Hard-won API facts baked into the script:
   price; check `manualPrices`, not the schedule's existence.
 - Transient 500s are normal; the script retries them.
 
-### 3. RevenueCat dashboard
+### 3. RevenueCat
 
-Add the three product ids as **non-subscription products** in the RevenueCat
-project (no entitlement, no offering needed). Purchases go through without
-this, but registering them keeps RevenueCat's charts and webhooks aware of
-tip revenue.
+```bash
+node scripts/revenuecat.mjs status                       # read-only
+node scripts/revenuecat.mjs setup                        # dry run without --yes
+node scripts/revenuecat.mjs set-bundle-id <bundle-id>    # dry run without --yes
+```
+
+`setup` registers the three ids as consumable products on the iOS app, with no
+entitlement and no offering: a tip unlocks nothing, and `fetchTipProducts` asks
+StoreKit for them by id rather than through an offering. Purchases go through
+without any of this; what registering them buys is attribution, so tip revenue
+reaches the charts, the exports and the webhooks.
+
+The ids are not written in that script. It reads `CONST.TIPS.PRODUCT_IDS` out
+of `src/CONST.ts`, so the RevenueCat half of the id contract cannot drift the
+way a hand-copied list can. `asc-tips.mjs` still keeps its own copy and still
+has to be kept in step by hand.
+
+`set-bundle-id` changes the store id an app points at, which RevenueCat's
+community answers say cannot be done and `POST /v2/projects/{id}/apps/{app_id}`
+does anyway. See [`BUNDLE_ID_MIGRATION.md`](./BUNDLE_ID_MIGRATION.md) section 5,
+where it moved the iOS app to `com.kiroku.app` without rotating the public SDK
+key.
+
+The script needs a RevenueCat **v2 secret key**, from
+`$REVENUECAT_V2_SECRET_KEY` or a gitignored `.env.revenuecat` at the repo root.
+It never prints it.
+
+**The App Store shared secret is not part of this.** RevenueCat labels that
+field "(Legacy)": it is a StoreKit 1 mechanism, and the SDK here (RevenueCat
+5.72.0 via `react-native-purchases` 10) runs StoreKit 2, which validates with
+the account-level In-App Purchase Key instead. Leave the field empty unless a
+sandbox purchase actually fails validation, and fill it by hand if it ever
+comes to that.
 
 ### 4. Review screenshot
 
