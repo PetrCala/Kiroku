@@ -214,6 +214,9 @@ const ONYXKEYS = {
   /** Stores the route to open after changing app permission from settings */
   LAST_ROUTE: 'lastRoute',
 
+  /** An invite link opened while signed out, resumed after sign-in and onboarding */
+  PENDING_FRIEND_INVITE: 'pendingFriendInvite',
+
   /** Indicates whether an forced upgrade is required */
   UPDATE_REQUIRED: 'updateRequired',
 
@@ -370,6 +373,7 @@ type OnyxValuesMapping = {
   [ONYXKEYS.ONYX_UPDATES_LAST_UPDATE_ID_APPLIED_TO_CLIENT]: number;
   [ONYXKEYS.LAST_VISITED_PATH]: string | undefined;
   [ONYXKEYS.LAST_ROUTE]: string;
+  [ONYXKEYS.PENDING_FRIEND_INVITE]: OnyxTypes.PendingFriendInvite;
   [ONYXKEYS.UPDATE_REQUIRED]: boolean;
   [ONYXKEYS.LOGS]: OnyxTypes.CapturedLogs;
   [ONYXKEYS.STATISTICS_FILTERS]: OnyxTypes.StatisticsFilters;

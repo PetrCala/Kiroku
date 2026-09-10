@@ -27,6 +27,9 @@ import useThemeStyles from '@hooks/useThemeStyles';
 import FlatList from '@components/FlatList';
 import {filterBlockedUsers} from '@libs/BlockUtils';
 import ERRORS from '@src/ERRORS';
+import ROUTES from '@src/ROUTES';
+import MenuItem from '@components/MenuItem';
+import * as KirokuIcons from '@components/Icon/KirokuIcons';
 
 function FriendSearchScreen() {
   const {auth} = useFirebase();
@@ -218,6 +221,13 @@ function FriendSearchScreen() {
       <HeaderWithBackButton
         title={translate('friendSearchScreen.title')}
         onBackButtonPress={Navigation.goBack}
+      />
+      <MenuItem
+        title={translate('friendSearchScreen.myQrCode')}
+        description={translate('friendSearchScreen.myQrCodeDescription')}
+        icon={KirokuIcons.QrCode}
+        onPress={() => Navigation.navigate(ROUTES.SOCIAL_MY_QR_CODE)}
+        shouldShowRightIcon
       />
       <SearchWindow
         // ref={searchInputRef}

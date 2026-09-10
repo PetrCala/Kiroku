@@ -15,6 +15,7 @@ import type {
 } from 'react-native-tab-view';
 import {getReceivedRequestsCount} from '@libs/FriendUtils';
 import Navigation from '@libs/Navigation/Navigation';
+import CONST from '@src/CONST';
 import ROUTES from '@src/ROUTES';
 import type SCREENS from '@src/SCREENS';
 import type {StackScreenProps} from '@react-navigation/stack';
@@ -239,6 +240,16 @@ function SocialScreen({route, navigation}: SocialScreenProps) {
       <HeaderWithBackButton
         title={translate('socialScreen.title')}
         shouldShowBackButton={false}
+        // In the header (above the tabs), so it's there on both tabs.
+        customRightButton={
+          <PressableWithFeedback
+            accessibilityLabel={translate('socialScreen.myQrCode')}
+            accessibilityRole={CONST.ROLE.BUTTON}
+            onPress={() => Navigation.navigate(ROUTES.SOCIAL_MY_QR_CODE)}
+            style={styles.touchableButtonImage}>
+            <Icon src={KirokuIcons.QrCode} fill={theme.icon} />
+          </PressableWithFeedback>
+        }
       />
       <TabView
         navigationState={{index: activeIndex, routes}}

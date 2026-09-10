@@ -137,6 +137,7 @@
     "react-native-permissions": "^5.4.0",
     "react-native-picker-select": "^9.1.3",
     "react-native-purchases": "^10.1.1",
+    "react-native-qrcode-svg": "^6.3.24",
     "react-native-reanimated": "4.2.1",
     "react-native-render-html": "6.3.1",
     "react-native-safe-area-context": "5.4.0",

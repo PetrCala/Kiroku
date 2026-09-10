@@ -19,6 +19,8 @@ import type {
   ForceUpdateTextParams,
   ForgotPasswordSuccessParams,
   FriendRequestsCountParams,
+  InviteDisplayNameParams,
+  InviteLinkParams,
   LastSessionSummaryParams,
   OnboardingStepCounterParams,
   RelativeTimeAgoParams,
@@ -481,6 +483,7 @@ export default {
     friendRequests: 'Žádosti o přátelství',
     noFriendsYet: 'Zatím nemáte žádné přátele',
     addThemHere: 'Přidejte si je zde',
+    myQrCode: 'Můj QR kód',
   },
   friendsFriendsScreen: {
     title: 'Najít přátele přátel',
@@ -496,6 +499,8 @@ export default {
     title: 'Vyhledat nové přátele',
     noUsersFound: 'Neexistují žádní uživatelé s touto přezdívkou.',
     searchWindow: 'Vyhledejte uživatele podle jejich přezdívky',
+    myQrCode: 'Přidávejte přátele pomocí QR kódu',
+    myQrCodeDescription: 'Ukažte svůj kód nebo sdílejte svůj odkaz',
   },
   friendRequestScreen: {
     requestsReceived: ({requestsCount}: FriendRequestsCountParams) =>
@@ -530,6 +535,60 @@ export default {
         'Nepodařilo se odebrat tohoto přítele. Zkuste to prosím znovu.',
       couldNotBlockUser:
         'Nepodařilo se zablokovat tohoto uživatele. Zkuste to prosím znovu.',
+    },
+  },
+  myQrCodeScreen: {
+    title: 'Můj QR kód',
+    prompt:
+      'Přátelé si vás přidají, když tento kód naskenují fotoaparátem v telefonu.',
+    qrCodeLabel: 'QR kód s vaším odkazem pro přidání do přátel',
+    share: 'Sdílet odkaz',
+    shareMessage: ({link}: InviteLinkParams) =>
+      `Přidej si mě do přátel v Kiroku: ${link}`,
+    copyLink: 'Kopírovat odkaz',
+    linkCopied: 'Odkaz zkopírován',
+    resetLink: 'Vytvořit nový odkaz',
+    resetTitle: 'Vytvořit nový odkaz?',
+    resetPrompt:
+      'Současný odkaz a QR kód přestanou fungovat. Kdo je ještě nepoužil, bude potřebovat nový.',
+    resetConfirm: 'Vytvořit nový',
+    tryAgain: 'Zkusit znovu',
+    error: {
+      couldNotLoad: 'Nepodařilo se načíst váš odkaz.',
+      couldNotReset:
+        'Nepodařilo se vytvořit nový odkaz. Zkuste to prosím znovu.',
+    },
+  },
+  addFriendScreen: {
+    title: 'Přidat přítele',
+    invitedYou: ({displayName}: InviteDisplayNameParams) =>
+      `${displayName} si vás chce přidat do přátel v Kiroku.`,
+    addFriend: 'Přidat do přátel',
+    addedTitle: 'Přítel přidán',
+    added: ({displayName}: InviteDisplayNameParams) =>
+      `Vy a ${displayName} jste teď přátelé.`,
+    alreadyFriends: ({displayName}: InviteDisplayNameParams) =>
+      `Vy a ${displayName} už jste přátelé.`,
+    viewProfile: 'Zobrazit profil',
+    ownInvite:
+      'Toto je váš vlastní odkaz. Sdílejte ho, aby si vás přátelé mohli přidat.',
+    showMyQrCode: 'Zobrazit můj QR kód',
+    blocked:
+      'Tohoto uživatele jste zablokoval/a. Pokud si ho chcete přidat do přátel, nejdřív ho odblokujte.',
+    manageBlockedUsers: 'Spravovat blokované uživatele',
+    signInToAdd: 'Přihlásit se a přidat',
+    signInHint: 'Přihlaste se nebo si vytvořte účet a hned vás sem vrátíme.',
+    getTheApp: 'Ještě nemáte Kiroku? Stáhněte si aplikaci:',
+    getIosApp: 'Aplikace pro iPhone',
+    getAndroidApp: 'Aplikace pro Android',
+    invalidTitle: 'Tento odkaz nefunguje',
+    invalid:
+      'Možná ho mezitím nahradil nový, nebo je špatně opsaný. Požádejte přítele o nový odkaz.',
+    tryAgain: 'Zkusit znovu',
+    error: {
+      couldNotLoad: 'Nepodařilo se načíst pozvánku.',
+      couldNotAdd: 'Tohoto přítele se nepodařilo přidat.',
+      generic: 'Něco se pokazilo. Zkuste to prosím znovu.',
     },
   },
   notFoundScreen: {

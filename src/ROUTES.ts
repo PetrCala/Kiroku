@@ -173,6 +173,14 @@ const ROUTES = {
   SOCIAL_FRIEND_LIST: 'social/friend-list',
   SOCIAL_FRIEND_REQUESTS: 'social/friend-requests',
   SOCIAL_FRIEND_SEARCH: 'social/friend-search',
+  SOCIAL_MY_QR_CODE: 'social/my-qr-code',
+
+  // Personal friend invite link target (https://app.kiroku.cz/add/<code>).
+  // Registered in both the public and the signed-in root stacks.
+  ADD_FRIEND: {
+    route: 'add/:code',
+    getRoute: (code: string) => `add/${code}` as const,
+  },
 
   STATISTICS: 'statistics',
 } as const;

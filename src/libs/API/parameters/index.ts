@@ -44,4 +44,5 @@ export type {default as FinalizeImageParams} from './FinalizeImageParams';
 export type {default as SyncUserStatusParams} from './SyncUserStatusParams';
 export type {default as AcceptTermsParams} from './AcceptTermsParams';
 export type {default as SetOnboardingLastVisitedPathParams} from './SetOnboardingLastVisitedPathParams';
+export type {default as InviteCodeParams} from './InviteCodeParams';
 // export type {default as UpdateUserAvatarParams} from './UpdateUserAvatarParams';

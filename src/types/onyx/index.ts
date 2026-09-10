@@ -28,6 +28,8 @@ import type {
 } from './FriendRequestList';
 import type FriendsMetadata from './FriendsMetadata';
 import type {FriendActionMetadata} from './FriendsMetadata';
+import type InvitePreview from './InvitePreview';
+import type PendingFriendInvite from './PendingFriendInvite';
 import type Locale from './Locale';
 import type Login from './Login';
 import type Modal from './Modal';
@@ -118,6 +120,7 @@ export type {
   FriendRequestStatus,
   FriendsMetadata,
   FriendActionMetadata,
+  InvitePreview,
   Locale,
   Log,
   Login,
@@ -128,6 +131,7 @@ export type {
   NicknameKey,
   NicknameToId,
   NicknameToIdList,
+  PendingFriendInvite,
   PendingOAuthCredential,
   OnboardingData,
   OngoingSessionSync,

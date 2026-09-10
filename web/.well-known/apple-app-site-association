@@ -1,0 +1,18 @@
+{
+  "applinks": {
+    "details": [
+      {
+        "appIDs": [
+          "L357YP9W28.com.kiroku.app",
+          "L357YP9W28.com.kiroku.app.adhoc"
+        ],
+        "components": [
+          {
+            "/": "/add/*",
+            "comment": "Personal friend invite links"
+          }
+        ]
+      }
+    ]
+  }
+}

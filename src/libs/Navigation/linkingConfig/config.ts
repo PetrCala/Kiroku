@@ -16,6 +16,9 @@ const config: LinkingOptions<RootStackParamList>['config'] = {
     [SCREENS.AUTH]: ROUTES.AUTH,
     [SCREENS.FORGOT_PASSWORD]: ROUTES.FORGOT_PASSWORD,
     [SCREENS.FORCE_UPDATE]: ROUTES.FORCE_UPDATE,
+    // Root level on purpose: the same path must resolve in the public stack
+    // (signed-out visitors) and the signed-in stack.
+    [SCREENS.ADD_FRIEND]: ROUTES.ADD_FRIEND.route,
 
     // Sidebar
     [NAVIGATORS.BOTTOM_TAB_NAVIGATOR]: {
@@ -223,6 +226,7 @@ const config: LinkingOptions<RootStackParamList>['config'] = {
             [SCREENS.SOCIAL.FRIEND_LIST]: ROUTES.SOCIAL_FRIEND_LIST,
             [SCREENS.SOCIAL.FRIEND_REQUESTS]: ROUTES.SOCIAL_FRIEND_REQUESTS,
             [SCREENS.SOCIAL.FRIEND_SEARCH]: ROUTES.SOCIAL_FRIEND_SEARCH,
+            [SCREENS.SOCIAL.MY_QR_CODE]: ROUTES.SOCIAL_MY_QR_CODE,
           },
         },
       },

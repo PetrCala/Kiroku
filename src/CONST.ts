@@ -285,6 +285,16 @@ const CONST = {
     },
   },
   DEEPLINK_BASE_URL: 'kiroku://',
+
+  FRIEND_INVITE: {
+    /**
+     * Personal invite links. They open the web app, or the native app through
+     * iOS universal links / Android app links (see `web/.well-known`).
+     */
+    LINK_BASE_URL: 'https://app.kiroku.cz/add/',
+    /** How long a link opened while signed out waits for sign-in to finish. */
+    PENDING_TTL_MS: 24 * 60 * 60 * 1000,
+  },
   DEFAULT_AVATAR_COUNT: 24,
   DIRECTION: {
     LEFT: 'left',
@@ -380,8 +390,13 @@ const CONST = {
     // middleware refreshes and replays). A 401 means a token refresh cannot
     // recover the session, so the client force-signs-out (see HttpUtils).
     UNAUTHORIZED: 401,
-    // No such route. Also what the retired legacy `{root}api/{Command}` host
-    // answered, so HttpUtils reuses it for an unrouted command (droppable).
+    // Validation failures, e.g. redeeming your own invite link.
+    BAD_REQUEST: 400,
+    // Neutral refusal, e.g. a block between two users (reason never disclosed).
+    FORBIDDEN: 403,
+    // No such route or resource (e.g. an unknown invite code). Also what the
+    // retired legacy `{root}api/{Command}` host answered, so HttpUtils reuses it
+    // for an unrouted command (droppable).
     NOT_FOUND: 404,
     // The resource already exists — e.g. provisioning an already-provisioned
     // user. Expected/benign for idempotent retries, not a service failure.
