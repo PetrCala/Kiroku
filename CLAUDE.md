@@ -170,7 +170,9 @@ The skill provides guidance on:
 
 `src/languages/en.ts` is the source of truth; every other locale mirrors its key structure. Do **not** hand-write non-English translations in a feature PR — add English keys only, then fill other locales with the `translate` skill, which translates against each language's glossary in `src/languages/context/`. Every locale needs a context file (enforced by a unit test). An optional AI quality review can be run manually via the `translation-review` workflow.
 
-**Copy voice — avoid em-dashes (`—`) in UI strings.** They read as artificial in running prose. Prefer two short sentences, a comma, or parentheses. This applies to the English source in `en.ts` and to every translation; the per-language guides in `src/languages/context/` restate the rule for translators.
+**Copy voice.** Every user-facing string (UI, store listing, release notes, screenshot captions) follows [`contributingGuides/COPY_VOICE.md`](contributingGuides/COPY_VOICE.md): plain utility copy by default, playfulness only in chosen moments, and translations that adapt playful lines instead of translating them word for word. Read it before writing or changing copy.
+
+**Avoid em-dashes (`—`) in UI strings.** They read as artificial in running prose. Prefer two short sentences, a comma, or parentheses. This applies to the English source in `en.ts` and to every translation; the per-language guides in `src/languages/context/` restate the rule for translators.
 
 ### Code Quality
 

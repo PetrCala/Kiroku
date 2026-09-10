@@ -51,8 +51,12 @@ in `CONST.LOCALES`.
      special attention to the "Known inconsistencies" backlog in the guide.
 3. **Translate, honoring the guide.** For each string:
    - Use the canonical glossary term; never a "Do NOT use" variant.
-   - Match the register/tone (e.g. Czech vykání) and capitalization (sentence
-     vs title case).
+   - Match the register/tone (e.g. Czech vykání, with tykání allowed only in
+     punchlines) and capitalization (sentence vs title case).
+   - Follow `contributingGuides/COPY_VOICE.md`: utility strings (labels,
+     buttons, errors, settings) stay close to the English; playful strings
+     (headlines, thank-yous, jokes) are rewritten in the language's own idiom
+     rather than translated literally.
    - Keep "do-not-translate" tokens verbatim.
    - Preserve interpolation: `${var}` placeholders, `Str.pluralize(...)` calls,
      and the exact function signature/param type from `en.ts`. Translate only
