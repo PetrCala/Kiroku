@@ -298,6 +298,9 @@ jobs:
           APPLE_CONTACT_PHONE: ${{ secrets.APPLE_CONTACT_PHONE }}
           APPLE_DEMO_EMAIL: ${{ secrets.APPLE_DEMO_EMAIL }}
           APPLE_DEMO_PASSWORD: ${{ secrets.APPLE_DEMO_PASSWORD }}
+          # Unlisted screen-recording link for the App Review notes (point 1).
+          # A secret rather than a variable only because the repo is public.
+          APPLE_REVIEW_VIDEO_URL: ${{ secrets.APPLE_REVIEW_VIDEO_URL }}
           IOS_CERTIFICATE_PASSWORD: ${{ secrets.IOS_CERTIFICATE_PASSWORD }}
           VERSION: ${{ env.IOS_VERSION }}
           TESTFLIGHT_CHANGELOG: ${{ env.TESTFLIGHT_CHANGELOG }}

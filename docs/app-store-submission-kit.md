@@ -19,14 +19,14 @@ The **listing copy (§1), age rating (§3), and review notes (§4) are now autom
 bundle exec fastlane ios upload_metadata
 ```
 
-The files in `fastlane/metadata/` are the **source of truth**; edit them, not ASC directly. App Review info (demo sign-in account, contact, empty notes) is assembled by `kiroku_review_information` in the `Fastfile` from environment variables — `APPLE_DEMO_EMAIL`, `APPLE_DEMO_PASSWORD`, `APPLE_CONTACT_EMAIL`, `APPLE_CONTACT_PHONE` (set as GitHub Actions secrets / a local untracked env; never hardcode — the repo is public).
+The files in `fastlane/metadata/` are the **source of truth**; edit them, not ASC directly. App Review info (demo sign-in account, contact, review notes) is assembled by `kiroku_review_information` in the `Fastfile` from environment variables: `APPLE_DEMO_EMAIL`, `APPLE_DEMO_PASSWORD`, `APPLE_CONTACT_EMAIL`, `APPLE_CONTACT_PHONE`, and optionally `APPLE_REVIEW_VIDEO_URL` (set as GitHub Actions secrets or a local untracked env; never hardcode them, the repo is public).
 
 **Decisions baked into the files (2026-05-28):**
 
 - **App name = `Kiroku`** in both locales (no descriptor); **no subtitle** in either locale.
 - **Support URL = `https://www.kiroku.cz/support`**.
 - **Never auto-release**: `automatic_release: false` in the `production` lane — approved builds stay Pending Developer Release.
-- **App Review info**: demo sign-in account + contact supplied via env vars/secrets (see above); **notes empty**.
+- **App Review info**: demo sign-in account + contact supplied via env vars/secrets (see above). The notes (`KIROKU_REVIEW_NOTES`) answer the seven Guideline 2.1 "Information Needed" questions from the 1.0.0 submission; set `APPLE_REVIEW_VIDEO_URL` to the screen-recording link so point 1 carries it.
 
 **Corrections discovered by actually running the upload against ASC (the rest of this doc predates these):**
 
