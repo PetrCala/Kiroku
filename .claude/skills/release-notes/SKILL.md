@@ -14,7 +14,7 @@ The two stores almost always have **different baselines**: Google Play productio
 You need, per requested platform, the last **publicly available** version:
 
 - **iOS**: if the user doesn't supply it, read it live: `node scripts/asc.mjs status` and take the version in `READY_FOR_SALE` state.
-- **Android**: there is no Play Console API wired up; the user must supply it. If they only know the minor (for example "0.3.10-something"), pass the bare minor to the script. It resolves to that minor's last build, and you must state that assumption next to the output so the user can correct it.
+- **Android**: if the user doesn't supply it, read it live: `node scripts/play.mjs status` and take the production track's `completed` release (each version code is printed with the internal version it decodes to). It decrypts the service-account key and prompts for `LARGE_SECRET_PASSPHRASE`, so let the user run it when that isn't at hand. If they only know the minor (for example "0.3.10-something"), pass the bare minor to the script. It resolves to that minor's last build, and you must state that assumption next to the output so the user can correct it.
 
 Version format mapping: the App Store displays `0.3.13.1`, which is internal version `0.3.13-1` (the deploy converts dashes to dots for iOS). The script accepts either form.
 
