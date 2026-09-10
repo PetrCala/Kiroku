@@ -269,19 +269,15 @@ async function getAccessToken(k) {
 let TOKEN;
 async function api(method, p, body) {
   const url = `${BASE}/${encodeURIComponent(OPTS.packageName)}${p}`;
+  // Google answers a bodiless POST with 411 Length Required.
+  const payload = body ?? (method === 'POST' ? {} : undefined);
   const res = await fetch(url, {
     method,
     headers: {
       Authorization: `Bearer ${TOKEN}`,
       'Content-Type': 'application/json',
     },
-    // Google answers a bodiless POST with 411 Length Required.
-    body:
-      body !== undefined
-        ? JSON.stringify(body)
-        : method === 'POST'
-          ? '{}'
-          : undefined,
+    body: payload === undefined ? undefined : JSON.stringify(payload),
   });
   const text = await res.text();
   let parsed;
