@@ -138,7 +138,7 @@ The Apple Distribution certificate and provisioning profiles (GPG-encrypted in `
 
 ### Store Screenshots
 
-App Store / Play Store screenshots run an end-to-end pipeline: **capture** (fastlane `snapshot` via the manual `screenshots.yml` workflow) → **ingest** (`npm run ingest-screenshots`, maps captures into the framing inputs) → **frame** (`npm run frame-screenshots`, branded captions at exact ASC sizes) → **upload**. To create or change them (captions, locales, theme, or which screen a shot shows), use the `store-screenshots` skill; the shot manifest is `scripts/store-screenshots.config.mjs`. See [`contributingGuides/SCREENSHOTS.md`](contributingGuides/SCREENSHOTS.md) and [`.claude/skills/store-screenshots`](.claude/skills/store-screenshots/SKILL.md).
+App Store / Play Store screenshots run an end-to-end pipeline: **capture** (fastlane `snapshot` via the manual `screenshots.yml` workflow) → **ingest** (`npm run ingest-screenshots`, maps captures into the framing inputs) → **frame** (`npm run frame-screenshots`, branded captions at exact ASC sizes plus a 1080x1920 Play size) → **upload** (`scripts/asc.mjs shots` for the App Store; `node scripts/play.mjs listing --screenshots` for Play, which also pushes the listing text in `fastlane/metadata/android/`). To create or change them (captions, locales, theme, or which screen a shot shows), use the `store-screenshots` skill; the shot manifest is `scripts/store-screenshots.config.mjs`. See [`contributingGuides/SCREENSHOTS.md`](contributingGuides/SCREENSHOTS.md) and [`.claude/skills/store-screenshots`](.claude/skills/store-screenshots/SKILL.md).
 
 ## Related Repositories
 

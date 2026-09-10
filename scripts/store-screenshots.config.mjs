@@ -55,6 +55,20 @@ const devices = [
   {id: 'watch-368', width: 368, height: 448, kind: 'watch', upload: true}, // APP_WATCH_SERIES_4
   {id: 'watch-396', width: 396, height: 484, kind: 'watch'}, // APP_WATCH_SERIES_7
   {id: 'watch-410', width: 410, height: 502, kind: 'watch'}, // APP_WATCH_ULTRA
+  // ─── Google Play ─────────────────────────────────────────────────────────
+  // Play rejects the iPhone frames: each side must be 320-3840 px and the long
+  // side at most twice the short one (1320x2868 is 2.17:1). 1080x1920 is the
+  // 9:16 size Play recommends. Not `upload`, because that marks ASC sizes;
+  // `play.mjs screenshots` reads framed/<locale>/play-phone/ directly. The
+  // wider canvas leaves room for a bigger caption, hence the theme override.
+  {
+    id: 'play-phone',
+    width: 1080,
+    height: 1920,
+    kind: 'phone',
+    store: 'play',
+    theme: {captionSizeRatio: 0.056, captionTopRatio: 0.06, gapRatio: 0.04},
+  },
 ];
 
 // ─── Locales (must match RAW_DIR subfolders and caption keys below) ──────────
@@ -69,6 +83,9 @@ const locales = ['en-US', 'cs'];
 // master that every output size is derived from, so the iPad capture is not
 // consumed here. Keep this in sync with the first device in fastlane/Snapfile.
 const captureLocales = {'en-US': 'en-US', cs: 'cs-CZ'};
+// The Play listing language for each framing locale, used by
+// `play.mjs screenshots` to find framed/<locale>/play-phone/ for a listing.
+const playLocales = {'en-US': 'en-US', cs: 'cs-CZ'};
 const captureSourceDevice = 'iPhone 17 Pro Max';
 
 // ─── Visual theme ───────────────────────────────────────────────────────────
@@ -141,7 +158,7 @@ const shots = [
     raw: '02-session.png',
     caption: {
       'en-US': 'Log a drink in seconds',
-      cs: 'Zaznamenejte nápoj během chvilky',
+      cs: 'Zaznamenejte drink během chvilky',
     },
   },
   {
@@ -188,7 +205,7 @@ const shots = [
     raw: 'watch.png',
     caption: {
       'en-US': 'Log a drink from your wrist',
-      cs: 'Zaznamenejte nápoj přímo z hodinek',
+      cs: 'Zaznamenejte drink přímo z hodinek',
     },
   },
 ];
@@ -202,4 +219,5 @@ export default {
   shots,
   captureLocales,
   captureSourceDevice,
+  playLocales,
 };

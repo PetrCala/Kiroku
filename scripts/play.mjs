@@ -4,15 +4,17 @@
  *
  * The Play-side counterpart of scripts/asc.mjs: it reads what Play actually
  * has, so release questions ("what's on open testing?", "is the listing
- * complete?") get answered from the console instead of guessed. It reuses the
- * fastlane service account (android/app/android-fastlane-json-key.json) and
- * mints the RS256 JWT with Node's built-in crypto. It NEVER prints the key.
+ * complete?") get answered from the console instead of guessed, and it pushes
+ * the store listing from the repo. It reuses the fastlane service account
+ * (android/app/android-fastlane-json-key.json) and mints the RS256 JWT with
+ * Node's built-in crypto. It NEVER prints the key.
  *
  * Tracks and listings can only be read inside an edit, Play's transaction
  * around every app change. `status` opens one, reads from it, and deletes it.
  * It never commits, so nothing in the console changes, and an open edit does
  * not disturb other ones (a CI upload running at the same time is unaffected).
- * `promote` is the only command that commits, and only with --yes.
+ * `promote`, `listing` and `screenshots` make all their changes in one edit
+ * and commit it only with --yes.
  *
  * Requires Node 18+ (global fetch), plus gpg when the key is only present
  * encrypted. No npm dependencies.
@@ -21,6 +23,8 @@
  *   node scripts/play.mjs status
  *   node scripts/play.mjs promote --version-code <code> [--track production]
  *        [--rollout <fraction>] [--notes-dir <dir>] [--yes]
+ *   node scripts/play.mjs listing [--screenshots] [--lang <code>] [--yes]
+ *   node scripts/play.mjs screenshots [--lang <code>] [--keep-tablet] [--yes]
  *
  * Commands:
  *   status   Tracks and their releases (version codes decoded to the internal
@@ -39,12 +43,30 @@
  *            edit is thrown away; with --yes it is committed. This is how
  *            Android ships to production without `:shipit:` (see
  *            contributingGuides/philosophies/DEPLOYING.md).
+ *   listing  Push title, short and full description for every language in
+ *            fastlane/metadata/android/<lang>/ (title.txt,
+ *            short_description.txt, full_description.txt, supply's layout).
+ *            A language Play doesn't have yet is added. With --screenshots it
+ *            also does what `screenshots` does, in the same edit.
+ *   screenshots
+ *            Replace each language's phone screenshots with the framed
+ *            `play-phone` set (framed/<locale>/play-phone/, see
+ *            scripts/store-screenshots.config.mjs; run
+ *            `npm run frame-screenshots` first), in manifest order, and
+ *            remove its 7" and 10" tablet screenshots. Play doesn't require
+ *            tablet shots, and a stale set showing an old UI is worse than
+ *            none; --keep-tablet leaves them alone.
  *
  * Release notes: one <play-language>.txt per language (en-US.txt,
  * cs-CZ.txt), Play's 500-character limit enforced before anything is sent.
  * --notes-dir defaults to fastlane/play-release-notes/<MAJOR.MINOR.PATCH> of
  * the version code, and the release goes out without notes when neither
  * exists.
+ *
+ * `listing` and `screenshots` are dry runs without --yes too. A dry run still
+ * makes every change, inside a throwaway edit that Play validates and that is
+ * then deleted, so it catches what Play would reject without changing
+ * anything in the console. Local files are checked before the key is loaded.
  *
  * Key: --key <path>, else $PLAY_KEY_JSON, else
  * android/app/android-fastlane-json-key.json. When only the .gpg copy exists
@@ -59,7 +81,11 @@
  *   --track <name>        promote: target track (default: production)
  *   --rollout <fraction>  promote: staged rollout share, e.g. 0.2
  *   --notes-dir <dir>     promote: release notes directory (see above)
- *   --yes                 promote: commit the edit instead of a dry run
+ *   --lang <code>         listing / screenshots: only this Play language
+ *   --screenshots         listing: also replace the screenshots, same edit
+ *   --keep-tablet         screenshots: keep the existing tablet screenshots
+ *   --yes                 promote / listing / screenshots: commit the edit
+ *                         instead of a dry run
  *   --help, -h            show this help
  */
 import fs from 'node:fs';
@@ -71,6 +97,9 @@ import {fileURLToPath} from 'node:url';
 const ROOT = path.join(path.dirname(fileURLToPath(import.meta.url)), '..');
 const BASE =
   'https://androidpublisher.googleapis.com/androidpublisher/v3/applications';
+// Media (image) uploads go to a separate host path.
+const UPLOAD_BASE =
+  'https://androidpublisher.googleapis.com/upload/androidpublisher/v3/applications';
 const SCOPE = 'https://www.googleapis.com/auth/androidpublisher';
 const DEFAULT_PACKAGE = 'com.alcohol_tracker';
 // Play's hard limits: the console rejects anything longer.
@@ -267,17 +296,23 @@ async function getAccessToken(k) {
 }
 
 let TOKEN;
-async function api(method, p, body) {
-  const url = `${BASE}/${encodeURIComponent(OPTS.packageName)}${p}`;
+/**
+ * `body` is sent as JSON. An image upload passes raw `data` with its
+ * `contentType` instead, and goes to the upload host.
+ */
+async function api(method, p, body, {data, contentType, upload} = {}) {
+  const url = `${upload ? UPLOAD_BASE : BASE}/${encodeURIComponent(OPTS.packageName)}${p}`;
   // Google answers a bodiless POST with 411 Length Required.
   const payload = body ?? (method === 'POST' ? {} : undefined);
+  let raw = data;
+  if (raw === undefined && payload !== undefined) raw = JSON.stringify(payload);
   const res = await fetch(url, {
     method,
     headers: {
       Authorization: `Bearer ${TOKEN}`,
-      'Content-Type': 'application/json',
+      'Content-Type': contentType ?? 'application/json',
     },
-    body: payload === undefined ? undefined : JSON.stringify(payload),
+    body: raw,
   });
   const text = await res.text();
   let parsed;
@@ -702,11 +737,268 @@ async function cmdPromote({versionCode, track, userFraction, dir, notes}) {
   );
 }
 
+// ---- listing / screenshots --------------------------------------------------
+const METADATA_DIR = path.join(ROOT, 'fastlane', 'metadata', 'android');
+// supply's file names, so fastlane and this script read the same layout.
+const TEXT_FILES = {
+  title: 'title.txt',
+  shortDescription: 'short_description.txt',
+  fullDescription: 'full_description.txt',
+};
+// Play's cap per screenshot type, and its size rules for each image.
+const MAX_PHONE_SCREENSHOTS = 8;
+const SCREENSHOT_SIDE = {min: 320, max: 3840};
+const SCREENSHOT_MAX_BYTES = 8 * 1024 * 1024;
+const TABLET_TYPES = ['sevenInchScreenshots', 'tenInchScreenshots'];
+
+/** The listing text per language, from fastlane/metadata/android/<lang>/. */
+function readLocalListings(onlyLang, errors) {
+  const langs = fs
+    .readdirSync(METADATA_DIR, {withFileTypes: true})
+    .filter(d => d.isDirectory() && (!onlyLang || d.name === onlyLang))
+    .map(d => d.name)
+    .sort();
+  const out = [];
+  for (const lang of langs) {
+    const files = Object.entries(TEXT_FILES);
+    const has = f => fs.existsSync(path.join(METADATA_DIR, lang, f));
+    // A folder holding only images/ is not a listing to push.
+    if (!files.some(([, f]) => has(f))) continue;
+    const fields = {};
+    for (const [field, file] of files) {
+      if (!has(file)) {
+        errors.push(`${lang}: missing ${file}`);
+        continue;
+      }
+      const value = fs
+        .readFileSync(path.join(METADATA_DIR, lang, file), 'utf8')
+        .trim();
+      if (!value) errors.push(`${lang}: ${file} is empty`);
+      if (value.length > LIMITS[field])
+        errors.push(
+          `${lang}: ${file} is ${value.length} characters, Play allows ${LIMITS[field]}`,
+        );
+      fields[field] = value;
+    }
+    out.push({lang, fields});
+  }
+  if (!out.length)
+    errors.push(
+      `No listing text in ${path.relative(ROOT, METADATA_DIR)}${onlyLang ? ` for ${onlyLang}` : ''}`,
+    );
+  return out;
+}
+
+/** Width and height from a PNG's IHDR chunk, or null for anything else. */
+function pngSize(file) {
+  const buf = Buffer.alloc(24);
+  const fd = fs.openSync(file, 'r');
+  try {
+    fs.readSync(fd, buf, 0, 24, 0);
+  } finally {
+    fs.closeSync(fd);
+  }
+  if (buf.readUInt32BE(0) !== 0x89504e47) return null;
+  return {width: buf.readUInt32BE(16), height: buf.readUInt32BE(20)};
+}
+
+/**
+ * The framed Play phone set per Play language: the `store: 'play'` device of
+ * scripts/store-screenshots.config.mjs, read from framed/<locale>/<device>/,
+ * with the framing locale mapped through its `playLocales`.
+ */
+async function readLocalScreenshots(onlyLang, errors) {
+  // eslint-disable-next-line import/extensions -- Node ESM requires the explicit extension
+  const {default: cfg} = await import('./store-screenshots.config.mjs');
+  const device = cfg.devices.find(d => d.store === 'play');
+  if (!device) {
+    errors.push(
+      "No `store: 'play'` device in scripts/store-screenshots.config.mjs",
+    );
+    return [];
+  }
+  const expected = cfg.shots.filter(
+    s => (s.kind ?? 'phone') === device.kind,
+  ).length;
+  const reframe = `npm run frame-screenshots -- --device ${device.id}`;
+  const out = [];
+  for (const [locale, lang] of Object.entries(cfg.playLocales)) {
+    if (onlyLang && lang !== onlyLang) continue;
+    const dir = path.join(ROOT, cfg.OUT_DIR, locale, device.id);
+    const files = fs.existsSync(dir)
+      ? fs
+          .readdirSync(dir)
+          .filter(f => f.endsWith('.png'))
+          .sort()
+          .map(f => path.join(dir, f))
+      : [];
+    // Framing wipes the folder first, so a count off from the manifest means
+    // a partial render (missing captures), not leftovers.
+    if (files.length !== expected) {
+      errors.push(
+        `${lang}: ${files.length} screenshots in ${path.relative(ROOT, dir)}, the manifest has ${expected} (run ${reframe})`,
+      );
+      continue;
+    }
+    if (
+      files.length < MIN_PHONE_SCREENSHOTS ||
+      files.length > MAX_PHONE_SCREENSHOTS
+    )
+      errors.push(
+        `${lang}: ${files.length} screenshots, Play takes ${MIN_PHONE_SCREENSHOTS} to ${MAX_PHONE_SCREENSHOTS}`,
+      );
+    for (const file of files) {
+      const name = path.relative(ROOT, file);
+      const size = pngSize(file);
+      if (!size) {
+        errors.push(`${name} is not a PNG`);
+        continue;
+      }
+      const short = Math.min(size.width, size.height);
+      const long = Math.max(size.width, size.height);
+      if (
+        short < SCREENSHOT_SIDE.min ||
+        long > SCREENSHOT_SIDE.max ||
+        long > 2 * short
+      )
+        errors.push(
+          `${name} is ${size.width}x${size.height}; Play needs each side ${SCREENSHOT_SIDE.min} to ${SCREENSHOT_SIDE.max} px and at most 2:1`,
+        );
+      if (fs.statSync(file).size > SCREENSHOT_MAX_BYTES)
+        errors.push(`${name} is over Play's 8 MB limit`);
+    }
+    out.push({lang, files});
+  }
+  if (!out.length && !errors.length)
+    errors.push(`No Play language matches ${onlyLang}`);
+  return out;
+}
+
+/**
+ * Commit an edit. When Play won't send changes for review automatically (the
+ * app uses managed publishing, or has changes Play wants sent by hand), a plain
+ * commit fails and names changesNotSentForReview. Committing with it keeps the
+ * changes, waiting in Publishing overview for someone to send them.
+ */
+async function commitEdit(id) {
+  try {
+    await api('POST', `/edits/${id}:commit`);
+    L('Committed. Play reviews listing changes before they go live.');
+  } catch (err) {
+    if (!/changesNotSentForReview/.test(err.message)) throw err;
+    await api('POST', `/edits/${id}:commit?changesNotSentForReview=true`);
+    L(
+      'Committed, not yet sent for review (Play would not send it automatically). Send it from Play Console > Publishing overview.',
+    );
+  }
+}
+
+/** The offline half of `listing` / `screenshots`: read and check local files. */
+async function pushArgs({text, images}) {
+  const langFlag = flag('lang');
+  const onlyLang = typeof langFlag === 'string' ? langFlag : null;
+  const errors = [];
+  const listings = text ? readLocalListings(onlyLang, errors) : [];
+  const shotSets = images ? await readLocalScreenshots(onlyLang, errors) : [];
+  if (errors.length)
+    throw new Error(
+      `Local files are not ready:\n${errors.map(e => `  - ${e}`).join('\n')}`,
+    );
+  return {listings, shotSets};
+}
+
+async function cmdPush({listings, shotSets}) {
+  const keepTablet = argv.includes('--keep-tablet');
+  L(OPTS.yes ? 'Applying (--yes).' : 'DRY RUN (add --yes to commit).');
+  L();
+  const edit = await api('POST', '/edits');
+  const at = p => `/edits/${edit.id}${p}`;
+  let committed = false;
+  try {
+    const {listings: current = []} = await api('GET', at('/listings'));
+    const onPlay = new Map(current.map(l => [l.language, l]));
+
+    // Sequential throughout: each step prints what it changed, and Play orders
+    // a type's images by upload order.
+    for (const {lang, fields} of listings) {
+      const before = onPlay.get(lang);
+      L(`${lang}  listing text${before ? '' : ' (new language)'}`);
+      for (const [field, value] of Object.entries(fields)) {
+        const old = before?.[field] ?? '';
+        let change = `${old.length} -> ${value.length} chars`;
+        if (old === value) change = 'unchanged';
+        else if (field === 'title') change = `"${old}" -> "${value}"`;
+        L(`  ${field.padEnd(17)} ${change}`);
+      }
+      // PUT replaces the listing, so carry over the fields we don't manage
+      // (the promo video).
+      const next = {...before, language: lang, ...fields};
+      await api('PUT', at(`/listings/${lang}`), next);
+      onPlay.set(lang, next);
+    }
+
+    for (const {lang, files} of shotSets) {
+      if (!onPlay.has(lang))
+        throw new Error(
+          `${lang} has no listing on Play yet. Push its text first: listing --screenshots`,
+        );
+      const count = async type =>
+        ((await api('GET', at(`/listings/${lang}/${type}`))).images ?? [])
+          .length;
+      L(
+        `${lang}  phone screenshots ${await count('phoneScreenshots')} -> ${files.length}`,
+      );
+      await api('DELETE', at(`/listings/${lang}/phoneScreenshots`));
+      for (const file of files) {
+        await api(
+          'POST',
+          at(`/listings/${lang}/phoneScreenshots?uploadType=media`),
+          undefined,
+          {upload: true, data: fs.readFileSync(file), contentType: 'image/png'},
+        );
+        L(`  + ${path.relative(ROOT, file)}`);
+      }
+      for (const type of TABLET_TYPES) {
+        const n = await count(type);
+        if (!n) continue;
+        if (keepTablet) {
+          L(`  ${type} ${n} kept (--keep-tablet)`);
+          continue;
+        }
+        await api('DELETE', at(`/listings/${lang}/${type}`));
+        L(`  ${type} ${n} -> 0`);
+      }
+    }
+
+    await api('POST', at(':validate'));
+    L();
+    L('Play validated the edit.');
+    if (!OPTS.yes) {
+      L('DRY RUN: discarding it, nothing changed. Re-run with --yes to apply.');
+      return;
+    }
+    await commitEdit(edit.id);
+    committed = true;
+  } finally {
+    if (!committed)
+      await api('DELETE', `/edits/${edit.id}`).catch(err =>
+        console.error(
+          `WARN could not delete edit ${edit.id} (it expires on its own): ${err.message}`,
+        ),
+      );
+  }
+}
+
 // ---- main -----------------------------------------------------------------
-// command -> [offline argument check, run]
+// command -> [offline check of arguments and local files, run]
 const COMMANDS = {
   status: [() => undefined, cmdStatus],
   promote: [promoteArgs, cmdPromote],
+  listing: [
+    () => pushArgs({text: true, images: argv.includes('--screenshots')}),
+    cmdPush,
+  ],
+  screenshots: [() => pushArgs({text: false, images: true}), cmdPush],
 };
 
 (async () => {
@@ -717,7 +1009,7 @@ const COMMANDS = {
     return;
   }
   const [prepare, run] = COMMANDS[cmd];
-  const args = prepare();
+  const args = await prepare();
   const k = await loadKey();
   TOKEN = await getAccessToken(k);
   L(`Signed in as ${k.client_email}`);

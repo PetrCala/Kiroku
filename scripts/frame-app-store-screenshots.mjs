@@ -4,8 +4,9 @@
  * Frame raw app captures into App Store-ready marketing screenshots.
  *
  * Composites your REAL app screenshots onto a branded background with a caption,
- * at the EXACT pixel sizes App Store Connect requires. Deterministic (sharp +
- * text-to-svg, the same stack as generate-icons.mjs) — no headless browser, no
+ * at the EXACT pixel sizes App Store Connect requires, plus a 1080x1920 Google
+ * Play size (`play-phone`; `play.mjs screenshots` uploads it). Deterministic (sharp +
+ * text-to-svg, the same stack as generate-icons.mjs): no headless browser, no
  * generative image model, so output is pixel-perfect and re-runnable.
  *
  * Usage:
@@ -29,7 +30,7 @@
  * Requires: sharp, text-to-svg (already in devDependencies).
  *
  * Apple Guideline 2.3.3: the capture content must match the shipped app. This
- * tool only adds marketing chrome (background + caption) — it never fabricates
+ * tool only adds marketing chrome (background + caption); it never fabricates
  * app UI.
  */
 
@@ -86,12 +87,51 @@ const esc = s =>
       ],
   );
 
-/** Greedy word-wrap using real font metrics, capped at `maxLines`. */
+// Czech typography never ends a line on a one-letter preposition or
+// conjunction ("cestě s / přáteli"), so these stick to the following word.
+const STICKY_WORD = /^[ksvzouai]$/i;
+
+/**
+ * Word-wrap using real font metrics, capped at `maxLines`: greedy, then the
+ * last two lines are balanced so a caption doesn't end on an orphan ("add /
+ * up").
+ */
 function wrap(text, fontSize, maxWidth, maxLines = 3) {
-  const words = text.split(/\s+/).filter(Boolean);
+  const words = [];
+  for (const w of text.split(/\s+/).filter(Boolean)) {
+    const prev = words[words.length - 1];
+    if (prev !== undefined && STICKY_WORD.test(prev.split(' ').pop())) {
+      words[words.length - 1] = `${prev} ${w}`;
+    } else {
+      words.push(w);
+    }
+  }
+  const widthOf = t => font.getMetrics(t, {fontSize}).width;
+  const lines = greedyWrap(words, widthOf, maxWidth, text, maxLines);
+  if (lines.length >= 2) {
+    const a = lines[lines.length - 2].split(' ');
+    const b = lines[lines.length - 1].split(' ');
+    const worst = (x, y) =>
+      Math.max(widthOf(x.join(' ')), widthOf(y.join(' ')));
+    // Move words down while that narrows the wider of the two lines. Sticky
+    // pairs are re-split here, so never move a word that ends in one.
+    while (a.length > 1 && !STICKY_WORD.test(a[a.length - 2])) {
+      const na = a.slice(0, -1);
+      const nb = [a[a.length - 1], ...b];
+      if (widthOf(nb.join(' ')) > maxWidth || worst(na, nb) >= worst(a, b)) {
+        break;
+      }
+      a.pop();
+      b.unshift(nb[0]);
+    }
+    lines.splice(lines.length - 2, 2, a.join(' '), b.join(' '));
+  }
+  return lines;
+}
+
+function greedyWrap(words, widthOf, maxWidth, text, maxLines) {
   const lines = [];
   let line = '';
-  const widthOf = t => font.getMetrics(t, {fontSize}).width;
   for (const w of words) {
     const candidate = line ? `${line} ${w}` : w;
     if (widthOf(candidate) > maxWidth && line) {
@@ -127,9 +167,9 @@ function gradientSvg(w, h, stops) {
 }
 
 /** Full-canvas SVG with the centered, wrapped caption baked as vector paths. */
-function captionSvg(lines, w, h, fontSize) {
+function captionSvg(lines, w, h, fontSize, t) {
   const lineHeight = Math.round(fontSize * 1.22);
-  const top = Math.round(h * theme.captionTopRatio);
+  const top = Math.round(h * t.captionTopRatio);
   const paths = lines
     .map((ln, i) => {
       const d = font.getD(ln, {
@@ -138,7 +178,7 @@ function captionSvg(lines, w, h, fontSize) {
         fontSize,
         anchor: 'center top',
       });
-      return `<path d="${d}" fill="${theme.captionColor}"/>`;
+      return `<path d="${d}" fill="${t.captionColor}"/>`;
     })
     .join('');
   return {
@@ -161,23 +201,25 @@ async function render(shot, index, locale, device) {
     return {status: 'missing', locale, device, raw: shot.raw};
   }
 
-  const fontSize = Math.round(W * theme.captionSizeRatio);
-  const maxTextWidth = Math.round(W * theme.captionMaxWidthRatio);
+  // A device may override parts of the theme (the Play canvas is squatter).
+  const t = {...theme, ...device.theme};
+  const fontSize = Math.round(W * t.captionSizeRatio);
+  const maxTextWidth = Math.round(W * t.captionMaxWidthRatio);
   const caption = shot.caption?.[locale] ?? shot.caption?.['en-US'] ?? '';
   const lines = caption ? wrap(esc(caption), fontSize, maxTextWidth) : [];
-  const {svg: capSvg, blockHeight} = captionSvg(lines, W, H, fontSize);
+  const {svg: capSvg, blockHeight} = captionSvg(lines, W, H, fontSize, t);
 
   // Layout: caption block on top, screenshot fills the remaining area.
-  const top = blockHeight + Math.round(H * theme.gapRatio);
-  const maxW = Math.round(W * theme.screenshotMaxWidthRatio);
-  const maxH = H - top - Math.round(H * theme.bottomRatio);
+  const top = blockHeight + Math.round(H * t.gapRatio);
+  const maxW = Math.round(W * t.screenshotMaxWidthRatio);
+  const maxH = H - top - Math.round(H * t.bottomRatio);
 
   const rawBuf = readFileSync(rawPath);
   const meta = await sharp(rawBuf).metadata();
   const scale = Math.min(maxW / meta.width, maxH / meta.height);
   const sw = Math.max(1, Math.round(meta.width * scale));
   const sh = Math.max(1, Math.round(meta.height * scale));
-  const radius = Math.round(sw * theme.cornerRadiusRatio);
+  const radius = Math.round(sw * t.cornerRadiusRatio);
 
   const shotBuf = await sharp(rawBuf)
     .resize(sw, sh, {fit: 'fill'})
@@ -186,7 +228,7 @@ async function render(shot, index, locale, device) {
     .toBuffer();
 
   const left = Math.round((W - sw) / 2);
-  const out = await sharp(Buffer.from(gradientSvg(W, H, theme.background)))
+  const out = await sharp(Buffer.from(gradientSvg(W, H, t.background)))
     .composite([
       {input: shotBuf, top, left},
       {input: Buffer.from(capSvg), top: 0, left: 0},
@@ -225,7 +267,7 @@ function runCheck(targetLocales) {
   }
   console.log(
     missing
-      ? `\n${missing} capture(s) missing — drop them in ${RAW_DIR}/<locale>/`
+      ? `\n${missing} capture(s) missing. Drop them in ${RAW_DIR}/<locale>/`
       : '\nAll captures present.',
   );
 }

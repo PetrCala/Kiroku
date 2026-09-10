@@ -1,0 +1,25 @@
+Kiroku is a private diary for your alcohol consumption. Log what you drink, see it back in a calendar and in statistics, and make informed decisions about your own habits.
+
+Kiroku is built around harm reduction. Most people underestimate how much they drink. The more clearly you see your own patterns, the easier it is to set a daily limit, notice trends, and cut back when you want to. Kiroku doesn't reward, encourage, or gamify drinking. It's free to use and has no ads.
+
+WHAT YOU CAN DO
+• Log drinks during a live session, or add a past session later
+• Record drink types and standard units (grams of pure alcohol) per session
+• Add notes to remember the context of a session
+• Browse your full history in a monthly calendar, where each day's color follows your own daily limit
+• See statistics and trends: totals, units over time, patterns, and breakdowns
+• Count your alcohol-free days and build alcohol-free streaks
+
+PRIVATE BY DESIGN
+• Works offline and syncs when you're back online
+• Your data is yours: view, edit, or delete any session at any time
+• Delete your account and all of its data from inside the app
+
+FRIENDS (OPTIONAL)
+• Add friends to share progress and support each other
+• Hide your sessions from friends at any time in Settings
+
+Privacy Policy: https://www.kiroku.cz/privacy
+Terms of Use: https://www.kiroku.cz/terms
+
+Kiroku is intended for adults (18+) who want to monitor and reflect on their own drinking. It does not provide medical advice. If you're concerned about your drinking, please talk to a healthcare professional.
