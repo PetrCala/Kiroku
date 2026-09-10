@@ -1,0 +1,10 @@
+Kiroku 1.0 is here, our first public release on Google Play.
+
+- Log drinking sessions live or add them later
+- Record drink types and units, with notes for context
+- Browse your history in a monthly calendar
+- See statistics and trends, including alcohol-free days
+- Works offline and syncs when you're back online
+- Add friends to share progress (optional)
+
+Thank you to everyone who tested the beta!

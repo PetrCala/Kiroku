@@ -82,7 +82,7 @@ State any baseline assumption (for example a bare minor resolved to its last bui
 
 ## Where the text goes (and does not go)
 
-- **Google Play**: pasted manually into the Play Console. CI never uploads changelogs (`skip_upload_changelogs: true` in the Fastfile), so this is the only path.
+- **Google Play**: CI never uploads changelogs (`skip_upload_changelogs: true` in the Fastfile). For a production release shipped with `node scripts/play.mjs promote`, save each locale to `fastlane/play-release-notes/<MAJOR.MINOR.PATCH>/<play-language>.txt` (`en-US.txt`, `cs-CZ.txt`) and the command sends them with the release. Otherwise paste them into the Play Console.
 - **App Store**: pasted into App Store Connect for the release being prepared. Do not edit `fastlane/metadata/*/release_notes.txt` as a delivery mechanism: the deploy's `deliver` call overrides release notes with the auto-generated `TESTFLIGHT_CHANGELOG` env var, so file edits do not stick as a source of truth.
 
 ## Relationship to the CI script

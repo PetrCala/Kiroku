@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * Kiroku Google Play Console helper (zero-dependency, read-only).
+ * Kiroku Google Play Console helper (zero-dependency).
  *
  * The Play-side counterpart of scripts/asc.mjs: it reads what Play actually
  * has, so release questions ("what's on open testing?", "is the listing
@@ -12,12 +12,15 @@
  * around every app change. `status` opens one, reads from it, and deletes it.
  * It never commits, so nothing in the console changes, and an open edit does
  * not disturb other ones (a CI upload running at the same time is unaffected).
+ * `promote` is the only command that commits, and only with --yes.
  *
  * Requires Node 18+ (global fetch), plus gpg when the key is only present
  * encrypted. No npm dependencies.
  *
  * Usage:
  *   node scripts/play.mjs status
+ *   node scripts/play.mjs promote --version-code <code> [--track production]
+ *        [--rollout <fraction>] [--notes-dir <dir>] [--yes]
  *
  * Commands:
  *   status   Tracks and their releases (version codes decoded to the internal
@@ -27,6 +30,21 @@
  *            against CONST.TIPS.PRODUCT_IDS, and subscriptions. Ends with the
  *            gaps it found and the Play Console items the API cannot read.
  *            Writes nothing.
+ *   promote  Put a build that is already on the internal track onto another
+ *            track (production by default) in one edit: the release gets
+ *            that versionCode, the release notes from --notes-dir, and status
+ *            completed, or inProgress at --rollout (0 < fraction < 1) for a
+ *            staged rollout. Play validates the edit and the script prints
+ *            what the track will hold afterwards. DRY RUN: without --yes the
+ *            edit is thrown away; with --yes it is committed. This is how
+ *            Android ships to production without `:shipit:` (see
+ *            contributingGuides/philosophies/DEPLOYING.md).
+ *
+ * Release notes: one <play-language>.txt per language (en-US.txt,
+ * cs-CZ.txt), Play's 500-character limit enforced before anything is sent.
+ * --notes-dir defaults to fastlane/play-release-notes/<MAJOR.MINOR.PATCH> of
+ * the version code, and the release goes out without notes when neither
+ * exists.
  *
  * Key: --key <path>, else $PLAY_KEY_JSON, else
  * android/app/android-fastlane-json-key.json. When only the .gpg copy exists
@@ -35,9 +53,14 @@
  * plaintext key is never written to disk.
  *
  * Flags:
- *   --package <id>   Play package name (default: com.alcohol_tracker)
- *   --key <path>     service account JSON key (see Key above)
- *   --help, -h       show this help
+ *   --package <id>        Play package name (default: com.alcohol_tracker)
+ *   --key <path>          service account JSON key (see Key above)
+ *   --version-code <code> promote: the build to ship, as on internal
+ *   --track <name>        promote: target track (default: production)
+ *   --rollout <fraction>  promote: staged rollout share, e.g. 0.2
+ *   --notes-dir <dir>     promote: release notes directory (see above)
+ *   --yes                 promote: commit the edit instead of a dry run
+ *   --help, -h            show this help
  */
 import fs from 'node:fs';
 import path from 'node:path';
@@ -68,6 +91,10 @@ const IMAGE_TYPES = [
   ['tenInchScreenshots', '10" tablet'],
 ];
 const TRACK_ORDER = ['production', 'beta', 'alpha', 'internal'];
+// Where `promote` looks for release notes when --notes-dir is not given. Kept
+// out of fastlane/metadata/android, where supply would read any folder as a
+// listing language.
+const NOTES_ROOT = path.join(ROOT, 'fastlane', 'play-release-notes');
 // What Play keeps behind the console UI: the API either cannot read these at
 // all (Data safety is write-only) or has no endpoint for them.
 const CONSOLE_ONLY = [
@@ -100,6 +127,7 @@ const OPTS = {
       path.join(ROOT, 'android', 'app', 'android-fastlane-json-key.json'),
   ),
   help: argv.includes('--help') || argv.includes('-h'),
+  yes: argv.includes('--yes'),
 };
 
 function usage() {
@@ -239,7 +267,7 @@ async function getAccessToken(k) {
 }
 
 let TOKEN;
-async function api(method, p) {
+async function api(method, p, body) {
   const url = `${BASE}/${encodeURIComponent(OPTS.packageName)}${p}`;
   const res = await fetch(url, {
     method,
@@ -248,7 +276,12 @@ async function api(method, p) {
       'Content-Type': 'application/json',
     },
     // Google answers a bodiless POST with 411 Length Required.
-    body: method === 'POST' ? '{}' : undefined,
+    body:
+      body !== undefined
+        ? JSON.stringify(body)
+        : method === 'POST'
+          ? '{}'
+          : undefined,
   });
   const text = await res.text();
   let parsed;
@@ -307,8 +340,8 @@ function tipProductIds() {
 }
 
 // ---- status -----------------------------------------------------------------
-function printTracks(tracks, versionCode, gaps) {
-  L('Tracks');
+function printTracks(tracks, versionCode, gaps, title = 'Tracks') {
+  L(title);
   const rank = t => {
     const i = TRACK_ORDER.indexOf(t.track);
     return i === -1 ? TRACK_ORDER.length : i;
@@ -510,18 +543,189 @@ async function cmdStatus() {
   for (const c of CONSOLE_ONLY) L(`  - ${c}`);
 }
 
+// ---- promote ----------------------------------------------------------------
+/** A flag that must carry a value, or undefined when it is absent. */
+function valueFlag(name) {
+  const v = flag(name);
+  if (v === true) throw new Error(`--${name} needs a value`);
+  return v;
+}
+
+/**
+ * Release notes as Play wants them, [{language, text}], from one
+ * <language>.txt per language. Fails when any text is over Play's limit, so a
+ * bad file is caught before an edit is even opened.
+ */
+function readReleaseNotes(versionCode) {
+  const explicit = valueFlag('notes-dir');
+  const version = decodeVersionCode(versionCode)?.split('-')[0];
+  const dir = explicit
+    ? path.resolve(explicit)
+    : version && path.join(NOTES_ROOT, version);
+  if (!dir || !fs.existsSync(dir)) {
+    if (explicit) throw new Error(`No release notes directory at ${dir}`);
+    return {dir: null, notes: []};
+  }
+  const notes = fs
+    .readdirSync(dir)
+    .filter(f => f.endsWith('.txt'))
+    .sort()
+    .map(f => ({
+      language: f.slice(0, -'.txt'.length),
+      text: fs.readFileSync(path.join(dir, f), 'utf8').trim(),
+    }));
+  if (!notes.length) throw new Error(`No <language>.txt files in ${dir}`);
+  const bad = notes.filter(n => !n.text || n.text.length > LIMITS.releaseNotes);
+  if (bad.length)
+    throw new Error(
+      `Release notes must be 1 to ${LIMITS.releaseNotes} characters: ${bad
+        .map(n => `${n.language} has ${n.text.length}`)
+        .join(', ')}`,
+    );
+  return {dir, notes};
+}
+
+/** Everything promote can check offline, so bad input fails before the key. */
+function promoteArgs() {
+  const versionCode = valueFlag('version-code');
+  if (!versionCode || !/^\d+$/.test(versionCode))
+    throw new Error(
+      'promote needs --version-code <code>, e.g. 1001000008 (see `status` for what internal has)',
+    );
+  const track = valueFlag('track') ?? 'production';
+  if (track === 'internal')
+    throw new Error('The build is taken from internal; pick another --track');
+  const rollout = valueFlag('rollout');
+  const userFraction = rollout === undefined ? undefined : Number(rollout);
+  if (userFraction !== undefined && !(userFraction > 0 && userFraction < 1))
+    throw new Error(
+      '--rollout is the share of users as a fraction between 0 and 1 (e.g. 0.2); leave it out for a full rollout',
+    );
+  return {versionCode, track, userFraction, ...readReleaseNotes(versionCode)};
+}
+
+async function cmdPromote({versionCode, track, userFraction, dir, notes}) {
+  L(
+    `${OPTS.yes ? 'PROMOTING' : 'DRY RUN (add --yes to commit)'}: ${showCode(versionCode)} internal -> ${track}`,
+  );
+  if (dir) {
+    L(`Release notes from ${path.relative(ROOT, dir) || dir}`);
+    for (const n of notes)
+      L(`  ${n.language}: ${n.text.length}/${LIMITS.releaseNotes}`);
+  } else {
+    L(
+      `WARN no release notes (no --notes-dir and no ${path.relative(ROOT, NOTES_ROOT)}/<version>)`,
+    );
+  }
+  L();
+
+  const edit = await api('POST', '/edits');
+  let committed = false;
+  try {
+    const readEdit = p => api('GET', `/edits/${edit.id}${p}`);
+    const [{tracks = []}, {listings = []}] = await Promise.all([
+      readEdit('/tracks'),
+      readEdit('/listings'),
+    ]);
+
+    const source = tracks
+      .find(t => t.track === 'internal')
+      ?.releases?.find(r => r.versionCodes?.includes(versionCode));
+    if (!source) {
+      const onInternal = (
+        tracks.find(t => t.track === 'internal')?.releases ?? []
+      )
+        .flatMap(r => r.versionCodes ?? [])
+        .map(showCode);
+      throw new Error(
+        `${showCode(versionCode)} is not on the internal track (internal has: ${onInternal.join(', ') || 'nothing'})`,
+      );
+    }
+    const listed = new Set(listings.map(l => l.language));
+    for (const n of notes)
+      if (!listed.has(n.language))
+        L(`WARN ${n.language} has release notes but no store listing`);
+
+    const current = tracks.find(t => t.track === track) ?? {
+      track,
+      releases: [],
+    };
+    printTracks([current], versionCode, [], `Play has now`);
+    L();
+
+    const release = {
+      name: source.name,
+      versionCodes: [versionCode],
+      status: userFraction === undefined ? 'completed' : 'inProgress',
+      ...(userFraction !== undefined && {userFraction}),
+      ...(notes.length && {releaseNotes: notes}),
+    };
+    // A staged rollout serves the new build to a share of users and the
+    // current completed release to everyone else, so that one has to stay
+    // on the track. A full release replaces everything on it.
+    const kept =
+      userFraction === undefined
+        ? []
+        : (current.releases ?? []).filter(r => r.status === 'completed');
+    await api('PUT', `/edits/${edit.id}/tracks/${encodeURIComponent(track)}`, {
+      track,
+      releases: [release, ...kept],
+    });
+    await api('POST', `/edits/${edit.id}:validate`);
+    const after = await readEdit(`/tracks/${encodeURIComponent(track)}`);
+    printTracks(
+      [after],
+      versionCode,
+      [],
+      OPTS.yes
+        ? 'Play will have (edit committed)'
+        : 'Play would have (validated by Play, not committed)',
+    );
+
+    if (OPTS.yes) {
+      await api('POST', `/edits/${edit.id}:commit`);
+      committed = true;
+    }
+  } finally {
+    if (!committed)
+      await api('DELETE', `/edits/${edit.id}`).catch(err =>
+        console.error(
+          `WARN could not delete edit ${edit.id} (it expires on its own): ${err.message}`,
+        ),
+      );
+  }
+
+  L();
+  if (!OPTS.yes) {
+    L('Nothing changed on Play. Re-run with --yes to commit this edit.');
+    return;
+  }
+  L(`Committed. The ${track} release goes to Google review.`);
+  L(
+    'If Managed publishing is on (Publishing overview in Play Console), the release is still held after review until you publish it there.',
+  );
+}
+
 // ---- main -----------------------------------------------------------------
+// command -> [offline argument check, run]
+const COMMANDS = {
+  status: [() => undefined, cmdStatus],
+  promote: [promoteArgs, cmdPromote],
+};
+
 (async () => {
   if (OPTS.help || !cmd) return usage();
-  if (cmd !== 'status') {
+  if (!COMMANDS[cmd]) {
     usage();
     process.exitCode = 1;
     return;
   }
+  const [prepare, run] = COMMANDS[cmd];
+  const args = prepare();
   const k = await loadKey();
   TOKEN = await getAccessToken(k);
   L(`Signed in as ${k.client_email}`);
-  await cmdStatus();
+  await run(args);
 })().catch(e => {
   console.error('ERROR', e.message);
   process.exit(1);

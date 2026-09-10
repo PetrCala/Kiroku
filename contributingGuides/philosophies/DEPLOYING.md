@@ -138,9 +138,33 @@ Trigger the [cherryPick workflow](../../.github/workflows/cherryPick.yml) manual
 2. Paste the full URL of the already-merged PR.
 3. Choose `staging` or `production` as the target.
 
-The workflow bumps the version, cherry-picks the PR, and pushes the target branch — triggering the normal branch-driven deploy. If there are conflicts, it opens a conflict-resolution PR instead and notifies Discord.
+The workflow bumps the version, cherry-picks the PR, and pushes the target branch, which triggers the normal branch-driven deploy. If there are conflicts, it opens a conflict-resolution PR instead and notifies Discord.
 
 For a **production** cherry-pick, the workflow also automatically bumps staging to the next patch version afterwards, so staging stays ahead of the App Store / Play Store version.
+
+### I want to ship Android to Play production on its own
+
+The `production` branch doesn't reach Google Play production. Its Android lane (`fastlane android production`) only promotes the internal build to open testing (`track_promote_to: 'beta'`). Play production is released separately, straight from the internal track:
+
+```bash
+node scripts/play.mjs promote --version-code 1001000008
+```
+
+#### Why `:shipit:` has to wait while iOS is in review
+
+Closing the `StagingDeployCash` issue with `:shipit:` pushes `production`, and the same deploy runs `fastlane ios production`. That lane calls `deliver` with a newer build number and `reject_if_possible: true`, which **pulls back any iOS version that's waiting for or in App Review** and resubmits. Review then starts again from scratch.
+
+So while an iOS version is in review (for example one submitted by hand with `node scripts/asc.mjs submit`), don't close the checklist. Ship Android with the steps below, and resume the normal `:shipit:` cycle once iOS is approved. Check the iOS state with `node scripts/asc.mjs status`.
+
+#### Steps
+
+1. **See what's on internal.** `node scripts/play.mjs status` prints every track with its version codes decoded (`1001000008 = 1.0.0-8`). Pick the code on internal that you want to ship. A later staging deploy replaces the internal release, so either ship before the next one or add `🔐 LockCashDeploys 🔐` to hold staging while you do.
+2. **Write the release notes.** Put one file per Play language in `fastlane/play-release-notes/<MAJOR.MINOR.PATCH>/` (`en-US.txt`, `cs-CZ.txt`), each 500 characters at most. The `release-notes` skill drafts them against the last Play production (or open-testing) release. `promote` picks this folder up by version; `--notes-dir <dir>` overrides it.
+3. **Dry run.** `node scripts/play.mjs promote --version-code <code>` opens an edit, sets the production release, has Play validate it, prints what the track would hold, and throws the edit away. It checks that the code is on internal and fails on notes over the limit.
+4. **Ship.** Run the same command with `--yes` to commit the edit. For a staged rollout, add `--rollout 0.2` (20% of users); run it again with a higher fraction, or without `--rollout` for everyone.
+5. **Publish if Managed publishing is on.** Committed changes go to Google review, and with Managed publishing on they're held after review until you click publish in Play Console under **Publishing overview**. A first production release can take several days to review.
+
+The script decrypts the fastlane service-account key in memory and prompts for `LARGE_SECRET_PASSPHRASE` (hidden input) when it isn't set, so there's nothing to export beforehand.
 
 ## Key GitHub Workflows
 
