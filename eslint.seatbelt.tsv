@@ -836,7 +836,6 @@
 "src/languages/types.ts"	"@typescript-eslint/no-restricted-types"	1
 "src/libs/API/index.ts"	"react-hooks/rules-of-hooks"	2
 "src/libs/Accessibility/index.ts"	"rulesdir/prefer-narrow-hook-dependencies"	1
-"src/libs/ApiUtils.ts"	"rulesdir/no-onyx-connect"	1
 "src/libs/Console/index.ts"	"@typescript-eslint/no-base-to-string"	2
 "src/libs/Console/index.ts"	"rulesdir/no-onyx-connect"	1
 "src/libs/DateUtils.ts"	"@typescript-eslint/switch-exhaustiveness-check"	1

@@ -63,7 +63,6 @@ The application uses a nested provider structure for context management:
 
 5. **Notifications**
 
-   - Push notification opt-in/out
    - Focus mode alerts
 
 6. **Onboarding & Welcome**

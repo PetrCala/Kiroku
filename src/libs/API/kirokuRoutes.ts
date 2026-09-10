@@ -4,13 +4,18 @@ import {
   SIDE_EFFECT_REQUEST_COMMANDS,
   WRITE_COMMANDS,
 } from './types';
+import type {
+  ReadCommand,
+  SideEffectRequestCommand,
+  WriteCommand,
+} from './types';
 
 /**
  * kiroku-api is a per-route REST surface (e.g. `GET /v1/app/open`,
  * `POST /v1/friends/request`), unlike the legacy Expensify-style single endpoint
  * (`{root}api/{Command}`). This map translates a command name to its
- * `{method, path}` on kiroku-api. Commands NOT listed here fall through to the
- * legacy request path in `HttpUtils.xhr`. Add an entry as each action is cut over.
+ * `{method, path}` on kiroku-api. The map covers every declared command, so a
+ * command added without a route fails to typecheck. The legacy endpoint is gone.
  */
 type KirokuRoute = {
   /** HTTP method to use against kiroku-api. */
@@ -33,7 +38,9 @@ type KirokuRoute = {
   requiresAuth?: boolean;
 };
 
-const KIROKU_ROUTES: Record<string, KirokuRoute> = {
+type ApiCommand = WriteCommand | ReadCommand | SideEffectRequestCommand;
+
+const KIROKU_ROUTES: Record<ApiCommand, KirokuRoute> = {
   [WRITE_COMMANDS.OPEN_APP]: {
     method: 'get',
     path: '/v1/app/open',
@@ -303,9 +310,9 @@ const KIROKU_DIRECT_PATHS = {
   HEALTHZ: '/v1/healthz',
 } as const;
 
-/** Returns the kiroku-api route for a command, or undefined for legacy commands. */
+/** Returns the kiroku-api route for a command, or undefined for an unknown one. */
 function getKirokuRoute(command: string): KirokuRoute | undefined {
-  return KIROKU_ROUTES[command];
+  return (KIROKU_ROUTES as Partial<Record<string, KirokuRoute>>)[command];
 }
 
 export {getKirokuRoute, KIROKU_DIRECT_PATHS};
