@@ -15,38 +15,61 @@
 
 # App Store "App Review Information": sign-in (demo) account + contact for the
 # reviewer. Secrets come from the environment (GitHub Actions secrets / a local
-# untracked env), never hardcode them, the repo is public. Notes are empty.
+# untracked env), never hardcode them, the repo is public.
 # Returns nil when the demo creds are absent so deliver skips review info
 # cleanly (it early-returns on a nil app_review_information).
-# Sent with every App Store submission. Version 0.3.22 was rejected under
-# Guideline 1.4 (Physical Harm) with the reviewer describing Kiroku as
-# "marketed as a blood alcohol content calculator", which it has never been.
-# Nothing in the app computes BAC, so say so up front rather than arguing it
-# after the fact.
+#
+# The notes answer, in order, the seven points App Review asked for under
+# Guideline 2.1 (Information Needed) on the 1.0.0 submission, and Apple wants
+# them kept here for every future submission. Point 1 (the screen recording)
+# comes from APPLE_REVIEW_VIDEO_URL, see kiroku_review_notes. The BAC paragraph
+# is there because 0.3.22 was rejected under Guideline 1.4 (Physical Harm) as
+# "marketed as a blood alcohol content calculator", which Kiroku has never
+# been. ASC caps the field at 4000 characters.
 KIROKU_REVIEW_NOTES = <<~NOTES.freeze
-  Kiroku is a personal alcohol-consumption diary. It records only what the
-  user chooses to log, and reports it back as totals, standard units, and
-  alcohol-free days.
+  2. PURPOSE AND AUDIENCE
+  Kiroku is a personal alcohol-consumption diary for adults (18+). Users log the drinks they choose to record and see them back as totals, standard units, and alcohol-free days, in a calendar and in statistics. Most people underestimate how much they drink; seeing your own pattern makes it easier to set a daily limit, notice trends, and cut back. The app is built around harm reduction. It doesn't encourage, reward, or gamify drinking, gives no medical advice, and points users to a healthcare professional if they're concerned about their drinking.
 
-  Kiroku does NOT estimate, calculate, or display blood alcohol content, and
-  it makes no claim about a user's level of impairment. There is no BAC
-  formula anywhere in the app: it never asks for body weight, sex, height, or
-  time since the last drink, and it shows no intoxication readout or
-  time-to-sober countdown. "Units" are the WHO standard-drink measure (grams
-  of ethanol per drink), a labelling convention printed on bottles, not a
-  physiological estimate.
+  Kiroku does NOT estimate, calculate, or display blood alcohol content, and makes no claim about a user's level of impairment. It never asks for body weight, sex, height, or time since the last drink, and shows no intoxication readout or time-to-sober countdown. "Units" are the WHO standard-drink measure (grams of ethanol per drink), a labelling convention, not a physiological estimate. The colour of a calendar day reflects the user's own self-set daily limit.
 
-  The colour of a day in the calendar reflects the user's own self-set daily
-  limit, not a measured bodily state.
+  3. HOW TO REVIEW
+  Sign in with the demo account from the Sign-In Information fields, using the email/password form on the first screen. Sign in with Apple and Google are also offered, and a new account can be created with any email. The demo account has several months of logged sessions and a few friends, so every screen has content.
+  - Home tab: the calendar of past days. Tap + to start a session, log drinks, then finish it.
+  - Statistics tab: totals, units over time, and alcohol-free days.
+  - Friends tab: friend list, search, and requests. Open a friend's profile and tap Manage to Report or Block them.
+  - Account deletion: Settings > Privacy > Manage account > Delete account. It permanently deletes the account and its data.
+  - Tip jar: Settings > Support Kiroku (see 7).
 
-  The app is framed around harm reduction: seeing your own pattern, tracking
-  alcohol-free days, and cutting back. It is for adults (18+), gives no
-  medical advice, and points users to a healthcare professional if they are
-  concerned about their drinking.
+  User-generated content: display names, nicknames, and profile photos are visible to a user's friends, and friends can see each other's sessions unless a user hides them in Settings > Privacy. There is no public feed and no chat or messaging. Uploaded profile photos are screened automatically for explicit content. Users can report or block a friend from that friend's profile; reports go to our moderation team, and blocked users are listed under Settings > Privacy > Blocked users.
 
-  The demo account is pre-populated with several months of logged sessions
-  and a short friends list so every screen has content to show.
+  4. EXTERNAL SERVICES
+  - Firebase (Google): Authentication (email/password, Sign in with Apple, Google Sign-In), Realtime Database and Cloud Storage for user data and profile photos, Cloud Functions for our backend API, and Crashlytics and Performance Monitoring for crash and performance reports (users can turn these off in Settings > Privacy).
+  - Google Cloud Vision SafeSearch: screens uploaded profile photos for explicit content. There are no generative AI features.
+  - RevenueCat, on top of Apple In-App Purchase, for the tip jar.
+  - Apple Core Location, only if the user turns on Settings > Privacy > Tag drinks with location (off by default).
+  No advertising or analytics SDKs.
+
+  5. REGIONS
+  The app works the same in every region; no feature or content differs by region. Tip prices are shown in each storefront's local currency, as reported by Apple.
+
+  6. REGULATED INDUSTRY AND THIRD-PARTY MATERIAL
+  Not applicable. Kiroku doesn't sell, deliver, or advertise alcohol, isn't a medical device, gives no medical advice, and contains no licensed third-party material.
+
+  7. IN-APP PURCHASES
+  Three optional consumable tips: "A small beer", "A pint", and "A round for the team" (kiroku.tipjar.small_beer, kiroku.tipjar.pint, kiroku.tipjar.round). To buy one: Settings tab > Support Kiroku > pick a tier > tap the buy button. A tip unlocks nothing: no feature, badge, or limit changes, and every feature stays free. This version has no subscriptions.
 NOTES
+
+def kiroku_review_notes
+  video_url = ENV["APPLE_REVIEW_VIDEO_URL"]
+  recording =
+    if video_url.to_s.empty?
+      "A screen recording on a physical iPhone is attached to our reply in App Review."
+    else
+      "Screen recording on a physical iPhone: #{video_url}"
+    end
+
+  "1. SCREEN RECORDING\n#{recording}\n\n#{KIROKU_REVIEW_NOTES}"
+end
 
 def kiroku_review_information
   demo_user = ENV["APPLE_DEMO_EMAIL"]
@@ -60,7 +83,7 @@ def kiroku_review_information
     email_address: ENV["APPLE_CONTACT_EMAIL"],
     demo_user: demo_user,
     demo_password: demo_password,
-    notes: KIROKU_REVIEW_NOTES
+    notes: kiroku_review_notes
   }
 end
 
