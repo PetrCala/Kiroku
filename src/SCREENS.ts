@@ -16,6 +16,8 @@ const SCREENS = {
   AUTH: 'Auth',
   FORGOT_PASSWORD: 'ForgotPassword',
   FORCE_UPDATE: 'ForceUpdate',
+  // Shared by the public and signed-in root stacks
+  ADD_FRIEND: 'AddFriend',
 
   ONBOARDING: {
     TERMS: 'Onboarding_Terms',
@@ -117,6 +119,7 @@ const SCREENS = {
     FRIEND_LIST: 'Social_FriendList',
     FRIEND_REQUESTS: 'Social_FriendRequests',
     FRIEND_SEARCH: 'Social_FriendSearch',
+    MY_QR_CODE: 'Social_MyQrCode',
   },
 
   STATISTICS: {

@@ -29,6 +29,14 @@ type ForgotPasswordSuccessParams = {
   email: string;
 };
 
+type InviteDisplayNameParams = {
+  displayName: string;
+};
+
+type InviteLinkParams = {
+  link: string;
+};
+
 type FriendRequestsCountParams = {
   requestsCount: number;
 };
@@ -143,6 +151,8 @@ export type {
   ForceUpdateTextParams,
   ForgotPasswordSuccessParams,
   FriendRequestsCountParams,
+  InviteDisplayNameParams,
+  InviteLinkParams,
   LastSessionSummaryParams,
   OnboardingStepCounterParams,
   RelativeTimeAgoParams,

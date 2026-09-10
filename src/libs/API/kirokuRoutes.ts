@@ -153,6 +153,33 @@ const KIROKU_ROUTES: Record<ApiCommand, KirokuRoute> = {
     method: 'post',
     path: '/v1/friends/request',
   },
+  // Personal invite links. The caller's own code comes back as
+  // `merge userDataList { [uid]: { invite_code } }` in onyxData.
+  [SIDE_EFFECT_REQUEST_COMMANDS.GET_INVITE_CODE]: {
+    method: 'get',
+    path: '/v1/friends/invite',
+  },
+  [SIDE_EFFECT_REQUEST_COMMANDS.RESET_INVITE_CODE]: {
+    method: 'post',
+    path: '/v1/friends/invite/reset',
+  },
+  // Public preview of an invite link's owner (`invitePreview` sidecar). Used
+  // signed out too (web visitors, native before sign-in), so it runs without a
+  // token. The server answers it before its auth gate, so it never returns the
+  // 401 that would trigger the revoked-token sign-out for a signed-in caller.
+  [SIDE_EFFECT_REQUEST_COMMANDS.GET_INVITE_PREVIEW]: {
+    method: 'get',
+    path: '/v1/friends/invite/:code',
+    toPath: data =>
+      `/v1/friends/invite/${encodeURIComponent(String(data.code))}`,
+    requiresAuth: false,
+  },
+  [SIDE_EFFECT_REQUEST_COMMANDS.REDEEM_INVITE]: {
+    method: 'post',
+    path: '/v1/friends/invite/:code/redeem',
+    toPath: data =>
+      `/v1/friends/invite/${encodeURIComponent(String(data.code))}/redeem`,
+  },
   [WRITE_COMMANDS.ACCEPT_FRIEND_REQUEST]: {
     method: 'post',
     path: '/v1/friends/accept',

@@ -19,6 +19,8 @@ import type {
   ForceUpdateTextParams,
   ForgotPasswordSuccessParams,
   FriendRequestsCountParams,
+  InviteDisplayNameParams,
+  InviteLinkParams,
   LastSessionSummaryParams,
   OnboardingStepCounterParams,
   RelativeTimeAgoParams,
@@ -479,6 +481,7 @@ export default {
     friendRequests: 'Friend Requests',
     noFriendsYet: 'You do not have any friends yet',
     addThemHere: 'Add them here',
+    myQrCode: 'My QR code',
   },
   friendsFriendsScreen: {
     title: 'Find Friends of Friends',
@@ -494,6 +497,8 @@ export default {
     title: 'Search For New Friends',
     noUsersFound: 'There are no users with this nickname.',
     searchWindow: "Search for a user's nickname",
+    myQrCode: 'Add friends with your QR code',
+    myQrCodeDescription: 'Show your code or share your invite link',
   },
   friendRequestScreen: {
     requestsReceived: ({requestsCount}: FriendRequestsCountParams) =>
@@ -526,6 +531,58 @@ export default {
         'Could not remove the friend request. Please try again.',
       couldNotUnfriend: 'Could not remove this friend. Please try again.',
       couldNotBlockUser: 'Could not block this user. Please try again.',
+    },
+  },
+  myQrCodeScreen: {
+    title: 'My QR code',
+    prompt:
+      'Friends can scan this code with their phone camera to add you on Kiroku.',
+    qrCodeLabel: 'QR code with your invite link',
+    share: 'Share invite link',
+    shareMessage: ({link}: InviteLinkParams) =>
+      `Add me as a friend on Kiroku: ${link}`,
+    copyLink: 'Copy link',
+    linkCopied: 'Link copied',
+    resetLink: 'Reset link',
+    resetTitle: 'Reset your invite link?',
+    resetPrompt:
+      "Your current link and QR code will stop working. Anyone who hasn't used it yet will need the new one.",
+    resetConfirm: 'Reset',
+    tryAgain: 'Try again',
+    error: {
+      couldNotLoad: "Couldn't load your invite link.",
+      couldNotReset: "Couldn't reset your invite link. Please try again.",
+    },
+  },
+  addFriendScreen: {
+    title: 'Add friend',
+    invitedYou: ({displayName}: InviteDisplayNameParams) =>
+      `${displayName} invited you to be friends on Kiroku.`,
+    addFriend: 'Add friend',
+    addedTitle: 'Friend added',
+    added: ({displayName}: InviteDisplayNameParams) =>
+      `You and ${displayName} are now friends.`,
+    alreadyFriends: ({displayName}: InviteDisplayNameParams) =>
+      `You and ${displayName} are already friends.`,
+    viewProfile: 'View profile',
+    ownInvite: 'This is your own invite link. Share it so friends can add you.',
+    showMyQrCode: 'Show my QR code',
+    blocked: "You've blocked this user. Unblock them to add them as a friend.",
+    manageBlockedUsers: 'Manage blocked users',
+    signInToAdd: 'Sign in to add friend',
+    signInHint:
+      "Sign in or create an account and we'll bring you right back here.",
+    getTheApp: 'New to Kiroku? Get the app:',
+    getIosApp: 'Get the iPhone app',
+    getAndroidApp: 'Get the Android app',
+    invalidTitle: "This link doesn't work",
+    invalid:
+      'It may have been reset or mistyped. Ask your friend for a new one.',
+    tryAgain: 'Try again',
+    error: {
+      couldNotLoad: "Couldn't load this invite.",
+      couldNotAdd: "Couldn't add this friend.",
+      generic: 'Something went wrong. Please try again.',
     },
   },
   notFoundScreen: {

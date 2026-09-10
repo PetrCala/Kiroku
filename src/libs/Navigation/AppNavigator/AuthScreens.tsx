@@ -35,6 +35,7 @@ import useCurrentUserData from '@hooks/useCurrentUserData';
 import useCurrentUserPreferences from '@hooks/useCurrentUserPreferences';
 import {useFirebase} from '@context/global/FirebaseContext';
 import OnboardingGuard from '@libs/Navigation/guards/OnboardingGuard';
+import PendingFriendInviteGuard from '@libs/Navigation/guards/PendingFriendInviteGuard';
 import TermsReConsentGuard from '@libs/Navigation/guards/TermsReConsentGuard';
 import createCustomStackNavigator from './createCustomStackNavigator';
 import getRootNavigatorScreenOptions from './getRootNavigatorScreenOptions';
@@ -53,6 +54,9 @@ import {
 // eslint-disable-next-line rulesdir/no-negated-variables
 const notFoundScreen = () =>
   require<ReactComponentModule>('@screens/ErrorScreen/NotFoundScreen').default;
+
+const addFriendScreen = () =>
+  require<ReactComponentModule>('@screens/Social/AddFriendScreen').default;
 
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 let lastUpdateIDAppliedToClient: OnyxEntry<number>;
@@ -283,6 +287,13 @@ function AuthScreensContent() {
           options={screenOptions.fullScreen}
           getComponent={notFoundScreen}
         />
+        {/* Root level (not RHP) because the same `add/:code` path also has to
+            resolve in the public stack for signed-out visitors. */}
+        <RootStack.Screen
+          name={SCREENS.ADD_FRIEND}
+          options={screenOptions.fullScreen}
+          getComponent={addFriendScreen}
+        />
         <RootStack.Screen
           name={NAVIGATORS.RIGHT_MODAL_NAVIGATOR}
           options={screenOptions.rightModalNavigator}
@@ -354,6 +365,7 @@ function AuthScreensContent() {
           )} */}
       </RootStack.Navigator>
       <OnboardingGuard />
+      <PendingFriendInviteGuard />
       <TermsReConsentGuard />
     </View>
     // </ComposeProviders>

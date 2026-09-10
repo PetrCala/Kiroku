@@ -261,6 +261,8 @@ const SocialModalStackNavigator =
     [SCREENS.SOCIAL.FRIEND_SEARCH]: () =>
       require<ReactComponentModule>('@screens/Social/FriendSearchScreen')
         .default,
+    [SCREENS.SOCIAL.MY_QR_CODE]: () =>
+      require<ReactComponentModule>('@screens/Social/MyQrCodeScreen').default,
   });
 
 export {

@@ -6,6 +6,7 @@ import ForceUpdateScreen from '@components/Modals/ForceUpdateModal';
 import AuthScreen from '@screens/SignUp/AuthScreen';
 import InitialScreen from '@screens/SignUp/InitialScreen';
 import ForgotPasswordScreen from '@screens/SignUp/ForgotPasswordScreen';
+import AddFriendScreen from '@screens/Social/AddFriendScreen';
 import NAVIGATORS from '@src/NAVIGATORS';
 import SCREENS from '@src/SCREENS';
 import defaultScreenOptions from './defaultScreenOptions';
@@ -35,6 +36,13 @@ function PublicScreens() {
         name={SCREENS.FORCE_UPDATE}
         options={{...defaultScreenOptions, gestureEnabled: false}}
         component={ForceUpdateScreen}
+      />
+      {/* Invite links opened while signed out: preview + sign-in (the code is
+          kept and reopened after sign-in by PendingFriendInviteGuard). */}
+      <RootStack.Screen
+        name={SCREENS.ADD_FRIEND}
+        options={defaultScreenOptions}
+        component={AddFriendScreen}
       />
     </RootStack.Navigator>
   );

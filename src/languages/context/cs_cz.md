@@ -95,6 +95,13 @@ zde`, `Přidejte si je zde`, `Zkuste hledat zde`.
 | tip (money, noun)              | **příspěvek**                                                                       | dýško, spropitné           |
 | alcohol adventures (tagline)   | **alkoholová dobrodružství** ("Mějte přehled o svých alkoholových dobrodružstvích") | alkoholové zážitky         |
 | share your drinks with friends | **sdílet s přáteli** ("Zapisujte své drinky a sdílejte je s přáteli")               |                            |
+| invite link (friend)           | **odkaz pro přidání do přátel** (short: "odkaz")                                    | pozvánkový odkaz           |
+| QR code                        | **QR kód**                                                                          |                            |
+| reset (an invite link)         | **vytvořit nový odkaz**                                                             | resetovat, obnovit         |
+
+Share-sheet text the user sends to a friend (`myQrCodeScreen.shareMessage`) is
+written in the user's voice to that friend, so it uses tykání ("Přidej si mě").
+Everything addressed to the user stays vykání.
 
 ## Do-not-translate (keep verbatim)
 

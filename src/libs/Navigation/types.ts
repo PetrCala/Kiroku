@@ -169,6 +169,7 @@ type SocialNavigatorParamList = {
   [SCREENS.SOCIAL.FRIEND_LIST]: undefined;
   [SCREENS.SOCIAL.FRIEND_REQUESTS]: undefined;
   [SCREENS.SOCIAL.FRIEND_SEARCH]: undefined;
+  [SCREENS.SOCIAL.MY_QR_CODE]: undefined;
 };
 
 type RightModalNavigatorParamList = {
@@ -209,6 +210,10 @@ type BottomTabNavigatorParamList = {
 
 type SharedScreensParamList = {
   [NAVIGATORS.BOTTOM_TAB_NAVIGATOR]: NavigatorScreenParams<BottomTabNavigatorParamList>;
+  // Personal invite link target; signed-out visitors land here too.
+  [SCREENS.ADD_FRIEND]: {
+    code: string;
+  };
   // [SCREENS.TRANSITION_BETWEEN_APPS]: {
   //     email?: string;
   //     accountID?: number;

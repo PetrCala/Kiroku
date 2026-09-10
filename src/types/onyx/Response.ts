@@ -1,5 +1,7 @@
 import type {OnyxUpdate} from 'react-native-onyx';
+import type InvitePreview from './InvitePreview';
 import type NicknameToId from './NicknameToId';
+import type {UserID} from './OnyxCommon';
 
 /** Model of commands data */
 type Data = {
@@ -93,6 +95,12 @@ type Response = {
 
   /** Deterministic storage object path paired with `uploadUrl`, echoed to `finalize`. */
   objectPath?: string;
+
+  /** Who an invite link belongs to (`GET /v1/friends/invite/:code`). */
+  invitePreview?: InvitePreview;
+
+  /** The new friend after redeeming an invite (`POST /v1/friends/invite/:code/redeem`). */
+  friendUserID?: UserID;
 };
 
 export default Response;

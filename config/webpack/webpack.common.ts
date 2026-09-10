@@ -43,6 +43,8 @@ const includeModules = [
   'react-native-safe-area-context',
   'react-native-screens',
   'react-native-svg',
+  // Ships untranspiled JSX in src/ (the personal invite QR code)
+  'react-native-qrcode-svg',
   '@react-native/assets-registry',
   'expo',
   'expo-image',
@@ -129,6 +131,9 @@ const getCommonConfiguration = ({
           {from: 'web/manifest.json'},
           // Opt-in device-simulator host page (embeds the app at `/` in a phone bezel iframe).
           {from: 'web/simulator.html'},
+          // iOS universal link + Android app link verification for the
+          // personal friend invite links (https://app.kiroku.cz/add/<code>).
+          {from: 'web/.well-known', to: '.well-known'},
           {from: 'assets/css', to: 'css'},
           {from: 'assets/fonts/web', to: 'fonts'},
 

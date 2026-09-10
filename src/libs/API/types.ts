@@ -150,6 +150,10 @@ const SIDE_EFFECT_REQUEST_COMMANDS = {
   GET_FEEDBACK_LIST: 'GetFeedbackList',
   GET_BUG_LIST: 'GetBugList',
   GET_MIN_VERSION: 'GetMinVersion',
+  GET_INVITE_CODE: 'GetInviteCode',
+  RESET_INVITE_CODE: 'ResetInviteCode',
+  GET_INVITE_PREVIEW: 'GetInvitePreview',
+  REDEEM_INVITE: 'RedeemInvite',
 } as const;
 
 type SideEffectRequestCommand = ValueOf<typeof SIDE_EFFECT_REQUEST_COMMANDS>;
@@ -163,6 +167,10 @@ type SideEffectRequestCommandParameters = {
   [SIDE_EFFECT_REQUEST_COMMANDS.GET_FEEDBACK_LIST]: EmptyObject;
   [SIDE_EFFECT_REQUEST_COMMANDS.GET_BUG_LIST]: EmptyObject;
   [SIDE_EFFECT_REQUEST_COMMANDS.GET_MIN_VERSION]: EmptyObject;
+  [SIDE_EFFECT_REQUEST_COMMANDS.GET_INVITE_CODE]: EmptyObject;
+  [SIDE_EFFECT_REQUEST_COMMANDS.RESET_INVITE_CODE]: EmptyObject;
+  [SIDE_EFFECT_REQUEST_COMMANDS.GET_INVITE_PREVIEW]: Parameters.InviteCodeParams;
+  [SIDE_EFFECT_REQUEST_COMMANDS.REDEEM_INVITE]: Parameters.InviteCodeParams;
 };
 
 type ApiRequestCommandParameters = WriteCommandParameters &

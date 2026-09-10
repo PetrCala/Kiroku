@@ -40,6 +40,14 @@ const ROUTE_CASES: RouteCase[] = [
     screen: SCREENS.DRINKING_SESSION.EDIT,
     params: {sessionId: 'abc'},
   },
+  // Personal invite link target: root level, so it resolves for signed-out
+  // visitors (public stack) and signed-in users alike.
+  {
+    path: 'add/abcd234567',
+    screen: SCREENS.ADD_FRIEND,
+    params: {code: 'abcd234567'},
+  },
+  {path: 'social/my-qr-code', screen: SCREENS.SOCIAL.MY_QR_CODE},
 ];
 
 describe('linkingConfig prefixes', () => {

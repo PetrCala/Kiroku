@@ -112,6 +112,15 @@ type UserData = {
   friends?: UserList;
 
   /**
+   * The signed-in user's personal invite code, the `<code>` in
+   * `https://app.kiroku.cz/add/<code>`. Server-generated on first
+   * `GET /v1/friends/invite` and rotated by `POST /v1/friends/invite/reset`;
+   * also hydrated with the rest of `users/{uid}` on `app/open`. Only present on
+   * the user's own record.
+   */
+  invite_code?: string;
+
+  /**
    * The signed-in user's OWN outbound block list: a map of uids this user has
    * blocked (`{[uid]: true}`). Server-authoritative — written by the kiroku-api
    * BlockUser/UnblockUser handlers and hydrated into Onyx the same way `friends`
