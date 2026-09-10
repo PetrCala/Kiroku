@@ -1,6 +1,6 @@
 ---
 name: store-screenshots
-description: End-to-end pipeline for Kiroku's App Store / Play Store screenshots — capture real app screens, ingest, frame onto a branded gradient with a localized caption at the exact App Store Connect sizes (6.9" 1320×2868, 6.7" 1290×2796), then upload. Use whenever the user wants to create, change, regenerate, restyle, or re-caption store screenshots / marketing screenshots / "the images users see on the App Store" — change a caption, add a locale, swap which screen a shot shows, re-theme the background, or capture fresh app screens. Trigger on direct and indirect phrasing: "change the store screenshots", "regenerate the App Store images", "frame my screenshots", "update the screenshot captions", "new store screenshots", "capture app screenshots". Deterministic framing (sharp + text-to-svg); never hand-edit the framed PNGs or fabricate app UI (Apple Guideline 2.3.3).
+description: End-to-end pipeline for Kiroku's App Store / Play Store screenshots: capture real app screens, ingest, frame onto a branded gradient with a localized caption at the exact App Store Connect sizes (6.9" 1320×2868, 6.7" 1290×2796) plus a 1080×1920 Google Play size, then upload (asc.mjs for App Store Connect, play.mjs for Play, which also pushes the Play listing text). Use whenever the user wants to create, change, regenerate, restyle, or re-caption store screenshots / marketing screenshots / "the images users see on the App Store" (change a caption, add a locale, swap which screen a shot shows, re-theme the background, or capture fresh app screens). Trigger on direct and indirect phrasing: "change the store screenshots", "regenerate the App Store images", "frame my screenshots", "update the screenshot captions", "new store screenshots", "capture app screenshots". Deterministic framing (sharp + text-to-svg); never hand-edit the framed PNGs or fabricate app UI (Apple Guideline 2.3.3).
 ---
 
 # Store screenshots (Kiroku)
@@ -151,6 +151,26 @@ later rather than as an error:
 appends to the existing screenshots. Apple processes assets asynchronously, so
 confirm every screenshot reports `assetDeliveryState` `COMPLETE` before
 submitting.
+
+### 5. Google Play
+
+Play rejects the iPhone frames (each side must be 320 to 3840 px and at most
+2:1; 1320x2868 is 2.17:1), so framing also renders a 1080x1920 `play-phone`
+size into `framed/<locale>/play-phone/` (phone shots only, no watch). The
+listing text lives in `fastlane/metadata/android/<lang>/` (`title.txt`,
+`short_description.txt`, `full_description.txt`; Play limits 30 / 80 / 4000).
+`scripts/play.mjs` pushes both in one edit:
+
+```bash
+node scripts/play.mjs listing --screenshots          # dry run: a throwaway edit Play validates
+node scripts/play.mjs listing --screenshots --yes    # commit
+```
+
+`screenshots` alone replaces only the images. Both remove the stale 7" / 10"
+tablet screenshots (Play doesn't require them; `--keep-tablet` keeps them).
+Play has no subtitle or keywords, so the short description is the search hook.
+The non-production Android deploy (`upload_beta_to_play_store`, fastlane
+supply) also pushes those text files, so edit the files, not the console.
 
 ## Making changes
 

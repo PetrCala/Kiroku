@@ -254,6 +254,15 @@ the same `APP_IPHONE_67` slot as 6.9" (1320x2868), putting 12 images in a
 `MULTIPLE_APPLE_WATCH_SCREENSHOT_TYPES_NOT_ALLOWED_IN_VERSION`. `--stage` keeps
 that choice in the config instead of in your hands.
 
+**Google Play** takes its own size: each side 320 to 3840 px and at most 2:1,
+which the 1320x2868 iPhone frames fail. Framing also renders a 1080x1920
+`play-phone` set (`framed/<locale>/play-phone/`), and `scripts/play.mjs` pushes
+it together with the listing text from `fastlane/metadata/android/<lang>/`:
+
+```bash
+node scripts/play.mjs listing --screenshots          # dry run; add --yes to commit
+```
+
 The full runbook (the in-month-session prerequisite, the `gh` capture-dispatch
 commands, and how to make changes) lives in the `store-screenshots` skill.
 
