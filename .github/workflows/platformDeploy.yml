@@ -186,6 +186,16 @@ jobs:
       # Fastfile), it never runs gym/pod install and never touches JS. Skip
       # both setup steps on that path; the staging `beta` lane below, which
       # does build and needs them, is unaffected.
+      #
+      # The production lane does still run `node scripts/asc.mjs submit-gate`
+      # before deliver. That script has no dependencies, so the production path
+      # gets a bare Node runtime instead of the full setup.
+      - name: Setup Node runtime
+        if: ${{ inputs.SHOULD_DEPLOY_PRODUCTION }}
+        uses: actions/setup-node@v5
+        with:
+          node-version-file: '.nvmrc'
+
       - name: Setup Node
         id: setup-node
         if: ${{ !inputs.SHOULD_DEPLOY_PRODUCTION }}
