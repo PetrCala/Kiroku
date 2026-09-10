@@ -37,7 +37,7 @@ Work from the subject list, but write for a store visitor, not a developer:
 - **User-visible changes only.** Skip refactors, tooling, and internal fixes that survived the filter. A fix earns a mention only if a user could have hit the bug.
 - **Group thematically.** A multi-minor span (typical for Android) can contain hundreds of commits; collapse them into roughly 4 to 7 themes ("Redesigned navigation", "Faster startup", "Live session improvements"), each one short line. Lead with the change a user would notice first.
 - **Plain language.** No commit references, no PR numbers, no library names, no jargon. "Fixed a crash when editing a session" beats "fix(session): guard undefined drinks".
-- **Voice.** Friendly and concise. No em-dashes anywhere, in any locale (repo copy rule). Bullets start with a dash and a capital letter.
+- **Voice.** Friendly and concise, per `contributingGuides/COPY_VOICE.md` (release notes are a playful moment, but stay factual about what changed). No em-dashes anywhere, in any locale (repo copy rule). Bullets start with a dash and a capital letter.
 - **Don't leak unreleased plans.** Only describe what is actually in the target ref.
 
 Produce every set of notes in **both locales: `en-US` and `cs`**. Write the Czech yourself following the voice and glossary in `src/languages/context/cs_cz.md`. These are marketing copy, not UI strings, so the `translate` skill machinery (en.ts keys) does not apply.

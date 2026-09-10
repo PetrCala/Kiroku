@@ -23,16 +23,24 @@ These are contested choices where the existing `cs_cz.ts` was inconsistent. The
 listed default is what the glossary enforces today; change the default here if
 the product voice should differ.
 
-| Topic                              | Default                               | Alternative                | Notes                                                                                                                                                                                               |
-| ---------------------------------- | ------------------------------------- | -------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Word for "drink" (the beverage)    | **drink / drinky**                    | nápoj / nápoje             | Product voice prefers the loanword `drink`. Declines as a hard masc. inanimate: gen sg `drinku`, nom/acc pl `drinky`, gen pl `drinků`, dat pl `drinkům`, loc pl `drincích`. Do **not** use `nápoj`. |
-| Register (how we address the user) | **vykání** (formal 2nd-person plural) | tykání (informal singular) | The app is overwhelmingly vykání. The `statistics.*` section drifted to tykání — treat that as drift to fix, not a second standard.                                                                 |
-| "Kiroku Supporter" tier name       | **keep English** ("Kiroku Supporter") | "podporovatel Kiroku"      | The tier is a brand/product name; the role/verb ("podpořit", "podporovatel") stays translated.                                                                                                      |
+| Topic                              | Default                                                          | Alternative           | Notes                                                                                                                                                                                                                                                   |
+| ---------------------------------- | ---------------------------------------------------------------- | --------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Word for "drink" (the beverage)    | **drink / drinky**                                               | nápoj / nápoje        | Product voice prefers the loanword `drink`. Declines as a hard masc. inanimate: gen sg `drinku`, nom/acc pl `drinky`, gen pl `drinků`, dat pl `drinkům`, loc pl `drincích`. Do **not** use `nápoj`.                                                     |
+| Register (how we address the user) | **vykání** (formal 2nd-person plural); tykání only in punchlines | tykání everywhere     | Headlines, slogans, jokes, and toasts may use tykání ("Pozvi vývojáře na pivko", "Teď si běž dát jedno ty!"). Anything explanatory or instructional stays vykání, even on the same screen. The old tykání in `statistics.*` was drift, not a punchline. |
+| "Kiroku Supporter" tier name       | **keep English** ("Kiroku Supporter")                            | "podporovatel Kiroku" | The tier is a brand/product name; the role/verb ("podpořit", "podporovatel") stays translated.                                                                                                                                                          |
 
 ## Register & tone
 
-- **Address the user with vykání** — formal 2nd-person plural ("máte", "chcete",
-  "jste si jisti?"). This applies everywhere, including statistics copy.
+- **Address the user with vykání**, the formal 2nd-person plural ("máte",
+  "chcete", "jste si jisti?"). This covers all utility copy, including
+  statistics.
+- **Punchlines may use tykání.** A playful headline, joke, or toast (see
+  `contributingGuides/COPY_VOICE.md`) can switch to tykání, like a slogan
+  would: "Pozvi vývojáře na pivko". The explanatory line right under it stays
+  vykání: "…nás můžete pozvat na pivko."
+- **Adapt playful lines, don't translate them.** Use Czech idioms ("pozvat na
+  pivo") and colloquial diminutives ("pivko") where the English is playful. A
+  pun that only works in Czech ("Dýško koutek") beats a literal rendering.
 - **Buttons / short actions** use the bare imperative verb: `Uložit`, `Zrušit`,
   `Potvrdit`, `Pokračovat`, `Smazat`.
 - **Full-sentence CTAs and links** use polite plural imperative: `Přihlaste se
