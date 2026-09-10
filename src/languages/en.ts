@@ -814,11 +814,8 @@ export default {
     tipJar: {
       title: 'Tip jar',
       subtitle:
-        'Kiroku is free and has no ads. If it helps you, you can buy us a beer.',
+        'Kiroku is free and has no ads. To support the app development, you can buy us a beer.',
       heroTitle: 'Buy us a beer',
-      tierSmallBeer: 'A small beer',
-      tierPint: 'A pint',
-      tierRound: 'A round for the team',
       tierSmallBeerShort: 'Small beer',
       tierPintShort: 'Pint',
       tierRoundShort: 'A round',
@@ -831,9 +828,9 @@ export default {
         count === 1 ? 'You bought us a beer' : `You bought us ${count} beers`,
       unlocksNothing:
         'Tips are optional and unlock nothing. The app stays the same for everyone.',
-      thanks: 'Thank you for the beer. It genuinely helps.',
+      thanks: 'Thank you for the beer. Now go and have one yourself!',
       cheersTitle: 'Cheers.',
-      receiptNote: 'Every one of them went into the app.',
+      receiptNote: 'More beers for us, more features for you!',
       loading: 'Reaching the tip jar...',
       unavailable:
         "The tip jar can't be reached right now. Check your connection and try again.",
