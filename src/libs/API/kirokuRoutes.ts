@@ -137,6 +137,18 @@ const KIROKU_ROUTES: Record<ApiCommand, KirokuRoute> = {
     method: 'post',
     path: '/v1/account/close',
   },
+  // Push device registry. Register on sign-in, app start, and FCM token
+  // refresh; unregister on sign-out (see actions/PushNotification).
+  [WRITE_COMMANDS.REGISTER_PUSH_DEVICE]: {
+    method: 'post',
+    path: '/v1/notifications/devices',
+  },
+  [WRITE_COMMANDS.UNREGISTER_PUSH_DEVICE]: {
+    method: 'delete',
+    path: '/v1/notifications/devices/:deviceID',
+    toPath: data =>
+      `/v1/notifications/devices/${encodeURIComponent(String(data.deviceID))}`,
+  },
   [WRITE_COMMANDS.SEND_FRIEND_REQUEST]: {
     method: 'post',
     path: '/v1/friends/request',

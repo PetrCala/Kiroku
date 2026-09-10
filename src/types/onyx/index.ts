@@ -44,6 +44,7 @@ import type {
 } from './OnyxUpdatesFromServer';
 
 import type Preferences from './Preferences';
+import type PushNotificationPrompt from './PushNotificationPrompt';
 import type {
   PreferencesList,
   UnitsToColors,
@@ -136,6 +137,7 @@ export type {
   OnyxUpdatesFromServer,
   Preferences,
   PreferencesList,
+  PushNotificationPrompt,
   Profile,
   ProfileList,
   ReasonForLeaving,

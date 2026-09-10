@@ -7,6 +7,7 @@ import android.os.Bundle
 import android.view.KeyEvent
 import android.view.View
 import android.view.WindowInsets
+import androidx.core.app.NotificationManagerCompat
 import com.alcohol_tracker.bootsplash.BootSplash
 // import com.alcohol_tracker.reactnativekeycommand.KeyCommandModule
 import com.facebook.react.ReactActivity
@@ -50,6 +51,16 @@ class MainActivity : ReactActivity() {
                 defaultInsets.systemWindowInsetBottom
             )
         }
+    }
+
+    /**
+     * Clear delivered notifications whenever the app comes to the foreground:
+     * once the user is in the app, the tray entries are stale. A tap on a
+     * notification reaches JS through the launch intent, so it isn't lost.
+     */
+    override fun onResume() {
+        super.onResume()
+        NotificationManagerCompat.from(this).cancelAll()
     }
 
     /**

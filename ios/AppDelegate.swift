@@ -10,6 +10,7 @@ import React
 import ReactAppDependencyProvider
 import React_RCTAppDelegate
 import UIKit
+import UserNotifications
 
 @main
 class AppDelegate: ExpoAppDelegate {
@@ -75,6 +76,21 @@ class AppDelegate: ExpoAppDelegate {
     }
 
     return true
+  }
+
+  // Clear delivered notifications and the icon badge whenever the app comes to
+  // the foreground: once the user is in the app, the tray entries are stale
+  // (the Friends tab badge carries the pending-request count instead). A tap
+  // on a notification is delivered to JS before this, so it isn't lost.
+  override func applicationDidBecomeActive(_ application: UIApplication) {
+    super.applicationDidBecomeActive(application)
+    let center = UNUserNotificationCenter.current()
+    center.removeAllDeliveredNotifications()
+    if #available(iOS 16.0, *) {
+      center.setBadgeCount(0) { _ in }
+    } else {
+      application.applicationIconBadgeNumber = 0
+    }
   }
 
   override func application(

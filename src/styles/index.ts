@@ -534,6 +534,12 @@ const styles = (theme: ThemeColors) =>
       alignItems: 'center',
     },
 
+    bottomTabBarBadge: {
+      position: 'absolute',
+      top: -4,
+      right: -10,
+    },
+
     bottomTabBarItem: {
       height: '100%',
       display: 'flex',

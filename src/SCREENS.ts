@@ -76,6 +76,8 @@ const SCREENS = {
       COLOR_PALETTE_CUSTOM: 'Settings_Preferences_ColorPalette_Custom',
     },
 
+    NOTIFICATIONS: 'Settings_Notifications',
+
     PRIVACY: {
       ROOT: 'Settings_Privacy',
       BLOCKED_USERS: 'Settings_Privacy_BlockedUsers',

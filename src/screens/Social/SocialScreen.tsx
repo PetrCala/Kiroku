@@ -24,7 +24,7 @@ import FloatingActionSurface from '@components/FloatingActionSurface';
 import Icon from '@components/Icon';
 import * as KirokuIcons from '@components/Icon/KirokuIcons';
 import {PressableWithFeedback} from '@components/Pressable';
-import Text from '@components/Text';
+import CountBadge from '@components/CountBadge';
 import TopTabBar, {TOP_TAB_COMMON_OPTIONS} from '@components/TopTabBar';
 import type {TopTabRoute} from '@components/TopTabBar';
 import useBottomTabBarHeight from '@hooks/useBottomTabBarHeight';
@@ -48,20 +48,6 @@ const localStyles = StyleSheet.create({
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-  },
-  badge: {
-    minWidth: 18,
-    height: 18,
-    borderRadius: 9,
-    paddingHorizontal: 4,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  badgeText: {
-    color: '#FFFFFF',
-    fontSize: 11,
-    fontWeight: '700',
-    textAlign: 'center',
   },
 });
 
@@ -95,15 +81,6 @@ const renderScene = SceneMap({
   friendList: FriendListScreen,
   friendRequests: FriendRequestScene,
 });
-
-function FriendRequestsBadge({count}: {count: number}) {
-  const theme = useTheme();
-  return (
-    <View style={[localStyles.badge, {backgroundColor: theme.success}]}>
-      <Text style={localStyles.badgeText}>{count}</Text>
-    </View>
-  );
-}
 
 type PagerPositionCaptureProps = {
   /* The pager's continuous swipe-progress value (tab index space) */
@@ -165,7 +142,7 @@ function SocialScreen() {
   const requestCount = getReceivedRequestsCount(userData?.friend_requests);
 
   const renderRequestsBadge = useCallback(
-    () => <FriendRequestsBadge count={requestCount} />,
+    () => <CountBadge count={requestCount} />,
     [requestCount],
   );
 

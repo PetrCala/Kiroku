@@ -10,6 +10,7 @@ import Onyx from 'react-native-onyx';
 import * as ErrorUtils from '@libs/ErrorUtils';
 import {KEYS_TO_PRESERVE} from '@userActions/App';
 import * as PersistedRequests from '@userActions/PersistedRequests';
+import * as PushNotification from '@userActions/PushNotification';
 import * as Subscriptions from '@userActions/Subscriptions';
 // import * as API from '@libs/API';
 // import type {UserID} from '@src/types/onyx/OnyxCommon';
@@ -1088,6 +1089,12 @@ function cleanupSession() {
  */
 async function signOut(auth: Auth) {
   try {
+    // Unregister this device first: the server call needs the still-valid ID
+    // token, and it can't be queued (cleanupSession drops the queue). Bounded
+    // and never throws, so sign-out can't hang on it. With no current user
+    // (account just deleted, the server already dropped its devices) only the
+    // local FCM token is deleted.
+    await PushNotification.unregisterDevice(!!auth.currentUser);
     await fbSignOut(auth);
     Subscriptions.forget();
   } catch (error) {

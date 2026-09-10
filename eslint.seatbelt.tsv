@@ -886,7 +886,6 @@
 "src/libs/actions/OnyxUpdateManager/utils/index.ts"	"rulesdir/no-onyx-connect"	1
 "src/libs/actions/OnyxUpdates.ts"	"rulesdir/no-onyx-connect"	1
 "src/libs/actions/PersistedRequests.ts"	"rulesdir/no-onyx-connect"	2
-"src/libs/actions/PushNotification.ts"	"rulesdir/no-onyx-connect"	1
 "src/libs/actions/Session/index.ts"	"rulesdir/no-onyx-connect"	1
 "src/libs/actions/TestTool.ts"	"rulesdir/no-onyx-connect"	1
 "src/libs/actions/User.ts"	"rulesdir/no-onyx-connect"	1

@@ -148,6 +148,11 @@ function SettingsScreen() {
           icon: KirokuIcons.Lock,
           routeName: ROUTES.SETTINGS_PRIVACY,
         },
+        {
+          translationKey: 'common.notifications',
+          icon: KirokuIcons.Bell,
+          routeName: ROUTES.SETTINGS_NOTIFICATIONS,
+        },
       ],
     };
 

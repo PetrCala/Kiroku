@@ -11,6 +11,7 @@ import Onyx from 'react-native-onyx';
 import * as API from '@libs/API';
 import {WRITE_COMMANDS} from '@libs/API/types';
 import * as Friends from '@userActions/Friends';
+import * as PushNotification from '@userActions/PushNotification';
 import CONST from '@src/CONST';
 import ONYXKEYS from '@src/ONYXKEYS';
 
@@ -36,6 +37,12 @@ jest.mock('@libs/Firebase/FirebaseApp', () => ({
 }));
 
 jest.mock('@libs/API', () => ({write: jest.fn()}));
+
+// The soft ask for push permission is its own action (covered in
+// PushNotification.test); here we only check sendFriendRequest triggers it.
+jest.mock('@userActions/PushNotification', () => ({
+  requestPromptIfNeeded: jest.fn(),
+}));
 
 // Isolate the action's Onyx-shaping from the Localize/Onyx-backed error builder.
 jest.mock('@libs/ErrorUtils', () => ({
@@ -172,5 +179,19 @@ describe('Friends actions — offline feedback (pattern B)', () => {
     expect(mockedMerge).toHaveBeenCalledWith(ONYXKEYS.FRIENDS_METADATA, {
       [OTHER]: null,
     });
+  });
+});
+
+describe('push notification soft ask', () => {
+  beforeEach(() => jest.clearAllMocks());
+
+  it('sending a friend request offers the push permission prompt', () => {
+    Friends.sendFriendRequest(OTHER);
+    expect(PushNotification.requestPromptIfNeeded).toHaveBeenCalledTimes(1);
+  });
+
+  it('accepting a request does not', () => {
+    Friends.acceptFriendRequest(OTHER);
+    expect(PushNotification.requestPromptIfNeeded).not.toHaveBeenCalled();
   });
 });

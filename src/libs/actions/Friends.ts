@@ -9,6 +9,7 @@ import ONYXKEYS from '@src/ONYXKEYS';
 import type {TranslationPaths} from '@src/languages/types';
 import type {PendingAction} from '@src/types/onyx/OnyxCommon';
 import type {FriendActionMetadata} from '@src/types/onyx/FriendsMetadata';
+import * as PushNotification from './PushNotification';
 
 /**
  * Friend actions, cut over from direct Firebase RTDB writes to kiroku-api
@@ -86,6 +87,9 @@ function sendFriendRequest(toUserId: string) {
     {toUserId},
     {optimisticData, successData, failureData},
   );
+  // Now "they accepted" is worth a notification: soft-ask once if the OS
+  // permission was never requested.
+  PushNotification.requestPromptIfNeeded();
 }
 
 function acceptFriendRequest(fromUserId: string) {

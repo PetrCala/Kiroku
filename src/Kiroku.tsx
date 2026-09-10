@@ -14,7 +14,6 @@ import SplashScreenStateContext from '@context/global/SplashScreenStateContext';
 import {useConfig} from '@context/global/ConfigContext';
 import Navigation from './libs/Navigation/Navigation';
 import NavigationRoot from './libs/Navigation/NavigationRoot';
-// import PushNotification from '@libs/Notification/PushNotification';
 import SplashScreenHider from './components/SplashScreenHider';
 import Log from './libs/Log';
 import migrateOnyx from './libs/migrateOnyx';
@@ -317,10 +316,8 @@ function Kiroku() {
   useEffect(() => {
     // Run any Onyx schema migrations and then continue loading the main app
     migrateOnyx().then(() => {
-      // In case of a crash that led to disconnection, we want to remove all the push notifications.
-      if (!isAuthenticated) {
-        // PushNotification.clearNotifications(); // TODO
-      }
+      // Delivered push notifications are cleared natively whenever the app
+      // comes to the foreground (AppDelegate / MainActivity), signed in or not.
 
       setIsOnyxMigrated(true);
     });

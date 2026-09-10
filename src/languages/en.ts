@@ -621,6 +621,31 @@ export default {
       save: "We couldn't save your privacy preferences. Please try again.",
     },
   },
+  notificationsScreen: {
+    title: 'Notifications',
+    pushSection: {
+      title: 'Push notifications',
+    },
+    pushNotifications: {
+      label: 'Push notifications',
+      description: 'Get notified on your phone about activity from friends.',
+    },
+    friendRequests: {
+      label: 'Friend requests',
+      description: 'When someone sends you a friend request or accepts yours.',
+    },
+    blockedBySystem:
+      'Notifications for Kiroku are turned off in your phone settings.',
+    openSettings: 'Open settings',
+    mobileOnly: 'Notifications are sent to the Kiroku mobile app.',
+  },
+  pushNotificationPrompt: {
+    title: 'Turn on notifications?',
+    prompt:
+      "We'll let you know when someone accepts your friend request or sends you one. You can change this in Settings at any time.",
+    confirm: 'Turn on',
+    cancel: 'Not now',
+  },
   blockedUsersScreen: {
     title: 'Blocked users',
     unblockNote:

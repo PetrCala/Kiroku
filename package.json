@@ -82,6 +82,7 @@
     "@react-native-community/slider": "^5.2.0",
     "@react-native-firebase/app": "^24.0.0",
     "@react-native-firebase/crashlytics": "^24.0.0",
+    "@react-native-firebase/messaging": "^24.0.0",
     "@react-native-firebase/perf": "^24.0.0",
     "@react-native-google-signin/google-signin": "^10.0.1",
     "@react-navigation/bottom-tabs": "7.3.14",

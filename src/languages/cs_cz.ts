@@ -627,6 +627,31 @@ export default {
       save: 'Nepodařilo se uložit nastavení soukromí. Zkuste to prosím znovu.',
     },
   },
+  notificationsScreen: {
+    title: 'Oznámení',
+    pushSection: {
+      title: 'Push oznámení',
+    },
+    pushNotifications: {
+      label: 'Push oznámení',
+      description: 'Dostávejte do telefonu oznámení o aktivitě přátel.',
+    },
+    friendRequests: {
+      label: 'Žádosti o přátelství',
+      description:
+        'Když vám někdo pošle žádost o přátelství nebo přijme tu vaši.',
+    },
+    blockedBySystem: 'Oznámení pro Kiroku máte vypnutá v nastavení telefonu.',
+    openSettings: 'Otevřít nastavení',
+    mobileOnly: 'Oznámení chodí do mobilní aplikace Kiroku.',
+  },
+  pushNotificationPrompt: {
+    title: 'Zapnout oznámení?',
+    prompt:
+      'Dáme vám vědět, když někdo přijme vaši žádost o přátelství nebo vám nějakou pošle. Změnit to můžete kdykoli v Nastavení.',
+    confirm: 'Zapnout',
+    cancel: 'Teď ne',
+  },
   blockedUsersScreen: {
     title: 'Zablokovaní uživatelé',
     unblockNote:

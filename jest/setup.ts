@@ -38,6 +38,19 @@ jest.mock('@react-native-firebase/crashlytics', () => ({
   setCrashlyticsCollectionEnabled: jest.fn(),
 }));
 
+// Push notifications (lib/Notification/PushNotification) import the modular
+// messaging surface, which would otherwise reach the native module.
+jest.mock('@react-native-firebase/messaging', () => ({
+  getMessaging: jest.fn(() => ({})),
+  getToken: jest.fn(() => Promise.resolve('mock-fcm-token')),
+  deleteToken: jest.fn(() => Promise.resolve()),
+  onTokenRefresh: jest.fn(() => jest.fn()),
+  onMessage: jest.fn(() => jest.fn()),
+  onNotificationOpenedApp: jest.fn(() => jest.fn()),
+  getInitialNotification: jest.fn(() => Promise.resolve(null)),
+  setBackgroundMessageHandler: jest.fn(),
+}));
+
 // Mock react-native-onyx storage layer because the SQLite storage layer doesn't work in jest.
 // Mocking this file in __mocks__ does not work because jest doesn't support mocking files that are not directly used in the testing project,
 // and we only want to mock the storage layer, not the whole Onyx module.

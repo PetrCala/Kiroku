@@ -110,6 +110,7 @@ const ROUTES = {
   SETTINGS_APP_SHARE: 'settings/app-share',
   SETTINGS_PREFERENCES: 'settings/preferences',
   SETTINGS_PRIVACY: 'settings/privacy',
+  SETTINGS_NOTIFICATIONS: 'settings/notifications',
   SETTINGS_PRIVACY_BLOCKED_USERS: 'settings/privacy/blocked-users',
   SETTINGS_LANGUAGE: 'settings/preferences/language',
   SETTINGS_THEME: 'settings/preferences/theme',

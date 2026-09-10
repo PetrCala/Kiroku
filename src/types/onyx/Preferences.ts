@@ -88,6 +88,16 @@ type Preferences = {
    *  consent and no marketing email may be sent. The server timestamps
    *  consent changes for accountability. */
   email_marketing_consent?: boolean;
+
+  /** Account-wide switch for push notifications. Undefined/true means on (the
+   *  OS permission prompt is the opt-in); false stops every push to every
+   *  device. Read server-side before each send. */
+  push_notifications_enabled?: boolean;
+
+  /** Push notifications for friend requests (received, and accepted).
+   *  Undefined/true means on. Only applies while push_notifications_enabled
+   *  is on. */
+  push_friend_requests_enabled?: boolean;
 };
 
 /** A collection of preferences of multiple users */
