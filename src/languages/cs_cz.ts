@@ -817,13 +817,10 @@ export default {
       'Podpořte Kiroku a získejte odznak podporovatele 🍺 na svém profilu.',
     menuEntry: 'Podpořit Kiroku',
     tipJar: {
-      title: 'Kasička',
+      title: 'Dýško koutek',
       subtitle:
-        'Kiroku je zdarma a bez reklam. Pokud vám pomáhá, můžete nám koupit pivo.',
-      heroTitle: 'Kupte nám pivo',
-      tierSmallBeer: 'Malé pivo',
-      tierPint: 'Velké pivo',
-      tierRound: 'Runda pro tým',
+        'Kiroku je zdarma a bez reklam. Pro podpoření aplikace nás můžete pozvat na pivko.',
+      heroTitle: 'Pozvi vývojáře na pivko',
       tierSmallBeerShort: 'Malé pivo',
       tierPintShort: 'Velké pivo',
       tierRoundShort: 'Runda',
@@ -833,16 +830,24 @@ export default {
       ctaPint: ({price}: SupporterPriceParams) =>
         `Koupit velké pivo · ${price}`,
       ctaRound: ({price}: SupporterPriceParams) => `Koupit rundu · ${price}`,
-      thanksCount: ({count}: SupporterTipCountParams) =>
-        count === 1 ? 'Koupili jste nám pivo' : `Koupili jste nám ${count} piv`,
+      // Czech has three forms here: 1 pivo, 2-4 piva, 5+ piv.
+      thanksCount: ({count}: SupporterTipCountParams) => {
+        if (count === 1) {
+          return 'Koupili jste nám pivo';
+        }
+        if (count >= 2 && count <= 4) {
+          return `Koupili jste nám ${count} piva`;
+        }
+        return `Koupili jste nám ${count} piv`;
+      },
       unlocksNothing:
         'Příspěvky jsou dobrovolné a nic neodemykají. Aplikace zůstává stejná pro všechny.',
-      thanks: 'Děkujeme za pivo. Opravdu to pomáhá.',
+      thanks: 'Děkujeme za pivo. Teď si běž dát jedno ty!',
       cheersTitle: 'Na zdraví.',
-      receiptNote: 'Každé z nich šlo do aplikace.',
-      loading: 'Načítám kasičku…',
+      receiptNote: 'Víc piv pro nás, lepší aplikace pro vás!',
+      loading: 'Načítám dýško koutek…',
       unavailable:
-        'Kasičku se teď nepodařilo načíst. Zkontrolujte připojení a zkuste to znovu.',
+        'Dýško koutek se teď nepodařilo načíst. Zkontrolujte připojení a zkuste to znovu.',
       webUnavailable: 'Příspěvky jsou dostupné v mobilní aplikaci.',
       purchaseError: ({message}: SupporterPurchaseErrorParams) =>
         `Nákup se nezdařil: ${message}. Zkuste to prosím znovu.`,
