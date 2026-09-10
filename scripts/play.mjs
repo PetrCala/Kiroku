@@ -2,10 +2,11 @@
 /**
  * Kiroku Google Play Console helper (zero-dependency).
  *
- * The Play-side counterpart of scripts/asc.mjs: it reads what Play actually
- * has, so release questions ("what's on open testing?", "is the listing
- * complete?") get answered from the console instead of guessed, and it pushes
- * the store listing from the repo. It reuses the fastlane service account
+ * The Play-side counterpart of scripts/asc.mjs and scripts/asc-tips.mjs: it
+ * reads what Play actually has, so release questions ("what's on open
+ * testing?", "is the listing complete?") get answered from the console instead
+ * of guessed, pushes the store listing from the repo, and creates the tip-jar
+ * products. It reuses the fastlane service account
  * (android/app/android-fastlane-json-key.json) and mints the RS256 JWT with
  * Node's built-in crypto. It NEVER prints the key.
  *
@@ -14,7 +15,8 @@
  * It never commits, so nothing in the console changes, and an open edit does
  * not disturb other ones (a CI upload running at the same time is unaffected).
  * `promote`, `listing` and `screenshots` make all their changes in one edit
- * and commit it only with --yes.
+ * and commit it only with --yes. `tips` writes through the product APIs,
+ * which sit outside edits, also only with --yes.
  *
  * Requires Node 18+ (global fetch), plus gpg when the key is only present
  * encrypted. No npm dependencies.
@@ -25,6 +27,7 @@
  *        [--rollout <fraction>] [--notes-dir <dir>] [--yes]
  *   node scripts/play.mjs listing [--screenshots] [--lang <code>] [--yes]
  *   node scripts/play.mjs screenshots [--lang <code>] [--keep-tablet] [--yes]
+ *   node scripts/play.mjs tips [--yes]
  *
  * Commands:
  *   status   Tracks and their releases (version codes decoded to the internal
@@ -56,6 +59,17 @@
  *            remove its 7" and 10" tablet screenshots. Play doesn't require
  *            tablet shots, and a stale set showing an old UI is worse than
  *            none; --keep-tablet leaves them alone.
+ *   tips     Creates the tip-jar consumables (CONST.TIPS.PRODUCT_IDS) as
+ *            one-time products, with the names, descriptions and CZK prices
+ *            from scripts/asc-tips.mjs (en-US and cs-CZ listings). CZ gets the
+ *            CZK price exactly; every other region gets Play's conversion of
+ *            it (convertRegionPrices), as Apple derives its territories from
+ *            CZE. Each product gets one legacy-compatible buy option, which is
+ *            then activated. Idempotent: an existing product is never
+ *            repriced, only given missing listings and an activated option.
+ *            Falls back to the legacy in-app products API if the one-time
+ *            products API is unavailable. DRY RUN unless --yes. Product ids
+ *            are burn-once on Play too, so read the dry run first.
  *
  * Release notes: one <play-language>.txt per language (en-US.txt,
  * cs-CZ.txt), Play's 500-character limit enforced before anything is sent.
@@ -86,7 +100,7 @@
  *   --screenshots         listing: also replace the screenshots, same edit
  *   --keep-tablet         screenshots: keep the existing tablet screenshots
  *   --yes                 promote / listing / screenshots: commit the edit
- *                         instead of a dry run
+ *                         instead of a dry run; tips: actually write
  *   --help, -h            show this help
  */
 import fs from 'node:fs';
@@ -94,6 +108,8 @@ import path from 'node:path';
 import crypto from 'node:crypto';
 import {spawnSync} from 'node:child_process';
 import {fileURLToPath} from 'node:url';
+// eslint-disable-next-line import/extensions -- Node ESM requires the explicit extension
+import TIPS from './asc-tips.mjs';
 
 const ROOT = path.join(path.dirname(fileURLToPath(import.meta.url)), '..');
 const BASE =
@@ -161,9 +177,11 @@ const OPTS = {
 };
 
 function usage() {
+  // The header comment only, not every JSDoc block further down.
+  const source = fs.readFileSync(fileURLToPath(import.meta.url), 'utf8');
   L(
-    fs
-      .readFileSync(fileURLToPath(import.meta.url), 'utf8')
+    source
+      .slice(0, source.indexOf(' */'))
       .split('\n')
       .filter(l => l.startsWith(' *'))
       .map(l => l.slice(3))
@@ -307,29 +325,53 @@ async function api(method, p, body, {data, contentType, upload} = {}) {
   const payload = body ?? (method === 'POST' ? {} : undefined);
   let raw = data;
   if (raw === undefined && payload !== undefined) raw = JSON.stringify(payload);
-  const res = await fetch(url, {
-    method,
-    headers: {
-      Authorization: `Bearer ${TOKEN}`,
-      'Content-Type': contentType ?? 'application/json',
-    },
-    body: raw,
-  });
-  const text = await res.text();
-  let parsed;
-  try {
-    parsed = text ? JSON.parse(text) : {};
-  } catch {
-    parsed = {raw: text};
-  }
-  if (!res.ok) {
+  // A dropped connection, a 5xx or a 429 is retried twice. Image uploads are
+  // not: retrying an upload that did land would add the image twice. The rest
+  // is safe to repeat: reads, create-if-missing, activate, and edit writes that
+  // replace rather than append.
+  const maxAttempts = upload ? 1 : 3;
+  const pause = attempt =>
+    new Promise(resolve => {
+      setTimeout(resolve, 1000 * attempt);
+    });
+  for (let attempt = 1; ; attempt++) {
+    let res;
+    try {
+      res = await fetch(url, {
+        method,
+        headers: {
+          Authorization: `Bearer ${TOKEN}`,
+          'Content-Type': contentType ?? 'application/json',
+        },
+        body: raw,
+      });
+    } catch (err) {
+      // A dropped connection throws ("fetch failed") instead of answering.
+      if (attempt >= maxAttempts)
+        throw new Error(`${method} ${p}: ${err.cause?.message ?? err.message}`);
+
+      await pause(attempt);
+      continue;
+    }
+
+    const text = await res.text();
+    let parsed;
+    try {
+      parsed = text ? JSON.parse(text) : {};
+    } catch {
+      parsed = {raw: text};
+    }
+    if (res.ok) return parsed;
+    if ((res.status >= 500 || res.status === 429) && attempt < maxAttempts) {
+      await pause(attempt);
+      continue;
+    }
     const err = new Error(
       `HTTP ${res.status} ${method} ${p}: ${parsed.error?.message ?? text}`,
     );
     err.status = res.status;
     throw err;
   }
-  return parsed;
 }
 
 // ---- repo facts -------------------------------------------------------------
@@ -494,7 +536,7 @@ async function listOneTimeProducts() {
     let pageToken;
     do {
       const q = pageToken ? `?pageToken=${encodeURIComponent(pageToken)}` : '';
-      // eslint-disable-next-line no-await-in-loop
+
       const r = await api('GET', `/oneTimeProducts${q}`);
       for (const p of r.oneTimeProducts ?? []) {
         const states = [
@@ -1006,6 +1048,302 @@ async function cmdPush({listings, shotSets}) {
   }
 }
 
+// ---- tips -------------------------------------------------------------------
+// asc-tips.mjs keys Czech the way App Store Connect does; Play wants a region.
+const PLAY_LANGUAGE = {cs: 'cs-CZ'};
+// The one purchase option each tip has. Immutable once created.
+const TIP_OPTION = 'tip';
+// Where the CZK prices in asc-tips.mjs apply, like Apple's CZE base territory.
+const BASE_REGION = 'CZ';
+const SAMPLE_REGIONS = ['CZ', 'US', 'DE', 'GB', 'JP'];
+
+/**
+ * The asc-tips.mjs table, checked against CONST.TIPS.PRODUCT_IDS: the app asks
+ * the store for exactly those ids, so a mismatch here would create a product
+ * nobody requests, under an id that can never be reused.
+ */
+function tipDefinitions() {
+  const ids = tipProductIds();
+  const byId = new Map(TIPS.map(t => [t.productId, t]));
+  const missing = ids.filter(id => !byId.has(id));
+  const extra = TIPS.map(t => t.productId).filter(id => !ids.includes(id));
+  if (missing.length || extra.length)
+    throw new Error(
+      `scripts/asc-tips.mjs TIPS and CONST.TIPS.PRODUCT_IDS disagree ` +
+        `(not in TIPS: ${missing.join(', ') || 'none'}; not in CONST: ${extra.join(', ') || 'none'}). Fix that first.`,
+    );
+  return ids.map(id => byId.get(id));
+}
+
+const playListings = tip =>
+  Object.entries(tip.locales).map(([locale, copy]) => ({
+    languageCode: PLAY_LANGUAGE[locale] ?? locale,
+    title: copy.name,
+    description: copy.description,
+  }));
+
+function money(currencyCode, amount) {
+  const cents = Math.round(amount * 100);
+  return {
+    currencyCode,
+    units: String(Math.floor(cents / 100)),
+    nanos: (cents % 100) * 1e7,
+  };
+}
+const amountOf = m => Number(m.units ?? 0) + (m.nanos ?? 0) / 1e9;
+// From the string parts, so 1 unit + 890000000 nanos prints 1.89, not a float.
+const showMoney = m => {
+  const fraction = String(m.nanos ?? 0)
+    .padStart(9, '0')
+    .replace(/0+$/, '');
+  return `${m.units ?? 0}${fraction ? `.${fraction}` : ''} ${m.currencyCode}`;
+};
+
+/**
+ * Every region's price for one tip. convertRegionPrices takes a tax-exclusive
+ * price and returns tax-inclusive ones, while the CZK prices are what a Czech
+ * buyer pays (as on the App Store). So a first call measures Czech VAT, a
+ * second converts from the net price that lands on `czk` gross, and CZ is
+ * pinned to `czk` so Play's rounding cannot move the anchor.
+ */
+async function convertTipPrices(czk) {
+  const convert = amount =>
+    api('POST', '/pricing:convertRegionPrices', {price: money('CZK', amount)});
+  const probe = await convert(czk);
+  const gross = probe.convertedRegionPrices?.[BASE_REGION]?.price;
+  if (!gross) throw new Error(`convertRegionPrices returned no ${BASE_REGION}`);
+  const r = await convert((czk * czk) / amountOf(gross));
+  return {
+    regions: Object.values(r.convertedRegionPrices ?? {}).map(c => ({
+      regionCode: c.regionCode,
+      price: c.regionCode === BASE_REGION ? money('CZK', czk) : c.price,
+      availability: 'AVAILABLE',
+    })),
+    otherRegions: r.convertedOtherRegionsPrice,
+    regionsVersion: r.regionVersion?.version,
+  };
+}
+
+function newTipProduct(tip, pricing) {
+  const {usdPrice, eurPrice} = pricing.otherRegions ?? {};
+  return {
+    packageName: OPTS.packageName,
+    productId: tip.productId,
+    listings: playListings(tip),
+    purchaseOptions: [
+      {
+        purchaseOptionId: TIP_OPTION,
+        // Legacy-compatible so billing clients that predate Play's one-time
+        // products model still sell it. Only one buy option may be.
+        buyOption: {legacyCompatible: true, multiQuantityEnabled: false},
+        regionalPricingAndAvailabilityConfigs: pricing.regions,
+        ...(usdPrice && eurPrice
+          ? {newRegionsConfig: {usdPrice, eurPrice, availability: 'AVAILABLE'}}
+          : {}),
+      },
+    ],
+  };
+}
+
+/** The same product for the legacy API, which converts prices itself. */
+function legacyTipProduct(tip) {
+  return {
+    packageName: OPTS.packageName,
+    sku: tip.productId,
+    status: 'active',
+    purchaseType: 'managedUser',
+    defaultLanguage: 'en-US',
+    defaultPrice: {priceMicros: String(tip.czk * 1e6), currency: 'CZK'},
+    listings: Object.fromEntries(
+      playListings(tip).map(l => [
+        l.languageCode,
+        {title: l.title, description: l.description},
+      ]),
+    ),
+  };
+}
+
+async function hasOneTimeProductsApi() {
+  try {
+    await api('GET', '/oneTimeProducts?pageSize=1');
+    return true;
+  } catch (err) {
+    if (err.status === 400 || err.status === 404) return false;
+    throw err;
+  }
+}
+
+async function getTip(id, legacy) {
+  const p = legacy ? '/inappproducts/' : '/oneTimeProducts/';
+  try {
+    return await api('GET', p + encodeURIComponent(id));
+  } catch (err) {
+    if (err.status === 404) return null;
+    throw err;
+  }
+}
+
+function describeTip(current, legacy) {
+  if (!current) return 'MISSING';
+  if (legacy) return `exists, ${current.status}`;
+  const options = (current.purchaseOptions ?? [])
+    .map(o => `${o.purchaseOptionId} ${o.state}`)
+    .join(', ');
+  const languages = (current.listings ?? []).map(l => l.languageCode);
+  return `exists, option ${options || 'none'}, listings ${languages.join(' ') || 'none'}`;
+}
+
+/** What `tips` has to do for one product: create, listings, activate. */
+function planTip(tip, current, legacy) {
+  if (!current) return legacy ? ['create'] : ['create', 'activate'];
+  if (legacy) return [];
+  const steps = [];
+  const have = new Set((current.listings ?? []).map(l => l.languageCode));
+  if (playListings(tip).some(l => !have.has(l.languageCode)))
+    steps.push('listings');
+  const option = current.purchaseOptions?.find(
+    o => o.purchaseOptionId === TIP_OPTION,
+  );
+  if (option && option.state !== 'ACTIVE') steps.push('activate');
+  return steps;
+}
+
+function printPlan({tip, current, steps, pricing}) {
+  if (steps.includes('create')) {
+    const listings = playListings(tip).map(
+      l => `${l.languageCode} "${l.title}"`,
+    );
+    L(`  create    ${listings.join(', ')}`);
+    if (pricing) {
+      const byRegion = new Map(pricing.regions.map(r => [r.regionCode, r]));
+      const samples = SAMPLE_REGIONS.filter(r => byRegion.has(r)).map(
+        r => `${r} ${showMoney(byRegion.get(r).price)}`,
+      );
+      L(
+        `  price     ${samples.join(', ')} (${pricing.regions.length} regions, version ${pricing.regionsVersion})`,
+      );
+    } else {
+      L(`  price     ${tip.czk} CZK default, Play converts the rest`);
+    }
+  }
+  if (steps.includes('listings')) {
+    const have = new Set(current.listings.map(l => l.languageCode));
+    const add = playListings(tip).filter(l => !have.has(l.languageCode));
+    L(`  listings  add ${add.map(l => l.languageCode).join(', ')}`);
+  }
+  if (steps.includes('activate'))
+    L(`  activate  purchase option "${TIP_OPTION}"`);
+  if (!steps.length) L('  nothing to do');
+}
+
+async function applyTip({tip, current, steps, pricing}, legacy) {
+  const id = encodeURIComponent(tip.productId);
+  if (legacy) {
+    await api(
+      'POST',
+      '/inappproducts?autoConvertMissingPrices=true',
+      legacyTipProduct(tip),
+    );
+    L(`  created ${tip.productId}`);
+    return;
+  }
+  if (steps.includes('create')) {
+    // allowMissing turns the patch into a create; updateMask is required on
+    // the call but ignored when it creates.
+    const q = new URLSearchParams({
+      allowMissing: 'true',
+      updateMask: 'listings,purchaseOptions',
+      'regionsVersion.version': pricing.regionsVersion,
+    });
+    await api(
+      'PATCH',
+      `/onetimeproducts/${id}?${q}`,
+      newTipProduct(tip, pricing),
+    );
+    L(`  created   ${tip.productId}`);
+  }
+  if (steps.includes('listings')) {
+    const have = new Set(current.listings.map(l => l.languageCode));
+    const listings = [
+      ...current.listings,
+      ...playListings(tip).filter(l => !have.has(l.languageCode)),
+    ];
+    const version =
+      current.regionsVersion?.version ??
+      (await convertTipPrices(tip.czk)).regionsVersion;
+    const q = new URLSearchParams({
+      updateMask: 'listings',
+      'regionsVersion.version': version,
+    });
+    await api('PATCH', `/onetimeproducts/${id}?${q}`, {
+      packageName: OPTS.packageName,
+      productId: tip.productId,
+      listings,
+    });
+    L(`  listings  ${tip.productId}`);
+  }
+  if (steps.includes('activate')) {
+    await api(
+      'POST',
+      `/oneTimeProducts/${id}/purchaseOptions:batchUpdateStates`,
+      {
+        requests: [
+          {
+            activatePurchaseOptionRequest: {
+              packageName: OPTS.packageName,
+              productId: tip.productId,
+              purchaseOptionId: TIP_OPTION,
+            },
+          },
+        ],
+      },
+    );
+    L(`  activated ${tip.productId} (${TIP_OPTION})`);
+  }
+}
+
+async function cmdTips() {
+  const tips = tipDefinitions();
+  const legacy = !(await hasOneTimeProductsApi());
+  L(
+    `Tip jar on ${OPTS.packageName}, via the ${legacy ? 'legacy in-app products' : 'one-time products'} API`,
+  );
+  const plans = [];
+  for (const tip of tips) {
+    const current = await getTip(tip.productId, legacy);
+    const steps = planTip(tip, current, legacy);
+    const pricing =
+      steps.includes('create') && !legacy
+        ? await convertTipPrices(tip.czk)
+        : null;
+    const plan = {tip, current, steps, pricing};
+    plans.push(plan);
+    L();
+    L(`${tip.productId}  ${describeTip(current, legacy)}`);
+    printPlan(plan);
+  }
+
+  const todo = plans.filter(p => p.steps.length);
+  L();
+  if (!todo.length) {
+    L('Nothing to do.');
+    return;
+  }
+  if (!OPTS.yes) {
+    L('DRY RUN. Pass --yes to write to Google Play.');
+    return;
+  }
+  for (const plan of todo) {
+    await applyTip(plan, legacy);
+  }
+  L();
+  L('Now');
+  for (const tip of tips) {
+    const now = await getTip(tip.productId, legacy);
+    L(`  ${tip.productId.padEnd(28)} ${describeTip(now, legacy)}`);
+  }
+}
+
 // ---- main -----------------------------------------------------------------
 // command -> [offline check of arguments and local files, run]
 const COMMANDS = {
@@ -1016,6 +1354,7 @@ const COMMANDS = {
     cmdPush,
   ],
   screenshots: [() => pushArgs({text: false, images: true}), cmdPush],
+  tips: [() => undefined, cmdTips],
 };
 
 (async () => {
@@ -1033,5 +1372,10 @@ const COMMANDS = {
   await run(args);
 })().catch(e => {
   console.error('ERROR', e.message);
+  if (e.status === 401 || e.status === 403)
+    console.error(
+      'The service account lacks a Play Console permission for this call. ' +
+        'See "Google Play setup" in contributingGuides/TIP_JAR.md.',
+    );
   process.exit(1);
 });
