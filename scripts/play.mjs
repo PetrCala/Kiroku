@@ -55,7 +55,8 @@
  * Flags:
  *   --package <id>        Play package name (default: com.alcohol_tracker)
  *   --key <path>          service account JSON key (see Key above)
- *   --version-code <code> promote: the build to ship, as on internal
+ *   --version-code <code> promote: the build to ship, as on internal; the
+ *                         code (1001000008) or the version (1.0.0-8)
  *   --track <name>        promote: target track (default: production)
  *   --rollout <fraction>  promote: staged rollout share, e.g. 0.2
  *   --notes-dir <dir>     promote: release notes directory (see above)
@@ -317,6 +318,22 @@ function decodeVersionCode(code) {
     Number(s.slice(i, i + 2)),
   );
   return `${major}.${minor}.${patch}-${build}`;
+}
+
+/**
+ * The reverse of decodeVersionCode: 1.0.0-10 (or the iOS form 1.0.0.10)
+ * becomes 1001000010. A bare number passes through, anything else is null.
+ */
+function encodeVersionCode(input) {
+  const s = String(input);
+  if (/^\d+$/.test(s)) return s;
+  const parts = /^(\d{1,2})\.(\d{1,2})\.(\d{1,2})[-.](\d{1,2})$/.exec(s);
+  return parts
+    ? `10${parts
+        .slice(1)
+        .map(p => p.padStart(2, '0'))
+        .join('')}`
+    : null;
 }
 const showCode = code => {
   const v = decodeVersionCode(code);
@@ -583,10 +600,10 @@ function readReleaseNotes(versionCode) {
 
 /** Everything promote can check offline, so bad input fails before the key. */
 function promoteArgs() {
-  const versionCode = valueFlag('version-code');
-  if (!versionCode || !/^\d+$/.test(versionCode))
+  const versionCode = encodeVersionCode(valueFlag('version-code') ?? '');
+  if (!versionCode)
     throw new Error(
-      'promote needs --version-code <code>, e.g. 1001000008 (see `status` for what internal has)',
+      'promote needs --version-code <code or version>, e.g. 1001000008 or 1.0.0-8 (see `status` for what internal has)',
     );
   const track = valueFlag('track') ?? 'production';
   if (track === 'internal')
