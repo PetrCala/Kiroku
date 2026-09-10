@@ -37,11 +37,15 @@
  *            against CONST.TIPS.PRODUCT_IDS, and subscriptions. Ends with the
  *            gaps it found and the Play Console items the API cannot read.
  *            Writes nothing.
- *   promote  Put a build that is already on the internal track onto another
- *            track (production by default) in one edit: the release gets
- *            that versionCode, the release notes from --notes-dir, and status
+ *   promote  Put a build that is on the internal track onto another track
+ *            (production by default) in one edit: the release gets that
+ *            versionCode, the release notes from --notes-dir, and status
  *            completed, or inProgress at --rollout (0 < fraction < 1) for a
- *            staged rollout. Play validates the edit and the script prints
+ *            staged rollout. A code already rolling out on the target track
+ *            (e.g. from `:shipit:`) is ramped instead: rerun with a higher
+ *            --rollout, or without it to complete. That works after a staging
+ *            deploy has replaced internal, and keeps the release's notes
+ *            unless new ones are found. Play validates the edit and the script prints
  *            what the track will hold afterwards. DRY RUN: without --yes the
  *            edit is thrown away; with --yes it is committed. This is how
  *            Android ships to production without `:shipit:` (see
@@ -91,8 +95,9 @@
  * Flags:
  *   --package <id>        Play package name (default: com.alcohol_tracker)
  *   --key <path>          service account JSON key (see Key above)
- *   --version-code <code> promote: the build to ship, as on internal; the
- *                         code (1001000008) or the version (1.0.0-8)
+ *   --version-code <code> promote: the build to ship (on internal, or already
+ *                         rolling out on --track); the code (1001000008) or
+ *                         the version (1.0.0-8)
  *   --track <name>        promote: target track (default: production)
  *   --rollout <fraction>  promote: staged rollout share, e.g. 0.2
  *   --notes-dir <dir>     promote: release notes directory (see above)
@@ -696,7 +701,7 @@ function promoteArgs() {
 
 async function cmdPromote({versionCode, track, userFraction, dir, notes}) {
   L(
-    `${OPTS.yes ? 'PROMOTING' : 'DRY RUN (add --yes to commit)'}: ${showCode(versionCode)} internal -> ${track}`,
+    `${OPTS.yes ? 'PROMOTING' : 'DRY RUN (add --yes to commit)'}: ${showCode(versionCode)} -> ${track}`,
   );
   if (dir) {
     L(`Release notes from ${path.relative(ROOT, dir) || dir}`);
@@ -718,9 +723,15 @@ async function cmdPromote({versionCode, track, userFraction, dir, notes}) {
       readEdit('/listings'),
     ]);
 
-    const source = tracks
-      .find(t => t.track === 'internal')
-      ?.releases?.find(r => r.versionCodes?.includes(versionCode));
+    const releaseWith = name =>
+      tracks
+        .find(t => t.track === name)
+        ?.releases?.find(r => r.versionCodes?.includes(versionCode));
+    // A release already on the target track is a staged rollout being ramped
+    // (a staging deploy may have replaced internal by then); otherwise the
+    // build is promoted from internal.
+    const onTarget = releaseWith(track);
+    const source = onTarget ?? releaseWith('internal');
     if (!source) {
       const onInternal = (
         tracks.find(t => t.track === 'internal')?.releases ?? []
@@ -728,9 +739,21 @@ async function cmdPromote({versionCode, track, userFraction, dir, notes}) {
         .flatMap(r => r.versionCodes ?? [])
         .map(showCode);
       throw new Error(
-        `${showCode(versionCode)} is not on the internal track (internal has: ${onInternal.join(', ') || 'nothing'})`,
+        `${showCode(versionCode)} is neither on the internal track (internal has: ${onInternal.join(', ') || 'nothing'}) nor rolling out on ${track}`,
       );
     }
+    if (onTarget?.status === 'completed')
+      throw new Error(
+        `${showCode(versionCode)} is already fully rolled out on ${track}`,
+      );
+    L(
+      onTarget
+        ? `Ramping the ${onTarget.status} release already on ${track} (${Math.round((onTarget.userFraction ?? 0) * 100)}% now)`
+        : 'Promoting from the internal track',
+    );
+    const releaseNotes = notes.length ? notes : onTarget?.releaseNotes ?? [];
+    if (!notes.length && releaseNotes.length)
+      L(`Keeping the release notes already on the ${track} release`);
     const listed = new Set(listings.map(l => l.language));
     for (const n of notes)
       if (!listed.has(n.language))
@@ -748,7 +771,7 @@ async function cmdPromote({versionCode, track, userFraction, dir, notes}) {
       versionCodes: [versionCode],
       status: userFraction === undefined ? 'completed' : 'inProgress',
       ...(userFraction !== undefined && {userFraction}),
-      ...(notes.length && {releaseNotes: notes}),
+      ...(releaseNotes.length && {releaseNotes}),
     };
     // A staged rollout serves the new build to a share of users and the
     // current completed release to everyone else, so that one has to stay

@@ -59,7 +59,7 @@ At a high level, changes flow through:
 master -> staging -> production
 ```
 
-Merging to `master` should automatically create a new internal/closed beta candidate on `staging` when deploys are not locked. The open `StagingDeployCash` issue tracks that candidate. After testing, a final `:shipit:` comment and closing the checklist promotes `staging` to `production`, which represents open beta now and App Store / Play Store production later.
+Merging to `master` should automatically create a new internal/closed beta candidate on `staging` when deploys are not locked. The open `StagingDeployCash` issue tracks that candidate. After testing, a final `:shipit:` comment and closing the checklist promotes `staging` to `production`, which submits iOS for App Store review and starts a staged rollout on Google Play production.
 
 ## Local production builds
 
