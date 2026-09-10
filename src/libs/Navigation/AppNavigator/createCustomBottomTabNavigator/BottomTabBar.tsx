@@ -1,9 +1,12 @@
 import type {BottomTabBarProps} from '@react-navigation/bottom-tabs';
 import {View} from 'react-native';
 import BottomTabBarIcon from '@components/BottomTabBarIcon';
+import useCurrentUserData from '@hooks/useCurrentUserData';
 import useLocalize from '@hooks/useLocalize';
 import useThemeStyles from '@hooks/useThemeStyles';
 import BOTTOM_TAB_CONFIG from '@navigation/AppNavigator/Navigators/bottomTabConfig';
+import {getReceivedRequestsCount} from '@libs/FriendUtils';
+import SCREENS from '@src/SCREENS';
 
 /**
  * Custom JS tab bar for the bottom tab navigator on every platform (web, iOS,
@@ -16,6 +19,12 @@ import BOTTOM_TAB_CONFIG from '@navigation/AppNavigator/Navigators/bottomTabConf
 function BottomTabBar({state, navigation}: BottomTabBarProps) {
   const styles = useThemeStyles();
   const {translate} = useLocalize();
+  const userData = useCurrentUserData();
+  // Pending received friend requests, badged on the Friends tab so they're
+  // visible from anywhere in the app (not only inside the Friends screen).
+  const pendingRequestCount = getReceivedRequestsCount(
+    userData?.friend_requests,
+  );
 
   return (
     <View style={[styles.bottomTabBarContainer, styles.ph1]}>
@@ -44,6 +53,9 @@ function BottomTabBar({state, navigation}: BottomTabBarProps) {
             isSelected={isSelected}
             onPress={onPress}
             accessibilityLabel={label}
+            badgeCount={
+              route.name === SCREENS.SOCIAL.ROOT ? pendingRequestCount : 0
+            }
           />
         );
       })}

@@ -46,13 +46,15 @@
 
       </activity>
 
-      <!-- <meta-data
+      <!-- FCM notifications shown by the system while the app is in the
+           background use the monochrome status-bar icon and the brand color. -->
+      <meta-data
           android:name="com.google.firebase.messaging.default_notification_icon"
-          android:resource="@mipmap/ic_launcher" />
+          android:resource="@drawable/ic_notification" />
 
       <meta-data
           android:name="com.google.firebase.messaging.default_notification_color"
-          android:resource="@color/bootsplash_background" /> -->
+          android:resource="@color/bootsplash_background" />
 
     </application>
 </manifest>

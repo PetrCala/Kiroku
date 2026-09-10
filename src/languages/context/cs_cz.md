@@ -72,6 +72,8 @@ zde`, `Přidejte si je zde`, `Zkuste hledat zde`.
 | profile                        | **profil**                                                                          |                            |
 | friend / friends               | **přítel / přátelé**                                                                |                            |
 | friend request                 | **žádost o přátelství** (short: "žádost")                                           |                            |
+| notification / notifications   | **oznámení** (neuter, same in sg and pl)                                            | notifikace, upozornění     |
+| push notifications             | **push oznámení**                                                                   | push notifikace            |
 | supporter (role)               | **podporovatel**                                                                    |                            |
 | badge / badges                 | **odznaky**                                                                         |                            |
 | last session (friend row)      | **poslední relace**                                                                 | bez pití, střízlivý        |

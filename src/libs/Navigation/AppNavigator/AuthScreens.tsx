@@ -22,6 +22,7 @@ import ONYXKEYS from '@src/ONYXKEYS';
 // import ROUTES from '@src/ROUTES';
 import SCREENS from '@src/SCREENS';
 import CrashReportingSync from '@components/CrashReportingSync';
+import PushNotificationManager from '@components/PushNotifications/PushNotificationManager';
 import {isEmptyObject} from '@src/types/utils/EmptyObject';
 import {useSplashScreenStateContext} from '@context/global/SplashScreenStateContext';
 import * as Pusher from '@libs/Pusher/pusher';
@@ -366,6 +367,7 @@ function AuthScreens() {
     <>
       <CrashReportingSync />
       <AuthScreensContent />
+      <PushNotificationManager />
     </>
   );
 }

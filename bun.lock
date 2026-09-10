@@ -22,6 +22,7 @@
         "@react-native-community/slider": "^5.2.0",
         "@react-native-firebase/app": "^24.0.0",
         "@react-native-firebase/crashlytics": "^24.0.0",
+        "@react-native-firebase/messaging": "^24.0.0",
         "@react-native-firebase/perf": "^24.0.0",
         "@react-native-google-signin/google-signin": "^10.0.1",
         "@react-navigation/bottom-tabs": "7.3.14",
@@ -1056,6 +1057,8 @@
     "@react-native-firebase/app": ["@react-native-firebase/app@24.0.0", "", { "dependencies": { "firebase": "12.10.0" }, "peerDependencies": { "expo": ">=47.0.0", "react": "*", "react-native": "*" }, "optionalPeers": ["expo"] }, "sha512-rLWNd8/4FjKYV7PeDR9uiT5vwYWdJ7dJ1yiIIaZ/eL+Y56Ij2iXbqRCUu4zWkvu/ZrJfaGOyT12Vhy1SLy0NMg=="],
 
     "@react-native-firebase/crashlytics": ["@react-native-firebase/crashlytics@24.0.0", "", { "dependencies": { "stacktrace-js": "^2.0.2" }, "peerDependencies": { "@react-native-firebase/app": "24.0.0", "expo": ">=47.0.0" }, "optionalPeers": ["expo"] }, "sha512-slNW6ood4SO9J15OLv2HjWLIsKlVT4VVGew7OacRql0VNDFDxjPwqPDrPus4lCz2oJWS6DQZ+tzZ2BEdT0irSA=="],
+
+    "@react-native-firebase/messaging": ["@react-native-firebase/messaging@24.0.0", "", { "peerDependencies": { "@react-native-firebase/app": "24.0.0", "expo": ">=47.0.0" }, "optionalPeers": ["expo"] }, "sha512-rODaV83e8mR+Y9EPDblfSpy4rM+alriiq5306RyzPryhsyu+guj4fhGwZpESWwhmk9fKjsnshv++aFA50xFjhg=="],
 
     "@react-native-firebase/perf": ["@react-native-firebase/perf@24.0.0", "", { "peerDependencies": { "@react-native-firebase/app": "24.0.0", "expo": ">=47.0.0" }, "optionalPeers": ["expo"] }, "sha512-Sad85xBo/KFZz9xJHxT7KamgDs0Wa59xEzugJzEJdsJgjKek5Lb4kr7m4z1sCJurswUppEiPAYRPQIBCPWiaew=="],
 

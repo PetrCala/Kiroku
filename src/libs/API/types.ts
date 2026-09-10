@@ -23,6 +23,8 @@ const WRITE_COMMANDS = {
   //   SIGN_IN_USER: 'SigninUser',
   //   SIGN_IN_USER_WITH_LINK: 'SigninUserWithLink',
   //   REQUEST_UNLINK_VALIDATION_LINK: 'RequestUnlinkValidationLink',
+  REGISTER_PUSH_DEVICE: 'RegisterPushDevice',
+  UNREGISTER_PUSH_DEVICE: 'UnregisterPushDevice',
   SEND_FRIEND_REQUEST: 'SendFriendRequest',
   ACCEPT_FRIEND_REQUEST: 'AcceptFriendRequest',
   DELETE_FRIEND_REQUEST: 'DeleteFriendRequest',
@@ -69,6 +71,8 @@ type WriteCommandParameters = {
   //   [WRITE_COMMANDS.SIGN_IN_USER]: SignInUserParams;
   //   [WRITE_COMMANDS.SIGN_IN_USER_WITH_LINK]: Parameters.SignInUserWithLinkParams;
   //   [WRITE_COMMANDS.REQUEST_UNLINK_VALIDATION_LINK]: Parameters.RequestUnlinkValidationLinkParams;
+  [WRITE_COMMANDS.REGISTER_PUSH_DEVICE]: Parameters.RegisterPushDeviceParams;
+  [WRITE_COMMANDS.UNREGISTER_PUSH_DEVICE]: Parameters.UnregisterPushDeviceParams;
   [WRITE_COMMANDS.SEND_FRIEND_REQUEST]: Parameters.SendFriendRequestParams;
   [WRITE_COMMANDS.ACCEPT_FRIEND_REQUEST]: Parameters.AcceptFriendRequestParams;
   [WRITE_COMMANDS.DELETE_FRIEND_REQUEST]: Parameters.DeleteFriendRequestParams;

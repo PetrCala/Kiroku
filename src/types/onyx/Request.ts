@@ -17,7 +17,7 @@ type OnyxData = {
 };
 
 /** HTTP request method names */
-type RequestType = 'get' | 'post';
+type RequestType = 'get' | 'post' | 'delete';
 
 /** Model of overall requests sent to the API */
 type RequestData = {

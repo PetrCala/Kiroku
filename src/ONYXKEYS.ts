@@ -98,8 +98,8 @@ const ONYXKEYS = {
    *  every user's calendar opens on today the first time it's viewed per session. */
   NVP_LAST_VIEWED_CALENDAR_DATE: 'nvp_lastViewedCalendarDate',
 
-  //   /** Does this user have push notifications enabled for this device? */
-  PUSH_NOTIFICATIONS_ENABLED: 'pushNotificationsEnabled',
+  /** One-time soft ask for push notification permission (see actions/PushNotification) */
+  PUSH_NOTIFICATION_PROMPT: 'pushNotificationPrompt',
 
   /** Boolean flag used to display the focus mode notification */
   FOCUS_MODE_NOTIFICATION: 'focusModeNotification',
@@ -341,7 +341,7 @@ type OnyxValuesMapping = {
   [ONYXKEYS.USER_LOCATION]: OnyxTypes.UserLocation;
   [ONYXKEYS.SESSION]: OnyxTypes.Session;
   [ONYXKEYS.FOCUS_MODE_NOTIFICATION]: boolean;
-  [ONYXKEYS.PUSH_NOTIFICATIONS_ENABLED]: boolean;
+  [ONYXKEYS.PUSH_NOTIFICATION_PROMPT]: OnyxTypes.PushNotificationPrompt;
   [ONYXKEYS.NVP_PREFERRED_LOCALE]: OnyxTypes.Locale;
   [ONYXKEYS.NVP_LAST_VIEWED_CALENDAR_DATE]: Record<string, DateString>;
   [ONYXKEYS.ONGOING_SESSION_DATA]: OnyxTypes.DrinkingSession;
