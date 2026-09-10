@@ -1,0 +1,10 @@
+Kiroku 1.0 je tady, naše první veřejná verze na Google Play.
+
+- Zaznamenávejte alkoholové relace živě nebo zpětně
+- Ukládejte druhy drinků a jednotky, včetně poznámek
+- Procházejte svou historii v měsíčním kalendáři
+- Sledujte statistiky a trendy včetně dnů bez alkoholu
+- Aplikace funguje offline a po připojení se synchronizuje
+- Přidejte si přátele a sdílejte pokrok (volitelné)
+
+Děkujeme všem, kdo testovali betaverzi!
