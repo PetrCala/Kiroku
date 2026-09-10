@@ -1,8 +1,8 @@
 #!/usr/bin/env node
 /**
  * Kiroku RevenueCat dashboard state: inspect it, point the iOS app at the
- * right bundle id, and register the tip-jar products (zero-dependency, v2
- * REST API).
+ * right bundle id, and register the tip-jar products on the iOS and Android
+ * apps (zero-dependency, v2 REST API).
  *
  * Everything here was dashboard-only clicking before, which is why
  * contributingGuides/BUNDLE_ID_MIGRATION.md still describes it that way in
@@ -17,17 +17,20 @@
  *
  * `status` is read-only. The other two are DRY RUNS unless --yes: they print
  * exactly what they would change first. `setup` is idempotent, so it is safe
- * to re-run after a failure partway through.
+ * to re-run after a failure partway through. `status` and `setup` cover both
+ * store apps (app_store and play_store); `set-bundle-id` only the iOS one.
  *
  * Auth: a RevenueCat v2 secret key (sk_...), needed for every command. Taken
- * from $REVENUECAT_V2_SECRET_KEY, or from a gitignored .env.revenuecat at the
- * repo root holding REVENUECAT_V2_SECRET_KEY=sk_... . It is never printed.
+ * from $REVENUECAT_V2_SECRET_KEY, or from a gitignored .env.revenuecat (in
+ * the repo root or --env-dir) holding REVENUECAT_V2_SECRET_KEY=sk_... . It
+ * is never printed.
  *
  * Flags:
  *   --env-dir <dir>  where the .env.* files live (default: repo root; a git
  *                    worktree has none, so point it at the main checkout)
  *   --project <id>   RevenueCat project id (default: the only one, or $REVENUECAT_PROJECT_ID)
- *   --app <id>       RevenueCat app id (default: the single app_store app)
+ *   --app <id>       RevenueCat app id (default: the single app_store app, plus
+ *                    the single play_store app for status and setup)
  *   --yes            actually write (otherwise dry run)
  */
 import fs from 'node:fs';
@@ -68,12 +71,13 @@ function secretKey() {
   if (SECRET) return SECRET;
   const key =
     process.env.REVENUECAT_V2_SECRET_KEY ||
-    dotenv(path.join(ROOT, '.env.revenuecat')).REVENUECAT_V2_SECRET_KEY;
+    dotenv(path.join(ROOT, '.env.revenuecat')).REVENUECAT_V2_SECRET_KEY ||
+    dotenv(path.join(OPTS.envDir, '.env.revenuecat')).REVENUECAT_V2_SECRET_KEY;
   if (!key) {
     throw new Error(
       'No RevenueCat secret key. Set $REVENUECAT_V2_SECRET_KEY, or put\n' +
         'REVENUECAT_V2_SECRET_KEY=sk_... in .env.revenuecat at the repo root\n' +
-        '(gitignored by the *.env* rule). Never commit it.',
+        'or in --env-dir (gitignored by the *.env* rule). Never commit it.',
     );
   }
   SECRET = key;
@@ -149,15 +153,24 @@ function tipProductIds() {
   return ids;
 }
 
+/**
+ * The store apps the tip jar sells on, and the .env.* variable holding each
+ * one's public SDK key.
+ */
+const TIP_STORES = {
+  app_store: 'REVENUECAT_IOS_API_KEY',
+  play_store: 'REVENUECAT_ANDROID_API_KEY',
+};
+
 /** The public SDK keys the shipped binaries actually use, per .env.* file. */
-function envPublicKeys() {
+function envPublicKeys(variable) {
   if (!fs.existsSync(OPTS.envDir)) return [];
   return fs
     .readdirSync(OPTS.envDir)
     .filter(f => /^\.env\./.test(f) && !/example|revenuecat/.test(f))
     .map(f => ({
       file: f,
-      key: dotenv(path.join(OPTS.envDir, f)).REVENUECAT_IOS_API_KEY || '',
+      key: dotenv(path.join(OPTS.envDir, f))[variable] || '',
     }))
     .filter(e => e.key);
 }
@@ -201,6 +214,27 @@ async function resolveApp(projectId) {
   return {app: ios[0], apps};
 }
 
+/** The apps the tip products belong on: one per store in TIP_STORES. */
+function tipApps(apps) {
+  if (OPTS.appId) {
+    const found = apps.find(a => a.id === OPTS.appId);
+    if (!found) throw new Error(`No app ${OPTS.appId} in this project`);
+    return [found];
+  }
+  return Object.keys(TIP_STORES).map(type => {
+    const matches = apps.filter(a => a.type === type);
+    if (matches.length !== 1) {
+      const listed = apps
+        .map(a => `  ${a.id}  ${a.type}  ${a.name}`)
+        .join('\n');
+      throw new Error(
+        `Expected exactly one ${type} app, found ${matches.length}. Pass --app <id>:\n${listed}`,
+      );
+    }
+    return matches[0];
+  });
+}
+
 const storeId = app =>
   app.app_store?.bundle_id ??
   app.play_store?.package_name ??
@@ -222,11 +256,11 @@ async function status() {
   for (const app of apps) {
     L(`  ${app.name}  [${app.type}]  ${app.id}`);
     L(`    store id: ${storeId(app)}`);
-    if (app.type === 'app_store') {
+    if (TIP_STORES[app.type]) {
       const keys = await list(
         `/projects/${projectId}/apps/${app.id}/public_api_keys`,
       );
-      const envs = envPublicKeys();
+      const envs = envPublicKeys(TIP_STORES[app.type]);
       for (const k of keys) {
         const used = envs.filter(e => e.key === k.key).map(e => e.file);
         let match = '';
@@ -258,25 +292,22 @@ async function status() {
   }
   L();
 
-  const {app: iosApp} = await resolveApp(projectId);
-  L(`Tip contract (CONST.TIPS.PRODUCT_IDS vs app "${iosApp.name}")`);
   let missing = 0;
-  for (const id of wanted) {
-    const hit = products.find(
-      p => p.store_identifier === id && p.app_id === iosApp.id,
-    );
-    if (hit) {
-      L(`  OK       ${id}  [${hit.type}]`);
-    } else {
-      missing += 1;
-      const elsewhere = products.find(p => p.store_identifier === id);
-      const note = elsewhere
-        ? `  (exists on a different app: ${elsewhere.app_id})`
-        : '';
-      L(`  MISSING  ${id}${note}`);
+  for (const app of tipApps(apps)) {
+    L(`Tip contract (CONST.TIPS.PRODUCT_IDS vs app "${app.name}")`);
+    for (const id of wanted) {
+      const hit = products.find(
+        p => p.store_identifier === id && p.app_id === app.id,
+      );
+      if (hit) {
+        L(`  OK       ${id}  [${hit.type}]`);
+      } else {
+        missing += 1;
+        L(`  MISSING  ${id}`);
+      }
     }
+    L();
   }
-  L();
   L(
     missing
       ? `${missing} product(s) to create: run setup`
@@ -336,22 +367,24 @@ async function setBundleId(bundleId) {
 
 async function setup() {
   const projectId = await resolveProject();
-  const {app} = await resolveApp(projectId);
+  const apps = await list(`/projects/${projectId}/apps`);
   const wanted = tipProductIds();
   const products = await list(`/projects/${projectId}/products`);
 
   L(`Project  ${projectId}`);
-  L(`App      ${app.name}  (${app.id})  ${storeId(app)}`);
-  L();
   const todo = [];
-  for (const id of wanted) {
-    const hit = products.find(
-      p => p.store_identifier === id && p.app_id === app.id,
-    );
-    if (hit) L(`  skip    ${id}  (already registered, ${hit.type})`);
-    else {
-      todo.push(id);
-      L(`  create  ${id}  [consumable]`);
+  for (const app of tipApps(apps)) {
+    L();
+    L(`App      ${app.name}  (${app.id})  ${storeId(app)}`);
+    for (const id of wanted) {
+      const hit = products.find(
+        p => p.store_identifier === id && p.app_id === app.id,
+      );
+      if (hit) L(`  skip    ${id}  (already registered, ${hit.type})`);
+      else {
+        todo.push({app, id});
+        L(`  create  ${id}  [consumable]`);
+      }
     }
   }
   if (!todo.length) {
@@ -365,14 +398,16 @@ async function setup() {
     return;
   }
   L();
-  for (const id of todo) {
+  for (const {app, id} of todo) {
+    // Consumable on Play too: RevenueCat consumes the purchase itself, which
+    // is what lets Play sell the same tip again.
     const created = await api('POST', `/projects/${projectId}/products`, {
       store_identifier: id,
       app_id: app.id,
       type: 'consumable',
     });
     L(
-      `  created ${created.store_identifier}  [${created.type}]  ${created.id}`,
+      `  created ${created.store_identifier}  [${created.type}]  ${app.name}  ${created.id}`,
     );
   }
   L();

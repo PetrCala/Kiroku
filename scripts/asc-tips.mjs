@@ -5,8 +5,10 @@
  *
  * The products are defined here, once, and must stay in step with
  * CONST.TIPS.PRODUCT_IDS in src/CONST.ts, because StoreKit silently omits any
- * id it does not recognize. The manual half of the setup (agreements, banking,
- * submission) is in contributingGuides/TIP_JAR.md.
+ * id it does not recognize. scripts/play.mjs imports TIPS to create the same
+ * products on Google Play, so this table is the copy for both stores. The
+ * manual half of the setup (agreements, banking, submission) is in
+ * contributingGuides/TIP_JAR.md.
  *
  * Usage:
  *   node scripts/asc-tips.mjs status
@@ -46,7 +48,8 @@ const REVIEW_NOTE =
   'nothing to restore. To see it: Settings > Support Kiroku.';
 
 // Base prices are CZK in the CZE territory; Apple derives every other
-// territory from them. Must stay in step with CONST.TIPS.PRODUCT_IDS.
+// territory from them (and Play every other region, see scripts/play.mjs).
+// Must stay in step with CONST.TIPS.PRODUCT_IDS. The module's default export.
 const TIPS = [
   {
     productId: 'kiroku.tipjar.small_beer',
@@ -538,7 +541,7 @@ async function screenshot(appId, input) {
 }
 
 // ---- main -----------------------------------------------------------------
-(async () => {
+async function main() {
   // Command and its argument come first; flags follow (as in asc.mjs).
   const command = argv[0] && !argv[0].startsWith('--') ? argv[0] : null;
   const arg = argv[1] && !argv[1].startsWith('--') ? argv[1] : undefined;
@@ -556,7 +559,17 @@ async function screenshot(appId, input) {
       '[--app-id <id>]',
   );
   process.exitCode = 1;
-})().catch(e => {
-  console.error('ERROR', e.message);
-  process.exit(1);
-});
+}
+
+export default TIPS;
+
+// Only as a CLI: scripts/play.mjs imports TIPS from this file.
+if (
+  process.argv[1] &&
+  path.resolve(process.argv[1]) === fileURLToPath(import.meta.url)
+) {
+  main().catch(e => {
+    console.error('ERROR', e.message);
+    process.exit(1);
+  });
+}
