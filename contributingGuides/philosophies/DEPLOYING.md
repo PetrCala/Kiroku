@@ -6,7 +6,7 @@ This guide describes the intended Kiroku release cycle and how to operate it onc
 
 - **`master`** - Source branch for merged application changes.
 - **`staging`** - Release-candidate branch. A push to this branch deploys to closed/internal beta environments.
-- **`production`** - Approved release branch. A push to this branch deploys to open beta now, and later App Store / Play Store production.
+- **`production`** - Approved release branch. A push to this branch submits iOS for App Store review and starts a 20% staged rollout on Google Play production.
 - **StagingDeployCash** - GitHub issue label for the current staging deploy checklist.
 - **DeployBlockerCash** - GitHub issue label for a blocker that prevents promotion from staging to production.
 - **LockCashDeploys** - GitHub issue label that freezes staging while QA is in progress.
@@ -24,7 +24,7 @@ For Kiroku, the environments mean:
 
 - `master`: code has merged, but it is not necessarily in a tester-facing build yet.
 - `staging`: iOS TestFlight internal testing and Android closed beta.
-- `production`: iOS TestFlight open beta and Android open beta. Later this branch will represent App Store / Play Store production.
+- `production`: the App Store (submitted for review) and Google Play production (a 20% staged rollout, ramped by hand). Play's open-testing track no longer gets new builds; its testers receive the production build once it's newer than what they have.
 
 GitHub Releases are release records and artifact holders. Branch pushes own deployment.
 
@@ -144,7 +144,7 @@ For a **production** cherry-pick, the workflow also automatically bumps staging 
 
 ### I want to ship Android to Play production on its own
 
-The `production` branch doesn't reach Google Play production. Its Android lane (`fastlane android production`) only promotes the internal build to open testing (`track_promote_to: 'beta'`). Play production is released separately, straight from the internal track:
+`:shipit:` ships Android through `fastlane android production`, which promotes the internal build to Play production as a 20% staged rollout. `scripts/play.mjs promote` covers the rest: shipping Android without `:shipit:` (while iOS is in review, say), attaching release notes, and ramping or completing a rollout. To ship straight from the internal track:
 
 ```bash
 node scripts/play.mjs promote --version-code 1001000008
@@ -163,6 +163,21 @@ So while an iOS version is in review (for example one submitted by hand with `no
 3. **Dry run.** `node scripts/play.mjs promote --version-code <code>` (the code, `1001000008`, or the version it decodes to, `1.0.0-8`) opens an edit, sets the production release, has Play validate it, prints what the track would hold, and throws the edit away. It checks that the code is on internal and fails on notes over the limit.
 4. **Ship.** Run the same command with `--yes` to commit the edit. For a staged rollout, add `--rollout 0.2` (20% of users); run it again with a higher fraction, or without `--rollout` for everyone.
 5. **Publish if Managed publishing is on.** Committed changes go to Google review, and with Managed publishing on they're held after review until you click publish in Play Console under **Publishing overview**. A first production release can take several days to review.
+
+#### Ramping a staged rollout
+
+A `:shipit:` release starts at 20% and carries no release notes, because the lane skips changelogs. `promote` also accepts a code that's already rolling out on the target track, even after a staging deploy has replaced internal:
+
+```bash
+# attach notes from fastlane/play-release-notes/<version>/ and stay at 20%
+node scripts/play.mjs promote --version-code 1.0.0-9 --rollout 0.2 --yes
+# widen to half of users
+node scripts/play.mjs promote --version-code 1.0.0-9 --rollout 0.5 --yes
+# complete the rollout
+node scripts/play.mjs promote --version-code 1.0.0-9 --yes
+```
+
+A ramp keeps the notes already on the release unless that version's notes folder exists. Drop `--yes` for a dry run first. With Managed publishing on, each committed change waits under **Publishing overview** until you publish it.
 
 The script decrypts the fastlane service-account key in memory and prompts for `LARGE_SECRET_PASSPHRASE` (hidden input) when it isn't set, so there's nothing to export beforehand.
 
@@ -215,8 +230,8 @@ Expected staging behavior:
 
 Expected production behavior:
 
-- deploy/promote iOS to TestFlight open beta, later App Store production
-- deploy/promote Android to open beta, later Play Store production
+- submit the iOS build (already on TestFlight from staging) for App Store review
+- promote Android from internal to Play production as a 20% staged rollout
 - create or update the production GitHub release/artifacts
 
 ### createDeployChecklist

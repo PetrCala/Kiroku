@@ -232,7 +232,7 @@ platform :android do
     capture_android_screenshots   # reads Screengrabfile
   end
 
-  desc "Deploy app to Google Play open beta"
+  desc "Promote the internal build to Google Play production as a staged rollout"
   lane :production do
     # Google is very unreliable, so we retry a few times
     ENV["SUPPLY_UPLOAD_MAX_RETRIES"]="5"
@@ -241,12 +241,14 @@ platform :android do
       json_key: './android/app/android-fastlane-json-key.json',
       version_code: ENV["VERSION"].to_i,
       track: 'internal',
-      track_promote_to: 'beta', # Modify to production when ready
-      # 'completed' auto-submits the promoted open-testing release for Google
-      # review. The go-live to testers is held by Play Console "Managed
-      # publishing", so releasing to open testing stays a manual click.
-      track_promote_release_status: 'completed',
-      rollout: '1.0',
+      track_promote_to: 'production',
+      # A fraction below 1 makes supply create an inProgress staged rollout:
+      # the new build reaches 20% of users and the previous production release
+      # keeps serving the rest. Ramp or complete it with
+      # `node scripts/play.mjs promote --version-code <code> [--rollout <f>] --yes`.
+      # The release still goes to Google review, and Play Console "Managed
+      # publishing" holds the go-live until it's published by hand.
+      rollout: '0.2',
       skip_upload_apk: true,
       skip_upload_aab: true,
       skip_upload_metadata: true,
