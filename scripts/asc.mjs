@@ -16,6 +16,7 @@
  *   node scripts/asc.mjs scrub  [--version 0.3.14] [--terms supporter,subscription]
  *   node scripts/asc.mjs shots  --dir <folder> [--locale en-US] [--replace] [--yes]
  *   node scripts/asc.mjs submit [--version 0.3.14] [--iaps a,b,c] [--yes]
+ *   node scripts/asc.mjs submit-gate --version 1.0.0 [--build 1.0.0.9]
  *   node scripts/asc.mjs rename --version 0.3.14 --to 0.3.15 [--yes]
  *   node scripts/asc.mjs clone-listing   --from <appId> --to <appId> [--yes]
  *   node scripts/asc.mjs clone-pricing   --from <appId> --to <appId> [--yes]
@@ -48,7 +49,15 @@
  *            attach in-app purchases (required for the FIRST IAP submission,
  *            which must ride an app version). DRY RUN unless --yes is passed
  *            (submit is irreversible).
- *   rename   PATCH an appStoreVersion's versionString (e.g. after a rejection,
+ *   submit-gate
+ *            Read-only check the fastlane `ios production` lane runs before
+ *            deliver: may --version be submitted for review? Skips when that
+ *            version is already past submission (WAITING_FOR_REVIEW,
+ *            IN_REVIEW, PENDING_DEVELOPER_RELEASE, READY_FOR_SALE, ...), when
+ *            another version is in review or approved but unreleased, or when
+ *            any review submission is open. Exit 0 = submit, 2 = skip (reasons
+ *            printed), 1 = App Store Connect could not be read. Writes nothing.
+ *   rename  PATCH an appStoreVersion's versionString (e.g. after a rejection,
  *            to reopen it for editing, or to reconcile a fresh record's 1.0
  *            down to what the app actually builds). Requires --to. DRY RUN
  *            unless --yes.
@@ -110,6 +119,7 @@
  *                      sent as strings)
  *   --groups <csv>     clone-testflight / distribute: beta group names
  *   --build <str>      distribute: CFBundleVersion to assign (default: newest build)
+ *                      submit-gate: the build this deploy would submit (log only)
  *   --with-testers     clone-testflight: also add the source groups' testers,
  *                      which sends them an invitation email
  *   --platform <p>     default IOS
@@ -784,6 +794,120 @@ async function cmdSubmit(appId) {
     data: {type: 'reviewSubmissions', id, attributes: {submitted: true}},
   });
   L(`Submitted ✓  submission=${id}  state=${done.data.attributes.state}`);
+}
+
+// ---- submit-gate ----------------------------------------------------------
+
+/**
+ * Review submission states that make a new submission impossible. A leftover
+ * READY_FOR_REVIEW one is deliberately NOT here: it was created and never
+ * submitted, and `submit` reuses it rather than failing on the POST.
+ */
+const COLLIDING_SUBMISSION_STATES = [
+  'WAITING_FOR_REVIEW',
+  'IN_REVIEW',
+  'UNRESOLVED_ISSUES',
+];
+
+/**
+ * Version states the production lane may submit from: what deliver itself
+ * treats as editable, minus WAITING_FOR_REVIEW (deliver lists that one too,
+ * which is how it ends up re-editing a version Apple already has).
+ */
+const SUBMITTABLE_VERSION_STATES = [
+  'PREPARE_FOR_SUBMISSION',
+  'DEVELOPER_REJECTED',
+  'REJECTED',
+  'METADATA_REJECTED',
+  'INVALID_BINARY',
+];
+/** Another version in one of these is still with Apple or not released yet. */
+const IN_FLIGHT_VERSION_STATES = [
+  'WAITING_FOR_REVIEW',
+  'IN_REVIEW',
+  'PENDING_DEVELOPER_RELEASE',
+  'PENDING_APPLE_RELEASE',
+];
+const GATE_SUBMIT = 0;
+const GATE_SKIP = 2;
+
+/**
+ * Read-only: may the production lane submit --version for review? Exit 0 to
+ * submit, 2 to skip (with the reasons printed), 1 when ASC can't be read.
+ */
+async function cmdSubmitGate(appId) {
+  if (!OPTS.version || OPTS.version === true)
+    throw new Error('submit-gate needs --version <short version>, e.g. 1.0.0');
+  const want = String(OPTS.version);
+  const states = v => [
+    ...new Set(
+      [v.attributes.appVersionState, v.attributes.appStoreState].filter(
+        Boolean,
+      ),
+    ),
+  ];
+  const reasons = [];
+
+  const vs = await listVersions(appId);
+  const target = vs.find(v => v.attributes.versionString === want);
+  if (!target) {
+    L(`Version ${want}: not on App Store Connect yet (deliver creates it)`);
+  } else {
+    const st = states(target);
+    const b = await fetchBuild(target.id);
+    const build = b?.attributes.version;
+    L(
+      `Version ${want}: ${st.join(' / ') || '?'}, build ${build ?? 'none attached'}`,
+    );
+    if (!st.length || !st.every(s => SUBMITTABLE_VERSION_STATES.includes(s)))
+      reasons.push(
+        `version ${want} is already ${st.join(' / ') || 'in an unknown state'}${build ? ` with build ${build}` : ''}`,
+      );
+  }
+
+  for (const v of vs) {
+    if (v === target) continue;
+    const hit = states(v).find(s => IN_FLIGHT_VERSION_STATES.includes(s));
+    if (hit)
+      reasons.push(
+        `version ${v.attributes.versionString} is ${hit}; release or withdraw it in App Store Connect before submitting ${want}`,
+      );
+  }
+
+  // Any open submission blocks a new one, and cancelling it is the only way
+  // through. That includes one carrying in-app purchases, which is how the
+  // first tip-jar IAPs have to reach review.
+  const subs = await api(
+    'GET',
+    `/v1/reviewSubmissions?filter[app]=${appId}&filter[platform]=${OPTS.platform}&filter[state]=${COLLIDING_SUBMISSION_STATES.join(',')}&limit=20`,
+  );
+  for (const rs of subs.data) {
+    const items = await api(
+      'GET',
+      `/v1/reviewSubmissions/${rs.id}/items?include=appStoreVersion&limit=50`,
+    );
+    const versionStrings = (items.included || [])
+      .filter(i => i.type === 'appStoreVersions')
+      .map(i => i.attributes.versionString);
+    const others = items.data.length - versionStrings.length;
+    const what = [
+      ...versionStrings.map(s => `version ${s}`),
+      ...(others ? [`${others} other item(s), e.g. in-app purchases`] : []),
+    ];
+    reasons.push(
+      `review submission ${rs.id} is ${rs.attributes.state} (${what.join(' + ') || 'no items'}); submitting would mean cancelling it`,
+    );
+  }
+
+  if (!reasons.length) {
+    L(`\nSUBMIT: nothing on App Store Connect is in the way of ${want}`);
+    return GATE_SUBMIT;
+  }
+  L('\nSKIP:');
+  reasons.forEach(r => L(`  - ${r}`));
+  if (OPTS.build && OPTS.build !== true)
+    L(`Build ${OPTS.build} stays in TestFlight, not submitted.`);
+  return GATE_SKIP;
 }
 
 // ---- clone-listing --------------------------------------------------------
@@ -2115,17 +2239,6 @@ const AGE_RATING_CONDITIONAL = {
   socialMediaAgeRestricted: a => a.socialMedia === true,
 };
 
-/**
- * Review submission states that make a new submission impossible. A leftover
- * READY_FOR_REVIEW one is deliberately NOT here: it was created and never
- * submitted, and `submit` reuses it rather than failing on the POST.
- */
-const COLLIDING_SUBMISSION_STATES = [
-  'WAITING_FOR_REVIEW',
-  'IN_REVIEW',
-  'UNRESOLVED_ISSUES',
-];
-
 const IOS_INFO_PLIST = path.join(ROOT, 'ios', 'kiroku', 'Info.plist');
 const CONST_TS = path.join(ROOT, 'src', 'CONST.ts');
 
@@ -2510,6 +2623,10 @@ async function cmdPreflight(appId) {
   }
   if (cmd === 'shots') return cmdShots(appId);
   if (cmd === 'submit') return cmdSubmit(appId);
+  if (cmd === 'submit-gate') {
+    process.exitCode = await cmdSubmitGate(appId);
+    return;
+  }
   if (cmd === 'rename') return cmdRename(appId);
   if (cmd === 'age-rating') return cmdAgeRating(appId);
   if (cmd === 'distribute') return cmdDistribute(appId);

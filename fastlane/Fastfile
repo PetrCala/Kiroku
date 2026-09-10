@@ -71,6 +71,34 @@ def kiroku_review_notes
   "1. SCREEN RECORDING\n#{recording}\n\n#{KIROKU_REVIEW_NOTES}"
 end
 
+require 'open3'
+
+# Exit codes of `node scripts/asc.mjs submit-gate`.
+SUBMIT_GATE_SUBMIT = 0
+SUBMIT_GATE_SKIP = 2
+
+# Asks App Store Connect (read-only) whether the production lane may submit
+# app_version for review. Returns true to submit, false to skip. Raises when
+# the check itself fails: submitting blind is what the gate exists to prevent.
+def kiroku_submit_gate(app_version, build_number)
+  # Lanes run with cwd = ./fastlane; asc.mjs resolves the API key from the root.
+  repo_root = File.basename(Dir.pwd) == "fastlane" ? File.expand_path("..") : Dir.pwd
+  output, status = Open3.capture2e(
+    "node", "scripts/asc.mjs", "submit-gate",
+    "--version", app_version, "--build", build_number,
+    chdir: repo_root
+  )
+  output.each_line { |line| UI.message(line.rstrip) }
+
+  case status.exitstatus
+  when SUBMIT_GATE_SUBMIT then true
+  when SUBMIT_GATE_SKIP then false
+  else UI.user_error!("asc.mjs submit-gate failed (exit #{status.exitstatus.inspect}), not submitting blind")
+  end
+rescue Errno::ENOENT
+  UI.user_error!("node not found; the App Store submit gate needs it (scripts/asc.mjs submit-gate)")
+end
+
 def kiroku_review_information
   demo_user = ENV["APPLE_DEMO_EMAIL"]
   demo_password = ENV["APPLE_DEMO_PASSWORD"]
@@ -439,17 +467,34 @@ platform :ios do
     # the App Store like everyone else. See BUNDLE_ID_MIGRATION.md, "External
     # TestFlight is deliberately absent".
 
+    # VERSION will be set to the full build_number e.g. '1.0.92.0'
+    build_number = ENV["VERSION"]
+    # app_version needs to be set to the short version, without the last digit e.g. '1.0.92'
+    app_version = build_number.rpartition(".")[0]
+
+    # Leave alone anything Apple already has. If this version is waiting for or
+    # in review, approved and pending release, or live, or any review
+    # submission is open (e.g. one submitted by hand with IAPs attached),
+    # deliver would re-edit it or cancel it. Skip instead: the lane still ends
+    # green, so the Android job and the rest of the production deploy carry on.
+    unless kiroku_submit_gate(app_version, build_number)
+      message = "Skipped the App Store submission of #{build_number}; see the submit-gate output above. Nothing on App Store Connect was changed."
+      UI.important(message)
+      if ENV["GITHUB_ACTIONS"]
+        puts("::warning title=App Store submission skipped::#{message}")
+        File.write(ENV["GITHUB_STEP_SUMMARY"], "#{message}\n", mode: "a") if ENV["GITHUB_STEP_SUMMARY"]
+      end
+      next
+    end
+
     deliver(
       api_key_path: "./ios/ios-fastlane-json-key.json",
 
       # Skip HTMl report verification
       force: true,
 
-      # VERSION will be set to the full build_number e.g. '1.0.92.0'
-      build_number: ENV["VERSION"],
-
-      # app_version needs to be set to the short version, without the last digit e.g. '1.0.92'
-      app_version: ENV["VERSION"].rpartition(".")[0],
+      build_number: build_number,
+      app_version: app_version,
 
       # Merging to `production` submits for review. The build, metadata,
       # release notes, rating config and review information are all set by this
@@ -459,7 +504,8 @@ platform :ios do
       # sit in Waiting for Review indefinitely, and it is unverified whether
       # deliver can attach them. Do the first one with
       #   node scripts/asc.mjs submit --iaps <ids> --yes
-      # and let this lane take over from the second release on.
+      # and let this lane take over from the second release on. The submit gate
+      # above keeps the lane off that hand-made submission while it is open.
       submit_for_review: true,
 
       # Do NOT auto-release on approval, keep the approved build as Pending
@@ -484,8 +530,14 @@ platform :ios do
       # We do not have any binary to upload as it's already in TestFlight
       skip_binary_upload: true,
 
-      # Reject the current build if there is one in review
-      reject_if_possible: true,
+      # Never cancel a review from here. reject_if_possible cancels whatever
+      # review submission is open for the platform, not just this version's,
+      # so an older version in review (or IAPs riding it) would be pulled and
+      # lose its place in the queue. The submit gate above already skips while
+      # any submission is open, so the flag could only fire on a race, and
+      # failing there beats withdrawing something unattended. To supersede a
+      # version in review, withdraw it in App Store Connect and re-run the deploy.
+      reject_if_possible: false,
 
       # We do not want to reset the ratings
       reset_ratings: false,

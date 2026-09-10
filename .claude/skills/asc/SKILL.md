@@ -5,7 +5,7 @@ description: Inspect App Store Connect state, lint the iOS store listing, and su
 
 # App Store Connect helper (Kiroku)
 
-Drives [`scripts/asc.mjs`](../../../scripts/asc.mjs) — a zero-dependency Node CLI
+Drives [`scripts/asc.mjs`](../../../scripts/asc.mjs), a zero-dependency Node CLI
 over the App Store Connect API. It reuses the existing fastlane API key at
 `ios/ios-fastlane-json-key.json` (key_id / issuer_id / .p8) and mints the ES256
 JWT itself with Node's built-in `crypto`. It never prints the key. Requires Node 18+.
@@ -17,6 +17,7 @@ node scripts/asc.mjs status                              # app, versions + state
 node scripts/asc.mjs preflight [--version X]             # read-only PASS/FAIL report of every submission precondition; exit 1 on any failure
 node scripts/asc.mjs scrub  [--version X] [--terms a,b]  # lint store listing for forbidden terms; exit 1 on any hit (CI-friendly)
 node scripts/asc.mjs submit [--version X] [--iaps a,b,c] [--yes]  # dry run unless --yes; submits the version for review, optionally attaching IAPs by product id
+node scripts/asc.mjs submit-gate --version X [--build X.N]  # read-only; exit 0 = the production lane may submit, 2 = skip (reasons printed), 1 = ASC unreadable
 ```
 
 Run from the repo root. Useful flags: `--version` (defaults to the lone
@@ -27,7 +28,7 @@ working from a git worktree where the gitignored key isn't present), `--terms`
 
 ## How to ship an iOS version (playbook)
 
-1. **`preflight`** — one read-only report of every precondition: version state,
+1. **`preflight`**: one read-only report of every precondition: version state,
    `versionString` vs `ios/kiroku/Info.plist`, the attached build, export
    compliance, content rights, the age rating declaration (including
    `socialMedia`, a question Apple added after both records were last rated),
@@ -35,13 +36,13 @@ working from a git worktree where the gitignored key isn't present), `--terms`
    (`APP_WATCH_SERIES_4` included, because the build embeds the watch app), the
    tip products, a colliding review submission, and the `scrub` listing check.
    Exit 1 on any failure, so it works as a gate. Use `status` for raw state.
-2. **`scrub --version X`** — the store description/keywords must not mention
+2. **`scrub --version X`**: the store description/keywords must not mention
    anything that isn't actually in this build. Until the paid tier ships that
    means no "supporter / subscription / předplatné / podporovatel". A listing
    that describes absent features is its own rejection (Guideline 2.3).
 3. Ensure subscriptions are **parked** (`DEVELOPER_ACTION_NEEDED`, i.e. not
    `WAITING_FOR_REVIEW` / `IN_REVIEW`) when shipping without them.
-4. Fix the **App Privacy / App Tracking Transparency** label in the ASC UI — that
+4. Fix the **App Privacy / App Tracking Transparency** label in the ASC UI. That
    is not scriptable here and is a common rejection (Guideline 5.1.2(i)).
 5. **`preflight`** again if anything was changed, then
    **`submit --version X`** (dry run) to see the pre-flight, then add `--yes` to
@@ -64,12 +65,20 @@ working from a git worktree where the gitignored key isn't present), `--terms`
   Purchases and Subscriptions" section disappears** and you can't add items.
   Manage it from the App Review submission, or just cut a fresh version and
   submit that app-only (what we did for 0.3.14).
-- **`submit` is irreversible** — hence `--yes` is required; always dry-run first.
+- **The `ios production` fastlane lane runs `submit-gate` before deliver.** It
+  skips the submission (green job, a warning on the run) when the version is
+  already waiting for or in review, pending developer release, or live, when
+  another version is in review or approved but unreleased, or when any review
+  submission is open. deliver runs with `reject_if_possible: false`, so the lane
+  never withdraws a review; a hand-made `submit --iaps` submission is safe from
+  the next `:shipit:`. To supersede a version in review, withdraw it in ASC and
+  re-run the deploy.
+- **`submit` is irreversible**, hence `--yes` is required; always dry-run first.
 
 ## Safety
 
 - Never print or commit the API key (`ios/ios-fastlane-json-key.json` is
   gitignored). The script reads it by path and only ever sends signed JWTs.
-- Changing live store copy (descriptions) is intentionally **not** a CLI command
-  — do that deliberately in the ASC UI, or via a one-off reviewed PATCH, so
+- Changing live store copy (descriptions) is intentionally **not** a CLI command.
+  Do that deliberately in the ASC UI, or via a one-off reviewed PATCH, so
   marketing text is never altered by accident.
