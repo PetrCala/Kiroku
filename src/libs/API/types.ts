@@ -7,20 +7,14 @@ import type * as Parameters from './parameters';
 type ApiRequest = ValueOf<typeof CONST.API_REQUEST_TYPE>;
 
 const WRITE_COMMANDS = {
-  UPDATE_PREFERRED_LOCALE: 'UpdatePreferredLocale',
   OPEN_APP: 'OpenApp',
   RECONNECT_APP: 'ReconnectApp',
-  HANDLE_RESTRICTED_EVENT: 'HandleRestrictedEvent',
-  UPDATE_PRONOUNS: 'UpdatePronouns',
   UPDATE_DISPLAY_NAME: 'UpdateDisplayName',
   SET_USERNAME: 'SetUsername',
   UPDATE_LEGAL_NAME: 'UpdateLegalName',
-  UPDATE_DATE_OF_BIRTH: 'UpdateDateOfBirth',
-  UPDATE_HOME_ADDRESS: 'UpdateHomeAddress',
   UPDATE_AUTOMATIC_TIMEZONE: 'UpdateAutomaticTimezone',
   UPDATE_SELECTED_TIMEZONE: 'UpdateSelectedTimezone',
   // UPDATE_USER_AVATAR: 'UpdateUserAvatar',
-  DELETE_USER_AVATAR: 'DeleteUserAvatar',
   PROVISION_USER: 'ProvisionUser',
   CLOSE_ACCOUNT: 'CloseAccount',
   //   OPEN_PROFILE: 'OpenProfile',
@@ -29,8 +23,6 @@ const WRITE_COMMANDS = {
   //   SIGN_IN_USER: 'SigninUser',
   //   SIGN_IN_USER_WITH_LINK: 'SigninUserWithLink',
   //   REQUEST_UNLINK_VALIDATION_LINK: 'RequestUnlinkValidationLink',
-  OPT_IN_TO_PUSH_NOTIFICATIONS: 'OptInToPushNotifications',
-  OPT_OUT_OF_PUSH_NOTIFICATIONS: 'OptOutOfPushNotifications',
   SEND_FRIEND_REQUEST: 'SendFriendRequest',
   ACCEPT_FRIEND_REQUEST: 'AcceptFriendRequest',
   DELETE_FRIEND_REQUEST: 'DeleteFriendRequest',
@@ -61,20 +53,14 @@ const WRITE_COMMANDS = {
 type WriteCommand = ValueOf<typeof WRITE_COMMANDS>;
 
 type WriteCommandParameters = {
-  [WRITE_COMMANDS.UPDATE_PREFERRED_LOCALE]: Parameters.UpdatePreferredLocaleParams;
   [WRITE_COMMANDS.OPEN_APP]: Parameters.OpenAppParams;
   [WRITE_COMMANDS.RECONNECT_APP]: Parameters.ReconnectAppParams;
-  [WRITE_COMMANDS.HANDLE_RESTRICTED_EVENT]: Parameters.HandleRestrictedEventParams;
-  [WRITE_COMMANDS.UPDATE_PRONOUNS]: Parameters.UpdatePronounsParams;
   [WRITE_COMMANDS.UPDATE_DISPLAY_NAME]: Parameters.UpdateDisplayNameParams;
   [WRITE_COMMANDS.SET_USERNAME]: Parameters.SetUsernameParams;
   [WRITE_COMMANDS.UPDATE_LEGAL_NAME]: Parameters.UpdateLegalNameParams;
-  [WRITE_COMMANDS.UPDATE_DATE_OF_BIRTH]: Parameters.UpdateDateOfBirthParams;
-  [WRITE_COMMANDS.UPDATE_HOME_ADDRESS]: Parameters.UpdateHomeAddressParams;
   [WRITE_COMMANDS.UPDATE_AUTOMATIC_TIMEZONE]: Parameters.UpdateAutomaticTimezoneParams;
   [WRITE_COMMANDS.UPDATE_SELECTED_TIMEZONE]: Parameters.UpdateSelectedTimezoneParams;
   // [WRITE_COMMANDS.UPDATE_USER_AVATAR]: Parameters.UpdateUserAvatarParams;
-  [WRITE_COMMANDS.DELETE_USER_AVATAR]: EmptyObject;
   [WRITE_COMMANDS.PROVISION_USER]: Parameters.ProvisionUserParams;
   [WRITE_COMMANDS.CLOSE_ACCOUNT]: Parameters.CloseAccountParams;
   //   [WRITE_COMMANDS.OPEN_PROFILE]: Parameters.OpenProfileParams;
@@ -83,8 +69,6 @@ type WriteCommandParameters = {
   //   [WRITE_COMMANDS.SIGN_IN_USER]: SignInUserParams;
   //   [WRITE_COMMANDS.SIGN_IN_USER_WITH_LINK]: Parameters.SignInUserWithLinkParams;
   //   [WRITE_COMMANDS.REQUEST_UNLINK_VALIDATION_LINK]: Parameters.RequestUnlinkValidationLinkParams;
-  [WRITE_COMMANDS.OPT_IN_TO_PUSH_NOTIFICATIONS]: Parameters.OptInOutToPushNotificationsParams;
-  [WRITE_COMMANDS.OPT_OUT_OF_PUSH_NOTIFICATIONS]: Parameters.OptInOutToPushNotificationsParams;
   [WRITE_COMMANDS.SEND_FRIEND_REQUEST]: Parameters.SendFriendRequestParams;
   [WRITE_COMMANDS.ACCEPT_FRIEND_REQUEST]: Parameters.AcceptFriendRequestParams;
   [WRITE_COMMANDS.DELETE_FRIEND_REQUEST]: Parameters.DeleteFriendRequestParams;

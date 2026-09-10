@@ -380,6 +380,9 @@ const CONST = {
     // middleware refreshes and replays). A 401 means a token refresh cannot
     // recover the session, so the client force-signs-out (see HttpUtils).
     UNAUTHORIZED: 401,
+    // No such route. Also what the retired legacy `{root}api/{Command}` host
+    // answered, so HttpUtils reuses it for an unrouted command (droppable).
+    NOT_FOUND: 404,
     // The resource already exists — e.g. provisioning an already-provisioned
     // user. Expected/benign for idempotent retries, not a service failure.
     CONFLICT: 409,

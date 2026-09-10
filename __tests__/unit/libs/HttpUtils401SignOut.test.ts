@@ -8,7 +8,8 @@
  * a `Bearer` token. These tests pin that behavior:
  *  - an authenticated 401 signs out once and still rejects the request,
  *  - a burst of concurrent 401s collapses into a single sign-out,
- *  - non-401 failures and 401s with no `Bearer` (legacy transport) do NOT sign out.
+ *  - non-401 failures do NOT sign out,
+ *  - an undeclared command rejects without a request (no legacy transport).
  */
 import type {WRITE_COMMANDS as WriteCommands} from '@libs/API/types';
 import type HttpUtilsType from '@libs/HttpUtils';
@@ -30,7 +31,6 @@ jest.mock('@userActions/Session', () => ({
 
 jest.mock('@libs/ApiUtils', () => ({
   getKirokuApiRoot: () => 'https://api.test',
-  getCommandURL: () => 'https://legacy.test/cmd',
 }));
 
 jest.mock('@userActions/Network', () => ({setTimeSkew: jest.fn()}));
@@ -112,15 +112,20 @@ describe('HttpUtils 401 (revoked token) sign-out', () => {
     expect(signOut).not.toHaveBeenCalled();
   });
 
-  it('does NOT sign out on a 401 with no Bearer token (legacy transport)', async () => {
+  it('rejects an undeclared command without sending a request', async () => {
     mockFetchStatus(401, 'Unauthorized');
 
-    // A command absent from the kiroku-api route map falls through to the legacy
-    // FormData transport, which sends no Authorization header.
+    // The legacy `{root}api/{Command}` transport is gone: a command missing
+    // from the kiroku-api route map fails fast instead of hitting the network.
+    // It keeps the 404 the retired endpoint returned, so a stale persisted
+    // request stays droppable and can't stall the sequential queue.
     await expect(HttpUtils.xhr('NotAKirokuCommand', {})).rejects.toMatchObject({
-      status: '401',
+      name: 'HttpsError',
+      status: '404',
+      message: 'No kiroku-api route for command "NotAKirokuCommand"',
     });
 
+    expect(global.fetch).not.toHaveBeenCalled();
     expect(signOut).not.toHaveBeenCalled();
   });
 });

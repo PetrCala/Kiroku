@@ -355,25 +355,23 @@ async function kirokuXhr(
 function xhr(
   command: string,
   data: Record<string, unknown>,
-  type: RequestType = CONST.NETWORK.METHOD.POST,
-  shouldUseSecure = false,
 ): Promise<Response> {
-  // kiroku-api commands route to the per-route REST surface with Bearer auth.
+  // Every command routes to kiroku-api's per-route REST surface with Bearer
+  // auth. KIROKU_ROUTES is typed exhaustively, so a miss here means an
+  // undeclared command, e.g. a request persisted by an older build. Reject with
+  // the 404 the retired legacy endpoint returned: SequentialQueue drops a
+  // non-retryable 4xx once its retry budget runs out, while a status-less
+  // error would stay queued and stall every write behind it.
   const kirokuRoute = getKirokuRoute(command);
-  if (kirokuRoute) {
-    return kirokuXhr(data, kirokuRoute);
+  if (!kirokuRoute) {
+    return Promise.reject(
+      new HttpsError({
+        message: `No kiroku-api route for command "${command}"`,
+        status: String(CONST.HTTP_STATUS.NOT_FOUND),
+      }),
+    );
   }
-
-  const formData = new FormData();
-  Object.keys(data).forEach(key => {
-    if (typeof data[key] === 'undefined') {
-      return;
-    }
-    formData.append(key, data[key] as string | Blob);
-  });
-
-  const url = ApiUtils.getCommandURL({shouldUseSecure, command});
-  return processHTTPRequest(url, type, formData, !!data.canCancel);
+  return kirokuXhr(data, kirokuRoute);
 }
 
 function cancelPendingRequests() {

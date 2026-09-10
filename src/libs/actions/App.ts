@@ -1,23 +1,16 @@
 // Issue - https://github.com/Expensify/App/issues/26719
 import type {AppStateStatus} from 'react-native';
 import {AppState} from 'react-native';
-import type {
-  OnyxEntry,
-  OnyxKey,
-  OnyxMergeInput,
-  OnyxUpdate,
-} from 'react-native-onyx';
+import type {OnyxEntry, OnyxKey, OnyxMergeInput} from 'react-native-onyx';
 import Onyx from 'react-native-onyx';
 import type {ValueOf} from 'type-fest';
 import * as API from '@libs/API';
 import type {
   GetMissingOnyxMessagesParams,
-  HandleRestrictedEventParams,
   OpenAppParams,
   //   OpenOldDotLinkParams,
   //   // OpenProfileParams,
   ReconnectAppParams,
-  UpdatePreferredLocaleParams,
 } from '@libs/API/parameters';
 import {SIDE_EFFECT_REQUEST_COMMANDS, WRITE_COMMANDS} from '@libs/API/types';
 // import * as Browser from '@libs/Browser';
@@ -37,6 +30,7 @@ import type * as OnyxTypes from '@src/types/onyx';
 import type {OnyxData} from '@src/types/onyx/Request';
 import type {DateString, UserID} from '@src/types/onyx/OnyxCommon';
 import type {User} from 'firebase/auth';
+import {updatePreferences} from './Preferences';
 import {resolveDuplicationConflictAction} from './RequestConflictUtils';
 // import * as Session from './Session';
 // import Timing from './Timing';
@@ -132,22 +126,9 @@ function setLocale(locale: Locale) {
     return;
   }
 
-  // Optimistically change preferred locale
-  const optimisticData: OnyxUpdate[] = [
-    {
-      onyxMethod: Onyx.METHOD.MERGE,
-      key: ONYXKEYS.NVP_PREFERRED_LOCALE,
-      value: locale,
-    },
-  ];
-
-  const parameters: UpdatePreferredLocaleParams = {
-    value: locale,
-  };
-
-  API.write(WRITE_COMMANDS.UPDATE_PREFERRED_LOCALE, parameters, {
-    optimisticData,
-  });
+  // Persist through kiroku-api's preferences endpoint. Its optimistic data
+  // also sets NVP_PREFERRED_LOCALE, so the UI switches language immediately.
+  updatePreferences({locale});
 }
 
 function setLocaleAndNavigate(locale: Locale) {
@@ -583,12 +564,6 @@ function redirectThirdPartyDesktopSignIn() {
 //   );
 // }
 
-function handleRestrictedEvent(eventName: string) {
-  const parameters: HandleRestrictedEventParams = {eventName};
-
-  API.write(WRITE_COMMANDS.HANDLE_RESTRICTED_EVENT, parameters);
-}
-
 function updateLastVisitedPath(path: string) {
   Onyx.merge(ONYXKEYS.LAST_VISITED_PATH, path);
 }
@@ -636,7 +611,6 @@ export {
   resetBootstrapStateForColdLaunch,
   reconnectApp,
   confirmReadyToOpenApp,
-  handleRestrictedEvent,
   // beginDeepLinkRedirect,
   // beginDeepLinkRedirectAfterTransition,
   getMissingOnyxUpdates,
