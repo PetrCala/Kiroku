@@ -23,44 +23,67 @@ ends with the same list of console-only items.
 Play Console > Monitor and improve > Policy and programs > App content. Ten
 declarations are filed, under the **Actioned** tab.
 
-| Declaration               | Answer                                                                                                                                                                                                               | 10 September 2026                                                                 |
-| ------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------- |
-| Privacy policy            | `https://www.kiroku.cz/privacy`                                                                                                                                                                                      | Checked, unchanged                                                                |
-| Ads                       | The app contains no ads                                                                                                                                                                                              | Checked, unchanged                                                                |
-| Advertising ID            | Not used: no ad, attribution or analytics SDK ships                                                                                                                                                                  | Checked, unchanged                                                                |
-| Target audience           | 18 and over only                                                                                                                                                                                                     | Checked, unchanged                                                                |
-| Government apps           | No                                                                                                                                                                                                                   | Checked, unchanged                                                                |
-| Financial features        | None                                                                                                                                                                                                                 | Checked, unchanged                                                                |
-| Health apps               | Only "Other" ticked (1 of 18 boxes), described as: "Tracks alcohol consumption for personal use and provides insights into drinking habits. Does not provide medical advice or claim to diagnose health conditions." | Checked, unchanged                                                                |
-| App access (sign-in info) | The reviewer demo account, the same credentials as the `APPLE_DEMO_EMAIL` / `APPLE_DEMO_PASSWORD` GitHub secrets                                                                                                     | Checked, matches                                                                  |
-| Content rating            | IARC ratings from the 9 October 2023 questionnaire (PEGI 18, ESRB Mature 17+)                                                                                                                                        | **Needs attention**: a new questionnaire is started but not submitted (see below) |
-| Data safety               | See [Data safety](#data-safety)                                                                                                                                                                                      | Redone                                                                            |
+| Declaration               | Answer                                                                                                                                                                                                               | 10 September 2026                                                   |
+| ------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------- |
+| Privacy policy            | `https://www.kiroku.cz/privacy`                                                                                                                                                                                      | Checked, unchanged                                                  |
+| Ads                       | The app contains no ads                                                                                                                                                                                              | Checked, unchanged                                                  |
+| Advertising ID            | Not used: no ad, attribution or analytics SDK ships                                                                                                                                                                  | Checked, unchanged                                                  |
+| Target audience           | 18 and over only                                                                                                                                                                                                     | Checked, unchanged                                                  |
+| Government apps           | No                                                                                                                                                                                                                   | Checked, unchanged                                                  |
+| Financial features        | None                                                                                                                                                                                                                 | Checked, unchanged                                                  |
+| Health apps               | Only "Other" ticked (1 of 18 boxes), described as: "Tracks alcohol consumption for personal use and provides insights into drinking habits. Does not provide medical advice or claim to diagnose health conditions." | Checked, unchanged                                                  |
+| App access (sign-in info) | The reviewer demo account, the same credentials as the `APPLE_DEMO_EMAIL` / `APPLE_DEMO_PASSWORD` GitHub secrets                                                                                                     | Checked, matches                                                    |
+| Content rating            | IARC questionnaire answered again on 10 September 2026 (PEGI 3, ESRB Teen); see below                                                                                                                                | Redone, saved, waiting in Publishing overview to be sent for review |
+| Data safety               | See [Data safety](#data-safety)                                                                                                                                                                                      | Redone                                                              |
 
 ### Content rating
 
-**Not redone yet.** The ratings on file come from the IARC questionnaire
-submitted on 9 October 2023, before friends and the tip jar existed. IARC status:
-Completed.
+Answered again on 10 September 2026. This replaces the IARC questionnaire of
+9 October 2023, which came before friends and the tip jar existed and said that
+promoting alcohol was a focus of the app. The new answers are saved and wait in
+Publishing overview until they're sent for review. Category: **All Other App
+Types**.
 
-| Authority                    | Rating     |
-| ---------------------------- | ---------- |
-| ClassInd (Brazil)            | 12+        |
-| ESRB (North America)         | Mature 17+ |
-| PEGI (Europe)                | PEGI 18    |
-| USK (Germany)                | 18+        |
-| IARC Generic (rest of world) | 18+        |
+The answers, section by section. Any question not listed was answered No.
 
-A new questionnaire has been started and is **still in progress, not
-submitted**. That's why App content lists Content ratings under **Need
-attention**. Finish it at App content > Content ratings > Incomplete
-questionnaire > **Edit**, submit it, then record the new answers and ratings
-here.
+| Section                                                    | Answers                                                                                                                                                                                                                                                                                          |
+| ---------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| Downloaded app                                             | Ratings-relevant content in the app package: Yes                                                                                                                                                                                                                                                 |
+| Violence, fear, sexuality, gambling, language, crude humor | No                                                                                                                                                                                                                                                                                               |
+| Controlled substance                                       | Alcohol only. Reference: ticked; Use and Encourages/Glamorizes: not ticked. Frequency: Often                                                                                                                                                                                                     |
+| User content sharing                                       | Users interact or exchange content: Yes (names, photos and sessions reach friends). User content is the primary source of content: No. Public sharing of nudity or graphic violence: No. Block: Yes. Report: Yes. Chat moderation: No (there is no chat). Can be limited to invited friends: Yes |
+| Online content                                             | No                                                                                                                                                                                                                                                                                               |
+| Promotion or sale of age-restricted products               | No                                                                                                                                                                                                                                                                                               |
+| Miscellaneous                                              | Shares precise location with other users: No. Digital purchases: Yes (the tips), with no chance-based items. Cash rewards, gift cards, crypto or NFTs: No. Web browser or search engine: No. Primarily news or educational: No                                                                   |
 
-Answers to use when finishing it, established from the code:
+The ratings, from Play's summary screen before saving:
 
-- **Users share their location with other users: No.** Drink locations are
-  never shown to friends. `user_session_locations` is readable only by admins
-  in the database rules, and location tagging is off by default.
+| Authority                    | Before (2023) | After (10 September 2026) |
+| ---------------------------- | ------------- | ------------------------- |
+| ClassInd (Brazil)            | 12+           | 14+ (Legal Drugs)         |
+| ESRB (North America)         | Mature 17+    | Teen (Alcohol Reference)  |
+| PEGI (Europe)                | PEGI 18       | PEGI 3                    |
+| USK (Germany)                | 18+           | All ages                  |
+| IARC Generic (rest of world) | 18+           | 3+                        |
+
+Every region also lists "Users Interact" and "In-App Purchases". Google Play's
+own ratings for Russia and South Korea are 3+. IARC's rating authorities can
+still revise them after review.
+
+Why they dropped: the 2023 answers said that promoting or selling age-restricted
+goods, alcohol specifically, was a focus of the app. Kiroku doesn't sell,
+deliver, advertise or promote alcohol (the App Review notes in
+`fastlane/Fastfile` say the same), so both answers are now No. The content
+rating is separate from the 18+ target audience, which is unchanged.
+
+Two answers that rest on the code:
+
+- **Shares location with other users: No.** Drink locations are never shown to
+  friends. `user_session_locations` is readable only by admins in the database
+  rules, and location tagging is off by default.
+- **User content is the primary source of content: No.** The main content is
+  the user's own diary. Friends see display names, profile photos and sessions;
+  session notes are private.
 
 ## Data safety
 
