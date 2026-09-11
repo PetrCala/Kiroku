@@ -10,9 +10,10 @@ import {trackErrors} from '../fixtures/consoleErrors';
  * screen the app lands on, and that the saved session round-trips with the
  * logged units) rather than just that a screen mounted.
  *
- * Both tests are self-cleaning: the lifecycle test deletes the session it
- * creates, and the discard test never persists one. That keeps the shared dev
- * test account from accumulating sessions across CI runs.
+ * Both tests are self-cleaning: each deletes (or discards) the session it
+ * starts, and `SessionPage.discardAndConfirm` waits for the delete to reach the
+ * server before the test ends. That keeps the shared dev test account from
+ * accumulating sessions across CI runs.
  */
 test.describe('drinking session lifecycle', () => {
   test('creates a live session, logs a drink, saves it, then deletes it', async ({
