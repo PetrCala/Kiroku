@@ -7,6 +7,7 @@ import * as Subscriptions from '@userActions/Subscriptions';
 import CONST from '@src/CONST';
 import ONYXKEYS from '@src/ONYXKEYS';
 import intlPolyfill from '@libs/IntlPolyfill';
+import installE2EHooks from '@libs/E2EHooks';
 import {initFirebaseAuth} from '@libs/Firebase/FirebaseApp';
 import StartupMetrics from '@libs/StartupMetrics';
 import WatchBridge from '@libs/WatchBridge';
@@ -75,6 +76,9 @@ export default function () {
   // No-op until RevenueCat keys land via env (#364); scaffolded ahead so the
   // internal-track AAB carries the BILLING permission today.
   Subscriptions.initialize();
+
+  // Dev builds only: expose the web e2e suite's page hooks.
+  installE2EHooks();
 
   // Force app layout to work left to right because our design does not currently support devices using this mode
   I18nManager.allowRTL(false);

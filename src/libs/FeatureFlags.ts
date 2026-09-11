@@ -17,6 +17,12 @@ Onyx.connectWithoutView({
 });
 
 /**
+ * Flags flipped for the current page load by the dev-only e2e hooks
+ * (`src/libs/E2EHooks`). Always empty outside `__DEV__` builds.
+ */
+const devOverrides: Partial<Record<FeatureFlag, boolean>> = {};
+
+/**
  * Resolve a flag against a set of remote overrides. A boolean override wins;
  * anything else (absent, `null`, a string) falls back to the compile-time
  * default in `CONST.FEATURES`.
@@ -32,17 +38,34 @@ function resolveFeatureFlag(
 }
 
 /**
- * Single accessor for feature flags. A server override
- * (`config/feature_flags/<FLAG>`) is checked first, so a flag can be switched
- * off remotely as a kill switch without a release; otherwise the compile-time
- * default in `CONST.FEATURES` applies. See contributingGuides/FEATURE_FLAGS.md.
+ * Single accessor for feature flags. A dev-only e2e override wins, then a
+ * server override (`config/feature_flags/<FLAG>`) is checked, so a flag can be
+ * switched off remotely as a kill switch without a release; otherwise the
+ * compile-time default in `CONST.FEATURES` applies. See
+ * contributingGuides/FEATURE_FLAGS.md.
  *
  * This doesn't re-render anything when an override changes. Components that
  * should react to a kill switch right away use `useFeatureFlag`.
  */
 function isEnabled(flag: FeatureFlag): boolean {
-  return resolveFeatureFlag(flag, remoteOverrides);
+  return devOverrides[flag] ?? resolveFeatureFlag(flag, remoteOverrides);
 }
 
-export {isEnabled, resolveFeatureFlag};
+/**
+ * Flip a flag in memory until the next page load, so an e2e spec can exercise
+ * code that ships switched off. A no-op outside `__DEV__` builds, so a
+ * production build always reads `CONST.FEATURES`.
+ */
+function setDevOverride(flag: FeatureFlag, value: boolean | undefined) {
+  if (!__DEV__) {
+    return;
+  }
+  if (value === undefined) {
+    delete devOverrides[flag];
+    return;
+  }
+  devOverrides[flag] = value;
+}
+
+export {isEnabled, resolveFeatureFlag, setDevOverride};
 export type {FeatureFlag};
