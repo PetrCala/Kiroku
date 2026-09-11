@@ -73,6 +73,18 @@ describe('linkingConfig route resolution (getStateFromPath)', () => {
   );
 });
 
+describe('linkingConfig Friends tab param', () => {
+  it('passes ?tab= through to the Friends screen (friend-request push target)', () => {
+    const state = getStateFromPath('social?tab=friendRequests', config);
+    if (!state) {
+      throw new Error('Expected /social?tab=friendRequests to resolve');
+    }
+    const focused = findFocusedRoute(state);
+    expect(focused?.name).toBe(SCREENS.SOCIAL.ROOT);
+    expect(focused?.params).toMatchObject({tab: 'friendRequests'});
+  });
+});
+
 describe('linkingConfig path serialization (getPathFromState)', () => {
   it.each(ROUTE_CASES)(
     'serializes the $screen screen back to /$path',

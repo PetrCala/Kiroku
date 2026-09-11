@@ -1,5 +1,6 @@
 import type {DrinkingSessionId} from './types/onyx';
 import type {UserID, DateString} from './types/onyx/OnyxCommon';
+import type {SocialTab} from '@libs/Navigation/types';
 
 /**
  * Builds a URL with an encoded URI component for the `backTo` param which can be added to the end of URLs
@@ -156,6 +157,12 @@ const ROUTES = {
   },
 
   SOCIAL: 'social',
+  // The Friends tab with one of its top tabs pre-selected (read by SocialScreen
+  // from the `tab` param). Link-building only; the linking config maps `social`.
+  SOCIAL_TAB: {
+    route: 'social',
+    getRoute: (tab: SocialTab) => `social?tab=${tab}` as const,
+  },
 
   // Causes an error
   // SOCIAL: {

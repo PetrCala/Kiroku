@@ -9,6 +9,7 @@ import PushNotification from '@libs/Notification/PushNotification';
 import type {PushNotificationMessage} from '@libs/Notification/PushNotification/types';
 import requestPermission from '@libs/Permissions/requestPermission';
 import ONYXKEYS from '@src/ONYXKEYS';
+import ROUTES from '@src/ROUTES';
 import type {Route} from '@src/ROUTES';
 import * as Device from './Device';
 import * as Preferences from './Preferences';
@@ -31,6 +32,17 @@ const UNREGISTER_TIMEOUT_MS = 3000;
  * slash. Anything else is ignored rather than handed to the router.
  */
 const NOTIFICATION_PATH_PATTERN = /^[a-z0-9][a-z0-9/_-]*$/i;
+
+/**
+ * Notification paths the app opens somewhere other than the path itself. The
+ * standalone `social/friend-requests` route renders the bare body of the Friends
+ * screen's "Friend Requests" tab (no header, no safe area), so a friend-request
+ * push opens the Friends tab with that tab selected instead. Recheck after the
+ * friend invite/QR rework: https://github.com/PetrCala/Kiroku/issues/1655
+ */
+const NOTIFICATION_ROUTE_OVERRIDES: Partial<Record<string, Route>> = {
+  [ROUTES.SOCIAL_FRIEND_REQUESTS]: ROUTES.SOCIAL_TAB.getRoute('friendRequests'),
+};
 
 /** The in-flight unregister, so concurrent sign-outs share one. */
 let pendingUnregister: Promise<void> | undefined;
@@ -219,7 +231,7 @@ function getNotificationRoute(
   if (!path || !NOTIFICATION_PATH_PATTERN.test(path)) {
     return undefined;
   }
-  return path as Route;
+  return NOTIFICATION_ROUTE_OVERRIDES[path] ?? (path as Route);
 }
 
 /** Navigate to a tapped notification's deep link through the linking config. */

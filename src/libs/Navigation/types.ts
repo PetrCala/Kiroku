@@ -198,11 +198,12 @@ type OnboardingModalNavigatorParamList = {
   [SCREENS.ONBOARDING.DISPLAY_NAME]: undefined;
 };
 
+/** Top tabs of the Friends screen; `social?tab=<tab>` pre-selects one (ROUTES.SOCIAL_TAB). */
+type SocialTab = 'friendList' | 'friendRequests';
+
 type BottomTabNavigatorParamList = {
   [SCREENS.HOME]: undefined;
-  [SCREENS.SOCIAL.ROOT]:
-    | {screen: DeepValueOf<typeof SCREENS.SOCIAL>}
-    | undefined;
+  [SCREENS.SOCIAL.ROOT]: {tab?: SocialTab} | undefined;
   [SCREENS.STATISTICS.ROOT]: undefined;
   [SCREENS.SETTINGS.ROOT]: undefined;
 };
@@ -259,6 +260,7 @@ type BottomTabName = keyof BottomTabNavigatorParamList;
 type CentralPaneName = keyof CentralPaneScreensParamList;
 
 export type {
+  SocialTab,
   BadgesNavigatorParamList,
   AuthScreensParamList,
   BottomTabName,
