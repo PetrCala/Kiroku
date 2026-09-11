@@ -15,7 +15,6 @@ import type NAVIGATORS from '@src/NAVIGATORS';
 import type SCREENS from '@src/SCREENS';
 import type {Route as Routes} from '@src/ROUTES';
 import type {DrinkingSessionId} from '@src/types/onyx';
-import type DeepValueOf from '@src/types/utils/DeepValueOf';
 import type {DateString, UserID} from '@src/types/onyx/OnyxCommon';
 
 type NavigationRef = NavigationContainerRefWithCurrent<RootStackParamList>;
