@@ -32,9 +32,6 @@ const UNREGISTER_TIMEOUT_MS = 3000;
  */
 const NOTIFICATION_PATH_PATTERN = /^[a-z0-9][a-z0-9/_-]*$/i;
 
-/** `<uid>:<deviceID>:<token>` of the last registration this process sent, to skip repeats. */
-let lastRegistrationKey: string | undefined;
-
 /** The in-flight unregister, so concurrent sign-outs share one. */
 let pendingUnregister: Promise<void> | undefined;
 
@@ -48,8 +45,9 @@ function errorMessage(error: unknown): string {
 /**
  * Register (or refresh) this device's FCM token with kiroku-api. Does nothing
  * until the OS permission is granted, so it never prompts. Queued like any
- * write, so it survives being offline; repeats of an unchanged token within
- * one process are skipped.
+ * write, so it survives being offline. Every call sends: the server write is an
+ * idempotent refresh, and skipping "already sent" repeats would also skip the
+ * retry after a registration the server rejected (the queue drops a 4xx).
  */
 async function registerDevice(): Promise<void> {
   const platform = PushNotification.platform;
@@ -68,11 +66,6 @@ async function registerDevice(): Promise<void> {
     if (!token || !deviceID) {
       return;
     }
-    const registrationKey = `${uid}:${deviceID}:${token}`;
-    if (registrationKey === lastRegistrationKey) {
-      return;
-    }
-    lastRegistrationKey = registrationKey;
     API.write(WRITE_COMMANDS.REGISTER_PUSH_DEVICE, {
       token,
       // Not `platform`: enhanceParameters overwrites that key with the legacy
@@ -104,7 +97,6 @@ function unregisterDevice(shouldNotifyServer: boolean): Promise<void> {
   if (pendingUnregister) {
     return pendingUnregister;
   }
-  lastRegistrationKey = undefined;
 
   const notifyServer = shouldNotifyServer
     ? Device.getDeviceID().then(deviceID =>

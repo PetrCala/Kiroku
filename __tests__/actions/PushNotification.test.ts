@@ -102,7 +102,7 @@ function registerWrites() {
 beforeEach(async () => {
   jest.clearAllMocks();
   push.getPermissionStatus.mockResolvedValue('granted');
-  // Start every test from a clean "nothing registered" state.
+  // Settle any unregister a previous test left in flight.
   await PushNotificationActions.unregisterDevice(false);
   jest.clearAllMocks();
   push.getPermissionStatus.mockResolvedValue('granted');
@@ -125,16 +125,18 @@ describe('registerDevice', () => {
     ]);
   });
 
-  it('skips a repeat of the same token, but sends a rotated one', async () => {
+  it('sends again on every call, so a rejected registration is retried', async () => {
+    // Regression: a pre-write "already registered" skip swallowed the retry
+    // after the server rejected the first attempt (the queue drops a 4xx).
     push.getToken.mockResolvedValue('token-b');
     await PushNotificationActions.registerDevice();
     await PushNotificationActions.registerDevice();
-    expect(registerWrites()).toHaveLength(1);
+    expect(registerWrites()).toHaveLength(2);
 
     push.getToken.mockResolvedValue('token-c');
     await PushNotificationActions.registerDevice();
-    expect(registerWrites()).toHaveLength(2);
-    expect(registerWrites()[1][1]).toMatchObject({token: 'token-c'});
+    expect(registerWrites()).toHaveLength(3);
+    expect(registerWrites()[2][1]).toMatchObject({token: 'token-c'});
   });
 
   it('does nothing (and never prompts) without the OS permission', async () => {
