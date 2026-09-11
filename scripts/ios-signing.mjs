@@ -43,7 +43,7 @@
  *            secret to the new P12 password and revokes the old expired cert /
  *            deletes the old profiles, then clears the scratch state.
  *   app-setup DRY RUN unless --yes. ONE-TIME bundle-id move: ensures the App
- *            Store App ID (--bundle-id) exists with Push + Sign in with Apple
+ *            Store App ID (--bundle-id) exists with Push + Sign in with Apple + Associated Domains
  *            enabled, then (re)mints ONLY the Kiroku profile bound to it against
  *            the existing valid Distribution cert and re-encrypts
  *            ios/Kiroku.mobileprovision.gpg. Use this when the bundle id changes
@@ -51,7 +51,7 @@
  *            it to rotating the certificate. Does NOT mint a cert, touch the P12
  *            or the other profiles, or git-commit. Idempotent.
  *   adhoc-setup DRY RUN unless --yes. ONE-TIME side-by-side install setup: ensures
- *            the explicit .adhoc App ID exists with Push + Sign in with Apple
+ *            the explicit .adhoc App ID exists with Push + Sign in with Apple + Associated Domains
  *            enabled, then (re)mints the Kiroku_AdHoc ad-hoc profile bound to it
  *            (incl. all enabled devices) against the existing valid Distribution
  *            cert and re-encrypts ios/Kiroku_AdHoc.mobileprovision.gpg. Does NOT
@@ -510,7 +510,7 @@ async function ensureBundleId(bundleId, name) {
     if (e.status === 403)
       throw new Error(
         'ASC API key lacks Admin rights — App ID creation requires the Admin role.\n' +
-          `Create the App ID ${bundleId} manually in the portal (Identifiers → +), enable Push Notifications + Sign in with Apple, then re-run adhoc-setup (it will find it and mint the profile).`,
+          `Create the App ID ${bundleId} manually in the portal (Identifiers → +), enable Push Notifications + Sign in with Apple + Associated Domains, then re-run adhoc-setup (it will find it and mint the profile).`,
       );
     throw e;
   }
@@ -1229,7 +1229,9 @@ async function cmdAppSetup() {
   L(
     `  App Store App ID:  ${mainBundle} ${existingBundle ? `(exists ${existingBundle.id})` : '→ CREATE'}`,
   );
-  L('  capabilities:      Push Notifications, Sign in with Apple');
+  L(
+    '  capabilities:      Push Notifications, Sign in with Apple, Associated Domains',
+  );
   L(
     `  signing cert:      ${validCert ? `${validCert.id} (${validCert.attributes.certificateType}, ${daysUntil(validCert.attributes.expirationDate)}d left)` : '✗ NONE valid'}`,
   );
@@ -1256,6 +1258,9 @@ async function cmdAppSetup() {
   const bundleResId = await ensureBundleId(mainBundle, 'Kiroku App identifier');
   await ensureBundleCapabilities(bundleResId, [
     {type: 'PUSH_NOTIFICATIONS'},
+    // `applinks:app.kiroku.cz` in kiroku.entitlements (personal friend invite
+    // links). A profile minted without it fails manual signing.
+    {type: 'ASSOCIATED_DOMAINS'},
     {
       // PRIMARY_APP_CONSENT makes this App ID its OWN Sign in with Apple
       // primary, which is the right default for a new app and the wrong one
@@ -1333,7 +1338,9 @@ async function cmdAdhocSetup() {
   L(
     `  ad-hoc App ID:     ${adhocBundle} ${existingBundle ? `(exists ${existingBundle.id})` : '→ CREATE'}`,
   );
-  L('  capabilities:      Push Notifications, Sign in with Apple');
+  L(
+    '  capabilities:      Push Notifications, Sign in with Apple, Associated Domains',
+  );
   L(`  enabled devices:   ${deviceIds.length}`);
   L(
     `  signing cert:      ${validCert ? `${validCert.id} (${validCert.attributes.certificateType}, ${daysUntil(validCert.attributes.expirationDate)}d left)` : '✗ NONE valid'}`,
@@ -1361,6 +1368,8 @@ async function cmdAdhocSetup() {
   const bundleResId = await ensureBundleId(adhocBundle, 'Kiroku AdHoc');
   await ensureBundleCapabilities(bundleResId, [
     {type: 'PUSH_NOTIFICATIONS'},
+    // The ad-hoc build shares kiroku.entitlements, so it needs this too.
+    {type: 'ASSOCIATED_DOMAINS'},
     {
       type: 'APPLE_ID_AUTH',
       // "Enable as a primary App ID" — the default Sign in with Apple config.
