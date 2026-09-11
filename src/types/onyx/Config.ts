@@ -24,6 +24,13 @@ type Maintenance = {
   end_time?: number;
 };
 
+/**
+ * Remote overrides for the app's feature flags, keyed by `CONST.FEATURES`
+ * name (RTDB `config/feature_flags/<FLAG>`). A boolean wins over the
+ * compile-time default; see `FeatureFlags.isEnabled`.
+ */
+type FeatureFlagOverrides = Partial<Record<string, boolean>>;
+
 /** Global configuration data */
 type Config = {
   /** Application settings */
@@ -34,7 +41,10 @@ type Config = {
 
   /** A timestamp representing the last update of terms and conditions */
   terms_last_updated?: Timestamp;
+
+  /** Remote feature-flag overrides (kill switches) */
+  feature_flags?: FeatureFlagOverrides;
 };
 
 export default Config;
-export type {Maintenance, AppSettings};
+export type {Maintenance, AppSettings, FeatureFlagOverrides};
