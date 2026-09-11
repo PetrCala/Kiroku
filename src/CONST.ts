@@ -1044,7 +1044,9 @@ const CONST = {
   },
   STORE_LINKS: {
     ANDROID: `https://play.google.com/store/apps/details?id=${ANDROID_PACKAGE_NAME}`,
-    IOS: 'https://testflight.apple.com/join/DgY9IieL',
+    // The App Store listing (com.kiroku.app, app id 6670502234). Update and
+    // force-update prompts open this, so it must point at the live store app.
+    IOS: 'https://apps.apple.com/app/id6670502234',
     DESKTOP: '',
   },
   TOOLTIP_MAX_LINES: 3,
