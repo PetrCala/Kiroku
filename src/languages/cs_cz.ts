@@ -1585,7 +1585,7 @@ export default {
   login: {
     hero: {
       header: 'Mějte přehled o svých alkoholových dobrodružstvích',
-      body: 'Vítejte v Kiroku, kde můžete sledovat svou konzumaci alkoholu a sdílet ji s přáteli',
+      body: 'Zapisujte své drinky a sdílejte je s přáteli.',
     },
     email: 'E-mail',
     existingAccount: 'Už máte účet?',

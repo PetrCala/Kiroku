@@ -1,1 +1,1 @@
-alcohol,drink,tracker,sobriety,habit,health,units,diary,log,awareness,mindful,calendar,stats,intake
+alcohol,drink,tracker,friends,social,share,beer,wine,cocktail,pub,units,log,calendar,stats

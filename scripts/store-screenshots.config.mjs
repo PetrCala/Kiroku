@@ -135,22 +135,30 @@ const theme = {
 // `snapshot` is the capture name the UI test emits (ios/KirokuUITests/
 // ScreenshotTests.swift → `<snapshot>.png`); the ingest mapper copies it to
 // `raw` (the filename inside RAW_DIR/<locale>/). `caption` is keyed by locale.
-// Captions stay consistent with Kiroku's harm-reduction framing, never
+// Captions follow contributingGuides/COPY_VOICE.md: social first, never
 // anything that celebrates drinking *volume*.
 //
 // Six store shots, matching what the UI test captures. `07_Settings` is
 // captured but intentionally left unmapped: it sells nothing.
 //
-// Shot order matters on the store page, so it runs from what the app is
-// (calendar, logging, detail) to what it gives back (statistics, alcohol-free
-// days) and only then to the social feature.
+// Shot order matters on the store page. Kiroku is a social app first, so the
+// friends shot comes right after the opener, then logging and detail, then
+// what it gives back (statistics, alcohol-free days).
 const shots = [
   {
     snapshot: '01_Home',
     raw: '01-home.png',
     caption: {
-      'en-US': 'See your drinking clearly',
-      cs: 'Mějte přehled o svém pití',
+      'en-US': 'Keep track of your alcohol adventures',
+      cs: 'Mějte přehled o svých alkoholových dobrodružstvích',
+    },
+  },
+  {
+    snapshot: '06_Friends',
+    raw: '06-friends.png',
+    caption: {
+      'en-US': 'Share your drinks with your friends',
+      cs: 'Sdílejte své drinky s přáteli',
     },
   },
   {
@@ -183,14 +191,6 @@ const shots = [
     caption: {
       'en-US': 'Watch your alcohol-free days add up',
       cs: 'Sledujte, jak přibývají dny bez alkoholu',
-    },
-  },
-  {
-    snapshot: '06_Friends',
-    raw: '06-friends.png',
-    caption: {
-      'en-US': 'Stay on track with friends',
-      cs: 'Zůstaňte na správné cestě s přáteli',
     },
   },
   // Apple Watch shot (kind: 'watch'). Renders ONLY on the watch devices. It has
