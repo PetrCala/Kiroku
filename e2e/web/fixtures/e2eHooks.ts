@@ -45,6 +45,7 @@ type E2EHooks = {
   setTimeSkew: (skew: number) => void;
   getQueuedRequests: () => QueuedRequest[];
   getOnyxValue: (key: string) => Promise<unknown>;
+  deleteSession: (sessionId: string) => Promise<void>;
 };
 
 declare global {
@@ -146,6 +147,35 @@ export async function setForceOffline(
   await expect
     .poll(() => page.evaluate(() => window.kirokuE2E?.isOffline()))
     .toBe(shouldForceOffline);
+}
+
+/**
+ * Delete a session a failed test left behind, so it doesn't leak onto the
+ * shared dev account: back online, the app's own delete, and wait for the
+ * server to confirm it. Best effort; `kiroku-cli cleanup-e2e-sessions` clears
+ * anything this misses.
+ */
+export async function deleteLeftoverSession(
+  page: Page,
+  sessionId: string,
+): Promise<void> {
+  try {
+    await page.waitForFunction(() => window.kirokuE2E !== undefined, null, {
+      timeout: 30_000,
+    });
+    await setForceOffline(page, false);
+    const deleted = page.waitForResponse(
+      response =>
+        response.url().includes('/v1/sessions/delete') && response.ok(),
+      {timeout: 60_000},
+    );
+    await page.evaluate(id => window.kirokuE2E?.deleteSession(id), sessionId);
+    await deleted;
+  } catch (error) {
+    console.warn(
+      `Could not delete leftover session ${sessionId} (${String(error)}). Clear it with kiroku-cli cleanup-e2e-sessions.`,
+    );
+  }
 }
 
 export function setTimeSkew(page: Page, skew: number): Promise<void> {

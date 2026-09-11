@@ -3,6 +3,7 @@ import {test, expect} from '../fixtures/auth';
 import {
   OP_MARKER_KEY,
   SESSION_OP_COMMAND,
+  deleteLeftoverSession,
   getOnyxValue,
   getQueuedRequests,
   getQueuedSessionOps,
@@ -280,69 +281,81 @@ test.describe('session ops: the ops endpoint', () => {
 
     await session.startLiveSession();
     const sessionId = session.currentSessionId();
-    await session.logOneDrink();
-    await expect(session.saveButton()).toBeEnabled();
-    await expect.poll(() => getQueuedRequests(page)).toEqual([]);
+    // From here on a real session exists on the shared dev account: delete it
+    // even when an assertion fails, or it leaks.
+    let isDeleted = false;
+    try {
+      await session.logOneDrink();
+      await expect(session.saveButton()).toBeEnabled();
+      await expect.poll(() => getQueuedRequests(page)).toEqual([]);
 
-    // Offline: an op the server doesn't implement yet, then the save.
-    await setForceOffline(page, true);
-    const opId = await sendSessionOp(
-      page,
-      {sessionId, type: 'add_entry', payload: {entryId: 'e2e-entry'}},
-      markerData(),
-    );
-    expect(await getOnyxValue(page, OP_MARKER_KEY)).toEqual({
-      state: 'pending',
-    });
-    await session.saveButton().click();
-    await session.summaryScreen().waitFor({state: 'visible'});
-    await expect
-      .poll(async () =>
-        (await getQueuedRequests(page)).map(request => request.command),
-      )
-      .toEqual([SESSION_OP_COMMAND, 'UpdateSession']);
+      // Offline: an op the server doesn't implement yet, then the save.
+      await setForceOffline(page, true);
+      const opId = await sendSessionOp(
+        page,
+        {sessionId, type: 'add_entry', payload: {entryId: 'e2e-entry'}},
+        markerData(),
+      );
+      expect(await getOnyxValue(page, OP_MARKER_KEY)).toEqual({
+        state: 'pending',
+      });
+      await session.saveButton().click();
+      await session.summaryScreen().waitFor({state: 'visible'});
+      await expect
+        .poll(async () =>
+          (await getQueuedRequests(page)).map(request => request.command),
+        )
+        .toEqual([SESSION_OP_COMMAND, 'UpdateSession']);
 
-    const opAnswers: Response[] = [];
-    page.on('response', response => {
-      if (isSessionOpRequest(response.request())) {
-        opAnswers.push(response);
+      const opAnswers: Response[] = [];
+      page.on('response', response => {
+        if (isSessionOpRequest(response.request())) {
+          opAnswers.push(response);
+        }
+      });
+      const saved = page.waitForResponse(
+        response =>
+          response.url().includes('/v1/sessions/update') && response.ok(),
+        {timeout: REJECTED_OP_DROP_TIMEOUT},
+      );
+      const reconnectedAt = Date.now();
+      await setForceOffline(page, false);
+      await saved;
+      const stalledFor = Date.now() - reconnectedAt;
+
+      // The server rejected the op every time it saw it, and never under
+      // another key.
+      expect(opAnswers.length).toBeGreaterThan(0);
+      for (const answer of opAnswers) {
+        expect(answer.status()).toBe(422);
+        expect(answer.request().headers()['idempotency-key']).toBe(opId);
       }
-    });
-    const saved = page.waitForResponse(
-      response =>
-        response.url().includes('/v1/sessions/update') && response.ok(),
-      {timeout: REJECTED_OP_DROP_TIMEOUT},
-    );
-    const reconnectedAt = Date.now();
-    await setForceOffline(page, false);
-    await saved;
-    const stalledFor = Date.now() - reconnectedAt;
+      test.info().annotations.push({
+        type: 'rejected op',
+        description: `${opAnswers.length} attempt(s); the save went out ${stalledFor} ms after reconnecting`,
+      });
 
-    // The server rejected the op every time it saw it, and never under
-    // another key.
-    expect(opAnswers.length).toBeGreaterThan(0);
-    for (const answer of opAnswers) {
-      expect(answer.status()).toBe(422);
-      expect(answer.request().headers()['idempotency-key']).toBe(opId);
+      // Dropped, with its failure data applied, not retried forever.
+      expect(await getOnyxValue(page, OP_MARKER_KEY)).toEqual({
+        state: 'failed',
+      });
+      expect(await getQueuedSessionOps(page)).toEqual([]);
+
+      // Clean up through the UI, the way a user deletes a saved session.
+      await session.openEditFromSummary();
+      const deleted = page.waitForResponse(
+        response =>
+          response.url().includes('/v1/sessions/delete') && response.ok(),
+      );
+      await session.discardButton().click();
+      await session.confirmYesButton().click();
+      await deleted;
+      isDeleted = true;
+    } finally {
+      if (!isDeleted) {
+        await deleteLeftoverSession(page, sessionId);
+      }
     }
-    test.info().annotations.push({
-      type: 'rejected op',
-      description: `${opAnswers.length} attempt(s); the save went out ${stalledFor} ms after reconnecting`,
-    });
-
-    // Dropped, with its failure data applied, not retried forever.
-    expect(await getOnyxValue(page, OP_MARKER_KEY)).toEqual({state: 'failed'});
-    expect(await getQueuedSessionOps(page)).toEqual([]);
-
-    // Clean up the session on the shared dev account.
-    await session.openEditFromSummary();
-    const deleted = page.waitForResponse(
-      response =>
-        response.url().includes('/v1/sessions/delete') && response.ok(),
-    );
-    await session.discardButton().click();
-    await session.confirmYesButton().click();
-    await deleted;
   });
 
   test('sends a rejected op once and moves on', async ({authedPage: page}) => {
