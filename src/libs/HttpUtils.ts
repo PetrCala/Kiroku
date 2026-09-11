@@ -71,18 +71,48 @@ const exemptedCommandsWithAuthWrites: string[] = [
 ];
 
 /**
- * The API commands that require the skew calculation
+ * The commands whose responses refresh the server-time offset: the bootstrap
+ * requests, which every cold start and reconnect makes. Refreshing on every
+ * request would churn the NETWORK key for nothing.
  */
 const addSkewList: string[] = [
-  // SIDE_EFFECT_REQUEST_COMMANDS.OPEN_REPORT,
   SIDE_EFFECT_REQUEST_COMMANDS.RECONNECT_APP,
   WRITE_COMMANDS.OPEN_APP,
 ];
 
+/** The standard `Date` header is truncated to the second; center it. */
+const DATE_HEADER_HALF_SECOND_MS = 500;
+
 /**
- * Regex to get API command from the command
+ * The server's clock (epoch ms) from a response: kiroku-api's millisecond
+ * `X-Server-Time`, else the whole-second `Date` header. `undefined` when the
+ * response carries neither (on the web, `Date` isn't readable cross-origin).
  */
-const APICommandRegex = /\/api\/([^&?]+)\??.*/;
+function getServerTimeFromHeaders(
+  headers: Pick<Headers, 'get'>,
+): number | undefined {
+  const precise = Number(headers.get(CONST.NETWORK.SERVER_TIME_HEADER));
+  if (Number.isFinite(precise) && precise > 0) {
+    return precise;
+  }
+  const date = headers.get('Date');
+  const parsed = date ? new Date(date).valueOf() : NaN;
+  return Number.isNaN(parsed) ? undefined : parsed + DATE_HEADER_HALF_SECOND_MS;
+}
+
+/**
+ * The offset to add to this device's clock to get the server's. The server
+ * read its clock somewhere during the round trip; the midpoint is the best
+ * estimate of when. (Upstream added half the round trip to the start instead
+ * of subtracting it, which overestimated the skew by a full round trip.)
+ */
+function computeTimeSkew(
+  serverTime: number,
+  requestStart: number,
+  responseEnd: number,
+): number {
+  return Math.round(serverTime - (requestStart + responseEnd) / 2);
+}
 
 /**
  * Send an HTTP request, and attempt to resolve the json response.
@@ -94,8 +124,9 @@ function processHTTPRequest(
   body: FormData | string | null = null,
   canCancel = true,
   headers?: Record<string, string>,
+  command?: string,
 ): Promise<Response> {
-  const startTime = new Date().valueOf();
+  const startTime = Date.now();
   return fetch(url, {
     // We hook requests to the same Controller signal, so we can cancel them all at once
     signal: canCancel ? cancellationController.signal : undefined,
@@ -104,17 +135,14 @@ function processHTTPRequest(
     headers,
   })
     .then(response => {
-      // We are calculating the skew to minimize the delay when posting the messages
-      const match = url.match(APICommandRegex)?.[1];
-      if (match && addSkewList.includes(match) && response.headers) {
-        const dateHeaderValue = response.headers.get('Date');
-        const serverTime = dateHeaderValue
-          ? new Date(dateHeaderValue).valueOf()
-          : new Date().valueOf();
-        const endTime = new Date().valueOf();
-        const latency = (endTime - startTime) / 2;
-        const skew = serverTime - startTime + latency;
-        NetworkActions.setTimeSkew(dateHeaderValue ? skew : 0);
+      // Keep the server-time offset fresh (see `DateUtils.getServerTime`).
+      if (command && addSkewList.includes(command) && response.headers) {
+        const serverTime = getServerTimeFromHeaders(response.headers);
+        if (serverTime !== undefined) {
+          NetworkActions.setTimeSkew(
+            computeTimeSkew(serverTime, startTime, Date.now()),
+          );
+        }
       }
       return response;
     })
@@ -247,6 +275,8 @@ const KIROKU_OMITTED_BODY_FIELDS = new Set<string>([
   'apiRequestType',
   'shouldRetry',
   'canCancel',
+  // Travels as the `Idempotency-Key` header (see kirokuXhr).
+  'idempotencyKey',
 ]);
 
 function buildKirokuBody(
@@ -312,6 +342,7 @@ function getFirebaseIdToken(): Promise<string | undefined> {
  * envelope the legacy path returns.
  */
 async function kirokuXhr(
+  command: string,
   data: Record<string, unknown>,
   route: KirokuRoute,
 ): Promise<Response> {
@@ -346,10 +377,24 @@ async function kirokuXhr(
     }
   } else {
     headers['Content-Type'] = 'application/json';
+    // Writes carry the key minted in `API.write`. Requests queued by an older
+    // build have none and go out without the header, which the server treats
+    // exactly as before keys existed. GET routes are reads, so they never
+    // send one.
+    if (typeof data.idempotencyKey === 'string') {
+      headers[CONST.NETWORK.IDEMPOTENCY_KEY_HEADER] = data.idempotencyKey;
+    }
     body = JSON.stringify(buildKirokuBody(data));
   }
 
-  return processHTTPRequest(url, route.method, body, !!data.canCancel, headers);
+  return processHTTPRequest(
+    url,
+    route.method,
+    body,
+    !!data.canCancel,
+    headers,
+    command,
+  );
 }
 
 function xhr(
@@ -371,7 +416,7 @@ function xhr(
       }),
     );
   }
-  return kirokuXhr(data, kirokuRoute);
+  return kirokuXhr(command, data, kirokuRoute);
 }
 
 function cancelPendingRequests() {

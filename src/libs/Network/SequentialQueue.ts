@@ -321,7 +321,10 @@ function push(newRequest: OnyxRequest): Promise<void> {
 
   if (checkAndFixConflictingRequest) {
     const requests = PersistedRequests.getAll();
-    const {conflictAction} = checkAndFixConflictingRequest(requests);
+    const {conflictAction} = checkAndFixConflictingRequest(
+      requests,
+      newRequest,
+    );
     Log.info(
       `[SequentialQueue] Conflict action for command ${newRequest.command} - ${conflictAction.type}:`,
     );
