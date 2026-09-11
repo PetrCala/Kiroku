@@ -118,8 +118,7 @@ const SCREENS = {
     ROOT: 'Social_Root',
     FRIEND_LIST: 'Social_FriendList',
     FRIEND_REQUESTS: 'Social_FriendRequests',
-    FRIEND_SEARCH: 'Social_FriendSearch',
-    MY_QR_CODE: 'Social_MyQrCode',
+    ADD_FRIENDS: 'Social_AddFriends',
   },
 
   STATISTICS: {

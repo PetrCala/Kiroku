@@ -168,8 +168,10 @@ type SessionsCalendarNavigatorParamList = {
 type SocialNavigatorParamList = {
   [SCREENS.SOCIAL.FRIEND_LIST]: undefined;
   [SCREENS.SOCIAL.FRIEND_REQUESTS]: undefined;
-  [SCREENS.SOCIAL.FRIEND_SEARCH]: undefined;
-  [SCREENS.SOCIAL.MY_QR_CODE]: undefined;
+  // Add friends hub; `tab` picks "Your code" (default) or "Search".
+  [SCREENS.SOCIAL.ADD_FRIENDS]:
+    | {tab?: ValueOf<typeof CONST.ADD_FRIENDS_TAB>}
+    | undefined;
 };
 
 type RightModalNavigatorParamList = {

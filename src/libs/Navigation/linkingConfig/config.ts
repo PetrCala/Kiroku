@@ -225,8 +225,7 @@ const config: LinkingOptions<RootStackParamList>['config'] = {
           screens: {
             [SCREENS.SOCIAL.FRIEND_LIST]: ROUTES.SOCIAL_FRIEND_LIST,
             [SCREENS.SOCIAL.FRIEND_REQUESTS]: ROUTES.SOCIAL_FRIEND_REQUESTS,
-            [SCREENS.SOCIAL.FRIEND_SEARCH]: ROUTES.SOCIAL_FRIEND_SEARCH,
-            [SCREENS.SOCIAL.MY_QR_CODE]: ROUTES.SOCIAL_MY_QR_CODE,
+            [SCREENS.SOCIAL.ADD_FRIENDS]: ROUTES.SOCIAL_ADD_FRIENDS.route,
           },
         },
       },

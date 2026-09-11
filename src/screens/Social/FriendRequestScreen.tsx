@@ -336,8 +336,7 @@ function FriendRequestScreen() {
               </View>
             ) : (
               <NoFriendInfo
-                message={translate('friendRequestScreen.lookingForNewFriends')}
-                buttonText={translate('friendRequestScreen.trySearchingHere')}
+                title={translate('friendRequestScreen.lookingForNewFriends')}
               />
             )}
           </View>

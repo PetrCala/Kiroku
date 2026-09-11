@@ -1,13 +1,9 @@
 import type {ListRenderItemInfo} from 'react-native';
 import {View} from 'react-native';
 import React, {useCallback, useMemo, useRef, useState} from 'react';
-import type {
-  FriendRequestList,
-  FriendRequestStatus,
-  ProfileList,
-} from '@src/types/onyx';
+import type {FriendRequestStatus, ProfileList} from '@src/types/onyx';
+import Button from '@components/Button';
 import Text from '@components/Text';
-import type {UserList} from '@src/types/onyx/OnyxCommon';
 import {useFirebase} from '@src/context/global/FirebaseContext';
 import {isEmptyArray} from '@src/types/utils/EmptyObject';
 import * as ErrorUtils from '@libs/ErrorUtils';
@@ -17,9 +13,6 @@ import SearchResult from '@components/Search/SearchResult';
 import SearchWindow from '@components/Social/SearchWindow';
 import type {UserSearchResults} from '@src/types/various/Search';
 import useCurrentUserData from '@hooks/useCurrentUserData';
-import Navigation from '@libs/Navigation/Navigation';
-import ScreenWrapper from '@components/ScreenWrapper';
-import HeaderWithBackButton from '@components/HeaderWithBackButton';
 import useLocalize from '@hooks/useLocalize';
 import useNetwork from '@hooks/useNetwork';
 import FlexibleLoadingIndicator from '@components/FlexibleLoadingIndicator';
@@ -27,11 +20,18 @@ import useThemeStyles from '@hooks/useThemeStyles';
 import FlatList from '@components/FlatList';
 import {filterBlockedUsers} from '@libs/BlockUtils';
 import ERRORS from '@src/ERRORS';
-import ROUTES from '@src/ROUTES';
-import MenuItem from '@components/MenuItem';
-import * as KirokuIcons from '@components/Icon/KirokuIcons';
 
-function FriendSearchScreen() {
+type FriendSearchViewProps = {
+  /** Switches the hub to the "Your code" tab */
+  onShowInviteCode: () => void;
+};
+
+/**
+ * The "Search" tab of the Add friends hub: nickname search with send/accept
+ * actions per result, plus a footer pointing people who aren't on Kiroku yet
+ * to the invite link.
+ */
+function FriendSearchView({onShowInviteCode}: FriendSearchViewProps) {
   const {auth} = useFirebase();
   const styles = useThemeStyles();
   const userData = useCurrentUserData();
@@ -42,13 +42,6 @@ function FriendSearchScreen() {
     [],
   );
   const [searching, setSearching] = useState(false);
-  const [friends, setFriends] = useState<UserList | undefined>(undefined);
-  const [friendRequests, setFriendRequests] = useState<
-    FriendRequestList | undefined
-  >(undefined);
-  const [requestStatuses, setRequestStatuses] = useState<
-    Record<string, FriendRequestStatus | undefined>
-  >({});
   const [noUsersFound, setNoUsersFound] = useState(false);
   const [displayData, setDisplayData] = useState<ProfileList>({});
   // The last query the search box emitted. `SearchWindow` owns the text (it only
@@ -56,35 +49,27 @@ function FriendSearchScreen() {
   // be able to replay it when connectivity resumes.
   const lastSearchTextRef = useRef('');
 
-  /** Having a list of users returned by the search,
-   * determine the request status for each and update
-   * the RequestStatuses hook.
-   */
-  const updateRequestStatuses = useCallback(
-    (data: UserSearchResults = searchResultData): void => {
-      if (!friendRequests) {
-        setRequestStatuses({});
-        return;
+  const friends = userData?.friends;
+  const friendRequests = userData?.friend_requests;
+
+  // The request status of every result, derived from the live friend requests
+  // so it updates when a request changes on the server.
+  const requestStatuses = useMemo(() => {
+    const statuses: Record<string, FriendRequestStatus | undefined> = {};
+    if (!friendRequests) {
+      return statuses;
+    }
+    searchResultData.forEach(userID => {
+      if (friendRequests[userID]) {
+        statuses[userID] = friendRequests[userID];
       }
-
-      const newRequestStatuses: Record<string, FriendRequestStatus> = {};
-      data.forEach(userID => {
-        if (!friendRequests[userID]) {
-          return;
-        }
-        newRequestStatuses[userID] = friendRequests[userID];
-      });
-
-      setRequestStatuses(newRequestStatuses);
-    },
-    [friendRequests, searchResultData],
-  );
+    });
+    return statuses;
+  }, [friendRequests, searchResultData]);
 
   const resetSearch = useCallback((): void => {
-    // Reset all values displayed on screen
     setSearching(false);
     setSearchResultData([]);
-    setRequestStatuses({});
     setDisplayData({});
     setNoUsersFound(false);
   }, []);
@@ -111,7 +96,6 @@ function FriendSearchScreen() {
           await searchDatabaseForUsers(searchText);
         const newDisplayData: ProfileList =
           await Profile.fetchUserProfiles(newData);
-        updateRequestStatuses(newData);
         setDisplayData(newDisplayData);
         setNoUsersFound(isEmptyArray(newData));
         setSearchResultData(newData);
@@ -121,12 +105,12 @@ function FriendSearchScreen() {
         setSearching(false);
       }
     },
-    [isOffline, updateRequestStatuses, resetSearch],
+    [isOffline, resetSearch],
   );
 
   // Replay the pending query when connectivity resumes. The offline branch of
   // `dbSearch` short-circuits (search is a live, unqueueable read) and renders
-  // the offline notice, but nothing re-runs the query once back online — the
+  // the offline notice, but nothing re-runs the query once back online: the
   // notice clears and the result list is left blank with the typed query still
   // in the box. Re-issue the last query the search box emitted on the
   // offline->online edge so reconnecting recovers the results in place. (Kept as
@@ -140,19 +124,6 @@ function FriendSearchScreen() {
       dbSearch(lastSearchTextRef.current);
     },
   });
-
-  useMemo(() => {
-    if (!userData) {
-      return;
-    }
-    setFriends(userData.friends);
-    setFriendRequests(userData.friend_requests);
-  }, [userData]);
-
-  useMemo(() => {
-    updateRequestStatuses();
-    // eslint-disable-next-line react-compiler/react-compiler, react-hooks/exhaustive-deps
-  }, [friendRequests]); // When updated in the database, not locally
 
   const renderItem = useCallback(
     ({item: userID}: ListRenderItemInfo<string>) => (
@@ -168,16 +139,13 @@ function FriendSearchScreen() {
   );
 
   if (!user) {
-    return;
+    return null;
   }
 
   const renderSearchResults = () => {
     // User search needs a live server read, so offline we show a notice rather
     // than a perpetual spinner or an error.
     if (isOffline) {
-      // Fill the available space so the ScreenWrapper's trailing offline
-      // indicator stays docked at the bottom instead of sitting right below
-      // this notice.
       return (
         <View style={styles.flex1}>
           <Text style={[styles.noResultsText, styles.pt4]}>
@@ -217,29 +185,36 @@ function FriendSearchScreen() {
   };
 
   return (
-    <ScreenWrapper testID={FriendSearchScreen.displayName}>
-      <HeaderWithBackButton
-        title={translate('friendSearchScreen.title')}
-        onBackButtonPress={Navigation.goBack}
-      />
-      <MenuItem
-        title={translate('friendSearchScreen.myQrCode')}
-        description={translate('friendSearchScreen.myQrCodeDescription')}
-        icon={KirokuIcons.QrCode}
-        onPress={() => Navigation.navigate(ROUTES.SOCIAL_MY_QR_CODE)}
-        shouldShowRightIcon
-      />
+    <View style={styles.flex1}>
       <SearchWindow
-        // ref={searchInputRef}
         windowText={translate('friendSearchScreen.searchWindow')}
         onSearch={dbSearch}
         onResetSearch={resetSearch}
         searchOnTextChange
       />
       {renderSearchResults()}
-    </ScreenWrapper>
+      <View
+        style={[
+          styles.flexRow,
+          styles.flexWrap,
+          styles.justifyContentCenter,
+          styles.alignItemsCenter,
+          styles.ph5,
+          styles.pv4,
+        ]}>
+        <Text style={styles.textLabelSupporting}>
+          {translate('addFriendsScreen.notOnKiroku')}
+        </Text>
+        <Button
+          text={translate('addFriendsScreen.shareInviteLink')}
+          onPress={onShowInviteCode}
+          style={[styles.bgTransparent, styles.p0, styles.ml1]}
+          textStyles={styles.link}
+        />
+      </View>
+    </View>
   );
 }
 
-FriendSearchScreen.displayName = 'Friend Search Screen';
-export default FriendSearchScreen;
+FriendSearchView.displayName = 'FriendSearchView';
+export default FriendSearchView;
