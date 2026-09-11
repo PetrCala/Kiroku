@@ -52,9 +52,12 @@
           android:name="com.google.firebase.messaging.default_notification_icon"
           android:resource="@drawable/ic_notification" />
 
+      <!-- @react-native-firebase/messaging declares its own default color;
+           tools:replace makes the app's brand color win the manifest merge. -->
       <meta-data
           android:name="com.google.firebase.messaging.default_notification_color"
-          android:resource="@color/bootsplash_background" />
+          android:resource="@color/bootsplash_background"
+          tools:replace="android:resource" />
 
     </application>
 </manifest>
