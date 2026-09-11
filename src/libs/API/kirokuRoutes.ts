@@ -52,10 +52,20 @@ const KIROKU_ROUTES: Record<ApiCommand, KirokuRoute> = {
     path: '/v1/app/min-version',
     requiresAuth: false,
   },
-  // Reconnect re-hydrates full state + the lastUpdateID baseline, same as open.
+  // Reconnect catch-up. With `updateIDFrom` (the client's last applied update)
+  // the server replays just the missed updates from its update log when the
+  // gap is small, and answers with the full OpenApp payload otherwise. Without
+  // it, this is a full re-hydration like OpenApp.
   [WRITE_COMMANDS.RECONNECT_APP]: {
     method: 'get',
     path: '/v1/app/open',
+    toQuery: data => {
+      const query: Record<string, number> = {};
+      if (typeof data.updateIDFrom === 'number' && data.updateIDFrom > 0) {
+        query.updateIDFrom = data.updateIDFrom;
+      }
+      return query;
+    },
   },
   // Friend drinking sessions, windowed by start_time and privacy-enforced
   // server-side (friends + visibility). Denied reads return 200 with an
