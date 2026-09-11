@@ -37,6 +37,14 @@ flows the web surface can exercise:
   spec covers the 429 a repeat gets while the original still runs and the 422
   for a key reused on another route (#1663). Needs a kiroku-api with
   kiroku-api #145; against an older one the specs skip.
+- **Session ops** (`session-ops.spec.ts`): the Sessions v2 op groundwork
+  (#1663): the server-time offset from `X-Server-Time` (including a shifted
+  browser clock), the `/v1/sessions/ops` round trip keyed by the op id, replay
+  of a lost answer, a rejected op leaving the queue, and op coalescing. Ops ship
+  switched off and no UI sends them yet, so the spec drives them through dev-only
+  page hooks (`window.kirokuE2E`, installed by `src/libs/E2EHooks` when
+  `__DEV__`) and turns `SESSION_OPS` on for the page load only. It skips on
+  builds without the hooks and on a kiroku-api without the ops endpoint.
 
 Several flows rely on `testID`s added to app components (the drink steppers, the
 session unit headline, the summary edit button, and calendar day cells), which
