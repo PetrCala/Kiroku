@@ -1,7 +1,5 @@
 import React, {memo, useEffect, useMemo, useRef} from 'react';
 import {View} from 'react-native';
-import type {OnyxEntry} from 'react-native-onyx';
-import Onyx from 'react-native-onyx';
 // import OptionsListContextProvider from '@components/OptionListContextProvider';
 import useStyleUtils from '@hooks/useStyleUtils';
 import useThemeStyles from '@hooks/useThemeStyles';
@@ -11,6 +9,7 @@ import useThemeStyles from '@hooks/useThemeStyles';
 import * as App from '@userActions/App';
 // import * as Download from '@userActions/Download';
 import * as Modal from '@userActions/Modal';
+import * as Reconnect from '@userActions/Reconnect';
 // import * as PriorityMode from '@userActions/PriorityMode';
 import * as Session from '@userActions/Session';
 import Timing from '@userActions/Timing';
@@ -18,7 +17,6 @@ import * as User from '@userActions/User';
 import CONFIG from '@src/CONFIG';
 import CONST from '@src/CONST';
 import NAVIGATORS from '@src/NAVIGATORS';
-import ONYXKEYS from '@src/ONYXKEYS';
 // import ROUTES from '@src/ROUTES';
 import SCREENS from '@src/SCREENS';
 import CrashReportingSync from '@components/CrashReportingSync';
@@ -57,25 +55,6 @@ const notFoundScreen = () =>
 
 const addFriendScreen = () =>
   require<ReactComponentModule>('@screens/Social/AddFriendScreen').default;
-
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
-let lastUpdateIDAppliedToClient: OnyxEntry<number>;
-
-Onyx.connect({
-  key: ONYXKEYS.ONYX_UPDATES_LAST_UPDATE_ID_APPLIED_TO_CLIENT,
-  callback: (value: OnyxEntry<number>) => {
-    lastUpdateIDAppliedToClient = value;
-  },
-});
-
-// function handleNetworkReconnect() {
-//   if (isLoadingApp) {
-//     App.openApp();
-//   } else {
-//     Log.info('[handleNetworkReconnect] Sending ReconnectApp');
-//     App.reconnectApp(lastUpdateIDAppliedToClient);
-//   }
-// }
 
 // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
 const RootStack = createCustomStackNavigator();
@@ -178,9 +157,10 @@ function AuthScreensContent() {
     //   return;
     // }
 
-    // TODO enable this
-    // NetworkConnection.listenForReconnect();
-    // NetworkConnection.onReconnect(handleNetworkReconnect);
+    // Catch up on whatever was missed while offline or in the background, by
+    // replaying the missed updates from the server's update log (see
+    // actions/Reconnect).
+    const unsubscribeReconnect = Reconnect.subscribeToReconnect();
     // PusherConnectionManager.init();
     Pusher.registerCustomAuthorizer(kirokuPusherAuthorizer);
     Pusher.init({
@@ -195,8 +175,8 @@ function AuthScreensContent() {
     });
 
     // Hydrate the signed-in user's data and seed the realtime `lastUpdateID`
-    // baseline via GET /v1/app/open. (The reconnectApp-vs-openApp optimization
-    // gated on `didUserLogInDuringSession` isn't wired yet — see #774.)
+    // baseline via GET /v1/app/open. Every cold start does a full open; later
+    // reconnects catch up incrementally through `subscribeToReconnect` above.
     App.openApp();
 
     // PriorityMode.autoSwitchToFocusMode();
@@ -256,6 +236,7 @@ function AuthScreensContent() {
       // unsubscribeShortcutsOverviewShortcut();
       // unsubscribeSearchShortcut();
       // unsubscribeChatShortcut();
+      unsubscribeReconnect();
       Session.cleanupSession();
     };
 
