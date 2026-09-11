@@ -829,6 +829,10 @@ const CONST = {
     // stall across a connectivity transition, freezing every request until it
     // settles. See `HttpUtils.getFirebaseIdToken`.
     ID_TOKEN_TIMEOUT_MS: 15 * 1000,
+    // Header carrying a write's idempotency key. kiroku-api answers a repeat
+    // of a key it already applied from its record instead of applying the
+    // write again. See `API.write` and kiroku-api `middleware/idempotency.ts`.
+    IDEMPOTENCY_KEY_HEADER: 'Idempotency-Key',
     NETWORK_STATUS: {
       ONLINE: 'online',
       OFFLINE: 'offline',
