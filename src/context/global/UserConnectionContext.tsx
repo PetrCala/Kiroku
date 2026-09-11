@@ -7,6 +7,7 @@ import isBoolean from 'lodash/isBoolean';
 import type {ValueOf} from 'type-fest';
 import * as ApiUtils from '@libs/ApiUtils';
 import {KIROKU_DIRECT_PATHS} from '@libs/API/kirokuRoutes';
+import getPlatform from '@libs/getPlatform';
 import * as NetworkActions from '@userActions/Network';
 import CONFIG from '@src/CONFIG';
 import CONST from '@src/CONST';
@@ -320,6 +321,26 @@ function UserConnectionProvider({children}: UserConnectionProviderProps) {
       },
     );
 
+    // On web, NetInfo only listens for `navigator.connection` "change" events
+    // where that API exists (Chromium), but Chromium fires window
+    // "offline"/"online" when the network drops or returns, not "change".
+    // Without these listeners a drop went unnoticed until the next periodic
+    // probe (up to ~26s), and a return took up to ~10s, which also held back
+    // the reconnect catch-up (see actions/Reconnect).
+    const isWeb = getPlatform() === CONST.PLATFORM.WEB;
+    const onBrowserConnectivityChange = () => {
+      NetInfo.refresh()
+        .then(state => {
+          applyConnectivity(state, 'browser online/offline event');
+        })
+        .catch(() => {});
+      runProbe('API reachability probe (browser online/offline event)');
+    };
+    if (isWeb) {
+      window.addEventListener('online', onBrowserConnectivityChange);
+      window.addEventListener('offline', onBrowserConnectivityChange);
+    }
+
     return () => {
       isUnmounted = true;
       if (recheckTimer) {
@@ -330,6 +351,10 @@ function UserConnectionProvider({children}: UserConnectionProviderProps) {
       }
       unsubscribeNetInfo();
       appStateSubscription.remove();
+      if (isWeb) {
+        window.removeEventListener('online', onBrowserConnectivityChange);
+        window.removeEventListener('offline', onBrowserConnectivityChange);
+      }
     };
   }, []);
 
