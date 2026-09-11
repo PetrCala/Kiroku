@@ -9,8 +9,7 @@ they all follow.
 ## What Kiroku is
 
 Kiroku is for keeping track of your alcohol adventures together. People log
-what they drink, share their sessions with friends, and see what their friends
-are having. The social side is the point. That's where the fun is.
+their drinks and share them with their friends. The social side is the point. That's where the fun is.
 
 Hiding your sessions from friends is a setting, and a fine choice. It's not the
 pitch. Store listings, captions, and onboarding lead with friends and sharing.
@@ -30,10 +29,10 @@ is saved for a few chosen moments. Cheeky is welcome there, as long as the pun
 is clever. A joke that needs explaining, or one that's only there to be a joke,
 gets cut.
 
-| Mode    | Where                                                                                                                    | Sounds like                                                                                   |
-| ------- | ------------------------------------------------------------------------------------------------------------------------ | --------------------------------------------------------------------------------------------- |
-| Utility | Labels, buttons, settings, empty states, loading, errors, fine print, anything legal                                     | "Nothing to plot here." · "Check your connection and try again." · "Per week"                 |
-| Playful | Hero headlines, slogans, store openers, promotional text, captions, thank-yous, celebrations, the tip jar, release notes | "Keep track of your alcohol adventures" · "See what your friends are having" · "Dýško koutek" |
+| Mode    | Where                                                                                                                    | Sounds like                                                                                                   |
+| ------- | ------------------------------------------------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------- |
+| Utility | Labels, buttons, settings, empty states, loading, errors, fine print, anything legal                                     | "Nothing to plot here." · "Check your connection and try again." · "Per week"                                 |
+| Playful | Hero headlines, slogans, store openers, promotional text, captions, thank-yous, celebrations, the tip jar, release notes | "Keep track of your alcohol adventures" · "Log your drinks and share them with your friends" · "Dýško koutek" |
 
 One screen can hold both. On the tip jar, the headline, the thanks, and the bar
 tab are playful; the buy button, the fine print, and the errors stay plain.
@@ -43,7 +42,8 @@ tab are playful; the buy button, the fine print, and the errors stay plain.
 - **"Alcohol adventures" is the anchor phrase.** It's on the website, the
   README, the login screen, and the store. Reach for it before inventing a new
   tagline. Czech: "alkoholová dobrodružství".
-- **Use:** friends, share, session, round, log, "what your friends are having".
+- **Use:** friends, share, session, round, log, "Log your drinks and share them
+  with your friends".
 - **Don't use in marketing:** diary, journal, private or privacy-first as a
   headline, awareness, mindful, habits, "track your consumption", harm
   reduction. Harm reduction stays in the fine print and the App Review notes,
