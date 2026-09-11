@@ -1,6 +1,6 @@
 # Sessions v2 (RFC)
 
-Status: **draft, in review**
+Status: **in review; all design questions settled (2026-09-11)**
 Last updated: 2026-09-11
 Authors: Petr Čala, from the design conversations of 2026-08-28 to 31 and 2026-09-10 to 11
 Tracking: epic issue to be filed once this RFC is accepted
@@ -52,6 +52,12 @@ This document is the plan for reworking drinking sessions: how drinks are captur
 | 16  | Live Activity (iOS) and ongoing notification (Android) | **Ship together.**                                                                                                                                                   |
 | 17  | Extra capture fields                                   | **None for v2.**                                                                                                                                                     |
 | 18  | Plus-gating                                            | **Nothing gated yet**; may change later.                                                                                                                             |
+| 19  | Storage of shared sessions                             | **Promote on share**: a session moves to `shared_sessions` the first time it's shared (§4.1).                                                                        |
+| 20  | Grace period for late entries                          | **12 hours** after the close.                                                                                                                                        |
+| 21  | Editing and deleting an entry                          | **The author and the target** can edit or delete it; **the admin** can also delete it.                                                                               |
+| 22  | Joining while you have your own live session           | **Offer to move your drinks in**, with "keep separate" as the alternative (§7.5).                                                                                    |
+| 23  | Account deletion inside shared sessions                | **Entries targeting the deleted user are removed**; entries they logged for others stay, with the author anonymized.                                                 |
+| 24  | Sharing a session after it ended                       | **Not in v2.** Join codes exist only while a session is live.                                                                                                        |
 
 ---
 
@@ -116,9 +122,9 @@ The core idea: **a solo session and a shared session have the same shape.** A sh
 | `session_join_codes/{code}`                | Join code to session id, expiry, creator. Server-only, like #139's invite codes | server       |
 | `user_status/{uid}`                        | Live-session mirror for friends (exists today); learns about shared sessions    | server       |
 
-**Promotion on share (proposed).** Every session starts solo, canonical in `user_drinking_sessions`. The first time it gets a second member, or a join code is created for it, the server **promotes** it: it copies meta and entries into `shared_sessions/{sessionId}` and turns the owner's record into a projection. The session id doesn't change, so links, the live route and the Live Activity keep working. The ~95% of sessions that are never shared cost nothing extra, and reads of solo sessions don't change.
+**Promotion on share.** Every session starts solo, canonical in `user_drinking_sessions`. The first time it gets a second member, or a join code is created for it, the server **promotes** it: it copies meta and entries into `shared_sessions/{sessionId}` and turns the owner's record into a projection. The session id doesn't change, so links, the live route and the Live Activity keep working. The ~95% of sessions that are never shared cost nothing extra, and reads of solo sessions don't change.
 
-The alternative, all v2 sessions canonical in one collection with a projection for everyone, is simpler to reason about but doubles every solo write. See open question Q1.
+We considered the alternative, with every v2 session canonical in one collection and a projection for everyone. It's simpler to reason about, but it doubles every solo write, so we rejected it.
 
 ### 4.2 Session meta
 
@@ -220,7 +226,7 @@ type SessionOp = {
 | Op                                                                   | Who                                                       | Offline?        | Notes                                                                                   |
 | -------------------------------------------------------------------- | --------------------------------------------------------- | --------------- | --------------------------------------------------------------------------------------- |
 | `add_entry`                                                          | any active member (solo: owner)                           | yes             | `target_uid` = self, or `'unclaimed'`                                                   |
-| `edit_entry`, `delete_entry`                                         | the entry's author or target; admin                       | yes             | delete writes a tombstone                                                               |
+| `edit_entry`, `delete_entry`                                         | the entry's author or target; the admin can also delete   | yes             | delete writes a tombstone                                                               |
 | `add_round`                                                          | any active member                                         | yes, optimistic | client pre-generates one `entryId` per target from its membership snapshot; replay-safe |
 | `decline_entry`                                                      | the entry's target                                        | yes             | the drink goes back to `'unclaimed'` with `declined: true`                              |
 | `claim_entry`                                                        | any active member                                         | yes, optimistic | compare-and-set on `target_uid === 'unclaimed'`; a lost race rolls back                 |
@@ -268,18 +274,18 @@ Until then, the server **rejects legacy whole-session writes against shared ids*
 
 ## 6. Offline and conflict policies
 
-| Situation                                        | Rule                                                                                                                                                                                                                   |
-| ------------------------------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Everyone logs their own drinks offline           | Disjoint keys; queues drain on reconnect; update replay catches everyone up. Nothing is lost.                                                                                                                          |
-| Entry arrives after the admin closed the session | Accepted if `ts` is inside `[start_time, closed_at + grace]`, stored with `late: true`. The session doesn't reopen. Outside the window: rejected with a clear message, and the drink is offered as a new solo session. |
-| Admin deletes an entry while its author edits it | **Tombstone wins.**                                                                                                                                                                                                    |
-| Two members claim the same unclaimed drink       | First to reach the server wins (RTDB transaction, as in the auto-close sweep); the loser rolls back with "already claimed by X".                                                                                       |
-| A round drink's target declines it               | It returns to `'unclaimed'` and stays in the session total.                                                                                                                                                            |
-| Unclaimed drinks                                 | Count toward the session total, nobody's personal stats. Claimable at any time, including after the close.                                                                                                             |
-| Stale admin op (the sender is no longer admin)   | Re-validated at apply time; bounces with a permission error and rolls back.                                                                                                                                            |
-| A member leaves or is removed                    | Their entries stay attributed to them: it's their history. Their projection remains.                                                                                                                                   |
-| A member deletes their account                   | Entries targeting them are removed and the totals recomputed; entries they logged for others stay, with the author anonymized.                                                                                         |
-| Stale ongoing session (#1293 auto-close)         | Staleness uses the **last activity of any member**. Only the sweep or the admin closes a shared session.                                                                                                               |
+| Situation                                        | Rule                                                                                                                                                                                                                  |
+| ------------------------------------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Everyone logs their own drinks offline           | Disjoint keys; queues drain on reconnect; update replay catches everyone up. Nothing is lost.                                                                                                                         |
+| Entry arrives after the admin closed the session | Accepted if `ts` is inside `[start_time, closed_at + 12 h]`, stored with `late: true`. The session doesn't reopen. Outside the window: rejected with a clear message, and the drink is offered as a new solo session. |
+| Admin deletes an entry while its author edits it | **Tombstone wins.**                                                                                                                                                                                                   |
+| Two members claim the same unclaimed drink       | First to reach the server wins (RTDB transaction, as in the auto-close sweep); the loser rolls back with "already claimed by X".                                                                                      |
+| A round drink's target declines it               | It returns to `'unclaimed'` and stays in the session total.                                                                                                                                                           |
+| Unclaimed drinks                                 | Count toward the session total, nobody's personal stats. Claimable at any time, including after the close.                                                                                                            |
+| Stale admin op (the sender is no longer admin)   | Re-validated at apply time; bounces with a permission error and rolls back.                                                                                                                                           |
+| A member leaves or is removed                    | Their entries stay attributed to them: it's their history. Their projection remains.                                                                                                                                  |
+| A member deletes their account                   | Entries targeting them are removed and the totals recomputed; entries they logged for others stay, with the author anonymized.                                                                                        |
+| Stale ongoing session (#1293 auto-close)         | Staleness uses the **last activity of any member**. Only the sweep or the admin closes a shared session.                                                                                                              |
 
 ---
 
@@ -335,7 +341,7 @@ If the session has unclaimed drinks, the new member immediately sees **"These dr
 
 ### 7.5 Joining while you have your own live session
 
-The Join screen offers **"Move your 3 drinks into this session"** (the drinks become entries of the shared session, attributed to you, and your solo session is removed) or **"Keep separate"** (your solo session stays live). See open question Q4.
+The Join screen offers **"Move your 3 drinks into this session"** (the drinks become entries of the shared session, attributed to you, and your solo session is removed) or **"Keep separate"** (your solo session stays live).
 
 ### 7.6 Guardrails
 
@@ -422,11 +428,4 @@ There's one umbrella epic, one issue per workstream and one PR train per workstr
 
 ## 14. Open questions
 
-| #   | Question                                                                                                            | Proposal                                                                        |
-| --- | ------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------- |
-| Q1  | Storage: promote a session to `shared_sessions` when it's first shared, or keep every v2 session in one collection? | **Promote on share** (§4.1)                                                     |
-| Q2  | Grace period for late entries after the close                                                                       | **12 hours**                                                                    |
-| Q3  | Who can edit or delete an entry                                                                                     | **The author and the target** edit; **the admin** can also delete               |
-| Q4  | Joining while you have your own live session                                                                        | **Offer to move your drinks in**, with "keep separate" as the alternative       |
-| Q5  | Account deletion inside shared sessions                                                                             | **Remove entries targeting the deleted user**, anonymize the ones they authored |
-| Q6  | Can a solo session be shared after it ended (e.g. adding friends the next morning)?                                 | **No** for v2: join codes exist only while a session is live                    |
+None. The six questions raised in review were settled on 2026-09-11 and are now decisions 19 to 24 in §2.
