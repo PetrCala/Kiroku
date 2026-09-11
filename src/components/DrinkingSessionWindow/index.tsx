@@ -6,6 +6,7 @@ import * as DSUtils from '@libs/DrinkingSessionUtils';
 import Text from '@components/Text';
 import type {DrinkingSession} from '@src/types/onyx';
 import DrinkTypesView from '@components/DrinkTypesView';
+import ElapsedTime from '@components/ElapsedTime';
 import SessionDetailsWindow from '@components/SessionDetailsWindow';
 import FillerView from '@components/FillerView';
 import getPlatform from '@libs/getPlatform';
@@ -204,6 +205,13 @@ function DrinkingSessionWindow({
                 ? `${translate('liveSessionScreen.sessionFrom')} ${DateUtils.getLocalizedTime(session.start_time, session.timezone)}`
                 : `${translate('liveSessionScreen.sessionOn')} ${DateUtils.getLocalizedDay(session.start_time, session.timezone, CONST.DATE.MONTH_DAY_YEAR_ABBR_FORMAT)}`}
             </Text>
+            {!!session?.ongoing && (
+              <ElapsedTime
+                startTime={session.start_time}
+                style={[styles.textLabelSupporting, styles.mt1]}
+                testID="session-elapsed-time"
+              />
+            )}
           </View>
         </View>
         <View
