@@ -536,8 +536,8 @@ export default {
     title: 'Add friends',
     yourCode: 'Your code',
     search: 'Search',
-    notOnKiroku: 'Not on Kiroku yet?',
-    shareInviteLink: 'Share your invite link',
+    friendNotOnKiroku: 'A friend does not have Kiroku yet?',
+    inviteThemHere: 'Invite them here',
   },
   inviteCode: {
     cardCta: 'Scan to add me on Kiroku',

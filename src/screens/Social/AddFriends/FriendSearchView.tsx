@@ -203,10 +203,10 @@ function FriendSearchView({onShowInviteCode}: FriendSearchViewProps) {
           styles.pv4,
         ]}>
         <Text style={styles.textLabelSupporting}>
-          {translate('addFriendsScreen.notOnKiroku')}
+          {translate('addFriendsScreen.friendNotOnKiroku')}
         </Text>
         <Button
-          text={translate('addFriendsScreen.shareInviteLink')}
+          text={translate('addFriendsScreen.inviteThemHere')}
           onPress={onShowInviteCode}
           style={[styles.bgTransparent, styles.p0, styles.ml1]}
           textStyles={styles.link}

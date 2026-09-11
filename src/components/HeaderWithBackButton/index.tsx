@@ -139,6 +139,9 @@ function HeaderWithBackButton({
         // be falsey, hence using !== undefined explicitly
         progressBarPercentage !== undefined && styles.pl0,
         shouldShowBackButton && [styles.pl2, styles.pr2],
+        // With no back button, a start-aligned title would sit on the screen
+        // edge; match the right side's pr5.
+        !shouldShowBackButton && shouldAlignTitleStart && styles.pl5,
         shouldOverlay && StyleSheet.absoluteFillObject,
         style,
       ]}>
