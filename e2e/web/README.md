@@ -22,6 +22,14 @@ flows the web surface can exercise:
   offline indicator below.
 - **Desktop phone frame** (`desktop-frame.spec.ts`) — the wide-window centered
   phone-frame layout (#1219 / #1224).
+- **Session ops** (`session-ops.spec.ts`): the Sessions v2 op groundwork
+  (#1663): the server-time offset from `X-Server-Time` (including a shifted
+  browser clock), the `/v1/sessions/ops` round trip keyed by the op id, replay
+  of a lost answer, a rejected op leaving the queue, and op coalescing. Ops ship
+  switched off and no UI sends them yet, so the spec drives them through dev-only
+  page hooks (`window.kirokuE2E`, installed by `src/libs/E2EHooks` when
+  `__DEV__`) and turns `SESSION_OPS` on for the page load only. It skips on
+  builds without the hooks and on a kiroku-api without the ops endpoint.
 
 Several flows rely on `testID`s added to app components (the drink steppers, the
 session unit headline, the summary edit button, and calendar day cells), which
