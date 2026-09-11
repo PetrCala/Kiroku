@@ -140,7 +140,13 @@ function processNextRequest(): Request | null {
     throw new Error('No requests to process');
   }
 
-  ongoingRequest = persistedRequests.shift() ?? null;
+  // Take the request off a NEW array instead of shift()ing in place: the
+  // current array is the value `save()` handed to Onyx.set, and Onyx writes
+  // it to storage asynchronously. Mutating it here can empty it before the
+  // write happens, so the request never reaches disk and a restart loses it.
+  const [nextRequest, ...remainingRequests] = persistedRequests;
+  ongoingRequest = nextRequest ?? null;
+  persistedRequests = remainingRequests;
 
   if (ongoingRequest && ongoingRequest.persistWhenOngoing) {
     Onyx.set(ONYXKEYS.PERSISTED_ONGOING_REQUESTS, ongoingRequest);
@@ -155,7 +161,10 @@ function rollbackOngoingRequest() {
   }
 
   // Prepend ongoingRequest to persistedRequests
-  persistedRequests.unshift({...ongoingRequest, isRollbacked: true});
+  persistedRequests = [
+    {...ongoingRequest, isRollbacked: true},
+    ...persistedRequests,
+  ];
 
   // Clear the ongoingRequest
   ongoingRequest = null;
