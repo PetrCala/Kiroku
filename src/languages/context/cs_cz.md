@@ -99,7 +99,7 @@ zde`, `Přidejte si je zde`, `Zkuste hledat zde`.
 | QR code                        | **QR kód**                                                                          |                            |
 | reset (an invite link)         | **vytvořit nový odkaz**                                                             | resetovat, obnovit         |
 
-Share-sheet text the user sends to a friend (`myQrCodeScreen.shareMessage`) is
+Share-sheet text the user sends to a friend (`inviteCode.shareMessage`) is
 written in the user's voice to that friend, so it uses tykání ("Přidej si mě").
 Everything addressed to the user stays vykání.
 

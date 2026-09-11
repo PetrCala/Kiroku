@@ -21,6 +21,7 @@ import type {
   FriendRequestsCountParams,
   InviteDisplayNameParams,
   InviteLinkParams,
+  FriendCountParams,
   LastSessionSummaryParams,
   OnboardingStepCounterParams,
   RelativeTimeAgoParams,
@@ -481,9 +482,12 @@ export default {
     friendList: 'Seznam přátel',
     friendSearch: 'Vyhledat přátele',
     friendRequests: 'Žádosti o přátelství',
-    noFriendsYet: 'Zatím nemáte žádné přátele',
-    addThemHere: 'Přidejte si je zde',
-    myQrCode: 'Můj QR kód',
+    noFriendsYet: 'Zatím žádní přátelé',
+    noFriendsYetDetail:
+      'Pozvěte přátele svým kódem, nebo je najděte podle jména.',
+    inviteFriends: 'Pozvat přátele',
+    searchByName: 'Hledat podle jména',
+    addFriends: 'Přidat přátele',
   },
   friendsFriendsScreen: {
     title: 'Najít přátele přátel',
@@ -496,11 +500,8 @@ export default {
     hasNoFriends: 'Tento uživatel ještě nepřidal žádné přátele.',
   },
   friendSearchScreen: {
-    title: 'Vyhledat nové přátele',
     noUsersFound: 'Neexistují žádní uživatelé s touto přezdívkou.',
     searchWindow: 'Vyhledejte uživatele podle jejich přezdívky',
-    myQrCode: 'Přidávejte přátele pomocí QR kódu',
-    myQrCodeDescription: 'Ukažte svůj kód nebo sdílejte svůj odkaz',
   },
   friendRequestScreen: {
     requestsReceived: ({requestsCount}: FriendRequestsCountParams) =>
@@ -508,7 +509,6 @@ export default {
     requestsSent: ({requestsCount}: FriendRequestsCountParams) =>
       `Odeslané žádosti (${requestsCount})`,
     lookingForNewFriends: 'Hledáte nové přátele?',
-    trySearchingHere: 'Zkuste hledat zde',
     accept: 'Přijmout',
     remove: 'Odstranit',
     error: {
@@ -537,10 +537,19 @@ export default {
         'Nepodařilo se zablokovat tohoto uživatele. Zkuste to prosím znovu.',
     },
   },
-  myQrCodeScreen: {
-    title: 'Můj QR kód',
-    prompt:
-      'Přátelé si vás přidají, když tento kód naskenují fotoaparátem v telefonu.',
+  addFriendsScreen: {
+    title: 'Přidat přátele',
+    yourCode: 'Váš kód',
+    search: 'Hledat',
+    notOnKiroku: 'Ještě nejsou v Kiroku?',
+    shareInviteLink: 'Sdílejte svůj odkaz',
+  },
+  inviteCode: {
+    cardCta: 'Naskenujte kód a přidejte si mě v Kiroku',
+    friendCount: ({friendCount}: FriendCountParams) =>
+      `${friendCount} ${Str.pluralize('přítel', 'přátel', friendCount)}`,
+    explain:
+      'Přátelé kód naskenují fotoaparátem v telefonu a klepnou na Přidat do přátel. Pak se uvidíte na kartě Přátelé.',
     qrCodeLabel: 'QR kód s vaším odkazem pro přidání do přátel',
     share: 'Sdílet odkaz',
     shareMessage: ({link}: InviteLinkParams) =>
@@ -548,6 +557,7 @@ export default {
     copyLink: 'Kopírovat odkaz',
     linkCopied: 'Odkaz zkopírován',
     resetLink: 'Vytvořit nový odkaz',
+    resetDescription: 'Současný odkaz a QR kód přestanou fungovat.',
     resetTitle: 'Vytvořit nový odkaz?',
     resetPrompt:
       'Současný odkaz a QR kód přestanou fungovat. Kdo je ještě nepoužil, bude potřebovat nový.',
@@ -578,9 +588,12 @@ export default {
     manageBlockedUsers: 'Spravovat blokované uživatele',
     signInToAdd: 'Přihlásit se a přidat',
     signInHint: 'Přihlaste se nebo si vytvořte účet a hned vás sem vrátíme.',
-    getTheApp: 'Ještě nemáte Kiroku? Stáhněte si aplikaci:',
-    getIosApp: 'Aplikace pro iPhone',
-    getAndroidApp: 'Aplikace pro Android',
+    getTheApp: 'Stáhněte si aplikaci Kiroku',
+    availableOn: 'K dispozici pro iPhone a Android.',
+    forYourIphone: 'Na iPhonu použijte App Store.',
+    forYourAndroid: 'Na telefonu s Androidem použijte Google Play.',
+    appStoreBadge: 'Stáhnout v App Store',
+    googlePlayBadge: 'Získat na Google Play',
     invalidTitle: 'Tento odkaz nefunguje',
     invalid:
       'Možná ho mezitím nahradil nový, nebo je špatně opsaný. Požádejte přítele o nový odkaz.',

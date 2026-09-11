@@ -34,6 +34,16 @@
 				<string>com.googleusercontent.apps.806896865950-4e3vg1ga2cr89vokhjq07ij4qvqegod0</string>
 			</array>
 		</dict>
+		<dict>
+			<key>CFBundleTypeRole</key>
+			<string>Editor</string>
+			<key>CFBundleURLName</key>
+			<string>kiroku</string>
+			<key>CFBundleURLSchemes</key>
+			<array>
+				<string>kiroku</string>
+			</array>
+		</dict>
 	</array>
 	<key>CFBundleVersion</key>
 	<string>1.0.0.25</string>

@@ -47,7 +47,12 @@ const ROUTE_CASES: RouteCase[] = [
     screen: SCREENS.ADD_FRIEND,
     params: {code: 'abcd234567'},
   },
-  {path: 'social/my-qr-code', screen: SCREENS.SOCIAL.MY_QR_CODE},
+  {path: 'social/add-friends', screen: SCREENS.SOCIAL.ADD_FRIENDS},
+  {
+    path: 'social/add-friends?tab=search',
+    screen: SCREENS.SOCIAL.ADD_FRIENDS,
+    params: {tab: 'search'},
+  },
 ];
 
 describe('linkingConfig prefixes', () => {

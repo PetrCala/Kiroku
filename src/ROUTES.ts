@@ -1,4 +1,6 @@
+import type {ValueOf} from 'type-fest';
 import type {SocialTab} from '@libs/Navigation/types';
+import type CONST from './CONST';
 import type {DrinkingSessionId} from './types/onyx';
 import type {UserID, DateString} from './types/onyx/OnyxCommon';
 
@@ -172,8 +174,14 @@ const ROUTES = {
   // },
   SOCIAL_FRIEND_LIST: 'social/friend-list',
   SOCIAL_FRIEND_REQUESTS: 'social/friend-requests',
-  SOCIAL_FRIEND_SEARCH: 'social/friend-search',
-  SOCIAL_MY_QR_CODE: 'social/my-qr-code',
+  // Add friends hub: the "Your code" tab (default) and the "Search" tab.
+  SOCIAL_ADD_FRIENDS: {
+    route: 'social/add-friends',
+    getRoute: (tab?: ValueOf<typeof CONST.ADD_FRIENDS_TAB>) =>
+      tab
+        ? (`social/add-friends?tab=${tab}` as const)
+        : ('social/add-friends' as const),
+  },
 
   // Personal friend invite link target (https://app.kiroku.cz/add/<code>).
   // Registered in both the public and the signed-in root stacks.

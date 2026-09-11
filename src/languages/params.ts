@@ -37,6 +37,10 @@ type InviteLinkParams = {
   link: string;
 };
 
+type FriendCountParams = {
+  friendCount: number;
+};
+
 type FriendRequestsCountParams = {
   requestsCount: number;
 };
@@ -153,6 +157,7 @@ export type {
   FriendRequestsCountParams,
   InviteDisplayNameParams,
   InviteLinkParams,
+  FriendCountParams,
   LastSessionSummaryParams,
   OnboardingStepCounterParams,
   RelativeTimeAgoParams,

@@ -295,6 +295,12 @@ const CONST = {
     /** How long a link opened while signed out waits for sign-in to finish. */
     PENDING_TTL_MS: 24 * 60 * 60 * 1000,
   },
+
+  /** Tabs of the Add friends hub (`social/add-friends?tab=`). */
+  ADD_FRIENDS_TAB: {
+    CODE: 'code',
+    SEARCH: 'search',
+  },
   DEFAULT_AVATAR_COUNT: 24,
   DIRECTION: {
     LEFT: 'left',

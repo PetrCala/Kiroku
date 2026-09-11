@@ -20,6 +20,7 @@ import type {InviteErrorKind} from '@libs/FriendInviteUtils';
 import Navigation from '@libs/Navigation/Navigation';
 import type {PublicScreensParamList} from '@libs/Navigation/types';
 import * as FriendInvite from '@userActions/FriendInvite';
+import CONST from '@src/CONST';
 import type {TranslationPaths} from '@src/languages/types';
 import ROUTES from '@src/ROUTES';
 import type SCREENS from '@src/SCREENS';
@@ -178,7 +179,9 @@ function AddFriendScreen({route}: AddFriendScreenProps) {
         <>
           {renderMessage(translate('addFriendScreen.ownInvite'))}
           {renderAction(translate('addFriendScreen.showMyQrCode'), () =>
-            Navigation.navigate(ROUTES.SOCIAL_MY_QR_CODE),
+            Navigation.navigate(
+              ROUTES.SOCIAL_ADD_FRIENDS.getRoute(CONST.ADD_FRIENDS_TAB.CODE),
+            ),
           )}
         </>
       );
@@ -282,6 +285,7 @@ function AddFriendScreen({route}: AddFriendScreenProps) {
       <HeaderWithBackButton
         title={translate('addFriendScreen.title')}
         onBackButtonPress={() => Navigation.goBack()}
+        shouldAlignTitleStart
       />
       <ScrollView
         contentContainerStyle={[
