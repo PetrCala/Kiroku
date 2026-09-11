@@ -10,7 +10,7 @@ name: Deploy web
 #                                                 kiroku-app-dev / app-dev.kiroku.cz).
 #                                                The adhoc env points the build at
 #                                                the DEV Firebase project AND the
-#                                                DEV kiroku-api — a production-grade
+#                                                DEV kiroku-api: a production-grade
 #                                                build on the dev backend, so the
 #                                                dev-only test account can sign in.
 # - PR labeled `Ready To Build - Web`         -> build-web-dev -> preview channel
@@ -48,8 +48,15 @@ permissions:
   contents: read
   pull-requests: write
 
+# Push deploys are keyed by branch, so a newer staging/production push
+# supersedes an in-flight one. PR runs are keyed by PR number AND label: every
+# label added to a PR fires its own `labeled` event, and adding the iOS, Android
+# and Web "Ready To Build" labels in one go would otherwise let a later non-web
+# run (whose jobs are all skipped) cancel the Web run, leaving no preview. A
+# manual dispatch maps to the Web label's key, so it and a Web-labeled run for
+# the same PR (both deploy channel `pr-<number>`) supersede each other.
 concurrency:
-  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  group: ${{ github.workflow }}-${{ github.event_name == 'push' && github.ref || format('pr-{0}-{1}', github.event.pull_request.number || github.event.inputs.PULL_REQUEST_NUMBER, github.event.label.name || 'Ready To Build - Web') }}
   cancel-in-progress: true
 
 jobs:
@@ -81,8 +88,8 @@ jobs:
       # build-web reads .env.production; build-web-adhoc reads .env.adhoc.
       # Stage the matching file from secrets. app-dev.kiroku.cz is fed the adhoc
       # env so the running app targets the DEV Firebase project + DEV kiroku-api
-      # (not prod, as STAGING_ENV_FILE did) — a production-grade build on the dev
-      # backend.
+      # (not prod, as STAGING_ENV_FILE did). It's a production-grade build on the
+      # dev backend.
       - name: Stage .env.production from secret
         if: ${{ github.ref_name == 'production' }}
         run: echo "${{ secrets.PRODUCTION_ENV_FILE }}" > .env.production
