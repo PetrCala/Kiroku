@@ -33,6 +33,7 @@ import useResponsiveLayout from '@hooks/useResponsiveLayout';
 import useAutoUpdateTimezone from '@hooks/useAutoUpdateTimezone';
 import useCurrentUserData from '@hooks/useCurrentUserData';
 import useCurrentUserPreferences from '@hooks/useCurrentUserPreferences';
+import useLiveSessionColdStart from '@hooks/useLiveSessionColdStart';
 import {useFirebase} from '@context/global/FirebaseContext';
 import OnboardingGuard from '@libs/Navigation/guards/OnboardingGuard';
 import PendingFriendInviteGuard from '@libs/Navigation/guards/PendingFriendInviteGuard';
@@ -137,12 +138,19 @@ function AuthScreensContent() {
   const userData = isEmptyObject(currentUserData) ? undefined : currentUserData;
   const preferences = useCurrentUserPreferences();
   const {setIsAuthDataReady} = useSplashScreenStateContext();
+  // On a cold start with a live session, the app opens straight into it. Keep
+  // the splash up until that's settled, so Home doesn't flash first.
+  const isColdStartRouteResolved = useLiveSessionColdStart();
   useEffect(() => {
-    if (userData === undefined || preferences === undefined) {
+    if (
+      userData === undefined ||
+      preferences === undefined ||
+      !isColdStartRouteResolved
+    ) {
       return;
     }
     setIsAuthDataReady(true);
-  }, [userData, preferences, setIsAuthDataReady]);
+  }, [userData, preferences, isColdStartRouteResolved, setIsAuthDataReady]);
   // Reset on sign-out (AuthScreens unmounts) so a subsequent sign-in
   // re-gates the splash on fresh data.
   useEffect(() => () => setIsAuthDataReady(false), [setIsAuthDataReady]);
