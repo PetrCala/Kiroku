@@ -554,13 +554,21 @@ function getDBTime(timestamp: string | number = ''): string {
 }
 
 /**
- * Returns the current time plus skew in milliseconds in the format expected by the database
+ * The current time on the server's clock (epoch ms): this device's clock
+ * corrected by the offset measured from kiroku-api's bootstrap responses (see
+ * `HttpUtils`). Use it for timestamps the server orders by, so a phone whose
+ * clock is minutes off doesn't scramble a shared timeline (Sessions v2 RFC
+ * §5.5). Before the first measurement it is the device clock.
+ */
+function getServerTime(): number {
+  return Date.now() + networkTimeSkew;
+}
+
+/**
+ * Returns the current server time in the format expected by the database
  */
 function getDBTimeWithSkew(): string {
-  if (networkTimeSkew > 0) {
-    return getDBTime(new Date().valueOf() + networkTimeSkew);
-  }
-  return getDBTime();
+  return getDBTime(getServerTime());
 }
 
 function subtractMillisecondsFromDateTime(
@@ -993,6 +1001,7 @@ const DateUtils = {
   getCurrentTimezone,
   getDBTime,
   getDBTimeWithSkew,
+  getServerTime,
   getDateFromStatusType,
   getDateFnsLocale,
   getDateStringFromISOTimestamp,
