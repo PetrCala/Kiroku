@@ -117,7 +117,7 @@ describe('registerDevice', () => {
         WRITE_COMMANDS.REGISTER_PUSH_DEVICE,
         {
           token: 'token-a',
-          platform: 'ios',
+          devicePlatform: 'ios',
           deviceID: 'device-1',
           locale: 'cs_cz',
         },
