@@ -16,6 +16,9 @@ import type {
 import {getReceivedRequestsCount} from '@libs/FriendUtils';
 import Navigation from '@libs/Navigation/Navigation';
 import ROUTES from '@src/ROUTES';
+import type SCREENS from '@src/SCREENS';
+import type {StackScreenProps} from '@react-navigation/stack';
+import type {BottomTabNavigatorParamList} from '@libs/Navigation/types';
 import ScreenWrapper from '@components/ScreenWrapper';
 import OfflineIndicator from '@components/OfflineIndicator';
 import HeaderWithBackButton from '@components/HeaderWithBackButton';
@@ -107,7 +110,12 @@ function PagerPositionCapture({
   return null;
 }
 
-function SocialScreen() {
+type SocialScreenProps = StackScreenProps<
+  BottomTabNavigatorParamList,
+  typeof SCREENS.SOCIAL.ROOT
+>;
+
+function SocialScreen({route, navigation}: SocialScreenProps) {
   const userData = useCurrentUserData();
   const theme = useTheme();
   const styles = useThemeStyles();
@@ -137,6 +145,25 @@ function SocialScreen() {
       {key: 'friendRequests', title: translate('socialScreen.friendRequests')},
     ],
     [translate],
+  );
+
+  // A `tab` param (e.g. from a tapped friend-request notification) selects that
+  // tab while it's set. The user's own tab switch clears it, so it never fights
+  // manual navigation and a later notification can select the tab again.
+  const requestedTab = route.params?.tab;
+  const requestedIndex = requestedTab
+    ? routes.findIndex(tabRoute => tabRoute.key === requestedTab)
+    : -1;
+  const activeIndex = requestedIndex >= 0 ? requestedIndex : index;
+
+  const onIndexChange = useCallback(
+    (nextIndex: number) => {
+      setIndex(nextIndex);
+      if (requestedTab) {
+        navigation.setParams({tab: undefined});
+      }
+    },
+    [navigation, requestedTab],
   );
 
   const requestCount = getReceivedRequestsCount(userData?.friend_requests);
@@ -193,7 +220,7 @@ function SocialScreen() {
   // (or tab-tap slide) toward Friend Requests — not only after the transition
   // settles. The static fallback only covers the first render, before the tab
   // bar has surfaced the position value (initial tab is Friend List → hidden).
-  const isFriendRequestsTab = routes[index]?.key === 'friendRequests';
+  const isFriendRequestsTab = routes[activeIndex]?.key === 'friendRequests';
   const fabOpacity = useMemo(
     () =>
       pagerPosition?.interpolate({
@@ -214,8 +241,8 @@ function SocialScreen() {
         shouldShowBackButton={false}
       />
       <TabView
-        navigationState={{index, routes}}
-        onIndexChange={setIndex}
+        navigationState={{index: activeIndex, routes}}
+        onIndexChange={onIndexChange}
         renderScene={renderScene}
         renderTabBar={renderTabBar}
         initialLayout={{width: windowWidth}}

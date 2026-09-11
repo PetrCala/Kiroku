@@ -281,10 +281,16 @@ describe('preferences', () => {
 });
 
 describe('opening a notification', () => {
-  it('navigates to the deep link', async () => {
+  it('opens the Friends tab on Friend Requests for a friend-request push', async () => {
     PushNotificationActions.openNotification({path: 'social/friend-requests'});
     await flushPromises();
-    expect(mockedNavigate).toHaveBeenCalledWith('social/friend-requests');
+    expect(mockedNavigate).toHaveBeenCalledWith('social?tab=friendRequests');
+  });
+
+  it('navigates to any other deep link as-is', async () => {
+    PushNotificationActions.openNotification({path: 'profile/user-2'});
+    await flushPromises();
+    expect(mockedNavigate).toHaveBeenCalledWith('profile/user-2');
   });
 
   it.each([
