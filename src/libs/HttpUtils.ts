@@ -386,3 +386,5 @@ export default {
   xhr,
   cancelPendingRequests,
 };
+
+export {buildKirokuBody};

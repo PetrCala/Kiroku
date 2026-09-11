@@ -75,7 +75,9 @@ async function registerDevice(): Promise<void> {
     lastRegistrationKey = registrationKey;
     API.write(WRITE_COMMANDS.REGISTER_PUSH_DEVICE, {
       token,
-      platform,
+      // Not `platform`: enhanceParameters overwrites that key with the legacy
+      // "iOS"/"Android" value and HttpUtils strips it from kiroku-api bodies.
+      devicePlatform: platform,
       deviceID,
       locale: BaseLocaleListener.getPreferredLocale(),
     });
