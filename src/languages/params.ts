@@ -55,6 +55,10 @@ type OnboardingStepCounterParams = {
   totalSteps: number;
 };
 
+type QuickAddDrinkParams = {
+  drinkName: string;
+};
+
 type RelativeTimeAgoParams = {
   count: number;
 };
@@ -160,6 +164,7 @@ export type {
   FriendCountParams,
   LastSessionSummaryParams,
   OnboardingStepCounterParams,
+  QuickAddDrinkParams,
   RelativeTimeAgoParams,
   SessionConfirmTimezoneChangeParams,
   SessionStartTimeParams,

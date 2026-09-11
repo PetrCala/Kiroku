@@ -50,6 +50,9 @@ let pendingUnregister: Promise<void> | undefined;
 /** The launch notification is opened once per process, not on every sign-in. */
 let hasOpenedInitialNotification = false;
 
+/** The launch notification's route, read from the platform once per process. */
+let initialNotificationRoutePromise: Promise<Route | undefined> | undefined;
+
 function errorMessage(error: unknown): string {
   return error instanceof Error ? error.message : String(error);
 }
@@ -243,19 +246,33 @@ function openNotification(message: PushNotificationMessage): void {
   Navigation.isNavigationReady().then(() => Navigation.navigate(route));
 }
 
+/**
+ * The route of the notification that launched the app from a quit state, or
+ * undefined when there was none. Read from the platform once per process and
+ * shared, so the cold-start live-session check can see a notification tap
+ * without consuming it before `openInitialNotification` does.
+ */
+function getInitialNotificationRoute(): Promise<Route | undefined> {
+  initialNotificationRoutePromise ??= PushNotification.platform
+    ? PushNotification.getInitialNotification()
+        .then(message => (message ? getNotificationRoute(message) : undefined))
+        .catch(() => undefined)
+    : Promise.resolve(undefined);
+  return initialNotificationRoutePromise;
+}
+
 /** Open the notification that launched the app from a quit state, once per process. */
 function openInitialNotification(): void {
   if (hasOpenedInitialNotification || !PushNotification.platform) {
     return;
   }
   hasOpenedInitialNotification = true;
-  PushNotification.getInitialNotification()
-    .then(message => {
-      if (message) {
-        openNotification(message);
-      }
-    })
-    .catch(() => undefined);
+  getInitialNotificationRoute().then(route => {
+    if (!route) {
+      return;
+    }
+    Navigation.isNavigationReady().then(() => Navigation.navigate(route));
+  });
 }
 
 export {
@@ -267,6 +284,7 @@ export {
   setFriendRequestNotificationsEnabled,
   enablePushNotifications,
   getNotificationRoute,
+  getInitialNotificationRoute,
   openNotification,
   openInitialNotification,
 };

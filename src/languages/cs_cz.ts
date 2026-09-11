@@ -24,6 +24,7 @@ import type {
   FriendCountParams,
   LastSessionSummaryParams,
   OnboardingStepCounterParams,
+  QuickAddDrinkParams,
   RelativeTimeAgoParams,
   SessionConfirmTimezoneChangeParams,
   SessionStartTimeParams,
@@ -1542,13 +1543,17 @@ export default {
       message:
         'Nepodařilo se nám načíst vaše relace. Připojte se a zobrazí se tady.',
     },
+    liveSessionCard: {
+      label: 'Živá relace',
+      open: 'Otevřít',
+      units: ({unitCount}: UnitCountParams) =>
+        `${unitCount} ${unitCount === 1 ? 'jednotka' : 'jednotek'}`,
+      a11y: ({unitCount}: UnitCountParams) =>
+        `Otevřít živou relaci, zatím ${unitCount} ${unitCount === 1 ? 'jednotka' : 'jednotek'}`,
+      addDrink: ({drinkName}: QuickAddDrinkParams) =>
+        `Přidat jeden: ${drinkName}`,
+    },
     banners: {
-      inSession: {
-        label: 'Probíhá relace',
-        body: 'Klepnutím se vrátíte do relace',
-        resume: 'Pokračovat',
-        a11y: 'Probíhá relace. Klepnutím se do ní vrátíte.',
-      },
       lastSession: {
         label: 'Poslední relace',
         summary: ({when, units}: LastSessionSummaryParams) =>
