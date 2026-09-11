@@ -106,10 +106,29 @@ export class SessionPage {
     await this.firstAddDrinkButton().click();
   }
 
-  /** Save the session; resolve on the summary screen. */
+  /**
+   * Resolve on the next successful response from a session endpoint. Session
+   * writes go through the app's persisted request queue, which lives in the
+   * browser context's IndexedDB; Playwright closes that context as soon as a
+   * test ends, so a write still sitting in the queue is lost with it. Awaiting
+   * the response makes sure the write reached the dev backend.
+   */
+  private waitForSessionWrite(endpoint: 'update' | 'delete'): Promise<unknown> {
+    return this.page.waitForResponse(
+      response =>
+        response.url().includes(`/v1/sessions/${endpoint}`) && response.ok(),
+    );
+  }
+
+  /**
+   * Save the session; resolve on the summary screen once the save reached the
+   * server.
+   */
   async save(): Promise<void> {
+    const saved = this.waitForSessionWrite('update');
     await this.saveButton().click();
     await this.summaryScreen().waitFor({state: 'visible'});
+    await saved;
   }
 
   /** From the summary, open the edit screen for the saved session. */
@@ -118,9 +137,15 @@ export class SessionPage {
     await this.editScreen().waitFor({state: 'visible'});
   }
 
-  /** Discard/delete the open session and confirm the warning modal. */
+  /**
+   * Discard/delete the open session and confirm the warning modal; resolve once
+   * the delete reached the server, so a test ending right after it does not
+   * leave the session behind on the shared dev account.
+   */
   async discardAndConfirm(): Promise<void> {
+    const deleted = this.waitForSessionWrite('delete');
     await this.discardButton().click();
     await this.confirmYesButton().click();
+    await deleted;
   }
 }
