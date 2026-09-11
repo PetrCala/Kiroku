@@ -1,6 +1,6 @@
+import type {SocialTab} from '@libs/Navigation/types';
 import type {DrinkingSessionId} from './types/onyx';
 import type {UserID, DateString} from './types/onyx/OnyxCommon';
-import type {SocialTab} from '@libs/Navigation/types';
 
 /**
  * Builds a URL with an encoded URI component for the `backTo` param which can be added to the end of URLs
