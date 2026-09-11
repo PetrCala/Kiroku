@@ -1,24 +1,27 @@
-Kiroku helps you track and understand your alcohol consumption — so you can make informed decisions about your own habits.
+What you drink is your business. Kiroku is a private diary for it: log a drink in seconds, see your days in a calendar, and find your patterns in the statistics.
 
-This is a personal tracking and self-awareness tool, not a drinking companion. Kiroku is built around harm reduction: the more clearly you see your own patterns, the easier it is to set goals, notice trends, and cut back when you want to.
+Kiroku is built for harm reduction. It doesn't reward, encourage, or gamify drinking. It's for adults who want a clear record of their own drinking, whether that's to notice trends, set a daily limit, or cut back.
 
 WHAT YOU CAN DO
-• Log drinking sessions in real time or add them later
-• Record drink types and standardized units per session
-• Add notes to remember the context of a session
-• Browse your full history in a monthly calendar
-• See statistics and trends: totals, units over time, alcohol-free days, patterns, and breakdowns
-• Track alcohol-free days to celebrate the days you didn't drink
+• Log drinks during a live session, or add a past session later
+• Record drink types and standard units (grams of pure alcohol)
+• Add notes to remember a session's context
+• Browse your history in a monthly calendar, where each day's color follows your own daily limit
+• See totals, units over time, patterns, and breakdowns in the statistics
+• Count your alcohol-free days and streaks
+• Log a drink from your Apple Watch
 
 PRIVATE BY DESIGN
-• Offline-first: the app works without a connection and syncs when you're back online
-• Your data is yours — view, edit, and delete sessions any time
-• Delete your account and data from within the app at any time
+• Works offline and syncs when you're back online
+• Your data is yours: view, edit, or delete any session at any time
+• Delete your account and all of its data from inside the app
+• No ads
 
-STAY CONNECTED (OPTIONAL)
-• Add friends to share progress and support each other
+FRIENDS (OPTIONAL)
+• Add friends and see each other's sessions
+• Hide your sessions from friends at any time in Settings
 
 Terms of Use (EULA): https://kiroku.cz/terms
 Privacy Policy: https://kiroku.cz/privacy
 
-Kiroku is intended for adults (18+) who want to monitor and reflect on their own drinking. It does not provide medical advice. If you are concerned about your drinking, please consult a healthcare professional.
+Kiroku is for adults (18+). It doesn't provide medical advice. If you're concerned about your drinking, please talk to a healthcare professional.
