@@ -247,6 +247,8 @@ const KIROKU_OMITTED_BODY_FIELDS = new Set<string>([
   'apiRequestType',
   'shouldRetry',
   'canCancel',
+  // Travels as the `Idempotency-Key` header (see kirokuXhr).
+  'idempotencyKey',
 ]);
 
 function buildKirokuBody(
@@ -346,6 +348,13 @@ async function kirokuXhr(
     }
   } else {
     headers['Content-Type'] = 'application/json';
+    // Writes carry the key minted in `API.write`. Requests queued by an older
+    // build have none and go out without the header, which the server treats
+    // exactly as before keys existed. GET routes are reads, so they never
+    // send one.
+    if (typeof data.idempotencyKey === 'string') {
+      headers[CONST.NETWORK.IDEMPOTENCY_KEY_HEADER] = data.idempotencyKey;
+    }
     body = JSON.stringify(buildKirokuBody(data));
   }
 
