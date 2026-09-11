@@ -1,25 +1,28 @@
-Kiroku je soukromý deník vaší konzumace alkoholu. Zaznamenávejte, co pijete, prohlížejte si to v kalendáři a ve statistikách a rozhodujte se o svých návycích informovaně.
+Mějte přehled o svých alkoholových dobrodružstvích. Zapisujte své drinky a sdílejte je s přáteli.
 
-Kiroku je postavené na principu snižování rizik. Většina lidí podceňuje, kolik pije. Čím jasněji vidíte své vlastní vzorce, tím snáze si nastavíte denní limit, všimnete si trendů a omezíte pití, když budete chtít. Kiroku pití neodměňuje, nepodporuje ani z něj nedělá hru. Aplikace je zdarma a bez reklam.
+Když vyrážíte ven, spusťte relaci, přidávejte drinky, jak přibývají rundy, a celý večer si pak prohlédněte v kalendáři. Přátelé ho uvidí taky a vy zase ty jejich.
 
 CO MŮŽETE DĚLAT
 • Zaznamenávejte drinky během živé relace, nebo přidejte zpětnou relaci později
-• Evidujte druhy drinků a standardní jednotky (gramy čistého alkoholu) v každé relaci
+• Projděte si relace svých přátel
+• Procházejte historii v měsíčním kalendáři, kde barva dne odpovídá vašemu vlastnímu dennímu limitu
+• Sledujte ve statistikách součty, jednotky v čase, vzorce a rozbory
+• Evidujte druhy drinků a standardní jednotky (gramy čistého alkoholu)
 • Přidávejte poznámky, abyste si pamatovali kontext relace
-• Procházejte celou historii v měsíčním kalendáři, kde barva dne odpovídá vašemu vlastnímu dennímu limitu
-• Sledujte statistiky a trendy: součty, jednotky v čase, vzorce a rozbory
-• Počítejte dny bez alkoholu a budujte série dnů bez alkoholu
+• Počítejte dny bez alkoholu a jejich série
 
-SOUKROMÍ NA PRVNÍM MÍSTĚ
+PŘÁTELÉ
+• Najděte své přátele a pošlete jim žádost o přátelství
+• Chcete si to nechat pro sebe? Své relace skryjete v Nastavení.
+• Kohokoli můžete z jeho profilu nahlásit nebo zablokovat
+
+VAŠE DATA
 • Funguje offline a po obnovení připojení se synchronizuje
-• Vaše data patří vám: kteroukoli relaci můžete kdykoli zobrazit, upravit nebo smazat
+• Kteroukoli relaci můžete kdykoli zobrazit, upravit nebo smazat
 • Účet i všechna jeho data smažete přímo v aplikaci
-
-PŘÁTELÉ (VOLITELNÉ)
-• Přidejte si přátele, sdílejte pokrok a podporujte se navzájem
-• Své relace můžete před přáteli kdykoli skrýt v Nastavení
+• Bez reklam
 
 Zásady ochrany soukromí: https://www.kiroku.cz/privacy
 Podmínky použití: https://www.kiroku.cz/terms
 
-Kiroku je určeno pro dospělé (18+), kteří chtějí sledovat a reflektovat své vlastní pití. Neposkytuje lékařské rady. Máte-li obavy o své pití, obraťte se prosím na lékaře nebo jiného odborníka.
+Kiroku je určeno pro dospělé (18+). Pití neodměňuje, nepodporuje ani z něj nedělá hru a neposkytuje lékařské rady. Máte-li obavy o své pití, obraťte se prosím na lékaře nebo jiného odborníka.
