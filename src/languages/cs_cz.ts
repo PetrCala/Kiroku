@@ -541,8 +541,8 @@ export default {
     title: 'Přidat přátele',
     yourCode: 'Váš kód',
     search: 'Hledat',
-    notOnKiroku: 'Ještě nejsou v Kiroku?',
-    shareInviteLink: 'Sdílejte svůj odkaz',
+    friendNotOnKiroku: 'Někdo z přátel ještě nemá Kiroku?',
+    inviteThemHere: 'Pozvěte ho tady',
   },
   inviteCode: {
     cardCta: 'Naskenujte kód a přidejte si mě v Kiroku',

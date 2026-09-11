@@ -120,6 +120,9 @@ function AddFriendScreen({route}: AddFriendScreenProps) {
           translate('addFriendScreen.addedTitle'),
           translate('addFriendScreen.added', {displayName}),
         );
+        // Land on the Friend List with the new friend's profile on top, so
+        // Back from the profile goes to the list instead of this screen.
+        Navigation.navigate(ROUTES.SOCIAL_TAB.getRoute('friendList'));
         Navigation.navigate(ROUTES.PROFILE.getRoute(friendUserID));
       })
       .catch((error: unknown) => setRedeemError(getInviteErrorKind(error)))
