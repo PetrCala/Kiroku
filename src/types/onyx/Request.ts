@@ -156,9 +156,12 @@ type ConflictActionData = {
 type RequestConflictResolver = {
   /**
    * A function that checks if a new request conflicts with any existing requests in the queue.
+   * `newRequest` is the request being added, with its idempotency key, so a resolver can
+   * coalesce it into a queued request (see `RequestConflictUtils`).
    */
   checkAndFixConflictingRequest?: (
     persistedRequest: Request[],
+    newRequest: Request,
   ) => ConflictActionData;
 
   /**
