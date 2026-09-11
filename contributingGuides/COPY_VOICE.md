@@ -6,24 +6,48 @@ purchase-sheet names, and emails. Each language's glossary, register, and
 grammar live in `src/languages/context/<locale>.md`; this file is the voice
 they all follow.
 
+## What Kiroku is
+
+Kiroku is for keeping track of your alcohol adventures together. People log
+what they drink, share their sessions with friends, and see what their friends
+are having. The social side is the point. That's where the fun is.
+
+Hiding your sessions from friends is a setting, and a fine choice. It's not the
+pitch. Store listings, captions, and onboarding lead with friends and sharing.
+Privacy gets one plain line, late: "Want to keep it to yourself? Hide your
+sessions in Settings."
+
 ## Who's talking
 
-Kiroku is made by a small team and should sound like it: a friend at the bar,
-not a company, a coach, or a doctor. What people drink is their business. The
-app records it and doesn't judge.
+One of the group: the friend who knows what everyone's having, says things
+straight, and keeps it short. Not a company, a coach, or a doctor. What people
+drink is their business. The app records it and never comments on how much.
 
 ## Plain by default, playful on purpose
 
 Most copy is utility, and utility copy is plain, short, and literal. Personality
-is saved for a few chosen moments, where a joke or a pun is welcome.
+is saved for a few chosen moments. Cheeky is welcome there, as long as the pun
+is clever. A joke that needs explaining, or one that's only there to be a joke,
+gets cut.
 
-| Mode    | Where                                                                                         | Sounds like                                                                                |
-| ------- | --------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------ |
-| Utility | Labels, buttons, settings, empty states, loading, errors, fine print, anything legal          | "Nothing to plot here." · "Check your connection and try again." · "Per week"              |
-| Playful | Hero headlines, slogans, thank-yous, celebrations, the tip jar, store captions, release notes | "Keep track of your alcohol adventures" · "Now go and have one yourself!" · "Dýško koutek" |
+| Mode    | Where                                                                                                                    | Sounds like                                                                                   |
+| ------- | ------------------------------------------------------------------------------------------------------------------------ | --------------------------------------------------------------------------------------------- |
+| Utility | Labels, buttons, settings, empty states, loading, errors, fine print, anything legal                                     | "Nothing to plot here." · "Check your connection and try again." · "Per week"                 |
+| Playful | Hero headlines, slogans, store openers, promotional text, captions, thank-yous, celebrations, the tip jar, release notes | "Keep track of your alcohol adventures" · "See what your friends are having" · "Dýško koutek" |
 
 One screen can hold both. On the tip jar, the headline, the thanks, and the bar
 tab are playful; the buy button, the fine print, and the errors stay plain.
+
+## Words
+
+- **"Alcohol adventures" is the anchor phrase.** It's on the website, the
+  README, the login screen, and the store. Reach for it before inventing a new
+  tagline. Czech: "alkoholová dobrodružství".
+- **Use:** friends, share, session, round, log, "what your friends are having".
+- **Don't use in marketing:** diary, journal, private or privacy-first as a
+  headline, awareness, mindful, habits, "track your consumption", harm
+  reduction. Harm reduction stays in the fine print and the App Review notes,
+  where it's a fact, not a slogan.
 
 ## Utility copy
 
@@ -40,6 +64,8 @@ tab are playful; the buy button, the fine print, and the errors stay plain.
 
 - **The pub is the home metaphor:** beer, rounds, the bar tab, coasters,
   cheers. Reach for it before inventing a new one.
+- **Puns earn their place.** If it only works with an explanation, or it's a
+  pun on a word nobody uses, cut it.
 - **Invite, don't sell.** Supporting the app is treating someone to a beer, not
   a transaction. Name a real recipient when you can: "Pozvi vývojáře na pivko"
   (invite the developer for a beer) rather than a faceless "us".
@@ -54,11 +80,24 @@ tab are playful; the buy button, the fine print, and the errors stay plain.
 - **Don't overpromise.** A tip unlocks nothing, so no playful line may suggest
   it does. Features are for everyone.
 
+## Store listings
+
+- **Order:** the social pitch first, then what you can do, then privacy in one
+  line, then the fine print.
+- **The fine print stays plain and stays put:** 18+, no medical advice, and
+  "Kiroku doesn't reward, encourage, or gamify drinking." These match what the
+  App Review notes tell Apple.
+
 ## Things we never do
 
+- Compete on volume: "who drank most", drinking challenges, leaderboards,
+  streaks of drinking days. Apple rejects apps that encourage heavy drinking,
+  and it isn't the fun we're selling anyway.
+- Sell privacy as the main reason to use the app.
 - Guilt, pressure, or urgency ("Don't leave us", countdowns, "only today").
-- Sincerity intensifiers: "genuinely", "truly", "honestly", "really". Warmth
-  comes from what the line says, not from telling people we mean it.
+- Tell people how sincere or fair we are: "genuinely", "truly", "honestly",
+  "really", "honest", "nobody judges", "no judgement", "judgment-free". Warmth
+  comes from what the line says, not from vouching for ourselves.
 - Moralizing about drinking, or praise and blame for how much someone drank.
 - Em dashes and en dashes in running copy. Use two short sentences, a comma, or
   parentheses.
@@ -79,7 +118,9 @@ tab are playful; the buy button, the fine print, and the errors stay plain.
 ## Before shipping copy
 
 1. Is this a utility string or a playful moment? Write in that mode.
-2. Can a word go? Can a whole clause go?
-3. Any euphemism, intensifier, guilt, or promise we can't keep?
-4. For translations: adapted (playful) or kept close (utility)? Is the feature's
+2. Does marketing copy lead with friends and sharing, not privacy?
+3. Can a word go? Can a whole clause go?
+4. Any euphemism, sincerity word, guilt, volume contest, or promise we can't
+   keep?
+5. For translations: adapted (playful) or kept close (utility)? Is the feature's
    name the same everywhere?
