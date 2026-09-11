@@ -185,6 +185,11 @@ const KIROKU_ROUTES: Record<ApiCommand, KirokuRoute> = {
     method: 'post',
     path: '/v1/sessions/delete',
   },
+  // Session ops (Sessions v2). The op id doubles as the Idempotency-Key.
+  [WRITE_COMMANDS.SESSION_OP]: {
+    method: 'post',
+    path: '/v1/sessions/ops',
+  },
   [WRITE_COMMANDS.UPDATE_PREFERENCES]: {
     method: 'post',
     path: '/v1/preferences',

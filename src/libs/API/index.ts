@@ -53,6 +53,15 @@ type OnyxData = {
 };
 
 /**
+ * A write's idempotency key. A caller may pin one (a session op sends its
+ * `opId`, which the server requires to match); otherwise a fresh one is minted.
+ */
+function getIdempotencyKey(parameters: Record<string, unknown>): string {
+  const pinned = parameters.idempotencyKey;
+  return typeof pinned === 'string' ? pinned : Str.guid();
+}
+
+/**
  * All calls to API.write() will be persisted to disk as JSON with the params, successData, and failureData (or finallyData, if included in place of the former two values).
  * This is so that if the network is unavailable or the app is closed, we can send the WRITE request later.
  *
@@ -75,23 +84,7 @@ function write<TCommand extends WriteCommand>(
 ): Promise<void> {
   Log.info('Called API write', false, {command, ...apiCommandParameters});
 
-  // When a conflict resolver decides this request is a no-op against the queue (e.g. it cancels
-  // out a previously queued request), we must NOT apply its optimistic data: there is no request
-  // that will later reconcile it, so the optimistic update would never be cleared.
-  let shouldApplyOptimisticData = true;
-  if (conflictResolver.checkAndFixConflictingRequest) {
-    const {conflictAction} = conflictResolver.checkAndFixConflictingRequest(
-      PersistedRequests.getAll(),
-    );
-    shouldApplyOptimisticData = conflictAction.type !== 'noAction';
-  }
-
   const {optimisticData, ...onyxDataWithoutOptimisticData} = onyxData;
-
-  // Optimistically update Onyx
-  if (optimisticData && shouldApplyOptimisticData) {
-    Onyx.update(optimisticData);
-  }
 
   // Assemble the data we'll send to the API
   const data = {
@@ -110,11 +103,11 @@ function write<TCommand extends WriteCommand>(
     data: {
       ...data,
 
-      // One key per write, minted here and persisted with the request, so every
-      // retry and every replay after an app restart carries the same key.
-      // kiroku-api answers a repeat from its record instead of applying the
-      // write again. HttpUtils sends it as a header, never in the body.
-      idempotencyKey: Str.guid(),
+      // One key per write, persisted with the request, so every retry and
+      // every replay after an app restart carries the same key. kiroku-api
+      // answers a repeat from its record instead of applying the write again.
+      // HttpUtils sends it as a header, never in the body.
+      idempotencyKey: getIdempotencyKey(apiCommandParameters),
 
       // This should be removed once we are no longer using deprecatedAPI https://github.com/Expensify/Expensify/issues/215650
       shouldRetry: true,
@@ -125,6 +118,24 @@ function write<TCommand extends WriteCommand>(
     ...onyxDataWithoutOptimisticData,
     ...conflictResolver,
   };
+
+  // When a conflict resolver decides this request is a no-op against the queue (e.g. it cancels
+  // out a previously queued request), we must NOT apply its optimistic data: there is no request
+  // that will later reconcile it, so the optimistic update would never be cleared. The resolver
+  // gets the assembled request, so it can coalesce it into a queued one.
+  let shouldApplyOptimisticData = true;
+  if (conflictResolver.checkAndFixConflictingRequest) {
+    const {conflictAction} = conflictResolver.checkAndFixConflictingRequest(
+      PersistedRequests.getAll(),
+      request,
+    );
+    shouldApplyOptimisticData = conflictAction.type !== 'noAction';
+  }
+
+  // Optimistically update Onyx
+  if (optimisticData && shouldApplyOptimisticData) {
+    Onyx.update(optimisticData);
+  }
 
   // Write commands can be saved and retried, so push it to the SequentialQueue
   return SequentialQueue.push(request);

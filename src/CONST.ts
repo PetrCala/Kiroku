@@ -120,6 +120,39 @@ const CONST = {
     // logo plays its full assembly + liquid-fill entrance instead of being
     // masked by the flying splash logo.
     LOGO_FLY_IN: false,
+    // Session writes as small idempotent ops (Sessions v2, RFC §5). Off until
+    // the server implements more than the `ping` shell.
+    SESSION_OPS: false,
+  },
+  // Session op types (Sessions v2 RFC §5.1). Mirrors kiroku-api
+  // `lib/sessions/ops.ts`, which rejects anything else.
+  SESSION_OP: {
+    TYPE: {
+      PING: 'ping',
+      START: 'start',
+      END: 'end',
+      ADD_ENTRY: 'add_entry',
+      EDIT_ENTRY: 'edit_entry',
+      DELETE_ENTRY: 'delete_entry',
+      ADD_ROUND: 'add_round',
+      DECLINE_ENTRY: 'decline_entry',
+      CLAIM_ENTRY: 'claim_entry',
+      SET_NOTE: 'set_note',
+      SET_BLACKOUT: 'set_blackout',
+      SET_VISIBILITY: 'set_visibility',
+      RENAME: 'rename',
+      ADD_PHOTO: 'add_photo',
+      REMOVE_PHOTO: 'remove_photo',
+      CLOSE: 'close',
+      REMOVE_MEMBER: 'remove_member',
+      TRANSFER_ADMIN: 'transfer_admin',
+      SET_MEMBERS_CAN_INVITE: 'set_members_can_invite',
+      LEAVE: 'leave',
+      CREATE_JOIN_CODE: 'create_join_code',
+      INVITE: 'invite',
+      JOIN: 'join',
+      RESPOND_INVITE: 'respond_invite',
+    },
   },
   // Registry of features gated behind a subscription tier. Read via the pure
   // `getFeatureAccess` resolver (`@libs/Entitlements`) and the `useFeatureAccess`
@@ -833,6 +866,9 @@ const CONST = {
     // of a key it already applied from its record instead of applying the
     // write again. See `API.write` and kiroku-api `middleware/idempotency.ts`.
     IDEMPOTENCY_KEY_HEADER: 'Idempotency-Key',
+    // kiroku-api's clock in epoch ms on every response, for the server-time
+    // offset (see `HttpUtils` and `DateUtils.getServerTime`).
+    SERVER_TIME_HEADER: 'X-Server-Time',
     NETWORK_STATUS: {
       ONLINE: 'online',
       OFFLINE: 'offline',

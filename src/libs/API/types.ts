@@ -49,6 +49,7 @@ const WRITE_COMMANDS = {
   ACCEPT_TERMS: 'AcceptTerms',
   COMPLETE_ONBOARDING: 'CompleteOnboarding',
   SET_ONBOARDING_LAST_VISITED_PATH: 'SetOnboardingLastVisitedPath',
+  SESSION_OP: 'SessionOp',
   // ...
 } as const;
 
@@ -97,6 +98,7 @@ type WriteCommandParameters = {
   [WRITE_COMMANDS.ACCEPT_TERMS]: Parameters.AcceptTermsParams;
   [WRITE_COMMANDS.COMPLETE_ONBOARDING]: EmptyObject;
   [WRITE_COMMANDS.SET_ONBOARDING_LAST_VISITED_PATH]: Parameters.SetOnboardingLastVisitedPathParams;
+  [WRITE_COMMANDS.SESSION_OP]: Parameters.SessionOpParams;
 };
 
 const READ_COMMANDS = {
