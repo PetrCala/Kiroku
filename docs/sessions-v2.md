@@ -3,7 +3,7 @@
 Status: **in review; all design questions settled (2026-09-11)**
 Last updated: 2026-09-11
 Authors: Petr Čala, from the design conversations of 2026-08-28 to 31 and 2026-09-10 to 11
-Tracking: epic issue to be filed once this RFC is accepted
+Tracking: epic #1661 (workstreams #1662 to #1671)
 
 This document is the plan for reworking drinking sessions: how drinks are captured, what a session records, how a live session is surfaced, session identity (names, photos), a feed on Home, and **communal shared sessions**. It fixes the data model and write protocol first so every later piece is born compatible with shared sessions, even though shared sessions ship last.
 
