@@ -47,7 +47,14 @@ test.describe('home live session card', () => {
     await homePage.goto();
     await expect(homePage.screen()).toBeVisible();
 
+    // Wait for the start to reach the server: the reload below would otherwise
+    // race the queued create.
+    const created = authedPage.waitForResponse(
+      response =>
+        response.url().includes('/v1/sessions/update') && response.ok(),
+    );
     await session.startLiveSession();
+    await created;
     const sessionId = session.currentSessionId();
 
     // The live screen shows the elapsed timer under its title.
@@ -93,8 +100,15 @@ test.describe('home live session card', () => {
       contentType: 'image/png',
     });
 
-    // Clean up: discard, and the card goes away.
+    // Clean up: discard, and the card goes away. Wait for the delete to reach
+    // the server: the context closes right after the test, and a delete still
+    // in the request queue would leave a live session on the shared account.
+    const deleted = authedPage.waitForResponse(
+      response =>
+        response.url().includes('/v1/sessions/delete') && response.ok(),
+    );
     await session.discardAndConfirm();
+    await deleted;
     await expect(homePage.screen()).toBeVisible();
     await expect(card(authedPage)).toBeHidden();
 
