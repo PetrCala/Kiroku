@@ -88,6 +88,18 @@ type Preferences = {
    *  consent and no marketing email may be sent. The server timestamps
    *  consent changes for accountability. */
   email_marketing_consent?: boolean;
+
+  /** After how many hours of inactivity an ongoing session is auto-closed.
+   *  A positive number of hours, or the `'never'` sentinel
+   *  (`CONST.SESSION.AUTO_CLOSE.NEVER`) to opt out. The opt-out is the string
+   *  `'never'`, not `null`: kiroku-api canonicalizes it that way (an RTDB `null`
+   *  would delete the key) and echoes `'never'` back into this Onyx key.
+   *  Absent means inherit the global default (`config.auto_close_default_hours`,
+   *  falling back to `CONST.SESSION.AUTO_CLOSE.DEFAULT_HOURS`); the default is
+   *  never materialized into the user's stored prefs. */
+  auto_close_sessions_after_hours?:
+    | number
+    | typeof CONST.SESSION.AUTO_CLOSE.NEVER;
 };
 
 /** A collection of preferences of multiple users */

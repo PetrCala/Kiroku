@@ -528,6 +528,110 @@ function calculateSessionLength(
 }
 
 /**
+ * Resolve the effective auto-close threshold (in hours) for DISPLAY in the
+ * settings UI.
+ *
+ * Resolution chain: the user's own preference, then the global config default,
+ * then the compile-time fallback (`CONST.SESSION.AUTO_CLOSE.DEFAULT_HOURS`).
+ * The `'never'` sentinel (`CONST.SESSION.AUTO_CLOSE.NEVER`, the kiroku-api wire
+ * form of the opt-out) is a terminal opt-out and short-circuits the chain, so a
+ * user who opted out is never overridden by a global default. `null` and a
+ * non-positive number are treated the same as opting out.
+ *
+ * NOTE: the compile-time 24h fallback exists only so the settings screen always
+ * has a concrete value to display. It is NOT a close-decision gate. The server
+ * sweep (kiroku-api `resolveThresholdHours`) and PR3's client lazy-close must
+ * treat "no user pref AND no config default" as DISABLED (no implicit 24h), so
+ * the feature stays dark until `config/auto_close_default_hours` is set. Use
+ * this resolver for the UI; gate the actual close on the config default being
+ * present.
+ *
+ * Returns the number of hours, or `null` when the session should never be
+ * auto-closed (displayed as "Never").
+ */
+function getEffectiveAutoCloseHours(
+  userPref: number | typeof CONST.SESSION.AUTO_CLOSE.NEVER | null | undefined,
+  configDefault: number | null | undefined,
+): number | null {
+  // Explicit user opt-out wins over any default. The canonical opt-out is the
+  // `'never'` sentinel; `null` is also accepted defensively.
+  if (userPref === CONST.SESSION.AUTO_CLOSE.NEVER || userPref === null) {
+    return null;
+  }
+  if (typeof userPref === 'number') {
+    return userPref > 0 ? userPref : null;
+  }
+  // The user has no stored value → inherit the global default.
+  if (configDefault === null) {
+    return null;
+  }
+  if (typeof configDefault === 'number') {
+    return configDefault > 0 ? configDefault : null;
+  }
+  return CONST.SESSION.AUTO_CLOSE.DEFAULT_HOURS;
+}
+
+/**
+ * The timestamp of the most recent drink in a session (its keys are ms epoch
+ * timestamps), or the session's `start_time` when there are no drinks. This is
+ * the truthful end-of-activity moment used as the auto-closed `end_time`.
+ */
+function getLastDrinkTimestamp(session: DrinkingSession): number {
+  const {drinks, start_time: startTime} = session;
+  if (isEmptyObject(drinks)) {
+    return startTime;
+  }
+  const timestamps = Object.keys(drinks)
+    .map(Number)
+    .filter(timestamp => !Number.isNaN(timestamp));
+  if (timestamps.length === 0) {
+    return startTime;
+  }
+  return Math.max(...timestamps);
+}
+
+/**
+ * Whether an ongoing session has been idle past its threshold and should be
+ * auto-closed. Staleness is measured from the last *activity*
+ * (`max(last drink timestamp, start_time)`), never from `start_time` alone, so
+ * a genuinely long but active night is not closed.
+ *
+ * `hours === null` (never) or a non-positive threshold means the session is
+ * never stale. `now` is injected for testability and clock-source control.
+ */
+function isSessionStale(
+  session: DrinkingSession,
+  hours: number | null,
+  now: number,
+): boolean {
+  if (hours === null || hours <= 0) {
+    return false;
+  }
+  const lastActivity = Math.max(
+    getLastDrinkTimestamp(session),
+    session.start_time,
+  );
+  const thresholdMs = hours * 60 * 60 * 1000;
+  return now - lastActivity >= thresholdMs;
+}
+
+/**
+ * Produce the finalized form of a session that is being auto-closed: no longer
+ * ongoing, `end_time` stamped to the last drink (fallback `start_time`), and
+ * flagged with the `auto_closed` audit marker. Pure — returns a new object and
+ * does not mutate the input. The actual persistence/close wiring lands in PR3
+ * (client) and PR2 (server sweep).
+ */
+function buildAutoClosedSession(session: DrinkingSession): DrinkingSession {
+  return {
+    ...session,
+    ongoing: false,
+    end_time: getLastDrinkTimestamp(session),
+    auto_closed: true,
+  };
+}
+
+/**
  * From a list of drinking sessions, extract a single session object.
  * If the list does not contain the session, return an empty session.
  */
@@ -907,6 +1011,7 @@ function getSessionTypeDescription(
 export {
   PlaceholderDrinks,
   addDrinksToList,
+  buildAutoClosedSession,
   calculateAvailableUnits,
   calculateSessionLength,
   calculateTotalUnits,
@@ -917,8 +1022,10 @@ export {
   getDrinkingSessionData,
   getDrinkingSessionOnyxKey,
   getEarliestSessionStartTime,
+  getEffectiveAutoCloseHours,
   getEmptySession,
   getIconForSession,
+  getLastDrinkTimestamp,
   getLastSession,
   getOngoingSessionId,
   getSessionAddDrinksOptions,
@@ -933,6 +1040,7 @@ export {
   isDrinkTypeKey,
   isEmptySession,
   isRealtimeSession,
+  isSessionStale,
   modifySessionDrinks,
   removeDrinksFromList,
   sessionIsExpired,

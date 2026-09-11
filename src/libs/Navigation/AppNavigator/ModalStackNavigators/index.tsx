@@ -171,6 +171,9 @@ const SettingsModalStackNavigator =
     [SCREENS.SETTINGS.PREFERENCES.COLOR_PALETTE_CUSTOM]: () =>
       require<ReactComponentModule>('@screens/Settings/Preferences/CustomColorPaletteScreen')
         .default,
+    [SCREENS.SETTINGS.PREFERENCES.AUTO_CLOSE_SESSIONS]: () =>
+      require<ReactComponentModule>('@screens/Settings/Preferences/AutoCloseSessionsScreen')
+        .default,
     [SCREENS.SETTINGS.PRIVACY.ROOT]: () =>
       require<ReactComponentModule>('@screens/Settings/Privacy/PrivacyScreen')
         .default,

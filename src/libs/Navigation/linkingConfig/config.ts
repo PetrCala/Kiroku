@@ -128,6 +128,10 @@ const config: LinkingOptions<RootStackParamList>['config'] = {
               path: ROUTES.SETTINGS_COLOR_PALETTE_CUSTOM,
               exact: true,
             },
+            [SCREENS.SETTINGS.PREFERENCES.AUTO_CLOSE_SESSIONS]: {
+              path: ROUTES.SETTINGS_AUTO_CLOSE_SESSIONS,
+              exact: true,
+            },
             [SCREENS.SETTINGS.PRIVACY.ROOT]: {
               path: ROUTES.SETTINGS_PRIVACY,
               exact: true,
