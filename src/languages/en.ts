@@ -24,6 +24,7 @@ import type {
   FriendCountParams,
   LastSessionSummaryParams,
   OnboardingStepCounterParams,
+  QuickAddDrinkParams,
   RelativeTimeAgoParams,
   SessionConfirmTimezoneChangeParams,
   SessionStartTimeParams,
@@ -1524,13 +1525,17 @@ export default {
       message:
         "We couldn't load your sessions. Reconnect and they'll show up here.",
     },
+    liveSessionCard: {
+      label: 'Live session',
+      open: 'Open',
+      // Units can be fractional ("0.5 units"), so only exactly 1 is singular.
+      units: ({unitCount}: UnitCountParams) =>
+        `${unitCount} ${unitCount === 1 ? 'unit' : 'units'}`,
+      a11y: ({unitCount}: UnitCountParams) =>
+        `Open your live session, ${unitCount} ${unitCount === 1 ? 'unit' : 'units'} so far`,
+      addDrink: ({drinkName}: QuickAddDrinkParams) => `Add one: ${drinkName}`,
+    },
     banners: {
-      inSession: {
-        label: 'In session',
-        body: 'Tap to return to your session',
-        resume: 'Resume',
-        a11y: 'You are in a session. Tap to return to it.',
-      },
       lastSession: {
         label: 'Last session',
         summary: ({when, units}: LastSessionSummaryParams) =>
