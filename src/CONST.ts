@@ -110,9 +110,10 @@ const CONST = {
     INACTIVE: 'inactive',
   },
   APP_IN_BETA: true,
-  // Static feature flags. Read via `FeatureFlags.isEnabled(name)` from
-  // `@libs/FeatureFlags` — never read this object directly at call sites so the
-  // backing source can later swap to Onyx/remote-config without churn.
+  // Compile-time feature-flag defaults. Read through `FeatureFlags.isEnabled`
+  // or `useFeatureFlag`, never directly: a remote override in the global config
+  // (`config/feature_flags/<FLAG>`) wins over these. See
+  // contributingGuides/FEATURE_FLAGS.md.
   FEATURES: {
     BADGES: false,
     FULLSCREEN_CALENDAR: true,
