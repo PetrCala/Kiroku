@@ -3,7 +3,6 @@ import {Alert, Platform, PermissionsAndroid, Linking} from 'react-native';
 import type {
   Permission as RNPermission,
   PermissionStatus as RNPermissionStatus,
-  NotificationsResponse,
 } from 'react-native-permissions';
 import {request, requestNotifications} from 'react-native-permissions';
 import getPlatform from '@libs/getPlatform';
@@ -99,9 +98,9 @@ const requestPermissionIOS = async (
 };
 
 const requestNotificationsPermissionIOS =
-  async (): Promise<NotificationsResponse> => {
+  async (): Promise<RNPermissionStatus> => {
     const response = await requestNotifications(['alert', 'sound']);
-    return response; // response.status === RESULTS.GRANTED;
+    return response.status;
   };
 
 /**
