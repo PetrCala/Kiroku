@@ -12,6 +12,8 @@ type IsChromeIOS = () => boolean;
 
 type IsSafari = () => boolean;
 
+type IsAutomated = () => boolean;
+
 type OpenRouteInDesktopApp = (
   shortLivedAuthToken?: string,
   email?: string,
@@ -26,5 +28,6 @@ export type {
   IsMobileWebKit,
   IsSafari,
   IsChromeIOS,
+  IsAutomated,
   OpenRouteInDesktopApp,
 };

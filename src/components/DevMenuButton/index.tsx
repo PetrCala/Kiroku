@@ -8,13 +8,14 @@ import useLocalize from '@hooks/useLocalize';
 import useSafeAreaInsets from '@hooks/useSafeAreaInsets';
 import useTheme from '@hooks/useTheme';
 import useThemeStyles from '@hooks/useThemeStyles';
+import {isAutomated} from '@libs/Browser';
 import variables from '@styles/variables';
 import toggleTestToolsModal from '@userActions/TestTool';
 import CONST from '@src/CONST';
 
 /**
  * A small floating button pinned to the top-right corner that opens the Test
- * Tools modal — the tappable equivalent of the existing 4-finger-tap gesture
+ * Tools modal: the tappable equivalent of the existing 4-finger-tap gesture
  * and the native shake-menu "Open Test Preferences" item.
  *
  * Gated to non-production builds: in production `isDevelopment` is false and the
@@ -22,6 +23,10 @@ import CONST from '@src/CONST';
  * same `IS_TEST_TOOLS_MODAL_OPEN` Onyx flag the other triggers use, so the
  * `<TestToolsModal />` mounted in ScreenWrapper picks it up regardless of which
  * screen is on top.
+ *
+ * Also hidden under browser automation: the e2e suite runs against DEV preview
+ * builds, and the button sits over the header's right slot (e.g. the session
+ * summary's edit button), intercepting clicks production users never see.
  */
 function DevMenuButton() {
   const {isDevelopment} = useEnvironment();
@@ -30,7 +35,7 @@ function DevMenuButton() {
   const styles = useThemeStyles();
   const {translate} = useLocalize();
 
-  if (!isDevelopment) {
+  if (!isDevelopment || isAutomated()) {
     return null;
   }
 

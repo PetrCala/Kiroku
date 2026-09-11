@@ -3,6 +3,7 @@ import CONST from '@src/CONST';
 import ROUTES from '@src/ROUTES';
 import type {
   GetBrowser,
+  IsAutomated,
   IsChromeIOS,
   IsMobile,
   IsMobileChrome,
@@ -94,6 +95,12 @@ const isChromeIOS: IsChromeIOS = () => {
 const isSafari: IsSafari = () => getBrowser() === 'safari' || isMobileSafari();
 
 /**
+ * Whether the page is driven by browser automation (Playwright, Selenium, or
+ * any WebDriver client), which sets `navigator.webdriver` to true.
+ */
+const isAutomated: IsAutomated = () => window.navigator.webdriver === true;
+
+/**
  * The session information needs to be passed to the Desktop app, and the only way to do that is by using query params. There is no other way to transfer the data.
  */
 const openRouteInDesktopApp: OpenRouteInDesktopApp = (
@@ -150,5 +157,6 @@ export {
   isSafari,
   isMobileChrome,
   isChromeIOS,
+  isAutomated,
   openRouteInDesktopApp,
 };

@@ -1,5 +1,6 @@
 import type {
   GetBrowser,
+  IsAutomated,
   IsChromeIOS,
   IsMobile,
   IsMobileChrome,
@@ -23,6 +24,8 @@ const isChromeIOS: IsChromeIOS = () => false;
 
 const isSafari: IsSafari = () => false;
 
+const isAutomated: IsAutomated = () => false;
+
 const openRouteInDesktopApp: OpenRouteInDesktopApp = () => {};
 
 export {
@@ -33,5 +36,6 @@ export {
   isSafari,
   isMobileChrome,
   isChromeIOS,
+  isAutomated,
   openRouteInDesktopApp,
 };
