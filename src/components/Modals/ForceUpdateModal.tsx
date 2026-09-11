@@ -45,7 +45,7 @@ function ForceUpdateModal() {
                 styles.p5,
                 styles.textPlainColor,
               ]}>
-              {translate('forceUpdate.text', {platform: currentPlatform})}
+              {translate('forceUpdate.text')}
             </Text>
             {storeLink && (
               <Text style={[styles.textLarge, styles.link]} onPress={onPress}>

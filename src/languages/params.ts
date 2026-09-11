@@ -1,5 +1,4 @@
 import type {DrinkingSessionId} from '@src/types/onyx';
-import type Platform from '@libs/getPlatform/types';
 
 type BadgesDayCountParams = {
   count: number;
@@ -19,10 +18,6 @@ type DiscardSessionParams = {
 
 type DrinkingSessionsParams = {
   sessionsCount: number;
-};
-
-type ForceUpdateTextParams = {
-  platform: Platform;
 };
 
 type ForgotPasswordSuccessParams = {
@@ -140,7 +135,6 @@ export type {
   ConfirmWithProviderPromptParams,
   DiscardSessionParams,
   DrinkingSessionsParams,
-  ForceUpdateTextParams,
   ForgotPasswordSuccessParams,
   FriendRequestsCountParams,
   LastSessionSummaryParams,

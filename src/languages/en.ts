@@ -1,4 +1,3 @@
-import CONST from '@src/CONST';
 import Str from '@libs/common/str';
 import type {
   CharacterLimitParams,
@@ -16,7 +15,6 @@ import type {
   ConfirmWithProviderPromptParams,
   DiscardSessionParams,
   DrinkingSessionsParams,
-  ForceUpdateTextParams,
   ForgotPasswordSuccessParams,
   FriendRequestsCountParams,
   LastSessionSummaryParams,
@@ -1591,8 +1589,7 @@ export default {
   },
   forceUpdate: {
     heading: 'App Update Required',
-    text: ({platform}: ForceUpdateTextParams) =>
-      `This version of the app is now discontinued. Please update to the latest version using the link below${platform === CONST.PLATFORM.IOS ? ' or from within the TestFlight app' : ''}.`,
+    text: 'This version of the app is no longer supported. Update to the latest version using the link below.',
     link: 'Update Now',
   },
   login: {
