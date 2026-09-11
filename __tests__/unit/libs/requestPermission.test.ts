@@ -1,3 +1,5 @@
+/* eslint-disable @typescript-eslint/naming-convention -- jest mock factory keys (__esModule) are dictated by Node module shape */
+
 /**
  * Tests for the native permission request helper
  * (src/libs/Permissions/requestPermission.ts). react-native-permissions is
@@ -62,6 +64,10 @@ describe('requestPermission on iOS', () => {
     await expect(requestPermission('notifications')).resolves.toBe(false);
 
     expect(mockAlert).toHaveBeenCalledTimes(1);
-    expect(mockAlert.mock.calls[0]?.[0]).toBe('permissions.permissionDenied');
+    expect(mockAlert).toHaveBeenCalledWith(
+      'permissions.permissionDenied',
+      'permissions.appNeedsAccess',
+      expect.any(Array),
+    );
   });
 });
