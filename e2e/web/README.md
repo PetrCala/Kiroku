@@ -22,6 +22,14 @@ flows the web surface can exercise:
   offline indicator below.
 - **Desktop phone frame** (`desktop-frame.spec.ts`) — the wide-window centered
   phone-frame layout (#1219 / #1224).
+- **Idempotency keys** (`idempotency.spec.ts`): session writes carry an
+  `Idempotency-Key` header (reads don't), and a save whose answer is lost on the
+  way back is retried with the same key, answered from the server's record
+  (`Idempotent-Replayed: true`) and applied once: on a plain retry, after a
+  restart, and when the retry races its still-running original. An API-level
+  spec covers the 429 a repeat gets while the original still runs and the 422
+  for a key reused on another route (#1663). Needs a kiroku-api with
+  kiroku-api #145; against an older one the specs skip.
 
 Several flows rely on `testID`s added to app components (the drink steppers, the
 session unit headline, the summary edit button, and calendar day cells), which
