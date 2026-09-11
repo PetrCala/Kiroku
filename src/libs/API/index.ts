@@ -1,5 +1,6 @@
 import type {OnyxUpdate} from 'react-native-onyx';
 import Onyx from 'react-native-onyx';
+import Str from '@libs/common/str';
 import Log from '@libs/Log';
 import * as Middleware from '@libs/Middleware';
 import * as NetworkStore from '@libs/Network/NetworkStore';
@@ -108,6 +109,12 @@ function write<TCommand extends WriteCommand>(
     command,
     data: {
       ...data,
+
+      // One key per write, minted here and persisted with the request, so every
+      // retry and every replay after an app restart carries the same key.
+      // kiroku-api answers a repeat from its record instead of applying the
+      // write again. HttpUtils sends it as a header, never in the body.
+      idempotencyKey: Str.guid(),
 
       // This should be removed once we are no longer using deprecatedAPI https://github.com/Expensify/Expensify/issues/215650
       shouldRetry: true,
