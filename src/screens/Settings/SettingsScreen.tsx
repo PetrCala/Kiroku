@@ -164,6 +164,16 @@ function SettingsScreen() {
       sectionTranslationKey: 'settingsScreen.general',
       items: [
         {
+          translationKey: 'supporter.menuEntry',
+          icon: KirokuIcons.Beer,
+          routeName: ROUTES.SETTINGS_SUPPORT,
+        },
+        {
+          translationKey: 'settingsScreen.shareTheApp',
+          icon: KirokuIcons.Share,
+          routeName: ROUTES.SETTINGS_APP_SHARE,
+        },
+        {
           translationKey: 'settingsScreen.reportBug',
           icon: KirokuIcons.Bug,
           routeName: ROUTES.SETTINGS_REPORT_BUG,
@@ -179,19 +189,9 @@ function SettingsScreen() {
           routeName: ROUTES.SETTINGS_HELP,
         },
         {
-          translationKey: 'settingsScreen.shareTheApp',
-          icon: KirokuIcons.Share,
-          routeName: ROUTES.SETTINGS_APP_SHARE,
-        },
-        {
           translationKey: 'settingsScreen.about',
           icon: KirokuIcons.Info,
           routeName: ROUTES.SETTINGS_ABOUT,
-        },
-        {
-          translationKey: 'supporter.menuEntry',
-          icon: KirokuIcons.Beer,
-          routeName: ROUTES.SETTINGS_SUPPORT,
         },
       ],
     };
