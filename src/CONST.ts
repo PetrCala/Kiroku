@@ -882,6 +882,12 @@ const CONST = {
     MAX_PENDING_TIME_MS: 10 * 1000,
     RECHECK_INTERVAL_MS: 60 * 1000,
     MAX_REQUEST_RETRIES: 10,
+    // Once the request queue has dropped a live-session flush
+    // MAX_LIVE_FLUSH_DROPS times in a row (see `DrinkingSession`), the
+    // automatic re-arm slows down to one flush per cooldown, doubling from the
+    // first value up to the second, instead of stopping until the next edit.
+    LIVE_FLUSH_DROP_COOLDOWN_MS: 30 * 1000,
+    LIVE_FLUSH_DROP_COOLDOWN_MAX_MS: 5 * 60 * 1000,
     // Upper bound on how long a kiroku-api request will wait for the Firebase ID
     // token before failing fast. `getIdToken()` is instant while the cached
     // token is valid, but a near-expiry refresh has no built-in timeout and can

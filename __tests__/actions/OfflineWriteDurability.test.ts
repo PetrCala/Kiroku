@@ -114,6 +114,8 @@ type MutableNetworkTuning = {
   MIN_RETRY_WAIT_TIME_MS: number;
   MAX_RANDOM_RETRY_WAIT_TIME_MS: number;
   MAX_RETRY_WAIT_TIME_MS: number;
+  LIVE_FLUSH_DROP_COOLDOWN_MS: number;
+  LIVE_FLUSH_DROP_COOLDOWN_MAX_MS: number;
 };
 const networkTuning = CONST.NETWORK as unknown as MutableNetworkTuning;
 const originalTuning: MutableNetworkTuning = {
@@ -121,7 +123,13 @@ const originalTuning: MutableNetworkTuning = {
   MIN_RETRY_WAIT_TIME_MS: networkTuning.MIN_RETRY_WAIT_TIME_MS,
   MAX_RANDOM_RETRY_WAIT_TIME_MS: networkTuning.MAX_RANDOM_RETRY_WAIT_TIME_MS,
   MAX_RETRY_WAIT_TIME_MS: networkTuning.MAX_RETRY_WAIT_TIME_MS,
+  LIVE_FLUSH_DROP_COOLDOWN_MS: networkTuning.LIVE_FLUSH_DROP_COOLDOWN_MS,
+  LIVE_FLUSH_DROP_COOLDOWN_MAX_MS:
+    networkTuning.LIVE_FLUSH_DROP_COOLDOWN_MAX_MS,
 };
+// The slow re-arm after the live-flush drop cap: 300 ms doubling to 1.2 s in
+// tests instead of 30 s doubling to 5 min.
+const TEST_FLUSH_COOLDOWN_MS = 300;
 const TEST_MAX_RETRIES = 2;
 
 function okResponse(): Promise<unknown> {
@@ -201,6 +209,8 @@ beforeAll(() => {
   networkTuning.MIN_RETRY_WAIT_TIME_MS = 1;
   networkTuning.MAX_RANDOM_RETRY_WAIT_TIME_MS = 2;
   networkTuning.MAX_RETRY_WAIT_TIME_MS = 4;
+  networkTuning.LIVE_FLUSH_DROP_COOLDOWN_MS = TEST_FLUSH_COOLDOWN_MS;
+  networkTuning.LIVE_FLUSH_DROP_COOLDOWN_MAX_MS = TEST_FLUSH_COOLDOWN_MS * 4;
 });
 
 afterAll(() => {
@@ -428,7 +438,7 @@ describe('Offline write durability (real write pipeline)', () => {
     expect(parkedAfter?.['sess-final']).toBeUndefined();
   });
 
-  it('re-arms a dropped live flush up to the cap, keeps the buffer, and recovers on the next edit', async () => {
+  it('re-arms a dropped live flush at full speed up to the cap, then only per cooldown, keeps the buffer, and recovers on the next edit', async () => {
     const live = DSUtils.getEmptySession({
       id: 'live-1',
       type: CONST.SESSION.TYPES.LIVE,
@@ -455,7 +465,7 @@ describe('Offline write durability (real write pipeline)', () => {
     expect(sync?.enqueuedAt).toBe(sync?.editedAt);
 
     // The server deterministically rejects it. Each drop re-arms the persist
-    // (failureData clears `enqueuedAt`), until the drop cap stops the loop.
+    // (failureData clears `enqueuedAt`), until the drop cap slows the loop.
     mockXhr.mockImplementation(() => httpFailure('400'));
     await setNetwork(false);
     await waitFor(async () => {
@@ -467,13 +477,25 @@ describe('Offline write durability (real write pipeline)', () => {
     await waitFor(() => PersistedRequests.getAll().length === 0);
     await settle();
 
-    // The re-arm loop stopped: no new request within another debounce window.
+    // The re-arm loop slowed down: nothing goes out inside the cooldown, then
+    // exactly one more flush, which is rejected too and doubles the cooldown.
     const callsAtCap = mockXhr.mock.calls.length;
     await new Promise<void>(resolve => {
-      setTimeout(resolve, 800);
+      setTimeout(resolve, TEST_FLUSH_COOLDOWN_MS / 3);
     });
     expect(mockXhr.mock.calls.length).toBe(callsAtCap);
     expect(PersistedRequests.getAll()).toHaveLength(0);
+    await waitFor(() => mockXhr.mock.calls.length === callsAtCap + 1, 3000);
+    await waitFor(async () => {
+      const current = await readOnyx<OngoingSessionSync>(
+        ONYXKEYS.ONGOING_SESSION_SYNC,
+      );
+      return current?.flushDropCount === 4;
+    }, 3000);
+    await new Promise<void>(resolve => {
+      setTimeout(resolve, TEST_FLUSH_COOLDOWN_MS);
+    });
+    expect(mockXhr.mock.calls.length).toBe(callsAtCap + 1);
 
     // The local buffer still holds the drink: nothing was wiped.
     const buffer = await readOnyx<DrinkingSession>(
@@ -733,7 +755,7 @@ describe('Offline write durability (real write pipeline)', () => {
     expect(edit?.note).toBe('ongoing slot rolled back');
   });
 
-  it('delivers every drink through the finalize after the live-flush drop cap is hit', async () => {
+  it('re-sends the live buffer on the cooldown once the server heals, with no new edit, and the finalize still delivers every drink', async () => {
     const live = DSUtils.getEmptySession({
       id: 'live-cap',
       type: CONST.SESSION.TYPES.LIVE,
@@ -764,18 +786,22 @@ describe('Offline write durability (real write pipeline)', () => {
     await settle();
     const flushesSent = mockXhr.mock.calls.length;
 
-    // The server heals, but nothing re-sends the live buffer on its own: the
-    // cap holds until the next edit or the finalize (pinned so a change to
-    // the re-arm policy is a deliberate one).
+    // The server heals: the slow re-arm re-sends the buffer by itself, and
+    // `syncedAt` catches up without the user touching anything.
     mockXhr.mockImplementation(() => okResponse());
-    await new Promise<void>(resolve => {
-      setTimeout(resolve, 1200);
-    });
-    expect(mockXhr.mock.calls.length).toBe(flushesSent);
+    await waitFor(async () => {
+      const current = await readOnyx<OngoingSessionSync>(
+        ONYXKEYS.ONGOING_SESSION_SYNC,
+      );
+      return (
+        current?.syncedAt !== undefined && current.syncedAt === current.editedAt
+      );
+    }, 5000);
     let sync = await readOnyx<OngoingSessionSync>(
       ONYXKEYS.ONGOING_SESSION_SYNC,
     );
-    expect(sync?.syncedAt ?? 0).toBeLessThan(sync?.editedAt ?? 0);
+    expect(mockXhr.mock.calls.length).toBeGreaterThan(flushesSent);
+    const flushesAfterHeal = mockXhr.mock.calls.length;
 
     // The finalize carries the full buffer, so the drink still reaches the
     // server and nothing is parked.
@@ -795,7 +821,7 @@ describe('Offline write durability (real write pipeline)', () => {
     );
     await waitFor(
       () =>
-        mockXhr.mock.calls.length > flushesSent &&
+        mockXhr.mock.calls.length > flushesAfterHeal &&
         PersistedRequests.getAll().length === 0,
     );
     await settle();

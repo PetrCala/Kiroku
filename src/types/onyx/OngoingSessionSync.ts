@@ -36,10 +36,11 @@ type OngoingSessionSync = {
   /**
    * How many enqueued live flushes in a row the request queue permanently
    * dropped (a deterministic server rejection; transient
-   * failures are never dropped). Caps the automatic re-arm in
-   * `maybeResumeLiveSessionPersist` so a payload the server always rejects
-   * cannot re-enqueue itself forever. Reset by the next local edit, since a
-   * new payload deserves a fresh budget.
+   * failures are never dropped). Past `MAX_LIVE_FLUSH_DROPS` the automatic
+   * re-arm in `maybeResumeLiveSessionPersist` slows down to one flush per
+   * cooldown (doubling with each further drop), so a payload the server
+   * always rejects cannot re-enqueue itself in a tight loop. Reset by the
+   * next local edit, since a new payload deserves a fresh budget.
    */
   flushDropCount?: number;
 };
