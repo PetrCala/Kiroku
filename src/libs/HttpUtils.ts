@@ -360,7 +360,7 @@ function xhr(
   // auth. KIROKU_ROUTES is typed exhaustively, so a miss here means an
   // undeclared command, e.g. a request persisted by an older build. Reject with
   // the 404 the retired legacy endpoint returned: SequentialQueue drops a
-  // non-retryable 4xx once its retry budget runs out, while a status-less
+  // non-retryable 4xx at once, while a status-less
   // error would stay queued and stall every write behind it.
   const kirokuRoute = getKirokuRoute(command);
   if (!kirokuRoute) {
