@@ -38,6 +38,7 @@ import type {
   DrinkingSession,
   DrinksToUnits,
   OngoingSessionSync,
+  Request,
   UnsyncedSessionWriteList,
 } from '@src/types/onyx';
 
@@ -500,5 +501,317 @@ describe('Offline write durability (real write pipeline)', () => {
     }, 5000);
     sync = await readOnyx<OngoingSessionSync>(ONYXKEYS.ONGOING_SESSION_SYNC);
     expect(sync?.flushDropCount).toBeUndefined();
+  });
+
+  it.each(['400', '401', '403', '404', '409', '413', '422'])(
+    'sends a write exactly once on a deterministic %s and clears the retry state',
+    async status => {
+      await setNetwork(true);
+      const sessionId = `sess-drop-${status}`;
+      const session = DSUtils.getEmptySession({
+        id: sessionId,
+        type: CONST.SESSION.TYPES.LIVE,
+        ongoing: false,
+      });
+      API.write(
+        WRITE_COMMANDS.UPDATE_SESSION,
+        {sessionId, session, sessionIsLive: false},
+        {},
+      );
+      await settle();
+
+      mockXhr.mockImplementation(() => httpFailure(status));
+      await setNetwork(false);
+      await waitFor(() => PersistedRequests.getAll().length === 0);
+      await SequentialQueue.waitForIdle();
+      // Give a would-be retry every chance to fire before asserting.
+      await new Promise<void>(resolve => {
+        setTimeout(resolve, 50);
+      });
+
+      expect(mockXhr).toHaveBeenCalledTimes(1);
+      // The drop cleared the throttle: no armed timer, no leftover wait.
+      expect(
+        SequentialQueue.sequentialQueueRequestThrottle.getLastRequestWaitTime(),
+      ).toBe(0);
+      expect(PersistedRequests.getOngoingRequest()).toBeNull();
+      expect(await readOnyx<unknown[]>(ONYXKEYS.PERSISTED_REQUESTS)).toEqual(
+        [],
+      );
+    },
+  );
+
+  it('drops a deterministic 4xx that lands on a retry attempt, without a leftover rolled-back copy or a second rollback', async () => {
+    await setNetwork(true);
+    const session = DSUtils.getEmptySession({
+      id: 'sess-late-reject',
+      type: CONST.SESSION.TYPES.LIVE,
+      ongoing: false,
+    });
+    const behind = DSUtils.getEmptySession({
+      id: 'sess-behind',
+      type: CONST.SESSION.TYPES.LIVE,
+      ongoing: false,
+    });
+    API.write(
+      WRITE_COMMANDS.UPDATE_SESSION,
+      {sessionId: 'sess-late-reject', session, sessionIsLive: false},
+      {
+        failureData: [
+          {
+            onyxMethod: Onyx.METHOD.MERGE,
+            key: ONYXKEYS.EDIT_SESSION_DATA,
+            value: {note: 'rolled back late'},
+          },
+        ],
+      },
+    );
+    API.write(
+      WRITE_COMMANDS.UPDATE_SESSION,
+      {sessionId: 'sess-behind', session: behind, sessionIsLive: false},
+      {},
+    );
+    await settle();
+
+    // Two transient failures first (the request is rolled back into the queue
+    // with `isRollbacked` each time), then the server rejects it for good.
+    const updateSpy = jest.spyOn(Onyx, 'update');
+    let attempts = 0;
+    mockXhr.mockImplementation(
+      (_command: string, data: Record<string, unknown>) => {
+        if (data.sessionId !== 'sess-late-reject') {
+          return okResponse();
+        }
+        attempts += 1;
+        return attempts <= 2 ? httpFailure('503') : httpFailure('422');
+      },
+    );
+    await setNetwork(false);
+    await waitFor(() => PersistedRequests.getAll().length === 0);
+    await SequentialQueue.waitForIdle();
+    await settle();
+
+    const sentSessionIds = mockXhr.mock.calls.map(
+      ([, data]) => (data as Record<string, unknown>).sessionId,
+    );
+    expect(sentSessionIds).toEqual([
+      'sess-late-reject',
+      'sess-late-reject',
+      'sess-late-reject',
+      'sess-behind',
+    ]);
+    // The rolled-back copy was removed along with the request: nothing is
+    // left in memory, on disk, or in the ongoing slot.
+    expect(PersistedRequests.getAll()).toEqual([]);
+    expect(PersistedRequests.getOngoingRequest()).toBeNull();
+    expect(await readOnyx<unknown[]>(ONYXKEYS.PERSISTED_REQUESTS)).toEqual([]);
+    // Onyx hands a cleared key back as null or undefined depending on the
+    // cache state; either means the ongoing slot is empty.
+    expect(
+      (await readOnyx<unknown>(ONYXKEYS.PERSISTED_ONGOING_REQUESTS)) ?? null,
+    ).toBeNull();
+    // Failure data ran exactly once, and only for the rejected write.
+    const rollbackApplications = updateSpy.mock.calls.filter(([updates]) =>
+      JSON.stringify(updates).includes('rolled back late'),
+    );
+    expect(rollbackApplications).toHaveLength(1);
+    updateSpy.mockRestore();
+  });
+
+  it('sends a write pushed while the rejected request is in flight right after the drop, and settles waitForIdle', async () => {
+    await setNetwork(true);
+    const inFlight = DSUtils.getEmptySession({
+      id: 'sess-inflight',
+      type: CONST.SESSION.TYPES.LIVE,
+      ongoing: false,
+    });
+    const pushedLater = DSUtils.getEmptySession({
+      id: 'sess-pushed-later',
+      type: CONST.SESSION.TYPES.LIVE,
+      ongoing: false,
+    });
+    API.write(
+      WRITE_COMMANDS.UPDATE_SESSION,
+      {sessionId: 'sess-inflight', session: inFlight, sessionIsLive: false},
+      {},
+    );
+    await settle();
+
+    // Hold the first request open so a second write can be pushed while the
+    // queue is running.
+    let rejectInFlight: ((error: unknown) => void) | undefined;
+    mockXhr.mockImplementation(
+      (_command: string, data: Record<string, unknown>) =>
+        data.sessionId === 'sess-inflight'
+          ? new Promise<never>((_resolve, reject) => {
+              rejectInFlight = reject;
+            })
+          : okResponse(),
+    );
+    await setNetwork(false);
+    await waitFor(() => rejectInFlight !== undefined);
+    expect(SequentialQueue.isRunning()).toBe(true);
+
+    API.write(
+      WRITE_COMMANDS.UPDATE_SESSION,
+      {
+        sessionId: 'sess-pushed-later',
+        session: pushedLater,
+        sessionIsLive: false,
+      },
+      {},
+    );
+    await settle();
+    expect(queuedCommands()).toEqual([WRITE_COMMANDS.UPDATE_SESSION]);
+    expect(mockXhr).toHaveBeenCalledTimes(1);
+
+    rejectInFlight?.(new HttpsError({message: 'HTTP 422', status: '422'}));
+    await waitFor(() => PersistedRequests.getAll().length === 0);
+    await SequentialQueue.waitForIdle();
+    await settle();
+
+    const sentSessionIds = mockXhr.mock.calls.map(
+      ([, data]) => (data as Record<string, unknown>).sessionId,
+    );
+    expect(sentSessionIds).toEqual(['sess-inflight', 'sess-pushed-later']);
+    expect(SequentialQueue.isRunning()).toBe(false);
+    expect(PersistedRequests.getOngoingRequest()).toBeNull();
+  });
+
+  it('clears the persisted ongoing slot when a persistWhenOngoing request is dropped', async () => {
+    await setNetwork(true);
+    const session = DSUtils.getEmptySession({
+      id: 'sess-ongoing-slot',
+      type: CONST.SESSION.TYPES.LIVE,
+      ongoing: false,
+    });
+    const request: Request = {
+      command: WRITE_COMMANDS.UPDATE_SESSION,
+      data: {
+        sessionId: 'sess-ongoing-slot',
+        session,
+        sessionIsLive: false,
+        apiRequestType: CONST.API_REQUEST_TYPE.WRITE,
+      },
+      persistWhenOngoing: true,
+      failureData: [
+        {
+          onyxMethod: Onyx.METHOD.MERGE,
+          key: ONYXKEYS.EDIT_SESSION_DATA,
+          value: {note: 'ongoing slot rolled back'},
+        },
+      ],
+    };
+    SequentialQueue.push(request);
+    await settle();
+    expect(queuedCommands()).toEqual([WRITE_COMMANDS.UPDATE_SESSION]);
+
+    let rejectInFlight: ((error: unknown) => void) | undefined;
+    mockXhr.mockImplementation(
+      () =>
+        new Promise<never>((_resolve, reject) => {
+          rejectInFlight = reject;
+        }),
+    );
+    await setNetwork(false);
+    await waitFor(() => rejectInFlight !== undefined);
+    await settle();
+    // While in flight the request lives in the ongoing slot, on disk too.
+    expect(
+      await readOnyx<Request>(ONYXKEYS.PERSISTED_ONGOING_REQUESTS),
+    ).toMatchObject({command: WRITE_COMMANDS.UPDATE_SESSION});
+
+    rejectInFlight?.(new HttpsError({message: 'HTTP 403', status: '403'}));
+    await waitFor(
+      async () =>
+        (await readOnyx<Request>(ONYXKEYS.PERSISTED_ONGOING_REQUESTS)) == null,
+    );
+    await SequentialQueue.waitForIdle();
+    expect(PersistedRequests.getAll()).toEqual([]);
+    expect(await readOnyx<unknown[]>(ONYXKEYS.PERSISTED_REQUESTS)).toEqual([]);
+    const edit = await readOnyx<DrinkingSession>(ONYXKEYS.EDIT_SESSION_DATA);
+    expect(edit?.note).toBe('ongoing slot rolled back');
+  });
+
+  it('delivers every drink through the finalize after the live-flush drop cap is hit', async () => {
+    const live = DSUtils.getEmptySession({
+      id: 'live-cap',
+      type: CONST.SESSION.TYPES.LIVE,
+      ongoing: true,
+    });
+    await Onyx.set(ONYXKEYS.ONGOING_SESSION_DATA, live);
+    await settle();
+    await setNetwork(true);
+    DS.updateDrinks(
+      'live-cap',
+      CONST.DRINKS.KEYS.BEER,
+      1,
+      CONST.DRINKS.ACTIONS.ADD,
+      DRINKS_TO_UNITS,
+    );
+    await waitFor(() => PersistedRequests.getAll().length === 1, 5000);
+
+    // Three rejections in a row exhaust the automatic re-arm.
+    mockXhr.mockImplementation(() => httpFailure('422'));
+    await setNetwork(false);
+    await waitFor(async () => {
+      const current = await readOnyx<OngoingSessionSync>(
+        ONYXKEYS.ONGOING_SESSION_SYNC,
+      );
+      return current?.flushDropCount === 3;
+    }, 20000);
+    await waitFor(() => PersistedRequests.getAll().length === 0);
+    await settle();
+    const flushesSent = mockXhr.mock.calls.length;
+
+    // The server heals, but nothing re-sends the live buffer on its own: the
+    // cap holds until the next edit or the finalize (pinned so a change to
+    // the re-arm policy is a deliberate one).
+    mockXhr.mockImplementation(() => okResponse());
+    await new Promise<void>(resolve => {
+      setTimeout(resolve, 1200);
+    });
+    expect(mockXhr.mock.calls.length).toBe(flushesSent);
+    let sync = await readOnyx<OngoingSessionSync>(
+      ONYXKEYS.ONGOING_SESSION_SYNC,
+    );
+    expect(sync?.syncedAt ?? 0).toBeLessThan(sync?.editedAt ?? 0);
+
+    // The finalize carries the full buffer, so the drink still reaches the
+    // server and nothing is parked.
+    const buffer = await readOnyx<DrinkingSession>(
+      ONYXKEYS.ONGOING_SESSION_DATA,
+    );
+    expect(Object.keys(buffer?.drinks ?? {})).toHaveLength(1);
+    if (!buffer) {
+      throw new Error('the live buffer should still hold the session');
+    }
+    await DS.saveDrinkingSessionData(
+      ME,
+      {...buffer, ongoing: false},
+      'live-cap',
+      ONYXKEYS.ONGOING_SESSION_DATA,
+      true,
+    );
+    await waitFor(
+      () =>
+        mockXhr.mock.calls.length > flushesSent &&
+        PersistedRequests.getAll().length === 0,
+    );
+    await settle();
+    const [, finalizeData] = mockXhr.mock.calls.at(-1) as [
+      string,
+      Record<string, unknown>,
+    ];
+    expect(finalizeData.sessionId).toBe('live-cap');
+    expect(
+      Object.keys((finalizeData.session as DrinkingSession).drinks ?? {}),
+    ).toHaveLength(1);
+    const parked = await readOnyx<UnsyncedSessionWriteList>(
+      ONYXKEYS.UNSYNCED_SESSION_WRITES,
+    );
+    expect(parked?.['live-cap']).toBeUndefined();
+    sync = await readOnyx<OngoingSessionSync>(ONYXKEYS.ONGOING_SESSION_SYNC);
+    expect(sync).toBeUndefined();
   });
 });
