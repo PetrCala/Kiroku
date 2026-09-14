@@ -85,7 +85,10 @@ function DayComponent({
           {isToday ? (
             <View
               pointerEvents="none"
-              style={styles.sessionsCalendarTodayRing}
+              style={[
+                styles.sessionsCalendarTodayRing,
+                StyleUtils.getSessionsCalendarTodayRingStyle(marking, afStreak),
+              ]}
             />
           ) : null}
         </View>

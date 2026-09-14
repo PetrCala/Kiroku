@@ -134,6 +134,29 @@ function getCalendarAlcoholFreeTint(
   };
 }
 
+// Normalised RGB distance below which two colors read as the same hue at
+// tile size: the Brand palette's Light swatch is the accent yellow itself, and
+// Classic's pure yellow sits just off it, so an accent ring on either tile
+// would vanish.
+const SIMILAR_HEX_THRESHOLD = 0.25;
+
+/**
+ * Whether two hex colors are close enough (Euclidean RGB distance, normalised
+ * to 0..1) that one drawn on the other would not read. Non-hex input is
+ * treated as not similar.
+ */
+function isSimilarHex(a: string, b: string): boolean {
+  const ra = parseHex(a);
+  const rb = parseHex(b);
+  if (!ra || !rb) {
+    return false;
+  }
+  const distance = Math.sqrt(
+    (ra.r - rb.r) ** 2 + (ra.g - rb.g) ** 2 + (ra.b - rb.b) ** 2,
+  );
+  return distance / (Math.sqrt(3) * 255) < SIMILAR_HEX_THRESHOLD;
+}
+
 export type {PaletteId, CalendarAlcoholFreeTint};
 export {
   CALENDAR_AF_STREAK_CAP,
@@ -143,6 +166,7 @@ export {
   getPaletteIdFromColors,
   resolvePalette,
   isLightHex,
+  isSimilarHex,
   getCalendarAlcoholFreeTint,
   getDerivedSwatchBorderColor,
 };
