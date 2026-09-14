@@ -59,6 +59,6 @@ Specialized workflows are documented in dedicated guides:
 [main README]: https://github.com/PetrCala/Kiroku/blob/master/README.md
 [technology README]: https://github.com/PetrCala/Kiroku/blob/master/contributingGuides/TECHNOLOGY.md
 [deploying guide]: https://github.com/PetrCala/Kiroku/blob/master/contributingGuides/philosophies/DEPLOYING.md
-[Discord invitation]: https://discord.gg/mv8zcQz5
+[Discord invitation]: https://discord.gg/PjvUFkuwMv
 [icon update guide]: https://github.com/PetrCala/Kiroku/blob/master/scripts/ICON_UPDATE.md
 [ios dev guide]: https://github.com/PetrCala/Kiroku/blob/master/contributingGuides/IOS_DEVELOPMENT.md
