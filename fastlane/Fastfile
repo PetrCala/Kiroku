@@ -46,7 +46,7 @@ KIROKU_REVIEW_NOTES = <<~NOTES.freeze
   - Firebase (Google): Authentication (email/password, Sign in with Apple, Google Sign-In), Realtime Database and Cloud Storage for user data and profile photos, Cloud Functions for our backend API, and Crashlytics and Performance Monitoring for crash and performance reports (users can turn these off in Settings > Privacy).
   - Google Cloud Vision SafeSearch: screens uploaded profile photos for explicit content. There are no generative AI features.
   - RevenueCat, on top of Apple In-App Purchase, for the tip jar.
-  - Apple Core Location, only if the user turns on Settings > Privacy > Tag drinks with location (off by default).
+  - Apple Core Location, to tag drinks with where they were logged, only if the user allows it. The first live session shows a one-time explanation whose single Continue button opens the iOS permission dialog.
   No advertising or analytics SDKs.
 
   5. REGIONS

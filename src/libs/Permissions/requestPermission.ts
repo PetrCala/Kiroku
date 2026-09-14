@@ -106,9 +106,15 @@ const requestNotificationsPermissionIOS =
 /**
  * Requests a specific permission.
  * @param permissionType - The type of permission to request.
+ * @param options.shouldAlertOnDenial - Whether to follow a denial with an alert
+ * pointing to Settings. Pass false for optional features, where the user's
+ * "Don't Allow" is a fine answer and nagging them about it is not.
  * @returns A promise that resolves to a boolean indicating whether the permission was granted.
  */
-const requestPermission = async (permissionType: PermissionKey) => {
+const requestPermission = async (
+  permissionType: PermissionKey,
+  {shouldAlertOnDenial = true}: {shouldAlertOnDenial?: boolean} = {},
+) => {
   const currentPlatform = getPlatform();
   const permission: PermissionValue | undefined =
     permissionsMap[permissionType][currentPlatform];
@@ -131,7 +137,7 @@ const requestPermission = async (permissionType: PermissionKey) => {
 
   const isGranted = permissionIsGranted(status);
 
-  if (!isGranted) {
+  if (!isGranted && shouldAlertOnDenial) {
     const restrictedAccess = permissionIsDenied(status);
     if (restrictedAccess) {
       Alert.alert(
