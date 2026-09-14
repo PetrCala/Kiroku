@@ -39,11 +39,13 @@ export class DayOverviewPage {
     return this.page.getByRole('button', {name: 'Done', exact: true});
   }
 
-  // A session tile, identified by its `dayOverviewScreen.sessionWindow`
-  // accessibility label which embeds the session id.
+  // A session tile, exposed as a button named by its
+  // `dayOverviewScreen.sessionWindow` accessibility label, which embeds the
+  // session id. Matched exactly so one id can't match a longer one.
   sessionTile(sessionId: string): Locator {
     return this.page.getByRole('button', {
       name: `Drinking session: ${sessionId}`,
+      exact: true,
     });
   }
 
