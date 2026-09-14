@@ -116,7 +116,6 @@ const CONST = {
   // contributingGuides/FEATURE_FLAGS.md.
   FEATURES: {
     BADGES: false,
-    FULLSCREEN_CALENDAR: true,
     // Boot-splash logo fly-in / splash→logo handoff (#1196). Off so the in-app
     // logo plays its full assembly + liquid-fill entrance instead of being
     // masked by the flying splash logo.

@@ -23,9 +23,10 @@ jest.mock('react-native-onyx/dist/batch', () => ({
   default: (callback: () => void) => callback(),
 }));
 
-// A flag that defaults on and one that defaults off, from the real registry.
-const ON_BY_DEFAULT = 'FULLSCREEN_CALENDAR';
-const OFF_BY_DEFAULT = 'BADGES';
+// The flag under test, and a second one used only to check isolation between
+// flags. Both default off; a remote override is what turns either on.
+const FLAG = 'BADGES';
+const OTHER_FLAG = 'LOGO_FLY_IN';
 
 function configWith(featureFlags?: FeatureFlagOverrides): Config {
   return {
@@ -53,60 +54,58 @@ beforeEach(async () => {
 
 describe('FeatureFlags.isEnabled', () => {
   it('uses the compile-time default without a config', () => {
-    expect(CONST.FEATURES[ON_BY_DEFAULT]).toBe(true);
-    expect(CONST.FEATURES[OFF_BY_DEFAULT]).toBe(false);
-    expect(FeatureFlags.isEnabled(ON_BY_DEFAULT)).toBe(true);
-    expect(FeatureFlags.isEnabled(OFF_BY_DEFAULT)).toBe(false);
-  });
-
-  it('turns a flag off remotely (kill switch)', async () => {
-    await setConfig(configWith({[ON_BY_DEFAULT]: false}));
-    expect(FeatureFlags.isEnabled(ON_BY_DEFAULT)).toBe(false);
+    expect(CONST.FEATURES[FLAG]).toBe(false);
+    expect(FeatureFlags.isEnabled(FLAG)).toBe(false);
   });
 
   it('turns a flag on remotely', async () => {
-    await setConfig(configWith({[OFF_BY_DEFAULT]: true}));
-    expect(FeatureFlags.isEnabled(OFF_BY_DEFAULT)).toBe(true);
+    await setConfig(configWith({[FLAG]: true}));
+    expect(FeatureFlags.isEnabled(FLAG)).toBe(true);
+  });
+
+  it('turns a flag back off remotely (kill switch)', async () => {
+    await setConfig(configWith({[FLAG]: true}));
+    expect(FeatureFlags.isEnabled(FLAG)).toBe(true);
+
+    await setConfig(configWith({[FLAG]: false}));
+    expect(FeatureFlags.isEnabled(FLAG)).toBe(false);
   });
 
   it('ignores an override that is not a boolean', async () => {
     const config = configWith();
     // What a hand-edited RTDB value could look like.
     (config as {feature_flags: unknown}).feature_flags = {
-      [ON_BY_DEFAULT]: 'false',
-      [OFF_BY_DEFAULT]: 1,
+      [FLAG]: 'true',
+      [OTHER_FLAG]: 1,
     };
     await setConfig(config);
-    expect(FeatureFlags.isEnabled(ON_BY_DEFAULT)).toBe(true);
-    expect(FeatureFlags.isEnabled(OFF_BY_DEFAULT)).toBe(false);
+    expect(FeatureFlags.isEnabled(FLAG)).toBe(false);
+    expect(FeatureFlags.isEnabled(OTHER_FLAG)).toBe(false);
   });
 
   it('falls back to the default once the override is removed', async () => {
-    await setConfig(configWith({[ON_BY_DEFAULT]: false}));
-    expect(FeatureFlags.isEnabled(ON_BY_DEFAULT)).toBe(false);
+    await setConfig(configWith({[FLAG]: true}));
+    expect(FeatureFlags.isEnabled(FLAG)).toBe(true);
 
     await setConfig(configWith());
-    expect(FeatureFlags.isEnabled(ON_BY_DEFAULT)).toBe(true);
+    expect(FeatureFlags.isEnabled(FLAG)).toBe(false);
   });
 
   it('leaves other flags alone', async () => {
-    await setConfig(configWith({[ON_BY_DEFAULT]: false}));
-    expect(FeatureFlags.isEnabled(OFF_BY_DEFAULT)).toBe(false);
-    expect(FeatureFlags.isEnabled('LOGO_FLY_IN')).toBe(
-      CONST.FEATURES.LOGO_FLY_IN,
-    );
+    await setConfig(configWith({[FLAG]: true}));
+    expect(FeatureFlags.isEnabled(OTHER_FLAG)).toBe(CONST.FEATURES[OTHER_FLAG]);
   });
 });
 
 describe('useFeatureFlag', () => {
   it('re-renders when a remote override arrives and when it is removed', async () => {
-    const {result} = renderHook(() => useFeatureFlag(ON_BY_DEFAULT));
-    await waitFor(() => expect(result.current).toBe(true));
-
-    await setConfig(configWith({[ON_BY_DEFAULT]: false}));
+    const {result} = renderHook(() => useFeatureFlag(FLAG));
     await waitFor(() => expect(result.current).toBe(false));
 
-    await setConfig(configWith());
+    await setConfig(configWith({[FLAG]: true}));
     await waitFor(() => expect(result.current).toBe(true));
+
+    await setConfig(configWith());
+    await waitFor(() => expect(result.current).toBe(false));
   });
 });
