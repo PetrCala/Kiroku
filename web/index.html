@@ -22,6 +22,25 @@
     <% if (htmlWebpackPlugin.options.isStaging) { %>
     <meta name="robots" content="noindex, nofollow" />
     <% } %>
+    <% if (htmlWebpackPlugin.options.isProduction) { %>
+    <!--
+      Safari on iOS shows the App Store banner. app-argument hands the current
+      URL to the app on "Open", so an invite link (/add/...) lands on the
+      right screen. If the script does not run, the banner still shows without it.
+    -->
+    <meta
+      id="apple-itunes-app"
+      name="apple-itunes-app"
+      content="app-id=6670502234" />
+    <script>
+      document
+        .getElementById('apple-itunes-app')
+        .setAttribute(
+          'content',
+          'app-id=6670502234, app-argument=' + window.location.href,
+        );
+    </script>
+    <% } %>
 
     <style>
       html,
