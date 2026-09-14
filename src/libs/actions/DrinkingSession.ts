@@ -278,7 +278,7 @@ async function updateLocalData(
 // land after them.
 const LIVE_SESSION_PERSIST_DEBOUNCE_MS = 500;
 // How many consecutive permanent drops of an enqueued live flush (deterministic
-// server rejections after retries) the automatic re-arm tolerates before it
+// server rejections) the automatic re-arm tolerates before it
 // stops re-enqueueing the same payload. See `maybeResumeLiveSessionPersist`.
 const MAX_LIVE_FLUSH_DROPS = 3;
 let liveSessionPersistTimer: ReturnType<typeof setTimeout> | null = null;
@@ -444,7 +444,7 @@ function flushLiveSessionPersist(): void {
             },
           ],
           // Applied only if the request queue permanently drops this request
-          // (a deterministic server rejection after retries; transient
+          // (a deterministic server rejection; transient
           // failures are never dropped). Clearing `enqueuedAt` re-opens the
           // "never reached the queue" state, so the next hydration or edit
           // re-arms the persist and the following full-session flush re-sends
@@ -687,7 +687,7 @@ async function saveDrinkingSessionData(
         sessionToPersist,
       ),
       // Applied only if the request queue permanently drops this request (a
-      // deterministic server rejection after retries; transient failures are
+      // deterministic server rejection; transient failures are
       // never dropped). Nothing later re-sends a finalize, so park the full
       // payload; the next app run re-enqueues it once
       // (`resendUnsyncedSessionWrites`) and a successful delivery clears it.

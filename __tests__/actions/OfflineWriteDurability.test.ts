@@ -13,7 +13,8 @@
  *  - transient failures (network-layer, 5xx) can NEVER permanently drop a
  *    persisted write, no matter how many retries they burn; the request stays
  *    queued and delivers once conditions recover,
- *  - a deterministic 4xx still drops, but the session payload survives it:
+ *  - a deterministic 4xx drops at once (retryable 408 / 425 / 429 don't),
+ *    and the session payload survives it:
  *    a dropped live flush re-arms the debounced persist (capped), and a
  *    dropped finalize is parked in UNSYNCED_SESSION_WRITES and re-sent by
  *    the next app run.
@@ -281,6 +282,90 @@ describe('Offline write durability (real write pipeline)', () => {
     await setNetwork(true);
     await setNetwork(false);
     await waitFor(() => PersistedRequests.getAll().length === 0);
+  });
+
+  it.each(['408', '425', '429'])(
+    'keeps a queued write through retry exhaustion on a retryable %s, then delivers it',
+    async status => {
+      await setNetwork(true);
+      const sessionId = `sess-${status}`;
+      const session = DSUtils.getEmptySession({
+        id: sessionId,
+        type: CONST.SESSION.TYPES.LIVE,
+        ongoing: false,
+      });
+      API.write(
+        WRITE_COMMANDS.UPDATE_SESSION,
+        {sessionId, session, sessionIsLive: false},
+        {},
+      );
+      await settle();
+
+      // A timeout, a "too early" or throttling burns the whole retry budget...
+      mockXhr.mockImplementation(() => httpFailure(status));
+      await setNetwork(false);
+      await waitFor(() => mockXhr.mock.calls.length >= TEST_MAX_RETRIES + 1);
+      await settle();
+
+      // ...and, being transient, must not drop the write.
+      expect(queuedCommands()).toEqual([WRITE_COMMANDS.UPDATE_SESSION]);
+
+      mockXhr.mockImplementation(() => okResponse());
+      await setNetwork(true);
+      await setNetwork(false);
+      await waitFor(() => PersistedRequests.getAll().length === 0);
+    },
+  );
+
+  it('drops a deterministic 4xx after one attempt, rolls it back, and sends the write behind it', async () => {
+    await setNetwork(true);
+    const rejected = DSUtils.getEmptySession({
+      id: 'sess-rejected',
+      type: CONST.SESSION.TYPES.LIVE,
+      ongoing: false,
+    });
+    const next = DSUtils.getEmptySession({
+      id: 'sess-next',
+      type: CONST.SESSION.TYPES.LIVE,
+      ongoing: false,
+    });
+    API.write(
+      WRITE_COMMANDS.UPDATE_SESSION,
+      {sessionId: 'sess-rejected', session: rejected, sessionIsLive: false},
+      {
+        failureData: [
+          {
+            onyxMethod: Onyx.METHOD.MERGE,
+            key: ONYXKEYS.EDIT_SESSION_DATA,
+            value: {note: 'rolled back'},
+          },
+        ],
+      },
+    );
+    API.write(
+      WRITE_COMMANDS.UPDATE_SESSION,
+      {sessionId: 'sess-next', session: next, sessionIsLive: false},
+      {},
+    );
+    await settle();
+    expect(queuedCommands()).toHaveLength(2);
+
+    // The server rejects the first payload outright and accepts the second.
+    mockXhr.mockImplementation(
+      (_command: string, data: Record<string, unknown>) =>
+        data.sessionId === 'sess-rejected' ? httpFailure('422') : okResponse(),
+    );
+    await setNetwork(false);
+    await waitFor(() => PersistedRequests.getAll().length === 0);
+    await settle();
+
+    // Sent once, never retried, and the write behind it went straight out.
+    const sentSessionIds = mockXhr.mock.calls.map(
+      ([, data]) => (data as Record<string, unknown>).sessionId,
+    );
+    expect(sentSessionIds).toEqual(['sess-rejected', 'sess-next']);
+    const edit = await readOnyx<DrinkingSession>(ONYXKEYS.EDIT_SESSION_DATA);
+    expect(edit?.note).toBe('rolled back');
   });
 
   it('parks a finalize dropped on a deterministic 4xx and re-sends it on the next run', async () => {

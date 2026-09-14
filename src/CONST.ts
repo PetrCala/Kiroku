@@ -407,6 +407,11 @@ const CONST = {
     // The resource already exists — e.g. provisioning an already-provisioned
     // user. Expected/benign for idempotent retries, not a service failure.
     CONFLICT: 409,
+    // The request took too long (a proxy or load balancer gave up on it).
+    // Transient: the queue retries it rather than dropping it.
+    REQUEST_TIMEOUT: 408,
+    // The server won't process the request yet. Transient, like 408.
+    TOO_EARLY: 425,
     // When Cloudflare throttles
     TOO_MANY_REQUESTS: 429,
     INTERNAL_SERVER_ERROR: 500,

@@ -4,7 +4,7 @@ import type {Timestamp, UserID} from './OnyxCommon';
 
 /**
  * A finalized session write the request queue permanently dropped (the server
- * deterministically rejected it after retries; transient failures are never
+ * deterministically rejected it; transient failures are never
  * dropped). Unlike a live-session flush, nothing later re-sends a finalize,
  * so the payload is parked here instead of being lost: the next app run
  * re-enqueues it once (`resendUnsyncedSessionWrites`), and a successful

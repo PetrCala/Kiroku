@@ -31,17 +31,33 @@ let isQueuePaused = false;
 const sequentialQueueRequestThrottle = new RequestThrottle('SequentialQueue');
 
 /**
- * Whether a request that exhausted its retry budget may be dropped from the
- * persisted queue. Only a deterministic client error qualifies: an actual
+ * 4xx statuses that say "try again later" rather than "this payload is wrong":
+ * the request timed out (408), the server won't take it yet (425), or it is
+ * throttling (429, which kiroku-api also answers while an idempotent original
+ * is still running).
+ */
+const RETRYABLE_CLIENT_ERROR_STATUSES: ReadonlySet<number> = new Set([
+  CONST.HTTP_STATUS.REQUEST_TIMEOUT,
+  CONST.HTTP_STATUS.TOO_EARLY,
+  CONST.HTTP_STATUS.TOO_MANY_REQUESTS,
+]);
+
+/**
+ * Whether a failed request is dropped from the persisted queue at once instead
+ * of being retried. Only a deterministic client error qualifies: an actual
  * server response with a non-retryable 4xx status, meaning the server
  * actively rejected this exact payload and replaying it can never succeed.
+ * Retrying it would only resend a known rejection while every write queued
+ * behind it waits (kiroku-api answers a session op it can't apply with a 422
+ * for exactly this reason).
  *
  * Everything else is transient by nature: network-layer failures carry no
  * response at all (fetch failure, timeout, a reauth attempt while offline),
- * and 5xx / 429 mean the server itself is unhealthy or throttling. Dropping a
- * persisted write on those destroys user data that would have delivered once
- * conditions recovered (an offline-logged drinking session, for example), so
- * such requests stay queued for the next flush trigger instead.
+ * and 5xx / 408 / 425 / 429 mean the server is unhealthy, slow or throttling.
+ * Dropping a persisted write on those destroys user data that would have
+ * delivered once conditions recovered (an offline-logged drinking session,
+ * for example), so such requests are retried and, once the budget runs out,
+ * stay queued for the next flush trigger.
  */
 function isDroppableFailure(error: RequestError): boolean {
   const status = Number(error.status);
@@ -52,7 +68,7 @@ function isDroppableFailure(error: RequestError): boolean {
   return (
     status >= 400 &&
     status < 500 &&
-    status !== CONST.HTTP_STATUS.TOO_MANY_REQUESTS
+    !RETRYABLE_CLIENT_ERROR_STATUSES.has(status)
   );
 }
 
@@ -151,40 +167,44 @@ function process(): Promise<void> {
         sequentialQueueRequestThrottle.clear();
         return process();
       }
+
+      // The server deterministically rejected this exact payload (see
+      // `isDroppableFailure`): drop it now and roll it back through its
+      // failure data, rather than resending a known rejection through the
+      // whole retry backoff while the writes queued behind it wait.
+      if (isDroppableFailure(error)) {
+        Onyx.update(requestToProcess.failureData ?? []);
+        Log.info(
+          '[SequentialQueue] Removing persisted request because the server rejected it.',
+          false,
+          {error, request: requestToProcess},
+        );
+        PersistedRequests.endRequestAndRemoveFromQueue(requestToProcess);
+        sequentialQueueRequestThrottle.clear();
+        return process();
+      }
+
       PersistedRequests.rollbackOngoingRequest();
       return sequentialQueueRequestThrottle
         .sleep(error, requestToProcess.command)
         .then(process)
         .catch(() => {
-          // The retry budget is exhausted. Drop the request only when the
-          // server deterministically rejected it (see `isDroppableFailure`);
-          // a transient failure (network-layer, 5xx, 429) keeps the request
-          // persisted and stalls the queue until the next flush trigger
-          // (reconnection, app foreground, a new write) retries it with a
-          // fresh budget. Dropping on transient failures silently destroyed
-          // offline-queued session writes during flaky-network windows.
-          if (!isDroppableFailure(error)) {
-            Log.info(
-              '[SequentialQueue] Request failed too many times; keeping it queued for the next flush trigger.',
-              false,
-              {error, request: requestToProcess},
-            );
-            sequentialQueueRequestThrottle.clear();
-            // Unblock `waitForIdle()` waiters the same way the offline
-            // early-return does: the queue is intentionally stalled, and
-            // holding reads hostage to an unreachable server helps nobody.
-            resolveIsReadyPromise?.();
-            return;
-          }
-          Onyx.update(requestToProcess.failureData ?? []);
+          // The retry budget is exhausted on a transient failure
+          // (network-layer, 5xx, 408, 425, 429). Keep the request persisted
+          // and stall the queue until the next flush trigger (reconnection,
+          // app foreground, a new write) retries it with a fresh budget.
+          // Dropping on transient failures silently destroyed offline-queued
+          // session writes during flaky-network windows.
           Log.info(
-            '[SequentialQueue] Removing persisted request because it failed too many times.',
+            '[SequentialQueue] Request failed too many times; keeping it queued for the next flush trigger.',
             false,
             {error, request: requestToProcess},
           );
-          PersistedRequests.endRequestAndRemoveFromQueue(requestToProcess);
           sequentialQueueRequestThrottle.clear();
-          return process();
+          // Unblock `waitForIdle()` waiters the same way the offline
+          // early-return does: the queue is intentionally stalled, and
+          // holding reads hostage to an unreachable server helps nobody.
+          resolveIsReadyPromise?.();
         });
     });
 
