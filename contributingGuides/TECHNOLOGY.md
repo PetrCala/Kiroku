@@ -29,4 +29,4 @@ Here is the list of technologies you should get acquainted with:
 
 For the release workflow specifically, read the [deploying guide](philosophies/DEPLOYING.md). It explains how `master`, `staging`, `production`, internal beta deploys, production promotion, deploy locks, and `StagingDeployCash` fit together.
 
-[Discord invitation]: https://discord.gg/mv8zcQz5
+[Discord invitation]: https://discord.gg/PjvUFkuwMv
