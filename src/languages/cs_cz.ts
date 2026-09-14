@@ -630,11 +630,9 @@ export default {
     },
   },
   locationPrompt: {
-    title: 'Označovat, kde si zapisujete drinky?',
+    title: 'Označování drinků polohou',
     prompt:
-      'Kiroku může ke každému drinku zaznamenanému během živé relace připojit vaši aktuální polohu, takže se později můžete podívat, kde která relace proběhla. Toto nastavení můžete kdykoli změnit v Nastavení → Soukromí.',
-    enable: 'Zapnout',
-    notNow: 'Teď ne',
+      'Kiroku může ke každému drinku zaznamenanému během živé relace připojit vaši aktuální polohu, takže se později můžete podívat, kde která relace proběhla. Zařízení vás poté požádá o přístup k poloze. Toto nastavení můžete kdykoli změnit v Nastavení → Soukromí.',
   },
   privacyScreen: {
     title: 'Soukromí',

@@ -624,11 +624,9 @@ export default {
     },
   },
   locationPrompt: {
-    title: 'Tag where you log drinks?',
+    title: 'Tag your drinks with a location',
     prompt:
-      'Kiroku can tag each drink you log during a live session with your current location, so you can look back and see where each session happened. You can change this anytime in Settings → Privacy.',
-    enable: 'Enable',
-    notNow: 'Not now',
+      'Kiroku can tag each drink you log during a live session with your current location, so you can look back and see where each session happened. Your device will ask for location access next. You can change this anytime in Settings → Privacy.',
   },
   privacyScreen: {
     title: 'Privacy',
