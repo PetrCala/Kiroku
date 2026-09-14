@@ -24,6 +24,7 @@ import {
   getCalendarAlcoholFreeTint,
   getDerivedSwatchBorderColor,
   isLightHex,
+  isSimilarHex,
 } from '@libs/SessionColorPalettes';
 import {defaultStyles} from '..';
 import type {ThemeStyles} from '..';
@@ -1489,6 +1490,38 @@ const createStyleUtils = (theme: ThemeColors, styles: ThemeStyles) => ({
       lineHeight: 10,
       color: textColor,
     };
+  },
+
+  /**
+   * Returns the color of the flush today ring for a day tile.
+   *
+   * The ring is the brand accent, except on a filled tile whose swatch is
+   * itself close to the accent (the Brand palette's Light swatch is the
+   * accent yellow; Classic's pure yellow is a hair off it), where an accent
+   * ring would vanish. There it takes the tile's on-swatch text color
+   * instead, so today stays marked on every palette. A tinted (unsaturated)
+   * alcohol-free tile shows the ground through it, so the accent always
+   * reads there.
+   */
+  getSessionsCalendarTodayRingStyle: (
+    marking: MarkingProps | undefined,
+    afStreak?: number,
+  ): ViewStyle => {
+    const markingColor = marking?.color;
+    let fill: string | undefined;
+    if (markingColor) {
+      fill =
+        afStreak === undefined ||
+        getCalendarAlcoholFreeTint(markingColor, afStreak).isSolid
+          ? markingColor
+          : undefined;
+    }
+    if (fill && isSimilarHex(fill, theme.appColor)) {
+      return {
+        borderColor: isLightHex(fill) ? theme.textDark : theme.textLight,
+      };
+    }
+    return {borderColor: theme.appColor};
   },
 
   /** Returns the centered hero units-number style. */

@@ -125,6 +125,23 @@ describe('SessionsCalendar DayComponent', () => {
     expect(findByStyle(renderDay({}), isRing)).toBeNull();
   });
 
+  it('swaps the ring off the accent when the tile is the accent yellow', () => {
+    const isRing = (style: Style) =>
+      style.borderWidth === 2 && style.position === 'absolute';
+    const ringColor = (tree: Json) =>
+      flattenStyle(findByStyle(tree, isRing)?.props?.style).borderColor;
+    // Brand palette Light swatch: the accent itself. Ring falls back to the
+    // dark on-swatch text so it still reads.
+    const onAccentTile = ringColor(
+      renderDay({state: 'today', marking: {color: '#F5C400'}, units: 0.5}),
+    );
+    // A tinted alcohol-free tile shows the ground through, so the ring keeps
+    // the accent; the two must differ.
+    const onTintedTile = ringColor(renderDay({state: 'today', afStreak: 1}));
+    expect(onAccentTile).not.toBe(onTintedTile);
+    expect(onTintedTile).toBe('#F5C400');
+  });
+
   it('dims a future day to a transparent shell', () => {
     const tree = renderDay({state: 'disabled', marking: undefined});
     const tile = findByStyle(tree, isTile);
