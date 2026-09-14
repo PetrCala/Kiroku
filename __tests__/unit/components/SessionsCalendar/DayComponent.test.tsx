@@ -131,7 +131,8 @@ describe('SessionsCalendar DayComponent', () => {
     const ringColor = (tree: Json) =>
       flattenStyle(findByStyle(tree, isRing)?.props?.style).borderColor;
     // Brand palette Light swatch: the accent itself. Ring falls back to the
-    // dark on-swatch text so it still reads.
+    // swatch pulled toward the dark on-swatch text so it still reads, but
+    // stops short of a full text-color outline.
     const onAccentTile = ringColor(
       renderDay({state: 'today', marking: {color: '#F5C400'}, units: 0.5}),
     );
@@ -140,6 +141,14 @@ describe('SessionsCalendar DayComponent', () => {
     const onTintedTile = ringColor(renderDay({state: 'today', afStreak: 1}));
     expect(onAccentTile).not.toBe(onTintedTile);
     expect(onTintedTile).toBe('#F5C400');
+    expect(onAccentTile).not.toBe('#1F2329');
+    expect(onAccentTile).not.toBe('#0D1117');
+    // Darker than the swatch on every channel it can move.
+    const [r, g] = [1, 3].map(i =>
+      parseInt(String(onAccentTile).slice(i, i + 2), 16),
+    );
+    expect(r).toBeLessThan(0xf5);
+    expect(g).toBeLessThan(0xc4);
   });
 
   it('dims a future day to a transparent shell', () => {

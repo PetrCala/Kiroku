@@ -134,6 +134,22 @@ function getCalendarAlcoholFreeTint(
   };
 }
 
+/**
+ * Mix `color` toward `target` by `amount` (0 = color, 1 = target). Returns
+ * `color` unchanged when either input isn't a hex triplet.
+ */
+function mixHex(color: string, target: string, amount: number): string {
+  const a = parseHex(color);
+  const b = parseHex(target);
+  if (!a || !b) {
+    return color;
+  }
+  const t = Math.max(0, Math.min(1, amount));
+  return `#${toHexByte(a.r * (1 - t) + b.r * t)}${toHexByte(
+    a.g * (1 - t) + b.g * t,
+  )}${toHexByte(a.b * (1 - t) + b.b * t)}`;
+}
+
 // Normalised RGB distance below which two colors read as the same hue at
 // tile size: the Brand palette's Light swatch is the accent yellow itself, and
 // Classic's pure yellow sits just off it, so an accent ring on either tile
@@ -167,6 +183,7 @@ export {
   resolvePalette,
   isLightHex,
   isSimilarHex,
+  mixHex,
   getCalendarAlcoholFreeTint,
   getDerivedSwatchBorderColor,
 };
