@@ -63,8 +63,7 @@ describe('deriveCalendarMonth', () => {
     // Every day of March carries cell data; sober days are green with no units.
     expect(month.dayData.size).toBe(31);
     expect(month.dayData.get('2026-03-01' as DateString)).toEqual({
-      marking: {color: GREEN},
-      afStreak: 1,
+      marking: {color: GREEN, isAlcoholFree: true},
     });
     // The session day carries the session marking and its units.
     const sessionCell = month.dayData.get('2026-03-10' as DateString);
@@ -76,59 +75,6 @@ describe('deriveCalendarMonth', () => {
     // Whole-month grid: every week row has 7 cells.
     expect(month.weeks.length).toBeGreaterThanOrEqual(5);
     month.weeks.forEach(week => expect(week.days).toHaveLength(7));
-  });
-
-  test('numbers each alcohol-free day by its run, resets on a session, caps at 7', () => {
-    const month = deriveCalendarMonth({
-      year: 2026,
-      month: 2,
-      monthEntriesByDay: makeMonthEntries('2026-03-04' as DateString, 2),
-      effectivePreferences: makePreferences(),
-      endClamp: null,
-    });
-    const streakOf = (day: string) =>
-      month.dayData.get(`2026-03-${day}` as DateString)?.afStreak;
-
-    // 1st to 3rd: a fresh run from the month start.
-    expect([streakOf('01'), streakOf('02'), streakOf('03')]).toEqual([1, 2, 3]);
-    // The session day carries no streak and restarts the count after it.
-    expect(streakOf('04')).toBeUndefined();
-    expect(streakOf('05')).toBe(1);
-    // A long run saturates at the cap and stays there.
-    expect(streakOf('11')).toBe(7);
-    expect(streakOf('31')).toBe(7);
-    expect(month.trailingAfStreak).toBe(7);
-  });
-
-  test('carries a run in from the previous month and reports the trailing run', () => {
-    const month = deriveCalendarMonth({
-      year: 2026,
-      month: 2,
-      monthEntriesByDay: makeMonthEntries('2026-03-30' as DateString, 2),
-      effectivePreferences: makePreferences(),
-      endClamp: null,
-      afStreakCarryIn: 3,
-    });
-    // March 1 continues February's 3-day run.
-    expect(month.dayData.get('2026-03-01' as DateString)?.afStreak).toBe(4);
-    // The 30th breaks the run; the 31st is day 1 of the next, which is what
-    // April would be seeded with.
-    expect(month.dayData.get('2026-03-31' as DateString)?.afStreak).toBe(1);
-    expect(month.trailingAfStreak).toBe(1);
-  });
-
-  test('a logged session with no drinks keeps the alcohol-free run going', () => {
-    const month = deriveCalendarMonth({
-      year: 2026,
-      month: 2,
-      monthEntriesByDay: makeMonthEntries('2026-03-02' as DateString, 0),
-      effectivePreferences: makePreferences(),
-      endClamp: null,
-    });
-    const day2 = month.dayData.get('2026-03-02' as DateString);
-    expect(day2?.units).toBe(0);
-    expect(day2?.afStreak).toBe(2);
-    expect(month.dayData.get('2026-03-03' as DateString)?.afStreak).toBe(3);
   });
 
   test('clamps the current month at endClamp', () => {

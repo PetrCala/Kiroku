@@ -9,7 +9,6 @@ function DayComponent({
   date,
   state,
   units,
-  afStreak,
   marking,
   theme, // eslint-disable-line @typescript-eslint/no-unused-vars
   trackingStartDate,
@@ -60,16 +59,11 @@ function DayComponent({
         onPress={() => onPress && date && onPress(date)}
         onLongPress={onLongPress ? () => date && onLongPress(date) : undefined}>
         <View
-          style={StyleUtils.getSessionsCalendarDayCellStyle(
-            marking,
-            isDimmed,
-            afStreak,
-          )}>
+          style={StyleUtils.getSessionsCalendarDayCellStyle(marking, isDimmed)}>
           <Text
             style={StyleUtils.getSessionsCalendarDayLabelStyle(
               marking,
               isDimmed,
-              afStreak,
             )}>
             {date?.day}
           </Text>
@@ -79,16 +73,13 @@ function DayComponent({
               {unitsText}
             </Text>
           )}
-          {/* Accent ring drawn flush inside the tile edge, as an overlay rather
-              than a border so the tile's geometry (and the corner label's
-              position) is identical on every day. */}
+          {/* Hairline ring drawn flush inside the tile edge, as an overlay
+              rather than a border so the tile's geometry (and the corner
+              label's position) is identical on every day. */}
           {isToday ? (
             <View
               pointerEvents="none"
-              style={[
-                styles.sessionsCalendarTodayRing,
-                StyleUtils.getSessionsCalendarTodayRingStyle(marking, afStreak),
-              ]}
+              style={styles.sessionsCalendarTodayRing}
             />
           ) : null}
         </View>

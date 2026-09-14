@@ -4,7 +4,7 @@ import React from 'react';
 import DayComponent from '@components/SessionsCalendar/DayComponent';
 import type {DateData} from 'react-native-calendars';
 import type {DayState} from 'react-native-calendars/src/types';
-import type {MarkingProps} from 'react-native-calendars/src/calendar/day/marking';
+import type {SessionsCalendarMarking} from '@components/SessionsCalendar/DayComponent/types';
 
 // PressableWithFeedback pulls in Reanimated → Worklets → native modules that
 // don't initialize under Jest. A passthrough keeps the tile renderable.
@@ -70,45 +70,44 @@ const TILE_SIZE = 44;
 const isTile = (style: Style) =>
   style.width === TILE_SIZE && style.height === TILE_SIZE;
 
+// Tokens of the theme the test renderer resolves to (dark), which the tile
+// derives its colors from.
+const CARD_BG = '#151B23';
+const ICON = '#9198A1';
+
 type RenderDayOptions = {
   state?: DayState;
   units?: number;
-  afStreak?: number;
-  /** Defaults to the green swatch; pass `undefined` for an unmarked day. */
-  marking?: MarkingProps;
+  /** Defaults to an alcohol-free day; pass `undefined` for an unmarked day. */
+  marking?: SessionsCalendarMarking;
 };
 
+const AF_MARKING: SessionsCalendarMarking = {color: GREEN, isAlcoholFree: true};
+
 function renderDay(options: RenderDayOptions): Json {
-  const marking =
-    'marking' in options ? options.marking : ({color: GREEN} as MarkingProps);
+  const marking = 'marking' in options ? options.marking : AF_MARKING;
   return render(
     <DayComponent
       date={date}
       state={options.state}
       units={options.units}
-      afStreak={options.afStreak}
       marking={marking}
     />,
   ).toJSON() as Json;
 }
 
+const isRing = (style: Style) =>
+  style.borderWidth === 1.5 && style.position === 'absolute';
+
 describe('SessionsCalendar DayComponent', () => {
-  it('tints a lone alcohol-free day faintly, with no border and no unit count', () => {
-    const tree = renderDay({afStreak: 1});
+  it('draws an alcohol-free day on the card surface, not the palette green', () => {
+    const tree = renderDay({});
     const tile = findByStyle(tree, isTile);
     const style = flattenStyle(tile?.props?.style);
-    // The swatch with an alpha byte, borderless, on the tile radius.
-    expect(style.backgroundColor).toMatch(/^#008000[0-9a-f]{2}$/i);
-    expect(style.borderWidth).toBeUndefined();
+    expect(style.backgroundColor).toBe(CARD_BG);
     expect(style.borderRadius).toBe(10);
-    // No unit count on an alcohol-free day.
+    // The day number stays in the supporting text color.
     expect(JSON.stringify(tree)).not.toContain('"children":["0"]');
-  });
-
-  it('fills the tile with the plain swatch once the run has saturated', () => {
-    const tree = renderDay({afStreak: 7});
-    const tile = findByStyle(tree, isTile);
-    expect(flattenStyle(tile?.props?.style).backgroundColor).toBe(GREEN);
   });
 
   it('renders a session day as a solid swatch with its unit count', () => {
@@ -118,37 +117,34 @@ describe('SessionsCalendar DayComponent', () => {
     expect(JSON.stringify(tree)).toContain('6.5');
   });
 
-  it('draws the today ring flush inside the tile, and only for today', () => {
-    const isRing = (style: Style) =>
-      style.borderWidth === 2 && style.position === 'absolute';
-    expect(findByStyle(renderDay({state: 'today'}), isRing)).not.toBeNull();
-    expect(findByStyle(renderDay({}), isRing)).toBeNull();
+  it('gives every filled tile a 1px edge pulled toward the text color', () => {
+    const edgeOf = (marking: SessionsCalendarMarking | undefined) =>
+      flattenStyle(findByStyle(renderDay({marking}), isTile)?.props?.style);
+    // Pale swatch on the light ground: the edge is a visibly darker tint.
+    const pale = edgeOf({color: '#FFED8F'});
+    expect(pale.borderWidth).toBe(1);
+    expect(pale.borderColor).not.toBe('#FFED8F');
+    expect(pale.borderColor).toMatch(/^#[0-9a-f]{6}$/i);
+    // Same edge rule on the neutral alcohol-free surface.
+    const af = edgeOf(AF_MARKING);
+    expect(af.borderColor).not.toBe(CARD_BG);
+    // Unmarked cells keep the 1px border for geometry, but transparent.
+    const empty = edgeOf(undefined);
+    expect(empty.borderWidth).toBe(1);
+    expect(empty.borderColor).toBe('transparent');
   });
 
-  it('swaps the ring off the accent when the tile is the accent yellow', () => {
-    const isRing = (style: Style) =>
-      style.borderWidth === 2 && style.position === 'absolute';
-    const ringColor = (tree: Json) =>
-      flattenStyle(findByStyle(tree, isRing)?.props?.style).borderColor;
-    // Brand palette Light swatch: the accent itself. Ring falls back to the
-    // swatch pulled toward the dark on-swatch text so it still reads, but
-    // stops short of a full text-color outline.
-    const onAccentTile = ringColor(
+  it('draws a hairline ring in the icon gray, and only for today', () => {
+    const ring = findByStyle(renderDay({state: 'today'}), isRing);
+    expect(ring).not.toBeNull();
+    expect(flattenStyle(ring?.props?.style).borderColor).toBe(ICON);
+    expect(findByStyle(renderDay({}), isRing)).toBeNull();
+    // Same ring on a session tile: it never depends on the fill.
+    const onSession = findByStyle(
       renderDay({state: 'today', marking: {color: '#F5C400'}, units: 0.5}),
+      isRing,
     );
-    // A tinted alcohol-free tile shows the ground through, so the ring keeps
-    // the accent; the two must differ.
-    const onTintedTile = ringColor(renderDay({state: 'today', afStreak: 1}));
-    expect(onAccentTile).not.toBe(onTintedTile);
-    expect(onTintedTile).toBe('#F5C400');
-    expect(onAccentTile).not.toBe('#1F2329');
-    expect(onAccentTile).not.toBe('#0D1117');
-    // Darker than the swatch on every channel it can move.
-    const [r, g] = [1, 3].map(i =>
-      parseInt(String(onAccentTile).slice(i, i + 2), 16),
-    );
-    expect(r).toBeLessThan(0xf5);
-    expect(g).toBeLessThan(0xc4);
+    expect(flattenStyle(onSession?.props?.style).borderColor).toBe(ICON);
   });
 
   it('dims a future day to a transparent shell', () => {

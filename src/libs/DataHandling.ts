@@ -263,6 +263,9 @@ function sessionsToDayMarking(
     marking: {
       color,
       textColor,
+      // A logged session with nothing in it is still an alcohol-free day;
+      // a blackout never is.
+      ...(totalUnits === 0 && !hasBlackout ? {isAlcoholFree: true} : {}),
     },
   };
 
