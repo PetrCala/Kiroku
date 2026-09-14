@@ -309,6 +309,7 @@ function ProfileScreen({route}: ProfileScreenProps) {
               <Button
                 icon={KirokuIcons.Star}
                 iconFill={StyleUtils.getIconFillColor()}
+                accessibilityLabel={translate('bottomTabBar.badges')}
                 style={[styles.profileBadgesIndicator, styles.bgTransparent]}
                 onPress={() => Navigation.navigate(ROUTES.BADGES)}
               />
