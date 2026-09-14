@@ -9,6 +9,9 @@ type DayComponentProps = {
   date?: DateData;
   state?: DayState;
   units?: number;
+  /** 1-based position in a run of consecutive alcohol-free days (clamped).
+   *  Present only on alcohol-free days; drives the tile's tint depth. */
+  afStreak?: number;
   marking?: MarkingProps;
   theme?: Theme;
   /** Earliest tracked day ('yyyy-MM-dd'). Days before it render dimmed (like

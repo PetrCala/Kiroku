@@ -2,7 +2,10 @@ import {endOfMonth} from 'date-fns';
 import type {MarkingProps} from 'react-native-calendars/src/calendar/day/marking';
 import {sessionsToDayMarking} from '@libs/DataHandling';
 import {resolveLocalParts} from '@libs/Statistics/localParts';
-import {resolvePalette} from '@libs/SessionColorPalettes';
+import {
+  CALENDAR_AF_STREAK_CAP,
+  resolvePalette,
+} from '@libs/SessionColorPalettes';
 import type {DrinkingSessionList, Preferences} from '@src/types/onyx';
 import type {DateString} from '@src/types/onyx/OnyxCommon';
 import type DrinkingSessionKeyValue from '@src/types/utils/databaseUtils';
@@ -38,6 +41,11 @@ type DayCellData = {
   /** Total units that day. Present only for days that have sessions —
    *  mirrors the legacy `unitsMap` sparseness. */
   units?: number;
+  /** 1-based position of the day in its run of consecutive alcohol-free days,
+   *  clamped to `CALENDAR_AF_STREAK_CAP`. Present only on alcohol-free days
+   *  (no session, or sessions totalling 0 units without a blackout); the tile
+   *  tints deeper along the run. */
+  afStreak?: number;
 };
 
 /**
@@ -61,6 +69,9 @@ type CalendarMonthData = {
   entriesByDay: ReadonlyMap<DateString, DrinkingSessionKeyValue[]>;
   /** Sum of all session units in the month (the label row's total). */
   totalUnits: number;
+  /** Alcohol-free run length (clamped) at the month's last derived day: the
+   *  next month's `afStreakCarryIn`. 0 when the month ends on a session day. */
+  trailingAfStreak: number;
 };
 
 type MonthEntriesByDay = ReadonlyMap<DateString, DrinkingSessionKeyValue[]>;
@@ -130,6 +141,10 @@ type DeriveCalendarMonthArgs = {
   /** Last day to include — today for the current month, null (= whole month)
    *  for past months. */
   endClamp: Date | null;
+  /** Alcohol-free run length carried over from the previous month's last day
+   *  (its `trailingAfStreak`), so a run that crosses a month edge keeps
+   *  ramping instead of restarting on the 1st. Defaults to 0. */
+  afStreakCarryIn?: number;
 };
 
 /**
@@ -143,6 +158,7 @@ function deriveCalendarMonth({
   monthEntriesByDay,
   effectivePreferences,
   endClamp,
+  afStreakCarryIn = 0,
 }: DeriveCalendarMonthArgs): CalendarMonthData {
   const monthStart = new Date(year, month, 1);
   const sections = buildMonthSections({
@@ -151,9 +167,8 @@ function deriveCalendarMonth({
   });
   const weeks = sections.length > 0 ? sections[0].weeks : [];
 
-  const paletteGreen = resolvePalette(
-    effectivePreferences.session_color_palette,
-  ).green;
+  const palette = resolvePalette(effectivePreferences.session_color_palette);
+  const paletteGreen = palette.green;
 
   const dayData = new Map<DateString, DayCellData>();
   // Only in-range days enter `entriesByDay` — a session dated later today
@@ -161,6 +176,10 @@ function deriveCalendarMonth({
   // grid doesn't render, mirroring the legacy interval filter.
   const entriesByDay = new Map<DateString, DrinkingSessionKeyValue[]>();
   let totalUnits = 0;
+  // Running alcohol-free streak. Seeded from the previous month so a run
+  // spanning the month edge ramps continuously; clamped so the cache key stays
+  // bounded and the tint math never overshoots.
+  let afStreak = Math.min(CALENDAR_AF_STREAK_CAP, Math.max(0, afStreakCarryIn));
 
   weeks.forEach(week => {
     week.days.forEach(dayKey => {
@@ -175,10 +194,22 @@ function deriveCalendarMonth({
           )
         : null;
       if (!marking) {
-        dayData.set(dayKey, {marking: {color: paletteGreen}});
+        afStreak = Math.min(CALENDAR_AF_STREAK_CAP, afStreak + 1);
+        dayData.set(dayKey, {marking: {color: paletteGreen}, afStreak});
         return;
       }
-      dayData.set(dayKey, {marking: marking.marking, units: marking.units});
+      // A logged session with nothing in it (0 units, no blackout) is still an
+      // alcohol-free day for the streak; anything else breaks the run.
+      const isAlcoholFree =
+        marking.units === 0 && marking.marking.color !== palette.black;
+      afStreak = isAlcoholFree
+        ? Math.min(CALENDAR_AF_STREAK_CAP, afStreak + 1)
+        : 0;
+      dayData.set(dayKey, {
+        marking: marking.marking,
+        units: marking.units,
+        ...(isAlcoholFree ? {afStreak} : {}),
+      });
       entriesByDay.set(dayKey, entries ?? []);
       totalUnits += marking.units;
     });
@@ -192,6 +223,7 @@ function deriveCalendarMonth({
     dayData,
     entriesByDay,
     totalUnits,
+    trailingAfStreak: afStreak,
   };
 }
 
@@ -206,11 +238,15 @@ type CachedMonth = {
 // Month-derivation cache. Keyed first on the `effectivePreferences` identity
 // (each mounted calendar builds its own object, so palettes/thresholds — and
 // users — can never cross-contaminate; old branches are GC'd with their
-// preferences object), then on `monthKey|endClampKey`. A loaded-window widen
-// changes neither key nor group references, so previously derived months are
-// returned by identity — the property the week-list's row memoization relies
-// on. Plain module-level memoization keeps the render path free of ref access,
-// which React Compiler would otherwise reject.
+// preferences object), then on `monthKey|endClampKey|afStreakCarryIn`. A
+// loaded-window widen changes neither key nor group references for already
+// derived months, so they are returned by identity, the property the
+// week-list's row memoization relies on. The one exception is the month that
+// was the loaded floor: widening can hand it a non-zero carry-in (a sober run
+// that started in the newly loaded month), and then it re-derives once with
+// the deeper tints: one month, on a widen, not on every render. Plain
+// module-level memoization keeps the render path free of ref access, which
+// React Compiler would otherwise reject.
 const monthCache = new WeakMap<Preferences, Map<string, CachedMonth>>();
 
 /** Cached `deriveCalendarMonth`. See the cache notes above. */
@@ -226,7 +262,11 @@ function getDerivedCalendarMonth(
   // the current month is clamped at today, so its entry is keyed by that day
   // and naturally misses (recomputes) after a date rollover.
   const endClampKey = args.endClamp ? toDateKey(args.endClamp) : '';
-  const cacheKey = `${toMonthKey(args.year, args.month)}|${endClampKey}`;
+  const carryKey = Math.min(
+    CALENDAR_AF_STREAK_CAP,
+    Math.max(0, args.afStreakCarryIn ?? 0),
+  );
+  const cacheKey = `${toMonthKey(args.year, args.month)}|${endClampKey}|${carryKey}`;
   const cached = byMonth.get(cacheKey);
   if (cached && cached.group === args.monthEntriesByDay) {
     return cached.value;

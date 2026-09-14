@@ -23,6 +23,9 @@ export default {
   componentSizeSmall: getValueUsingPixelRatio(28, 32),
   componentSizeNormalSmall: 36,
   sessionsCalendarDaySize: 44,
+  sessionsCalendarTileRadius: 10,
+  sessionsCalendarDayLabelFontSize: 10,
+  sessionsCalendarNavButtonSize: 32,
   componentSizeNormal: 40,
   componentSizeMedium: 48,
   inputComponentSizeNormal: 40,
@@ -230,7 +233,6 @@ export default {
   floatingActionButtonSize: 70,
   bottomTabBarCounterSize: 20,
   calendarHeaderHeight: 50,
-  sessionsCalendarArrowWidth: 44,
   qrCodeScreenSizePercentage: 0.7,
   qrCodeMinSizeLargeScreen: 300,
 

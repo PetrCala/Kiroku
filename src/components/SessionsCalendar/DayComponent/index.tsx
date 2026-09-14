@@ -2,12 +2,14 @@ import {View} from 'react-native';
 import Text from '@components/Text';
 import {PressableWithFeedback} from '@components/Pressable';
 import useStyleUtils from '@hooks/useStyleUtils';
+import useThemeStyles from '@hooks/useThemeStyles';
 import type {DayComponentProps} from '@components/SessionsCalendar/types';
 
 function DayComponent({
   date,
   state,
   units,
+  afStreak,
   marking,
   theme, // eslint-disable-line @typescript-eslint/no-unused-vars
   trackingStartDate,
@@ -15,11 +17,15 @@ function DayComponent({
   onLongPress,
 }: DayComponentProps) {
   const StyleUtils = useStyleUtils();
+  const styles = useThemeStyles();
   // `isDisabled` gates clickability — set only for out-of-range days (future
   // days, via the calendar's maxDate). `isBeforeTracking` is a styling-only
   // signal for days before the user started tracking: those stay clickable so
   // the user can add a past session, but render dimmed like future days.
   const isDisabled = state === 'disabled';
+  // Only react-native-calendars (the compact grid) reports `today`; the
+  // fullscreen week-list never passes it on purpose (see `WeekRow`).
+  const isToday = state === 'today';
   const isBeforeTracking =
     !!trackingStartDate && !!date && date.dateString < trackingStartDate;
   const isDimmed = isDisabled || isBeforeTracking;
@@ -54,11 +60,16 @@ function DayComponent({
         onPress={() => onPress && date && onPress(date)}
         onLongPress={onLongPress ? () => date && onLongPress(date) : undefined}>
         <View
-          style={StyleUtils.getSessionsCalendarDayCellStyle(marking, isDimmed)}>
+          style={StyleUtils.getSessionsCalendarDayCellStyle(
+            marking,
+            isDimmed,
+            afStreak,
+          )}>
           <Text
             style={StyleUtils.getSessionsCalendarDayLabelStyle(
               marking,
               isDimmed,
+              afStreak,
             )}>
             {date?.day}
           </Text>
@@ -68,6 +79,15 @@ function DayComponent({
               {unitsText}
             </Text>
           )}
+          {/* Accent ring drawn flush inside the tile edge, as an overlay rather
+              than a border so the tile's geometry (and the corner label's
+              position) is identical on every day. */}
+          {isToday ? (
+            <View
+              pointerEvents="none"
+              style={styles.sessionsCalendarTodayRing}
+            />
+          ) : null}
         </View>
       </PressableWithFeedback>
     </View>

@@ -6,8 +6,14 @@ import type {
   Preferences,
 } from '@src/types/onyx';
 import CONST from '@src/CONST';
-import {differenceInCalendarMonths, startOfMonth, subMonths} from 'date-fns';
+import {
+  differenceInCalendarMonths,
+  startOfMonth,
+  subDays,
+  subMonths,
+} from 'date-fns';
 import {sessionsToDayMarking} from '@libs/DataHandling';
+import {CALENDAR_AF_STREAK_CAP} from '@libs/SessionColorPalettes';
 import useResolvedPalette from '@hooks/useResolvedPalette';
 import lodashDebounce from 'lodash/debounce';
 import type {MarkedDates} from 'react-native-calendars/src/types';
@@ -218,10 +224,12 @@ function useLazyMarkedDates(
   // On a widen only the newly exposed months actually derive; everything else
   // is reference-copied, so this memo is O(loaded days) of Map sets at worst.
   const paletteGreen = palette.green;
+  const paletteBlack = palette.black;
   const {
     calendarMonths,
     markedDates,
     unitsMap,
+    afStreakMap,
     monthlyTotalsMap,
     sessionEntriesByDay,
     loadedFromDate,
@@ -234,12 +242,17 @@ function useLazyMarkedDates(
     const months: CalendarMonthData[] = [];
     const newMarkedDates: MarkedDates = {};
     const newUnitsMap = new Map<DateString, number>();
+    const newAfStreakMap = new Map<DateString, number>();
     const newMonthlyTotalsMap = new Map<string, number>();
     const newSessionEntriesByDay = new Map<
       DateString,
       DrinkingSessionKeyValue[]
     >();
 
+    // Months derive oldest-first so each can seed the next with the
+    // alcohol-free run it ends on; the loaded floor starts from 0 (nothing
+    // older is known).
+    let afStreakCarryIn = 0;
     for (let monthsBack = effectiveMonths; monthsBack >= 0; monthsBack--) {
       const monthStart = startOfMonth(subMonths(today, monthsBack));
       const monthData = getDerivedCalendarMonth({
@@ -250,12 +263,17 @@ function useLazyMarkedDates(
         ),
         effectivePreferences,
         endClamp: monthsBack === 0 ? today : null,
+        afStreakCarryIn,
       });
+      afStreakCarryIn = monthData.trailingAfStreak;
       months.push(monthData);
       monthData.dayData.forEach((cell, dayKey) => {
         newMarkedDates[dayKey] = cell.marking;
         if (cell.units !== undefined) {
           newUnitsMap.set(dayKey, cell.units);
+        }
+        if (cell.afStreak !== undefined) {
+          newAfStreakMap.set(dayKey, cell.afStreak);
         }
       });
       monthData.entriesByDay.forEach((entries, dayKey) => {
@@ -270,6 +288,7 @@ function useLazyMarkedDates(
       calendarMonths: months,
       markedDates: newMarkedDates,
       unitsMap: newUnitsMap,
+      afStreakMap: newAfStreakMap,
       monthlyTotalsMap: newMonthlyTotalsMap,
       sessionEntriesByDay: newSessionEntriesByDay,
       loadedFromDate: rangeStart,
@@ -290,6 +309,7 @@ function useLazyMarkedDates(
     calendarMonths: overlaidCalendarMonths,
     markedDates: overlaidMarkedDates,
     unitsMap: overlaidUnitsMap,
+    afStreakMap: overlaidAfStreakMap,
     monthlyTotalsMap: overlaidMonthlyTotalsMap,
     sessionEntriesByDay: overlaidSessionEntriesByDay,
   } = useMemo(() => {
@@ -298,6 +318,7 @@ function useLazyMarkedDates(
         calendarMonths,
         markedDates,
         unitsMap,
+        afStreakMap,
         monthlyTotalsMap,
         sessionEntriesByDay,
       };
@@ -328,14 +349,38 @@ function useLazyMarkedDates(
       patchedEntries.map(entry => entry.session),
       effectivePreferences,
     );
-    const patchedCell: DayCellData = newMarking
-      ? {marking: newMarking.marking, units: newMarking.units}
-      : {marking: {color: paletteGreen}};
+    // A live session with nothing logged yet is still an alcohol-free day, so
+    // it keeps its place in the run (one past the previous day's position);
+    // the first drink breaks the run. Only this day is patched: a live
+    // session always sits on the latest derived day, so no later day's
+    // position can depend on it.
     const newUnits = newMarking?.units ?? 0;
+    const isAlcoholFree =
+      !newMarking ||
+      (newUnits === 0 && newMarking.marking.color !== paletteBlack);
+    const previousDayKey = toDateKey(subDays(overlayDate, 1));
+    const patchedAfStreak = isAlcoholFree
+      ? Math.min(
+          CALENDAR_AF_STREAK_CAP,
+          (afStreakMap.get(previousDayKey) ?? 0) + 1,
+        )
+      : undefined;
+    const patchedCell: DayCellData = {
+      marking: newMarking ? newMarking.marking : {color: paletteGreen},
+      ...(newMarking ? {units: newMarking.units} : {}),
+      ...(patchedAfStreak !== undefined ? {afStreak: patchedAfStreak} : {}),
+    };
     const oldUnits = unitsMap.get(dayKey) ?? 0;
 
     const nextUnitsMap = new Map(unitsMap);
     nextUnitsMap.set(dayKey, newUnits);
+
+    const nextAfStreakMap = new Map(afStreakMap);
+    if (patchedAfStreak !== undefined) {
+      nextAfStreakMap.set(dayKey, patchedAfStreak);
+    } else {
+      nextAfStreakMap.delete(dayKey);
+    }
 
     const nextMonthlyTotalsMap = new Map(monthlyTotalsMap);
     nextMonthlyTotalsMap.set(
@@ -369,6 +414,7 @@ function useLazyMarkedDates(
         [dayKey]: patchedCell.marking,
       },
       unitsMap: nextUnitsMap,
+      afStreakMap: nextAfStreakMap,
       monthlyTotalsMap: nextMonthlyTotalsMap,
       sessionEntriesByDay: nextSessionEntriesByDay,
     };
@@ -377,10 +423,12 @@ function useLazyMarkedDates(
     calendarMonths,
     markedDates,
     unitsMap,
+    afStreakMap,
     monthlyTotalsMap,
     sessionEntriesByDay,
     effectivePreferences,
     paletteGreen,
+    paletteBlack,
     defaultTimezone,
   ]);
 
@@ -438,6 +486,9 @@ function useLazyMarkedDates(
   return {
     markedDates: overlaidMarkedDates,
     unitsMap: overlaidUnitsMap,
+    // Per-day alcohol-free run position (clamped), keyed like `unitsMap` and
+    // just as sparse: only alcohol-free days have an entry.
+    afStreakMap: overlaidAfStreakMap,
     monthlyTotalsMap: overlaidMonthlyTotalsMap,
     sessionEntriesByDay: overlaidSessionEntriesByDay,
     // Per-month render payloads for the fullscreen week-list, ascending. Month

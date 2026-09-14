@@ -102,6 +102,7 @@ function SessionsCalendar({
   const {
     markedDates,
     unitsMap,
+    afStreakMap,
     sessionEntriesByDay,
     calendarMonths,
     loadedFrom,
@@ -521,6 +522,7 @@ function SessionsCalendar({
         userID={userID}
         markedDates={markedDates}
         unitsMap={unitsMap}
+        afStreakMap={afStreakMap}
         visibleDate={visibleDate}
         minDate={format(absoluteFloor, CONST.DATE.CALENDAR_FORMAT)}
         trackingStartDate={minDate}

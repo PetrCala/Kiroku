@@ -58,17 +58,18 @@ function toHexByte(value: number): string {
     .padStart(2, '0');
 }
 
-// How far to nudge the swatch toward black/white when synthesising the tile
-// border. 0.25 lands deep enough to read as an edge on every palette without
+// How far to nudge a swatch toward black/white when synthesising a border
+// from it. 0.25 lands deep enough to read as an edge on every palette without
 // overpowering vivid swatches.
-const CALENDAR_TILE_BORDER_MIX = 0.25;
+const DERIVED_SWATCH_BORDER_MIX = 0.25;
 
 /**
- * Derives a per-tile border color by mixing the swatch toward black on light
- * backgrounds (or white on dark backgrounds). Every calendar tile gets a
- * subtle, swatch-harmonious edge that always contrasts the app background.
+ * Derives a border color by mixing the swatch toward black on light
+ * backgrounds (or white on dark backgrounds), so a palette-colored surface
+ * gets a subtle, swatch-harmonious edge that always contrasts the app
+ * background (accent rows, swatch chips).
  */
-function getCalendarTileBorderColor(
+function getDerivedSwatchBorderColor(
   swatch: string,
   background: string,
 ): string | null {
@@ -78,20 +79,70 @@ function getCalendarTileBorderColor(
     return null;
   }
   const target = bgLum > 0.5 ? 0 : 255;
-  const mix = CALENDAR_TILE_BORDER_MIX;
+  const mix = DERIVED_SWATCH_BORDER_MIX;
   const r = swatchRgb.r * (1 - mix) + target * mix;
   const g = swatchRgb.g * (1 - mix) + target * mix;
   const b = swatchRgb.b * (1 - mix) + target * mix;
   return `#${toHexByte(r)}${toHexByte(g)}${toHexByte(b)}`;
 }
 
-export type {PaletteId};
+// Alcohol-free tile ramp. A sober day's tile is the palette green at an
+// opacity that grows with the day's position in a run of consecutive sober
+// days: the first day is a faint tint, and the run reaches the full swatch on
+// day CALENDAR_AF_STREAK_CAP. A single sober day stays quiet; a week without a
+// session fills in, so the solid green is something the calendar builds up to
+// rather than the default state of every empty day.
+const CALENDAR_AF_STREAK_CAP = 7;
+const CALENDAR_AF_TINT_BASE = 0.15;
+const CALENDAR_AF_TINT_STEP = 0.145;
+// Above this opacity the tint reads as a filled tile, so the day number flips
+// to the on-swatch text color (same rule as a session tile).
+const CALENDAR_AF_SOLID_THRESHOLD = 0.8;
+
+type CalendarAlcoholFreeTint = {
+  /** The tile background: `swatch` with an alpha byte, or the plain swatch
+   *  once the run has saturated. */
+  color: string;
+  /** Whether the tint is opaque enough for the on-swatch text color. */
+  isSolid: boolean;
+};
+
+/**
+ * Background for an alcohol-free day's tile, given the day's 1-based position
+ * in its run of consecutive alcohol-free days (clamped to the cap). Falls back
+ * to the plain swatch for a color that isn't a hex triplet.
+ */
+function getCalendarAlcoholFreeTint(
+  swatch: string,
+  streak: number,
+): CalendarAlcoholFreeTint {
+  const position = Math.max(
+    1,
+    Math.min(CALENDAR_AF_STREAK_CAP, Math.floor(streak)),
+  );
+  const alpha = Math.min(
+    1,
+    CALENDAR_AF_TINT_BASE + CALENDAR_AF_TINT_STEP * (position - 1),
+  );
+  const rgb = parseHex(swatch);
+  if (!rgb || alpha >= 1) {
+    return {color: swatch, isSolid: true};
+  }
+  return {
+    color: `#${toHexByte(rgb.r)}${toHexByte(rgb.g)}${toHexByte(rgb.b)}${toHexByte(alpha * 255)}`,
+    isSolid: alpha >= CALENDAR_AF_SOLID_THRESHOLD,
+  };
+}
+
+export type {PaletteId, CalendarAlcoholFreeTint};
 export {
+  CALENDAR_AF_STREAK_CAP,
   PALETTE_IDS,
   PALETTES,
   DEFAULT_PALETTE_ID,
   getPaletteIdFromColors,
   resolvePalette,
   isLightHex,
-  getCalendarTileBorderColor,
+  getCalendarAlcoholFreeTint,
+  getDerivedSwatchBorderColor,
 };
