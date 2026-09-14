@@ -16,7 +16,6 @@ import SessionsCalendar from '@components/SessionsCalendar';
 import SessionsCalendarCompactSkeleton from '@components/SessionsCalendar/SessionsCalendarCompactSkeleton';
 import {getCommonFriendsCount} from '@libs/FriendUtils';
 import {isBlocked} from '@libs/BlockUtils';
-import * as FeatureFlags from '@libs/FeatureFlags';
 import * as KirokuIcons from '@components/Icon/KirokuIcons';
 import Icon from '@components/Icon';
 import type {StackScreenProps} from '@react-navigation/stack';
@@ -41,6 +40,7 @@ import ScrollView from '@components/ScrollView';
 import Text from '@components/Text';
 import useStyleUtils from '@hooks/useStyleUtils';
 import useNetwork from '@hooks/useNetwork';
+import useFeatureFlag from '@hooks/useFeatureFlag';
 
 type ProfileScreenProps = StackScreenProps<
   ProfileNavigatorParamList,
@@ -97,6 +97,9 @@ function ProfileScreen({route}: ProfileScreenProps) {
     userID,
     date: dateToDateData(new Date()),
   }));
+  // A remote BADGES override has to show in the running session, not only
+  // from the next launch, so read it through the hook (not `isEnabled`).
+  const isBadgesEnabled = useFeatureFlag('BADGES');
   const [lastViewedByUser] = useOnyx(ONYXKEYS.NVP_LAST_VIEWED_CALENDAR_DATE);
   // This user's OWN last-viewed day (narrow primitive so the memo below only
   // re-runs when THIS user's entry changes, not on any other user's).
@@ -302,14 +305,14 @@ function ProfileScreen({route}: ProfileScreenProps) {
         showsVerticalScrollIndicator={false}>
         {user?.uid === userID && (
           <>
-            {FeatureFlags.isEnabled('BADGES') && (
+            {isBadgesEnabled ? (
               <Button
                 icon={KirokuIcons.Star}
                 iconFill={StyleUtils.getIconFillColor()}
                 style={[styles.profileBadgesIndicator, styles.bgTransparent]}
                 onPress={() => Navigation.navigate(ROUTES.BADGES)}
               />
-            )}
+            ) : null}
             <Button
               icon={KirokuIcons.Gear}
               iconFill={StyleUtils.getIconFillColor()}
