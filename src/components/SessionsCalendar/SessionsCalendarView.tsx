@@ -10,6 +10,7 @@ import type {DateData} from 'react-native-calendars';
 import type {MarkedDates} from 'react-native-calendars/src/types';
 import {useOnyx} from 'react-native-onyx';
 import {format, parseISO, startOfMonth} from 'date-fns';
+import useFeatureFlag from '@hooks/useFeatureFlag';
 import useLocalize from '@hooks/useLocalize';
 import useTheme from '@hooks/useTheme';
 import useThemePreference from '@hooks/useThemePreference';
@@ -22,7 +23,6 @@ import Navigation from '@libs/Navigation/Navigation';
 import DateUtils from '@libs/DateUtils';
 import Str from '@libs/common/str';
 import setCalendarLocale from '@libs/setCalendarLocale';
-import * as FeatureFlags from '@libs/FeatureFlags';
 import type {DateString, UserID} from '@src/types/onyx/OnyxCommon';
 import Text from '@components/Text';
 import DayComponent from './DayComponent';
@@ -152,8 +152,10 @@ function SessionsCalendarView({
   // layout jump between native-header and custom-header rendering.
   // The lib passes an `XDate` (no published d.ts; treated as `any` here). All we
   // need is its epoch — extract via `getTime()` and rebuild a native `Date`.
-  const isHeaderTappable =
-    !!userID && FeatureFlags.isEnabled('FULLSCREEN_CALENDAR');
+  // `useFeatureFlag`, not `isEnabled`: a remote kill switch has to hide the
+  // entry point in the running session, not only from the next launch.
+  const isFullscreenCalendarEnabled = useFeatureFlag('FULLSCREEN_CALENDAR');
+  const isHeaderTappable = !!userID && isFullscreenCalendarEnabled;
 
   const onHeaderPress = useCallback(() => {
     if (!userID) {
