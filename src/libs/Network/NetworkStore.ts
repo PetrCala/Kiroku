@@ -24,17 +24,24 @@ let offline = false;
 let hasConfirmedConnectivity = false;
 let authenticating = false;
 
-// Allow code that is outside of the network listen for when a reconnection happens so that it can execute any side-effects (like flushing the sequential network queue)
-let reconnectCallback: () => void;
+// Code outside the network layer listens for reconnection to run side-effects:
+// the sequential queue flushes, and the reconnect catch-up fetches what was
+// missed (see actions/Reconnect). Callbacks run in registration order, so the
+// queue (registered at import) flushes before a catch-up request is queued.
+const reconnectCallbacks = new Set<() => void>();
 function triggerReconnectCallback() {
-  if (typeof reconnectCallback !== 'function') {
-    return;
-  }
-  return reconnectCallback();
+  reconnectCallbacks.forEach(callback => callback());
 }
 
-function onReconnection(callbackFunction: () => void) {
-  reconnectCallback = callbackFunction;
+/**
+ * Run `callbackFunction` whenever connectivity resumes.
+ * @returns a function that removes the callback
+ */
+function onReconnection(callbackFunction: () => void): () => void {
+  reconnectCallbacks.add(callbackFunction);
+  return () => {
+    reconnectCallbacks.delete(callbackFunction);
+  };
 }
 
 let resolveIsReadyPromise: (args?: unknown[]) => void;
@@ -89,17 +96,22 @@ Onyx.connect({
     }
 
     const isNowOffline = !!network.shouldForceOffline || !!network.isOffline;
+    const isReconnection =
+      !isNowOffline && (offline || !hasConfirmedConnectivity);
+
+    // Update the state BEFORE emitting, so a callback that queues a write (the
+    // reconnect catch-up) sees the client as online and gets it flushed.
+    // Emitting first left such a write parked until the next flush trigger.
+    hasConfirmedConnectivity = true;
+    offline = isNowOffline;
 
     // Emit the connectivity-resumed event (which flushes the sequential queue)
     // both on a normal offline->online transition and on the first authoritative
     // online signal after launch. The latter is what replays writes persisted
     // during a prior offline session once the app is reloaded back online.
-    if (!isNowOffline && (offline || !hasConfirmedConnectivity)) {
+    if (isReconnection) {
       triggerReconnectCallback();
     }
-
-    hasConfirmedConnectivity = true;
-    offline = isNowOffline;
   },
 });
 

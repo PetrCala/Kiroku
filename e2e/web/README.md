@@ -22,18 +22,28 @@ flows the web surface can exercise:
   offline indicator below.
 - **Desktop phone frame** (`desktop-frame.spec.ts`) — the wide-window centered
   phone-frame layout (#1219 / #1224).
+- **Reconnect catch-up** (`reconnect.spec.ts`): after missing a change (offline,
+  or with the realtime connection cut), the app sends
+  `GET /v1/app/open?updateIDFrom=<last applied update>`, gets back only the
+  missed updates, and shows the change without a reload. Also covers cold start
+  (full OpenApp, no catch-up), the up-to-date case (config only), and a burst of
+  triggers collapsing into one request. Needs a kiroku-api with incremental
+  reconnect (kiroku-api#146) on the backend the build points at; an older API
+  answers with the full payload and the incremental assertions fail.
 
 Several flows rely on `testID`s added to app components (the drink steppers, the
 session unit headline, the summary edit button, and calendar day cells), which
 surface as `data-testid` on web and double as Maestro `id:` matchers for the
 proposed native suite (see [`../native/README.md`](../native/README.md)).
 
-> **Offline indicator caveat.** `offline.spec.ts` asserts navigability, not the
-> `OfflineIndicator` banner. Under Playwright's simulated offline (which flips
-> `navigator.onLine` and fires the offline events), the banner did **not**
-> appear within 30s on the web dev build — the NetInfo → NETWORK bridge does not
-> seem to react to browser offline state on web. Whether the deployed web app
-> behaves the same is unconfirmed; flagged as a follow-up rather than asserted.
+> **Simulated offline.** `context.setOffline(true)` does reach the app's
+> `NETWORK` state on the web dev build: `isOffline` flips within about 6s (the
+> API reachability probe fails), and back within about 10s of going online
+> (`reconnect.spec.ts` relies on both). `offline.spec.ts` still asserts
+> navigability rather than the `OfflineIndicator` banner itself. Note that
+> simulated offline does **not** close an already-open WebSocket, so Pusher
+> keeps delivering live updates "offline"; `fixtures/reconnect.ts` has a
+> `PusherLink` switch for tests that need the app to actually miss updates.
 
 - **Run locally:** copy `.env.e2e.example` to `.env.e2e`, fill in a dev-backend
   account, then `npm run test:e2e:web` from the repo root. With no
