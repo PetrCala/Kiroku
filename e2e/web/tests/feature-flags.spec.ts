@@ -16,17 +16,18 @@ import {
  * dev RTDB: its `config` node is global and shared by every dev user and test
  * run.
  *
- * Probed through the two Home entry points gated by a flag:
+ * Probed through the entry points gated by a flag:
  *   - FULLSCREEN_CALENDAR (default on): the calendar's month header is a button
  *     that opens the fullscreen calendar; with the flag off it is plain text.
- *   - BADGES (default off): a "Badges" button in the Home header.
+ *   - BADGES (default off): a "Badges" button in the Home header, and one on
+ *     the user's own Profile.
  *
- * The calendar header reads the flag through `useFeatureFlag`, so a kill switch
- * applies in the running session. The Home header still reads
+ * The calendar header and Profile read their flag through `useFeatureFlag`, so
+ * an override applies in the running session. The Home header still reads
  * `FeatureFlags.isEnabled`, which doesn't re-render when an override arrives,
- * so BADGES shows only from the next launch; that gap is pinned in the "known
- * gap" block below. The flag-agnostic specs assert on a relaunch, where both
- * call sites are current.
+ * so its Badges button shows only from the next launch; that gap is pinned in
+ * the "known gap" block below. The flag-agnostic specs assert on a relaunch,
+ * where every call site is current.
  */
 
 // The Home calendar header renders the visible month as `MMM yyyy`
@@ -226,10 +227,51 @@ test.describe('remote feature flags', () => {
     await expectStaysAbsent(authedPage, badgesEntry(authedPage));
   });
 
-  // FULLSCREEN_CALENDAR is read through `useFeatureFlag`
-  // (src/components/SessionsCalendar/SessionsCalendarView.tsx), so the kill
-  // switch works in the running session, whichever way the override arrives.
+  // Call sites that read their flag through `useFeatureFlag`
+  // (src/components/SessionsCalendar/SessionsCalendarView.tsx for
+  // FULLSCREEN_CALENDAR, src/screens/Profile/ProfileScreen.tsx for BADGES), so
+  // an override works in the running session, whichever way it arrives.
   test.describe('without a relaunch', () => {
+    test('a config broadcast shows the Profile badges entry point and hides it again', async ({
+      authedPage,
+    }) => {
+      const errors = trackErrors(authedPage);
+      const remote = await launchHome(authedPage, {});
+      await new HomePage(authedPage).openOwnProfile();
+      const profile = authedPage.getByTestId('Profile Screen').last();
+      await expect(profile).toBeVisible();
+      const profileBadges = profile.getByRole('button', {
+        name: 'Badges',
+        exact: true,
+      });
+      await expectStaysAbsent(authedPage, profileBadges);
+
+      remote.set({BADGES: true});
+      await emitConfigUpdate(authedPage, {
+        ...remote.lastServedConfig(),
+        feature_flags: {BADGES: true},
+      });
+      await expectStoredOverrides(authedPage, {BADGES: true});
+      await expect(profileBadges).toBeVisible();
+      await profileBadges.click();
+      await expect(authedPage.getByTestId('Badges Screen')).toBeVisible();
+
+      await authedPage.goBack();
+      await expect(profile).toBeVisible();
+      remote.set({});
+      await emitConfigUpdate(authedPage, {
+        ...remote.lastServedConfig(),
+        feature_flags: {},
+      });
+      await expectStoredOverrides(authedPage, {});
+      await expectStaysAbsent(authedPage, profileBadges);
+
+      expect(
+        errors,
+        `Unexpected console errors:\n${errors.join('\n')}`,
+      ).toEqual([]);
+    });
+
     test('FULLSCREEN_CALENDAR: false from the boot app-open hides the fullscreen calendar entry point', async ({
       authedPage,
     }) => {

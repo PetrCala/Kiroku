@@ -26,6 +26,19 @@ export class HomePage {
     return this.page.getByTestId('Home Screen');
   }
 
+  // The header's avatar + display-name button, which opens the signed-in
+  // user's own Profile. It carries no label (its name is the account's display
+  // name), but it is always the first button on Home.
+  profileEntry(): Locator {
+    return this.screen().getByRole('button').first();
+  }
+
+  /** Open the signed-in user's own Profile from the Home header. */
+  async openOwnProfile(): Promise<void> {
+    await this.profileEntry().click();
+    await this.page.waitForURL(/\/profile\//);
+  }
+
   /** Clear any dev gates and wait until the Home screen is mounted. */
   async waitUntilVisible(): Promise<void> {
     await reachAuthenticatedApp(this.page);
