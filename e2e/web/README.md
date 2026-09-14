@@ -20,6 +20,12 @@ flows the web surface can exercise:
 - **Offline resilience** (`offline.spec.ts`) — the app stays navigable across
   the cached tab roots while offline and after reconnecting. See the note on the
   offline indicator below.
+- **Remote feature flags** (`feature-flags.spec.ts`): a `config.feature_flags`
+  override injected into the app-open response or a simulated Pusher `config`
+  broadcast (never written to the shared dev RTDB) is stored and switches the
+  gated Home entry points (FULLSCREEN_CALENDAR, BADGES) from the next launch;
+  non-boolean values are ignored. The in-session case is pinned as a known gap
+  until those call sites move to `useFeatureFlag`.
 - **Desktop phone frame** (`desktop-frame.spec.ts`) — the wide-window centered
   phone-frame layout (#1219 / #1224).
 
