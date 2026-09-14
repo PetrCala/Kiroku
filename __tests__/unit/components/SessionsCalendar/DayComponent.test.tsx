@@ -5,6 +5,7 @@ import DayComponent from '@components/SessionsCalendar/DayComponent';
 import type {DateData} from 'react-native-calendars';
 import type {DayState} from 'react-native-calendars/src/types';
 import type {SessionsCalendarMarking} from '@components/SessionsCalendar/DayComponent/types';
+import {mixHex} from '@libs/SessionColorPalettes';
 
 // PressableWithFeedback pulls in Reanimated → Worklets → native modules that
 // don't initialize under Jest. A passthrough keeps the tile renderable.
@@ -72,8 +73,10 @@ const isTile = (style: Style) =>
 
 // Tokens of the theme the test renderer resolves to (dark), which the tile
 // derives its colors from.
-const CARD_BG = '#151B23';
+const APP_BG = '#0D1117';
 const ICON = '#9198A1';
+// The palette green at 35% over the app background.
+const AF_TINT = mixHex(APP_BG, GREEN, 0.35);
 
 type RenderDayOptions = {
   state?: DayState;
@@ -100,11 +103,12 @@ const isRing = (style: Style) =>
   style.borderWidth === 1.5 && style.position === 'absolute';
 
 describe('SessionsCalendar DayComponent', () => {
-  it('draws an alcohol-free day on the card surface, not the palette green', () => {
+  it('draws an alcohol-free day as a flat 35% tint, not the full green', () => {
     const tree = renderDay({});
     const tile = findByStyle(tree, isTile);
     const style = flattenStyle(tile?.props?.style);
-    expect(style.backgroundColor).toBe(CARD_BG);
+    expect(style.backgroundColor).toBe(AF_TINT);
+    expect(AF_TINT).not.toBe(GREEN);
     expect(style.borderRadius).toBe(10);
     // The day number stays in the supporting text color.
     expect(JSON.stringify(tree)).not.toContain('"children":["0"]');
@@ -125,9 +129,9 @@ describe('SessionsCalendar DayComponent', () => {
     expect(pale.borderWidth).toBe(1);
     expect(pale.borderColor).not.toBe('#FFED8F');
     expect(pale.borderColor).toMatch(/^#[0-9a-f]{6}$/i);
-    // Same edge rule on the neutral alcohol-free surface.
+    // Same edge rule on the tinted alcohol-free tile.
     const af = edgeOf(AF_MARKING);
-    expect(af.borderColor).not.toBe(CARD_BG);
+    expect(af.borderColor).not.toBe(AF_TINT);
     // Unmarked cells keep the 1px border for geometry, but transparent.
     const empty = edgeOf(undefined);
     expect(empty.borderWidth).toBe(1);

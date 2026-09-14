@@ -1214,10 +1214,15 @@ const staticStyleUtils = {
 // dark).
 const CALENDAR_TILE_EDGE_MIX = 0.14;
 
+// How much of the palette green an alcohol-free tile carries over the app
+// background. 0.35 is clearly the palette hue while staying a ground the
+// solid session tiles sit on; higher and a run of sober days reads as a block.
+const CALENDAR_AF_TINT = 0.35;
+
 /**
  * The opaque fill of a calendar day tile, or null for an unmarked (future /
- * out-of-range) day. Alcohol-free days take the neutral card surface rather
- * than their marking color.
+ * out-of-range) day. Alcohol-free days take a flat 35% tint of their palette
+ * green over the app background rather than the full swatch.
  */
 function getSessionsCalendarTileFill(
   marking: SessionsCalendarMarking | undefined,
@@ -1226,7 +1231,9 @@ function getSessionsCalendarTileFill(
   if (!marking?.color) {
     return null;
   }
-  return marking.isAlcoholFree ? theme.cardBG : marking.color;
+  return marking.isAlcoholFree
+    ? mixHex(theme.appBG, marking.color, CALENDAR_AF_TINT)
+    : marking.color;
 }
 
 const createStyleUtils = (theme: ThemeColors, styles: ThemeStyles) => ({
@@ -1441,9 +1448,9 @@ const createStyleUtils = (theme: ThemeColors, styles: ThemeStyles) => ({
    * Returns the outer cell style for a sessions-calendar day.
    *
    * A session day is a solid tile in its swatch. An alcohol-free day (see
-   * `SessionsCalendarMarking.isAlcoholFree`) is the neutral card surface: it
-   * reads as "logged, nothing to show", so the session tiles are the only
-   * color on the grid. Days without a marking (future / outside the loaded
+   * `SessionsCalendarMarking.isAlcoholFree`) is a flat 35% tint of the
+   * palette green: clearly the palette hue, but a ground the solid session
+   * tiles still stand out from. Days without a marking (future / outside the loaded
    * data range) render as a transparent shell so they read as "no data"
    * rather than "rest day". Off-month cells dim to ~35%.
    *

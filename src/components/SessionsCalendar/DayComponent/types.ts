@@ -7,7 +7,7 @@ type CalendarColors = string;
 /** A day's marking, plus whether the day counts as alcohol-free: no session,
  *  or sessions totalling 0 units without a blackout. `color` still carries the
  *  palette green for those days (other consumers read it), but the calendar
- *  tile draws them on the neutral card surface instead of the swatch. */
+ *  tile draws them as a flat tint of it instead of the full swatch. */
 type SessionsCalendarMarking = MarkingProps & {isAlcoholFree?: boolean};
 
 /** Props for a react native calendar day component */
