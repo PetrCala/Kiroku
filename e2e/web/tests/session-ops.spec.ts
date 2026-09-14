@@ -38,14 +38,6 @@ import {SessionPage} from '../pages/SessionPage';
  * dies with the browser context.
  */
 
-/**
- * The queue retries a failed write with a backoff of up to ten steps capped at
- * 10 s, about 35 s in all, and today a rejected (4xx) op sits through all of
- * it before it is dropped (see the `test.fail` below). Tests that wait for a
- * rejected op to leave the queue budget for that.
- */
-const REJECTED_OP_DROP_TIMEOUT = 90_000;
-
 /** An id the server accepts for ops that never touch a real session. */
 function syntheticSessionId(label: string): string {
   return `e2e-${label}-${Math.random().toString(36).slice(2, 10)}`;
@@ -316,7 +308,7 @@ test.describe('session ops: the ops endpoint', () => {
       const saved = page.waitForResponse(
         response =>
           response.url().includes('/v1/sessions/update') && response.ok(),
-        {timeout: REJECTED_OP_DROP_TIMEOUT},
+        {timeout: 30_000},
       );
       const reconnectedAt = Date.now();
       await setForceOffline(page, false);
@@ -360,14 +352,8 @@ test.describe('session ops: the ops endpoint', () => {
 
   test('sends a rejected op once and moves on', async ({authedPage: page}) => {
     // kiroku-api answers an op it can't apply with a 4xx precisely so the
-    // queue drops it and rolls it back (routes/sessions `POST /ops`). The
-    // queue instead retries any failure through its whole backoff first: 11
-    // attempts over about 35 s, stalling every write queued behind it. Remove
-    // this line once SequentialQueue drops a deterministic 4xx at once.
-    test.fail(
-      true,
-      'Known bug: SequentialQueue retries a 4xx through its whole backoff before dropping it',
-    );
+    // queue drops it and rolls it back after one attempt (routes/sessions
+    // `POST /ops`; SequentialQueue drops a deterministic 4xx at once).
     await bootWithSessionOps(page);
     const sent = recordSessionOpRequests(page);
 
@@ -431,13 +417,10 @@ test.describe('session ops: coalescing', () => {
     // The server rejects edit_entry for now, so wait for the queue to drop it.
     await setForceOffline(page, false);
     await expect
-      .poll(() => getQueuedSessionOps(page), {
-        timeout: REJECTED_OP_DROP_TIMEOUT,
-      })
+      .poll(() => getQueuedSessionOps(page), {timeout: 30_000})
       .toEqual([]);
 
-    // On the wire: one op, the merged one, never the first id. Each attempt is
-    // that same op, retried (see the rejected-op `test.fail`).
+    // On the wire: one op, the merged one, never the first id.
     expect(sent.length).toBeGreaterThan(0);
     for (const request of sent) {
       expect(request.headers()['idempotency-key']).toBe(secondId);
