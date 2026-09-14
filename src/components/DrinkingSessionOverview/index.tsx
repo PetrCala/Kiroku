@@ -158,6 +158,7 @@ function DrinkingSessionOverview({
       accessibilityLabel={translate('dayOverviewScreen.sessionWindow', {
         sessionId,
       })}
+      accessibilityRole={CONST.ROLE.BUTTON}
       style={rowStyle}
       onPress={() => onSessionButtonPress()}
       onLongPress={onLongPress}>
