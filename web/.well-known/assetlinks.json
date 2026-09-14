@@ -4,7 +4,9 @@
     "target": {
       "namespace": "android_app",
       "package_name": "com.alcohol_tracker",
-      "sha256_cert_fingerprints": ["REPLACE_WITH_PLAY_APP_SIGNING_SHA256"]
+      "sha256_cert_fingerprints": [
+        "A6:99:96:5F:E9:08:33:52:25:C0:DE:32:67:54:CE:C9:09:C2:B5:14:1B:47:0F:ED:0D:6E:75:B1:F7:26:C3:AE"
+      ]
     }
   }
 ]
