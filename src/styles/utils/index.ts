@@ -25,6 +25,7 @@ import {
   getDerivedSwatchBorderColor,
   isLightHex,
   isSimilarHex,
+  mixHex,
 } from '@libs/SessionColorPalettes';
 import {defaultStyles} from '..';
 import type {ThemeStyles} from '..';
@@ -1208,6 +1209,11 @@ const staticStyleUtils = {
   getAmountWidth,
 };
 
+// How far the today ring pulls an accent-like tile fill toward its on-swatch
+// text color. 0.45 reads as a clear ring on the Brand palette's Light swatch
+// without turning into a black outline.
+const CALENDAR_TODAY_RING_FALLBACK_MIX = 0.45;
+
 const createStyleUtils = (theme: ThemeColors, styles: ThemeStyles) => ({
   ...staticStyleUtils,
   ...createModalStyleUtils({theme, styles}),
@@ -1498,10 +1504,11 @@ const createStyleUtils = (theme: ThemeColors, styles: ThemeStyles) => ({
    * The ring is the brand accent, except on a filled tile whose swatch is
    * itself close to the accent (the Brand palette's Light swatch is the
    * accent yellow; Classic's pure yellow is a hair off it), where an accent
-   * ring would vanish. There it takes the tile's on-swatch text color
-   * instead, so today stays marked on every palette. A tinted (unsaturated)
-   * alcohol-free tile shows the ground through it, so the accent always
-   * reads there.
+   * ring would vanish. There it takes the swatch pulled partway toward the
+   * tile's on-swatch text color: enough contrast to mark today, without the
+   * heavy near-black outline a full text-color ring puts on a bright fill.
+   * A tinted (unsaturated) alcohol-free tile shows the ground through it, so
+   * the accent always reads there.
    */
   getSessionsCalendarTodayRingStyle: (
     marking: MarkingProps | undefined,
@@ -1517,8 +1524,9 @@ const createStyleUtils = (theme: ThemeColors, styles: ThemeStyles) => ({
           : undefined;
     }
     if (fill && isSimilarHex(fill, theme.appColor)) {
+      const onSwatch = isLightHex(fill) ? theme.textDark : theme.textLight;
       return {
-        borderColor: isLightHex(fill) ? theme.textDark : theme.textLight,
+        borderColor: mixHex(fill, onSwatch, CALENDAR_TODAY_RING_FALLBACK_MIX),
       };
     }
     return {borderColor: theme.appColor};
