@@ -239,11 +239,16 @@ function DrinkingSessionWindow({
       <BottomActionBar containerStyle={styles.gap2}>
         {/* Each button is wrapped in a flex:1 view so the pair splits the row
             evenly; the wrapper (not the button) carries the flex, so the
-            buttons keep their natural height instead of stretching vertically. */}
+            buttons keep their natural height instead of stretching vertically.
+            The visible labels are single words because half of a 375pt-wide
+            screen (small iPhones, iPhone apps on iPad) can't fit "Discard
+            Session" on the button's one line at larger text sizes. The full
+            phrase stays as the accessibility label. */}
         <View style={styles.flex1}>
           <Button
             large
-            text={translate('liveSessionScreen.discardSession', {
+            text={deleteSessionWording}
+            accessibilityLabel={translate('liveSessionScreen.discardSession', {
               discardWord: deleteSessionWording,
             })}
             style={styles.buttonLarge}
@@ -255,7 +260,8 @@ function DrinkingSessionWindow({
             success
             large
             isDisabled={isSaveDisabled}
-            text={translate('liveSessionScreen.saveSession')}
+            text={translate('common.save')}
+            accessibilityLabel={translate('liveSessionScreen.saveSession')}
             style={styles.buttonLargeSuccess}
             onPress={() => saveSession(user)}
           />
