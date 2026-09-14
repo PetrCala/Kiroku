@@ -484,16 +484,7 @@ describe('useLazyMarkedDates incremental derivation', () => {
     // The widen appended older months…
     expect(after.length).toBeGreaterThan(before.size);
     // …and every month that was already derived kept its identity, so the
-    // week-list's memoized rows for those months never re-render. The one
-    // allowed exception is the month that was the loaded floor: it started
-    // with no alcohol-free carry-in, and if the newly loaded month before it
-    // ends on a sober run it re-derives once so the run ramps across the
-    // edge. Otherwise it, too, keeps its identity.
-    const previousFloorKey = [...before.keys()].sort()[0];
-    const previousFloorIndex = after.findIndex(
-      month => month.monthKey === previousFloorKey,
-    );
-    const newlyLoadedBefore = after[previousFloorIndex - 1];
+    // week-list's memoized rows for those months never re-render.
     let overlapCount = 0;
     after.forEach(month => {
       const previous = before.get(month.monthKey);
@@ -501,18 +492,6 @@ describe('useLazyMarkedDates incremental derivation', () => {
         return;
       }
       overlapCount += 1;
-      if (month.monthKey === previousFloorKey) {
-        if (newlyLoadedBefore.trailingAfStreak > 0) {
-          expect(month).not.toBe(previous);
-          const firstDay = [...month.dayData.keys()].sort()[0];
-          expect(month.dayData.get(firstDay)?.afStreak).toBe(
-            Math.min(7, newlyLoadedBefore.trailingAfStreak + 1),
-          );
-        } else {
-          expect(month).toBe(previous);
-        }
-        return;
-      }
       expect(month).toBe(previous);
     });
     expect(overlapCount).toBe(before.size);
@@ -656,7 +635,10 @@ describe('useLazyMarkedDates incremental derivation', () => {
     expect(result.current.unitsMap.get(todayKey)).toBe(1);
     expect(result.current.monthlyTotalsMap.get(monthKey)).toBe(1);
     // Sober in-range day: green marking, no units entry, no month-total entry.
-    expect(result.current.markedDates[soberKey]).toEqual({color: '#00ff00'});
+    expect(result.current.markedDates[soberKey]).toEqual({
+      color: '#00ff00',
+      isAlcoholFree: true,
+    });
     expect(result.current.unitsMap.has(soberKey)).toBe(false);
     expect(result.current.monthlyTotalsMap.has(soberKey.slice(0, 7))).toBe(
       false,

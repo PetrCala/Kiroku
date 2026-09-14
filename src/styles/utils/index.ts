@@ -20,11 +20,10 @@ import CONST from '@src/CONST';
 import type {StyledSafeAreaInsets} from '@hooks/useStyledSafeAreaInsets';
 import type {Theme as RNCalendarsTheme} from 'react-native-calendars/src/types';
 import type {MarkingProps} from 'react-native-calendars/src/calendar/day/marking';
+import type {SessionsCalendarMarking} from '@components/SessionsCalendar/DayComponent/types';
 import {
-  getCalendarAlcoholFreeTint,
   getDerivedSwatchBorderColor,
   isLightHex,
-  isSimilarHex,
   mixHex,
 } from '@libs/SessionColorPalettes';
 import {defaultStyles} from '..';
@@ -1209,10 +1208,26 @@ const staticStyleUtils = {
   getAmountWidth,
 };
 
-// How far the today ring pulls an accent-like tile fill toward its on-swatch
-// text color. 0.45 reads as a clear ring on the Brand palette's Light swatch
-// without turning into a black outline.
-const CALENDAR_TODAY_RING_FALLBACK_MIX = 0.45;
+// How far a calendar tile's fill is pulled toward the text color for its 1px
+// edge. 0.14 is invisible on a saturated swatch and just enough to outline a
+// tile whose fill matches the ground (pale swatches on light, blackout on
+// dark).
+const CALENDAR_TILE_EDGE_MIX = 0.14;
+
+/**
+ * The opaque fill of a calendar day tile, or null for an unmarked (future /
+ * out-of-range) day. Alcohol-free days take the neutral card surface rather
+ * than their marking color.
+ */
+function getSessionsCalendarTileFill(
+  marking: SessionsCalendarMarking | undefined,
+  theme: ThemeColors,
+): string | null {
+  if (!marking?.color) {
+    return null;
+  }
+  return marking.isAlcoholFree ? theme.cardBG : marking.color;
+}
 
 const createStyleUtils = (theme: ThemeColors, styles: ThemeStyles) => ({
   ...staticStyleUtils,
@@ -1425,35 +1440,35 @@ const createStyleUtils = (theme: ThemeColors, styles: ThemeStyles) => ({
   /**
    * Returns the outer cell style for a sessions-calendar day.
    *
-   * A session day is a solid tile in its swatch. An alcohol-free day is the
-   * palette green at an opacity that ramps with `afStreak` (its position in
-   * the run of consecutive alcohol-free days, see
-   * `getCalendarAlcoholFreeTint`), so a lone sober day sits quietly on the
-   * ground and a week-long run fills in to the full swatch. Days without a
-   * marking (future / outside the loaded data range) render as a transparent
-   * shell so they read as "no data" rather than "rest day". Off-month cells
-   * dim to ~35%. Borderless: the row gap separates tiles.
+   * A session day is a solid tile in its swatch. An alcohol-free day (see
+   * `SessionsCalendarMarking.isAlcoholFree`) is the neutral card surface: it
+   * reads as "logged, nothing to show", so the session tiles are the only
+   * color on the grid. Days without a marking (future / outside the loaded
+   * data range) render as a transparent shell so they read as "no data"
+   * rather than "rest day". Off-month cells dim to ~35%.
+   *
+   * Every filled tile carries a 1px edge in the text color at low opacity
+   * (`CALENDAR_TILE_EDGE_MIX`): invisible on a saturated fill, and exactly
+   * what keeps a pale tile on the light ground or a blackout tile on the dark
+   * ground from dissolving into it. Unfilled cells keep the same 1px border
+   * (transparent) so the corner label sits at the same spot on every day.
    */
   getSessionsCalendarDayCellStyle: (
-    marking: MarkingProps | undefined,
+    marking: SessionsCalendarMarking | undefined,
     isDimmed: boolean,
-    afStreak?: number,
   ): ViewStyle => {
-    const markingColor = marking?.color;
-    let backgroundColor: string = markingColor ?? 'transparent';
-    if (markingColor && afStreak !== undefined) {
-      backgroundColor = getCalendarAlcoholFreeTint(
-        markingColor,
-        afStreak,
-      ).color;
-    }
+    const fill = getSessionsCalendarTileFill(marking, theme);
     return {
       width: variables.sessionsCalendarDaySize,
       height: variables.sessionsCalendarDaySize,
       borderRadius: variables.sessionsCalendarTileRadius,
+      borderWidth: 1,
+      borderColor: fill
+        ? mixHex(fill, theme.text, CALENDAR_TILE_EDGE_MIX)
+        : 'transparent',
       alignItems: 'center',
       justifyContent: 'center',
-      backgroundColor,
+      backgroundColor: fill ?? 'transparent',
       opacity: isDimmed ? 0.35 : 1,
     };
   },
@@ -1461,24 +1476,19 @@ const createStyleUtils = (theme: ThemeColors, styles: ThemeStyles) => ({
   /**
    * Returns the corner day-number label style.
    *
-   * Always positioned absolute top-left, including on alcohol-free days — the
-   * empty center is what signals AF, not a re-centered day number. On a
-   * tinted (not yet saturated) alcohol-free tile and on an unmarked cell the
-   * label uses the muted theme text color; on a solid tile it inverts against
-   * the swatch like the unit count does.
+   * Always positioned absolute top-left, including on alcohol-free days: the
+   * empty center is what signals AF, not a re-centered day number. On an
+   * alcohol-free tile and on an unmarked cell the label uses the muted theme
+   * text color; on a session tile it inverts against the swatch like the
+   * unit count does.
    */
   getSessionsCalendarDayLabelStyle: (
-    marking: MarkingProps | undefined,
+    marking: SessionsCalendarMarking | undefined,
     isDimmed: boolean,
-    afStreak?: number,
   ): TextStyle => {
     const markingColor = marking?.color;
-    const isTintedAlcoholFree =
-      !!markingColor &&
-      afStreak !== undefined &&
-      !getCalendarAlcoholFreeTint(markingColor, afStreak).isSolid;
     let textColor: Color;
-    if (!markingColor || isTintedAlcoholFree) {
+    if (!markingColor || marking?.isAlcoholFree) {
       textColor = theme.textSupporting;
     } else if (isDimmed) {
       textColor = theme.textMutedReversed;
@@ -1496,40 +1506,6 @@ const createStyleUtils = (theme: ThemeColors, styles: ThemeStyles) => ({
       lineHeight: 10,
       color: textColor,
     };
-  },
-
-  /**
-   * Returns the color of the flush today ring for a day tile.
-   *
-   * The ring is the brand accent, except on a filled tile whose swatch is
-   * itself close to the accent (the Brand palette's Light swatch is the
-   * accent yellow; Classic's pure yellow is a hair off it), where an accent
-   * ring would vanish. There it takes the swatch pulled partway toward the
-   * tile's on-swatch text color: enough contrast to mark today, without the
-   * heavy near-black outline a full text-color ring puts on a bright fill.
-   * A tinted (unsaturated) alcohol-free tile shows the ground through it, so
-   * the accent always reads there.
-   */
-  getSessionsCalendarTodayRingStyle: (
-    marking: MarkingProps | undefined,
-    afStreak?: number,
-  ): ViewStyle => {
-    const markingColor = marking?.color;
-    let fill: string | undefined;
-    if (markingColor) {
-      fill =
-        afStreak === undefined ||
-        getCalendarAlcoholFreeTint(markingColor, afStreak).isSolid
-          ? markingColor
-          : undefined;
-    }
-    if (fill && isSimilarHex(fill, theme.appColor)) {
-      const onSwatch = isLightHex(fill) ? theme.textDark : theme.textLight;
-      return {
-        borderColor: mixHex(fill, onSwatch, CALENDAR_TODAY_RING_FALLBACK_MIX),
-      };
-    }
-    return {borderColor: theme.appColor};
   },
 
   /** Returns the centered hero units-number style. */

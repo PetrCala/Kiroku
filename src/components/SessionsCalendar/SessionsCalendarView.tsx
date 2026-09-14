@@ -42,7 +42,6 @@ type SessionsCalendarViewProps = {
 
   /** Per-day alcohol-free run position (1-based, clamped); only alcohol-free
    *  days have an entry. Drives how deeply the day cell tints. */
-  afStreakMap: Map<DateString, number>;
 
   /** The visible month */
   visibleDate: DateData;
@@ -101,7 +100,6 @@ function SessionsCalendarView({
   userID,
   markedDates,
   unitsMap,
-  afStreakMap,
   visibleDate,
   minDate,
   maxDate,
@@ -139,9 +137,6 @@ function SessionsCalendarView({
         date={date}
         state={state}
         units={date ? unitsMap.get(date.dateString as DateString) : 0}
-        afStreak={
-          date ? afStreakMap.get(date.dateString as DateString) : undefined
-        }
         marking={marking}
         theme={dayTheme}
         trackingStartDate={trackingStartDate}
@@ -149,7 +144,7 @@ function SessionsCalendarView({
         onLongPress={onDayLongPress}
       />
     ),
-    [unitsMap, afStreakMap, trackingStartDate, onDayPress, onDayLongPress],
+    [unitsMap, trackingStartDate, onDayPress, onDayLongPress],
   );
 
   // Month navigation. The library's own arrows are hidden (`hideArrows`) and

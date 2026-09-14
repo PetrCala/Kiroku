@@ -1773,17 +1773,18 @@ const styles = (theme: ThemeColors) =>
       marginLeft: 6,
     },
 
-    // Accent ring for today, drawn flush inside the tile edge as an overlay
-    // so the tile's own geometry never changes.
+    // Hairline ring for today in the icon gray, drawn as an overlay so the
+    // tile's own geometry never changes. Inset by -1 so it sits on top of the
+    // tile's 1px contrast edge rather than inside it.
     sessionsCalendarTodayRing: {
       position: 'absolute',
-      top: 0,
-      left: 0,
-      right: 0,
-      bottom: 0,
+      top: -1,
+      left: -1,
+      right: -1,
+      bottom: -1,
       borderRadius: variables.sessionsCalendarTileRadius,
-      borderWidth: 2,
-      borderColor: theme.appColor,
+      borderWidth: 1.5,
+      borderColor: theme.icon,
     },
 
     // Accent circle for the jump-to-current-month control; mirrors the

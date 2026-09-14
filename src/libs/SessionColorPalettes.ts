@@ -86,54 +86,6 @@ function getDerivedSwatchBorderColor(
   return `#${toHexByte(r)}${toHexByte(g)}${toHexByte(b)}`;
 }
 
-// Alcohol-free tile ramp. A sober day's tile is the palette green at an
-// opacity that grows with the day's position in a run of consecutive sober
-// days: the first day is a faint tint, and the run reaches the full swatch on
-// day CALENDAR_AF_STREAK_CAP. A single sober day stays quiet; a week without a
-// session fills in, so the solid green is something the calendar builds up to
-// rather than the default state of every empty day.
-const CALENDAR_AF_STREAK_CAP = 7;
-const CALENDAR_AF_TINT_BASE = 0.15;
-const CALENDAR_AF_TINT_STEP = 0.145;
-// Above this opacity the tint reads as a filled tile, so the day number flips
-// to the on-swatch text color (same rule as a session tile).
-const CALENDAR_AF_SOLID_THRESHOLD = 0.8;
-
-type CalendarAlcoholFreeTint = {
-  /** The tile background: `swatch` with an alpha byte, or the plain swatch
-   *  once the run has saturated. */
-  color: string;
-  /** Whether the tint is opaque enough for the on-swatch text color. */
-  isSolid: boolean;
-};
-
-/**
- * Background for an alcohol-free day's tile, given the day's 1-based position
- * in its run of consecutive alcohol-free days (clamped to the cap). Falls back
- * to the plain swatch for a color that isn't a hex triplet.
- */
-function getCalendarAlcoholFreeTint(
-  swatch: string,
-  streak: number,
-): CalendarAlcoholFreeTint {
-  const position = Math.max(
-    1,
-    Math.min(CALENDAR_AF_STREAK_CAP, Math.floor(streak)),
-  );
-  const alpha = Math.min(
-    1,
-    CALENDAR_AF_TINT_BASE + CALENDAR_AF_TINT_STEP * (position - 1),
-  );
-  const rgb = parseHex(swatch);
-  if (!rgb || alpha >= 1) {
-    return {color: swatch, isSolid: true};
-  }
-  return {
-    color: `#${toHexByte(rgb.r)}${toHexByte(rgb.g)}${toHexByte(rgb.b)}${toHexByte(alpha * 255)}`,
-    isSolid: alpha >= CALENDAR_AF_SOLID_THRESHOLD,
-  };
-}
-
 /**
  * Mix `color` toward `target` by `amount` (0 = color, 1 = target). Returns
  * `color` unchanged when either input isn't a hex triplet.
@@ -150,40 +102,14 @@ function mixHex(color: string, target: string, amount: number): string {
   )}${toHexByte(a.b * (1 - t) + b.b * t)}`;
 }
 
-// Normalised RGB distance below which two colors read as the same hue at
-// tile size: the Brand palette's Light swatch is the accent yellow itself, and
-// Classic's pure yellow sits just off it, so an accent ring on either tile
-// would vanish.
-const SIMILAR_HEX_THRESHOLD = 0.25;
-
-/**
- * Whether two hex colors are close enough (Euclidean RGB distance, normalised
- * to 0..1) that one drawn on the other would not read. Non-hex input is
- * treated as not similar.
- */
-function isSimilarHex(a: string, b: string): boolean {
-  const ra = parseHex(a);
-  const rb = parseHex(b);
-  if (!ra || !rb) {
-    return false;
-  }
-  const distance = Math.sqrt(
-    (ra.r - rb.r) ** 2 + (ra.g - rb.g) ** 2 + (ra.b - rb.b) ** 2,
-  );
-  return distance / (Math.sqrt(3) * 255) < SIMILAR_HEX_THRESHOLD;
-}
-
-export type {PaletteId, CalendarAlcoholFreeTint};
+export type {PaletteId};
 export {
-  CALENDAR_AF_STREAK_CAP,
   PALETTE_IDS,
   PALETTES,
   DEFAULT_PALETTE_ID,
   getPaletteIdFromColors,
   resolvePalette,
   isLightHex,
-  isSimilarHex,
   mixHex,
-  getCalendarAlcoholFreeTint,
   getDerivedSwatchBorderColor,
 };
