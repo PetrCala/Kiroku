@@ -42,7 +42,10 @@ import {PressableWithFeedback} from '@components/Pressable';
 import useTheme from '@hooks/useTheme';
 import StartSessionButtonAndPopover from '@components/StartSessionButtonAndPopover';
 import {useOnyx} from 'react-native-onyx';
+import type {OnyxEntry} from 'react-native-onyx';
 import ONYXKEYS from '@src/ONYXKEYS';
+import type {DrinkingSession} from '@src/types/onyx';
+import LiveSessionCard from '@components/LiveSessionCard';
 import {isEmptyObject} from '@src/types/utils/EmptyObject';
 import Button from '@components/Button';
 import SessionsCalendarCompactSkeleton from '@components/SessionsCalendar/SessionsCalendarCompactSkeleton';
@@ -51,6 +54,9 @@ import useNetwork from '@hooks/useNetwork';
 import useBottomTabBarHeight from '@hooks/useBottomTabBarHeight';
 import HomeHeaderSkeleton from './HomeScreenSkeleton';
 import getHomeContentState from './getHomeContentState';
+
+const isSessionOngoingSelector = (session: OnyxEntry<DrinkingSession>) =>
+  !!session?.ongoing;
 
 type HomeScreenProps = StackScreenProps<
   BottomTabNavigatorParamList,
@@ -73,7 +79,11 @@ function HomeScreen({route}: HomeScreenProps) {
   // optional-chain expression directly).
   const uid = user?.uid;
   const [loadingText] = useOnyx(ONYXKEYS.APP_LOADING_TEXT);
-  const [ongoingSessionData] = useOnyx(ONYXKEYS.ONGOING_SESSION_DATA);
+  // Only whether a session is live: the live card reads the session itself, so
+  // a quick-add re-renders the card, not all of Home.
+  const [isSessionOngoing] = useOnyx(ONYXKEYS.ONGOING_SESSION_DATA, {
+    selector: isSessionOngoingSelector,
+  });
   const [lastViewedByUser] = useOnyx(ONYXKEYS.NVP_LAST_VIEWED_CALENDAR_DATE);
   // The signed-in user's OWN last-viewed day (the home calendar is always self).
   const lastViewedForUser = uid ? lastViewedByUser?.[uid] : undefined;
@@ -247,21 +257,12 @@ function HomeScreen({route}: HomeScreenProps) {
     );
   };
 
-  // The banner keeps a constant footprint whether or not a session is live, so
-  // the calendar below never shifts. A brand-new user (no completed session and
-  // not in one) shows no banner.
+  // While a session is live, its card sits at the very top. Otherwise the
+  // last-session banner does. A brand-new user (no completed session and not
+  // in one) shows neither.
   const renderBanner = () => {
-    if (ongoingSessionData?.ongoing) {
-      return (
-        <HomeBanner
-          tone="active"
-          label={translate('homeScreen.banners.inSession.label')}
-          detail={translate('homeScreen.banners.inSession.body')}
-          actionLabel={translate('homeScreen.banners.inSession.resume')}
-          accessibilityLabel={translate('homeScreen.banners.inSession.a11y')}
-          onPress={() => DS.navigateToOngoingSessionScreen()}
-        />
-      );
+    if (isSessionOngoing) {
+      return <LiveSessionCard />;
     }
     if (lastSession) {
       return (
