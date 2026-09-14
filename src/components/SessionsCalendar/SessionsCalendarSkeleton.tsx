@@ -27,7 +27,7 @@ function SessionsCalendarSkeleton() {
   const styles = useThemeStyles();
   const theme = useTheme();
   const daySize = variables.sessionsCalendarDaySize;
-  const dayRadius = variables.componentBorderRadiusNormal;
+  const dayRadius = variables.sessionsCalendarTileRadius;
 
   return (
     <View

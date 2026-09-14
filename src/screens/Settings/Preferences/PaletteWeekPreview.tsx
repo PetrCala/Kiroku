@@ -10,19 +10,22 @@ type WeekCell = {
   day: number;
   slot: keyof SessionColorPalette;
   units: number;
+  /** Alcohol-free run position for green cells, spread across the ramp so
+   *  the preview shows the faint first day through the saturated seventh. */
+  afStreak?: number;
 };
 
 // A representative week — 3 rest days + 4 active days covering each severity
 // once. Keeps the preview honest about what a normal week looks like rather
 // than showing every cell maxed out.
 const WEEK_OVERLAY: readonly WeekCell[] = [
-  {day: 10, slot: 'green', units: 0},
+  {day: 10, slot: 'green', units: 0, afStreak: 2},
   {day: 11, slot: 'yellow', units: 3},
-  {day: 12, slot: 'green', units: 0},
+  {day: 12, slot: 'green', units: 0, afStreak: 4},
   {day: 13, slot: 'orange', units: 7},
   {day: 14, slot: 'red', units: 12},
   {day: 15, slot: 'black', units: 20},
-  {day: 16, slot: 'green', units: 0},
+  {day: 16, slot: 'green', units: 0, afStreak: 7},
 ];
 
 type PaletteWeekPreviewProps = {
@@ -62,11 +65,13 @@ function PaletteWeekPreview({palette}: PaletteWeekPreviewProps) {
               style={StyleUtils.getSessionsCalendarDayCellStyle(
                 marking,
                 false,
+                cell.afStreak,
               )}>
               <Text
                 style={StyleUtils.getSessionsCalendarDayLabelStyle(
                   marking,
                   false,
+                  cell.afStreak,
                 )}>
                 {cell.day}
               </Text>

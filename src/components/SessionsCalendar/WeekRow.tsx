@@ -70,6 +70,7 @@ function WeekRow({
             <DayComponent
               date={dayKeyToDateData(dayKey)}
               units={cell?.units}
+              afStreak={cell?.afStreak}
               marking={cell?.marking}
               trackingStartDate={trackingStartDate}
               onPress={onDayPress}
