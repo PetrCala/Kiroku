@@ -316,4 +316,60 @@ test.describe('request queue failure handling', () => {
       await deleteSessionBestEffort(page, session);
     }
   });
+  test('re-sends a live flush on the cooldown once the server heals after the drop cap, with no user action', async ({
+    authedPage: page,
+  }) => {
+    // Three drops at full speed, then the 30 s cooldown (see
+    // `DrinkingSession.maybeResumeLiveSessionPersist`).
+    test.setTimeout(180_000);
+    const session = new SessionPage(page);
+    try {
+      const sessionId = await startSession(page, session);
+
+      let serverHealed = false;
+      const seen = await interceptSessionUpdates(page, body =>
+        isLiveFlushWithDrinks(body, sessionId) && !serverHealed
+          ? {status: 422}
+          : undefined,
+      );
+      const liveFlushes = () =>
+        seen.filter(update => update.ongoing && update.drinks > 0);
+
+      const unitsBefore = Number(await session.totalUnits().innerText());
+      await session.logOneDrink();
+      await expect
+        .poll(async () => Number(await session.totalUnits().innerText()))
+        .toBeGreaterThan(unitsBefore);
+      const loggedUnits = await session.totalUnits().innerText();
+
+      // The cap: three rejected flushes, then nothing inside the cooldown.
+      await expect.poll(() => liveFlushes().length, {timeout: 10_000}).toBe(3);
+      const cappedAt = Date.now();
+      await page.waitForTimeout(5_000);
+      expect(liveFlushes()).toHaveLength(3);
+
+      // The server heals. Without any tap, the cooldown re-arm sends the
+      // buffer and the server accepts it.
+      serverHealed = true;
+      await expect
+        .poll(() => liveFlushes().some(update => update.status === 200), {
+          timeout: 60_000,
+          message: `live flushes: ${JSON.stringify(liveFlushes())}`,
+        })
+        .toBe(true);
+      const resent = liveFlushes().find(update => update.status === 200);
+      expect(resent?.drinks).toBe(1);
+      // Not before the cooldown elapsed, and only one attempt was needed.
+      expect((resent?.at ?? 0) - cappedAt).toBeGreaterThanOrEqual(25_000);
+      expect(liveFlushes()).toHaveLength(4);
+
+      // The session on the server now has the drink: the finalize is a plain
+      // save, and the summary round trip shows the unit.
+      await session.save();
+      await session.openEditFromSummary();
+      await expect(session.totalUnits()).toHaveText(loggedUnits);
+    } finally {
+      await deleteSessionBestEffort(page, session);
+    }
+  });
 });
