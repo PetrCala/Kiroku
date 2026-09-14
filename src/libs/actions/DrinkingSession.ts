@@ -278,11 +278,19 @@ async function updateLocalData(
 // land after them.
 const LIVE_SESSION_PERSIST_DEBOUNCE_MS = 500;
 // How many consecutive permanent drops of an enqueued live flush (deterministic
-// server rejections) the automatic re-arm tolerates before it
-// stops re-enqueueing the same payload. See `maybeResumeLiveSessionPersist`.
+// server rejections) the automatic re-arm tolerates at full speed (one
+// debounce window apart). Past that it keeps re-arming, but only once per
+// cooldown that doubles from `LIVE_FLUSH_DROP_COOLDOWN_MS` up to
+// `LIVE_FLUSH_DROP_COOLDOWN_MAX_MS`, so a payload the server always rejects
+// costs one request every few minutes rather than a tight loop, while a
+// rejection that clears (a server-side fix, a deploy) is picked up without
+// waiting for the user's next edit. See `maybeResumeLiveSessionPersist`.
 const MAX_LIVE_FLUSH_DROPS = 3;
 let liveSessionPersistTimer: ReturnType<typeof setTimeout> | null = null;
 let liveSessionPersistInteraction: {cancel: () => void} | null = null;
+// Armed while the re-arm is in its slow phase (see above): fires one
+// `scheduleLiveSessionPersist` after the cooldown.
+let liveFlushCooldownTimer: ReturnType<typeof setTimeout> | null = null;
 
 /**
  * Whether a debounced live-session persist is armed or deferred but not yet sent.
@@ -292,12 +300,23 @@ let liveSessionPersistInteraction: {cancel: () => void} | null = null;
  */
 function hasPendingLiveSessionPersist(): boolean {
   return (
-    liveSessionPersistTimer !== null || liveSessionPersistInteraction !== null
+    liveSessionPersistTimer !== null ||
+    liveSessionPersistInteraction !== null ||
+    liveFlushCooldownTimer !== null
   );
+}
+
+/** Cancel a cooldown re-arm (see `maybeResumeLiveSessionPersist`), if any. */
+function cancelLiveFlushCooldown(): void {
+  if (liveFlushCooldownTimer) {
+    clearTimeout(liveFlushCooldownTimer);
+    liveFlushCooldownTimer = null;
+  }
 }
 
 /** Cancel a scheduled-but-not-yet-sent debounced live-session persist. */
 function cancelLiveSessionPersist(): void {
+  cancelLiveFlushCooldown();
   if (liveSessionPersistTimer) {
     clearTimeout(liveSessionPersistTimer);
     liveSessionPersistTimer = null;
@@ -381,22 +400,30 @@ function maybeResumeLiveSessionPersist(): void {
   if (sync.editedAt <= Math.max(sync.enqueuedAt ?? 0, sync.syncedAt ?? 0)) {
     return;
   }
-  // The request queue permanently dropped this payload several times in a row
-  // (deterministic server rejections; transient failures never drop). Stop
-  // auto-re-enqueueing it: the buffer stays guarded locally (`syncedAt` never
-  // advanced), and the next explicit edit or the finalize sends a fresh
-  // full-session payload anyway.
-  if ((sync.flushDropCount ?? 0) >= MAX_LIVE_FLUSH_DROPS) {
-    Log.hmmm(
-      '[DrinkingSession] Live flush dropped too many times; not re-arming',
-      {
-        sessionId: session.id,
-        flushDropCount: sync.flushDropCount,
-      },
-    );
+  if (hasPendingLiveSessionPersist()) {
     return;
   }
-  if (hasPendingLiveSessionPersist()) {
+  // The request queue permanently dropped this payload several times in a row
+  // (deterministic server rejections; transient failures never drop). Keep
+  // re-arming, but slowly: one flush per cooldown, doubling with every further
+  // drop. The buffer stays guarded locally meanwhile (`syncedAt` never
+  // advanced), and the next explicit edit resets the count, so a fresh payload
+  // goes out at full speed again.
+  const flushDropCount = sync.flushDropCount ?? 0;
+  if (flushDropCount >= MAX_LIVE_FLUSH_DROPS) {
+    const cooldownMs = Math.min(
+      CONST.NETWORK.LIVE_FLUSH_DROP_COOLDOWN_MS *
+        2 ** (flushDropCount - MAX_LIVE_FLUSH_DROPS),
+      CONST.NETWORK.LIVE_FLUSH_DROP_COOLDOWN_MAX_MS,
+    );
+    Log.hmmm(
+      '[DrinkingSession] Live flush dropped too many times; re-arming after a cooldown',
+      {sessionId: session.id, flushDropCount, cooldownMs},
+    );
+    liveFlushCooldownTimer = setTimeout(() => {
+      liveFlushCooldownTimer = null;
+      scheduleLiveSessionPersist();
+    }, cooldownMs);
     return;
   }
   scheduleLiveSessionPersist();
@@ -448,7 +475,7 @@ function flushLiveSessionPersist(): void {
           // failures are never dropped). Clearing `enqueuedAt` re-opens the
           // "never reached the queue" state, so the next hydration or edit
           // re-arms the persist and the following full-session flush re-sends
-          // everything; `flushDropCount` caps that loop (see
+          // everything; `flushDropCount` slows that loop down (see
           // `maybeResumeLiveSessionPersist`).
           failureData: [
             {
@@ -486,6 +513,8 @@ function recordLiveSessionEdit(sessionId: DrinkingSessionId | undefined): void {
  * on a touch frame.
  */
 function scheduleLiveSessionPersist(): void {
+  // A persist scheduled now supersedes a slow re-arm still waiting its turn.
+  cancelLiveFlushCooldown();
   if (liveSessionPersistTimer) {
     clearTimeout(liveSessionPersistTimer);
   }
