@@ -23,9 +23,9 @@ flows the web surface can exercise:
 - **Remote feature flags** (`feature-flags.spec.ts`): a `config.feature_flags`
   override injected into the app-open response or a simulated Pusher `config`
   broadcast (never written to the shared dev RTDB) is stored and switches the
-  gated Home entry points (FULLSCREEN_CALENDAR, BADGES) from the next launch;
-  non-boolean values are ignored. The in-session case is pinned as a known gap
-  until those call sites move to `useFeatureFlag`.
+  gated Home entry points; non-boolean values are ignored. FULLSCREEN_CALENDAR
+  (read via `useFeatureFlag`) switches in the running session; BADGES (still
+  `isEnabled` in HomeScreen) only from the next launch, pinned as a known gap.
 - **Desktop phone frame** (`desktop-frame.spec.ts`) — the wide-window centered
   phone-frame layout (#1219 / #1224).
 

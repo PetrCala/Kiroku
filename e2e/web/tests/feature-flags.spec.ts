@@ -21,10 +21,12 @@ import {
  *     that opens the fullscreen calendar; with the flag off it is plain text.
  *   - BADGES (default off): a "Badges" button in the Home header.
  *
- * Both call sites read `FeatureFlags.isEnabled`, which doesn't re-render when
- * an override arrives, so today an override shows on screen only from the next
- * app launch. The specs assert that (the override is stored, then applied on
- * relaunch), and pin the in-session gap in the "known gap" block below.
+ * The calendar header reads the flag through `useFeatureFlag`, so a kill switch
+ * applies in the running session. The Home header still reads
+ * `FeatureFlags.isEnabled`, which doesn't re-render when an override arrives,
+ * so BADGES shows only from the next launch; that gap is pinned in the "known
+ * gap" block below. The flag-agnostic specs assert on a relaunch, where both
+ * call sites are current.
  */
 
 // The Home calendar header renders the visible month as `MMM yyyy`
@@ -224,76 +226,98 @@ test.describe('remote feature flags', () => {
     await expectStaysAbsent(authedPage, badgesEntry(authedPage));
   });
 
-  // Known gap: an override that arrives while the app is running (the boot
-  // app-open included) is stored but doesn't change the screen until the next
-  // launch, because these call sites read `FeatureFlags.isEnabled` instead of
-  // `useFeatureFlag`:
-  //   - FULLSCREEN_CALENDAR: src/components/SessionsCalendar/SessionsCalendarView.tsx
-  //   - BADGES: src/screens/HomeScreen.tsx
-  // Each test asserts the setup for real (override served and stored) and then
-  // expects the screen to still be stale. When a call site moves to
-  // `useFeatureFlag` its tests fail on that last check: flip it to assert the
-  // change shows right away.
-  test.describe('without a relaunch (known gap)', () => {
+  // FULLSCREEN_CALENDAR is read through `useFeatureFlag`
+  // (src/components/SessionsCalendar/SessionsCalendarView.tsx), so the kill
+  // switch works in the running session, whichever way the override arrives.
+  test.describe('without a relaunch', () => {
+    test('FULLSCREEN_CALENDAR: false from the boot app-open hides the fullscreen calendar entry point', async ({
+      authedPage,
+    }) => {
+      await launchHome(authedPage, {FULLSCREEN_CALENDAR: false});
+
+      await expectStaysAbsent(authedPage, fullscreenCalendarEntry(authedPage));
+    });
+
+    test('a config broadcast switches the fullscreen calendar entry point off and back on', async ({
+      authedPage,
+    }) => {
+      const errors = trackErrors(authedPage);
+      const remote = await launchHome(authedPage, {});
+      await expect(fullscreenCalendarEntry(authedPage)).toBeVisible();
+
+      // Admin PUT: the kill switch hides the entry point on screen.
+      remote.set({FULLSCREEN_CALENDAR: false});
+      await emitConfigUpdate(authedPage, {
+        ...remote.lastServedConfig(),
+        feature_flags: {FULLSCREEN_CALENDAR: false},
+      });
+      await expectStoredOverrides(authedPage, {FULLSCREEN_CALENDAR: false});
+      await expectStaysAbsent(authedPage, fullscreenCalendarEntry(authedPage));
+
+      // Admin DELETE: the entry point comes back and works again.
+      remote.set({});
+      await emitConfigUpdate(authedPage, {
+        ...remote.lastServedConfig(),
+        feature_flags: {},
+      });
+      await expectStoredOverrides(authedPage, {});
+      await expect(fullscreenCalendarEntry(authedPage)).toBeVisible();
+      await fullscreenCalendarEntry(authedPage).click();
+      await expect(
+        authedPage.getByTestId('SessionsCalendarScreen'),
+      ).toBeVisible();
+
+      expect(
+        errors,
+        `Unexpected console errors:\n${errors.join('\n')}`,
+      ).toEqual([]);
+    });
+  });
+
+  // Known gap: the Home header reads BADGES through `FeatureFlags.isEnabled`
+  // (src/screens/HomeScreen.tsx), so an override that arrives while the app is
+  // running (the boot app-open included) is stored but doesn't change the
+  // screen until the next launch. Each test asserts the setup for real
+  // (override served and stored) and then expects the screen to still be
+  // stale. Once HomeScreen moves to `useFeatureFlag` these fail on that last
+  // check: flip them to assert the change shows right away, as the
+  // FULLSCREEN_CALENDAR specs above do.
+  test.describe('BADGES without a relaunch (known gap)', () => {
     // Once Onyx has stored the override a subscribed component re-renders
     // within a frame, so a short budget is plenty.
     const IN_SESSION_TIMEOUT = 5_000;
 
-    async function expectStillStale(
-      page: Page,
-      expectApplied: (page: Page) => Promise<void>,
-    ): Promise<void> {
-      const applied = await expectApplied(page).then(
-        () => true,
-        () => false,
-      );
+    async function expectBadgesStillHidden(page: Page): Promise<void> {
+      const shown = await expect(badgesEntry(page))
+        .toBeVisible({timeout: IN_SESSION_TIMEOUT})
+        .then(
+          () => true,
+          () => false,
+        );
       expect(
-        applied,
-        'The override now shows without a relaunch: the known gap is fixed, so assert the change directly',
+        shown,
+        'BADGES now shows without a relaunch: the known gap is fixed, so assert the change directly',
       ).toBe(false);
     }
 
-    const cases: Array<{
-      name: string;
-      override: Record<string, unknown>;
-      expectApplied: (page: Page) => Promise<void>;
-    }> = [
-      {
-        name: 'FULLSCREEN_CALENDAR: false hides the fullscreen calendar entry point',
-        override: {FULLSCREEN_CALENDAR: false},
-        expectApplied: page =>
-          expect(fullscreenCalendarEntry(page)).toHaveCount(0, {
-            timeout: IN_SESSION_TIMEOUT,
-          }),
-      },
-      {
-        name: 'BADGES: true shows the badges entry point',
-        override: {BADGES: true},
-        expectApplied: page =>
-          expect(badgesEntry(page)).toBeVisible({timeout: IN_SESSION_TIMEOUT}),
-      },
-    ];
+    test('BADGES: true from the boot app-open shows the badges entry point only after a relaunch', async ({
+      authedPage,
+    }) => {
+      await launchHome(authedPage, {BADGES: true});
+      await expectBadgesStillHidden(authedPage);
+    });
 
-    for (const {name, override, expectApplied} of cases) {
-      test(`${name} only after a relaunch when it arrives with the boot app-open`, async ({
-        authedPage,
-      }) => {
-        await launchHome(authedPage, override);
-        await expectStillStale(authedPage, expectApplied);
+    test('BADGES: true from a config broadcast shows the badges entry point only after a relaunch', async ({
+      authedPage,
+    }) => {
+      const remote = await launchHome(authedPage, {});
+      remote.set({BADGES: true});
+      await emitConfigUpdate(authedPage, {
+        ...remote.lastServedConfig(),
+        feature_flags: {BADGES: true},
       });
-
-      test(`${name} only after a relaunch when a config broadcast arrives after load`, async ({
-        authedPage,
-      }) => {
-        const remote = await launchHome(authedPage, {});
-        remote.set(override);
-        await emitConfigUpdate(authedPage, {
-          ...remote.lastServedConfig(),
-          feature_flags: override,
-        });
-        await expectStoredOverrides(authedPage, override);
-        await expectStillStale(authedPage, expectApplied);
-      });
-    }
+      await expectStoredOverrides(authedPage, {BADGES: true});
+      await expectBadgesStillHidden(authedPage);
+    });
   });
 });
