@@ -63,7 +63,7 @@ describe('deriveCalendarMonth', () => {
     // Every day of March carries cell data; sober days are green with no units.
     expect(month.dayData.size).toBe(31);
     expect(month.dayData.get('2026-03-01' as DateString)).toEqual({
-      marking: {color: GREEN},
+      marking: {color: GREEN, isAlcoholFree: true},
     });
     // The session day carries the session marking and its units.
     const sessionCell = month.dayData.get('2026-03-10' as DateString);

@@ -1,8 +1,11 @@
 import type {DrinkingSessionList, Preferences} from '@src/types/onyx';
 import type {DateString, UserID} from '@src/types/onyx/OnyxCommon';
 import type {DateData} from 'react-native-calendars';
-import type {MarkingProps} from 'react-native-calendars/src/calendar/day/marking';
-import type {DayComponentProps, CalendarColors} from './DayComponent/types';
+import type {
+  DayComponentProps,
+  CalendarColors,
+  SessionsCalendarMarking,
+} from './DayComponent/types';
 
 type SessionsCalendarProps = {
   /** ID of the user for which to render the calendar */
@@ -67,7 +70,7 @@ type SessionsCalendarProps = {
 };
 
 type SessionsCalendarDayMarking = {
-  marking: MarkingProps;
+  marking: SessionsCalendarMarking;
   units: number;
 };
 type SessionsCalendarMarkedDates = Record<string, SessionsCalendarDayMarking>;
@@ -76,6 +79,7 @@ export default SessionsCalendarProps;
 export type {
   DayComponentProps,
   CalendarColors,
+  SessionsCalendarMarking,
   SessionsCalendarDayMarking,
   SessionsCalendarMarkedDates,
 };

@@ -7,6 +7,7 @@ import Icon from '@components/Icon';
 import * as KirokuIcons from '@components/Icon/KirokuIcons';
 import {Calendar} from 'react-native-calendars';
 import type {DateData} from 'react-native-calendars';
+import type {ValueOf} from 'type-fest';
 import type {MarkedDates} from 'react-native-calendars/src/types';
 import {useOnyx} from 'react-native-onyx';
 import {format, parseISO, startOfMonth} from 'date-fns';
@@ -26,8 +27,6 @@ import type {DateString, UserID} from '@src/types/onyx/OnyxCommon';
 import Text from '@components/Text';
 import DayComponent from './DayComponent';
 import type {DayComponentProps} from './types';
-import CalendarArrow from './CalendarArrow';
-import type {Direction} from './CalendarArrow';
 
 type SessionsCalendarViewProps = {
   /** Owning user — required to deep-link to the full-screen calendar route
@@ -40,6 +39,9 @@ type SessionsCalendarViewProps = {
 
   /** Per-day total unit counts (used by the day cell to render the number) */
   unitsMap: Map<DateString, number>;
+
+  /** Per-day alcohol-free run position (1-based, clamped); only alcohol-free
+   *  days have an entry. Drives how deeply the day cell tints. */
 
   /** The visible month */
   visibleDate: DateData;
@@ -69,7 +71,7 @@ type SessionsCalendarViewProps = {
    *  control appears in the header while the user is viewing a past month. */
   onJumpToCurrent?: () => void;
 
-  /** Hide month-nav arrows entirely (e.g. for an inline preview) */
+  /** Hide the month-nav buttons entirely (e.g. for an inline preview) */
   hideArrows?: boolean;
 
   /** Hide the month-year text header (e.g. for an inline preview) */
@@ -145,10 +147,42 @@ function SessionsCalendarView({
     [unitsMap, trackingStartDate, onDayPress, onDayLongPress],
   );
 
-  // Custom header: matches the default month-text styling but reserves space
-  // for an inline spinner shown only while an older-months fetch is in flight.
-  // Keeping the header always-customized (not just when fetching) avoids a
-  // layout jump between native-header and custom-header rendering.
+  // Month navigation. The library's own arrows are hidden (`hideArrows`) and
+  // replaced by buttons inside the custom header, so paging via button, swipe
+  // and the header all run through these two handlers and the orchestrator's
+  // lazy-load path. The `subtractMonth/addMonth` callback the handlers take
+  // is the lib's internal cursor updater, irrelevant here since `current` is
+  // driven by `visibleDate`, so a no-op is passed.
+  const resolvedMinDate = minDate ?? CONST.DATE.MIN_DATE;
+  const resolvedMaxDate =
+    maxDate ?? format(new Date(), CONST.DATE.CALENDAR_FORMAT);
+  const visibleMonthStart = useMemo(
+    () => startOfMonth(new Date(visibleDate.timestamp)),
+    [visibleDate.timestamp],
+  );
+  const canGoToPreviousMonth =
+    !!onLeftArrowPress &&
+    visibleMonthStart > startOfMonth(parseISO(resolvedMinDate));
+  const canGoToNextMonth =
+    !!onRightArrowPress &&
+    visibleMonthStart < startOfMonth(parseISO(resolvedMaxDate));
+  const goToPreviousMonth = useCallback(() => {
+    if (!canGoToPreviousMonth || !onLeftArrowPress) {
+      return;
+    }
+    onLeftArrowPress(() => {});
+  }, [canGoToPreviousMonth, onLeftArrowPress]);
+  const goToNextMonth = useCallback(() => {
+    if (!canGoToNextMonth || !onRightArrowPress) {
+      return;
+    }
+    onRightArrowPress(() => {});
+  }, [canGoToNextMonth, onRightArrowPress]);
+
+  // Custom header: the month label leads, the revert control / older-months
+  // spinner and the two nav buttons trail. Keeping the header always-customized
+  // (not just when fetching) avoids a layout jump between native-header and
+  // custom-header rendering.
   // The lib passes an `XDate` (no published d.ts; treated as `any` here). All we
   // need is its epoch — extract via `getTime()` and rebuild a native `Date`.
   const isHeaderTappable = !!userID;
@@ -241,12 +275,35 @@ function SessionsCalendarView({
           </Animated.View>
         );
       }
+      const renderNavButton = (direction: ValueOf<typeof CONST.DIRECTION>) => {
+        const isLeft = direction === CONST.DIRECTION.LEFT;
+        const isEnabled = isLeft ? canGoToPreviousMonth : canGoToNextMonth;
+        return (
+          <PressableWithFeedback
+            onPress={isLeft ? goToPreviousMonth : goToNextMonth}
+            disabled={!isEnabled}
+            role={CONST.ROLE.BUTTON}
+            accessibilityLabel={translate(
+              isLeft ? 'common.previous' : 'common.next',
+            )}
+            style={[
+              styles.sessionsCalendarHeaderNavButton,
+              !isEnabled && styles.buttonOpacityDisabled,
+            ]}>
+            <Icon
+              src={KirokuIcons.ArrowRight}
+              fill={theme.icon}
+              width={14}
+              height={14}
+              additionalStyles={StyleUtils.getDirectionStyle(direction)}
+            />
+          </PressableWithFeedback>
+        );
+      };
       return (
-        // Mirrors the Statistics range navigator: a phantom left spacer matches
-        // the right slot so the month label stays centered and never shifts
+        // The right slot keeps a fixed width so the nav buttons never shift
         // when the revert control or older-months spinner toggle in/out.
         <View style={styles.sessionsCalendarHeader}>
-          <View style={styles.sessionsCalendarHeaderSideSlot} />
           {isHeaderTappable ? (
             <PressableWithFeedback
               onPress={onHeaderPress}
@@ -265,15 +322,23 @@ function SessionsCalendarView({
           ) : (
             <View style={styles.sessionsCalendarHeaderLabel}>{monthText}</View>
           )}
+          <View style={styles.flex1} />
           <View style={styles.sessionsCalendarHeaderSideSlot}>
             {rightSlotContent}
           </View>
+          {!hideArrows && (
+            <>
+              {renderNavButton(CONST.DIRECTION.LEFT)}
+              {renderNavButton(CONST.DIRECTION.RIGHT)}
+            </>
+          )}
         </View>
       );
     },
     [
       dateFnsLocale,
       hideMonthHeader,
+      hideArrows,
       isFetchingOlderMonths,
       isHeaderTappable,
       onHeaderPress,
@@ -281,12 +346,21 @@ function SessionsCalendarView({
       showRevert,
       revertOpacity,
       translate,
+      canGoToPreviousMonth,
+      canGoToNextMonth,
+      goToPreviousMonth,
+      goToNextMonth,
+      StyleUtils,
+      styles.flex1,
+      styles.buttonOpacityDisabled,
       styles.sessionsCalendarHeader,
       styles.sessionsCalendarHeaderLabel,
       styles.sessionsCalendarHeaderCaret,
       styles.sessionsCalendarHeaderMonthText,
+      styles.sessionsCalendarHeaderNavButton,
       styles.sessionsCalendarHeaderSideSlot,
       styles.sessionsCalendarHeaderRevert,
+      theme.icon,
       theme.spinner,
       theme.textReversed,
       theme.textSupporting,
@@ -294,34 +368,8 @@ function SessionsCalendarView({
   );
 
   // Side-swipe → change month. The library's built-in `enableSwipeMonths` is
-  // off because it bypasses the orchestrator's lazy-load hook; we feed the
-  // existing arrow handlers instead so the same prefetch path fires. The
-  // `subtractMonth/addMonth` callback they take is the lib's internal cursor
-  // updater — irrelevant here since `current` is driven by `visibleDate`.
-  const resolvedMinDate = minDate ?? CONST.DATE.MIN_DATE;
-  const resolvedMaxDate =
-    maxDate ?? format(new Date(), CONST.DATE.CALENDAR_FORMAT);
-  const goToPreviousMonth = useCallback(() => {
-    if (!onLeftArrowPress) {
-      return;
-    }
-    const visibleMonth = startOfMonth(new Date(visibleDate.timestamp));
-    if (visibleMonth <= startOfMonth(parseISO(resolvedMinDate))) {
-      return;
-    }
-    onLeftArrowPress(() => {});
-  }, [onLeftArrowPress, visibleDate.timestamp, resolvedMinDate]);
-  const goToNextMonth = useCallback(() => {
-    if (!onRightArrowPress) {
-      return;
-    }
-    const visibleMonth = startOfMonth(new Date(visibleDate.timestamp));
-    if (visibleMonth >= startOfMonth(parseISO(resolvedMaxDate))) {
-      return;
-    }
-    onRightArrowPress(() => {});
-  }, [onRightArrowPress, visibleDate.timestamp, resolvedMaxDate]);
-
+  // off because it bypasses the orchestrator's lazy-load hook; the swipe feeds
+  // the same handlers as the header buttons so the same prefetch path fires.
   const swipeGesture = useMemo(
     () =>
       Gesture.Pan()
@@ -372,22 +420,17 @@ function SessionsCalendarView({
           minDate={resolvedMinDate}
           maxDate={resolvedMaxDate}
           monthFormat={CONST.DATE.MONTH_YEAR_ABBR_FORMAT}
-          onPressArrowLeft={onLeftArrowPress}
-          onPressArrowRight={onRightArrowPress}
           markedDates={markedDates}
           markingType="period"
           firstDay={CONST.WEEK_STARTS_ON}
           enableSwipeMonths={false}
-          hideArrows={hideArrows}
+          // The library's edge arrows are always hidden; month paging lives in
+          // the custom header (`renderNavButton`) so it can sit next to the
+          // revert control without the arrows' hit-slop swallowing its taps.
+          hideArrows
           hideDayNames={hideDayNames}
           renderHeader={renderHeader}
           disableAllTouchEventsForDisabledDays
-          // Drop the library's default 20px arrow hit-slop: combined with the
-          // wide arrow touch container it bled over the header's revert button
-          // and swallowed its taps. The arrow target stays comfortable via its
-          // own width + padding.
-          arrowsHitSlop={0}
-          renderArrow={(direction: Direction) => CalendarArrow(direction)}
           style={styles.sessionsCalendarContainer}
           theme={StyleUtils.getSessionsCalendarStyle()}
           // Forwarded to the library's CalendarHeader (Kiroku patch). The

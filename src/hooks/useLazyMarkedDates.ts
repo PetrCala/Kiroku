@@ -330,7 +330,7 @@ function useLazyMarkedDates(
     );
     const patchedCell: DayCellData = newMarking
       ? {marking: newMarking.marking, units: newMarking.units}
-      : {marking: {color: paletteGreen}};
+      : {marking: {color: paletteGreen, isAlcoholFree: true}};
     const newUnits = newMarking?.units ?? 0;
     const oldUnits = unitsMap.get(dayKey) ?? 0;
 

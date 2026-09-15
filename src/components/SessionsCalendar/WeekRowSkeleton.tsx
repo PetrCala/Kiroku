@@ -39,7 +39,7 @@ function WeekRowSkeleton({row}: WeekRowSkeletonProps) {
             <Skeleton
               width={variables.sessionsCalendarDaySize}
               height={variables.sessionsCalendarDaySize}
-              radius={variables.componentBorderRadiusNormal}
+              radius={variables.sessionsCalendarTileRadius}
               animate={false}
             />
           </View>

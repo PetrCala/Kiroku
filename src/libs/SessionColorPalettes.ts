@@ -58,17 +58,18 @@ function toHexByte(value: number): string {
     .padStart(2, '0');
 }
 
-// How far to nudge the swatch toward black/white when synthesising the tile
-// border. 0.25 lands deep enough to read as an edge on every palette without
+// How far to nudge a swatch toward black/white when synthesising a border
+// from it. 0.25 lands deep enough to read as an edge on every palette without
 // overpowering vivid swatches.
-const CALENDAR_TILE_BORDER_MIX = 0.25;
+const DERIVED_SWATCH_BORDER_MIX = 0.25;
 
 /**
- * Derives a per-tile border color by mixing the swatch toward black on light
- * backgrounds (or white on dark backgrounds). Every calendar tile gets a
- * subtle, swatch-harmonious edge that always contrasts the app background.
+ * Derives a border color by mixing the swatch toward black on light
+ * backgrounds (or white on dark backgrounds), so a palette-colored surface
+ * gets a subtle, swatch-harmonious edge that always contrasts the app
+ * background (accent rows, swatch chips).
  */
-function getCalendarTileBorderColor(
+function getDerivedSwatchBorderColor(
   swatch: string,
   background: string,
 ): string | null {
@@ -78,11 +79,27 @@ function getCalendarTileBorderColor(
     return null;
   }
   const target = bgLum > 0.5 ? 0 : 255;
-  const mix = CALENDAR_TILE_BORDER_MIX;
+  const mix = DERIVED_SWATCH_BORDER_MIX;
   const r = swatchRgb.r * (1 - mix) + target * mix;
   const g = swatchRgb.g * (1 - mix) + target * mix;
   const b = swatchRgb.b * (1 - mix) + target * mix;
   return `#${toHexByte(r)}${toHexByte(g)}${toHexByte(b)}`;
+}
+
+/**
+ * Mix `color` toward `target` by `amount` (0 = color, 1 = target). Returns
+ * `color` unchanged when either input isn't a hex triplet.
+ */
+function mixHex(color: string, target: string, amount: number): string {
+  const a = parseHex(color);
+  const b = parseHex(target);
+  if (!a || !b) {
+    return color;
+  }
+  const t = Math.max(0, Math.min(1, amount));
+  return `#${toHexByte(a.r * (1 - t) + b.r * t)}${toHexByte(
+    a.g * (1 - t) + b.g * t,
+  )}${toHexByte(a.b * (1 - t) + b.b * t)}`;
 }
 
 export type {PaletteId};
@@ -93,5 +110,6 @@ export {
   getPaletteIdFromColors,
   resolvePalette,
   isLightHex,
-  getCalendarTileBorderColor,
+  mixHex,
+  getDerivedSwatchBorderColor,
 };

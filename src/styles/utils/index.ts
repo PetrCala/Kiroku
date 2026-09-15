@@ -20,9 +20,11 @@ import CONST from '@src/CONST';
 import type {StyledSafeAreaInsets} from '@hooks/useStyledSafeAreaInsets';
 import type {Theme as RNCalendarsTheme} from 'react-native-calendars/src/types';
 import type {MarkingProps} from 'react-native-calendars/src/calendar/day/marking';
+import type {SessionsCalendarMarking} from '@components/SessionsCalendar/DayComponent/types';
 import {
-  getCalendarTileBorderColor,
+  getDerivedSwatchBorderColor,
   isLightHex,
+  mixHex,
 } from '@libs/SessionColorPalettes';
 import {defaultStyles} from '..';
 import type {ThemeStyles} from '..';
@@ -1206,6 +1208,27 @@ const staticStyleUtils = {
   getAmountWidth,
 };
 
+// How far a calendar tile's fill is pulled toward the text color for its 1px
+// edge. 0.14 is invisible on a saturated swatch and just enough to outline a
+// tile whose fill matches the ground (pale swatches on light, blackout on
+// dark).
+const CALENDAR_TILE_EDGE_MIX = 0.14;
+
+/**
+ * The opaque fill of a calendar day tile, or null for an unmarked (future /
+ * out-of-range) day. Alcohol-free days take the neutral card surface rather
+ * than their marking color.
+ */
+function getSessionsCalendarTileFill(
+  marking: SessionsCalendarMarking | undefined,
+  theme: ThemeColors,
+): string | null {
+  if (!marking?.color) {
+    return null;
+  }
+  return marking.isAlcoholFree ? theme.cardBG : marking.color;
+}
+
 const createStyleUtils = (theme: ThemeColors, styles: ThemeStyles) => ({
   ...staticStyleUtils,
   ...createModalStyleUtils({theme, styles}),
@@ -1343,6 +1366,21 @@ const createStyleUtils = (theme: ThemeColors, styles: ThemeStyles) => ({
         },
       },
       'stylesheet.calendar.header': {
+        // The library's edge arrows are hidden and the custom `renderHeader`
+        // carries its own nav buttons, so its container must span the full
+        // row (the lib's default is a shrink-wrapped `space-between` slot with
+        // 10px side padding).
+        header: {
+          flexDirection: 'row',
+          alignItems: 'center',
+          paddingLeft: 0,
+          paddingRight: 0,
+          marginTop: 6,
+        },
+        headerContainer: {
+          flex: 1,
+          flexDirection: 'row',
+        },
         // Day-name row inside the library header — must match the week row's
         // column distribution so day names line up with the tile columns.
         week: {
@@ -1350,13 +1388,16 @@ const createStyleUtils = (theme: ThemeColors, styles: ThemeStyles) => ({
           flexDirection: 'row',
           justifyContent: 'space-around',
         },
+        // Matches the fullscreen `sessionsCalendarDayNameText` strip.
         dayHeader: {
           flex: 1,
           marginTop: 2,
           marginBottom: 7,
           textAlign: 'center',
-          fontSize: variables.fontSizeLabel,
-          ...FontUtils.fontFamily.platform.EXP_NEUE,
+          fontSize: variables.fontSizeSmall,
+          ...FontUtils.fontFamily.platform.EXP_NEUE_BOLD,
+          textTransform: 'uppercase',
+          letterSpacing: 0.6,
           color: theme.textSupporting,
         },
       },
@@ -1386,86 +1427,88 @@ const createStyleUtils = (theme: ThemeColors, styles: ThemeStyles) => ({
       // selectedDayTextColor: theme.selectedDayTextColor,
 
       // Customize day header text
-      textDayHeaderFontSize: variables.fontSizeLabel,
+      textDayHeaderFontSize: variables.fontSizeSmall,
       textDayHeaderFontWeight:
-        FontUtils.fontFamily.platform.EXP_NEUE.fontWeight,
+        FontUtils.fontFamily.platform.EXP_NEUE_BOLD.fontWeight,
       textDayHeaderFontFamily:
-        FontUtils.fontFamily.platform.EXP_NEUE.fontFamily,
+        FontUtils.fontFamily.platform.EXP_NEUE_BOLD.fontFamily,
 
       ...(stylesheetOverrides as unknown as RNCalendarsTheme),
     };
   },
 
   /**
-   * Returns the outer cell style for a sessions-calendar day (Variant D).
+   * Returns the outer cell style for a sessions-calendar day.
    *
-   * The whole cell carries the heatmap tint when a marking is present; days
-   * without a marking (future / outside the loaded data range) render as a
-   * transparent shell so they read as "no data" rather than "rest day".
-   * Off-month cells dim to ~35%.
+   * A session day is a solid tile in its swatch. An alcohol-free day (see
+   * `SessionsCalendarMarking.isAlcoholFree`) is the neutral card surface: it
+   * reads as "logged, nothing to show", so the session tiles are the only
+   * color on the grid. Days without a marking (future / outside the loaded
+   * data range) render as a transparent shell so they read as "no data"
+   * rather than "rest day". Off-month cells dim to ~35%.
+   *
+   * Every filled tile carries a 1px edge in the text color at low opacity
+   * (`CALENDAR_TILE_EDGE_MIX`): invisible on a saturated fill, and exactly
+   * what keeps a pale tile on the light ground or a blackout tile on the dark
+   * ground from dissolving into it. Unfilled cells keep the same 1px border
+   * (transparent) so the corner label sits at the same spot on every day.
    */
   getSessionsCalendarDayCellStyle: (
-    marking: MarkingProps | undefined,
+    marking: SessionsCalendarMarking | undefined,
     isDimmed: boolean,
   ): ViewStyle => {
-    const markingColor = marking?.color;
-    // Every marked tile gets a 1px border derived from its own swatch, shifted
-    // toward black/white relative to the app background. This keeps edges
-    // visible against any theme (pale tiles on light, near-black tiles on
-    // dark) while staying tonally close to the tile color. Unmarked cells
-    // keep the transparent shell so they still read as "no data".
-    const borderColor = markingColor
-      ? getCalendarTileBorderColor(markingColor, theme.appBG) ?? 'transparent'
-      : 'transparent';
+    const fill = getSessionsCalendarTileFill(marking, theme);
     return {
       width: variables.sessionsCalendarDaySize,
       height: variables.sessionsCalendarDaySize,
-      borderRadius: variables.componentBorderRadiusNormal,
+      borderRadius: variables.sessionsCalendarTileRadius,
       borderWidth: 1,
-      borderColor,
+      borderColor: fill
+        ? mixHex(fill, theme.text, CALENDAR_TILE_EDGE_MIX)
+        : 'transparent',
       alignItems: 'center',
       justifyContent: 'center',
-      backgroundColor: markingColor ?? 'transparent',
+      backgroundColor: fill ?? 'transparent',
       opacity: isDimmed ? 0.35 : 1,
     };
   },
 
   /**
-   * Returns the corner day-number label style (Variant D).
+   * Returns the corner day-number label style.
    *
-   * Always positioned absolute top-left, including on alcohol-free days — the
-   * empty center is what signals AF, not a re-centered day number. When the
-   * cell has no marking (future / out-of-range), the label uses the muted
-   * theme text color rather than light/dark inversion.
+   * Always positioned absolute top-left, including on alcohol-free days: the
+   * empty center is what signals AF, not a re-centered day number. On an
+   * alcohol-free tile and on an unmarked cell the label uses the muted theme
+   * text color; on a session tile it inverts against the swatch like the
+   * unit count does.
    */
   getSessionsCalendarDayLabelStyle: (
-    marking: MarkingProps | undefined,
+    marking: SessionsCalendarMarking | undefined,
     isDimmed: boolean,
   ): TextStyle => {
     const markingColor = marking?.color;
-    const isLightColor = !!markingColor && isLightHex(markingColor);
     let textColor: Color;
-    if (!markingColor) {
+    if (!markingColor || marking?.isAlcoholFree) {
       textColor = theme.textSupporting;
     } else if (isDimmed) {
       textColor = theme.textMutedReversed;
-    } else if (isLightColor) {
+    } else if (isLightHex(markingColor)) {
       textColor = theme.textDark;
     } else {
       textColor = theme.textLight;
     }
     return {
       position: 'absolute',
-      top: 3,
-      left: 5,
-      fontSize: variables.fontSizeExtraSmall,
+      top: 4,
+      left: 6,
+      fontSize: variables.sessionsCalendarDayLabelFontSize,
       fontWeight: '600',
       lineHeight: 10,
       color: textColor,
     };
   },
 
-  /** Returns the centered hero units-number style (Variant D). */
+  /** Returns the centered hero units-number style. */
   getSessionsCalendarDayUnitsTextStyle: (
     marking: MarkingProps | undefined,
   ): TextStyle => {
@@ -1722,7 +1765,7 @@ const createStyleUtils = (theme: ThemeColors, styles: ThemeStyles) => ({
    */
   getColorAccentRowStyle: (color: string | null): ViewStyle => {
     const derived = color
-      ? getCalendarTileBorderColor(color, theme.appBG) ?? 'transparent'
+      ? getDerivedSwatchBorderColor(color, theme.appBG) ?? 'transparent'
       : 'transparent';
     return {
       borderRadius: 12,
@@ -1736,15 +1779,15 @@ const createStyleUtils = (theme: ThemeColors, styles: ThemeStyles) => ({
 
   /**
    * 1px border whose color is the swatch shifted 25% toward black/white
-   * relative to the app background — the same edge logic the calendar tiles
-   * use. Pass `null` for a transparent border (preserves layout). Use anywhere
-   * a palette-colored surface needs a tonally consistent, theme-aware edge.
+   * relative to the app background. Pass `null` for a transparent border
+   * (preserves layout). Use anywhere a palette-colored surface needs a
+   * tonally consistent, theme-aware edge.
    */
   getDerivedSwatchBorderStyle: (color: string | null): ViewStyle => {
     if (!color) {
       return {borderWidth: 1, borderColor: 'transparent'};
     }
-    const derived = getCalendarTileBorderColor(color, theme.appBG);
+    const derived = getDerivedSwatchBorderColor(color, theme.appBG);
     return {borderWidth: 1, borderColor: derived ?? 'transparent'};
   },
 

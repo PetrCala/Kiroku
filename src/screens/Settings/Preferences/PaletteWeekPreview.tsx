@@ -54,7 +54,10 @@ function PaletteWeekPreview({palette}: PaletteWeekPreviewProps) {
           StyleUtils.getBorderColorStyle(accentTint),
         ]}>
         {WEEK_OVERLAY.map(cell => {
-          const marking = {color: palette[cell.slot]};
+          const marking = {
+            color: palette[cell.slot],
+            isAlcoholFree: cell.slot === 'green',
+          };
           const unitsText = cell.units > 0 ? String(cell.units) : '';
           return (
             <View

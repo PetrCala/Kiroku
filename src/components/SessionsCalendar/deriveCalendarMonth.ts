@@ -1,11 +1,11 @@
 import {endOfMonth} from 'date-fns';
-import type {MarkingProps} from 'react-native-calendars/src/calendar/day/marking';
 import {sessionsToDayMarking} from '@libs/DataHandling';
 import {resolveLocalParts} from '@libs/Statistics/localParts';
 import {resolvePalette} from '@libs/SessionColorPalettes';
 import type {DrinkingSessionList, Preferences} from '@src/types/onyx';
 import type {DateString} from '@src/types/onyx/OnyxCommon';
 import type DrinkingSessionKeyValue from '@src/types/utils/databaseUtils';
+import type {SessionsCalendarMarking} from './DayComponent/types';
 import buildMonthSections from './buildMonthSections';
 import type {MonthWeek} from './buildMonthSections';
 
@@ -34,7 +34,7 @@ function toMonthKey(year: number, month: number): string {
 type DayCellData = {
   /** Marking to paint the day tile with (green "sober" marking for in-range
    *  days without sessions, session-colored otherwise). */
-  marking: MarkingProps;
+  marking: SessionsCalendarMarking;
   /** Total units that day. Present only for days that have sessions —
    *  mirrors the legacy `unitsMap` sparseness. */
   units?: number;
@@ -175,7 +175,9 @@ function deriveCalendarMonth({
           )
         : null;
       if (!marking) {
-        dayData.set(dayKey, {marking: {color: paletteGreen}});
+        dayData.set(dayKey, {
+          marking: {color: paletteGreen, isAlcoholFree: true},
+        });
         return;
       }
       dayData.set(dayKey, {marking: marking.marking, units: marking.units});

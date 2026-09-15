@@ -635,7 +635,10 @@ describe('useLazyMarkedDates incremental derivation', () => {
     expect(result.current.unitsMap.get(todayKey)).toBe(1);
     expect(result.current.monthlyTotalsMap.get(monthKey)).toBe(1);
     // Sober in-range day: green marking, no units entry, no month-total entry.
-    expect(result.current.markedDates[soberKey]).toEqual({color: '#00ff00'});
+    expect(result.current.markedDates[soberKey]).toEqual({
+      color: '#00ff00',
+      isAlcoholFree: true,
+    });
     expect(result.current.unitsMap.has(soberKey)).toBe(false);
     expect(result.current.monthlyTotalsMap.has(soberKey.slice(0, 7))).toBe(
       false,

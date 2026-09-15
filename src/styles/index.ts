@@ -18,7 +18,6 @@ import type {
 import * as Browser from '@libs/Browser';
 import CONST from '@src/CONST';
 import type {CalendarColors} from '@components/SessionsCalendar/types';
-import type {Direction} from '@components/SessionsCalendar/CalendarArrow';
 import {defaultTheme} from './theme';
 import type {ThemeColors} from './theme/types';
 // import addOutlineWidth from './utils/addOutlineWidth';
@@ -1720,12 +1719,15 @@ const styles = (theme: ThemeColors) =>
       borderBottomWidth: 1,
     },
 
+    // Month label leading, controls trailing. The row is as tall as the
+    // library's arrow row used to be (48 + its 6px top margin), so the grid
+    // below and the compact skeleton keep their positions.
     sessionsCalendarHeader: {
+      flex: 1,
       flexDirection: 'row',
       alignItems: 'center',
-      justifyContent: 'center',
-      columnGap: 8,
-      minHeight: 36,
+      minHeight: 48,
+      paddingHorizontal: 4,
     },
 
     sessionsCalendarHeaderMonthText: {
@@ -1734,11 +1736,11 @@ const styles = (theme: ThemeColors) =>
       fontSize: variables.fontSizeLarge,
     },
 
-    // Padding around the month label, matching the Statistics range navigator's
-    // label so the gap to the revert control reads the same on both screens.
+    // The month label is flush with the first tile column; the trailing
+    // padding keeps the tap target comfortable.
     sessionsCalendarHeaderLabel: {
       flexDirection: 'row',
-      paddingHorizontal: 8,
+      paddingRight: 8,
       paddingVertical: 4,
       alignItems: 'center',
     },
@@ -1749,14 +1751,40 @@ const styles = (theme: ThemeColors) =>
       marginLeft: 4,
     },
 
-    // Equal-width slots flanking the month label: a phantom spacer on the left,
-    // the revert button or older-months spinner on the right. Fixed width on
-    // both sides keeps the label centered. Matches the stats jump slot.
+    // Fixed-size slot for the revert button or older-months spinner, so the
+    // nav buttons after it never shift when either toggles in or out.
     sessionsCalendarHeaderSideSlot: {
       width: 24,
       height: 24,
       alignItems: 'center',
       justifyContent: 'center',
+    },
+
+    // Round, outlined month-paging button; two sit at the header's trailing
+    // edge, the second flush with the last tile column.
+    sessionsCalendarHeaderNavButton: {
+      width: variables.sessionsCalendarNavButtonSize,
+      height: variables.sessionsCalendarNavButtonSize,
+      borderRadius: variables.sessionsCalendarNavButtonSize / 2,
+      borderWidth: 1,
+      borderColor: theme.border,
+      alignItems: 'center',
+      justifyContent: 'center',
+      marginLeft: 6,
+    },
+
+    // Hairline ring for today in the icon gray, drawn as an overlay so the
+    // tile's own geometry never changes. Inset by -1 so it sits on top of the
+    // tile's 1px contrast edge rather than inside it.
+    sessionsCalendarTodayRing: {
+      position: 'absolute',
+      top: -1,
+      left: -1,
+      right: -1,
+      bottom: -1,
+      borderRadius: variables.sessionsCalendarTileRadius,
+      borderWidth: 1.5,
+      borderColor: theme.icon,
     },
 
     // Accent circle for the jump-to-current-month control; mirrors the
@@ -1803,25 +1831,26 @@ const styles = (theme: ThemeColors) =>
       ...FontUtils.fontFamily.platform.EXP_NEUE_BOLD,
       color: theme.textSupporting,
       fontSize: variables.fontSizeSmall,
+      textTransform: 'uppercase',
+      letterSpacing: 0.6,
     },
 
     // Compact-calendar loading skeleton (`SessionsCalendarCompactSkeleton`).
-    // These mirror react-native-calendars' compact header geometry so the
-    // skeleton→calendar handover doesn't shift layout. The library's month-row
-    // (`header`) is `marginTop:6` with nav arrows padded out to ~48px tall, and
-    // its day-name strip (`week`/`dayHeader`) sits `marginTop:7` with no
-    // separator rule — unlike the fullscreen `sessionsCalendarDayNamesRow`.
+    // These mirror the compact header geometry so the skeleton→calendar
+    // handover doesn't shift layout: the custom header row (`marginTop:6`,
+    // 48px tall, 4px side inset, label leading and two nav buttons trailing)
+    // and the library's day-name strip (`marginTop:7`, no separator rule,
+    // unlike the fullscreen `sessionsCalendarDayNamesRow`).
     sessionsCalendarCompactSkeletonHeader: {
       flexDirection: 'row',
       alignItems: 'center',
-      justifyContent: 'space-between',
       marginTop: 6,
-      // Centre the 10px arrow placeholders on the real chevrons: the library
-      // pads the header by 10 and the arrow touchable by another 10, then our
-      // `ArrowIcon` adds `p1` (4) before its 20px glyph — so each arrow centre
-      // sits 34px from the edge (10+10+4+10). 34 − half the placeholder = 29.
-      paddingHorizontal: 29,
+      paddingHorizontal: 4,
       minHeight: 48,
+    },
+
+    sessionsCalendarCompactSkeletonNavButton: {
+      marginLeft: 6,
     },
 
     sessionsCalendarCompactSkeletonDayNamesRow: {
@@ -2233,13 +2262,6 @@ const styles = (theme: ThemeColors) =>
       flexGrow: 0,
       flexShrink: 1,
     },
-
-    sessionsCalendarArrow: (direction: Direction) =>
-      ({
-        width: variables.sessionsCalendarArrowWidth,
-        alignItems:
-          direction === CONST.DIRECTION.LEFT ? 'flex-start' : 'flex-end',
-      }) satisfies ViewStyle,
 
     sessionDrinksInputContainer: (activeBackground: string | null) =>
       ({
