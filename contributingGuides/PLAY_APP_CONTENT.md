@@ -23,18 +23,18 @@ ends with the same list of console-only items.
 Play Console > Monitor and improve > Policy and programs > App content. Ten
 declarations are filed, under the **Actioned** tab.
 
-| Declaration               | Answer                                                                                                                                                                                                               | 10 September 2026                                                   |
-| ------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------- |
-| Privacy policy            | `https://www.kiroku.cz/privacy`                                                                                                                                                                                      | Checked, unchanged                                                  |
-| Ads                       | The app contains no ads                                                                                                                                                                                              | Checked, unchanged                                                  |
-| Advertising ID            | Not used: no ad, attribution or analytics SDK ships                                                                                                                                                                  | Checked, unchanged                                                  |
-| Target audience           | 18 and over only                                                                                                                                                                                                     | Checked, unchanged                                                  |
-| Government apps           | No                                                                                                                                                                                                                   | Checked, unchanged                                                  |
-| Financial features        | None                                                                                                                                                                                                                 | Checked, unchanged                                                  |
-| Health apps               | Only "Other" ticked (1 of 18 boxes), described as: "Tracks alcohol consumption for personal use and provides insights into drinking habits. Does not provide medical advice or claim to diagnose health conditions." | Checked, unchanged                                                  |
-| App access (sign-in info) | The reviewer demo account, the same credentials as the `APPLE_DEMO_EMAIL` / `APPLE_DEMO_PASSWORD` GitHub secrets                                                                                                     | Checked, matches                                                    |
-| Content rating            | IARC questionnaire answered again on 10 September 2026 (PEGI 3, ESRB Teen); see below                                                                                                                                | Redone, saved, waiting in Publishing overview to be sent for review |
-| Data safety               | See [Data safety](#data-safety)                                                                                                                                                                                      | Redone                                                              |
+| Declaration               | Answer                                                                                                                                                                                                                                                                                                                                                       | 10 September 2026                                                   |
+| ------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ------------------------------------------------------------------- |
+| Privacy policy            | `https://www.kiroku.cz/privacy`                                                                                                                                                                                                                                                                                                                              | Checked, unchanged                                                  |
+| Ads                       | The app contains no ads                                                                                                                                                                                                                                                                                                                                      | Checked, unchanged                                                  |
+| Advertising ID            | Not used: no ad, attribution or analytics SDK ships                                                                                                                                                                                                                                                                                                          | Checked, unchanged                                                  |
+| Target audience           | 18 and over only                                                                                                                                                                                                                                                                                                                                             | Checked, unchanged                                                  |
+| Government apps           | No                                                                                                                                                                                                                                                                                                                                                           | Checked, unchanged                                                  |
+| Financial features        | None                                                                                                                                                                                                                                                                                                                                                         | Checked, unchanged                                                  |
+| Health apps               | **Mental and behavioural health** ticked (under Medical), nothing else. Until 15 September 2026 only "Other" was ticked, described as "Tracks alcohol consumption for personal use and provides insights into drinking habits. Does not provide medical advice or claim to diagnose health conditions."; Play rejected that, see [Health apps](#health-apps) | Changed on 15 September 2026                                        |
+| App access (sign-in info) | The reviewer demo account, the same credentials as the `APPLE_DEMO_EMAIL` / `APPLE_DEMO_PASSWORD` GitHub secrets                                                                                                                                                                                                                                             | Checked, matches                                                    |
+| Content rating            | IARC questionnaire answered again on 10 September 2026 (PEGI 3, ESRB Teen); see below                                                                                                                                                                                                                                                                        | Redone, saved, waiting in Publishing overview to be sent for review |
+| Data safety               | See [Data safety](#data-safety)                                                                                                                                                                                                                                                                                                                              | Redone                                                              |
 
 ### Content rating
 
@@ -84,6 +84,23 @@ Two answers that rest on the code:
 - **User content is the primary source of content: No.** The main content is
   the user's own diary. Friends see display names, profile photos and sessions;
   session notes are private.
+
+### Health apps
+
+On 15 September 2026 Play rejected an update with "Inaccurate Health Apps
+Declaration" (Health Content and Services policy). The reviewer read the en-US
+full description (drink logging, units of pure alcohol, alcohol-free days and
+streaks, the healthcare-professional line) as a health feature and asked for
+the **Mental and behavioural health** category, which Play defines as "tools for
+mental health support, counseling services and addiction recovery programs".
+The form's "Other" box with a free-text description did not count.
+
+The fix is in the console only (the Android Publisher API has no endpoint for
+this form): Policy and programs > App content > Health apps > **Manage**, tick
+**Mental and behavioural health**, untick **Other**, save, then Publishing
+overview > **Send changes for review**. The store listing did not change; the
+description is accurate and the rejection asked for the declaration, not the
+copy. A policy review can take up to seven days.
 
 ## Data safety
 
