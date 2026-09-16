@@ -514,6 +514,11 @@ platform :ios do
       # Developer Release so we control the public launch date.
       automatic_release: false,
 
+      # Once we do release it by hand, ramp over Apple's automatic 7-day phased
+      # rollout (with its own automatic pause on an elevated crash rate)
+      # instead of going straight to 100%, mirroring Android's staged rollout.
+      phased_release: true,
+
       # We need to upload metadata to upload the release notes which is required for each new version
       skip_metadata: false,
 
