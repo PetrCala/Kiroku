@@ -88,7 +88,7 @@ function LiveSessionCard() {
   }
 
   const totalUnits = DSUtils.calculateTotalUnits(
-    session.drinks,
+    session,
     preferences?.drinks_to_units,
     true,
   );

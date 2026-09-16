@@ -38,6 +38,11 @@ import {
   getDrinkOverrides,
   makeDrinkEntry,
 } from './DrinkEntryUtils';
+import {
+  getSessionEntries,
+  legacyBucketsToEntries,
+  sumEntryUnits,
+} from './SessionEntries';
 import {roundToTwoDecimalPlaces} from './NumberUtils';
 import {getFirebaseAuth} from './Firebase/FirebaseApp';
 import {numberToVerboseString} from './TimeUtils';
@@ -153,6 +158,7 @@ function isEmptySession(session: DrinkingSession): boolean {
     session.start_time === 0 &&
     session.end_time === 0 &&
     isEmptyObject(session?.drinks) &&
+    isEmptyObject(session?.entries) &&
     session.blackout === false &&
     session.note === ''
   );
@@ -258,54 +264,55 @@ function countCompletedSessions(
 }
 
 /**
- * Calculates the total units of a Drinks object based on a DrinksToUnits mapping.
+ * The total units of a session: every entry's `count` times the user's
+ * per-type factor, read through the entries adapter so a legacy session and
+ * a v2 session with the same drinks give the same number.
  *
- * @param drinks - The Drinks object containing drink counts.
+ * @param session - The session (legacy buckets or v2 entries).
  * @param drinksToUnits - A mapping from DrinkKey to unit conversion factors.
- * @param roundUp?: boolean,
+ * @param roundUp - Round the result to two decimal places.
  * @returns The total units calculated.
  */
 function calculateTotalUnits(
-  drinks: DrinksList | undefined,
+  session: DrinkingSession | null | undefined,
   drinksToUnits: DrinksToUnits | undefined,
   roundUp?: boolean,
 ): number {
-  if (!drinks || !drinksToUnits) {
-    return 0;
-  }
-
-  let totalUnits = 0;
-  // Iterate over each timestamp in drinksObject
-  Object.values(drinks).forEach(drinkTypes => {
-    Object.keys(drinkTypes).forEach(DrinkKey => {
-      if (!isDrinkTypeKey(DrinkKey)) {
-        return;
-      }
-      const typeDrinks = getDrinkCount(drinkTypes[DrinkKey]);
-      const typeUnits = drinksToUnits[DrinkKey] ?? 0;
-      totalUnits += typeDrinks * typeUnits;
-    });
-  });
-
+  const totalUnits = sumEntryUnits(getSessionEntries(session), drinksToUnits);
   if (roundUp) {
     return roundToTwoDecimalPlaces(totalUnits);
   }
-
   return totalUnits;
 }
 
 /**
- * Calculate how many units are available to add based on the current drinks and the drinksToUnits mapping.
+ * The total units of a legacy `DrinksList` on its own, for the bucket write
+ * path (`addDrinksToList`) that composes a new list before it lands on a
+ * session. Same unit function as `calculateTotalUnits`.
+ */
+function calculateDrinksListUnits(
+  drinks: DrinksList | undefined,
+  drinksToUnits: DrinksToUnits | undefined,
+): number {
+  return sumEntryUnits(
+    Object.values(legacyBucketsToEntries(drinks, '')),
+    drinksToUnits,
+  );
+}
+
+/**
+ * Calculate how many units are available to add based on the session's
+ * current drinks and the drinksToUnits mapping.
  *
- * @param drinks Current drinks
+ * @param session The session
  * @param drinksToUnits The mapping from DrinkKey to unit conversion factors.
  * @returns The number of units available to add
  */
 function calculateAvailableUnits(
-  drinks: DrinksList | undefined,
+  session: DrinkingSession | null | undefined,
   drinksToUnits: DrinksToUnits,
 ): number {
-  const currentUnits = calculateTotalUnits(drinks, drinksToUnits);
+  const currentUnits = calculateTotalUnits(session, drinksToUnits);
   return CONST.MAX_ALLOWED_UNITS - currentUnits;
 }
 
@@ -341,7 +348,9 @@ function addDrinksToList(
     return updatedDrinksList;
   }
 
-  const availableUnits = calculateAvailableUnits(drinksList, drinksToUnits);
+  const availableUnits =
+    CONST.MAX_ALLOWED_UNITS -
+    calculateDrinksListUnits(drinksList, drinksToUnits);
   const newUnits = amount * (drinksToUnits[drinkKey] || 0);
   if (newUnits > availableUnits) {
     // TODO potentially show a warning message to the user
@@ -570,22 +579,13 @@ function determineSessionMostCommonDrink(
   if (!session) {
     return null;
   }
-  const drinks = session.drinks;
-  if (!drinks) {
+  const entries = getSessionEntries(session);
+  if (entries.length === 0) {
     return null;
   }
   const drinkCounts: Partial<Record<DrinkKey, number>> = {};
-
-  Object.values(drinks).forEach(drinksAtTimestamp => {
-    Object.entries(drinksAtTimestamp).forEach(([drinkKey, entry]) => {
-      const count = getDrinkCount(entry);
-      if (!count) {
-        return;
-      }
-      const key = drinkKey as DrinkKey; // Initialize safely
-      // Increment the count, initializing to 0 if necessary
-      drinkCounts[key] = (drinkCounts[key] ?? 0) + count;
-    });
+  entries.forEach(entry => {
+    drinkCounts[entry.key] = (drinkCounts[entry.key] ?? 0) + entry.count;
   });
 
   // Find the drink with the highest count
@@ -866,6 +866,18 @@ function shiftSessionTimestamps(
     });
 
     convertedSession.drinks = convertedDrinks;
+  }
+
+  // v2 entries keep their ids; only the drink time moves.
+  if (!isEmptyObject(session.entries)) {
+    const convertedEntries: NonNullable<DrinkingSession['entries']> = {};
+    Object.entries(session.entries).forEach(([entryId, entry]) => {
+      convertedEntries[entryId] = {
+        ...entry,
+        ts: subMilliseconds(entry.ts, millisecondsToSub).getTime(),
+      };
+    });
+    convertedSession.entries = convertedEntries;
   }
 
   return convertedSession;

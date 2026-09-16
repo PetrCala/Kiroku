@@ -16,6 +16,7 @@ import {getKirokuApiEnv} from '@libs/ApiUtils';
 import AppStateMonitor from '@libs/AppStateMonitor';
 import {getDrinkCount} from '@libs/DrinkEntryUtils';
 import {getFirebaseAuth} from '@libs/Firebase/FirebaseApp';
+import {isSchemaV2Session} from '@libs/SessionEntries';
 import Log from '@libs/Log';
 import CONST from '@src/CONST';
 import ONYXKEYS from '@src/ONYXKEYS';
@@ -35,15 +36,39 @@ let isInitialized = false;
 /**
  * Serialize the ongoing session into the exact shape the watch's Codable model
  * (ios/KirokuWatchCore .../DrinkingSession.swift) decodes: every non-optional
- * field present, drink entries collapsed to plain counts, JS-only fields
- * (drinksTimeParts) dropped. Returns undefined when there is nothing live to
- * mirror, so the payload key is omitted (never null: NSNull is not plist-safe).
+ * field present, legacy drink entries collapsed to plain counts, v2 sessions
+ * carrying their `schema_version`, `name`, `visibility` and `entries` map
+ * verbatim, JS-only fields (drinksTimeParts) dropped. Returns undefined when
+ * there is nothing live to mirror, so the payload key is omitted (never null:
+ * NSNull is not plist-safe).
  */
 function serializeOngoingSession(
   session: DrinkingSession | undefined,
 ): string | undefined {
   if (!session?.ongoing || !session.id) {
     return undefined;
+  }
+  const base = {
+    id: session.id,
+    start_time: session.start_time,
+    end_time: session.end_time ?? session.start_time,
+    blackout: !!session.blackout,
+    note: session.note ?? '',
+    timezone: session.timezone ?? CONST.DEFAULT_TIME_ZONE.selected,
+    type: session.type ?? CONST.SESSION.TYPES.LIVE,
+    ongoing: true,
+  };
+  if (isSchemaV2Session(session)) {
+    const hasEntries = Object.keys(session.entries ?? {}).length > 0;
+    return JSON.stringify({
+      ...base,
+      schema_version: session.schema_version,
+      ...(session.name !== undefined ? {name: session.name} : {}),
+      ...(session.visibility !== undefined
+        ? {visibility: session.visibility}
+        : {}),
+      ...(hasEntries ? {entries: session.entries} : {}),
+    });
   }
   const drinks: Record<string, Record<string, number>> = {};
   Object.entries(session.drinks ?? {}).forEach(([timestamp, bucket]) => {
@@ -60,14 +85,7 @@ function serializeOngoingSession(
   });
   const hasDrinks = Object.keys(drinks).length > 0;
   return JSON.stringify({
-    id: session.id,
-    start_time: session.start_time,
-    end_time: session.end_time ?? session.start_time,
-    blackout: !!session.blackout,
-    note: session.note ?? '',
-    timezone: session.timezone ?? CONST.DEFAULT_TIME_ZONE.selected,
-    type: session.type ?? CONST.SESSION.TYPES.LIVE,
-    ongoing: true,
+    ...base,
     ...(hasDrinks ? {drinks} : {}),
   });
 }

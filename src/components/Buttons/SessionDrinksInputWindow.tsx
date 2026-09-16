@@ -1,9 +1,13 @@
 import React, {useState, useRef, useEffect} from 'react';
 import {Keyboard, TextInput, View} from 'react-native';
-import {sumDrinksOfSingleType} from '@libs/DataHandling';
+import {sumSessionDrinksOfType} from '@libs/DataHandling';
 import * as DSUtils from '@src/libs/DrinkingSessionUtils';
 import * as DS from '@userActions/DrinkingSession';
-import type {DrinkingSessionId, DrinkKey, DrinksList} from '@src/types/onyx';
+import type {
+  DrinkingSession,
+  DrinkingSessionId,
+  DrinkKey,
+} from '@src/types/onyx';
 import useLocalize from '@hooks/useLocalize';
 import useTheme from '@hooks/useTheme';
 import useThemeStyles from '@hooks/useThemeStyles';
@@ -19,8 +23,8 @@ import Log from '@libs/Log';
 import CONST from '@src/CONST';
 
 type SessionDrinksInputWindowProps = {
-  /** Current session drinks */
-  drinks: DrinksList | undefined;
+  /** The session whose drinks of `drinkKey` this input edits */
+  session: DrinkingSession | undefined;
 
   /** Key of the drinking session */
   drinkKey: DrinkKey;
@@ -30,7 +34,7 @@ type SessionDrinksInputWindowProps = {
 };
 
 function SessionDrinksInputWindow({
-  drinks,
+  session,
   drinkKey,
   sessionId,
 }: SessionDrinksInputWindowProps) {
@@ -47,7 +51,7 @@ function SessionDrinksInputWindow({
     : styles.textWhite;
   const [shouldHighlight, setShouldHighlight] = useState<boolean>(false);
   const [inputValue, setInputValue] = useState<string>(
-    sumDrinksOfSingleType(drinks, drinkKey).toString(),
+    sumSessionDrinksOfType(session, drinkKey).toString(),
   );
   const inputRef = useRef<TextInput>(null);
 
@@ -121,7 +125,7 @@ function SessionDrinksInputWindow({
       const inputValueNumeric = parseFloat(inputValue); // In case one digit is already input, adjust the availableDrinks for this digit
 
       const availableUnits = DSUtils.calculateAvailableUnits(
-        drinks,
+        session,
         preferences.drinks_to_units,
       );
 
@@ -151,17 +155,17 @@ function SessionDrinksInputWindow({
 
   // Update input value when drinks change
   useEffect(() => {
-    const newInputValue = sumDrinksOfSingleType(drinks, drinkKey).toString();
+    const newInputValue = sumSessionDrinksOfType(session, drinkKey).toString();
     setInputValue(newInputValue);
-  }, [drinks, drinkKey]);
+  }, [session, drinkKey]);
 
   useEffect(() => {
-    if (sumDrinksOfSingleType(drinks, drinkKey) > 0) {
+    if (sumSessionDrinksOfType(session, drinkKey) > 0) {
       setShouldHighlight(true);
     } else {
       setShouldHighlight(false);
     }
-  }, [drinks, drinkKey]);
+  }, [session, drinkKey]);
 
   if (!preferences) {
     return;

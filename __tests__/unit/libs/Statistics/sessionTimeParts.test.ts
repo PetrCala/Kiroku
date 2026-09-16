@@ -79,7 +79,10 @@ describe('buildSessionTimeParts', () => {
   it('stores d/h/w/dow per timestamp in the given timezone', () => {
     // 2024-01-15 23:30 UTC → 2024-01-16 08:30 in Tokyo (UTC+9).
     const ts = Date.UTC(2024, 0, 15, 23, 30);
-    const parts = buildSessionTimeParts(makeDrinks([[ts, {beer: 1}]]), TOKYO);
+    const parts = buildSessionTimeParts(
+      {start_time: ts, drinks: makeDrinks([[ts, {beer: 1}]])},
+      TOKYO,
+    );
     expect(parts).toEqual({
       tz: TOKYO,
       byTs: {[ts]: {d: '2024-01-16', h: 8, w: '2024-W03', dow: 2}},
@@ -88,7 +91,10 @@ describe('buildSessionTimeParts', () => {
 
   it('returns undefined when there are no drinks', () => {
     expect(buildSessionTimeParts(undefined, UTC)).toBeUndefined();
-    expect(buildSessionTimeParts({}, UTC)).toBeUndefined();
+    expect(buildSessionTimeParts({start_time: 0}, UTC)).toBeUndefined();
+    expect(
+      buildSessionTimeParts({start_time: 0, drinks: {}}, UTC),
+    ).toBeUndefined();
   });
 
   it('skips non-finite timestamp keys but keeps the finite ones', () => {
@@ -97,7 +103,7 @@ describe('buildSessionTimeParts', () => {
       NaN: {beer: 1},
       [good]: {beer: 1},
     };
-    const parts = buildSessionTimeParts(drinks, UTC);
+    const parts = buildSessionTimeParts({start_time: good, drinks}, UTC);
     expect(Object.keys(parts?.byTs ?? {})).toEqual([String(good)]);
   });
 });
@@ -128,7 +134,7 @@ describe('buildDrinkEvents — stored parts match the recompute path', () => {
       UTC,
       MON,
     );
-    const parts = buildSessionTimeParts(drinks, tz);
+    const parts = buildSessionTimeParts({start_time: ts, drinks}, tz);
     const withParts = buildDrinkEvents(
       oneSession({
         start_time: ts,
@@ -248,11 +254,15 @@ describe('buildTimePartsPatchFromEvents — backfill round-trip', () => {
     );
     expect(afterBackfill).toEqual(events);
     // It also matches what the write path would have produced directly.
-    expect(reconstructed).toEqual(buildSessionTimeParts(drinks, TOKYO));
+    expect(reconstructed).toEqual(
+      buildSessionTimeParts({start_time: 0, drinks}, TOKYO),
+    );
   });
 
   it('returns null once every session already has valid parts (converges)', () => {
-    const withParts = freshSessions(buildSessionTimeParts(drinks, TOKYO));
+    const withParts = freshSessions(
+      buildSessionTimeParts({start_time: 0, drinks}, TOKYO),
+    );
     const events = buildDrinkEvents(withParts, UNITS, DEFAULTS, UTC, MON);
     expect(
       buildTimePartsPatchFromEvents(events, withParts, UTC, MON),

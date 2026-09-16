@@ -686,7 +686,7 @@ async function startLiveDrinkingSession(
  */
 function withSessionTimeParts(session: DrinkingSession): DrinkingSession {
   const sessionTz = session.timezone ?? CONST.DEFAULT_TIME_ZONE.selected;
-  const drinksTimeParts = buildSessionTimeParts(session.drinks, sessionTz);
+  const drinksTimeParts = buildSessionTimeParts(session, sessionTz);
   return drinksTimeParts ? {...session, drinksTimeParts} : session;
 }
 

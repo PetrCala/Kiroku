@@ -86,7 +86,10 @@ describe('calculateTotalUnits', () => {
       weak_shot: 0,
       wine: 0,
     };
-    const result = DSUtils.calculateTotalUnits(zeroDrinks, zeroDrinksToUnits);
+    const result = DSUtils.calculateTotalUnits(
+      {start_time: 0, drinks: zeroDrinks},
+      zeroDrinksToUnits,
+    );
     expect(result).toBe(0);
   });
 
@@ -110,7 +113,7 @@ describe('calculateTotalUnits', () => {
       wine: 7,
     };
     const result = DSUtils.calculateTotalUnits(
-      partialDrinks,
+      {start_time: 0, drinks: partialDrinks},
       sampleDrinksToUnits,
     );
     expect(result).toBe(2 * 5 + 1 * 10 + 3 * 1);
@@ -136,7 +139,7 @@ describe('calculateTotalUnits', () => {
       wine: 7,
     };
     const result = DSUtils.calculateTotalUnits(
-      mixedDrinks,
+      {start_time: 0, drinks: mixedDrinks},
       sampleDrinksToUnits,
     );
     expect(result).toBe(2 * 5 + 1 * 10 + 3 * 1);
@@ -236,9 +239,7 @@ describe('setLocalSessionCache / compose-on-latest', () => {
     });
 
     const final = DSUtils.getDrinkingSessionData('live-1');
-    expect(
-      DSUtils.calculateTotalUnits(final?.drinks, ALL_DRINKS_TO_UNITS),
-    ).toBe(2);
+    expect(DSUtils.calculateTotalUnits(final, ALL_DRINKS_TO_UNITS)).toBe(2);
   });
 });
 

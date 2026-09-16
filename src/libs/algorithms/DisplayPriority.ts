@@ -4,7 +4,7 @@ import type {
 } from '@src/types/various/Algorithms';
 import type {UserStatus, UserStatusList} from '@src/types/onyx';
 import type {UserID} from '@src/types/onyx/OnyxCommon';
-import {sumAllDrinks} from '@libs/DataHandling';
+import {sumSessionDrinks} from '@libs/DataHandling';
 import * as DSUtils from '@libs/DrinkingSessionUtils';
 
 /**
@@ -69,9 +69,7 @@ function calculateUserPriority(userStatusData: UserStatus): number {
   } // Do not account for session if expired
 
   const sessionActive = latestSession?.ongoing ? 1 : 0;
-  const sessionDrinks = latestSession?.drinks
-    ? sumAllDrinks(latestSession.drinks) // TODO units should be used here perhaps
-    : 0;
+  const sessionDrinks = sumSessionDrinks(latestSession); // TODO units should be used here perhaps
   return (
     sessionActive * 500 +
     sessionDrinks * sessionActive * 10 + // Only count active sessions

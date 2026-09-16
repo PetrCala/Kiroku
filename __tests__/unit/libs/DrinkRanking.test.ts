@@ -9,7 +9,7 @@ import {
 import type {DrinkProfile} from '@libs/DrinkRanking/types';
 import CONST from '@src/CONST';
 import type {DrinkingSession, DrinkingSessionList} from '@src/types/onyx';
-import type {DrinksList} from '@src/types/onyx/Drinks';
+import type {DrinkKey, DrinksList} from '@src/types/onyx/Drinks';
 import type {SelectedTimezone} from '@src/types/onyx/UserData';
 
 const {KEYS} = CONST.DRINKS;
@@ -247,28 +247,62 @@ describe('buildDrinkProfile', () => {
 });
 
 describe('getLatestDrinkKey', () => {
+  const withDrinks = (drinks: DrinksList) => ({start_time: at(19), drinks});
+
   test('is the drink in the newest timestamp that still holds one', () => {
     expect(getLatestDrinkKey(undefined)).toBeUndefined();
-    expect(getLatestDrinkKey({})).toBeUndefined();
+    expect(getLatestDrinkKey({start_time: at(19)})).toBeUndefined();
+    expect(getLatestDrinkKey(withDrinks({}))).toBeUndefined();
     expect(
-      getLatestDrinkKey({
-        [at(19)]: {[KEYS.BEER]: 1},
-        [at(20)]: {[KEYS.COCKTAIL]: 1},
-        [at(21)]: {[KEYS.WINE]: 0},
-      }),
+      getLatestDrinkKey(
+        withDrinks({
+          [at(19)]: {[KEYS.BEER]: 1},
+          [at(20)]: {[KEYS.COCKTAIL]: 1},
+          [at(21)]: {[KEYS.WINE]: 0},
+        }),
+      ),
     ).toBe(KEYS.COCKTAIL);
   });
 
   test('breaks a tie by count, then by the drink order', () => {
     expect(
-      getLatestDrinkKey({[at(19)]: {[KEYS.WINE]: 1, [KEYS.STRONG_SHOT]: 2}}),
+      getLatestDrinkKey(
+        withDrinks({[at(19)]: {[KEYS.WINE]: 1, [KEYS.STRONG_SHOT]: 2}}),
+      ),
     ).toBe(KEYS.STRONG_SHOT);
     expect(
-      getLatestDrinkKey({[at(19)]: {[KEYS.WINE]: 2, [KEYS.STRONG_SHOT]: 2}}),
+      getLatestDrinkKey(
+        withDrinks({[at(19)]: {[KEYS.WINE]: 2, [KEYS.STRONG_SHOT]: 2}}),
+      ),
     ).toBe(KEYS.STRONG_SHOT);
     expect(
-      getLatestDrinkKey({[at(19)]: {[KEYS.WINE]: 3, [KEYS.STRONG_SHOT]: 2}}),
+      getLatestDrinkKey(
+        withDrinks({[at(19)]: {[KEYS.WINE]: 3, [KEYS.STRONG_SHOT]: 2}}),
+      ),
     ).toBe(KEYS.WINE);
+  });
+
+  test('reads a v2 session the same way', () => {
+    const entry = (ts: number, key: DrinkKey, count: number) => ({
+      ts,
+      key,
+      count,
+      source: 'phone' as const,
+      author_uid: 'u',
+      target_uid: 'u',
+      created_at: ts,
+    });
+    expect(
+      getLatestDrinkKey({
+        schema_version: 2,
+        start_time: at(19),
+        entries: {
+          a: entry(at(19), KEYS.BEER, 1),
+          b: entry(at(20), KEYS.COCKTAIL, 1),
+          c: {...entry(at(21), KEYS.WINE, 1), deleted: true},
+        },
+      }),
+    ).toBe(KEYS.COCKTAIL);
   });
 });
 

@@ -84,7 +84,7 @@ function DrinkTypesView({session}: DrinkTypesViewProps) {
                 testID={`remove-drink-${drinkKey}`}
               />
               <SessionDrinksInputWindow
-                drinks={session?.drinks}
+                session={session}
                 drinkKey={drinkKey}
                 sessionId={session?.id}
               />

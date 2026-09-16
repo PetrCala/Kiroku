@@ -1,85 +1,14 @@
 import CONST from '@src/CONST';
-import type {DrinkKey, DrinksList} from '@src/types/onyx/Drinks';
+import {entrySdu, entryUnits, getSessionEntries} from '@libs/SessionEntries';
+import type {DrinkDefaults} from '@libs/SessionEntries';
 import type DrinkingSession from '@src/types/onyx/DrinkingSession';
 import type {UserDrinkingSessionsList} from '@src/types/onyx/DrinkingSession';
 import type {DrinksToUnits} from '@src/types/onyx/Preferences';
 import type {SelectedTimezone} from '@src/types/onyx/UserData';
 import type {LocalParts} from './localParts';
 import {resolveLocalParts} from './localParts';
-import {sduFrom} from './sdu';
 import {isStoredLocalParts} from './sessionTimeParts';
 import type {DrinkEvent, WeekStart} from './types';
-
-/**
- * Volume/ABV defaults per drink type. Caller supplies — typically
- * `CONST.DRINK_DEFAULTS` once v2-A lands. Passed as a parameter (not
- * imported) so the function stays pure and v2-A can ship independently.
- */
-type DrinkDefaults = Partial<Record<DrinkKey, {ml: number; abv: number}>>;
-
-type NormalizedEntry = {
-  count: number;
-  volumeMl?: number;
-  abv?: number;
-};
-
-/**
- * Narrow the legacy numeric drink entry and the v2-A object shape into a
- * single internal form. Defensive: rejects non-finite counts, non-positive
- * counts, and malformed object entries — the upstream Onyx data has been
- * touched by multiple app versions, so we cannot trust shape from compile
- * time alone.
- */
-function normalizeEntry(raw: unknown): NormalizedEntry | null {
-  if (typeof raw === 'number') {
-    if (!Number.isFinite(raw) || raw <= 0) {
-      return null;
-    }
-    return {count: raw};
-  }
-  if (raw && typeof raw === 'object') {
-    const obj = raw as {
-      count?: unknown;
-      volume_ml?: unknown;
-      abv?: unknown;
-    };
-    const count =
-      typeof obj.count === 'number' &&
-      Number.isFinite(obj.count) &&
-      obj.count > 0
-        ? obj.count
-        : null;
-    if (count === null) {
-      return null;
-    }
-    const volumeMl =
-      typeof obj.volume_ml === 'number' && Number.isFinite(obj.volume_ml)
-        ? obj.volume_ml
-        : undefined;
-    const abv =
-      typeof obj.abv === 'number' && Number.isFinite(obj.abv)
-        ? obj.abv
-        : undefined;
-    return {count, volumeMl, abv};
-  }
-  return null;
-}
-
-/**
- * Compute SDU for a single entry. Returns `undefined` when neither overrides
- * nor defaults yield both an `ml` and an `abv`.
- */
-function computeSdu(
-  entry: NormalizedEntry,
-  defaults: {ml: number; abv: number} | undefined,
-): number | undefined {
-  const ml = entry.volumeMl ?? defaults?.ml;
-  const abv = entry.abv ?? defaults?.abv;
-  if (ml === undefined || abv === undefined) {
-    return undefined;
-  }
-  return sduFrom(ml, abv) * entry.count;
-}
 
 /**
  * Resolve a timestamp's local fields, preferring values stored on the session
@@ -168,8 +97,9 @@ let lastCall: {
 
 /**
  * Materialise the per-drink event stream from raw Onyx sessions. One pass:
- * iterate users → sessions → drink timestamps → drink type entries → emit
- * one `DrinkEvent` per (timestamp, drink type).
+ * iterate users → sessions → entries (read through the `SessionEntries`
+ * adapter, so legacy buckets and v2 entries look the same) → emit one
+ * `DrinkEvent` per entry.
  *
  * - Excludes only sessions with non-finite `start_time`. In-progress
  *   (`ongoing`) sessions ARE included so a live session counts toward the
@@ -177,8 +107,9 @@ let lastCall: {
  *   live buffer is overlaid separately in `useHomeStats`).
  * - `localDow` is rotated so 0 = `weekStart`; `isWeekend` is the absolute
  *   calendar Sat/Sun.
- * - Both the legacy `number` entry shape and the v2-A
- *   `{count, volume_ml?, abv?}` object shape produce events.
+ * - Legacy buckets (numeric or `{count, volume_ml?, abv?}`) and v2 entries
+ *   produce the same events; units and SDU come from `entryUnits` and
+ *   `entrySdu`, the one unit computation shared with the session screens.
  * - `sdu` is omitted when neither per-entry overrides nor `drinkDefaults`
  *   can supply both `ml` and `abv`.
  * - Pure. Memoised on input identity (sessions / drinksToUnits /
@@ -241,8 +172,8 @@ function buildDrinkEvents(
       const sessionType = session.ongoing
         ? CONST.SESSION.TYPES.LIVE
         : session.type;
-      const drinks: DrinksList | undefined = session.drinks;
-      if (!drinks) {
+      const entries = getSessionEntries(session, userId);
+      if (entries.length === 0) {
         continue;
       }
       // Stored fields are trusted only when they were computed under the
@@ -268,14 +199,8 @@ function buildDrinkEvents(
       if (!anchor) {
         continue;
       }
-      for (const [tsKey, drinksAtTs] of Object.entries(drinks)) {
-        const ts = Number(tsKey);
-        if (!Number.isFinite(ts)) {
-          continue;
-        }
-        if (!drinksAtTs) {
-          continue;
-        }
+      for (const entry of entries) {
+        const ts = entry.ts;
         let parts: LocalParts | null;
         try {
           parts = localPartsFor(ts, sessionTz, storedByTs?.[ts]);
@@ -288,37 +213,25 @@ function buildDrinkEvents(
         // Only the hour is taken from the drink's own time; day/week/month/dow
         // come from the session anchor.
         const {localHour} = parts;
-        for (const drinkKeyRaw of Object.keys(drinksAtTs)) {
-          const drinkKey = drinkKeyRaw as DrinkKey;
-          const entry = normalizeEntry(
-            (drinksAtTs as Record<string, unknown>)[drinkKey],
-          );
-          if (!entry) {
-            continue;
-          }
-          const unitsPerDrink = drinksToUnits?.[drinkKey] ?? 0;
-          const units = entry.count * unitsPerDrink;
-          const sdu = computeSdu(entry, drinkDefaults?.[drinkKey]);
-          events.push({
-            userId,
-            sessionId,
-            ts,
-            anchorTs: startMs,
-            localDay: anchor.localDay,
-            localIsoWeek: anchor.localIsoWeek,
-            localMonth: anchor.localMonth,
-            localHour,
-            localDow: anchor.localDow,
-            isWeekend: anchor.isWeekend,
-            drinkKey,
-            count: entry.count,
-            units,
-            sdu,
-            blackoutSession,
-            sessionDurationMin,
-            sessionType,
-          });
-        }
+        events.push({
+          userId,
+          sessionId,
+          ts,
+          anchorTs: startMs,
+          localDay: anchor.localDay,
+          localIsoWeek: anchor.localIsoWeek,
+          localMonth: anchor.localMonth,
+          localHour,
+          localDow: anchor.localDow,
+          isWeekend: anchor.isWeekend,
+          drinkKey: entry.key,
+          count: entry.count,
+          units: entryUnits(entry, drinksToUnits),
+          sdu: entrySdu(entry, drinkDefaults),
+          blackoutSession,
+          sessionDurationMin,
+          sessionType,
+        });
       }
     }
   }

@@ -77,9 +77,7 @@ function useLastSession(): LastSessionView | null {
     return {
       sessionId,
       when,
-      units: formatUnits(
-        DSUtils.calculateTotalUnits(session.drinks, drinksToUnits),
-      ),
+      units: formatUnits(DSUtils.calculateTotalUnits(session, drinksToUnits)),
       dateString: timestampToDateString(session.start_time),
     };
   }, [drinkingSessionData, drinksToUnits, translate]);
