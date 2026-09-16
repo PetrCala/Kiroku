@@ -72,15 +72,24 @@ test.describe('home live session card', () => {
       contentType: 'image/png',
     });
 
-    // Quick-add logs a drink without leaving Home.
+    // Every drink type is one tap away: the row holds all of them and scrolls
+    // sideways.
+    const quickAdd = authedPage.getByTestId(/^live-session-card-add-/);
+    await expect(quickAdd).toHaveCount(7);
+
+    // Quick-add logs a drink without leaving Home, and the drink just logged
+    // moves to the front of the row.
     const unitsBefore = await readCardUnits(authedPage);
-    await authedPage
-      .getByTestId(/^live-session-card-add-/)
-      .first()
-      .click();
+    const secondChip = await quickAdd.nth(1).getAttribute('data-testid');
+    expect(secondChip).toBeTruthy();
+    await quickAdd.nth(1).click();
     await expect
       .poll(() => readCardUnits(authedPage))
       .toBeGreaterThan(unitsBefore);
+    await expect(quickAdd.first()).toHaveAttribute(
+      'data-testid',
+      secondChip ?? '',
+    );
     await expect(session.liveScreen()).toBeHidden();
     const unitsAfter = await readCardUnits(authedPage);
     await testInfo.attach('home-live-card-after-quick-add', {
