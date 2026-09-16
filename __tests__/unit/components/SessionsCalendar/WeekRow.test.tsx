@@ -17,19 +17,22 @@ jest.mock('@libs/HapticFeedback', () => ({
   },
 }));
 
+/** `DateString` is a nominal literal type; brand the fixtures' plain strings. */
+const d = (value: string) => value as DateString;
+
 const GREEN = '#008000';
 const ORANGE = '#FFA500';
 
 // Mon 2026-09-07 .. Sun 2026-09-13, with the last two cells blank (as the
 // builder nulls days outside the loaded range).
 const row: MonthWeek = {
-  key: '2026-09-07',
+  key: d('2026-09-07'),
   days: [
-    '2026-09-07',
-    '2026-09-08',
-    '2026-09-09',
-    '2026-09-10',
-    '2026-09-11',
+    d('2026-09-07'),
+    d('2026-09-08'),
+    d('2026-09-09'),
+    d('2026-09-10'),
+    d('2026-09-11'),
     null,
     null,
   ],
@@ -39,11 +42,11 @@ const dayData: ReadonlyMap<DateString, DayCellData> = new Map<
   DateString,
   DayCellData
 >([
-  ['2026-09-07', {marking: {color: GREEN, isAlcoholFree: true}}],
-  ['2026-09-08', {marking: {color: ORANGE}, units: 6.5}],
-  ['2026-09-09', {marking: {color: GREEN, isAlcoholFree: true}}],
-  ['2026-09-10', {marking: {color: ORANGE}, units: 3}],
-  ['2026-09-11', {marking: {color: GREEN, isAlcoholFree: true}}],
+  [d('2026-09-07'), {marking: {color: GREEN, isAlcoholFree: true}}],
+  [d('2026-09-08'), {marking: {color: ORANGE}, units: 6.5}],
+  [d('2026-09-09'), {marking: {color: GREEN, isAlcoholFree: true}}],
+  [d('2026-09-10'), {marking: {color: ORANGE}, units: 3}],
+  [d('2026-09-11'), {marking: {color: GREEN, isAlcoholFree: true}}],
 ]);
 
 type Style = Record<string, unknown>;
@@ -120,9 +123,8 @@ describe('SessionsCalendar WeekRow', () => {
     );
     const pressable = getByTestId('calendar-day-2026-09-08');
     const tile = pressable.children[0];
-    expect(typeof tile).not.toBe('string');
     const tileStyle = flattenStyle(
-      (tile as {props: {style: unknown}}).props.style,
+      typeof tile === 'string' ? undefined : tile.props.style,
     );
     expect(tileStyle.opacity).toBe(0.35);
     expect(JSON.stringify(toJSON())).not.toContain('"6.5"');
@@ -133,7 +135,9 @@ describe('SessionsCalendar WeekRow', () => {
     // The tracked day after the floor is drawn at full strength.
     const tracked = getByTestId('calendar-day-2026-09-10').children[0];
     expect(
-      flattenStyle((tracked as {props: {style: unknown}}).props.style).opacity,
+      flattenStyle(
+        typeof tracked === 'string' ? undefined : tracked.props.style,
+      ).opacity,
     ).toBe(1);
   });
 });
