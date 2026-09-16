@@ -1,10 +1,9 @@
-import {useEffect, useMemo, useRef} from 'react';
+import {useCallback, useEffect, useMemo, useRef, useState} from 'react';
 import {View} from 'react-native';
-// eslint-disable-next-line no-restricted-imports
-import type {ScrollView as RNScrollView} from 'react-native';
 import {useOnyx} from 'react-native-onyx';
-import Animated, {LinearTransition} from 'react-native-reanimated';
+import {useFocusEffect} from '@react-navigation/native';
 import useAddDrinks from '@hooks/useAddDrinks';
+import useAppFocusEvent from '@hooks/useAppFocusEvent';
 import useCurrentUserDrinkingSessions from '@hooks/useCurrentUserDrinkingSessions';
 import useCurrentUserPreferences from '@hooks/useCurrentUserPreferences';
 import useLocalize from '@hooks/useLocalize';
@@ -17,6 +16,7 @@ import {buildDrinkProfile, rankQuickAdd} from '@libs/DrinkRanking';
 import * as DS from '@userActions/DrinkingSession';
 import CONST from '@src/CONST';
 import ONYXKEYS from '@src/ONYXKEYS';
+import type {DrinkKey} from '@src/types/onyx';
 import Text from './Text';
 import {PressableWithFeedback} from './Pressable';
 import * as KirokuIcons from './Icon/KirokuIcons';
@@ -29,18 +29,23 @@ const QUICK_ADD_RADIUS = 8;
 const LIVE_DOT_SIZE = 8;
 const CHEVRON_SIZE = 16;
 const QUICK_ADD_ICON_SIZE = 22;
-const QUICK_ADD_PLUS_SIZE = 12;
+const QUICK_ADD_PLUS_SIZE = 16;
 /**
  * Every chip is at least this wide, so the row overflows the card on a phone
  * and the chip cut off at the edge shows there is more to scroll to.
  */
-const QUICK_ADD_MIN_WIDTH = 88;
+const QUICK_ADD_MIN_WIDTH = 80;
 
 /**
  * The top of Home while a session is live: how long it has been running, the
  * units so far, and one-tap adds for every drink type, the most likely first
  * (`rankQuickAdd`): the drink logged last in this session sits at the front and
  * the rest follow the user's habits for the time of day the session started.
+ *
+ * The row keeps its order while it is on screen, so a chip never moves from
+ * under the user's finger; it is re-ranked only when Home comes back into view
+ * (focus, the app returning to the foreground) and when a new session starts.
+ *
  * Tapping the card opens the live session. It reads the live buffer itself, so
  * a quick-add re-renders this card, not Home, and the timer ticks inside
  * `ElapsedTime` only.
@@ -57,15 +62,26 @@ function LiveSessionCard() {
     () => buildDrinkProfile(drinkingSessions),
     [drinkingSessions],
   );
-  const quickAddKeys = rankQuickAdd(drinkProfile, session);
-  const frontKey = quickAddKeys.at(0);
-  const quickAddRef = useRef<RNScrollView>(null);
 
+  // The re-rank triggers read the latest inputs through a ref, so they don't
+  // re-run on every tap (each tap changes `session`).
+  const rankInputs = useRef({drinkProfile, session});
   useEffect(() => {
-    // The drink just logged moved to the front of the row; bring it into view
-    // in case the user had scrolled to reach it.
-    quickAddRef.current?.scrollTo({x: 0, animated: true});
-  }, [frontKey]);
+    rankInputs.current = {drinkProfile, session};
+  });
+  const [quickAddKeys, setQuickAddKeys] = useState<DrinkKey[]>(() =>
+    rankQuickAdd(drinkProfile, session),
+  );
+  const reRank = useCallback(() => {
+    const inputs = rankInputs.current;
+    setQuickAddKeys(rankQuickAdd(inputs.drinkProfile, inputs.session));
+  }, []);
+  useFocusEffect(reRank);
+  useAppFocusEvent(reRank);
+  const sessionID = session?.id;
+  useEffect(() => {
+    reRank();
+  }, [sessionID, reRank]);
 
   if (!session?.ongoing) {
     return null;
@@ -147,19 +163,28 @@ function LiveSessionCard() {
           />
         </View>
       </PressableWithFeedback>
-      <ScrollView
-        ref={quickAddRef}
-        horizontal
-        showsHorizontalScrollIndicator={false}
-        contentContainerStyle={[styles.gap2, styles.ph3, styles.pb3]}
-        testID="live-session-card-quick-add">
-        {quickAddKeys.map(drinkKey => {
-          const drinkName = translate(findDrinkNameTranslationKey(drinkKey));
-          const icon = DrinkData.find(drink => drink.key === drinkKey)?.icon;
-          return (
-            // The chip that moves to the front slides there instead of jumping.
-            <Animated.View key={drinkKey} layout={LinearTransition}>
+      <View style={[styles.flexRow, styles.alignItemsCenter, styles.pb3]}>
+        {/* Said once for the whole row instead of on every chip: a tap adds. */}
+        <View style={[styles.pl3, styles.pr2]}>
+          <Icon
+            src={KirokuIcons.Plus}
+            width={QUICK_ADD_PLUS_SIZE}
+            height={QUICK_ADD_PLUS_SIZE}
+            fill={theme.textSupporting}
+          />
+        </View>
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          style={styles.flex1}
+          contentContainerStyle={[styles.gap2, styles.pr3]}
+          testID="live-session-card-quick-add">
+          {quickAddKeys.map(drinkKey => {
+            const drinkName = translate(findDrinkNameTranslationKey(drinkKey));
+            const icon = DrinkData.find(drink => drink.key === drinkKey)?.icon;
+            return (
               <PressableWithFeedback
+                key={drinkKey}
                 accessibilityLabel={translate(
                   'homeScreen.liveSessionCard.addDrink',
                   {drinkName},
@@ -178,36 +203,23 @@ function LiveSessionCard() {
                     borderRadius: QUICK_ADD_RADIUS,
                   },
                 ]}>
-                <View
-                  style={[
-                    styles.flexRow,
-                    styles.alignItemsCenter,
-                    styles.gap1,
-                  ]}>
-                  {!!icon && (
-                    <Icon
-                      src={icon}
-                      width={QUICK_ADD_ICON_SIZE}
-                      height={QUICK_ADD_ICON_SIZE}
-                      fill={theme.text}
-                    />
-                  )}
+                {!!icon && (
                   <Icon
-                    src={KirokuIcons.Plus}
-                    width={QUICK_ADD_PLUS_SIZE}
-                    height={QUICK_ADD_PLUS_SIZE}
+                    src={icon}
+                    width={QUICK_ADD_ICON_SIZE}
+                    height={QUICK_ADD_ICON_SIZE}
                     fill={theme.text}
                   />
-                </View>
+                )}
                 {/* Small beer and beer share an icon, so the name disambiguates. */}
                 <Text style={[styles.textMicro, styles.mt1]} numberOfLines={1}>
                   {drinkName}
                 </Text>
               </PressableWithFeedback>
-            </Animated.View>
-          );
-        })}
-      </ScrollView>
+            );
+          })}
+        </ScrollView>
+      </View>
     </View>
   );
 }
