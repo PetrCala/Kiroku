@@ -57,9 +57,9 @@ function SessionsCalendarCompactSkeleton() {
             key={`nav-${button}`}
             style={styles.sessionsCalendarCompactSkeletonNavButton}>
             <Skeleton
-              width={variables.sessionsCalendarNavButtonSize}
-              height={variables.sessionsCalendarNavButtonSize}
-              radius={variables.sessionsCalendarNavButtonSize / 2}
+              width={variables.periodHeaderNavButtonSize}
+              height={variables.periodHeaderNavButtonSize}
+              radius={variables.periodHeaderNavButtonSize / 2}
               animate={false}
             />
           </View>

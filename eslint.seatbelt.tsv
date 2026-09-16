@@ -800,7 +800,6 @@
 "src/components/Social/UserOverview.tsx"	"react/jsx-no-leaked-render"	1
 "src/components/StartSessionButtonAndPopover.tsx"	"react-hooks/set-state-in-effect"	1
 "src/components/StartSessionButtonAndPopover.tsx"	"react/jsx-no-leaked-render"	1
-"src/components/Statistics/StatsFilterToolbar/StatsRangeNavigator.tsx"	"react/jsx-no-leaked-render"	4
 "src/components/SubscriptAvatar.tsx"	"react/jsx-no-leaked-render"	2
 "src/components/Switch.tsx"	"react-hooks/refs"	1
 "src/components/TermsScreenContent.tsx"	"rulesdir/prefer-narrow-hook-dependencies"	1

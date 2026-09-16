@@ -25,7 +25,7 @@ export default {
   sessionsCalendarDaySize: 44,
   sessionsCalendarTileRadius: 10,
   sessionsCalendarDayLabelFontSize: 10,
-  sessionsCalendarNavButtonSize: 32,
+  periodHeaderNavButtonSize: 32,
   componentSizeNormal: 40,
   componentSizeMedium: 48,
   inputComponentSizeNormal: 40,

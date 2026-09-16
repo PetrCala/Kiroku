@@ -1,10 +1,9 @@
 import React, {useEffect, useState} from 'react';
-import {Animated, View} from 'react-native';
-import ArrowIcon from '@components/DatePicker/CalendarPicker/ArrowIcon';
+import {Animated} from 'react-native';
 import Icon from '@components/Icon';
 import * as KirokuIcons from '@components/Icon/KirokuIcons';
+import PeriodHeader from '@components/PeriodHeader';
 import PressableWithFeedback from '@components/Pressable/PressableWithFeedback';
-import Text from '@components/Text';
 import useLocalize from '@hooks/useLocalize';
 import useTheme from '@hooks/useTheme';
 import useThemeStyles from '@hooks/useThemeStyles';
@@ -31,7 +30,7 @@ function StatsRangeNavigator({
 }: Props) {
   const {translate, preferredLocale} = useLocalize();
   const styles = useThemeStyles();
-  const {text, textReversed, textSupporting} = useTheme();
+  const {textReversed} = useTheme();
 
   const label = getStatsRangeLabel({range, translate, preferredLocale});
   const {isPageable, canGoPrev, canGoNext, isLatest} = range;
@@ -54,107 +53,61 @@ function StatsRangeNavigator({
     }).start();
   }, [showJump, jumpOpacity]);
 
+  // Side slot: the jump-to-latest button (fades in) or the custom-range revert
+  // button. Never both, since a custom range isn't pageable.
+  let sideSlot: React.ReactNode = null;
+  if (showJump) {
+    sideSlot = (
+      <Animated.View style={{opacity: jumpOpacity}}>
+        <PressableWithFeedback
+          onPress={onJumpToLatest}
+          role={CONST.ROLE.BUTTON}
+          accessibilityLabel={translate('statistics.filters.a11y.jumpToLatest')}
+          shouldUseAutoHitSlop
+          style={styles.periodHeaderRevert}>
+          <Icon
+            src={KirokuIcons.RotateLeft}
+            fill={textReversed}
+            width={14}
+            height={14}
+          />
+        </PressableWithFeedback>
+      </Animated.View>
+    );
+  } else if (showRevert) {
+    sideSlot = (
+      <PressableWithFeedback
+        onPress={onRevert}
+        role={CONST.ROLE.BUTTON}
+        accessibilityLabel={translate('statistics.filters.a11y.revertToPreset')}
+        shouldUseAutoHitSlop
+        style={styles.periodHeaderRevert}>
+        <Icon
+          src={KirokuIcons.RotateLeft}
+          fill={textReversed}
+          width={14}
+          height={14}
+        />
+      </PressableWithFeedback>
+    );
+  }
+
   return (
-    <View style={styles.statsRangeNavigatorRow}>
-      <View style={styles.statsRangeNavigatorButtonSlot}>
-        {isPageable && (
-          <PressableWithFeedback
-            shouldUseAutoHitSlop={false}
-            disabled={!canGoPrev}
-            onPress={onPrev}
-            hoverDimmingValue={1}
-            accessibilityLabel={translate(
-              'statistics.filters.a11y.previousPeriod',
-            )}
-            accessibilityState={{disabled: !canGoPrev}}
-            style={styles.statsRangeNavigatorButton}>
-            <ArrowIcon
-              small
-              direction={CONST.DIRECTION.LEFT}
-              disabled={!canGoPrev}
-            />
-          </PressableWithFeedback>
-        )}
-      </View>
-      <View style={styles.statsRangeNavigatorLabelSlot}>
-        <View style={styles.statsRangeNavigatorLabelRow}>
-          {/* Phantom spacer matching the jump slot on the right, so the label
-              stays centered whether or not the jump button is showing. */}
-          <View style={styles.statsRangeNavigatorJumpSlot} />
-          <PressableWithFeedback
-            onPress={onPressLabel}
-            accessibilityLabel={translate('statistics.filters.a11y.rangeLabel')}
-            accessibilityRole="button"
-            style={styles.statsRangeNavigatorLabelPressable}>
-            <Text
-              color={text}
-              fontSize={15}
-              style={styles.statsRangeNavigatorLabelText}
-              numberOfLines={1}>
-              {label}
-            </Text>
-            <Icon
-              src={KirokuIcons.DownArrow}
-              fill={textSupporting}
-              width={12}
-              height={12}
-              additionalStyles={styles.ml1}
-            />
-          </PressableWithFeedback>
-          {/* Right slot: a fixed-width reserve keeps the label centered. Holds
-              the jump-to-latest button (fades in) or the custom-range revert
-              button — never both, since a custom range isn't pageable. */}
-          <View style={styles.statsRangeNavigatorJumpSlot}>
-            {showJump && (
-              <Animated.View style={{opacity: jumpOpacity}}>
-                <PressableWithFeedback
-                  onPress={onJumpToLatest}
-                  accessibilityLabel={translate(
-                    'statistics.filters.a11y.jumpToLatest',
-                  )}
-                  accessibilityRole="button"
-                  style={styles.statsRangeNavigatorInlineJump}>
-                  <Icon
-                    small
-                    src={KirokuIcons.RotateLeft}
-                    fill={textReversed}
-                  />
-                </PressableWithFeedback>
-              </Animated.View>
-            )}
-            {showRevert && (
-              <PressableWithFeedback
-                onPress={onRevert}
-                accessibilityLabel={translate(
-                  'statistics.filters.a11y.revertToPreset',
-                )}
-                accessibilityRole="button"
-                style={styles.statsRangeNavigatorInlineJump}>
-                <Icon small src={KirokuIcons.RotateLeft} fill={textReversed} />
-              </PressableWithFeedback>
-            )}
-          </View>
-        </View>
-      </View>
-      <View style={styles.statsRangeNavigatorButtonSlot}>
-        {isPageable && (
-          <PressableWithFeedback
-            shouldUseAutoHitSlop={false}
-            disabled={!canGoNext}
-            onPress={onNext}
-            hoverDimmingValue={1}
-            accessibilityLabel={translate('statistics.filters.a11y.nextPeriod')}
-            accessibilityState={{disabled: !canGoNext}}
-            style={styles.statsRangeNavigatorButton}>
-            <ArrowIcon
-              small
-              direction={CONST.DIRECTION.RIGHT}
-              disabled={!canGoNext}
-            />
-          </PressableWithFeedback>
-        )}
-      </View>
-    </View>
+    <PeriodHeader
+      label={label}
+      onPressLabel={onPressLabel}
+      labelAccessibilityLabel={translate('statistics.filters.a11y.rangeLabel')}
+      sideSlot={sideSlot}
+      onPrevious={onPrev}
+      onNext={onNext}
+      canGoPrevious={canGoPrev}
+      canGoNext={canGoNext}
+      hideNavButtons={!isPageable}
+      previousAccessibilityLabel={translate(
+        'statistics.filters.a11y.previousPeriod',
+      )}
+      nextAccessibilityLabel={translate('statistics.filters.a11y.nextPeriod')}
+    />
   );
 }
 

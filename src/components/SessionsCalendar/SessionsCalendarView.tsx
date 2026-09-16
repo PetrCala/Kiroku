@@ -5,9 +5,9 @@ import {runOnJS} from 'react-native-reanimated';
 import {PressableWithFeedback} from '@components/Pressable';
 import Icon from '@components/Icon';
 import * as KirokuIcons from '@components/Icon/KirokuIcons';
+import PeriodHeader from '@components/PeriodHeader';
 import {Calendar} from 'react-native-calendars';
 import type {DateData} from 'react-native-calendars';
-import type {ValueOf} from 'type-fest';
 import type {MarkedDates} from 'react-native-calendars/src/types';
 import {useOnyx} from 'react-native-onyx';
 import {format, parseISO, startOfMonth} from 'date-fns';
@@ -24,7 +24,6 @@ import DateUtils from '@libs/DateUtils';
 import Str from '@libs/common/str';
 import setCalendarLocale from '@libs/setCalendarLocale';
 import type {DateString, UserID} from '@src/types/onyx/OnyxCommon';
-import Text from '@components/Text';
 import DayComponent from './DayComponent';
 import type {DayComponentProps} from './types';
 
@@ -179,10 +178,10 @@ function SessionsCalendarView({
     onRightArrowPress(() => {});
   }, [canGoToNextMonth, onRightArrowPress]);
 
-  // Custom header: the month label leads, the revert control / older-months
-  // spinner and the two nav buttons trail. Keeping the header always-customized
-  // (not just when fetching) avoids a layout jump between native-header and
-  // custom-header rendering.
+  // Custom header: the shared `PeriodHeader` (month label leading, the revert
+  // control / older-months spinner and the two nav buttons trailing). Keeping
+  // the header always-customized (not just when fetching) avoids a layout jump
+  // between native-header and custom-header rendering.
   // The lib passes an `XDate` (no published d.ts; treated as `any` here). All we
   // need is its epoch — extract via `getTime()` and rebuild a native `Date`.
   const isHeaderTappable = !!userID;
@@ -242,18 +241,13 @@ function SessionsCalendarView({
           locale: dateFnsLocale,
         }),
       );
-      const monthText = (
-        <Text style={styles.sessionsCalendarHeaderMonthText}>{formatted}</Text>
-      );
-      // Right slot holds at most one of: the older-months spinner (priority) or
+      // Side slot holds at most one of: the older-months spinner (priority) or
       // the revert control. Computed up front to avoid a nested ternary in JSX.
-      let rightSlotContent: React.ReactNode = null;
+      let sideSlot: React.ReactNode = null;
       if (isFetchingOlderMonths) {
-        rightSlotContent = (
-          <ActivityIndicator size="small" color={theme.spinner} />
-        );
+        sideSlot = <ActivityIndicator size="small" color={theme.spinner} />;
       } else if (showRevert) {
-        rightSlotContent = (
+        sideSlot = (
           <Animated.View style={{opacity: revertOpacity}}>
             <PressableWithFeedback
               onPress={onJumpToCurrent}
@@ -264,7 +258,7 @@ function SessionsCalendarView({
               // Auto-pad the small pill out to the minimum touch target without
               // growing its visual size.
               shouldUseAutoHitSlop
-              style={styles.sessionsCalendarHeaderRevert}>
+              style={styles.periodHeaderRevert}>
               <Icon
                 src={KirokuIcons.RotateLeft}
                 fill={theme.textReversed}
@@ -275,64 +269,18 @@ function SessionsCalendarView({
           </Animated.View>
         );
       }
-      const renderNavButton = (direction: ValueOf<typeof CONST.DIRECTION>) => {
-        const isLeft = direction === CONST.DIRECTION.LEFT;
-        const isEnabled = isLeft ? canGoToPreviousMonth : canGoToNextMonth;
-        return (
-          <PressableWithFeedback
-            onPress={isLeft ? goToPreviousMonth : goToNextMonth}
-            disabled={!isEnabled}
-            role={CONST.ROLE.BUTTON}
-            accessibilityLabel={translate(
-              isLeft ? 'common.previous' : 'common.next',
-            )}
-            style={[
-              styles.sessionsCalendarHeaderNavButton,
-              !isEnabled && styles.buttonOpacityDisabled,
-            ]}>
-            <Icon
-              src={KirokuIcons.ArrowRight}
-              fill={theme.icon}
-              width={14}
-              height={14}
-              additionalStyles={StyleUtils.getDirectionStyle(direction)}
-            />
-          </PressableWithFeedback>
-        );
-      };
       return (
-        // The right slot keeps a fixed width so the nav buttons never shift
-        // when the revert control or older-months spinner toggle in/out.
-        <View style={styles.sessionsCalendarHeader}>
-          {isHeaderTappable ? (
-            <PressableWithFeedback
-              onPress={onHeaderPress}
-              role={CONST.ROLE.BUTTON}
-              accessibilityLabel={formatted}
-              style={styles.sessionsCalendarHeaderLabel}>
-              {monthText}
-              <Icon
-                src={KirokuIcons.DownArrow}
-                fill={theme.textSupporting}
-                width={12}
-                height={12}
-                additionalStyles={styles.sessionsCalendarHeaderCaret}
-              />
-            </PressableWithFeedback>
-          ) : (
-            <View style={styles.sessionsCalendarHeaderLabel}>{monthText}</View>
-          )}
-          <View style={styles.flex1} />
-          <View style={styles.sessionsCalendarHeaderSideSlot}>
-            {rightSlotContent}
-          </View>
-          {!hideArrows && (
-            <>
-              {renderNavButton(CONST.DIRECTION.LEFT)}
-              {renderNavButton(CONST.DIRECTION.RIGHT)}
-            </>
-          )}
-        </View>
+        <PeriodHeader
+          label={formatted}
+          onPressLabel={isHeaderTappable ? onHeaderPress : undefined}
+          sideSlot={sideSlot}
+          onPrevious={goToPreviousMonth}
+          onNext={goToNextMonth}
+          canGoPrevious={canGoToPreviousMonth}
+          canGoNext={canGoToNextMonth}
+          hideNavButtons={hideArrows}
+          style={styles.sessionsCalendarHeader}
+        />
       );
     },
     [
@@ -350,20 +298,10 @@ function SessionsCalendarView({
       canGoToNextMonth,
       goToPreviousMonth,
       goToNextMonth,
-      StyleUtils,
-      styles.flex1,
-      styles.buttonOpacityDisabled,
       styles.sessionsCalendarHeader,
-      styles.sessionsCalendarHeaderLabel,
-      styles.sessionsCalendarHeaderCaret,
-      styles.sessionsCalendarHeaderMonthText,
-      styles.sessionsCalendarHeaderNavButton,
-      styles.sessionsCalendarHeaderSideSlot,
-      styles.sessionsCalendarHeaderRevert,
-      theme.icon,
+      styles.periodHeaderRevert,
       theme.spinner,
       theme.textReversed,
-      theme.textSupporting,
     ],
   );
 
@@ -425,7 +363,7 @@ function SessionsCalendarView({
           firstDay={CONST.WEEK_STARTS_ON}
           enableSwipeMonths={false}
           // The library's edge arrows are always hidden; month paging lives in
-          // the custom header (`renderNavButton`) so it can sit next to the
+          // the custom header (`PeriodHeader`) so it can sit next to the
           // revert control without the arrows' hit-slop swallowing its taps.
           hideArrows
           hideDayNames={hideDayNames}
