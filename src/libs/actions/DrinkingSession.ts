@@ -61,8 +61,21 @@ let ongoingSessionSyncLoaded = false;
 Onyx.connect({
   key: ONYXKEYS.ONGOING_SESSION_SYNC,
   callback: value => {
-    ongoingSessionSync = value ?? undefined;
     ongoingSessionSyncLoaded = true;
+    // A live flush that resolves after finalize/discard cleared the stamps
+    // merges only its own fields back (`syncedAt` on success, the drop
+    // bookkeeping on a rejection): a queued request cannot know the marker is
+    // gone. Such a fragment names no session, so nothing can act on it; drop
+    // it rather than let it linger. Unless a newer edit has already re-stamped
+    // the key, in which case this callback is the stale one and the edit's
+    // own write supersedes the fragment.
+    if (value && !value.sessionId) {
+      if (!ongoingSessionSync?.sessionId) {
+        Onyx.set(ONYXKEYS.ONGOING_SESSION_SYNC, null);
+      }
+      return;
+    }
+    ongoingSessionSync = value ?? undefined;
     maybeResumeLiveSessionPersist();
   },
 });

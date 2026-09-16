@@ -840,4 +840,70 @@ describe('Offline write durability (real write pipeline)', () => {
     sync = await readOnyx<OngoingSessionSync>(ONYXKEYS.ONGOING_SESSION_SYNC);
     expect(sync).toBeUndefined();
   });
+
+  it('leaves no stale sync marker when a live flush queued offline delivers after the finalize cleared the stamps', async () => {
+    const live = DSUtils.getEmptySession({
+      id: 'live-behind',
+      type: CONST.SESSION.TYPES.LIVE,
+      ongoing: true,
+    });
+    await Onyx.set(ONYXKEYS.ONGOING_SESSION_DATA, live);
+    await settle();
+    await setNetwork(true);
+    DS.updateDrinks(
+      'live-behind',
+      CONST.DRINKS.KEYS.BEER,
+      1,
+      CONST.DRINKS.ACTIONS.ADD,
+      DRINKS_TO_UNITS,
+    );
+    await waitFor(() => PersistedRequests.getAll().length === 1, 5000);
+
+    // The user finishes the session while still offline: the finalize queues
+    // behind the live flush, and the sync stamps are cleared at once.
+    const buffer = await readOnyx<DrinkingSession>(
+      ONYXKEYS.ONGOING_SESSION_DATA,
+    );
+    if (!buffer) {
+      throw new Error('the live buffer should still hold the session');
+    }
+    await DS.saveDrinkingSessionData(
+      ME,
+      {...buffer, ongoing: false},
+      'live-behind',
+      ONYXKEYS.ONGOING_SESSION_DATA,
+      true,
+    );
+    await settle();
+    expect(queuedCommands()).toEqual([
+      WRITE_COMMANDS.UPDATE_SESSION,
+      WRITE_COMMANDS.UPDATE_SESSION,
+    ]);
+    expect(
+      await readOnyx<OngoingSessionSync>(ONYXKEYS.ONGOING_SESSION_SYNC),
+    ).toBeUndefined();
+
+    // Back online, both deliver in order. The flush's success data (its
+    // `syncedAt` stamp) is applied only after the finalize cleared the stamps
+    // and must not leave behind a marker that names no session.
+    await setNetwork(false);
+    await waitFor(
+      () =>
+        mockXhr.mock.calls.length === 2 &&
+        PersistedRequests.getAll().length === 0,
+    );
+    await settle();
+    const [[, flushData], [, finalizeData]] = mockXhr.mock.calls as Array<
+      [string, Record<string, unknown>]
+    >;
+    expect((flushData.session as DrinkingSession).ongoing).toBe(true);
+    expect((finalizeData.session as DrinkingSession).ongoing).toBe(false);
+    expect(
+      Object.keys((finalizeData.session as DrinkingSession).drinks ?? {}),
+    ).toHaveLength(1);
+    const sync = await readOnyx<OngoingSessionSync>(
+      ONYXKEYS.ONGOING_SESSION_SYNC,
+    );
+    expect(sync).toBeUndefined();
+  });
 });
