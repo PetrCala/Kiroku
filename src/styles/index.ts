@@ -787,77 +787,6 @@ const styles = (theme: ThemeColors) =>
       overflow: 'hidden',
     },
 
-    statsRangeNavigatorRow: {
-      flexDirection: 'row',
-      alignItems: 'center',
-    },
-
-    // Fixed-width slots keep the round buttons pinned to the row edges,
-    // independent of the variable-width label between them.
-    statsRangeNavigatorButtonSlot: {
-      width: 40,
-      height: 40,
-      alignItems: 'center',
-      justifyContent: 'center',
-    },
-
-    statsRangeNavigatorButton: {
-      width: 40,
-      height: 40,
-      borderRadius: 20,
-      borderWidth: 1,
-      borderColor: theme.border,
-      backgroundColor: theme.appBG,
-      alignItems: 'center',
-      justifyContent: 'center',
-    },
-
-    statsRangeNavigatorLabelSlot: {
-      flex: 1,
-      alignItems: 'center',
-      justifyContent: 'center',
-    },
-
-    // Date label + (optional) inline jump-to-latest button, centered together.
-    statsRangeNavigatorLabelRow: {
-      flexDirection: 'row',
-      alignItems: 'center',
-      justifyContent: 'center',
-      columnGap: 8,
-    },
-
-    statsRangeNavigatorLabelPressable: {
-      flexDirection: 'row',
-      paddingHorizontal: 8,
-      paddingVertical: 4,
-      alignItems: 'center',
-    },
-
-    statsRangeNavigatorLabelText: {
-      fontWeight: FontUtils.fontWeight.bold,
-    },
-
-    // Small accent circle that appears beside the label when viewing a past
-    // period; tapping it returns to the current period.
-    statsRangeNavigatorInlineJump: {
-      width: 24,
-      height: 24,
-      borderRadius: 12,
-      backgroundColor: theme.appColor,
-      alignItems: 'center',
-      justifyContent: 'center',
-    },
-
-    // Fixed-width slot reserved on both sides of the label — the right slot
-    // holds the jump-to-latest button, the left is a phantom spacer — so the
-    // centered label never shifts when the jump button toggles.
-    statsRangeNavigatorJumpSlot: {
-      width: 24,
-      height: 24,
-      alignItems: 'center',
-      justifyContent: 'center',
-    },
-
     cardBG: {
       backgroundColor: theme.border,
     },
@@ -1719,58 +1648,80 @@ const styles = (theme: ThemeColors) =>
       borderBottomWidth: 1,
     },
 
-    // Month label leading, controls trailing. The row is as tall as the
-    // library's arrow row used to be (48 + its 6px top margin), so the grid
-    // below and the compact skeleton keep their positions.
-    sessionsCalendarHeader: {
-      flex: 1,
+    // Shared period-navigation header (compact sessions calendar, Statistics
+    // range navigator): label leading, controls trailing. The row is as tall as
+    // the calendar library's arrow row used to be (48 + its 6px top margin), so
+    // the calendar grid and the compact skeleton keep their positions.
+    periodHeader: {
       flexDirection: 'row',
       alignItems: 'center',
       minHeight: 48,
+    },
+
+    // The calendar library wraps the custom header in its own row; grow to
+    // fill it and inset by 4 so the label sits flush with the first tile
+    // column and the last nav button with the last.
+    sessionsCalendarHeader: {
+      flex: 1,
       paddingHorizontal: 4,
     },
 
-    sessionsCalendarHeaderMonthText: {
+    periodHeaderLabelText: {
       ...FontUtils.fontFamily.platform.EXP_NEUE_BOLD,
       color: theme.text,
       fontSize: variables.fontSizeLarge,
     },
 
-    // The month label is flush with the first tile column; the trailing
-    // padding keeps the tap target comfortable.
-    sessionsCalendarHeaderLabel: {
+    // The trailing padding keeps the label's tap target comfortable.
+    periodHeaderLabel: {
       flexDirection: 'row',
       paddingRight: 8,
       paddingVertical: 4,
       alignItems: 'center',
     },
 
-    // Subtle caret trailing the month label, hinting that tapping it expands to
-    // the full-screen calendar. Shown only when the header is tappable.
-    sessionsCalendarHeaderCaret: {
+    // Subtle caret trailing the label, hinting that tapping it opens a picker
+    // or an expanded view. Shown only when the label is pressable.
+    periodHeaderCaret: {
       marginLeft: 4,
     },
 
-    // Fixed-size slot for the revert button or older-months spinner, so the
-    // nav buttons after it never shift when either toggles in or out.
-    sessionsCalendarHeaderSideSlot: {
+    // Fixed-size slot for the revert / jump control or a spinner, so the nav
+    // buttons after it never shift when either toggles in or out.
+    periodHeaderSideSlot: {
       width: 24,
       height: 24,
       alignItems: 'center',
       justifyContent: 'center',
     },
 
-    // Round, outlined month-paging button; two sit at the header's trailing
-    // edge, the second flush with the last tile column.
-    sessionsCalendarHeaderNavButton: {
-      width: variables.sessionsCalendarNavButtonSize,
-      height: variables.sessionsCalendarNavButtonSize,
-      borderRadius: variables.sessionsCalendarNavButtonSize / 2,
+    // Round, outlined period-paging button; two sit at the header's trailing
+    // edge.
+    periodHeaderNavButton: {
+      width: variables.periodHeaderNavButtonSize,
+      height: variables.periodHeaderNavButtonSize,
+      borderRadius: variables.periodHeaderNavButtonSize / 2,
       borderWidth: 1,
       borderColor: theme.border,
       alignItems: 'center',
       justifyContent: 'center',
+    },
+
+    // Gap before each nav button in the header (side slot to first button,
+    // first button to second).
+    periodHeaderNavButtonGap: {
       marginLeft: 6,
+    },
+
+    // Accent circle for the revert / jump-to-current control in the header's
+    // side slot.
+    periodHeaderRevert: {
+      width: 24,
+      height: 24,
+      borderRadius: 12,
+      backgroundColor: theme.appColor,
+      alignItems: 'center',
+      justifyContent: 'center',
     },
 
     // Hairline ring for today in the icon gray, drawn as an overlay so the
@@ -1785,17 +1736,6 @@ const styles = (theme: ThemeColors) =>
       borderRadius: variables.sessionsCalendarTileRadius,
       borderWidth: 1.5,
       borderColor: theme.icon,
-    },
-
-    // Accent circle for the jump-to-current-month control; mirrors the
-    // Statistics range navigator's jump-to-latest pill.
-    sessionsCalendarHeaderRevert: {
-      width: 24,
-      height: 24,
-      borderRadius: 12,
-      backgroundColor: theme.appColor,
-      alignItems: 'center',
-      justifyContent: 'center',
     },
 
     sessionsCalendarWeekRow: {

@@ -14,10 +14,10 @@ import {FlashList} from '@shopify/flash-list';
 import type {FlashListRef} from '@shopify/flash-list';
 import React, {useCallback, useRef, useState} from 'react';
 import {StyleSheet, View} from 'react-native';
-import ArrowIcon from '@components/DatePicker/CalendarPicker/ArrowIcon';
 import generateMonthMatrix from '@components/DatePicker/CalendarPicker/generateMonthMatrix';
 import Icon from '@components/Icon';
 import * as KirokuIcons from '@components/Icon/KirokuIcons';
+import {PeriodNavButton} from '@components/PeriodHeader';
 import PressableWithFeedback from '@components/Pressable/PressableWithFeedback';
 import PressableWithoutFeedback from '@components/Pressable/PressableWithoutFeedback';
 import Text from '@components/Text';
@@ -42,12 +42,6 @@ const localStyles = StyleSheet.create({
   header: {
     height: 50,
     flexDirection: 'row',
-    alignItems: 'center',
-  },
-  headerArrow: {
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    justifyContent: 'center',
     alignItems: 'center',
   },
   // PressableWithFeedback applies `style` to the inner pressable, not to the
@@ -104,14 +98,15 @@ const localStyles = StyleSheet.create({
 
 /**
  * Unified calendar grid powering both the single-date and date-range pickers.
- * The month view steps months via edge arrows; tapping the centered title opens
+ * The month view steps months via the shared round nav buttons at the header's
+ * edges; tapping the centered title opens
  * an Apple-style year overview (months in 3 columns, scrolled vertically) so any
  * month is one tap away.
  */
 function Calendar(props: CalendarProps) {
   const themeStyles = useThemeStyles();
   const theme = useTheme();
-  const {preferredLocale, translate} = useLocalize();
+  const {preferredLocale} = useLocalize();
 
   const minDate =
     props.minDate ?? setYear(new Date(), CONST.CALENDAR_PICKER.MIN_YEAR);
@@ -278,14 +273,11 @@ function Calendar(props: CalendarProps) {
     <View>
       <View style={localStyles.header}>
         {view === 'month' ? (
-          <PressableWithFeedback
+          <PeriodNavButton
+            direction={CONST.DIRECTION.LEFT}
             disabled={!hasPrev}
             onPress={() => setMonthView(subMonths(monthView, 1))}
-            hoverDimmingValue={1}
-            style={localStyles.headerArrow}
-            accessibilityLabel={translate('common.previous')}>
-            <ArrowIcon disabled={!hasPrev} direction={CONST.DIRECTION.LEFT} />
-          </PressableWithFeedback>
+          />
         ) : null}
         <PressableWithFeedback
           onPress={() => setView(view === 'month' ? 'overview' : 'month')}
@@ -304,14 +296,11 @@ function Calendar(props: CalendarProps) {
           />
         </PressableWithFeedback>
         {view === 'month' ? (
-          <PressableWithFeedback
+          <PeriodNavButton
+            direction={CONST.DIRECTION.RIGHT}
             disabled={!hasNext}
             onPress={() => setMonthView(addMonths(monthView, 1))}
-            hoverDimmingValue={1}
-            style={localStyles.headerArrow}
-            accessibilityLabel={translate('common.next')}>
-            <ArrowIcon disabled={!hasNext} />
-          </PressableWithFeedback>
+          />
         ) : null}
       </View>
 

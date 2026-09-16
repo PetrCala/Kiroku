@@ -30,6 +30,19 @@ const styles = StyleSheet.create({
     flex: 1,
     height: 32,
   },
+  // Mirrors the shared PeriodHeader row: label leading, two round 32pt nav
+  // buttons trailing, 48pt tall.
+  periodRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    minHeight: 48,
+  },
+  periodSpacer: {
+    flex: 1,
+  },
+  periodNavButton: {
+    marginLeft: 6,
+  },
   chipRow: {
     flexDirection: 'row',
     columnGap: 8,
@@ -64,10 +77,15 @@ function StatsFilterToolbarSkeleton({
         </View>
         <Skeleton width={88} height={32} radius={8} />
       </View>
-      <View style={styles.row}>
-        <Skeleton width={28} height={28} radius={6} />
+      <View style={styles.periodRow}>
         <Skeleton width={140} height={18} radius={6} />
-        <Skeleton width={28} height={28} radius={6} />
+        <View style={styles.periodSpacer} />
+        <View style={styles.periodNavButton}>
+          <Skeleton width={32} height={32} radius={16} />
+        </View>
+        <View style={styles.periodNavButton}>
+          <Skeleton width={32} height={32} radius={16} />
+        </View>
       </View>
       {showDrinkTypeFilter ? (
         <View style={styles.chipRow}>
