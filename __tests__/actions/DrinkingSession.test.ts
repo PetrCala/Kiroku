@@ -11,6 +11,7 @@ import Onyx from 'react-native-onyx';
 import * as API from '@libs/API';
 import {WRITE_COMMANDS} from '@libs/API/types';
 import * as DSUtils from '@libs/DrinkingSessionUtils';
+import * as FeatureFlags from '@libs/FeatureFlags';
 import ONYXKEYS from '@src/ONYXKEYS';
 import CONST from '@src/CONST';
 import type {DrinkingSession} from '@src/types/onyx';
@@ -77,9 +78,21 @@ jest.mock('@libs/Navigation/Navigation', () => ({
 }));
 jest.mock('@libs/Localize', () => ({translateLocal: (key: string) => key}));
 jest.mock('@libs/DrinkingSessionUtils');
+jest.mock('@libs/FeatureFlags', () => ({isEnabled: jest.fn(() => false)}));
+jest.mock('@libs/Firebase/FirebaseApp', () => ({
+  getFirebaseAuth: jest.fn(() => ({currentUser: {uid: 'uid-me'}})),
+}));
+jest.mock('@libs/getPlatform', () => ({
+  __esModule: true,
+  default: jest.fn(() => 'ios'),
+}));
+jest.mock('@libs/SessionName', () => ({
+  getDefaultSessionName: jest.fn(() => 'Friday evening'),
+}));
 
 const mockedWrite = jest.mocked(API.write);
 const mockedDSUtils = jest.mocked(DSUtils);
+const mockedIsEnabled = jest.mocked(FeatureFlags.isEnabled);
 
 const DRINKS_TO_UNITS = {beer: 1} as never;
 
@@ -652,5 +665,148 @@ describe('updateSessionDate shifts in the session timezone', () => {
       session,
       -3 * DAY_MS,
     );
+  });
+});
+
+describe('Sessions v2 schema flag', () => {
+  const user = {uid: 'uid-me'} as never;
+
+  beforeEach(() => {
+    mockedIsEnabled.mockReturnValue(false);
+    mockedDSUtils.getEmptySession.mockImplementation(session => ({
+      id: session.id,
+      start_time: session.start_time ?? 1_000,
+      end_time: session.end_time ?? 1_000,
+      blackout: false,
+      note: '',
+      timezone: session.timezone ?? 'Europe/Prague',
+      type: session.type ?? CONST.SESSION.TYPES.LIVE,
+      ongoing: session.ongoing,
+    }));
+  });
+
+  it('starts a legacy session while the flag is off', async () => {
+    await DS.startLiveDrinkingSession(user, 'Europe/Prague');
+    const started = sessionOf(liveUpdateCalls()[0]);
+    expect(started?.schema_version).toBeUndefined();
+    expect(started?.name).toBeUndefined();
+    expect(started?.visibility).toBeUndefined();
+  });
+
+  it('starts a schema 2 session with a default name and friends visibility when on', async () => {
+    mockedIsEnabled.mockImplementation(flag => flag === 'SESSIONS_V2_SCHEMA');
+    await DS.startLiveDrinkingSession(user, 'Europe/Prague');
+    const started = sessionOf(liveUpdateCalls()[0]);
+    expect(started).toMatchObject({
+      id: 'generated-id',
+      ongoing: true,
+      schema_version: 2,
+      name: 'Friday evening',
+      visibility: 'friends',
+    });
+    expect(started?.drinks).toBeUndefined();
+    expect(started?.entries).toBeUndefined();
+  });
+
+  it('creates a schema 2 edit session when on', async () => {
+    mockedIsEnabled.mockImplementation(flag => flag === 'SESSIONS_V2_SCHEMA');
+    const session = await DS.getNewSessionToEdit(
+      user,
+      new Date(1_700_000_000_000),
+      'Europe/Prague',
+      false,
+    );
+    expect(session).toMatchObject({
+      schema_version: 2,
+      name: 'Friday evening',
+      visibility: 'friends',
+      type: CONST.SESSION.TYPES.EDIT,
+    });
+  });
+
+  it('writes drinks on a schema 2 session as entries, merging only the change', () => {
+    const live: DrinkingSession = {
+      ...makeOngoing('v2'),
+      schema_version: 2,
+      drinks: undefined,
+      entries: {},
+    };
+    const entry = {
+      ts: 2_000,
+      key: 'beer' as const,
+      count: 1,
+      source: 'phone' as const,
+      author_uid: 'uid-me',
+      target_uid: 'uid-me',
+      created_at: 2_000,
+    };
+    driveOnyx(ONYXKEYS.ONGOING_SESSION_DATA, live);
+    mockedDSUtils.getDrinkingSessionData.mockReturnValue(live);
+    mockedDSUtils.getDrinkingSessionOnyxKey.mockReturnValue(
+      ONYXKEYS.ONGOING_SESSION_DATA,
+    );
+    mockedDSUtils.modifySessionEntries.mockReturnValue({
+      entries: {newEntry: entry},
+      patch: {newEntry: entry},
+      addedTs: 2_000,
+    });
+
+    const addedTs = DS.updateDrinks(
+      'v2',
+      CONST.DRINKS.KEYS.BEER,
+      1,
+      CONST.DRINKS.ACTIONS.ADD,
+      DRINKS_TO_UNITS,
+    );
+
+    expect(addedTs).toBe(2_000);
+    expect(mockedDSUtils.modifySessionEntries).toHaveBeenCalledWith(
+      live,
+      CONST.DRINKS.KEYS.BEER,
+      1,
+      CONST.DRINKS.ACTIONS.ADD,
+      DRINKS_TO_UNITS,
+      'uid-me',
+      'phone',
+      expect.any(Function),
+    );
+    expect(mockedDSUtils.modifySessionDrinks).not.toHaveBeenCalled();
+    expect(mockedDSUtils.setLocalSessionCache).toHaveBeenCalledWith(
+      ONYXKEYS.ONGOING_SESSION_DATA,
+      {...live, entries: {newEntry: entry}},
+    );
+    expect(Onyx.merge).toHaveBeenCalledWith(ONYXKEYS.ONGOING_SESSION_DATA, {
+      entries: {newEntry: entry},
+    });
+    // No whole-session replace: an entry change is always a merge.
+    expect(Onyx.set).not.toHaveBeenCalledWith(
+      ONYXKEYS.ONGOING_SESSION_DATA,
+      expect.anything(),
+    );
+    // The live persist is armed like any other live edit.
+    runLivePersistDebounce();
+    expect(liveUpdateCalls()).toHaveLength(1);
+  });
+
+  it('does nothing when the entry change is empty', () => {
+    const live: DrinkingSession = {...makeOngoing('v2'), schema_version: 2};
+    mockedDSUtils.getDrinkingSessionData.mockReturnValue(live);
+    mockedDSUtils.getDrinkingSessionOnyxKey.mockReturnValue(
+      ONYXKEYS.ONGOING_SESSION_DATA,
+    );
+    mockedDSUtils.modifySessionEntries.mockReturnValue({
+      entries: {},
+      patch: {},
+    });
+    expect(
+      DS.updateDrinks(
+        'v2',
+        CONST.DRINKS.KEYS.BEER,
+        1,
+        CONST.DRINKS.ACTIONS.REMOVE,
+        DRINKS_TO_UNITS,
+      ),
+    ).toBeUndefined();
+    expect(Onyx.merge).not.toHaveBeenCalled();
   });
 });
