@@ -130,6 +130,49 @@ final class Kiroku_Watch_AppTests: XCTestCase {
         XCTAssertEqual(session?.totalUnits, 2)
     }
 
+    func testApplyDecodesASchema2SessionAndTheSchemaFlag() {
+        let ongoingJSON = """
+        {"id":"-V2abc","start_time":1700000000000,"end_time":1700000005000,\
+        "blackout":false,"note":"","timezone":"Europe/Prague","type":"live",\
+        "ongoing":true,"schema_version":2,"name":"Friday evening","visibility":"friends",\
+        "entries":{"a":{"ts":1700000001000,"key":"beer","count":2,"source":"phone",\
+        "author_uid":"uid-42","target_uid":"uid-42","created_at":1700000001000},\
+        "b":{"ts":1700000002000,"key":"wine","count":1,"source":"phone",\
+        "author_uid":"uid-42","target_uid":"uid-42","created_at":1700000002000,"deleted":true}}}
+        """
+        SessionConnectivity.shared.apply([
+            "v": 1,
+            "signedIn": true,
+            "idToken": "pushed-token",
+            "uid": "uid-42",
+            "expiresAt": nowMs + 3_600_000,
+            "apiEnv": "dev",
+            "ongoingSession": ongoingJSON,
+            "sessionsV2Schema": true,
+        ])
+        drainMainQueue()
+
+        let session = SessionConnectivity.shared.ongoingSession
+        XCTAssertEqual(session?.isSchemaV2, true)
+        XCTAssertEqual(session?.name, "Friday evening")
+        XCTAssertEqual(session?.entries?.count, 2)
+        // The tombstone does not count, exactly as on the phone.
+        XCTAssertEqual(session?.totalUnits, 2)
+        XCTAssertTrue(SessionConnectivity.shared.sessionsV2Schema)
+
+        // Without the flag key the watch stays on the legacy shape.
+        SessionConnectivity.shared.apply([
+            "v": 1,
+            "signedIn": true,
+            "idToken": "pushed-token",
+            "uid": "uid-42",
+            "expiresAt": nowMs + 3_600_000,
+            "apiEnv": "dev",
+        ])
+        drainMainQueue()
+        XCTAssertFalse(SessionConnectivity.shared.sessionsV2Schema)
+    }
+
     func testApplySignedOutPayloadClearsCredential() {
         CredentialStore.save(StoredCredential(
             idToken: "old", uid: "uid", expiresAt: nowMs + 3_600_000, apiEnv: "dev"
@@ -318,6 +361,30 @@ final class SessionViewModelTests: XCTestCase {
         viewModel.addUnit()
         XCTAssertEqual(viewModel.unitCount, 3)
 
+        viewModel.subtractUnit()
+        XCTAssertEqual(viewModel.unitCount, 2)
+    }
+
+    func testAddAndSubtractUnitsOnASchema2Session() async {
+        let ongoingJSON = """
+        {"id":"-V2count","start_time":1700000000000,"end_time":1700000000000,\
+        "blackout":false,"note":"","timezone":"Europe/Prague","type":"live",\
+        "ongoing":true,"schema_version":2,"visibility":"friends",\
+        "entries":{"p":{"ts":1700000001000,"key":"beer","count":2,"source":"phone",\
+        "author_uid":"uid-test","target_uid":"uid-test","created_at":1700000001000}}}
+        """
+        await signIn(ongoingJSON: ongoingJSON)
+        let viewModel = makeViewModel(SpyWriter())
+        XCTAssertTrue(viewModel.isActive)
+        XCTAssertEqual(viewModel.unitCount, 2, "the phone's entries count")
+
+        // The signed-in uid authors the watch's entries; a subtract only ever
+        // takes the watch's own back, never the phone's two beers.
+        viewModel.addUnit()
+        viewModel.addUnit()
+        XCTAssertEqual(viewModel.unitCount, 4)
+        viewModel.subtractUnit()
+        viewModel.subtractUnit()
         viewModel.subtractUnit()
         XCTAssertEqual(viewModel.unitCount, 2)
     }

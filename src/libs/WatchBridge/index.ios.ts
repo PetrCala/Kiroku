@@ -15,6 +15,7 @@ import Onyx from 'react-native-onyx';
 import {getKirokuApiEnv} from '@libs/ApiUtils';
 import AppStateMonitor from '@libs/AppStateMonitor';
 import {getDrinkCount} from '@libs/DrinkEntryUtils';
+import * as FeatureFlags from '@libs/FeatureFlags';
 import {getFirebaseAuth} from '@libs/Firebase/FirebaseApp';
 import {isSchemaV2Session} from '@libs/SessionEntries';
 import Log from '@libs/Log';
@@ -116,6 +117,7 @@ async function pushCredentialToWatch(): Promise<void> {
       uid: user.uid,
       expiresAt: new Date(result.expirationTime).getTime(),
       apiEnv: getKirokuApiEnv(),
+      sessionsV2Schema: FeatureFlags.isEnabled('SESSIONS_V2_SCHEMA'),
       ...(ongoingSessionJson ? {ongoingSession: ongoingSessionJson} : {}),
     };
     const payloadKey = [
@@ -123,6 +125,7 @@ async function pushCredentialToWatch(): Promise<void> {
       payload.idToken,
       payload.expiresAt,
       payload.apiEnv,
+      payload.sessionsV2Schema,
       ongoingSessionJson ?? '',
     ].join('|');
     if (payloadKey === lastPayloadKey) {

@@ -108,7 +108,8 @@ final class SessionViewModel: ObservableObject {
         cancelLivePersist()
         let session = controller.begin(
             adopting: connectivity.ongoingSession,
-            newId: PushID.generate()
+            newId: PushID.generate(),
+            schemaV2: connectivity.sessionsV2Schema
         )
         syncPublished()
         haptics.play(.start)
@@ -121,7 +122,9 @@ final class SessionViewModel: ObservableObject {
     }
 
     func addUnit() {
-        guard controller.addUnit() else { return }
+        // A Sessions v2 entry is attributed to the signed-in user; the phone's
+        // credential push carries the uid.
+        guard controller.addUnit(authorUid: CredentialStore.load()?.uid) else { return }
         haptics.play(.click)
         syncPublished()
         scheduleLivePersist()
