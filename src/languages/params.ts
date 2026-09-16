@@ -133,6 +133,10 @@ type SupporterTipCountParams = {
   count: number;
 };
 
+type TipJarPromptTitleParams = {
+  sessionCount: number;
+};
+
 type SupporterPurchaseErrorParams = {
   message: string;
 };
@@ -178,6 +182,7 @@ export type {
   SupporterPurchaseErrorParams,
   SupporterRenewalDateParams,
   SupporterTipCountParams,
+  TipJarPromptTitleParams,
   UnitCountParams,
   UpdateEmailSentEmailParams,
   VerifyEmailScreenEmailParmas,

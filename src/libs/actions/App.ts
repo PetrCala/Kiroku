@@ -95,6 +95,10 @@ const KEYS_TO_PRESERVE: OnyxKey[] = [
   // Device-level count of tip-jar tips given; cosmetic only (drives the
   // thank-you line on the Support screen) and carries no user data.
   ONYXKEYS.TIPS_GIVEN,
+  // Its companion: the tip-jar card's first-open clock and impression count.
+  // Same footing (device-level, cosmetic, no user data); clearing it on
+  // sign-out would restart the 14-day clock and re-arm a dismissed card.
+  ONYXKEYS.TIP_JAR_PROMPT,
 ];
 
 let resolveIsReadyPromise: () => void;

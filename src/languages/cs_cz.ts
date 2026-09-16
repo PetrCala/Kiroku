@@ -37,6 +37,7 @@ import type {
   SupporterPurchaseErrorParams,
   SupporterRenewalDateParams,
   SupporterTipCountParams,
+  TipJarPromptTitleParams,
   UnitCountParams,
   UpdateEmailSentEmailParams,
   VerifyEmailScreenEmailParmas,
@@ -947,6 +948,17 @@ export default {
       webUnavailable: 'Příspěvky jsou dostupné v mobilní aplikaci.',
       purchaseError: ({message}: SupporterPurchaseErrorParams) =>
         `Nákup se nezdařil: ${message}. Zkuste to prosím znovu.`,
+    },
+    // Playful headline, so tykání (a punchline); the body and buttons stay plain.
+    // The card only appears from 5 sessions up, so the 5+ form "relací" is
+    // always right.
+    tipJarPrompt: {
+      title: ({sessionCount}: TipJarPromptTitleParams) =>
+        `${sessionCount} zaznamenaných relací. Nepozveš vývojáře na pivko?`,
+      body: 'Kiroku je zdarma a bez reklam. Příspěvky nic neodemykají.',
+      accept: 'Pozvat na pivko',
+      notNow: 'Teď ne',
+      never: 'Už se neptat',
     },
     paywallScreen: {
       title: 'Podpořit Kiroku',

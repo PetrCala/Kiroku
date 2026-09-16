@@ -94,6 +94,7 @@ zde`, `Přidejte si je zde`, `Zkuste hledat zde`.
 | moderation team                | **moderátorský tým**                                                                |                            |
 | tip jar                        | **dýško koutek** (pun on disko; only koutek declines)                               | kasička, sklenice na dýška |
 | tip (money, noun)              | **příspěvek**                                                                       | dýško, spropitné           |
+| log (a session or a drink)     | **zaznamenat** ("zaznamenaných relací")                                             | zapsat, uložit do deníku   |
 | alcohol adventures (tagline)   | **alkoholová dobrodružství** ("Mějte přehled o svých alkoholových dobrodružstvích") | alkoholové zážitky         |
 | share your drinks with friends | **sdílet s přáteli** ("Zapisujte své drinky a sdílejte je s přáteli")               |                            |
 | invite link (friend)           | **odkaz pro přidání do přátel** (short: "odkaz")                                    | pozvánkový odkaz           |

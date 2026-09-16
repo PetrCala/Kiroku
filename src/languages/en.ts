@@ -37,6 +37,7 @@ import type {
   SupporterPurchaseErrorParams,
   SupporterRenewalDateParams,
   SupporterTipCountParams,
+  TipJarPromptTitleParams,
   UnitCountParams,
   UpdateEmailSentEmailParams,
   VerifyEmailScreenEmailParmas,
@@ -930,6 +931,14 @@ export default {
       webUnavailable: 'Tips are available in the mobile app.',
       purchaseError: ({message}: SupporterPurchaseErrorParams) =>
         `Purchase failed: ${message}. Please try again.`,
+    },
+    tipJarPrompt: {
+      title: ({sessionCount}: TipJarPromptTitleParams) =>
+        `${sessionCount} sessions logged. Fancy buying us a beer?`,
+      body: 'Kiroku is free and has no ads. Tips unlock nothing.',
+      accept: 'Buy us a beer',
+      notNow: 'Not now',
+      never: "Don't ask again",
     },
     paywallScreen: {
       title: 'Support Kiroku',

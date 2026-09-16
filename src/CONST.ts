@@ -183,6 +183,17 @@ const CONST = {
     // How long the dismiss update button should hide the window for
     DISMISS_TIME: 1000 * 60 * 60 * 24 * 1, // 1 day
   },
+  /** The one gated ask for the tip jar on Home; see contributingGuides/TIP_JAR.md. */
+  TIP_JAR_PROMPT: {
+    /** The app must have been used on this device for this long before the card can appear. */
+    MIN_MS_SINCE_FIRST_OPEN: 1000 * 60 * 60 * 24 * 14, // 14 days
+    /** The user must have this many completed sessions before the card can appear. */
+    MIN_COMPLETED_SESSIONS: 5,
+    /** The card appears at most this many times per device, ever. */
+    MAX_IMPRESSIONS: 3,
+    /** The floor between two impressions; also what "Not now" hides the card for. */
+    COOLDOWN_MS: 1000 * 60 * 60 * 24 * 120, // 120 days
+  },
   AUTH_TOKEN_TYPES: {
     ANONYMOUS: 'anonymousAccount',
     SUPPORT: 'support',

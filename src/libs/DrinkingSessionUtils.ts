@@ -245,6 +245,18 @@ function getLastSession(
   return latest;
 }
 
+/** How many of the user's sessions are finished (not ongoing). */
+function countCompletedSessions(
+  drinkingSessions: DrinkingSessionList | null | undefined,
+): number {
+  if (isEmptyObject(drinkingSessions)) {
+    return 0;
+  }
+  return Object.values(drinkingSessions).filter(
+    session => !!session && !session.ongoing,
+  ).length;
+}
+
 /**
  * Calculates the total units of a Drinks object based on a DrinksToUnits mapping.
  *
@@ -911,6 +923,7 @@ export {
   calculateSessionLength,
   calculateTotalUnits,
   clearOngoingSessionCache,
+  countCompletedSessions,
   determineSessionMostCommonDrink,
   extractSessionOrEmpty,
   getDisplayNameForParticipant,

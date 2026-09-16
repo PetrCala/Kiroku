@@ -173,6 +173,11 @@ const ONYXKEYS = {
    *  the user may do (a tip unlocks nothing). Device-level, survives sign-out. */
   TIPS_GIVEN: 'tipsGiven',
 
+  /** The one gated ask for the tip jar on Home: first-open clock, impressions,
+   *  and the user's answer. Device-level like TIPS_GIVEN, survives sign-out,
+   *  carries no user data. */
+  TIP_JAR_PROMPT: 'tipJarPrompt',
+
   /** The last time a user has sent a verification email */
   VERIFY_EMAIL_SENT: 'verifyEmailSent',
 
@@ -362,6 +367,7 @@ type OnyxValuesMapping = {
   [ONYXKEYS.SHOULD_SHOW_COMPOSE_INPUT]: boolean;
   [ONYXKEYS.APP_UPDATE_DISMISSED]: Timestamp;
   [ONYXKEYS.TIPS_GIVEN]: number;
+  [ONYXKEYS.TIP_JAR_PROMPT]: OnyxTypes.TipJarPrompt;
   [ONYXKEYS.VERIFY_EMAIL_SENT]: Timestamp;
   [ONYXKEYS.IS_BETA]: boolean;
   [ONYXKEYS.HAS_CHECKED_AUTO_LOGIN]: boolean;

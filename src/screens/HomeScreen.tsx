@@ -20,6 +20,7 @@ import MonthlyOverviewCard, {
 } from '@components/Items/MonthlyOverviewCard';
 import ScreenWrapper from '@components/ScreenWrapper';
 import HomeBanner, {HomeBannerSkeleton} from '@components/Info/HomeBanner';
+import TipJarPromptCard from '@components/TipJarPromptCard';
 import useThemeStyles from '@hooks/useThemeStyles';
 import * as FeatureFlags from '@libs/FeatureFlags';
 import FullScreenLoadingIndicator from '@components/FullscreenLoadingIndicator';
@@ -237,6 +238,10 @@ function HomeScreen({route}: HomeScreenProps) {
     }
     return (
       <>
+        {/* The one gated tip-jar ask. Usually null; when it opens (after a
+            session summary closes, see TipJarPromptCard) it sits between the
+            session banner and the overview. */}
+        <TipJarPromptCard />
         {/* The overview sits above the calendar so its position stays fixed as
          *  the user pages months — the calendar's row count (5 vs 6 weeks)
          *  varies, and keeping it last confines that height change to the
