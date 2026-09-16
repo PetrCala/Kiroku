@@ -77,8 +77,8 @@ test.describe('home live session card', () => {
     const quickAdd = authedPage.getByTestId(/^live-session-card-add-/);
     await expect(quickAdd).toHaveCount(7);
 
-    // Quick-add logs a drink without leaving Home, and the drink just logged
-    // moves to the front of the row.
+    // Quick-add logs a drink without leaving Home. The row keeps its order
+    // while it is on screen, so the tapped chip stays where the finger is.
     const unitsBefore = await readCardUnits(authedPage);
     const secondChip = await quickAdd.nth(1).getAttribute('data-testid');
     expect(secondChip).toBeTruthy();
@@ -86,7 +86,7 @@ test.describe('home live session card', () => {
     await expect
       .poll(() => readCardUnits(authedPage))
       .toBeGreaterThan(unitsBefore);
-    await expect(quickAdd.first()).toHaveAttribute(
+    await expect(quickAdd.nth(1)).toHaveAttribute(
       'data-testid',
       secondChip ?? '',
     );
@@ -108,6 +108,21 @@ test.describe('home live session card', () => {
       body: await authedPage.screenshot(),
       contentType: 'image/png',
     });
+
+    // Back on Home the row is re-ranked, and the drink just logged is first.
+    await authedPage.goBack();
+    await expect(homePage.screen()).toBeVisible();
+    await expect(card(authedPage)).toBeVisible();
+    await expect(quickAdd.first()).toHaveAttribute(
+      'data-testid',
+      secondChip ?? '',
+    );
+    await testInfo.attach('home-live-card-re-ranked', {
+      body: await authedPage.screenshot(),
+      contentType: 'image/png',
+    });
+    await card(authedPage).click();
+    await session.liveScreen().waitFor({state: 'visible'});
 
     // Clean up: discard, and the card goes away. Wait for the delete to reach
     // the server: the context closes right after the test, and a delete still
