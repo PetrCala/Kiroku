@@ -58,6 +58,7 @@ zde`, `Přidejte si je zde`, `Zkuste hledat zde`.
 | drinking session               | **alkoholová relace**                                                               | relace pití                |
 | live (session)                 | **živá** (relace)                                                                   |                            |
 | edit / past (session)          | **zpětná** (relace)                                                                 |                            |
+| end (a live session)           | **ukončit** (relaci)                                                                | dokončit, zastavit, uložit |
 | unit / units                   | **jednotka / jednotky / jednotek**                                                  |                            |
 | drink / drinks (beverage)      | **drink / drinky** (gen sg drinku, gen pl drinků)                                   | nápoj / nápoje             |
 | beer                           | **pivo**                                                                            |                            |

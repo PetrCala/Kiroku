@@ -75,7 +75,13 @@ function DrinkingSessionWindow({
         return;
       }
 
-      await App.setLoadingText(translate('liveSessionScreen.saving'));
+      await App.setLoadingText(
+        translate(
+          sessionIsLive
+            ? 'liveSessionScreen.ending'
+            : 'liveSessionScreen.saving',
+        ),
+      );
       const newSessionData: DrinkingSession = {
         ...session,
         end_time: session?.ongoing ? Date.now() : session.end_time,
@@ -230,6 +236,18 @@ function DrinkingSessionWindow({
           </Text>
         </View>
         <DrinkTypesView session={session} />
+        {!!sessionIsLive && (
+          <Text
+            testID="session-autosave-hint"
+            style={[
+              styles.textLabelSupporting,
+              styles.textAlignCenter,
+              styles.ph4,
+              styles.pb2,
+            ]}>
+            {translate('liveSessionScreen.drinksAutoSaved')}
+          </Text>
+        )}
         <SessionDetailsWindow
           sessionId={sessionId}
           session={session}
@@ -248,10 +266,13 @@ function DrinkingSessionWindow({
         {/* Each button is wrapped in a flex:1 view so the pair splits the row
             evenly; the wrapper (not the button) carries the flex, so the
             buttons keep their natural height instead of stretching vertically.
-            The visible labels are single words because half of a 375pt-wide
-            screen (small iPhones, iPhone apps on iPad) can't fit "Discard
-            Session" on the button's one line at larger text sizes. The full
-            phrase stays as the accessibility label. */}
+            The visible labels stay short because half of a 375pt-wide screen
+            (small iPhones, iPhone apps on iPad) can't fit "Discard Session"
+            on the button's one line at larger text sizes. The full phrase
+            stays as the accessibility label.
+            A live session persists each drink as it's logged, so its primary
+            action is "End session" (it stamps the end time); "Save" is only
+            for edits of a past session, which are held until the press. */}
         <View style={styles.flex1}>
           <Button
             large
@@ -268,8 +289,14 @@ function DrinkingSessionWindow({
             success
             large
             isDisabled={isSaveDisabled}
-            text={translate('common.save')}
-            accessibilityLabel={translate('liveSessionScreen.saveSession')}
+            text={translate(
+              sessionIsLive ? 'liveSessionScreen.endSession' : 'common.save',
+            )}
+            accessibilityLabel={translate(
+              sessionIsLive
+                ? 'liveSessionScreen.endSession'
+                : 'liveSessionScreen.saveSession',
+            )}
             style={styles.buttonLargeSuccess}
             onPress={() => saveSession(user)}
           />

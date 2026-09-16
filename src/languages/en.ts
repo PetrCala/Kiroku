@@ -1570,6 +1570,7 @@ export default {
   },
   liveSessionScreen: {
     saving: 'Saving your session...',
+    ending: 'Ending your session...',
     synchronizing: 'Synchronizing data...',
     loading: 'Loading your session...',
     drinksConsumed: 'Drinks consumed',
@@ -1587,6 +1588,10 @@ export default {
     discardSession: ({discardWord}: DiscardSessionParams) =>
       `${discardWord} Session`,
     saveSession: 'Save Session',
+    endSession: 'End session',
+    // Live sessions persist every drink as it's logged, so "End session" only
+    // stamps the end time. This line pre-empts "do I need to save?".
+    drinksAutoSaved: 'Drinks are saved as you add them.',
     discardingSession: ({discardWord}: DiscardSessionParams) =>
       `${discardWord} this session...`,
   },

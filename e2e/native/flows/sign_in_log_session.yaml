@@ -58,7 +58,7 @@ env:
 - assertVisible:
     id: 'Live Session Screen'
 
-# Unit count starts at 0; logging a drink moves it off 0 and enables Save.
+# Unit count starts at 0; logging a drink moves it off 0 and enables End session.
 - assertVisible:
     id: 'session-total-units'
     text: '0'
@@ -69,6 +69,6 @@ env:
     text: '0'
 
 - tapOn:
-    text: 'Save Session'
+    text: 'End session'
 - assertVisible:
     id: 'Session Summary Screen'

@@ -1585,6 +1585,7 @@ export default {
   },
   liveSessionScreen: {
     saving: 'Ukládám vaši relaci…',
+    ending: 'Ukončuji vaši relaci…',
     synchronizing: 'Synchronizuji data…',
     loading: 'Načítám vaši relaci…',
     drinksConsumed: 'Zkonzumované drinky',
@@ -1600,6 +1601,8 @@ export default {
     discardSession: ({discardWord}: DiscardSessionParams) =>
       `${discardWord} relaci`,
     saveSession: 'Uložit relaci',
+    endSession: 'Ukončit relaci',
+    drinksAutoSaved: 'Drinky se ukládají průběžně, jak je přidáváte.',
     discardingSession: ({discardWord}: DiscardSessionParams) =>
       `${discardWord} tuto relaci…`,
   },
