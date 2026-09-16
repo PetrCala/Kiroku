@@ -14,9 +14,14 @@ function queueOnyxUpdates(updates: OnyxUpdate[]): Promise<void> {
 }
 
 function flushQueue(): Promise<void> {
-  return Onyx.update(queuedOnyxUpdates).then(() => {
-    queuedOnyxUpdates = [];
-  });
+  // Hand the queue off before applying it. `Onyx.update` resolves only once
+  // its subscriber batch has flushed (a macrotask later); clearing after that
+  // left a window in which a second drain (a write pushed and answered in the
+  // meantime) applied these same updates again, and anything queued during
+  // the window was wiped by the late clear.
+  const updates = queuedOnyxUpdates;
+  queuedOnyxUpdates = [];
+  return Onyx.update(updates);
 }
 
 function isEmpty() {
