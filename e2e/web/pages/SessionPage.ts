@@ -55,8 +55,12 @@ export class SessionPage {
     return this.page.getByTestId(/^add-drink-/).first();
   }
 
+  // Same button for both wordings: "End session" (live) / "Save Session" (a
+  // saved session being edited).
   saveButton(): Locator {
-    return this.page.getByRole('button', {name: 'Save Session', exact: true});
+    return this.page.getByRole('button', {
+      name: /^(End session|Save Session)$/,
+    });
   }
 
   // Same button for both wordings: "Discard Session" (live) / "Delete Session"
