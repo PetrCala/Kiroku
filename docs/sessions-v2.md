@@ -1,7 +1,7 @@
 # Sessions v2 (RFC)
 
-Status: **in review; all design questions settled (2026-09-11)**
-Last updated: 2026-09-11
+Status: **accepted (2026-09-16); all design questions settled (2026-09-11)**
+Last updated: 2026-09-16
 Authors: Petr Čala, from the design conversations of 2026-08-28 to 31 and 2026-09-10 to 11
 Tracking: epic #1661 (workstreams #1662 to #1671)
 
@@ -81,13 +81,13 @@ Checked against `master` on 2026-09-11 (app `4d5ea8c1`, API `3b1deb18`). Much of
 - **Client.**
   - `SequentialQueue` + `PersistedRequests`, `OnyxUpdateManager` gap repair, `OfflineWithFeedback`.
   - Live-session buffering: `ONGOING_SESSION_DATA`, `ONGOING_SESSION_SYNC`, `UNSYNCED_SESSION_WRITES`, and the debounced live persist (`scheduleLiveSessionPersist` / `flushLiveSessionPersist`, 500 ms).
-  - The queue's conflict-resolver hook exists; its only consumer drops duplicate `RECONNECT_APP` requests.
+  - The queue's conflict-resolver hook exists; P generalized it so session ops coalesce while duplicate `RECONNECT_APP` requests are still dropped (#1678).
 - **Server.**
   - `POST /v1/sessions/update` stores the session **verbatim**: a whole-object upsert where the last write wins.
   - It checks only `start_time`, plus limits of 50 keys, 64 KB and depth 8 (`routes/sessions/index.ts`).
   - Live sessions are mirrored in full into `user_status/{uid}` (`latest_session_id`, `latest_session`).
-- **No idempotency keys** on any write. A replayed request is applied again.
-- **Reconnect catch-up isn't wired** (#774): `AuthScreens.tsx` always calls `openApp()`, and the reconnect handler is commented out. Catch-up after being offline depends on the next Pusher event.
+- **Idempotency keys** ship since P: every queued write carries one stable key that survives retries and restarts, and the server answers a replay from a per-user key record with a 7-day TTL, mounted on `/v1/sessions/*` (#1675, kiroku-api#145).
+- **Reconnect catch-up is wired** since P (#774): `reconnectApp` runs when connectivity, the realtime connection or the foreground returns, sending `lastUpdateIDAppliedToClient`; the server replays only the missed log entries when the gap fits, and falls back to the full payload otherwise. Cold start still does a full `openApp` (#1676, kiroku-api#146).
 - The per-user update log exists and is solid: `publisher.publish` keeps a transactional `last_update_id` and a 500-entry log, and `GET /v1/updates` backfills.
 - The auto-close sweep (`lib/sessions/closeStale.ts`) flips `ongoing` in an RTDB transaction, then finalizes with a plain multi-path update. It stays off unless `config/auto_close_default_hours` is set.
 
@@ -101,7 +101,7 @@ Checked against `master` on 2026-09-11 (app `4d5ea8c1`, API `3b1deb18`). Much of
   - Moderation (`lib/moderation.ts`) runs only when `IMAGE_MODERATION_ENABLED` is set.
   - The app has `CONST.IMAGE_UPLOAD_KIND.SESSION`, but nothing uses it.
 - **GPS per drink** exists (`user_session_locations`).
-- **Feature flags** are compile-time only: `FeatureFlags.isEnabled` reads `CONST.FEATURES`, with no remote override.
+- **Feature flags** have a remote override since P: `FeatureFlags.isEnabled` checks `config.feature_flags` before the compile-time `CONST.FEATURES` default, and admin routes broadcast a change live (#1677, kiroku-api#147). See `contributingGuides/FEATURE_FLAGS.md`.
 - **Version enforcement** is `app_settings.min_supported_version`, checked by the client, plus a server-forced 426.
 - `GET /v1/users/:uid/sessions?from=` returns every session from a start time, **with no limit or cursor**.
 - **Account close** nulls database subtrees but **deletes no storage objects** (neither `avatars/` nor `session_images/`).
@@ -395,7 +395,7 @@ The feed needs newest-first cursor pagination on the sessions endpoint, and app 
 
 ## 12. Workstreams and order
 
-There's one umbrella epic, one issue per workstream and one PR train per workstream, staged through TestFlight and internal testing. Every user-visible piece sits behind a feature flag. Flags are compile-time only today, so P adds a remote override (read from server config) to let a flag act as a kill switch without a release.
+There's one umbrella epic, one issue per workstream and one PR train per workstream, staged through TestFlight and internal testing. Every user-visible piece sits behind a feature flag. P added the remote override (read from server config), so a flag acts as a kill switch without a release. P is done; `POST /v1/sessions/ops` exists behind the `SESSION_OPS` flag (off) and applies only `ping` until W2.
 
 | #   | Workstream              | Contents                                                                                                                        | Depends on                          |
 | --- | ----------------------- | ------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------- |
