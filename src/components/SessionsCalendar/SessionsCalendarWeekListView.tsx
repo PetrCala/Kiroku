@@ -3,7 +3,6 @@ import {View} from 'react-native';
 import {FlashList} from '@shopify/flash-list';
 import type {FlashListRef} from '@shopify/flash-list';
 import {parseISO, startOfMonth} from 'date-fns';
-import lodashDebounce from 'lodash/debounce';
 import type {DateData} from 'react-native-calendars';
 import {LocaleConfig} from 'react-native-calendars';
 import {useOnyx} from 'react-native-onyx';
@@ -48,6 +47,21 @@ const BOTTOM_SPACER_RATIO = 0.4;
 // runs out, but quiet enough not to thrash on every pixel of scroll. The
 // previous `1` value was a major contributor to deceleration jitter.
 const VIEWABILITY_CONFIG = {itemVisiblePercentThreshold: 50};
+
+// How long the list must sit still (no scroll events) before the centre-most
+// day is written to the viewed user's last-viewed slot. The write re-renders
+// the screen underneath (Home's compact calendar and month stats, which on
+// native are not frozen while this modal is up), so it must never land
+// mid-scroll: a viewability-driven debounce fired between rows on a slow drag
+// and right as the next fling started. Scroll events fire every frame while
+// the list moves, so debouncing on them means "at rest".
+const LAST_VIEWED_IDLE_MS = 300;
+
+// How far beyond the viewport FlashList prepares rows, in px. Its native
+// default (250) is under half a viewport: a fast fling outran it and the rows
+// filled in late. Rows are cheap to mount now (see `WeekRow`), so buy a full
+// extra viewport of runway in each direction; matches FlashList's web default.
+const DRAW_DISTANCE = 500;
 
 type SessionsCalendarWeekListViewProps = {
   /** Per-month render payloads, ascending. Month objects are referentially
@@ -279,18 +293,47 @@ function SessionsCalendarWeekListView({
   );
 
   // Record the month the user is looking at so the compact calendar can sync to
-  // it on back-navigation. Debounced so a fast scroll writes once at rest. The
+  // it on back-navigation. The centre-most day is captured on every viewability
+  // change (cheap: a ref write) and written only once the list has been idle
+  // for `LAST_VIEWED_IDLE_MS`, so the write, and the re-render of the screen
+  // underneath that it triggers, never competes with the scroll itself. The
   // parent binds the write to the viewed user's own per-user slot, so this
   // records for the signed-in user and friends alike, with no cross-user leak
-  // (Rule 2).
-  const writeLastViewedDay = useMemo(
-    () =>
-      lodashDebounce((day: DateString) => {
-        onRecordLastViewedDay?.(day);
-      }, 250),
-    [onRecordLastViewedDay],
-  );
-  useEffect(() => () => writeLastViewedDay.cancel(), [writeLastViewedDay]);
+  // (Rule 2). Hand-rolled rather than a lodash debounce because the timer body
+  // reads refs, which React Compiler only allows in functions it can see are
+  // never invoked during render (event handlers and effects).
+  const pendingLastViewedDayRef = useRef<DateString | null>(null);
+  const flushTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const flushLastViewedDay = useCallback(() => {
+    if (flushTimerRef.current) {
+      clearTimeout(flushTimerRef.current);
+      flushTimerRef.current = null;
+    }
+    const day = pendingLastViewedDayRef.current;
+    if (!day) {
+      return;
+    }
+    pendingLastViewedDayRef.current = null;
+    onRecordLastViewedDay?.(day);
+  }, [onRecordLastViewedDay]);
+  // (Re)arm the idle timer. Every scroll event pushes it back, so it fires only
+  // once the list has actually stopped.
+  const scheduleLastViewedFlush = useCallback(() => {
+    if (flushTimerRef.current) {
+      clearTimeout(flushTimerRef.current);
+    }
+    flushTimerRef.current = setTimeout(flushLastViewedDay, LAST_VIEWED_IDLE_MS);
+  }, [flushLastViewedDay]);
+  // Closing the modal inside the idle window must not lose the position: flush
+  // whatever is pending on unmount instead of dropping it with the timer.
+  useEffect(() => () => flushLastViewedDay(), [flushLastViewedDay]);
+  // Nothing to do until a real drag has captured a day (the programmatic
+  // centering scroll leaves no pending day).
+  const onScroll = useCallback(() => {
+    if (pendingLastViewedDayRef.current) {
+      scheduleLastViewedFlush();
+    }
+  }, [scheduleLastViewedFlush]);
 
   // Lazy-load older months when the user scrolls within the buffer of the
   // first real (non-pending) item — anywhere inside the pending-skeleton zone
@@ -326,7 +369,8 @@ function SessionsCalendarWeekListView({
               ? (`${centerItem.monthKey}-01` as DateString)
               : centerItem.row.days.find(d => d !== null);
           if (centerDay) {
-            writeLastViewedDay(centerDay);
+            pendingLastViewedDayRef.current = centerDay;
+            scheduleLastViewedFlush();
           }
         }
       }
@@ -349,7 +393,7 @@ function SessionsCalendarWeekListView({
         }
       }
     },
-    [items, firstRealIndex, onRequestOlder, writeLastViewedDay],
+    [items, firstRealIndex, onRequestOlder, scheduleLastViewedFlush],
   );
 
   const renderItem = useCallback(
@@ -440,7 +484,9 @@ function SessionsCalendarWeekListView({
           initialScrollIndex={initialScrollIndex}
           contentContainerStyle={contentContainerStyle}
           showsVerticalScrollIndicator
+          drawDistance={DRAW_DISTANCE}
           onLoad={handleListLoad}
+          onScroll={onScroll}
           onScrollBeginDrag={onScrollBeginDrag}
           onViewableItemsChanged={onViewableItemsChanged}
           viewabilityConfig={VIEWABILITY_CONFIG}

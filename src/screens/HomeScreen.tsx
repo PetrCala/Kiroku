@@ -111,6 +111,22 @@ function HomeScreen({route}: HomeScreenProps) {
     [lastViewedForUser, localVisibleDate],
   );
 
+  // While Home sits blurred under the enlarged calendar or the day-overview
+  // scroll, that screen rewrites this user's last-viewed slot each time its
+  // scroll comes to rest. On native, Home is NOT frozen underneath a root-stack
+  // modal (`shouldSetScreenBlurred` only freezes screens two or more levels
+  // down), so each such write would re-render the hidden compact calendar and
+  // rebuild the month stats, competing with the modal's own scroll work on the
+  // JS thread. Hold the month the calendar was last focused on until Home is
+  // focused again; while focused the live derivation is used directly, so the
+  // switch happens in the same render that unhides the calendar and the user
+  // still never sees the month flip.
+  const [heldVisibleDate, setHeldVisibleDate] = useState<DateData>(visibleDate);
+  if (isFocused && heldVisibleDate !== visibleDate) {
+    setHeldVisibleDate(visibleDate);
+  }
+  const calendarVisibleDate = isFocused ? visibleDate : heldVisibleDate;
+
   // Manual month navigation overrides the synced value — clear this user's own
   // per-user slot.
   const onDateChange = useCallback(
@@ -123,7 +139,7 @@ function HomeScreen({route}: HomeScreenProps) {
     [uid],
   );
 
-  const monthlyStats = useHomeStats(visibleDate);
+  const monthlyStats = useHomeStats(calendarVisibleDate);
 
   useEffect(() => {
     // Update the ongoing session local data
@@ -237,7 +253,7 @@ function HomeScreen({route}: HomeScreenProps) {
         <View style={isFocused ? undefined : styles.opacity0}>
           <SessionsCalendar
             userID={user.uid}
-            visibleDate={visibleDate}
+            visibleDate={calendarVisibleDate}
             onDateChange={onDateChange}
             drinkingSessionData={drinkingSessionData}
             preferences={preferences}

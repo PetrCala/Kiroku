@@ -5,6 +5,7 @@ import MonthlyOverviewCard, {
   MonthlyOverviewCardSkeleton,
 } from '@components/Items/MonthlyOverviewCard';
 import ProfileOverview from '@components/Social/ProfileOverview';
+import {useIsFocused} from '@react-navigation/native';
 import React, {useCallback, useEffect, useMemo, useState} from 'react';
 import {useOnyx} from 'react-native-onyx';
 import ONYXKEYS from '@src/ONYXKEYS';
@@ -130,6 +131,21 @@ function ProfileScreen({route}: ProfileScreenProps) {
     }
     return dateToDateData(new Date());
   }, [lastViewedForUser, localVisible.date, localVisible.userID, userID]);
+  // While this profile sits blurred under the viewed user's enlarged calendar,
+  // that screen rewrites the user's last-viewed slot each time its scroll comes
+  // to rest. On native the screen underneath a root-stack modal is not frozen,
+  // so each write would re-render the hidden compact calendar and rebuild the
+  // month stats mid-scroll. Hold the last focused month until the profile is
+  // focused again; the live derivation takes over in that same render, so the
+  // user never sees the month flip (mirrors `HomeScreen`).
+  const isFocused = useIsFocused();
+  const [heldVisibleDate, setHeldVisibleDate] =
+    useState<DateData>(visibleDateData);
+  if (isFocused && heldVisibleDate !== visibleDateData) {
+    setHeldVisibleDate(visibleDateData);
+  }
+  const calendarVisibleDate = isFocused ? visibleDateData : heldVisibleDate;
+
   // Manual month navigation overrides the restored scroll position. Re-tag with
   // the current user so the derivation keeps using it for this visit, and clear
   // ONLY this user's own per-user slot (never another user's; Rule 2).
@@ -142,7 +158,7 @@ function ProfileScreen({route}: ProfileScreenProps) {
   );
   const profileStats = useUserMonthlyStats({
     userID,
-    visibleDate: visibleDateData,
+    visibleDate: calendarVisibleDate,
     drinkingSessionData,
     preferences,
     timezone: userData?.timezone?.selected,
@@ -355,7 +371,7 @@ function ProfileScreen({route}: ProfileScreenProps) {
               {didScreenTransitionEnd ? (
                 <SessionsCalendar
                   userID={userID}
-                  visibleDate={visibleDateData}
+                  visibleDate={calendarVisibleDate}
                   onDateChange={onDateChange}
                   drinkingSessionData={drinkingSessionData}
                   preferences={preferences}
