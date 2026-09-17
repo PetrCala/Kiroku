@@ -467,52 +467,25 @@ function setIsNavigationReady() {
 }
 
 /**
- * Checks if the navigation state contains routes that are protected (over the auth wall).
+ * Waits until it is safe to navigate to a route that lives over the auth wall.
  *
- * @param state - react-navigation state object
- */
-function navContainsProtectedRoutes(state: State | undefined): boolean {
-  if (!state?.routeNames || !Array.isArray(state.routeNames)) {
-    return false;
-  }
-
-  // If one protected screen is in the routeNames then other screens are there as well.
-  return false;
-  // return state?.routeNames.includes(PROTECTED_SCREENS.CONCIERGE);
-}
-
-/**
- * Waits for the navigation state to contain protected routes specified in PROTECTED_SCREENS constant.
- * If the navigation is in a state, where protected routes are available, the promise resolve immediately.
+ * Upstream this waited for a protected screen (`PROTECTED_SCREENS.CONCIERGE`) to show up in the
+ * navigation state, via an immediate check plus a 'state' listener. That screen does not exist in
+ * this fork, so the check was stubbed out to always return false, which left the promise with no
+ * way to ever settle: every caller awaiting it hung forever.
  *
- * @function
- * @returns A promise that resolves when the one of the PROTECTED_SCREENS screen is available in the nav tree.
+ * Until a real protected-screen check exists here, navigator readiness is the only readiness signal
+ * this fork actually has, so we resolve on that. Do not "restore" the protected-route wait without
+ * also restoring a check that can return true.
+ *
+ * @returns A promise that resolves once the navigator is ready.
  *
  * @example
  * waitForProtectedRoutes()
- *     .then(()=> console.log('Protected routes are present!'))
+ *     .then(()=> console.log('Safe to navigate!'))
  */
-function waitForProtectedRoutes() {
-  return new Promise<void>(resolve => {
-    isNavigationReady().then(() => {
-      const currentState = navigationRef.current?.getState();
-      if (navContainsProtectedRoutes(currentState)) {
-        resolve();
-        return;
-      }
-
-      const unsubscribe = navigationRef.current?.addListener(
-        'state',
-        ({data}) => {
-          const state = data?.state;
-          if (navContainsProtectedRoutes(state)) {
-            unsubscribe?.();
-            resolve();
-          }
-        },
-      );
-    });
-  });
+function waitForProtectedRoutes(): Promise<void> {
+  return isNavigationReady();
 }
 
 function getTopMostCentralPaneRouteFromRootState() {
