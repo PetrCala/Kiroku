@@ -272,7 +272,7 @@ the Android tip jar shows its unavailable state, exactly like an iOS build
 before App Store Connect approval.
 
 ```bash
-node scripts/play.mjs status    # the "Tip jar" block shows each id's state
+node scripts/play.mjs status    # the "Tip jar" block: state and listing titles
 ```
 
 ### 1. Prerequisites
@@ -319,7 +319,10 @@ Hard-won API facts baked into the script:
 
 - Listings are brought in step with the table, not just created: a language
   missing from a live product is added, and a title or description that has
-  drifted (a renamed tier) is rewritten. Play reviews the change.
+  drifted (a renamed tier) is rewritten. Unlike the App Store, a one-time
+  product's listing goes live when it is written, with no review in between.
+  `status` prints each listing's title and flags one that disagrees with the
+  table, which is the only way to read the live Play copy back.
 - **Product ids are burn-once on Play too.** A deleted id cannot be reused, so
   read the dry run before `--yes`. The script also refuses to run if the
   `asc-tips.mjs` table and `CONST.TIPS.PRODUCT_IDS` disagree.
