@@ -227,12 +227,19 @@ final class Kiroku_Watch_AppTests: XCTestCase {
 /// Captures what the view model posts, standing in for `KirokuAPI`.
 private final class SpyWriter: SessionWriting, @unchecked Sendable {
     private(set) var started: [DrinkingSession] = []
+    private(set) var updated: [DrinkingSession] = []
     private(set) var saved: [DrinkingSession] = []
     private(set) var discarded: [String] = []
+    private(set) var applied: [SessionOp] = []
     var errorToThrow: KirokuAPIError?
 
     func start(_ session: DrinkingSession) async throws -> KirokuAPIResponse {
         started.append(session)
+        return try result()
+    }
+
+    func update(_ session: DrinkingSession) async throws -> KirokuAPIResponse {
+        updated.append(session)
         return try result()
     }
 
@@ -246,12 +253,34 @@ private final class SpyWriter: SessionWriting, @unchecked Sendable {
         return try result()
     }
 
+    func apply(_ op: SessionOp) async throws -> KirokuAPIResponse {
+        applied.append(op)
+        return try result()
+    }
+
+    /// The types of the ops that reached the writer, in order.
+    var appliedTypes: [String] { applied.map(\.type) }
+
     private func result() throws -> KirokuAPIResponse {
         if let errorToThrow {
             throw errorToThrow
         }
         return KirokuAPIResponse(statusCode: 200, jsonCode: 200, body: Data())
     }
+}
+
+/// An in-memory op store, so a test can watch what the view model persists
+/// without touching `UserDefaults`.
+private final class FakeOpStore: SessionOpStoring, @unchecked Sendable {
+    var stored: [SessionOp]
+
+    init(stored: [SessionOp] = []) {
+        self.stored = stored
+    }
+
+    func load() -> [SessionOp] { stored }
+
+    func save(_ ops: [SessionOp]) { stored = ops }
 }
 
 private struct NoopHaptics: WatchHaptics {
@@ -309,13 +338,35 @@ final class SessionViewModelTests: XCTestCase {
         await drainMain()
     }
 
-    private func makeViewModel(_ spy: SpyWriter) -> SessionViewModel {
+    private func makeViewModel(
+        _ spy: SpyWriter,
+        opStore: SessionOpStoring = FakeOpStore()
+    ) -> SessionViewModel {
         SessionViewModel(
             connectivity: .shared,
             controller: LiveSessionController(),
+            outbox: SessionOpOutbox(baseRetryMillis: 10, maxRetryMillis: 20),
+            opStore: opStore,
             haptics: NoopHaptics(),
             makeWriter: { _, _ in spy }
         )
+    }
+
+    /// A schema 2 ongoing session, optionally carrying one entry the PHONE
+    /// logged, so a test can watch the watch's ops leave it alone.
+    private func v2OngoingJSON(id: String, phoneBeers: Int = 0) -> String {
+        let entries = phoneBeers > 0
+            ? """
+            ,"entries":{"phone-1":{"ts":1700000001000,"key":"beer","count":\(phoneBeers),\
+            "source":"phone","author_uid":"uid-test","target_uid":"uid-test",\
+            "created_at":1700000001000}}
+            """
+            : ""
+        return """
+        {"id":"\(id)","start_time":1700000000000,"end_time":1700000000000,\
+        "blackout":false,"note":"","timezone":"Europe/Prague","type":"live",\
+        "ongoing":true,"schema_version":2,"visibility":"friends"\(entries)}
+        """
     }
 
     private func ongoingJSON(id: String, beers: Int) -> String {
@@ -468,4 +519,189 @@ final class SessionViewModelTests: XCTestCase {
         await waitUntil { viewModel.needsReconnect }
         XCTAssertTrue(viewModel.needsReconnect, "a revoked token drops to the reconnect state")
     }
+    // MARK: Sessions v2: ops instead of whole sessions (W2)
+
+    func testAddingADrinkOnAV2SessionSendsAnAddEntryOpAndNoWholeSession() async {
+        await signIn(ongoingJSON: v2OngoingJSON(id: "-V2Ops"))
+        let spy = SpyWriter()
+        let viewModel = makeViewModel(spy)
+
+        viewModel.addUnit()
+        await waitUntil { spy.applied.count == 1 }
+
+        XCTAssertEqual(spy.appliedTypes, ["add_entry"])
+        XCTAssertEqual(spy.applied.first?.sessionId, "-V2Ops")
+        XCTAssertEqual(spy.applied.first?.payload.source, "watch")
+        // The race this closes: no whole-session write goes out at all, so
+        // there is nothing that could overwrite what the phone logged.
+        XCTAssertTrue(spy.updated.isEmpty)
+        XCTAssertTrue(spy.saved.isEmpty)
+    }
+
+    func testEachTapIsItsOwnOpWithItsOwnEntryId() async {
+        await signIn(ongoingJSON: v2OngoingJSON(id: "-V2Ops"))
+        let spy = SpyWriter()
+        let viewModel = makeViewModel(spy)
+
+        viewModel.addUnit()
+        viewModel.addUnit()
+        viewModel.addUnit()
+        await waitUntil { spy.applied.count == 3 }
+
+        XCTAssertEqual(spy.appliedTypes, ["add_entry", "add_entry", "add_entry"])
+        let entryIds = spy.applied.compactMap { $0.payload.entryId }
+        XCTAssertEqual(Set(entryIds).count, 3, "no tap is folded into another")
+    }
+
+    func testSubtractingSendsADeleteOpForTheWatchsOwnEntry() async {
+        await signIn(ongoingJSON: v2OngoingJSON(id: "-V2Ops", phoneBeers: 2))
+        let spy = SpyWriter()
+        let viewModel = makeViewModel(spy)
+        XCTAssertEqual(viewModel.unitCount, 2, "the phone's drinks count")
+
+        viewModel.addUnit()
+        await waitUntil { spy.applied.count == 1 }
+        viewModel.subtractUnit()
+        await waitUntil { spy.applied.count == 2 }
+
+        XCTAssertEqual(spy.appliedTypes, ["add_entry", "delete_entry"])
+        // It names the watch's own entry, so the phone's two beers are
+        // untouchable by construction.
+        XCTAssertEqual(
+            spy.applied.last?.payload.entryId,
+            spy.applied.first?.payload.entryId
+        )
+        XCTAssertEqual(viewModel.unitCount, 2)
+    }
+
+    func testSubtractingThePhonesDrinkIsRefusedLocallyAndSendsNothing() async {
+        await signIn(ongoingJSON: v2OngoingJSON(id: "-V2Ops", phoneBeers: 1))
+        let spy = SpyWriter()
+        let viewModel = makeViewModel(spy)
+
+        viewModel.subtractUnit()
+        await drainMain()
+
+        XCTAssertTrue(spy.applied.isEmpty, "the watch has nothing of its own to remove")
+        XCTAssertEqual(viewModel.unitCount, 1)
+    }
+
+    func testEndingAV2SessionSendsAnEndOpAndGoesIdleAtOnce() async {
+        await signIn(ongoingJSON: v2OngoingJSON(id: "-V2Ops"))
+        let spy = SpyWriter()
+        let viewModel = makeViewModel(spy)
+
+        viewModel.addUnit()
+        await waitUntil { spy.applied.count == 1 }
+        viewModel.saveSession()
+        await waitUntil { spy.applied.count == 2 }
+
+        XCTAssertEqual(spy.appliedTypes, ["add_entry", "end"])
+        XCTAssertTrue(spy.saved.isEmpty, "no whole-session finalize")
+        // Ending is instant and offline-safe: the outbox owes the server the
+        // close, so the UI does not wait on it.
+        XCTAssertFalse(viewModel.isActive)
+        XCTAssertFalse(viewModel.isBusy)
+    }
+
+    func testStartingAFreshV2SessionSendsAStartOp() async {
+        await signIn()
+        SessionConnectivity.shared.apply([
+            "v": 1,
+            "signedIn": true,
+            "idToken": "test-token",
+            "uid": "uid-test",
+            "expiresAt": nowMs + 3_600_000,
+            "apiEnv": "dev",
+            "sessionsV2Schema": true,
+        ])
+        await drainMain()
+        let spy = SpyWriter()
+        let viewModel = makeViewModel(spy)
+
+        viewModel.startSession()
+        await waitUntil { spy.applied.count == 1 }
+
+        XCTAssertEqual(spy.appliedTypes, ["start"])
+        XCTAssertTrue(spy.started.isEmpty, "no whole-session start")
+        XCTAssertTrue(viewModel.isActive)
+    }
+
+    func testALegacySessionStillWritesWholeSessions() async {
+        await signIn(ongoingJSON: ongoingJSON(id: "-Legacy", beers: 0))
+        let spy = SpyWriter()
+        let viewModel = makeViewModel(spy)
+
+        viewModel.addUnit()
+        viewModel.saveSession()
+        await waitUntil { !spy.saved.isEmpty }
+
+        XCTAssertTrue(spy.applied.isEmpty, "a legacy session has no entry ids to name")
+        XCTAssertEqual(spy.saved.count, 1)
+        XCTAssertEqual(spy.saved.first?.ongoing, false)
+    }
+
+    func testQueuedOpsArePersistedAndDrainOnTheNextLaunch() async {
+        await signIn(ongoingJSON: v2OngoingJSON(id: "-V2Ops"))
+        let store = FakeOpStore()
+        // Offline: every send fails transiently, so the op stays queued and is
+        // written to the store. A drink queued and never sent exists nowhere
+        // else, which is why this has to survive a relaunch.
+        let offline = SpyWriter()
+        offline.errorToThrow = .network(message: "offline")
+        let viewModel = makeViewModel(offline, opStore: store)
+
+        viewModel.addUnit()
+        await waitUntil { !store.stored.isEmpty }
+        XCTAssertEqual(store.stored.count, 1)
+        XCTAssertEqual(viewModel.pendingOpCount, 1)
+
+        // The relaunch: a new view model over the same store, now online.
+        let online = SpyWriter()
+        let revived = makeViewModel(online, opStore: store)
+        await waitUntil { !online.applied.isEmpty }
+
+        XCTAssertEqual(online.appliedTypes, ["add_entry"])
+        await waitUntil { store.stored.isEmpty }
+        XCTAssertEqual(revived.pendingOpCount, 0)
+    }
+
+    func testARefusedOpIsDroppedSoLaterDrinksStillGoOut() async {
+        await signIn(ongoingJSON: v2OngoingJSON(id: "-V2Ops"))
+        let spy = SpyWriter()
+        // The server refuses this exact payload; replaying it can never work.
+        spy.errorToThrow = .server(statusCode: 422, jsonCode: 422, message: "nope")
+        let viewModel = makeViewModel(spy)
+
+        viewModel.addUnit()
+        await waitUntil { !spy.applied.isEmpty }
+        // It must not block what comes after it.
+        spy.errorToThrow = nil
+        viewModel.addUnit()
+        await waitUntil { spy.applied.count >= 2 }
+
+        await waitUntil { viewModel.pendingOpCount == 0 }
+        XCTAssertEqual(viewModel.pendingOpCount, 0)
+    }
+
+    func testDiscardingDropsTheSessionsQueuedOps() async {
+        await signIn(ongoingJSON: v2OngoingJSON(id: "-V2Ops"))
+        let store = FakeOpStore()
+        let offline = SpyWriter()
+        offline.errorToThrow = .network(message: "offline")
+        let viewModel = makeViewModel(offline, opStore: store)
+
+        viewModel.addUnit()
+        await waitUntil { !store.stored.isEmpty }
+
+        offline.errorToThrow = nil
+        viewModel.discardSession()
+        await waitUntil { !offline.discarded.isEmpty }
+
+        // The session is gone, so its queued drinks have nowhere to land;
+        // sending them would only pile up refusals against a deleted id.
+        XCTAssertTrue(store.stored.isEmpty)
+        XCTAssertFalse(viewModel.isActive)
+    }
+
 }
