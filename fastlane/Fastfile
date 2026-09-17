@@ -77,6 +77,12 @@ require 'open3'
 SUBMIT_GATE_SUBMIT = 0
 SUBMIT_GATE_SKIP = 2
 
+# altool verdicts on the binary itself. The generic retry predicate below keys
+# off "Error uploading ipa", which fastlane wraps EVERY upload failure in, so
+# these have to be recognised first or a permanent rejection is retried like a
+# flake. Each one needs a human (a version bump, a new build, a signing fix).
+PERMANENT_UPLOAD_REJECTIONS = /Invalid Pre-Release Train|closed for new build submissions|This bundle is invalid|must contain a higher version|\(90186\)|\(90062\)/i
+
 # Asks App Store Connect (read-only) whether the production lane may submit
 # app_version for review. Returns true to submit, false to skip. Raises when
 # the check itself fails: submitting blind is what the gate exists to prevent.
@@ -409,6 +415,12 @@ platform :ios do
 
       if message.match?(/already been used|already exists|already been uploaded|redundant binary/i)
         UI.important("Build already present on App Store Connect; treating the TestFlight upload as successful (#{message.strip})")
+      elsif message.match?(PERMANENT_UPLOAD_REJECTIONS)
+        # Apple has judged the binary; the delivery itself worked. Retrying
+        # re-uploads the same rejected IPA and loses another two minutes per
+        # attempt (and the job's own retry multiplies that again), so stop here.
+        UI.error("App Store Connect rejected this build; retrying cannot help.")
+        raise
       elsif testflight_upload_attempts < max_testflight_upload_attempts &&
             message.match?(/status code 5\d\d|internal server error|CHANGE UPLOAD STATE TO COMPLETE|Could not download\/upload|Error uploading ipa|timed out|connection reset/i)
         UI.error("TestFlight upload attempt #{testflight_upload_attempts}/#{max_testflight_upload_attempts} failed: #{message.strip}")
