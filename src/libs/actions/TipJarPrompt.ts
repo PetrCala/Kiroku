@@ -1,5 +1,7 @@
 import Onyx from 'react-native-onyx';
 import Navigation from '@libs/Navigation/Navigation';
+import CONFIG from '@src/CONFIG';
+import CONST from '@src/CONST';
 import ONYXKEYS from '@src/ONYXKEYS';
 import ROUTES from '@src/ROUTES';
 
@@ -69,6 +71,51 @@ function dismissForever(): void {
   Onyx.merge(ONYXKEYS.TIP_JAR_PROMPT, {isOpen: false, dismissedForever: true});
 }
 
+/**
+ * Developer-only shortcuts for the Test Tools panel, so the card can be seen
+ * without waiting 14 days. Every one is a no-op in production, like the
+ * premium-feature overrides in `@userActions/FeatureAccess`.
+ */
+
+/** Put the card on Home right away (the tip, supporter, and live-session gates still apply). */
+function devShowNow(): void {
+  if (CONFIG.IS_IN_PRODUCTION) {
+    return;
+  }
+  const now = Date.now();
+  Onyx.set(ONYXKEYS.TIP_JAR_PROMPT, {
+    firstOpenAt: now - CONST.TIP_JAR_PROMPT.MIN_MS_SINCE_FIRST_OPEN,
+    shownCount: 1,
+    lastShownAt: now,
+    isOpen: true,
+    dismissedForever: false,
+  });
+}
+
+/**
+ * Backdate the first open past the 14-day gate, forget every impression and
+ * dismissal, and arm the moment, so the real open path runs on Home's next
+ * focus or data change. Still needs 5 sessions and no tip on this device.
+ */
+function devMakeEligible(): void {
+  if (CONFIG.IS_IN_PRODUCTION) {
+    return;
+  }
+  Onyx.set(ONYXKEYS.TIP_JAR_PROMPT, {
+    firstOpenAt: Date.now() - CONST.TIP_JAR_PROMPT.MIN_MS_SINCE_FIRST_OPEN,
+    shownCount: 0,
+  });
+  armMoment();
+}
+
+/** Forget the card's state, as on a fresh install (the clock restarts on the next Home render). */
+function devReset(): void {
+  if (CONFIG.IS_IN_PRODUCTION) {
+    return;
+  }
+  Onyx.set(ONYXKEYS.TIP_JAR_PROMPT, null);
+}
+
 export {
   recordFirstOpen,
   armMoment,
@@ -77,4 +124,7 @@ export {
   acceptAndOpenSupport,
   dismiss,
   dismissForever,
+  devShowNow,
+  devMakeEligible,
+  devReset,
 };

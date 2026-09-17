@@ -38,6 +38,7 @@ import type {
   SupporterRenewalDateParams,
   SupporterTipCountParams,
   TipJarPromptTitleParams,
+  TipJarPromptDevStatusParams,
   UnitCountParams,
   UpdateEmailSentEmailParams,
   VerifyEmailScreenEmailParmas,
@@ -1652,6 +1653,21 @@ export default {
       unlocked: 'Unlocked',
     },
     resetOverrides: 'Reset overrides',
+    tipJarPrompt: {
+      title: 'Tip jar card',
+      description:
+        'The one ask on Home. Normally it needs 14 days on this device, 5 sessions, no tip given here, and a session summary closing first.',
+      status: ({
+        firstOpen,
+        shownCount,
+        tipsGiven,
+      }: TipJarPromptDevStatusParams) =>
+        `First open: ${firstOpen ?? 'not yet'} · Shown: ${shownCount} · Tips on this device: ${tipsGiven}`,
+      dismissedForever: 'Dismissed for good on this device.',
+      showNow: 'Show the card now',
+      makeEligible: 'Make eligible (then close a session summary)',
+      reset: 'Reset card state',
+    },
     environmentLabel: 'Environment',
     howToOpen:
       'Open via ⌘D → Open Test Preferences, or a four-finger tap anywhere in the app.',

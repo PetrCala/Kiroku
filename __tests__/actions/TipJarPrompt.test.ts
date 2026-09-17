@@ -9,6 +9,8 @@
 import Onyx from 'react-native-onyx';
 import Navigation from '@libs/Navigation/Navigation';
 import * as TipJarPromptActions from '@userActions/TipJarPrompt';
+import CONFIG from '@src/CONFIG';
+import CONST from '@src/CONST';
 import ONYXKEYS from '@src/ONYXKEYS';
 import ROUTES from '@src/ROUTES';
 
@@ -18,8 +20,14 @@ jest.mock('react-native-onyx', () => ({
     connect: jest.fn(),
     disconnect: jest.fn(),
     merge: jest.fn(() => Promise.resolve()),
+    set: jest.fn(() => Promise.resolve()),
     METHOD: {MERGE: 'merge', SET: 'set'},
   },
+}));
+
+jest.mock('@src/CONFIG', () => ({
+  __esModule: true,
+  default: {IS_IN_PRODUCTION: false},
 }));
 
 jest.mock('@libs/Navigation/Navigation', () => ({
@@ -74,6 +82,47 @@ describe('TipJarPrompt actions', () => {
         shownCount: 2,
         lastShownAt: NOW,
       });
+    });
+  });
+
+  describe('developer shortcuts', () => {
+    it('"Show now" opens the card with the clock backdated past the gate', () => {
+      TipJarPromptActions.devShowNow();
+      expect(Onyx.set).toHaveBeenCalledWith(ONYXKEYS.TIP_JAR_PROMPT, {
+        firstOpenAt: NOW - CONST.TIP_JAR_PROMPT.MIN_MS_SINCE_FIRST_OPEN,
+        shownCount: 1,
+        lastShownAt: NOW,
+        isOpen: true,
+        dismissedForever: false,
+      });
+    });
+
+    it('"Make eligible" backdates the clock, forgets impressions, and arms the moment', () => {
+      TipJarPromptActions.devMakeEligible();
+      expect(Onyx.set).toHaveBeenCalledWith(ONYXKEYS.TIP_JAR_PROMPT, {
+        firstOpenAt: NOW - CONST.TIP_JAR_PROMPT.MIN_MS_SINCE_FIRST_OPEN,
+        shownCount: 0,
+      });
+      expect(TipJarPromptActions.consumeMoment()).toBe(true);
+    });
+
+    it('"Reset" forgets the state', () => {
+      TipJarPromptActions.devReset();
+      expect(Onyx.set).toHaveBeenCalledWith(ONYXKEYS.TIP_JAR_PROMPT, null);
+    });
+
+    it('do nothing in production', () => {
+      const config = CONFIG as {IS_IN_PRODUCTION: boolean};
+      config.IS_IN_PRODUCTION = true;
+      try {
+        TipJarPromptActions.devShowNow();
+        TipJarPromptActions.devMakeEligible();
+        TipJarPromptActions.devReset();
+      } finally {
+        config.IS_IN_PRODUCTION = false;
+      }
+      expect(Onyx.set).not.toHaveBeenCalled();
+      expect(TipJarPromptActions.consumeMoment()).toBe(false);
     });
   });
 

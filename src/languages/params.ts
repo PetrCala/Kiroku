@@ -137,6 +137,13 @@ type TipJarPromptTitleParams = {
   sessionCount: number;
 };
 
+type TipJarPromptDevStatusParams = {
+  /** Formatted date the card's clock started; null when it has not. */
+  firstOpen: string | null;
+  shownCount: number;
+  tipsGiven: number;
+};
+
 type SupporterPurchaseErrorParams = {
   message: string;
 };
@@ -183,6 +190,7 @@ export type {
   SupporterRenewalDateParams,
   SupporterTipCountParams,
   TipJarPromptTitleParams,
+  TipJarPromptDevStatusParams,
   UnitCountParams,
   UpdateEmailSentEmailParams,
   VerifyEmailScreenEmailParmas,

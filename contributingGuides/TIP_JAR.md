@@ -64,6 +64,17 @@ to tipping.
   session count, a plain body ("free, no ads, tips unlock nothing"), plain
   buttons. Tips are "tips", never donations (App Store guideline 3.2.2).
 
+**Testing it.** The card cannot appear on a fresh install for 14 days, and
+an ad-hoc test build has no Test Tools panel, so it has to be a development
+build: run the `Kiroku (development)` scheme on a simulator or on a phone
+from Xcode (or `npm run ios`), open Test Tools (four-finger tap, or ⌘D →
+Open Test Preferences), and use the "Tip jar card" section. "Show the card
+now" puts it on Home at once; "Make eligible" backdates the clock and arms
+the moment so the real open path runs (still needs 5 sessions); "Reset"
+forgets the state. All three are no-ops in production. The tip, supporter,
+and live-session gates always apply, so a device that tipped in the sandbox
+shows nothing until `TIPS_GIVEN` is cleared.
+
 Not built, on purpose: a thank-you variant a year after a tip (`TIPS_GIVEN`
 is a count, not a date), a yearly December ask (KDE's model; decide after a
 year of data), and any prompt on web.

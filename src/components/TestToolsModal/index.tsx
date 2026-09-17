@@ -16,6 +16,7 @@ import {getPremiumFeatureKeys} from '@libs/Entitlements';
 import type {FeatureOverride} from '@src/types/onyx/FeatureAccessOverrides';
 import * as FeatureAccess from '@userActions/FeatureAccess';
 import toggleTestToolsModal from '@userActions/TestTool';
+import * as TipJarPromptActions from '@userActions/TipJarPrompt';
 import CONST from '@src/CONST';
 import ONYXKEYS from '@src/ONYXKEYS';
 
@@ -46,6 +47,13 @@ function TestToolsModal() {
   const [overrides] = useOnyx(ONYXKEYS.FEATURE_ACCESS_OVERRIDES, {
     canBeMissing: true,
   });
+  const [tipJarPrompt] = useOnyx(ONYXKEYS.TIP_JAR_PROMPT, {
+    canBeMissing: true,
+  });
+  const [tipsGiven] = useOnyx(ONYXKEYS.TIPS_GIVEN, {canBeMissing: true});
+  const firstOpen = tipJarPrompt?.firstOpenAt
+    ? new Date(tipJarPrompt.firstOpenAt).toLocaleDateString()
+    : null;
 
   const accent = theme.appColor;
   const featureKeys = getPremiumFeatureKeys();
@@ -146,6 +154,42 @@ function TestToolsModal() {
             small
             text={translate('testTools.resetOverrides')}
             onPress={FeatureAccess.clearAllFeatureOverrides}
+          />
+        </View>
+
+        <View style={styles.gap2}>
+          <Text style={[styles.textNormal, styles.textStrong]}>
+            {translate('testTools.tipJarPrompt.title')}
+          </Text>
+          <Text style={styles.textMicroSupporting}>
+            {translate('testTools.tipJarPrompt.description')}
+          </Text>
+          <Text style={styles.textMicroSupporting}>
+            {translate('testTools.tipJarPrompt.status', {
+              firstOpen,
+              shownCount: tipJarPrompt?.shownCount ?? 0,
+              tipsGiven: tipsGiven ?? 0,
+            })}
+          </Text>
+          {tipJarPrompt?.dismissedForever ? (
+            <Text style={styles.textMicroSupporting}>
+              {translate('testTools.tipJarPrompt.dismissedForever')}
+            </Text>
+          ) : null}
+          <Button
+            small
+            text={translate('testTools.tipJarPrompt.showNow')}
+            onPress={TipJarPromptActions.devShowNow}
+          />
+          <Button
+            small
+            text={translate('testTools.tipJarPrompt.makeEligible')}
+            onPress={TipJarPromptActions.devMakeEligible}
+          />
+          <Button
+            small
+            text={translate('testTools.tipJarPrompt.reset')}
+            onPress={TipJarPromptActions.devReset}
           />
         </View>
 
