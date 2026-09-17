@@ -32,6 +32,8 @@ import type {
 } from '@libs/SessionOpBuilders';
 import {getDefaultSessionName} from '@libs/SessionName';
 import type {UserID} from '@src/types/onyx/OnyxCommon';
+import type {SessionEntryId} from '@src/types/onyx/SessionEntries';
+import DateUtils from '@libs/DateUtils';
 import type {User} from 'firebase/auth';
 import CONST from '@src/CONST';
 import generatePushID from '@libs/generatePushID';
@@ -1246,6 +1248,70 @@ function updateEntries(
 }
 
 /**
+ * Delete ONE named entry: the precise delete, where the user pointed at a
+ * drink in the session timeline rather than at a drink type.
+ *
+ * This is what entries buy over legacy buckets. A bucket holds a count and no
+ * identity, so `removeDrinksFromList` can only guess which drink a removal
+ * means (newest bucket first) and a rewrite of the bucket races every other
+ * writer. Here the delete names the entry, the server tombstones exactly that
+ * key, and a phone and a watch deleting different drinks at the same moment
+ * cannot touch each other's.
+ *
+ * A no-op for a legacy session (no entry ids to name) and for an entry that
+ * is already a tombstone, so a double tap on delete cannot fail.
+ */
+function removeSessionEntry(
+  sessionId: DrinkingSessionId | undefined,
+  entryId: SessionEntryId,
+): void {
+  const session = DSUtils.getDrinkingSessionData(sessionId);
+  const onyxKey = DSUtils.getDrinkingSessionOnyxKey(sessionId);
+  if (!session || !onyxKey || !sessionId) {
+    return;
+  }
+  if (!isSchemaV2Session(session)) {
+    Log.warn(
+      '[DrinkingSession] Cannot delete an entry of a legacy session; it has no entry ids',
+      {sessionId},
+    );
+    return;
+  }
+  const patch = DSUtils.removeSessionEntryById(
+    session,
+    entryId,
+    DateUtils.getServerTime(),
+  );
+  if (Object.keys(patch).length === 0) {
+    return;
+  }
+
+  // Compose the next mutation on the freshest value, as the add/remove path
+  // does: the Onyx.connect callback lags while the JS thread is busy.
+  DSUtils.setLocalSessionCache(onyxKey, {
+    ...session,
+    entries: {...session.entries, ...patch},
+  });
+
+  if (
+    onyxKey === ONYXKEYS.ONGOING_SESSION_DATA &&
+    shouldUseSessionOps(session)
+  ) {
+    sendSessionOps(
+      buildEntryPatchOps(session.entries, patch),
+      sessionId,
+      liveBufferApplier(),
+    );
+    return;
+  }
+
+  Onyx.merge(onyxKey, {entries: patch});
+  if (onyxKey === ONYXKEYS.ONGOING_SESSION_DATA) {
+    recordLiveSessionEdit(sessionId);
+  }
+}
+
+/**
  * Update a drinking session note
  *
  * @param session The session to update
@@ -1621,6 +1687,7 @@ function openFriendDrinkingSessions(
 
 export {
   generateDrinkingSessionId,
+  removeSessionEntry,
   openFriendDrinkingSessions,
   navigateToEditSessionScreen,
   navigateToOngoingSessionScreen,

@@ -403,7 +403,16 @@ function addDrinksToList(
 }
 
 /**
- * Removes drinks from a DrinksList based on the specified behavior.
+ * LEGACY ONLY. Removes drinks from a `drinks[timestamp][drinkKey]` bucket map.
+ *
+ * A bucket holds a COUNT and nothing else, so there is no way to say WHICH
+ * drink is being removed: this picks victims newest-bucket-first and hopes.
+ * It is also why two writers (the phone and the watch) could clobber each
+ * other on the old write path. A `schema_version: 2` session has neither
+ * problem: every drink is an entry with an id, and a removal names the ids it
+ * takes (`selectEntriesForRemoval`) or one id outright
+ * (`removeSessionEntryById`). Kept only for sessions the §11 backfill has not
+ * converted yet.
  *
  * @param drinkKey - The drink key to remove.
  * @param amount - The number of drinks to remove.
@@ -495,10 +504,6 @@ function getSessionAddDrinksOptions(
   };
 }
 
-function getSessionRemoveDrinksOptions(): RemoveDrinksOptions {
-  return 'removeFromLatest';
-}
-
 /**
  * Modify the drinks in a session based on the action.
  *
@@ -527,8 +532,14 @@ function modifySessionDrinks(
       options,
     );
   } else if (action === 'remove') {
-    const options: RemoveDrinksOptions = 'removeFromLatest';
-    drinksList = removeDrinksFromList(drinkKey, amount, drinksList, options);
+    // Newest bucket first: the only order a bucket map allows (see
+    // `removeDrinksFromList`). A v2 session removes by entry id instead.
+    drinksList = removeDrinksFromList(
+      drinkKey,
+      amount,
+      drinksList,
+      'removeFromLatest',
+    );
   }
 
   return drinksList;
@@ -607,23 +618,70 @@ function modifySessionEntries(
     return {entries, patch: {[id]: entry}, addedTs: ts};
   }
 
-  // Remove from the latest entries first, as `removeDrinksFromList` does.
-  const latestFirst = [...getSessionEntriesOfType(session, drinkKey)].reverse();
+  const patch = selectEntriesForRemoval(session, drinkKey, amount, now);
+  return {entries: {...entries, ...patch}, patch};
+}
+
+/**
+ * Which entries a "remove N drinks of this type" action takes, and what each
+ * of them becomes. Newest first, by the adapter's `(ts, id)` order.
+ *
+ * This is the precise counterpart of `removeDrinksFromList`. The ORDER is the
+ * same (the newest drink of that type is the one the user means to take back),
+ * but the RESULT is not a guess: every entry it touches is named by its id, so
+ * the write is `delete_entry { entryId }` or `edit_entry { entryId, count }`
+ * rather than a rewrite of a shared bucket. An entry the removal empties
+ * becomes a tombstone and KEEPS its key (RFC §4.3); one it only partly eats
+ * keeps its id with a smaller `count`.
+ *
+ * Returns the changed entries only, keyed by id: an empty map when there is
+ * nothing of that type left to remove.
+ */
+function selectEntriesForRemoval(
+  session: DrinkingSession,
+  drinkKey: DrinkKey,
+  amount: number,
+  now: number,
+): SessionEntries {
   const patch: SessionEntries = {};
+  if (amount <= 0) {
+    return patch;
+  }
+  const latestFirst = [...getSessionEntriesOfType(session, drinkKey)].reverse();
   let remaining = amount;
   for (const {id, ...entry} of latestFirst) {
     if (remaining <= 0) {
       break;
     }
-    const updated: SessionEntry =
+    patch[id] =
       entry.count <= remaining
         ? {...entry, deleted: true, edited_at: now}
         : {...entry, count: entry.count - remaining, edited_at: now};
     remaining -= entry.count;
-    entries[id] = updated;
-    patch[id] = updated;
   }
-  return {entries, patch};
+  return patch;
+}
+
+/**
+ * Tombstone ONE named entry: the precise delete the session timeline and undo
+ * use, where the user pointed at a drink rather than at a drink type.
+ *
+ * Returns the changed entry keyed by its id, or an empty map when the session
+ * has no such live entry (already a tombstone, or never there), so a repeated
+ * delete is a no-op rather than an error. A legacy session has no entry ids at
+ * all and always yields an empty map; the caller keeps
+ * `modifySessionDrinks` for those.
+ */
+function removeSessionEntryById(
+  session: DrinkingSession,
+  entryId: SessionEntryId,
+  now: number,
+): SessionEntries {
+  const entry = session.entries?.[entryId];
+  if (!entry || entry.deleted === true) {
+    return {};
+  }
+  return {[entryId]: {...entry, deleted: true, edited_at: now}};
 }
 
 function sessionIsExpired(session: DrinkingSession | undefined): boolean {
@@ -1049,7 +1107,6 @@ export {
   getLastSession,
   getOngoingSessionId,
   getSessionAddDrinksOptions,
-  getSessionRemoveDrinksOptions,
   getSessionTypeDescription,
   getSessionTypeTitle,
   getSingleDayDrinkingSessions,
@@ -1063,6 +1120,8 @@ export {
   modifySessionDrinks,
   modifySessionEntries,
   removeDrinksFromList,
+  removeSessionEntryById,
+  selectEntriesForRemoval,
   sessionIsExpired,
   setLocalSessionCache,
   shiftSessionTimestamps,
