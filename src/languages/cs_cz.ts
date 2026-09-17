@@ -1,4 +1,3 @@
-import CONST from '@src/CONST';
 import Str from '@libs/common/str';
 import type {
   CharacterLimitParams,
@@ -16,7 +15,6 @@ import type {
   ConfirmWithProviderPromptParams,
   DiscardSessionParams,
   DrinkingSessionsParams,
-  ForceUpdateTextParams,
   ForgotPasswordSuccessParams,
   FriendRequestsCountParams,
   InviteDisplayNameParams,
@@ -1677,12 +1675,7 @@ export default {
   },
   forceUpdate: {
     heading: 'Je vyžadována aktualizace aplikace',
-    text: ({platform}: ForceUpdateTextParams) =>
-      `Podpora této verze aplikace skončila. Aktualizujte prosím na nejnovější verzi pomocí odkazu níže${
-        platform === CONST.PLATFORM.IOS
-          ? ' nebo z prostředí aplikace TestFlight'
-          : ''
-      }.`,
+    text: 'Tato verze aplikace již není podporována. Aktualizujte ji na nejnovější verzi pomocí odkazu níže.',
     link: 'Aktualizovat nyní',
   },
   login: {
