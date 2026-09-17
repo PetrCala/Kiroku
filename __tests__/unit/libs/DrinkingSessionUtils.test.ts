@@ -7,6 +7,7 @@ import type {
   DrinkingSession,
   DrinkingSessionArray,
   DrinkingSessionList,
+  DrinkKey,
   DrinksList,
   DrinksToUnits,
 } from '@src/types/onyx';
@@ -15,6 +16,20 @@ import CONST from '@src/CONST';
 import ONYXKEYS from '@src/ONYXKEYS';
 import {getZeroDrinksList} from '@libs/DataHandling';
 import {randDrinkingSession} from '../../utils/collections/drinkingSessions';
+
+/* eslint-disable @typescript-eslint/naming-convention -- drinks are keyed by ms timestamps and jest mock factories use __esModule */
+
+// The logger schedules a flush that would write to Onyx after the test
+// environment is gone; the warnings the guards emit are not what is tested.
+jest.mock('@libs/Log', () => ({
+  __esModule: true,
+  default: {
+    info: jest.fn(),
+    warn: jest.fn(),
+    alert: jest.fn(),
+    hmmm: jest.fn(),
+  },
+}));
 
 const ALL_DRINKS_TO_UNITS: DrinksToUnits = {
   small_beer: 1,
@@ -25,8 +40,6 @@ const ALL_DRINKS_TO_UNITS: DrinksToUnits = {
   weak_shot: 1,
   wine: 1,
 };
-
-/* eslint-disable @typescript-eslint/naming-convention */
 
 describe('determineSessionMostCommonDrink', () => {
   let session: DrinkingSession;
@@ -394,5 +407,180 @@ describe('isDifferentDay', () => {
     };
     expect(DSUtils.isDifferentDay(session, TOKYO)).toBe(true);
     expect(DSUtils.isDifferentDay(session, UTC)).toBe(false);
+  });
+});
+
+describe('modifySessionEntries', () => {
+  const UID = 'uid-owner';
+  let minted = 0;
+  const mintId = () => {
+    minted += 1;
+    return `push-${minted}`;
+  };
+  const START = 1_700_000_000_000;
+  const entry = (ts: number, key: DrinkKey, count: number) => ({
+    ts,
+    key,
+    count,
+    source: CONST.SESSION.ENTRY_SOURCE.PHONE,
+    author_uid: UID,
+    target_uid: UID,
+    created_at: ts,
+  });
+  const liveV2 = (): DrinkingSession => ({
+    id: 'v2-live',
+    schema_version: CONST.SESSION.SCHEMA_VERSION,
+    start_time: START,
+    end_time: START,
+    ongoing: true,
+    type: CONST.SESSION.TYPES.LIVE,
+    entries: {
+      older: entry(START, 'beer', 2),
+      newer: entry(START + 60_000, 'beer', 1),
+      wine: entry(START + 30_000, 'wine', 1),
+    },
+  });
+
+  it('appends one entry for an add, authored by the caller, at the live time', () => {
+    const before = Date.now();
+    const {entries, patch, addedTs} = DSUtils.modifySessionEntries(
+      liveV2(),
+      CONST.DRINKS.KEYS.COCKTAIL,
+      2,
+      CONST.DRINKS.ACTIONS.ADD,
+      ALL_DRINKS_TO_UNITS,
+      UID,
+      CONST.SESSION.ENTRY_SOURCE.WEB,
+      mintId,
+    );
+    const [id] = Object.keys(patch);
+    expect(Object.keys(patch)).toHaveLength(1);
+    expect(patch[id]).toEqual({
+      ts: addedTs,
+      key: 'cocktail',
+      count: 2,
+      source: 'web',
+      author_uid: UID,
+      target_uid: UID,
+      created_at: addedTs,
+    });
+    expect(addedTs).toBeGreaterThanOrEqual(before);
+    expect(Object.keys(entries)).toHaveLength(4);
+    expect(entries[id]).toBe(patch[id]);
+  });
+
+  it('adds at the session start for an edit session', () => {
+    const edit: DrinkingSession = {
+      ...liveV2(),
+      ongoing: false,
+      type: CONST.SESSION.TYPES.EDIT,
+      end_time: START + 3_600_000,
+    };
+    const {addedTs} = DSUtils.modifySessionEntries(
+      edit,
+      CONST.DRINKS.KEYS.BEER,
+      1,
+      CONST.DRINKS.ACTIONS.ADD,
+      ALL_DRINKS_TO_UNITS,
+      UID,
+      CONST.SESSION.ENTRY_SOURCE.PHONE,
+      mintId,
+    );
+    expect(addedTs).toBe(START);
+  });
+
+  it('refuses an add past the max units and an unknown factor', () => {
+    const unchanged = DSUtils.modifySessionEntries(
+      liveV2(),
+      CONST.DRINKS.KEYS.BEER,
+      CONST.MAX_ALLOWED_UNITS + 1,
+      CONST.DRINKS.ACTIONS.ADD,
+      ALL_DRINKS_TO_UNITS,
+      UID,
+      CONST.SESSION.ENTRY_SOURCE.PHONE,
+      mintId,
+    );
+    expect(unchanged.patch).toEqual({});
+    expect(unchanged.addedTs).toBeUndefined();
+    expect(
+      DSUtils.modifySessionEntries(
+        liveV2(),
+        CONST.DRINKS.KEYS.BEER,
+        1,
+        CONST.DRINKS.ACTIONS.ADD,
+        {...ALL_DRINKS_TO_UNITS, beer: 0},
+        UID,
+        CONST.SESSION.ENTRY_SOURCE.PHONE,
+        mintId,
+      ).patch,
+    ).toEqual({});
+  });
+
+  it('tombstones the latest entry on a remove and keeps its key', () => {
+    const {entries, patch} = DSUtils.modifySessionEntries(
+      liveV2(),
+      CONST.DRINKS.KEYS.BEER,
+      1,
+      CONST.DRINKS.ACTIONS.REMOVE,
+      ALL_DRINKS_TO_UNITS,
+      UID,
+      CONST.SESSION.ENTRY_SOURCE.PHONE,
+      mintId,
+    );
+    expect(Object.keys(patch)).toEqual(['newer']);
+    expect(patch.newer.deleted).toBe(true);
+    expect(patch.newer.edited_at).toEqual(expect.any(Number));
+    expect(entries.older.count).toBe(2);
+    expect(Object.keys(entries)).toHaveLength(3);
+    expect(
+      DSUtils.calculateTotalUnits({...liveV2(), entries}, ALL_DRINKS_TO_UNITS),
+    ).toBe(3);
+  });
+
+  it('reduces an entry it does not empty and spans several entries', () => {
+    const {entries, patch} = DSUtils.modifySessionEntries(
+      liveV2(),
+      CONST.DRINKS.KEYS.BEER,
+      2,
+      CONST.DRINKS.ACTIONS.REMOVE,
+      ALL_DRINKS_TO_UNITS,
+      UID,
+      CONST.SESSION.ENTRY_SOURCE.PHONE,
+      mintId,
+    );
+    expect(Object.keys(patch).sort()).toEqual(['newer', 'older']);
+    expect(patch.newer.deleted).toBe(true);
+    expect(patch.older.count).toBe(1);
+    expect(patch.older.deleted).toBeUndefined();
+    expect(
+      DSUtils.calculateTotalUnits({...liveV2(), entries}, ALL_DRINKS_TO_UNITS),
+    ).toBe(2);
+  });
+
+  it('removes nothing when there is nothing of that type, and ignores bad amounts', () => {
+    expect(
+      DSUtils.modifySessionEntries(
+        liveV2(),
+        CONST.DRINKS.KEYS.OTHER,
+        1,
+        CONST.DRINKS.ACTIONS.REMOVE,
+        ALL_DRINKS_TO_UNITS,
+        UID,
+        CONST.SESSION.ENTRY_SOURCE.PHONE,
+        mintId,
+      ).patch,
+    ).toEqual({});
+    expect(
+      DSUtils.modifySessionEntries(
+        liveV2(),
+        CONST.DRINKS.KEYS.BEER,
+        0,
+        CONST.DRINKS.ACTIONS.ADD,
+        ALL_DRINKS_TO_UNITS,
+        UID,
+        CONST.SESSION.ENTRY_SOURCE.PHONE,
+        mintId,
+      ).patch,
+    ).toEqual({});
   });
 });

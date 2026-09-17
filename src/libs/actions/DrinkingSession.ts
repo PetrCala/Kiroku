@@ -6,18 +6,24 @@ import type {
   DrinksToUnits,
   DrinksTimestamp,
   OngoingSessionSync,
+  SessionEntrySource,
   UnsyncedSessionWriteList,
   UserDataList,
 } from '@src/types/onyx';
 import Log from '@libs/Log';
 import * as Localize from '@libs/Localize';
 import * as DSUtils from '@libs/DrinkingSessionUtils';
+import * as FeatureFlags from '@libs/FeatureFlags';
+import {getFirebaseAuth} from '@libs/Firebase/FirebaseApp';
+import getPlatform from '@libs/getPlatform';
+import {isSchemaV2Session} from '@libs/SessionEntries';
+import {getDefaultSessionName} from '@libs/SessionName';
 import type {UserID} from '@src/types/onyx/OnyxCommon';
 import type {User} from 'firebase/auth';
 import CONST from '@src/CONST';
 import generatePushID from '@libs/generatePushID';
 import Onyx from 'react-native-onyx';
-import type {OnyxUpdate} from 'react-native-onyx';
+import type {OnyxKey as OnyxStoreKey, OnyxUpdate} from 'react-native-onyx';
 import * as API from '@libs/API';
 import {buildSessionTimeParts} from '@libs/Statistics/sessionTimeParts';
 import {READ_COMMANDS, WRITE_COMMANDS} from '@libs/API/types';
@@ -617,6 +623,39 @@ async function syncLocalLiveSessionData(
   }
 }
 
+/**
+ * Whether new sessions are written as Sessions v2 (`schema_version: 2`, a
+ * default name, `visibility`, drinks as `entries`). Behind a flag until the
+ * backfill has run and the server accepts schema 2 (Kiroku#1664).
+ */
+function shouldWriteSchemaV2(): boolean {
+  return FeatureFlags.isEnabled('SESSIONS_V2_SCHEMA');
+}
+
+/**
+ * The Sessions v2 meta a new session starts with (RFC §4.2): the schema
+ * marker, the auto-generated default name for its start time and timezone
+ * (RFC §9), and `friends` visibility. Applied only when the flag is on.
+ */
+function withSchemaV2Meta(session: DrinkingSession): DrinkingSession {
+  if (!shouldWriteSchemaV2()) {
+    return session;
+  }
+  return {
+    ...session,
+    schema_version: CONST.SESSION.SCHEMA_VERSION,
+    name: getDefaultSessionName(session.start_time, session.timezone),
+    visibility: CONST.SESSION.VISIBILITY.FRIENDS,
+  };
+}
+
+/** Where a drink logged on this device comes from (RFC §4.3 `source`). */
+function getEntrySource(): SessionEntrySource {
+  return getPlatform() === CONST.PLATFORM.WEB
+    ? CONST.SESSION.ENTRY_SOURCE.WEB
+    : CONST.SESSION.ENTRY_SOURCE.PHONE;
+}
+
 /** Start a live drinking session
  *
  * Assume that if a session is ongoing, it is a live session and its data is stored in the local database.
@@ -635,12 +674,14 @@ async function startLiveDrinkingSession(
   const newSessionId = generatePushID();
 
   // The user is not in an active session
-  const newSessionData: DrinkingSession = DSUtils.getEmptySession({
-    id: newSessionId,
-    type: CONST.SESSION.TYPES.LIVE,
-    timezone,
-    ongoing: true,
-  });
+  const newSessionData: DrinkingSession = withSchemaV2Meta(
+    DSUtils.getEmptySession({
+      id: newSessionId,
+      type: CONST.SESSION.TYPES.LIVE,
+      timezone,
+      ongoing: true,
+    }),
+  );
 
   // The server upserts the session and, because `sessionIsLive`, mirrors it into
   // the user's live status (`user_status`). Live sessions start at "now", so the
@@ -818,6 +859,17 @@ function updateDrinks(
   if (!session || !onyxKey) {
     return undefined;
   }
+  if (isSchemaV2Session(session)) {
+    return updateEntries(
+      session,
+      onyxKey,
+      drinkKey,
+      amount,
+      action,
+      drinksToUnits,
+    );
+  }
+
   const previousDrinks = session.drinks ?? {};
   const drinksList = DSUtils.modifySessionDrinks(
     session,
@@ -865,6 +917,51 @@ function updateDrinks(
     }
   }
   return added;
+}
+
+/**
+ * The Sessions v2 half of `updateDrinks`: change the session's entries and
+ * merge only the changed ones into Onyx (an add appends one entry, a remove
+ * tombstones or reduces existing ones; keys are never removed). Same cache,
+ * persist and return contract as the legacy path.
+ */
+function updateEntries(
+  session: DrinkingSession,
+  onyxKey: OnyxStoreKey,
+  drinkKey: DrinkKey,
+  amount: number,
+  action: ValueOf<typeof CONST.DRINKS.ACTIONS>,
+  drinksToUnits: DrinksToUnits,
+): DrinksTimestamp | undefined {
+  const authorUid = getFirebaseAuth().currentUser?.uid;
+  if (!authorUid) {
+    Log.warn('updateDrinks: no signed-in user to author the entry');
+    return undefined;
+  }
+  const {entries, patch, addedTs} = DSUtils.modifySessionEntries(
+    session,
+    drinkKey,
+    amount,
+    action,
+    drinksToUnits,
+    authorUid,
+    getEntrySource(),
+    generatePushID,
+  );
+  if (Object.keys(patch).length === 0) {
+    return undefined;
+  }
+
+  // Same reasoning as the legacy path: compose the next mutation on the
+  // freshest value, not on a lagging Onyx.connect snapshot.
+  const updatedSession: DrinkingSession = {...session, entries};
+  DSUtils.setLocalSessionCache(onyxKey, updatedSession);
+  Onyx.merge(onyxKey, {entries: patch});
+
+  if (onyxKey === ONYXKEYS.ONGOING_SESSION_DATA) {
+    recordLiveSessionEdit(session.id);
+  }
+  return addedTs;
 }
 
 /**
@@ -999,13 +1096,15 @@ async function getNewSessionToEdit(
   }
   const newSessionId = generateDrinkingSessionId(user);
   const timestamp = currentDate.getTime();
-  const newSession: DrinkingSession = DSUtils.getEmptySession({
-    id: newSessionId,
-    start_time: timestamp,
-    end_time: timestamp,
-    type: CONST.SESSION.TYPES.EDIT,
-    timezone,
-  });
+  const newSession: DrinkingSession = withSchemaV2Meta(
+    DSUtils.getEmptySession({
+      id: newSessionId,
+      start_time: timestamp,
+      end_time: timestamp,
+      type: CONST.SESSION.TYPES.EDIT,
+      timezone,
+    }),
+  );
 
   if (shouldUpdateLocalData) {
     await updateLocalData(ONYXKEYS.EDIT_SESSION_DATA, newSession, newSessionId);

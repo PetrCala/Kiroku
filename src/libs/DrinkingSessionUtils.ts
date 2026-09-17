@@ -9,6 +9,10 @@ import type {
   Drinks,
   DrinksList,
   DrinksToUnits,
+  SessionEntries,
+  SessionEntry,
+  SessionEntryId,
+  SessionEntrySource,
 } from '@src/types/onyx';
 import {isEmptyObject} from '@src/types/utils/EmptyObject';
 import type {UserID} from '@src/types/onyx/OnyxCommon';
@@ -40,6 +44,7 @@ import {
 } from './DrinkEntryUtils';
 import {
   getSessionEntries,
+  getSessionEntriesOfType,
   legacyBucketsToEntries,
   sumEntryUnits,
 } from './SessionEntries';
@@ -316,6 +321,20 @@ function calculateAvailableUnits(
   return CONST.MAX_ALLOWED_UNITS - currentUnits;
 }
 
+/** The drink time an add lands on, per the session's add options. */
+function resolveAddTimestamp(options: AddDrinksOptions, now: number): number {
+  if (options.timestampOption === 'now') {
+    return now;
+  }
+  if (options.timestampOption === 'sessionEndTime') {
+    return options.end_time;
+  }
+  if (options.timestampOption === 'sessionStartTime') {
+    return options.start_time;
+  }
+  throw new Error('Invalid timestampOption');
+}
+
 /**
  * Adds a Drinks object to an existing DrinksList object with a specified timestamp behavior.
  * It checks if the total units exceed the maximum allowed units before adding.
@@ -358,17 +377,7 @@ function addDrinksToList(
     return updatedDrinksList;
   }
 
-  let timestamp: number;
-
-  if (options.timestampOption === 'now') {
-    timestamp = Date.now();
-  } else if (options.timestampOption === 'sessionEndTime') {
-    timestamp = options.end_time;
-  } else if (options.timestampOption === 'sessionStartTime') {
-    timestamp = options.start_time;
-  } else {
-    throw new Error('Invalid timestampOption');
-  }
+  const timestamp = resolveAddTimestamp(options, Date.now());
 
   if (updatedDrinksList[timestamp]) {
     // Timestamp already exists, merge the drinks
@@ -523,6 +532,98 @@ function modifySessionDrinks(
   }
 
   return drinksList;
+}
+
+/** What `modifySessionEntries` changed: the whole map and the changed entries. */
+type SessionEntriesChange = {
+  /** The session's entries after the change */
+  entries: SessionEntries;
+
+  /** Only the entries that were added or edited, for an Onyx merge */
+  patch: SessionEntries;
+
+  /** The drink time of the entry an ADD created; undefined otherwise */
+  addedTs?: number;
+};
+
+/**
+ * The Sessions v2 counterpart of `modifySessionDrinks`: change a v2 session's
+ * entries for an add or a remove and report exactly what changed.
+ *
+ * - ADD appends one entry for `amount` drinks of `drinkKey` at the session's
+ *   add time (now for a live session, the start or end otherwise), authored
+ *   by and targeting `authorUid`, under the id `mintEntryId` returns (a push
+ *   id from the action layer). The max-units guard applies as for legacy
+ *   sessions.
+ * - REMOVE takes `amount` drinks off the latest entries of `drinkKey` first:
+ *   an entry the removal empties becomes a tombstone (`deleted: true`), one
+ *   it only reduces keeps its id with a smaller `count`. Keys are never
+ *   removed from the map (RFC §4.3).
+ *
+ * Times are in server-corrected time (`DateUtils.getServerTime`).
+ */
+function modifySessionEntries(
+  session: DrinkingSession,
+  drinkKey: DrinkKey,
+  amount: number,
+  action: ValueOf<typeof CONST.DRINKS.ACTIONS>,
+  drinksToUnits: DrinksToUnits,
+  authorUid: UserID,
+  source: SessionEntrySource,
+  mintEntryId: () => SessionEntryId,
+): SessionEntriesChange {
+  const entries: SessionEntries = {...(session.entries ?? {})};
+  const unchanged: SessionEntriesChange = {entries, patch: {}};
+  if (amount <= 0) {
+    Log.warn(`Invalid amount: ${amount}`);
+    return unchanged;
+  }
+  const now = DateUtils.getServerTime();
+
+  if (action === CONST.DRINKS.ACTIONS.ADD) {
+    if (!drinksToUnits[drinkKey]) {
+      Log.warn(`Invalid drink key: ${drinkKey}`);
+      return unchanged;
+    }
+    const newUnits = amount * (drinksToUnits[drinkKey] || 0);
+    if (newUnits > calculateAvailableUnits(session, drinksToUnits)) {
+      Log.warn(
+        'Total units exceed the maximum allowed units. Drinks not added.',
+      );
+      return unchanged;
+    }
+    const ts = resolveAddTimestamp(getSessionAddDrinksOptions(session), now);
+    const entry: SessionEntry = {
+      ts,
+      key: drinkKey,
+      count: amount,
+      source,
+      author_uid: authorUid,
+      target_uid: authorUid,
+      created_at: now,
+    };
+    const id = mintEntryId();
+    entries[id] = entry;
+    return {entries, patch: {[id]: entry}, addedTs: ts};
+  }
+
+  // Remove from the latest entries first, as `removeDrinksFromList` does.
+  const latestFirst = [...getSessionEntriesOfType(session, drinkKey)].reverse();
+  const patch: SessionEntries = {};
+  let remaining = amount;
+  for (const {id, ...entry} of latestFirst) {
+    if (remaining <= 0) {
+      break;
+    }
+    const updated: SessionEntry =
+      entry.count <= remaining
+        ? {...entry, deleted: true, edited_at: now}
+        : {...entry, count: entry.count - remaining, edited_at: now};
+    remaining -= entry.count;
+    entries[id] = updated;
+    patch[id] = updated;
+  }
+  return {entries, patch};
 }
 
 function sessionIsExpired(session: DrinkingSession | undefined): boolean {
@@ -928,6 +1029,7 @@ function getSessionTypeDescription(
   }
 }
 
+export type {SessionEntriesChange};
 export {
   PlaceholderDrinks,
   addDrinksToList,
@@ -959,6 +1061,7 @@ export {
   isEmptySession,
   isRealtimeSession,
   modifySessionDrinks,
+  modifySessionEntries,
   removeDrinksFromList,
   sessionIsExpired,
   setLocalSessionCache,

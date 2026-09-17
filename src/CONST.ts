@@ -123,6 +123,11 @@ const CONST = {
     // Session writes as small idempotent ops (Sessions v2, RFC §5). Off until
     // the server implements more than the `ping` shell.
     SESSION_OPS: false,
+    // New sessions are written as Sessions v2 (RFC §4): `schema_version: 2`, a
+    // default name, `visibility`, and drinks as `entries` instead of buckets.
+    // Off until the backfill has run and the server accepts schema 2
+    // (Kiroku#1664). Old sessions read through the adapter either way.
+    SESSIONS_V2_SCHEMA: false,
   },
   // Session op types (Sessions v2 RFC §5.1). Mirrors kiroku-api
   // `lib/sessions/ops.ts`, which rejects anything else.
@@ -1144,6 +1149,14 @@ const CONST = {
       INVITE: 'invite',
       LINK: 'link',
       CODE: 'code',
+    },
+    // The local hour each part of the day starts at, for the default session
+    // name ("Friday evening", RFC §9). Night runs from 22:00 to 04:59.
+    PART_OF_DAY_START: {
+      MORNING: 5,
+      AFTERNOON: 12,
+      EVENING: 17,
+      NIGHT: 22,
     },
   },
   SOCIALS: {

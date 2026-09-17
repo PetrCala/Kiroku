@@ -62,6 +62,15 @@ type SessionConfirmTimezoneChangeParams = {
   newTimezone: string;
 };
 
+type SessionDefaultNameParams = {
+  /** The localized weekday name, e.g. "Friday" */
+  weekday: string;
+  /** The weekday as a number, 0 for Sunday through 6 for Saturday */
+  weekdayIndex: number;
+  /** The localized part of the day, e.g. "evening" */
+  partOfDay: string;
+};
+
 type SessionStartTimeParams = {
   startTime: string;
 };
@@ -172,6 +181,7 @@ export type {
   QuickAddDrinkParams,
   RelativeTimeAgoParams,
   SessionConfirmTimezoneChangeParams,
+  SessionDefaultNameParams,
   SessionStartTimeParams,
   SessionWindowIdParams,
   StatsDrillDownTitleParams,

@@ -25,6 +25,7 @@ import type {
   QuickAddDrinkParams,
   RelativeTimeAgoParams,
   SessionConfirmTimezoneChangeParams,
+  SessionDefaultNameParams,
   SessionStartTimeParams,
   SessionWindowIdParams,
   StatsDrillDownTitleParams,
@@ -1063,6 +1064,27 @@ export default {
       sessionOpen: 'Nepodařilo se otevřít relaci',
       missingId: 'Chybí ID relace',
       missingData: 'Chybí data relace',
+    },
+    // Czech says "Páteční večer", not "Pátek večer": the weekday becomes an
+    // adjective, picked by index (0 is Sunday) instead of the noun the code
+    // passes in `weekday`.
+    defaultName: ({weekdayIndex, partOfDay}: SessionDefaultNameParams) =>
+      `${
+        [
+          'Nedělní',
+          'Pondělní',
+          'Úterní',
+          'Středeční',
+          'Čtvrteční',
+          'Páteční',
+          'Sobotní',
+        ][weekdayIndex] ?? ''
+      } ${partOfDay}`.trim(),
+    partOfDay: {
+      morning: 'ráno',
+      afternoon: 'odpoledne',
+      evening: 'večer',
+      night: 'noc',
     },
   },
   startSession: {

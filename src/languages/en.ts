@@ -25,6 +25,7 @@ import type {
   QuickAddDrinkParams,
   RelativeTimeAgoParams,
   SessionConfirmTimezoneChangeParams,
+  SessionDefaultNameParams,
   SessionStartTimeParams,
   SessionWindowIdParams,
   StatsDrillDownTitleParams,
@@ -1042,6 +1043,16 @@ export default {
       sessionOpen: 'Failed to open a session',
       missingId: 'Missing session ID',
       missingData: 'Missing session data',
+    },
+    // The name a new session gets before the user renames it: the weekday and
+    // the part of the day it started in, e.g. "Friday evening".
+    defaultName: ({weekday, partOfDay}: SessionDefaultNameParams) =>
+      `${weekday} ${partOfDay}`,
+    partOfDay: {
+      morning: 'morning',
+      afternoon: 'afternoon',
+      evening: 'evening',
+      night: 'night',
     },
   },
   startSession: {
