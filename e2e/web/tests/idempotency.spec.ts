@@ -15,6 +15,7 @@ import {
   toServerAnswer,
 } from '../fixtures/idempotency';
 import type {ApiAccess, ServerAnswer} from '../fixtures/idempotency';
+import {overrideRemoteFeatureFlags} from '../fixtures/featureFlags';
 import {DayOverviewPage, localDateString} from '../pages/DayOverviewPage';
 import {HomePage} from '../pages/HomePage';
 import {SessionPage} from '../pages/SessionPage';
@@ -41,6 +42,19 @@ import {SessionPage} from '../pages/SessionPage';
 /** Open Home, then return the app's API access, or skip on an older server. */
 async function openHome(page: Page): Promise<ApiAccess> {
   const apiAccess = captureApiAccess(page);
+  // The LEGACY write path, as a REMOTE override attached before the first
+  // navigation, not a runtime one. These specs lose the answer to a
+  // whole-session save and check the replay carries the same key, and one of
+  // them relaunches the app to prove the queue survived; a runtime flag would
+  // be gone on that reload and the relaunched app would come back on ops
+  // mid-spec. The `/v1/app/open` route serves the override on every boot.
+  //
+  // Both flags: `SESSION_OPS` off alone still creates a schema 2 session, whose
+  // drinks live in `entries`, and these specs read `session.drinks`.
+  await overrideRemoteFeatureFlags(page, {
+    SESSION_OPS: false,
+    SESSIONS_V2_SCHEMA: false,
+  });
   await new HomePage(page).goto();
   const api = await apiAccess;
   test.skip(

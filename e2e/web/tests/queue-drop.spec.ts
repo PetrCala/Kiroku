@@ -1,5 +1,6 @@
 import type {Page, Route} from '@playwright/test';
 import {test, expect} from '../fixtures/auth';
+import {setLegacySessionWrites} from '../fixtures/e2eHooks';
 import {HomePage} from '../pages/HomePage';
 import {SessionPage} from '../pages/SessionPage';
 
@@ -136,11 +137,27 @@ async function deleteSessionBestEffort(
   await deleted;
 }
 
-/** Start a live session on Home and hand back its id. */
+/**
+ * Start a live session on Home and hand back its id.
+ *
+ * These specs run on the LEGACY write path (both session flags off). What they
+ * test is the
+ * persisted request queue itself: how it tells a deterministic refusal from a
+ * transient one, what it retries, and what it drops. They use a whole-session
+ * save as the vehicle for that, and `POST /v1/sessions/update` is still a real
+ * write path: legacy sessions use it, and it is where the kill switch lands a
+ * schema 2 session during an incident. Leaving these on it keeps that path
+ * covered, which matters precisely because it is the fallback.
+ *
+ * The op path's own failure handling is covered by `session-ops.spec.ts` (a
+ * rejected op sent once and dropped, its failure data rolled back, and the
+ * write behind it going through), so nothing is lost by pinning these here.
+ */
 async function startSession(page: Page, session: SessionPage): Promise<string> {
   const homePage = new HomePage(page);
   await homePage.goto();
   await expect(homePage.screen()).toBeVisible();
+  await setLegacySessionWrites(page);
   await session.startLiveSession();
   return session.currentSessionId();
 }

@@ -21,7 +21,16 @@ const FAKE_PHOTO_ID = 'e2e-photo-1';
  * inside the spec. `/v1/app/open` carries the window of existing sessions, for
  * a spec that opens one it did not just create.
  */
-const SESSION_BEARING_PATHS = ['/v1/sessions/update', '/v1/app/open'];
+// Every response that can carry the session, so the record lands whichever
+// write path the session took: `/v1/sessions/update` is the whole-session save,
+// `/v1/sessions/ops` is the op echo a schema 2 session saves through (it
+// merges `cachedDrinkingSessions.<uid>.<sessionId>` exactly the same way, just
+// with a partial value), and `/v1/app/open` carries an already-stored session.
+const SESSION_BEARING_PATHS = [
+  '/v1/sessions/update',
+  '/v1/sessions/ops',
+  '/v1/app/open',
+];
 
 /**
  * Attach the photo record to `sessionId` wherever the response carries that
