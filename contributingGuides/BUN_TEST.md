@@ -5,8 +5,9 @@
 This document records what was actually measured, so the question can be
 re-opened against evidence rather than re-investigated from scratch. If you are
 here because "Bun is faster, why are we still on Jest", read
-[Why the full port fails](#why-the-full-port-fails) and
-[What would change the answer](#what-would-change-the-answer).
+[Why the full port fails](#why-the-full-port-fails),
+[Pre-transpiling Flow does not help](#pre-transpiling-flow-does-not-help-measured-2026-09-17)
+and [What would change the answer](#what-would-change-the-answer).
 
 ## Reproducing this
 
@@ -153,14 +154,141 @@ tests we have rather than add any.
 The 26x speedup seen in `kiroku-cli` does not transfer. That was a plain Node
 suite with no React Native in it.
 
+## Pre-transpiling Flow does not help (measured 2026-09-17)
+
+The obvious next move is to stop fighting Bun's transpiler and just remove the
+Flow ahead of time: strip it out of `node_modules` into a mirror tree, point Bun
+at the mirror, and see how many of the 107 blocked files come back. That was
+tried. **It clears every Flow error and unblocks zero test files.**
+
+### What was built
+
+A throwaway mirror of the whole project root, hardlinked (not symlinked, because
+Bun resolves modules from a file's realpath and a symlinked file resolves back
+into the real tree). Inside it, every `.js` file carrying a Flow marker was
+replaced with a Babel-stripped copy using the same three plugins the RN preset
+uses for this: `@babel/plugin-transform-flow-strip-types`,
+`babel-plugin-syntax-hermes-parser` and `babel-plugin-transform-flow-enums`.
+Plain `flow-strip-types` on its own is not enough; it fails on 181 RN files that
+use newer Flow syntax the Babel parser does not accept. With the Hermes parser
+in front, 1,413 files strip cleanly and the only failures are Flow test fixtures
+under `react-native/sdks/hermes/`, which nothing imports.
+
+The scope was widened past the `transformIgnorePatterns` allowlist. The
+allowlist covers 1,154 Flow files, but 259 more live in packages outside it
+(`react-native-config` is the loudest), and those block tests just as hard.
+
+`__DEV__` was defined in a `--preload`, matching what `jest.config.js` sets in
+`globals`.
+
+### Neither plugin hook works for this
+
+`Bun.plugin`'s `onResolve` never fires in `bun test` on 1.4.0. A hook with a
+`console.error` in it printed nothing and the import resolved to the real
+`node_modules` anyway, with and without `--isolate`. So the documented way to
+redirect a specifier is simply not available at test runtime.
+
+The `onLoad` CJS bug ([oven-sh/bun#19279](https://github.com/oven-sh/bun/issues/19279))
+never got the chance to bite, because the mirror serves real files from disk and
+no loader hook is involved. Making the mirror the actual project root sidesteps
+both problems.
+
+### Result
+
+| bucket  | before | after |
+| ------- | ------ | ----- |
+| clean   | 42     | 42    |
+| failing | 1      | 2     |
+| blocked | 107    | 106   |
+
+One file moved, `__tests__/unit/reactNativeMock.test.ts`, and it moved from
+`blocked` to `failing`. Of the other 106, 64 are blocked for a different reason
+than before and 42 for the identical reason. Both Flow buckets went to zero:
+`Unexpected typeof` 36 to 0, `Expected "from" but found "{"` 25 to 0.
+
+Where those 61 formerly Flow-blocked files land now:
+
+```
+ 31  undefined is not an object (evaluating 'TurboModuleRegistry.get')
+ 12  crashes with no attributable error line
+  7  Cannot find module './index.shared'   (the @firebase/auth .d.ts resolution)
+  4  undefined is not an object (evaluating 'language of languages')
+  2  undefined is not an object (evaluating 'Platform.select')
+  2  window is not defined
+  1  Unexpected token '{'. import call expects one or two arguments
+  1  undefined is not an object (evaluating 'ReactNativePlatform.OS')
+  1  moved to the failing bucket
+```
+
+### The blocker behind Flow is worse than Flow
+
+43 of those files (the 31 plus the 12 unattributed) are one root cause, and it is
+not a missing mock. `react-native/index.js` is CommonJS that exports ~85 lazy
+getters, so that importing `react-native` does not drag in the entire native
+surface. Bun builds an ES module namespace for a CommonJS module by enumerating
+`module.exports` eagerly, which fires every one of those getters at import time:
+
+```
+$ bun -e "import('react-native')"
+ProgressBarAndroid has been extracted from react-native core ...
+SafeAreaView has been deprecated ...
+Invariant Violation: __fbBatchedBridgeConfig is not set, cannot invoke native modules
+    at react-native/Libraries/BatchedBridge/NativeModules.js:187
+    at react-native/Libraries/TurboModule/TurboModuleRegistry.js:15
+    at react-native/Libraries/StyleSheet/StyleSheetExports.js:18
+    at ActivityIndicator (react-native/index.js:35)
+```
+
+The deprecation warnings are the tell: the getters ran. And the namespace it
+produces is wrong. `import {TurboModuleRegistry} from 'react-native'` yields
+`undefined` while `require('react-native').TurboModuleRegistry` works, because
+the getter values are not statically analyzable.
+
+Under Jest this never arises: Babel compiles every consumer to CommonJS, so each
+import is a property access that triggers exactly one getter on demand. Getting
+the same behavior under Bun means running Babel over the whole graph, which is
+the thing Bun was supposed to replace.
+
+### Cost of the pre-transpile
+
+On an 8-core machine under heavy load, so CPU seconds rather than wall clock:
+
+| step                                                          | CPU seconds |
+| ------------------------------------------------------------- | ----------- |
+| hardlink the project root and `node_modules` into a mirror    | ~62         |
+| strip Flow from the allowlist packages (15,491 files)         | ~13         |
+| scan the other 51,618 `.js` files and strip the 259 Flow ones | ~20         |
+| total                                                         | ~95         |
+
+A whole Jest run is ~184 CPU seconds. The hardlink step is an artifact of this
+particular mechanism and a real implementation might avoid it, but the ~33
+seconds of scanning and stripping is inherent, and it would have to run on every
+dependency change.
+
+### What this changes
+
+The earlier read was that [#34112](https://github.com/oven-sh/bun/pull/34112) is
+the one upstream fix that matters, because nothing else helps while
+`react-native` cannot be parsed. That is now measurably wrong. Parsing
+`react-native` was never the binding constraint; it was just the first one. With
+Flow gone, the suite is blocked on CommonJS-to-ESM namespace semantics, missing
+`jest` APIs, absent native-module mocks and `jest-expo`, all at once, and no
+single upstream fix moves any of them.
+
+Treat the Flow question as settled. Do not spend time on a Flow-stripping
+loader, a transformed-`node_modules` cache, or #34112.
+
 ## What would change the answer
 
 Re-run `node scripts/bun-test-triage.mjs` when any of these lands, in roughly
 this order of importance:
 
-- [oven-sh/bun#34112](https://github.com/oven-sh/bun/pull/34112) merges and ships,
-  making a Flow-stripping `Bun.plugin` loader viable. This is the one that
-  matters; nothing else helps while `react-native` cannot be parsed.
+- Bun's CommonJS-to-ESM interop stops eagerly enumerating getters, or gains a
+  documented way to opt out. This is the one that matters now; see
+  [Pre-transpiling Flow does not help](#pre-transpiling-flow-does-not-help-measured-2026-09-17).
+  [oven-sh/bun#34112](https://github.com/oven-sh/bun/pull/34112), the
+  Flow-stripping loader fix, has been demoted: it was measured and it unblocks
+  nothing on its own.
 - `jest.mock` factory hoisting gets picked back up after
   [#36297](https://github.com/oven-sh/bun/pull/36297) was closed.
 - `jest.requireActual` and friends appear. Tracked only as unchecked boxes in
