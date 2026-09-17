@@ -163,7 +163,9 @@ function UserListComponent({
       renderItem={renderItem}
       style={[]}
       keyboardShouldPersistTaps="always"
-      contentContainerStyle={[styles.pt1]}
+      // `flexGrow` lets a centered empty state (NoFriendInfo) fill the
+      // viewport instead of collapsing against the top of the list.
+      contentContainerStyle={[styles.pt1, styles.flexGrow1]}
       onEndReached={loadMoreUsers}
       onEndReachedThreshold={0.75}
       ListEmptyComponent={emptyListComponent}

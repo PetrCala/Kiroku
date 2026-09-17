@@ -133,10 +133,16 @@ function DayOverviewListView({
 
   // Room below the newest session so `scrollToIndex({viewPosition: 0.5})` can
   // pull a bottom-edge day toward center instead of clamping it to the bottom.
-  // See `BOTTOM_SPACER_RATIO` for the amount.
+  // See `BOTTOM_SPACER_RATIO` for the amount. With nothing to scroll there is
+  // no bottom edge to pull up, and the spacer would push the empty state off
+  // center, so the container just grows to the viewport instead.
+  const hasSessions = sessionEntriesByDay.size > 0;
   const contentContainerStyle = useMemo(
-    () => ({paddingBottom: Math.round(windowHeight * BOTTOM_SPACER_RATIO)}),
-    [windowHeight],
+    () =>
+      hasSessions
+        ? {paddingBottom: Math.round(windowHeight * BOTTOM_SPACER_RATIO)}
+        : {flexGrow: 1},
+    [hasSessions, windowHeight],
   );
 
   // Flatten the day→sessions map into a single list: each day emits a header
