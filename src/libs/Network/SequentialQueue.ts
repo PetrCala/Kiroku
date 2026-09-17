@@ -174,8 +174,19 @@ function process(): Promise<void> {
       // whole retry backoff while the writes queued behind it wait.
       if (isDroppableFailure(error)) {
         Onyx.update(requestToProcess.failureData ?? []);
+        // A permission refusal (460) is called out separately from every other
+        // deterministic rejection: it means the caller may not make this
+        // change, not that the payload was malformed, and it is the failure
+        // the Sessions v2 write protocol relies on taking a different path
+        // from a network error (RFC §5.3, upstream's `jsonCode` 460). The
+        // handling is the same — drop it and roll it back — but a reader of
+        // the logs should not have to guess which kind of 4xx it was.
+        const isPermissionDenied =
+          Number(error.status) === CONST.HTTP_STATUS.PERMISSION_DENIED;
         Log.info(
-          '[SequentialQueue] Removing persisted request because the server rejected it.',
+          isPermissionDenied
+            ? '[SequentialQueue] Removing persisted request because the caller is not allowed to make this change.'
+            : '[SequentialQueue] Removing persisted request because the server rejected it.',
           false,
           {error, request: requestToProcess},
         );

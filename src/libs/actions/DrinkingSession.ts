@@ -10,6 +10,7 @@ import type {
   SessionVisibility,
   UnsyncedSessionWriteList,
   UserDataList,
+  UserDrinkingSessionsList,
 } from '@src/types/onyx';
 import Log from '@libs/Log';
 import * as Localize from '@libs/Localize';
@@ -18,6 +19,17 @@ import * as FeatureFlags from '@libs/FeatureFlags';
 import {getFirebaseAuth} from '@libs/Firebase/FirebaseApp';
 import getPlatform from '@libs/getPlatform';
 import {isSchemaV2Session} from '@libs/SessionEntries';
+import {
+  buildEntryPatchOps,
+  buildSessionDiffOps,
+  buildSetBlackoutOp,
+  buildSetNoteOp,
+} from '@libs/SessionOpBuilders';
+import type {
+  PendingSessionOp,
+  SessionDiffOptions,
+  SessionPatch,
+} from '@libs/SessionOpBuilders';
 import {getDefaultSessionName} from '@libs/SessionName';
 import type {UserID} from '@src/types/onyx/OnyxCommon';
 import type {User} from 'firebase/auth';
@@ -29,6 +41,7 @@ import * as API from '@libs/API';
 import {buildSessionTimeParts} from '@libs/Statistics/sessionTimeParts';
 import {READ_COMMANDS, WRITE_COMMANDS} from '@libs/API/types';
 import type Response from '@src/types/onyx/Response';
+import type {OnyxData} from '@src/types/onyx/Request';
 import type {OpenFriendDrinkingSessionsParams} from '@libs/API/parameters';
 import type {OnyxKey} from '@src/ONYXKEYS';
 import ONYXKEYS from '@src/ONYXKEYS';
@@ -40,6 +53,8 @@ import {toZonedTime} from 'date-fns-tz';
 import type {SelectedTimezone} from '@src/types/onyx/UserData';
 import type {ValueOf} from 'type-fest';
 import {Alert, InteractionManager} from 'react-native';
+import * as PersistedRequests from './PersistedRequests';
+import {sendSessionOp} from './SessionOps';
 
 let ongoingSessionData: DrinkingSession | undefined;
 Onyx.connect({
@@ -158,6 +173,19 @@ Onyx.connect({
   key: ONYXKEYS.USER_DATA_LIST,
   callback: value => {
     userDataList = value ?? undefined;
+  },
+});
+
+// The cached snapshot of what the server last said each session looks like.
+// The op path diffs a save against it (see `saveSessionThroughOps`), which
+// needs it synchronously at save time, with no React context to hang a
+// `useOnyx` on.
+let cachedSessions: UserDrinkingSessionsList | undefined;
+// eslint-disable-next-line rulesdir/no-onyx-connect -- module-scope action-layer wiring; a save needs this synchronously and has no React context to hang a useOnyx on, same as the connections above
+Onyx.connect({
+  key: ONYXKEYS.CACHED_DRINKING_SESSIONS,
+  callback: value => {
+    cachedSessions = value ?? undefined;
   },
 });
 
@@ -587,6 +615,25 @@ async function syncLocalLiveSessionData(
     // drinks (and clobber crash-recovered local state). Adopt the snapshot only
     // once this device has nothing un-persisted — that covers cross-device drink
     // updates, cold-start resume and crash recovery without the rollback.
+    // On the op path the exact answer is in the queue itself: while this
+    // device has ops for the session waiting there, the local buffer is ahead
+    // of the snapshot and adopting the snapshot would roll just-tapped drinks
+    // back. That covers the restart case too, because the queue is persisted,
+    // which is why the op path needs no sync stamps at all.
+    if (
+      shouldUseSessionOps(ongoingSessionData) &&
+      ongoingSessionData?.id === ongoingSessionId
+    ) {
+      if (hasQueuedSessionOps(ongoingSessionId)) {
+        return;
+      }
+      await updateLocalData(
+        ONYXKEYS.ONGOING_SESSION_DATA,
+        newData,
+        ongoingSessionId,
+      );
+      return;
+    }
     if (
       hasPendingLiveSessionPersist() &&
       ongoingSessionData?.id === ongoingSessionId &&
@@ -616,7 +663,9 @@ async function syncLocalLiveSessionData(
     if (
       ongoingSessionData?.ongoing &&
       ongoingSessionData.id &&
-      hasUnsyncedLiveSessionEdits(ongoingSessionData.id)
+      (shouldUseSessionOps(ongoingSessionData)
+        ? hasQueuedSessionOps(ongoingSessionData.id)
+        : hasUnsyncedLiveSessionEdits(ongoingSessionData.id))
     ) {
       return;
     }
@@ -657,6 +706,139 @@ function getEntrySource(): SessionEntrySource {
     : CONST.SESSION.ENTRY_SOURCE.PHONE;
 }
 
+/**
+ * Whether this session's writes go out as ops (Sessions v2 RFC §5.6) rather
+ * than as whole-session upserts.
+ *
+ * Both conditions are load-bearing. The flag is the kill switch: turning it
+ * off has to put every write back on the snapshot path, so that path stays in
+ * place until the flag goes away for good. And a LEGACY session never goes
+ * through ops even with the flag on: its drinks live in `drinks` buckets,
+ * which have no entry ids for an op to name, and the server refuses an op
+ * against one. Such a session keeps writing whole until the W1 backfill
+ * converts it.
+ */
+function shouldUseSessionOps(
+  session: DrinkingSession | undefined | null,
+): boolean {
+  return (
+    FeatureFlags.isEnabled('SESSION_OPS') &&
+    !!session &&
+    isSchemaV2Session(session)
+  );
+}
+
+/**
+ * Turns an op's patch into the Onyx update that applies it. Each target key
+ * has its own applier because a session sits at the root of the live editing
+ * buffer but under `{uid: {sessionId: ...}}` in the cached snapshot.
+ */
+type PatchApplier = (patch: SessionPatch) => OnyxUpdate;
+
+/** Applier for the live editing buffer. */
+function liveBufferApplier(): PatchApplier {
+  return patch => ({
+    onyxMethod: Onyx.METHOD.MERGE,
+    key: ONYXKEYS.ONGOING_SESSION_DATA,
+    value: patch,
+  });
+}
+
+/** Applier for the cached snapshot of one user's session. */
+function cachedSessionApplier(
+  uid: UserID,
+  sessionId: DrinkingSessionId,
+): PatchApplier {
+  return patch => ({
+    onyxMethod: Onyx.METHOD.MERGE,
+    key: ONYXKEYS.CACHED_DRINKING_SESSIONS,
+    value: {[uid]: {[sessionId]: patch}},
+  });
+}
+
+/**
+ * Send a list of ops, each with its own optimistic and failure data (RFC
+ * §5.3). `API.write` puts every op in the persisted queue synchronously, so an
+ * app killed mid-session leaves its ops queued and they drain on the next
+ * launch. That is what replaces the debounced whole-session persist: a burst
+ * of taps coalesces in the queue's conflict resolver
+ * (`SessionOps.coalesceWithLatestSessionOp`) rather than behind a timer, and
+ * nothing has to remember that the local buffer holds edits the server has
+ * never seen.
+ *
+ * One op's rejection rolls back only that op's change: the ops of a save are
+ * independent, so a refused `add_entry` must not undo the note that saved
+ * alongside it.
+ */
+function sendSessionOps(
+  ops: PendingSessionOp[],
+  sessionId: DrinkingSessionId,
+  apply: PatchApplier,
+): void {
+  ops.forEach(op => {
+    const onyxData: OnyxData = {};
+    if (Object.keys(op.patch).length > 0) {
+      onyxData.optimisticData = [apply(op.patch)];
+    }
+    if (Object.keys(op.undo).length > 0) {
+      onyxData.failureData = [apply(op.undo)];
+    }
+    sendSessionOp({sessionId, type: op.type, payload: op.payload}, onyxData);
+  });
+}
+
+/**
+ * Send one meta op for a LIVE session, if this session writes through ops.
+ * Returns whether it did, so the caller can fall through to the snapshot path
+ * when it did not.
+ */
+function sendLiveMetaOp(
+  session: DrinkingSession | undefined,
+  op: PendingSessionOp,
+): boolean {
+  if (!session?.id || !shouldUseSessionOps(session)) {
+    return false;
+  }
+  sendSessionOps([op], session.id, liveBufferApplier());
+  return true;
+}
+
+/**
+ * Send the ops for the difference between two versions of a LIVE session.
+ * Returns whether it did, so the caller can fall through to the snapshot path.
+ */
+function sendLiveSessionDiff(
+  stored: DrinkingSession,
+  edited: DrinkingSession,
+  options: SessionDiffOptions,
+): boolean {
+  if (!stored.id || !shouldUseSessionOps(stored)) {
+    return false;
+  }
+  sendSessionOps(
+    buildSessionDiffOps(stored, edited, options),
+    stored.id,
+    liveBufferApplier(),
+  );
+  return true;
+}
+
+/**
+ * Whether this device still has ops for `sessionId` waiting in the persisted
+ * queue. The op-path answer to "does the local copy hold changes the server
+ * has not acknowledged?", and a better one than the sync stamps the snapshot
+ * path keeps: it reads the queue itself, so it is exact, and the queue is
+ * persisted, so it survives a restart.
+ */
+function hasQueuedSessionOps(sessionId: DrinkingSessionId): boolean {
+  return PersistedRequests.getAll().some(
+    request =>
+      request.command === WRITE_COMMANDS.SESSION_OP &&
+      (request.data as {sessionId?: string} | undefined)?.sessionId ===
+        sessionId,
+  );
+}
+
 /** Start a live drinking session
  *
  * Assume that if a session is ongoing, it is a live session and its data is stored in the local database.
@@ -684,24 +866,42 @@ async function startLiveDrinkingSession(
     }),
   );
 
-  // The server upserts the session and, because `sessionIsLive`, mirrors it into
-  // the user's live status (`user_status`). Live sessions start at "now", so the
-  // strict-improvement floor only moves when the user has no earlier session —
-  // `sessionUpsertOptimisticData` handles that optimistically.
-  API.write(
-    WRITE_COMMANDS.UPDATE_SESSION,
-    {sessionId: newSessionId, session: newSessionData, sessionIsLive: true},
-    {
-      optimisticData: sessionUpsertOptimisticData(
-        user.uid,
-        newSessionId,
-        newSessionData,
-      ),
-    },
-  );
+  if (shouldUseSessionOps(newSessionData)) {
+    // One `start` op carries the whole of a new session's meta, and the server
+    // creates it, claims the live `user_status` slot and lowers the
+    // earliest-session floor in one multi-path update.
+    sendSessionOps(
+      buildSessionDiffOps(undefined, newSessionData),
+      newSessionId,
+      cachedSessionApplier(user.uid, newSessionId),
+    );
+    // The `start` op carries no patch of its own (the server writes the
+    // session), so the cached snapshot gets its optimistic copy here, the same
+    // one the snapshot path writes.
+    Onyx.update(
+      sessionUpsertOptimisticData(user.uid, newSessionId, newSessionData),
+    );
+  } else {
+    // The server upserts the session and, because `sessionIsLive`, mirrors it into
+    // the user's live status (`user_status`). Live sessions start at "now", so the
+    // strict-improvement floor only moves when the user has no earlier session —
+    // `sessionUpsertOptimisticData` handles that optimistically.
+    API.write(
+      WRITE_COMMANDS.UPDATE_SESSION,
+      {sessionId: newSessionId, session: newSessionData, sessionIsLive: true},
+      {
+        optimisticData: sessionUpsertOptimisticData(
+          user.uid,
+          newSessionId,
+          newSessionData,
+        ),
+      },
+    );
+  }
 
   // Fresh session, fresh sync stamps: any leftover marker from a previous
-  // (crashed/stale) session must not shadow this one's edits.
+  // (crashed/stale) session must not shadow this one's edits. Harmless on the
+  // op path, which keeps no stamps, and required when the flag is off.
   clearLiveSessionSyncState();
 
   // Seed the synchronous cache so a tap fired before the Onyx.connect callback
@@ -732,6 +932,61 @@ function withSessionTimeParts(session: DrinkingSession): DrinkingSession {
   return drinksTimeParts ? {...session, drinksTimeParts} : session;
 }
 
+/**
+ * Save a session by sending the ops for what actually changed, instead of one
+ * whole-session upsert (RFC §5.6).
+ *
+ * The baseline is the cached snapshot, which is what the server last told us
+ * this session looks like.
+ *
+ * - A **live** session is diffed on its META only, plus `end`. Every entry
+ *   change was already sent as its own op while the session ran, so diffing
+ *   entries again against a snapshot that may lag the queue would resend ops
+ *   that already landed. Meta ops are absolute, so a redundant one is
+ *   harmless.
+ * - An **edit** session is diffed in full, entries included: its mutations
+ *   stayed local until this moment, so the snapshot is an exact baseline and
+ *   nothing about it can lag.
+ * - A session the server has never seen (a new session from the edit flow)
+ *   becomes one `start` carrying all of its meta plus an `add_entry` per
+ *   drink. `start` stamps `ongoing` from the session's own type, so an edit
+ *   session arrives closed and needs no `end`.
+ *
+ * `drinksTimeParts` is deliberately not sent. It is a client-computed `Intl`
+ * cache; the Statistics read path recomputes any timestamp missing from it and
+ * its backfill regenerates the map, so an op-written session is correct and
+ * pays the cold-path cost once.
+ */
+function saveSessionThroughOps(
+  userID: UserID,
+  newSessionData: DrinkingSession,
+  sessionKey: DrinkingSessionId,
+  sessionIsLive: boolean,
+): void {
+  const stored = cachedSessions?.[userID]?.[sessionKey];
+  const ops = buildSessionDiffOps(stored, newSessionData, {
+    shouldIncludeEntries: !sessionIsLive,
+  });
+  // A live session's `end` only fires when the snapshot still says the session
+  // is ongoing. When the snapshot lags (its `ongoing` is already false, or the
+  // session is missing from it), the diff would drop the close, so add it.
+  if (sessionIsLive && !ops.some(op => op.type === CONST.SESSION_OP.TYPE.END)) {
+    ops.push({
+      type: CONST.SESSION_OP.TYPE.END,
+      payload: {end_time: newSessionData.end_time},
+      patch: {ongoing: false, end_time: newSessionData.end_time},
+      undo: {},
+    });
+  }
+  sendSessionOps(ops, sessionKey, cachedSessionApplier(userID, sessionKey));
+  // The ops' own patches cover what each of them changed; this puts the whole
+  // saved session in the cached snapshot at once, so the summary screen the
+  // user lands on reads the session rather than waiting for the round trips.
+  Onyx.update(
+    sessionFinalizeOptimisticData(userID, sessionKey, newSessionData),
+  );
+}
+
 async function saveDrinkingSessionData(
   userID: string,
   newSessionData: DrinkingSession,
@@ -748,6 +1003,12 @@ async function saveDrinkingSessionData(
     cancelLiveSessionPersist();
     DSUtils.clearOngoingSessionCache();
     clearLiveSessionSyncState();
+  }
+
+  if (shouldUseSessionOps(newSessionData)) {
+    saveSessionThroughOps(userID, newSessionData, sessionKey, !!sessionIsLive);
+    await Onyx.set(onyxKey, null);
+    return;
   }
 
   const sessionToPersist = withSessionTimeParts(newSessionData);
@@ -957,8 +1218,27 @@ function updateEntries(
   // freshest value, not on a lagging Onyx.connect snapshot.
   const updatedSession: DrinkingSession = {...session, entries};
   DSUtils.setLocalSessionCache(onyxKey, updatedSession);
-  Onyx.merge(onyxKey, {entries: patch});
 
+  // A live session's drinks go out as ops, one per changed entry: an add
+  // appends, a removal that empties an entry tombstones it and one that only
+  // reduces it edits its count. The op carries the patch as its optimistic
+  // data, so the tap shows instantly and a rejection undoes exactly that
+  // entry. An edit session stays local until it is saved, as it always has,
+  // and `saveDrinkingSessionData` diffs it into ops then.
+  if (
+    onyxKey === ONYXKEYS.ONGOING_SESSION_DATA &&
+    session.id &&
+    shouldUseSessionOps(session)
+  ) {
+    sendSessionOps(
+      buildEntryPatchOps(session.entries, patch),
+      session.id,
+      liveBufferApplier(),
+    );
+    return addedTs;
+  }
+
+  Onyx.merge(onyxKey, {entries: patch});
   if (onyxKey === ONYXKEYS.ONGOING_SESSION_DATA) {
     recordLiveSessionEdit(session.id);
   }
@@ -977,17 +1257,22 @@ function updateNote(
   newNote: string,
 ): void {
   const onyxKey = DSUtils.getDrinkingSessionOnyxKey(session?.id);
-  if (onyxKey) {
-    const current = DSUtils.getDrinkingSessionData(session?.id) ?? session;
-    Onyx.merge(onyxKey, {
-      note: newNote,
-    });
-    if (current) {
-      DSUtils.setLocalSessionCache(onyxKey, {...current, note: newNote});
-    }
-    if (onyxKey === ONYXKEYS.ONGOING_SESSION_DATA) {
-      recordLiveSessionEdit(current?.id ?? session?.id);
-    }
+  if (!onyxKey) {
+    return;
+  }
+  const current = DSUtils.getDrinkingSessionData(session?.id) ?? session;
+  if (current) {
+    DSUtils.setLocalSessionCache(onyxKey, {...current, note: newNote});
+  }
+  if (
+    onyxKey === ONYXKEYS.ONGOING_SESSION_DATA &&
+    sendLiveMetaOp(current, buildSetNoteOp(current?.note ?? '', newNote))
+  ) {
+    return;
+  }
+  Onyx.merge(onyxKey, {note: newNote});
+  if (onyxKey === ONYXKEYS.ONGOING_SESSION_DATA) {
+    recordLiveSessionEdit(current?.id ?? session?.id);
   }
 }
 
@@ -1093,17 +1378,22 @@ function updateBlackout(
   blackout: boolean,
 ): void {
   const onyxKey = DSUtils.getDrinkingSessionOnyxKey(session?.id);
-  if (onyxKey) {
-    const current = DSUtils.getDrinkingSessionData(session?.id) ?? session;
-    Onyx.merge(onyxKey, {
-      blackout,
-    });
-    if (current) {
-      DSUtils.setLocalSessionCache(onyxKey, {...current, blackout});
-    }
-    if (onyxKey === ONYXKEYS.ONGOING_SESSION_DATA) {
-      recordLiveSessionEdit(current?.id ?? session?.id);
-    }
+  if (!onyxKey) {
+    return;
+  }
+  const current = DSUtils.getDrinkingSessionData(session?.id) ?? session;
+  if (current) {
+    DSUtils.setLocalSessionCache(onyxKey, {...current, blackout});
+  }
+  if (
+    onyxKey === ONYXKEYS.ONGOING_SESSION_DATA &&
+    sendLiveMetaOp(current, buildSetBlackoutOp(!!current?.blackout, blackout))
+  ) {
+    return;
+  }
+  Onyx.merge(onyxKey, {blackout});
+  if (onyxKey === ONYXKEYS.ONGOING_SESSION_DATA) {
+    recordLiveSessionEdit(current?.id ?? session?.id);
   }
 }
 
@@ -1119,20 +1409,34 @@ function updateTimezone(
   newTimezone: SelectedTimezone,
 ): void {
   const onyxKey = DSUtils.getDrinkingSessionOnyxKey(session?.id);
-  if (onyxKey) {
-    const current = DSUtils.getDrinkingSessionData(session?.id) ?? session;
-    Onyx.merge(onyxKey, {
-      timezone: newTimezone,
-    });
-    if (current) {
-      DSUtils.setLocalSessionCache(onyxKey, {
-        ...current,
-        timezone: newTimezone,
-      });
-    }
-    if (onyxKey === ONYXKEYS.ONGOING_SESSION_DATA) {
-      recordLiveSessionEdit(current?.id ?? session?.id);
-    }
+  if (!onyxKey) {
+    return;
+  }
+  const current = DSUtils.getDrinkingSessionData(session?.id) ?? session;
+  if (current) {
+    DSUtils.setLocalSessionCache(onyxKey, {...current, timezone: newTimezone});
+  }
+  // The timezone rides on `set_times`: it is the clock the session's start and
+  // end read in, so it is the same question and needs no op of its own. The
+  // times go out unchanged, which the server applies absolutely and which
+  // leaves the earliest-session floor alone.
+  if (
+    current &&
+    onyxKey === ONYXKEYS.ONGOING_SESSION_DATA &&
+    sendLiveSessionDiff(
+      current,
+      {...current, timezone: newTimezone},
+      {
+        shouldIncludeEntries: false,
+        shouldIncludeEnd: false,
+      },
+    )
+  ) {
+    return;
+  }
+  Onyx.merge(onyxKey, {timezone: newTimezone});
+  if (onyxKey === ONYXKEYS.ONGOING_SESSION_DATA) {
+    recordLiveSessionEdit(current?.id ?? session?.id);
   }
 }
 
@@ -1170,9 +1474,24 @@ async function updateSessionDate(
     ? ONYXKEYS.ONGOING_SESSION_DATA
     : ONYXKEYS.EDIT_SESSION_DATA;
   await updateLocalData(onyxKey, modifiedSession, sessionId);
-  if (shouldUpdateLiveSessionData) {
-    recordLiveSessionEdit(sessionId);
+  if (!shouldUpdateLiveSessionData) {
+    // An edit session persists on save, which diffs it into ops then.
+    return;
   }
+  // A whole-day shift moves the session's times AND every drink in it, so on
+  // the op path it is `set_times` plus one `edit_entry` per entry, each naming
+  // the timestamp it must end up with. A single "shift by a day" op would be
+  // shorter, but a shift is relative: a client that re-minted it after losing
+  // the answer would shift the session twice.
+  if (
+    sendLiveSessionDiff(session, modifiedSession, {
+      shouldIncludeEntries: true,
+      shouldIncludeEnd: false,
+    })
+  ) {
+    return;
+  }
+  recordLiveSessionEdit(sessionId);
 }
 
 /** Generate a new key for a drinking session */
