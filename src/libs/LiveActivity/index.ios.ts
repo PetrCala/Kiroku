@@ -8,16 +8,33 @@
  * itself is checked natively, not here: iOS 16.1 and older, and a user who
  * turned Live Activities off, both end in the same quiet no-op.
  */
-import {NativeModules} from 'react-native';
-import type {LiveActivityModule} from './types';
+import {NativeEventEmitter, NativeModules} from 'react-native';
+import type {
+  LiveActivityModule,
+  LiveActivityNativeModule,
+  LiveActivityPushToken,
+} from './types';
 
-const bridge: LiveActivityModule | undefined =
+const PUSH_TOKEN_EVENT = 'liveActivityPushToken';
+
+const bridge: LiveActivityNativeModule | undefined =
   NativeModules?.LiveActivityBridge;
+
+// One emitter for the module, created once. Constructing it per subscription
+// would register a duplicate listener set on the native side.
+const emitter = bridge ? new NativeEventEmitter(bridge) : undefined;
 
 const LiveActivity: LiveActivityModule = {
   start: payload => bridge?.start(payload),
   update: payload => bridge?.update(payload),
   end: payload => bridge?.end(payload),
+  subscribeToPushToken: listener => {
+    const subscription = emitter?.addListener(
+      PUSH_TOKEN_EVENT,
+      (pushToken: LiveActivityPushToken) => listener(pushToken),
+    );
+    return () => subscription?.remove();
+  },
 };
 
 export default LiveActivity;

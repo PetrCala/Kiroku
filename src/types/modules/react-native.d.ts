@@ -17,7 +17,10 @@ import 'react-native';
 import type {TargetedEvent} from 'react-native';
 import type {BootSplashModule} from '@libs/BootSplash/types';
 import type {EnvironmentCheckerModule} from '@libs/Environment/betaChecker/types';
-import type {LiveActivityModule} from '@libs/LiveActivity/types';
+import type {
+  LiveActivityModule,
+  LiveActivityNativeModule,
+} from '@libs/LiveActivity/types';
 import type {ShortcutManagerModule} from '@libs/ShortcutManager';
 import type {WatchBridgeModule} from '@libs/WatchBridge/types';
 
@@ -66,7 +69,7 @@ declare module 'react-native' {
     EnvironmentChecker: EnvironmentCheckerModule;
     ShortcutManager: ShortcutManagerModule;
     WatchBridge: WatchBridgeModule;
-    LiveActivityBridge: LiveActivityModule;
+    LiveActivityBridge: LiveActivityNativeModule;
     LiveSessionNotification: LiveActivityModule;
   }
 

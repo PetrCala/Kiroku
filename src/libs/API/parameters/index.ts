@@ -22,6 +22,8 @@ export type {default as GetUsersBatchParams} from './GetUsersBatchParams';
 export type {default as OpenFriendListParams} from './OpenFriendListParams';
 export type {default as RegisterPushDeviceParams} from './RegisterPushDeviceParams';
 export type {default as UnregisterPushDeviceParams} from './UnregisterPushDeviceParams';
+export type {default as RegisterLiveActivityParams} from './RegisterLiveActivityParams';
+export type {default as UnregisterLiveActivityParams} from './UnregisterLiveActivityParams';
 export type {default as ReconnectAppParams} from './ReconnectAppParams';
 export type {default as UpdateAutomaticTimezoneParams} from './UpdateAutomaticTimezoneParams';
 export type {default as UpdateDisplayNameParams} from './UpdateDisplayNameParams';
