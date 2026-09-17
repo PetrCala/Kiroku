@@ -282,10 +282,12 @@ test.describe('session ops: the ops endpoint', () => {
       await expect.poll(() => getQueuedRequests(page)).toEqual([]);
 
       // Offline: an op the server doesn't implement yet, then the save.
+      // `claim_entry` is a shared-session op, so it stays "not implemented"
+      // now that W2 applies the solo ops (`add_entry` among them).
       await setForceOffline(page, true);
       const opId = await sendSessionOp(
         page,
-        {sessionId, type: 'add_entry', payload: {entryId: 'e2e-entry'}},
+        {sessionId, type: 'claim_entry', payload: {entryId: 'e2e-entry'}},
         markerData(),
       );
       expect(await getOnyxValue(page, OP_MARKER_KEY)).toEqual({
@@ -361,7 +363,9 @@ test.describe('session ops: the ops endpoint', () => {
       page,
       {
         sessionId: syntheticSessionId('rejected'),
-        type: 'add_entry',
+        // A shared-session op, still answered "not implemented" now that W2
+        // applies the solo ops.
+        type: 'claim_entry',
         payload: {entryId: 'e2e-entry'},
       },
       markerData(),
@@ -506,5 +510,176 @@ test.describe('session ops: coalescing', () => {
       idempotencyKey: thirdId,
       payload: {entryId: 'entry-1', count: 3},
     });
+  });
+});
+
+/**
+ * W2's solo write path: with `SESSION_OPS` and `SESSIONS_V2_SCHEMA` both on, a
+ * whole session driven through the UI goes out as ops and never as a
+ * whole-session upsert. Needs a kiroku-api that APPLIES the solo ops
+ * (kiroku-api#157); against an older backend the `start` op is answered "not
+ * implemented" and the spec skips.
+ */
+test.describe('session ops: the solo write path', () => {
+  /** Boot with both W2 flags on. */
+  async function bootWithSoloOps(page: Page): Promise<void> {
+    await bootWithSessionOps(page);
+    await page.evaluate(() => {
+      window.kirokuE2E?.setFeatureFlag('SESSIONS_V2_SCHEMA', true);
+    });
+  }
+
+  /** The op envelopes that reached the server, in order. */
+  function opTypes(requests: Array<{postDataJSON: () => unknown}>): string[] {
+    return requests.map(
+      request => (request.postDataJSON() as {type: string}).type,
+    );
+  }
+
+  test('starts, logs and ends a session entirely through ops', async ({
+    authedPage: page,
+  }) => {
+    test.setTimeout(180_000);
+    const session = new SessionPage(page);
+    await bootWithSoloOps(page);
+
+    const sentOps = recordSessionOpRequests(page);
+    const upserts: string[] = [];
+    page.on('request', request => {
+      if (request.url().includes('/v1/sessions/update')) {
+        upserts.push(request.url());
+      }
+    });
+
+    // `start` is the first op of the session; a backend that does not apply it
+    // yet answers 422 and there is nothing further to test here.
+    const started = waitForOpResponse(page);
+    await session.startLiveSession();
+    const sessionId = session.currentSessionId();
+    let isDeleted = false;
+    try {
+      const startResponse = await started;
+      test.skip(
+        startResponse.status() === 422,
+        'Needs a kiroku-api that applies the solo session ops (kiroku-api#157).',
+      );
+      expect(startResponse.status()).toBe(200);
+      expect(opBody(startResponse.request())).toMatchObject({type: 'start'});
+
+      // A drink is one `add_entry` carrying an id and this platform's source.
+      const added = waitForOpResponse(page);
+      await session.logOneDrink();
+      const addResponse = await added;
+      expect(addResponse.status()).toBe(200);
+      const addBody = opBody(addResponse.request()) as {
+        type: string;
+        payload: {entryId: string; source: string; count: number};
+      };
+      expect(addBody.type).toBe('add_entry');
+      expect(addBody.payload.entryId).toEqual(expect.any(String));
+      expect(addBody.payload.source).toBe('web');
+      expect(addBody.payload.count).toBe(1);
+
+      // Saving closes the session with `end`, not with a whole-session write.
+      const ended = page.waitForResponse(
+        response =>
+          isSessionOpRequest(response.request()) &&
+          (opBody(response.request()) as {type: string}).type === 'end',
+        {timeout: 30_000},
+      );
+      await session.saveButton().click();
+      await session.summaryScreen().waitFor({state: 'visible'});
+      const endResponse = await ended;
+      expect(endResponse.status()).toBe(200);
+
+      // Every write of this session was an op. `/v1/sessions/delete` is still
+      // the delete path (there is no delete-session op), so only `update` has
+      // to be absent.
+      expect(opTypes(sentOps)).toEqual(
+        expect.arrayContaining(['start', 'add_entry', 'end']),
+      );
+      expect(upserts).toEqual([]);
+      await expect.poll(() => getQueuedSessionOps(page)).toEqual([]);
+
+      // The saved session reads back with its entry, through the adapter.
+      await session.openEditFromSummary();
+      await expect(session.totalUnits()).not.toHaveText('0');
+
+      const deleted = page.waitForResponse(
+        response =>
+          response.url().includes('/v1/sessions/delete') && response.ok(),
+      );
+      await session.discardButton().click();
+      await session.confirmYesButton().click();
+      await deleted;
+      isDeleted = true;
+    } finally {
+      if (!isDeleted) {
+        await deleteLeftoverSession(page, sessionId);
+      }
+    }
+  });
+
+  test('keeps an offline burst of drinks and drains it in order on reconnect', async ({
+    authedPage: page,
+  }) => {
+    test.setTimeout(180_000);
+    const session = new SessionPage(page);
+    await bootWithSoloOps(page);
+
+    const started = waitForOpResponse(page);
+    await session.startLiveSession();
+    const sessionId = session.currentSessionId();
+    let isDeleted = false;
+    try {
+      const startResponse = await started;
+      test.skip(
+        startResponse.status() === 422,
+        'Needs a kiroku-api that applies the solo session ops (kiroku-api#157).',
+      );
+
+      // Offline: three taps, each its own op, none of them lost and none of
+      // them folded into another (distinct entries, distinct ids).
+      await setForceOffline(page, true);
+      await session.logOneDrink();
+      await session.logOneDrink();
+      await session.logOneDrink();
+      await expect.poll(() => getQueuedSessionOps(page)).toHaveLength(3);
+      const queued = await getQueuedSessionOps(page);
+      const queuedIds = queued.map(
+        request =>
+          (request.data?.payload as {entryId?: string} | undefined)?.entryId,
+      );
+      expect(new Set(queuedIds).size).toBe(3);
+      expect(
+        queued.map(request => request.data?.type as string | undefined),
+      ).toEqual(['add_entry', 'add_entry', 'add_entry']);
+
+      const sentOps = recordSessionOpRequests(page);
+      await setForceOffline(page, false);
+      await expect
+        .poll(() => getQueuedSessionOps(page), {timeout: 60_000})
+        .toEqual([]);
+
+      // They went out in the order they were made, under their own ids.
+      const sentIds = sentOps.map(
+        request =>
+          (opBody(request) as {payload: {entryId?: string}}).payload.entryId,
+      );
+      expect(sentIds).toEqual(queuedIds);
+
+      const deleted = page.waitForResponse(
+        response =>
+          response.url().includes('/v1/sessions/delete') && response.ok(),
+      );
+      await session.discardButton().click();
+      await session.confirmYesButton().click();
+      await deleted;
+      isDeleted = true;
+    } finally {
+      if (!isDeleted) {
+        await deleteLeftoverSession(page, sessionId);
+      }
+    }
   });
 });
