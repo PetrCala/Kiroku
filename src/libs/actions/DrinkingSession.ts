@@ -15,6 +15,7 @@ import type {
 import Log from '@libs/Log';
 import * as Localize from '@libs/Localize';
 import * as DSUtils from '@libs/DrinkingSessionUtils';
+import type {AddEntryOverrides} from '@libs/DrinkingSessionUtils';
 import * as FeatureFlags from '@libs/FeatureFlags';
 import {getFirebaseAuth} from '@libs/Firebase/FirebaseApp';
 import getPlatform from '@libs/getPlatform';
@@ -33,6 +34,7 @@ import type {
 import {getDefaultSessionName} from '@libs/SessionName';
 import type {UserID} from '@src/types/onyx/OnyxCommon';
 import type {SessionEntryId} from '@src/types/onyx/SessionEntries';
+import type SessionEntries from '@src/types/onyx/SessionEntries';
 import DateUtils from '@libs/DateUtils';
 import type {User} from 'firebase/auth';
 import CONST from '@src/CONST';
@@ -1196,13 +1198,14 @@ function updateEntries(
   amount: number,
   action: ValueOf<typeof CONST.DRINKS.ACTIONS>,
   drinksToUnits: DrinksToUnits,
+  overrides: AddEntryOverrides = {},
 ): DrinksTimestamp | undefined {
   const authorUid = getFirebaseAuth().currentUser?.uid;
   if (!authorUid) {
     Log.warn('updateDrinks: no signed-in user to author the entry');
     return undefined;
   }
-  const {entries, patch, addedTs} = DSUtils.modifySessionEntries(
+  const {patch, addedTs} = DSUtils.modifySessionEntries(
     session,
     drinkKey,
     amount,
@@ -1211,22 +1214,39 @@ function updateEntries(
     authorUid,
     getEntrySource(),
     generatePushID,
+    overrides,
   );
+  return applyEntriesPatch(session, onyxKey, patch) ? addedTs : undefined;
+}
+
+/**
+ * Persist a change to a session's entries: the one place every entry mutation
+ * (a tap, a preset add, a retro-add, a per-entry edit, a delete) goes through.
+ *
+ * A live session's entries go out as ops, one per changed entry: an add
+ * appends, a removal that empties an entry tombstones it, one that only
+ * reduces it edits its count. Each op carries its patch as optimistic data, so
+ * the change shows instantly and a rejection undoes exactly that entry. An
+ * edit session stays local until it is saved, as it always has, and
+ * `saveDrinkingSessionData` diffs it into ops then.
+ *
+ * Returns whether anything changed.
+ */
+function applyEntriesPatch(
+  session: DrinkingSession,
+  onyxKey: OnyxStoreKey,
+  patch: SessionEntries,
+): boolean {
   if (Object.keys(patch).length === 0) {
-    return undefined;
+    return false;
   }
+  // Compose the next mutation on the freshest value, not on a lagging
+  // Onyx.connect snapshot: the cache is read synchronously by the next tap.
+  DSUtils.setLocalSessionCache(onyxKey, {
+    ...session,
+    entries: {...session.entries, ...patch},
+  });
 
-  // Same reasoning as the legacy path: compose the next mutation on the
-  // freshest value, not on a lagging Onyx.connect snapshot.
-  const updatedSession: DrinkingSession = {...session, entries};
-  DSUtils.setLocalSessionCache(onyxKey, updatedSession);
-
-  // A live session's drinks go out as ops, one per changed entry: an add
-  // appends, a removal that empties an entry tombstones it and one that only
-  // reduces it edits its count. The op carries the patch as its optimistic
-  // data, so the tap shows instantly and a rejection undoes exactly that
-  // entry. An edit session stays local until it is saved, as it always has,
-  // and `saveDrinkingSessionData` diffs it into ops then.
   if (
     onyxKey === ONYXKEYS.ONGOING_SESSION_DATA &&
     session.id &&
@@ -1237,14 +1257,153 @@ function updateEntries(
       session.id,
       liveBufferApplier(),
     );
-    return addedTs;
+    return true;
   }
 
   Onyx.merge(onyxKey, {entries: patch});
   if (onyxKey === ONYXKEYS.ONGOING_SESSION_DATA) {
     recordLiveSessionEdit(session.id);
   }
-  return addedTs;
+  return true;
+}
+
+/** The session and the Onyx key it is being edited under, or `undefined`. */
+function resolveEntryTarget(sessionId: DrinkingSessionId | undefined):
+  | {
+      session: DrinkingSession;
+      onyxKey: OnyxStoreKey;
+      sessionId: DrinkingSessionId;
+    }
+  | undefined {
+  const session = DSUtils.getDrinkingSessionData(sessionId);
+  const onyxKey = DSUtils.getDrinkingSessionOnyxKey(sessionId);
+  if (!session || !onyxKey || !sessionId) {
+    return undefined;
+  }
+  if (!isSchemaV2Session(session)) {
+    Log.warn(
+      '[DrinkingSession] Entry-targeted writes need a schema 2 session',
+      {sessionId},
+    );
+    return undefined;
+  }
+  return {session, onyxKey, sessionId};
+}
+
+/**
+ * Add ONE entry, naming the serving and the time it happened: the capture
+ * UI's preset add and retro-add ("this beer was 20 minutes ago").
+ *
+ * `updateDrinks` is still the plain "+1 of this type" path and goes through
+ * the same code; this exists so the UI can say which serving and which moment
+ * without the caller having to reach into the utils.
+ *
+ * Returns the new entry's id and time, which the caller needs to offer undo.
+ */
+function addSessionEntry(
+  sessionId: DrinkingSessionId | undefined,
+  options: {
+    drinkKey: DrinkKey;
+    amount?: number;
+    drinksToUnits: DrinksToUnits | undefined;
+  } & AddEntryOverrides,
+): {entryId: SessionEntryId; ts: number} | undefined {
+  const target = resolveEntryTarget(sessionId);
+  const authorUid = getFirebaseAuth().currentUser?.uid;
+  if (!target || !authorUid || !options.drinksToUnits) {
+    return undefined;
+  }
+  const {ts: overrideTs, volume_ml: volumeMl, abv} = options;
+  const {patch, addedTs} = DSUtils.modifySessionEntries(
+    target.session,
+    options.drinkKey,
+    options.amount ?? 1,
+    CONST.DRINKS.ACTIONS.ADD,
+    options.drinksToUnits,
+    authorUid,
+    getEntrySource(),
+    generatePushID,
+    {ts: overrideTs, volume_ml: volumeMl, abv},
+  );
+  const [entryId] = Object.keys(patch);
+  if (
+    !applyEntriesPatch(target.session, target.onyxKey, patch) ||
+    addedTs === undefined
+  ) {
+    return undefined;
+  }
+  return {entryId, ts: addedTs};
+}
+
+/**
+ * Change ONE named entry: the per-entry edit from the session timeline. Only
+ * the fields named move, and an edit that changes nothing sends nothing.
+ */
+function editSessionEntry(
+  sessionId: DrinkingSessionId | undefined,
+  entryId: SessionEntryId,
+  fields: AddEntryOverrides & {count?: number; drinkKey?: DrinkKey},
+): void {
+  const target = resolveEntryTarget(sessionId);
+  if (!target) {
+    return;
+  }
+  const patch = DSUtils.editSessionEntryById(
+    target.session,
+    entryId,
+    {
+      ts: fields.ts,
+      volume_ml: fields.volume_ml,
+      abv: fields.abv,
+      count: fields.count,
+      key: fields.drinkKey,
+    },
+    DateUtils.getServerTime(),
+  );
+  applyEntriesPatch(target.session, target.onyxKey, patch);
+}
+
+/**
+ * Set a session's start and end time of day. Until now only whole-day shifts
+ * were possible (`updateSessionDate`), which could move a session to another
+ * date but never fix a start time that was half an hour out.
+ *
+ * Both times are absolute, so the write is replay-safe and the server owns the
+ * `earliest_session_at` floor it may move.
+ */
+function setSessionTimes(
+  sessionId: DrinkingSessionId | undefined,
+  startTime: number,
+  endTime: number,
+): void {
+  const session = DSUtils.getDrinkingSessionData(sessionId);
+  const onyxKey = DSUtils.getDrinkingSessionOnyxKey(sessionId);
+  if (!session || !onyxKey || !sessionId) {
+    return;
+  }
+  if (session.start_time === startTime && session.end_time === endTime) {
+    return;
+  }
+  const updated: DrinkingSession = {
+    ...session,
+    start_time: startTime,
+    end_time: endTime,
+  };
+  DSUtils.setLocalSessionCache(onyxKey, updated);
+
+  if (
+    onyxKey === ONYXKEYS.ONGOING_SESSION_DATA &&
+    sendLiveSessionDiff(session, updated, {
+      shouldIncludeEntries: false,
+      shouldIncludeEnd: false,
+    })
+  ) {
+    return;
+  }
+  Onyx.merge(onyxKey, {start_time: startTime, end_time: endTime});
+  if (onyxKey === ONYXKEYS.ONGOING_SESSION_DATA) {
+    recordLiveSessionEdit(sessionId);
+  }
 }
 
 /**
@@ -1265,50 +1424,16 @@ function removeSessionEntry(
   sessionId: DrinkingSessionId | undefined,
   entryId: SessionEntryId,
 ): void {
-  const session = DSUtils.getDrinkingSessionData(sessionId);
-  const onyxKey = DSUtils.getDrinkingSessionOnyxKey(sessionId);
-  if (!session || !onyxKey || !sessionId) {
-    return;
-  }
-  if (!isSchemaV2Session(session)) {
-    Log.warn(
-      '[DrinkingSession] Cannot delete an entry of a legacy session; it has no entry ids',
-      {sessionId},
-    );
+  const target = resolveEntryTarget(sessionId);
+  if (!target) {
     return;
   }
   const patch = DSUtils.removeSessionEntryById(
-    session,
+    target.session,
     entryId,
     DateUtils.getServerTime(),
   );
-  if (Object.keys(patch).length === 0) {
-    return;
-  }
-
-  // Compose the next mutation on the freshest value, as the add/remove path
-  // does: the Onyx.connect callback lags while the JS thread is busy.
-  DSUtils.setLocalSessionCache(onyxKey, {
-    ...session,
-    entries: {...session.entries, ...patch},
-  });
-
-  if (
-    onyxKey === ONYXKEYS.ONGOING_SESSION_DATA &&
-    shouldUseSessionOps(session)
-  ) {
-    sendSessionOps(
-      buildEntryPatchOps(session.entries, patch),
-      sessionId,
-      liveBufferApplier(),
-    );
-    return;
-  }
-
-  Onyx.merge(onyxKey, {entries: patch});
-  if (onyxKey === ONYXKEYS.ONGOING_SESSION_DATA) {
-    recordLiveSessionEdit(sessionId);
-  }
+  applyEntriesPatch(target.session, target.onyxKey, patch);
 }
 
 /**
@@ -1686,8 +1811,11 @@ function openFriendDrinkingSessions(
 }
 
 export {
+  addSessionEntry,
+  editSessionEntry,
   generateDrinkingSessionId,
   removeSessionEntry,
+  setSessionTimes,
   openFriendDrinkingSessions,
   navigateToEditSessionScreen,
   navigateToOngoingSessionScreen,

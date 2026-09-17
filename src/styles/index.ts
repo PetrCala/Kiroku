@@ -924,6 +924,14 @@ const styles = (theme: ThemeColors) =>
       ...spacing.mh3,
     },
 
+    // The session timeline's leading time column. Fixed width so the drink
+    // names line up down the list instead of stepping in and out with the
+    // width of "9:05" against "11:47".
+    timelineEntryTime: {
+      width: 44,
+      ...spacing.mr1,
+    },
+
     drinkTypesViewIconContainer: {
       alignItems: 'center',
       justifyContent: 'center',

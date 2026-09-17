@@ -14,6 +14,11 @@ import type {
   CommonFriendsLabelParams,
   ConfirmWithProviderPromptParams,
   DiscardSessionParams,
+  DrinkAtTimeParams,
+  DrinkNameParams,
+  DrinkServingParams,
+  EntryCountParams,
+  MinutesAgoParams,
   DrinkingSessionsParams,
   ForgotPasswordSuccessParams,
   FriendRequestsCountParams,
@@ -1639,6 +1644,49 @@ export default {
     drinksAutoSaved: 'Drinks are saved as you add them.',
     discardingSession: ({discardWord}: DiscardSessionParams) =>
       `${discardWord} this session...`,
+    // Capture (Sessions v2 W2). A drink is one entry with its own time and
+    // serving, so the UI can talk about a single drink rather than a count.
+    timeline: 'Timeline',
+    timelineEmpty: 'Drinks you log show up here, oldest first.',
+    entryMultiplier: ({count}: EntryCountParams) => `x${count}`,
+    entryLabel: ({drink, time}: DrinkAtTimeParams) => `${drink} at ${time}`,
+    entryOptions: ({drink, time}: DrinkAtTimeParams) =>
+      `Options for ${drink} at ${time}`,
+    editDrink: 'Edit drink',
+    deleteDrink: 'Delete drink',
+    drinkOptions: ({drink}: DrinkNameParams) => `More ways to add ${drink}`,
+    addDrinkTitle: ({drink}: DrinkNameParams) => `Add ${drink}`,
+    addDrink: 'Add',
+    servingLabel: 'Serving',
+    serving: ({ml, abv}: DrinkServingParams) => `${ml} ml, ${abv}%`,
+    whenLabel: 'When',
+    justNow: 'Just now',
+    minutesAgo: ({minutes}: MinutesAgoParams) => `${minutes} min ago`,
+    countLabel: 'How many',
+    timeLabel: 'Time',
+    addedDrink: ({drink}: DrinkNameParams) => `Added ${drink}.`,
+    undo: 'Undo',
+    sessionTimes: 'Start and end time',
+    // Watch and Live Activity drinks are worth pointing out in the timeline;
+    // a drink logged on the phone is the unremarkable case.
+    source: {
+      watch: 'Watch',
+      liveActivity: 'Lock screen',
+      web: 'Web',
+    },
+  },
+  sessionTimesScreen: {
+    title: 'Session times',
+    prompt:
+      'Set when this session started and ended. The date stays as it is; change it on the date screen.',
+    start: 'Start',
+    end: 'End',
+    hours: 'Hours',
+    minutes: 'Minutes',
+    error: {
+      load: 'Failed to fetch details of this session.',
+      endBeforeStart: 'A session cannot end before it starts.',
+    },
   },
   sessionDateScreen: {
     title: 'Session date',

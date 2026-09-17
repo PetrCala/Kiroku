@@ -1202,6 +1202,14 @@ const CONST = {
       LINK: 'link',
       CODE: 'code',
     },
+    // How long after a drink is logged the undo affordance stays up. Long
+    // enough to catch a mis-tap, short enough that it cannot be mistaken for
+    // a permanent control.
+    UNDO_WINDOW_MS: 8000,
+    // How many minutes back the capture UI offers for a retro-add ("this beer
+    // was 20 minutes ago"). 0 is "just now"; anything else goes in through the
+    // per-entry edit.
+    RETRO_ADD_OFFSETS_MINUTES: [0, 15, 30, 60, 120],
     // The local hour each part of the day starts at, for the default session
     // name ("Friday evening", RFC §9). Night runs from 22:00 to 04:59.
     PART_OF_DAY_START: {
@@ -1297,6 +1305,61 @@ const CONST = {
     strong_shot: {ml: 40, abv: 0.4},
     weak_shot: {ml: 40, abv: 0.2},
     other: {ml: 200, abv: 0.1},
+  },
+
+  /**
+   * Serving presets the capture UI offers per drink type, first one the
+   * default from `DRINK_DEFAULTS`. Picking any other stamps `volume_ml` and
+   * `abv` on the entry (RFC §4.3), which is what turns an assumed standard
+   * drink into a measured one: a 0.5 l 7% IPA and a 0.33 l 4% lager are both
+   * "a beer" to the unit count, but not to the SDU math.
+   *
+   * Kept short on purpose. These are the servings people actually order, not
+   * a catalogue; anything else goes in through the per-entry edit.
+   */
+  DRINK_PRESETS: {
+    small_beer: [
+      {ml: 330, abv: 0.05},
+      {ml: 250, abv: 0.05},
+      {ml: 330, abv: 0.04},
+      {ml: 330, abv: 0.07},
+    ],
+    beer: [
+      {ml: 500, abv: 0.05},
+      {ml: 400, abv: 0.05},
+      {ml: 500, abv: 0.04},
+      {ml: 500, abv: 0.07},
+    ],
+    wine: [
+      {ml: 150, abv: 0.12},
+      {ml: 100, abv: 0.12},
+      {ml: 200, abv: 0.12},
+      {ml: 150, abv: 0.14},
+    ],
+    cocktail: [
+      {ml: 250, abv: 0.1},
+      {ml: 200, abv: 0.08},
+      {ml: 300, abv: 0.12},
+      {ml: 150, abv: 0.15},
+    ],
+    strong_shot: [
+      {ml: 40, abv: 0.4},
+      {ml: 20, abv: 0.4},
+      {ml: 50, abv: 0.4},
+      {ml: 40, abv: 0.5},
+    ],
+    weak_shot: [
+      {ml: 40, abv: 0.2},
+      {ml: 20, abv: 0.2},
+      {ml: 50, abv: 0.2},
+      {ml: 40, abv: 0.3},
+    ],
+    other: [
+      {ml: 200, abv: 0.1},
+      {ml: 100, abv: 0.1},
+      {ml: 330, abv: 0.05},
+      {ml: 40, abv: 0.4},
+    ],
   },
 
   GENDER: {

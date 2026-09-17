@@ -111,5 +111,13 @@ export {isLegacySession, isSchemaV2Session} from './schema';
 export {legacyBucketsToEntries, normalizeBucketEntry} from './convert';
 export {LEGACY_ENTRY_ID_PREFIX, legacyEntryId} from './legacyEntryId';
 export {entrySdu, entryUnits, sumEntryCounts, sumEntryUnits} from './units';
+export {
+  getDefaultServing,
+  getDrinkServings,
+  getEntryServing,
+  hasCustomServing,
+  isSameServing,
+} from './serving';
+export type {DrinkServing} from './serving';
 export type {DrinkDefaults} from './units';
 export type {SessionEntryWithId};

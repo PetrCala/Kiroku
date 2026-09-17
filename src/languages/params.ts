@@ -12,6 +12,33 @@ type ConfirmWithProviderPromptParams = {
   provider: string;
 };
 
+/** A drink serving: a volume in millilitres and a strength in whole percent. */
+type DrinkServingParams = {
+  ml: number;
+  abv: number;
+};
+
+/** How long ago a retro-added drink happened. */
+type MinutesAgoParams = {
+  minutes: number;
+};
+
+/** The drink type a capture action is about, already localized. */
+type DrinkNameParams = {
+  drink: string;
+};
+
+/** A drink and the time of day it was logged at, for an accessible label. */
+type DrinkAtTimeParams = {
+  drink: string;
+  time: string;
+};
+
+/** How many drinks one entry stands for. */
+type EntryCountParams = {
+  count: number;
+};
+
 type DiscardSessionParams = {
   discardWord: string;
 };
@@ -185,6 +212,11 @@ export type {
   CommonFriendsLabelParams,
   ConfirmWithProviderPromptParams,
   DiscardSessionParams,
+  DrinkAtTimeParams,
+  DrinkNameParams,
+  DrinkServingParams,
+  EntryCountParams,
+  MinutesAgoParams,
   DrinkingSessionsParams,
   ForgotPasswordSuccessParams,
   FriendRequestsCountParams,
