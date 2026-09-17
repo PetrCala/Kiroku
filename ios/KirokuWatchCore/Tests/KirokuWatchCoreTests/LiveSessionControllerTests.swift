@@ -164,4 +164,101 @@ final class LiveSessionControllerTests: XCTestCase {
         let restarted = controller.begin(adopting: stale, newId: "-B2", now: 80_000, timezone: "Europe/Prague")
         XCTAssertEqual(restarted.id, "-B2")
     }
+
+    // MARK: - Sessions v2 (schema 2) sessions
+
+    private func ongoingV2(id: String, now: Int = 1_700_000_000_000) -> DrinkingSession {
+        DrinkingSession.newLive(id: id, now: now, timezone: "Europe/Prague", schemaV2: true)
+    }
+
+    private func phoneEntry(ts: Int, key: DrinkKey, count: Int) -> SessionEntry {
+        SessionEntry(
+            ts: ts,
+            key: key.rawValue,
+            count: count,
+            source: "phone",
+            authorUid: "uid-phone",
+            targetUid: "uid-phone",
+            createdAt: ts
+        )
+    }
+
+    func testBeginMintsASchema2SessionWhenAsked() {
+        let controller = LiveSessionController()
+        let started = controller.begin(adopting: nil, newId: "-V2", now: 5_000, timezone: "Europe/Prague", schemaV2: true)
+        XCTAssertTrue(started.isSchemaV2)
+        XCTAssertEqual(started.visibility, "friends")
+        XCTAssertNil(started.drinks)
+        XCTAssertEqual(started.totalUnits, 0)
+    }
+
+    func testAddUnitOnSchema2AppendsAWatchEntryForTheAuthor() {
+        let controller = LiveSessionController()
+        controller.begin(adopting: nil, newId: "-V2add", now: 5_000, timezone: "Europe/Prague", schemaV2: true)
+        XCTAssertTrue(controller.addUnit(of: .beer, authorUid: "uid-me", now: 6_000, entryId: "-Entry1"))
+        XCTAssertEqual(controller.unitCount, 1)
+        let entry = controller.currentSession()?.entries?["-Entry1"]
+        XCTAssertEqual(entry?.key, "beer")
+        XCTAssertEqual(entry?.count, 1)
+        XCTAssertEqual(entry?.source, "watch")
+        XCTAssertEqual(entry?.authorUid, "uid-me")
+        XCTAssertEqual(entry?.targetUid, "uid-me")
+        XCTAssertEqual(entry?.ts, 6_000)
+        XCTAssertEqual(entry?.createdAt, 6_000)
+        XCTAssertNil(controller.currentSession()?.drinks, "a schema 2 session never grows buckets")
+    }
+
+    func testAddUnitOnSchema2NeedsAnAuthor() {
+        let controller = LiveSessionController()
+        controller.begin(adopting: nil, newId: "-V2noauthor", now: 5_000, timezone: "Europe/Prague", schemaV2: true)
+        XCTAssertFalse(controller.addUnit(of: .beer, authorUid: nil))
+        XCTAssertFalse(controller.addUnit(of: .beer, authorUid: ""))
+        XCTAssertEqual(controller.unitCount, 0)
+    }
+
+    func testWatchSubtractOnSchema2TombstonesOnlyItsOwnEntries() {
+        let controller = LiveSessionController()
+        var phone = ongoingV2(id: "-V2mixed")
+        phone.addEntry(phoneEntry(ts: 1_700_000_000_000, key: .beer, count: 2), id: "phone-1")
+        controller.reflectOngoing(phone, now: 20_000)
+        XCTAssertEqual(controller.unitCount, 2)
+
+        XCTAssertTrue(controller.addUnit(of: .beer, authorUid: "uid-me", now: 21_000, entryId: "watch-1"))
+        XCTAssertEqual(controller.unitCount, 3)
+        XCTAssertTrue(controller.subtractUnit(of: .beer, now: 22_000))
+        XCTAssertEqual(controller.unitCount, 2, "back to the phone's baseline")
+        // The watch's entry is a tombstone, its key kept; the phone's is intact.
+        XCTAssertEqual(controller.currentSession()?.entries?["watch-1"]?.deleted, true)
+        XCTAssertEqual(controller.currentSession()?.entries?["watch-1"]?.editedAt, 22_000)
+        XCTAssertEqual(controller.currentSession()?.entries?["phone-1"]?.count, 2)
+        XCTAssertNil(controller.currentSession()?.entries?["phone-1"]?.deleted)
+        XCTAssertFalse(controller.subtractUnit(of: .beer), "can't remove the phone's beers")
+        XCTAssertEqual(controller.unitCount, 2)
+    }
+
+    func testWatchSubtractOnSchema2RemovesTheNewestOfItsOwnFirst() {
+        let controller = LiveSessionController()
+        controller.begin(adopting: nil, newId: "-V2order", now: 5_000, timezone: "Europe/Prague", schemaV2: true)
+        controller.addUnit(of: .beer, authorUid: "uid-me", now: 6_000, entryId: "w1")
+        controller.addUnit(of: .wine, authorUid: "uid-me", now: 7_000, entryId: "w2")
+        controller.addUnit(of: .beer, authorUid: "uid-me", now: 8_000, entryId: "w3")
+        XCTAssertTrue(controller.subtractUnit(of: .beer, now: 9_000))
+        XCTAssertEqual(controller.currentSession()?.entries?["w3"]?.deleted, true)
+        XCTAssertNil(controller.currentSession()?.entries?["w1"]?.deleted)
+        XCTAssertFalse(controller.subtractUnit(of: .cocktail), "nothing of that type to remove")
+        XCTAssertEqual(controller.unitCount, 2)
+    }
+
+    func testMarkFinishedForgetsTheWatchEntries() {
+        let controller = LiveSessionController()
+        controller.begin(adopting: nil, newId: "-V2done", now: 5_000, timezone: "Europe/Prague", schemaV2: true)
+        controller.addUnit(of: .beer, authorUid: "uid-me", entryId: "w1")
+        controller.markFinished()
+        // A new session adopted later must not be able to tombstone "w1".
+        var next = ongoingV2(id: "-V2next")
+        next.addEntry(SessionEntry(ts: 1, key: "beer", count: 1, source: "watch", authorUid: "uid-me", targetUid: "uid-me", createdAt: 1), id: "w1")
+        controller.reflectOngoing(next)
+        XCTAssertFalse(controller.subtractUnit(of: .beer))
+        XCTAssertEqual(controller.unitCount, 1)
+    }
 }

@@ -46,6 +46,8 @@ jest.mock('@libs/ApiUtils', () => ({
   getKirokuApiEnv: jest.fn(() => 'dev'),
 }));
 
+jest.mock('@libs/FeatureFlags', () => ({isEnabled: jest.fn(() => false)}));
+
 jest.mock('@libs/AppStateMonitor', () => ({
   addBecameActiveListener: jest.fn(),
 }));
@@ -236,6 +238,7 @@ describe('WatchBridge', () => {
         uid: 'uid-42',
         expiresAt: EXPIRATION_MS,
         apiEnv: 'dev',
+        sessionsV2Schema: false,
       });
       expect(new Date(EXPIRATION_TIME).getTime()).toBe(EXPIRATION_MS);
     });

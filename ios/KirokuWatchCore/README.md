@@ -13,7 +13,7 @@ it to kiroku-api with a `Bearer` token — then delete it.
 
 | File | Mirrors | Purpose |
 | --- | --- | --- |
-| `Sources/KirokuWatchCore/DrinkingSession.swift` | `src/types/onyx/DrinkingSession.ts`, `src/types/onyx/Drinks.ts` | Codable session + `DrinkKey`/`SessionType`; `start_time`/`end_time` map to snake_case on the wire; `drinks` = `[Timestamp: [DrinkKey: Int]]`. |
+| `Sources/KirokuWatchCore/DrinkingSession.swift` | `src/types/onyx/DrinkingSession.ts`, `src/types/onyx/Drinks.ts`, `src/types/onyx/SessionEntries.ts` | Codable session + `DrinkKey`/`SessionType`; `start_time`/`end_time` map to snake_case on the wire. Decodes both shapes: legacy `drinks` = `[Timestamp: [DrinkKey: Int]]`, and Sessions v2 (`schema_version: 2`) `entries` = `[EntryId: SessionEntry]`. `liveEntries()` is the read adapter (the same rule as the phone's `getSessionEntries`) and `totalUnits` counts through it. |
 | `Sources/KirokuWatchCore/PushID.swift` | `src/libs/generatePushID.ts` | 20-char, time-sortable Firebase push-id generator (8 timestamp chars + 72 random bits, same-ms carry). |
 | `Sources/KirokuWatchCore/KirokuAPI.swift` | `src/libs/HttpUtils.ts`, `src/libs/API/kirokuRoutes.ts`, `src/CONFIG.ts` | `URLSession` JSON client: `Bearer` auth, dev/prod base URL, `start`/`update`/`save`/`discard`, typed 407/401/network/server errors. |
 

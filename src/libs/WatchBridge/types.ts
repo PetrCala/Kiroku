@@ -20,6 +20,12 @@ type WatchCredentialPayload = {
 
   /** JSON string of the whitelisted ongoing-session fields; omitted when none */
   ongoingSession?: string;
+
+  /**
+   * Whether new sessions are written as Sessions v2 (`SESSIONS_V2_SCHEMA`), so
+   * a session the watch starts on its own takes the same shape
+   */
+  sessionsV2Schema: boolean;
 };
 
 /** The native module surface (ios/kiroku/WatchBridge.swift) */

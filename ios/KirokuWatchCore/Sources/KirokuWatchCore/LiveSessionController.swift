@@ -11,10 +11,13 @@ import Foundation
 ///   - **No bounce after finishing.** A saved/discarded session's id is
 ///     remembered so a lagging phone snapshot of the just-finished session isn't
 ///     re-adopted straight back into the UI.
-///   - **Watch owns its own unit bucket.** `+`/`−` only ever touch one
-///     timestamp bucket the watch picks when the session becomes active, so a
-///     watch subtraction can never delete a drink the phone logged; adopted
-///     phone drinks stay intact and still count toward the displayed total.
+///   - **Watch owns its own drinks.** On a legacy session `+`/`−` only ever
+///     touch one timestamp bucket the watch picks when the session becomes
+///     active; on a Sessions v2 session every `+` appends an entry authored by
+///     the watch (`source: watch`) and `−` only tombstones or reduces entries
+///     the watch itself added in this run. Either way a watch subtraction can
+///     never delete a drink the phone logged; adopted phone drinks stay intact
+///     and still count toward the displayed total.
 ///
 /// It performs no networking and holds no credential; the view model reads
 /// ``currentSession()`` / ``makeFinalized()`` and POSTs via `KirokuAPI`, then
@@ -24,10 +27,15 @@ public final class LiveSessionController {
     /// The live session being logged, or `nil` when idle (no active session).
     public private(set) var liveSession: DrinkingSession?
 
-    /// The timestamp-millisecond bucket the watch's `+`/`−` operate on. Chosen
-    /// when a session becomes active so watch units layer onto their own bucket,
-    /// distinct from any drinks an adopted phone session already carries.
+    /// The timestamp-millisecond bucket the watch's `+`/`−` operate on in a
+    /// legacy session. Chosen when a session becomes active so watch units
+    /// layer onto their own bucket, distinct from any drinks an adopted phone
+    /// session already carries.
     private var unitBucketMillis: Int?
+
+    /// The ids of the entries this watch added to the active Sessions v2
+    /// session, oldest first. `−` only ever touches these.
+    private var watchEntryIds: [String] = []
 
     /// Ids of sessions already saved/discarded from the watch, so a stale phone
     /// snapshot of one can't be re-adopted after the watch went idle.
@@ -76,48 +84,100 @@ public final class LiveSessionController {
     /// when one is present (so watch taps land in the same session, no
     /// duplicate); otherwise mints a fresh session with `newId`. Returns the
     /// session to POST as the start of the session.
+    ///   - schemaV2: when minting a fresh session, make it a Sessions v2 one
+    ///     (the phone's `SESSIONS_V2_SCHEMA` flag, bridged as `sessionsV2Schema`).
     @discardableResult
     public func begin(
         adopting ongoing: DrinkingSession?,
         newId: String,
         now: Int = DrinkingSession.nowMillis(),
-        timezone: String = TimeZone.current.identifier
+        timezone: String = TimeZone.current.identifier,
+        schemaV2: Bool = false
     ) -> DrinkingSession {
         let session: DrinkingSession
         if let ongoing, ongoing.ongoing, !finishedIds.contains(ongoing.id) {
             session = ongoing
         } else {
-            session = DrinkingSession.newLive(id: newId, now: now, timezone: timezone)
+            session = DrinkingSession.newLive(id: newId, now: now, timezone: timezone, schemaV2: schemaV2)
         }
         setActive(session, bucketMillis: now)
         return session
     }
 
-    /// Add one unit of `key` to the watch's own bucket. Returns whether the state
-    /// changed (always `true` while active), so the caller can gate a haptic.
+    /// Add one unit of `key`: to the watch's own bucket on a legacy session, or
+    /// as a new entry authored by `authorUid` (the signed-in uid) on a Sessions
+    /// v2 session. Returns whether the state changed, so the caller can gate a
+    /// haptic; `false` on a v2 session without an author to attribute to.
     @discardableResult
-    public func addUnit(of key: DrinkKey = .other) -> Bool {
-        guard var session = liveSession, let bucket = unitBucketMillis else {
+    public func addUnit(
+        of key: DrinkKey = .other,
+        authorUid: String? = nil,
+        now: Int = DrinkingSession.nowMillis(),
+        entryId: String = PushID.generate()
+    ) -> Bool {
+        guard var session = liveSession else {
             return false
         }
-        session.addDrinks(1, of: key, atMillis: bucket)
+        if session.isSchemaV2 {
+            guard let authorUid, !authorUid.isEmpty else {
+                return false
+            }
+            session.addEntry(
+                SessionEntry(
+                    ts: now,
+                    key: key.rawValue,
+                    count: 1,
+                    source: SessionEntry.watchSource,
+                    authorUid: authorUid,
+                    targetUid: authorUid,
+                    createdAt: now
+                ),
+                id: entryId
+            )
+            watchEntryIds.append(entryId)
+        } else {
+            guard let bucket = unitBucketMillis else {
+                return false
+            }
+            session.addDrinks(1, of: key, atMillis: bucket)
+        }
         liveSession = session
         return true
     }
 
-    /// Remove one unit of `key` from the watch's own bucket. Returns `false`
-    /// (no haptic) when there is nothing the watch itself added to remove; a
-    /// watch subtraction never deletes a drink the phone logged.
+    /// Remove one unit of `key` from what the watch itself added: the watch's
+    /// bucket on a legacy session, or the newest live entry the watch logged on
+    /// a Sessions v2 session (tombstoned when it held one drink, reduced
+    /// otherwise). Returns `false` (no haptic) when there is nothing of the
+    /// watch's own to remove; a watch subtraction never deletes a drink the
+    /// phone logged.
     @discardableResult
-    public func subtractUnit(of key: DrinkKey = .other) -> Bool {
-        guard var session = liveSession, let bucket = unitBucketMillis else {
+    public func subtractUnit(of key: DrinkKey = .other, now: Int = DrinkingSession.nowMillis()) -> Bool {
+        guard var session = liveSession else {
             return false
         }
-        let owned = session.drinks?[String(bucket)]?[key.rawValue] ?? 0
-        guard owned > 0 else {
-            return false
+        if session.isSchemaV2 {
+            guard let ownId = watchEntryIds.last(where: { id in
+                guard let entry = session.entries?[id] else { return false }
+                return entry.isLive && entry.key == key.rawValue
+            }), let entry = session.entries?[ownId] else {
+                return false
+            }
+            if entry.count > 1 {
+                session.reduceEntry(id: ownId, by: 1, atMillis: now)
+            } else {
+                session.tombstoneEntry(id: ownId, atMillis: now)
+            }
+        } else {
+            guard let bucket = unitBucketMillis else {
+                return false
+            }
+            let owned = session.drinks?[String(bucket)]?[key.rawValue] ?? 0
+            guard owned > 0 else {
+                return false
+            }
+            session.addDrinks(-1, of: key, atMillis: bucket)
         }
-        session.addDrinks(-1, of: key, atMillis: bucket)
         liveSession = session
         return true
     }
@@ -142,6 +202,7 @@ public final class LiveSessionController {
         }
         liveSession = nil
         unitBucketMillis = nil
+        watchEntryIds = []
     }
 
     // MARK: - Internals
@@ -149,5 +210,6 @@ public final class LiveSessionController {
     private func setActive(_ session: DrinkingSession, bucketMillis: Int) {
         liveSession = session
         unitBucketMillis = bucketMillis
+        watchEntryIds = []
     }
 }

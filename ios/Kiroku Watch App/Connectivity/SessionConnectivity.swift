@@ -13,6 +13,7 @@
 //    signedIn: Bool (false means: clear the cached credential)
 //    idToken: String, uid: String, expiresAt: Double (epoch ms), apiEnv: String
 //    ongoingSession: String (JSON of DrinkingSession fields; absent when none)
+//    sessionsV2Schema: Bool (the phone's SESSIONS_V2_SCHEMA flag; absent = false)
 //
 
 import Combine
@@ -37,6 +38,11 @@ final class SessionConnectivity: NSObject, ObservableObject {
 
     /// Whether `WCSession` finished activating.
     @Published private(set) var isActivated = false
+
+    /// Whether the phone writes new sessions as Sessions v2 (its
+    /// `SESSIONS_V2_SCHEMA` flag). A session the watch starts on its own
+    /// follows the same shape, so phone and watch never disagree.
+    @Published private(set) var sessionsV2Schema = false
 
     /// True when the watch has no usable token, which drives the
     /// "Open Kiroku on your phone to reconnect." UI. Time passing can flip
@@ -90,10 +96,12 @@ final class SessionConnectivity: NSObject, ObservableObject {
         } else {
             CredentialStore.clear()
         }
+        let newSessionsV2Schema = context["sessionsV2Schema"] as? Bool ?? false
 
         DispatchQueue.main.async {
             self.credential = newCredential
             self.ongoingSession = newSession
+            self.sessionsV2Schema = newSessionsV2Schema
         }
     }
 

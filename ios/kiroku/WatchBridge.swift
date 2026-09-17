@@ -66,6 +66,9 @@ final class WatchBridge: NSObject {
             if let ongoingSession = credential["ongoingSession"] as? String, !ongoingSession.isEmpty {
                 context["ongoingSession"] = ongoingSession
             }
+            if let sessionsV2Schema = credential["sessionsV2Schema"] as? Bool {
+                context["sessionsV2Schema"] = sessionsV2Schema
+            }
             self.latest = context
             self.activateAndPush()
         }

@@ -386,7 +386,11 @@ The feed needs newest-first cursor pagination on the sessions endpoint, and app 
 ## 11. Migration and compatibility
 
 - `schema_version: 2` on every new session. Old sessions are read through an **adapter** that turns `drinks[timestamp][key]` buckets into entries in memory. Statistics already does this conversion internally; this is the moment to have **one** unit computation instead of two.
-- A **one-shot, lossless backfill** in kiroku-cli (one entry per bucket key, `source: 'phone'`), dry run first. Then bump the minimum supported version. Version enforcement is client-side only today, which is fine here because old clients' writes still go through the adapter.
+- A **one-shot, lossless backfill** in kiroku-cli (one entry per bucket key, `source: 'phone'`), dry run first.
+- **Raise `min_supported_version` BEFORE the backfill writes anything**, not after, and give the release carrying the adapter time to be adopted first. An older client totals units from `session.drinks`, which the backfill removes, so every converted session reads as zero units on it: the sessions still list, but a calendar day is only painted above zero units, so the history looks empty. Nothing is lost (the drinks are in `entries`) and the old client's writes are still safe, since a legacy write replaces the session node wholesale and the adapter reads the buckets it leaves behind. The damage is purely what the user sees, and the version floor is the only lever over binaries that are already installed: above the floor, the app replaces its whole tree with the update prompt at launch, so those users get "please update" instead of an emptied history. Observed on a pre-W1 ad-hoc build against dev after the W1 backfill (Kiroku#1664).
+- Version enforcement is **client-side only** today, read from `config` on every app open and reconnect. There is no server-forced 426 in kiroku-api yet, so the floor only binds a client that reaches the config, which is every launch in practice. If a hard cutoff is ever needed, the server gate has to be built.
+- **The floor cannot separate two builds in the same MAJOR.MINOR.PATCH, so the W1 release has to be a PATCH bump.** Releases are `1.0.0-NN` (a BUILD bump per release), and `Validation.cleanSemver` keeps only `major.minor.patch`, so the client compares `1.0.0` no matter which build it is. A floor of `1.0.0` therefore blocks nothing, and there is no value that blocks `1.0.0-52` while letting `1.0.0-53` through. `kiroku-cli app-version set` also refuses a prerelease floor and refuses a floor above `latest_version`, so both gates move together and both must be plain semver. Cut the release carrying the adapter as `1.0.1`, set `latest_version` and `min_supported_version` to `1.0.1`, then backfill. Verified against dev: a floor of `1.0.0` leaves a `1.0.0-52` build running, and `1.0.1` puts it on the force-update screen.
+- Locking out clients that cannot update is the accepted cost of this ordering. The alternative, if it ever becomes unacceptable, is a transition window: the backfill writes `entries` and LEAVES `drinks` in place, with a second pass to drop the buckets once the floor has moved. Old clients keep working throughout, at the cost of relaxing the server check that rejects a v2 session carrying `drinks` (kiroku-api#151) and of double-storing the drinks for the length of the window.
 - Server payload limits on sessions get revisited for entry-heavy sessions and photo metadata.
 - The watch's Codable models change in the same PR train (the watch is an embedded target, so it ships in lockstep).
 - The auto-close sweep (#1293) and its client reconciler learn about shared sessions and projections (§6).
@@ -429,3 +433,16 @@ There's one umbrella epic, one issue per workstream and one PR train per workstr
 ## 14. Open questions
 
 None. The six questions raised in review were settled on 2026-09-11 and are now decisions 19 to 24 in §2.
+
+---
+
+## 15. Deviations
+
+Where the code had to depart from the letter of this document. Each one is small and none changes a locked decision.
+
+**W1 (schema v2, #1664)**
+
+- `entries` is optional on a schema 2 session. RTDB drops an empty map, so a freshly started session arrives without the key; the type guard keys on `schema_version: 2` alone (§4.3 shows `entries` as always present).
+- `name` is optional on the wire. The app generates the default name (§9) when it starts a session, but the kiroku-cli backfill converts legacy sessions without minting names (the default is localized and the backfill has no locale to hand), and a session started from the watch carries none either. Readers fall back to the generated default when `name` is absent; W3 fills it in for display and editing (§4.2 shows `name` as required).
+- Entries converted from legacy buckets use the deterministic id `legacy-<timestamp>-<drinkKey>` instead of a push id (§4.3), so the in-memory adapter in the app and the backfill in kiroku-cli produce identical ids for the same session, and a session converted twice is identical. New entries use push ids as specified.
+- On `POST /v1/sessions/update` every entry must be the caller's own (`author_uid === target_uid === uid`). That route only ever carries a solo session (§5.6 rejects whole-session writes against shared ids), so the constraint is a safety check, not a narrowing of §4.3.
