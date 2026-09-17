@@ -85,6 +85,35 @@ export function isSessionOpRequest(request: Request): boolean {
   );
 }
 
+/**
+ * Whether an ops request body is an op of `type`. Used to wait for a specific
+ * write on the op path: a session sends several ops over its life, so matching
+ * the endpoint alone would resolve on whichever op happened to be in flight.
+ *
+ * Takes the raw body because a `Response`'s request does not always expose
+ * parsed JSON; anything absent or unparseable is "not this op".
+ */
+export function isOpOfType(body: string | null, type: string): boolean {
+  if (!body) {
+    return false;
+  }
+  try {
+    return (JSON.parse(body) as {type?: string}).type === type;
+  } catch {
+    return false;
+  }
+}
+
+/** The op a save sends. */
+export function isEndOp(body: string | null): boolean {
+  return isOpOfType(body, 'end');
+}
+
+/** The op starting a live session sends. */
+export function isStartOp(body: string | null): boolean {
+  return isOpOfType(body, 'start');
+}
+
 export function isBootstrapResponse(response: Response): boolean {
   return (
     response.request().method() === 'GET' &&
@@ -119,6 +148,24 @@ export function setSessionOpsEnabled(
   return page.evaluate(value => {
     window.kirokuE2E?.setFeatureFlag('SESSION_OPS', value);
   }, enabled);
+}
+
+/**
+ * Put a spec on the LEGACY session write path: whole-session
+ * `POST /v1/sessions/update`, with drinks in `drinks` buckets rather than
+ * `entries`.
+ *
+ * Both flags, because one is not enough. `SESSION_OPS` off sends the write to
+ * the old endpoint, but `SESSIONS_V2_SCHEMA` on still creates the session as
+ * schema 2, so its drinks land in `entries` and a body read as
+ * `session.drinks` looks empty. A spec about whole-session writes wants a
+ * whole legacy session.
+ */
+export async function setLegacySessionWrites(page: Page): Promise<void> {
+  await page.evaluate(() => {
+    window.kirokuE2E?.setFeatureFlag('SESSION_OPS', false);
+    window.kirokuE2E?.setFeatureFlag('SESSIONS_V2_SCHEMA', false);
+  });
 }
 
 export function sendSessionOp(

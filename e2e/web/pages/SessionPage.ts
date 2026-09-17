@@ -1,4 +1,5 @@
 import type {Locator, Page} from '@playwright/test';
+import {isEndOp} from '../fixtures/e2eHooks';
 
 /**
  * Page Object for the drinking-session lifecycle: the Home start-session FAB,
@@ -143,12 +144,42 @@ export class SessionPage {
    * browser context's IndexedDB; Playwright closes that context as soon as a
    * test ends, so a write still sitting in the queue is lost with it. Awaiting
    * the response makes sure the write reached the dev backend.
+   *
+   * Saving takes one of two endpoints depending on `SESSION_OPS`: a legacy
+   * session (or a switched-off flag) finalizes with a whole-session
+   * `POST /v1/sessions/update`, while a schema 2 session writes ops. Either one
+   * means the save landed, so this accepts both rather than the caller having
+   * to know which path the app took.
+   *
+   * On the op path, WHICH op ends the save depends on the screen, and the two
+   * cases need different rules:
+   *
+   * - A LIVE session closes with an `end` op, but its drinks already went out
+   *   as their own ops while it ran. Matching the endpoint alone would resolve
+   *   on one of those still in flight and let the test move on before the save
+   *   reached the server, so the live case matches the body naming `end`.
+   * - An EDIT session never sends `end` (it is already ended) and its
+   *   mutations stay in the buffer until the save diffs them out, so the first
+   *   op of any kind after the click belongs to this save. Waiting for `end`
+   *   here would wait forever.
    */
-  private waitForSessionWrite(endpoint: 'update' | 'delete'): Promise<unknown> {
-    return this.page.waitForResponse(
-      response =>
-        response.url().includes(`/v1/sessions/${endpoint}`) && response.ok(),
-    );
+  private waitForSessionWrite(
+    endpoint: 'update' | 'delete',
+    kind: 'live' | 'edit' = 'live',
+  ): Promise<unknown> {
+    return this.page.waitForResponse(response => {
+      if (!response.ok()) {
+        return false;
+      }
+      const url = response.url();
+      if (url.includes(`/v1/sessions/${endpoint}`)) {
+        return true;
+      }
+      if (endpoint !== 'update' || !url.includes('/v1/sessions/ops')) {
+        return false;
+      }
+      return kind === 'edit' || isEndOp(response.request().postData());
+    });
   }
 
   /**
@@ -156,7 +187,12 @@ export class SessionPage {
    * server.
    */
   async save(): Promise<void> {
-    const saved = this.waitForSessionWrite('update');
+    // Which screen is saving decides which write to wait for, so callers keep
+    // saying `save()` on both the live screen and the edit screen.
+    const isEdit = await this.editScreen()
+      .isVisible()
+      .catch(() => false);
+    const saved = this.waitForSessionWrite('update', isEdit ? 'edit' : 'live');
     await this.saveButton().click();
     await this.summaryScreen().waitFor({state: 'visible'});
     await saved;

@@ -8,9 +8,10 @@ import {hasE2EHooks} from '../fixtures/e2eHooks';
  * Sessions v2 W1 (#1664): with the `SESSIONS_V2_SCHEMA` flag on, a new
  * session is written as schema 2 (a schema marker, a default name, friends
  * visibility) and its drinks as entries, and it still round-trips through
- * save, the summary and edit exactly like a legacy session. The flag ships
- * off, so the spec turns it on for this page load only through the dev hooks
- * and skips on builds without them.
+ * save, the summary and edit exactly like a legacy session. The flag ships ON
+ * since W2 (#1665); the spec still sets it explicitly through the dev hooks,
+ * so a remote override cannot make it pass by writing a legacy session
+ * instead. It skips on builds without those hooks.
  */
 type OngoingSessionLike = {
   schema_version?: number;
