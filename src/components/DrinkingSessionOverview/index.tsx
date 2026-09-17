@@ -10,6 +10,7 @@ import ROUTES from '@src/ROUTES';
 import useCurrentUserPreferences from '@hooks/useCurrentUserPreferences';
 import * as DS from '@userActions/DrinkingSession';
 import * as DSUtils from '@libs/DrinkingSessionUtils';
+import {getSessionDisplayName} from '@libs/SessionName';
 import CONST from '@src/CONST';
 import {nonMidnightString} from '@libs/StringUtilsKiroku';
 import Button from '@components/Button';
@@ -108,16 +109,15 @@ function DrinkingSessionOverview({
         styles.justifyContentBetween,
         styles.flex1,
       ]}>
-      {/* Left: units + (live) time */}
-      <View style={styles.flexColumn}>
-        <Text style={[styles.textNormal, styles.textStrong]}>
-          {translate('common.units')}: {totalUnits}
+      {/* Left: name, units + (live) time */}
+      <View style={[styles.flexColumn, styles.flexShrink1]}>
+        <Text style={[styles.textNormal, styles.textStrong]} numberOfLines={1}>
+          {getSessionDisplayName(session)}
         </Text>
-        {shouldDisplayTime && (
-          <Text style={[styles.textMicroSupporting, styles.mt1]}>
-            {translate('common.time')}: {timeString}
-          </Text>
-        )}
+        <Text style={[styles.textMicroSupporting, styles.mt1]}>
+          {translate('common.units')}: {totalUnits}
+          {shouldDisplayTime ? ` · ${timeString}` : ''}
+        </Text>
       </View>
       {/* Right: per-drink-type breakdown as compact icon-over-count columns */}
       {drinkBreakdown.length > 0 && (

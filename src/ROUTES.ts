@@ -71,6 +71,14 @@ const ROUTES = {
         backTo,
       ),
   },
+  DRINKING_SESSION_SESSION_NAME_SCREEN: {
+    route: 'drinking-session/:sessionId/session-name-screen',
+    getRoute: (sessionId: DrinkingSessionId, backTo = '') =>
+      getUrlWithBackToParam(
+        `drinking-session/${sessionId}/session-name-screen` as const,
+        backTo,
+      ),
+  },
   DRINKING_SESSION_SESSION_NOTE_SCREEN: {
     route: 'drinking-session/:sessionId/session-note-screen',
     getRoute: (sessionId: DrinkingSessionId) =>

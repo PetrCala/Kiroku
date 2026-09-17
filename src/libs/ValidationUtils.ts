@@ -337,7 +337,19 @@ function isValidWebsite(url: string): boolean {
 }
 
 function isValidSessionNote(note: string): boolean {
-  return note.length <= CONST.SESSION_NAME_CHARACTER_LIMIT;
+  return note.length <= CONST.SESSION_NOTE_CHARACTER_LIMIT;
+}
+
+/**
+ * Checks that a session name fits the limit and carries no objectionable
+ * language. The profanity check is the same soft, client-side guard display
+ * names use for immediate inline feedback; the server is authoritative.
+ */
+function isValidSessionName(name: string): boolean {
+  return (
+    name.length <= CONST.SESSION_NAME_CHARACTER_LIMIT &&
+    !ProfanityFilter.containsProfanity(name)
+  );
 }
 
 function isValidValidateCode(validateCode: string): boolean {
@@ -503,6 +515,7 @@ export {
   isValidWebsite,
   isValidTwoFactorCode,
   //   isNumericWithSpecialChars,
+  isValidSessionName,
   isValidSessionNote,
   isValidRoutingNumber,
   isValidValidateCode,

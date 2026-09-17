@@ -92,6 +92,10 @@ type DrinkingSessionNavigatorParamList = {
     sessionId: DrinkingSessionId;
     backTo?: Routes;
   };
+  [SCREENS.DRINKING_SESSION.SESSION_NAME_SCREEN]: {
+    sessionId: DrinkingSessionId;
+    backTo?: Routes;
+  };
   [SCREENS.DRINKING_SESSION.SESSION_NOTE_SCREEN]: {
     sessionId: DrinkingSessionId;
   };

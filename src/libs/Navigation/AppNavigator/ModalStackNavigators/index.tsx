@@ -108,6 +108,9 @@ const DrinkingSessionModalStackNavigator =
     [SCREENS.DRINKING_SESSION.SESSION_DATE_SCREEN]: () =>
       require<ReactComponentModule>('@screens/DrinkingSession/SessionDateScreen')
         .default,
+    [SCREENS.DRINKING_SESSION.SESSION_NAME_SCREEN]: () =>
+      require<ReactComponentModule>('@screens/DrinkingSession/SessionNameScreen')
+        .default,
     [SCREENS.DRINKING_SESSION.SESSION_NOTE_SCREEN]: () =>
       require<ReactComponentModule>('@screens/DrinkingSession/SessionNoteScreen')
         .default,

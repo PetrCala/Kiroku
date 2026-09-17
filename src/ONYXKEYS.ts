@@ -288,6 +288,8 @@ const ONYXKEYS = {
     REPORT_BUG_FORM_DRAFT: 'reportBugFormDraft',
     FEEDBACK_FORM: 'feedbackForm',
     FEEDBACK_FORM_DRAFT: 'feedbackFormDraft',
+    SESSION_NAME_FORM: 'sessionNameForm',
+    SESSION_NAME_FORM_DRAFT: 'sessionNameFormDraft',
     SESSION_NOTE_FORM: 'sessionNoteForm',
     SESSION_NOTE_FORM_DRAFT: 'sessionNoteFormDraft',
   },
@@ -308,6 +310,7 @@ type OnyxFormValuesMapping = {
   [ONYXKEYS.FORMS.PASSWORD_FORM]: FormTypes.PasswordForm;
   [ONYXKEYS.FORMS.REPORT_BUG_FORM]: FormTypes.ReportBugForm;
   [ONYXKEYS.FORMS.FEEDBACK_FORM]: FormTypes.FeedbackForm;
+  [ONYXKEYS.FORMS.SESSION_NAME_FORM]: FormTypes.SessionNameForm;
   [ONYXKEYS.FORMS.SESSION_NOTE_FORM]: FormTypes.SessionNoteForm;
 };
 
