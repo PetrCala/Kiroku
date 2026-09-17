@@ -72,6 +72,24 @@ function SplashScreenHider({
 
   const hideHasBeenCalled = useRef(false);
 
+  // Reduce-motion picks between the handoff and the shrink-out, and reading it
+  // is a bridge round trip. Kick the read off at mount so `hide` can take the
+  // answer from a ref instead of paying for that round trip on the launch
+  // critical path. The in-flight promise is kept too: if `hide` somehow runs
+  // before the read lands, awaiting it yields the correct answer rather than a
+  // guess.
+  const reduceMotionRef = useRef<boolean | null>(null);
+  const reduceMotionPromiseRef = useRef<Promise<boolean> | null>(null);
+
+  useEffect(() => {
+    reduceMotionPromiseRef.current = AccessibilityInfo.isReduceMotionEnabled()
+      .catch(() => false)
+      .then(isEnabled => {
+        reduceMotionRef.current = isEnabled;
+        return isEnabled;
+      });
+  }, []);
+
   const hide = useCallback(() => {
     if (hideHasBeenCalled.current) {
       return;
@@ -113,10 +131,21 @@ function SplashScreenHider({
     // After the native dissolve resolves, either fly the logo into the
     // InitialScreen slot (signed-out cold boot) or fall back to the
     // shrink-out (authenticated boot, reduced motion, or no slot reported).
+    //
+    // The JS animation deliberately starts only once the dissolve resolves.
+    // Running it in parallel would move or fade the overlay logo while the
+    // storyboard's own logo is still on screen at a decreasing alpha, so the
+    // two would separate instead of matching pixel for pixel; and on the
+    // shrink-out path the overlay's fade would uncover the still-mounting
+    // React tree inside the very window the dissolve exists to mask.
     BootSplash.hide().then(async () => {
       const target = logoHandoffTargetRef.current;
+      // Resolved by the mount effect above, so on every real launch this is a
+      // ref read. The await covers only the race where the probe has not
+      // landed yet, and it settles against the promise already in flight.
       const reduceMotionEnabled =
-        await AccessibilityInfo.isReduceMotionEnabled().catch(() => false);
+        reduceMotionRef.current ??
+        (await (reduceMotionPromiseRef.current ?? Promise.resolve(false)));
 
       // Handoff only when the fly-in feature is enabled, the signed-out tree
       // reported a usable logo slot, and motion isn't reduced. Otherwise keep
