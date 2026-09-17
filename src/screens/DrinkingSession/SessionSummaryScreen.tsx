@@ -2,13 +2,18 @@ import type {StyleProp, ViewStyle} from 'react-native';
 import {View} from 'react-native';
 import {
   getLastDrinkAddedTime,
-  sumSessionDrinksOfType,
   convertUnitsToColors,
+  findDrinkNameTranslationKey,
 } from '@libs/DataHandling';
+import DrinkData from '@libs/DrinkData';
+import {buildDrinkProfile, rankDrinkKeys} from '@libs/DrinkRanking';
+import formatSessionDuration from '@libs/formatSessionDuration';
+import {getSessionEntries, sumEntryCounts} from '@libs/SessionEntries';
+import Icon from '@components/Icon';
 import {resolvePalette} from '@libs/SessionColorPalettes';
 import useLocalize from '@hooks/useLocalize';
 import * as KirokuIcons from '@components/Icon/KirokuIcons';
-import type {DrinkingSession} from '@src/types/onyx';
+import type {DrinkingSession, DrinkKey} from '@src/types/onyx';
 import useCurrentUserPreferences from '@hooks/useCurrentUserPreferences';
 import useCurrentUserDrinkingSessions from '@hooks/useCurrentUserDrinkingSessions';
 import type {StackScreenProps} from '@react-navigation/stack';
@@ -18,7 +23,7 @@ import Text from '@components/Text';
 import type {DrinkingSessionNavigatorParamList} from '@libs/Navigation/types';
 import type {Route} from '@src/ROUTES';
 import ROUTES from '@src/ROUTES';
-import {useCallback, useEffect, useMemo, useState} from 'react';
+import {useEffect, useMemo, useState} from 'react';
 import * as DSUtils from '@libs/DrinkingSessionUtils';
 import {getSessionDisplayName} from '@libs/SessionName';
 import {
@@ -33,6 +38,7 @@ import ScreenWrapper from '@components/ScreenWrapper';
 import HeaderWithBackButton from '@components/HeaderWithBackButton';
 import BottomActionBar from '@components/BottomActionBar';
 import Button from '@components/Button';
+import useTheme from '@hooks/useTheme';
 import useThemeStyles from '@hooks/useThemeStyles';
 import useStyleUtils from '@hooks/useStyleUtils';
 import variables from '@styles/variables';
@@ -43,12 +49,6 @@ import SessionPhotoGallery from '@components/SessionPhotoGallery';
 import type {TranslationPaths} from '@src/languages/types';
 import MenuItemGroup from '@components/MenuItemGroup';
 import Switch from '@components/Switch';
-import cloneDeep from 'lodash/cloneDeep';
-
-type DrinkMenuItem = {
-  key: TranslationPaths;
-  val: number;
-};
 
 type MenuData = {
   titleKey?: TranslationPaths;
@@ -76,6 +76,7 @@ function SessionSummaryScreen({route}: SessionSummaryScreenProps) {
   const drinkingSessionData = useCurrentUserDrinkingSessions();
   const {translate} = useLocalize();
   const styles = useThemeStyles();
+  const theme = useTheme();
   const StyleUtils = useStyleUtils();
   const [session, setSession] = useState<DrinkingSession>(
     DSUtils.extractSessionOrEmpty(sessionId, drinkingSessionData),
@@ -135,229 +136,129 @@ function SessionSummaryScreen({route}: SessionSummaryScreenProps) {
         preferences?.session_color_palette,
       );
 
-  const generalMenuItemsData: Menu = useMemo(
-    () => ({
-      sectionTranslationKey: 'sessionSummaryScreen.generalSection.title',
-      items: [
-        {
-          titleKey: 'sessionSummaryScreen.generalSection.name',
-          description: sessionName,
-          routeName: ROUTES.DRINKING_SESSION_SESSION_NAME_SCREEN.getRoute(
-            sessionId,
-            ROUTES.DRINKING_SESSION_SUMMARY.getRoute(sessionId),
-          ),
-          shouldHide: session.ongoing,
-        },
-        {
-          titleKey: 'liveSessionScreen.private',
-          description: translate('liveSessionScreen.privateDescription'),
-          rightComponent: (
-            <Switch
-              accessibilityLabel={translate(
-                'liveSessionScreen.privateSwitchLabel',
-              )}
-              isOn={isSessionPrivate(session)}
-              onToggle={value =>
-                DS.updateSessionVisibility(
-                  sessionId,
-                  session,
-                  visibilityFromIsPrivate(value),
-                )
-              }
-            />
-          ),
-          shouldHide: session.ongoing,
-        },
-        {
-          titleKey: 'sessionSummaryScreen.generalSection.sessionColor',
-          rightComponent: (
-            <View
-              style={[
-                styles.sessionColorMarker(sessionColor),
-                {borderRadius: variables.componentBorderRadiusNormal},
-                StyleUtils.getDerivedSwatchBorderStyle(sessionColor),
-              ]}
-            />
-          ),
-        },
-        {
-          titleKey: 'sessionSummaryScreen.generalSection.units',
-          description: totalUnits.toString(),
-        },
-        {
-          titleKey: 'sessionSummaryScreen.generalSection.date',
-          description: sessionDay,
-        },
-        {
-          titleKey: 'sessionSummaryScreen.generalSection.startTime',
-          description: sessionStartTime,
-          shouldHide: !wasLiveSession,
-        },
-        {
-          titleKey: 'sessionSummaryScreen.generalSection.lastDrinkAdded',
-          description: lastDrinkAdded,
-          shouldHide: !wasLiveSession,
-        },
-        {
-          titleKey: 'sessionSummaryScreen.generalSection.endTime',
-          description: sessionEndTime,
-          shouldHide: !wasLiveSession,
-        },
-        {
-          titleKey: 'common.blackout',
-          description: translate(session.blackout ? 'common.yes' : 'common.no'),
-          shouldHide: !session.blackout,
-        },
-        {
-          titleKey: 'common.note',
-          description: session.note,
-          shouldHide: !session.note,
-        },
-      ],
-    }),
-    [
-      translate,
-      session,
-      sessionId,
-      sessionName,
-      lastDrinkAdded,
-      sessionColor,
-      sessionDay,
-      sessionEndTime,
-      sessionStartTime,
-      totalUnits,
-      wasLiveSession,
-      styles,
-      StyleUtils,
+  /**
+   * The details section: everything the hero strip and the breakdown above it
+   * do not already say. The name and visibility rows are the edit actions for
+   * the two fields this page owns; the rest is read-only context.
+   */
+  const detailsMenuItemsData: Menu = {
+    sectionTranslationKey: 'sessionSummaryScreen.detailsSection.title',
+    items: [
+      {
+        titleKey: 'sessionSummaryScreen.generalSection.name',
+        description: sessionName,
+        routeName: ROUTES.DRINKING_SESSION_SESSION_NAME_SCREEN.getRoute(
+          sessionId,
+          ROUTES.DRINKING_SESSION_SUMMARY.getRoute(sessionId),
+        ),
+        shouldHide: session.ongoing,
+      },
+      {
+        titleKey: 'liveSessionScreen.private',
+        rightComponent: (
+          <Switch
+            accessibilityLabel={translate(
+              'liveSessionScreen.privateSwitchLabel',
+            )}
+            isOn={isSessionPrivate(session)}
+            onToggle={value =>
+              DS.updateSessionVisibility(
+                sessionId,
+                session,
+                visibilityFromIsPrivate(value),
+              )
+            }
+          />
+        ),
+        shouldHide: session.ongoing,
+      },
+      {
+        titleKey: 'sessionSummaryScreen.generalSection.sessionColor',
+        rightComponent: (
+          <View
+            style={[
+              styles.sessionColorMarker(sessionColor),
+              {borderRadius: variables.componentBorderRadiusNormal},
+              StyleUtils.getDerivedSwatchBorderStyle(sessionColor),
+            ]}
+          />
+        ),
+      },
+      {
+        titleKey: 'sessionSummaryScreen.generalSection.startTime',
+        description: sessionStartTime,
+        shouldHide: !wasLiveSession,
+      },
+      {
+        titleKey: 'sessionSummaryScreen.generalSection.lastDrinkAdded',
+        description: lastDrinkAdded,
+        shouldHide: !wasLiveSession,
+      },
+      {
+        titleKey: 'sessionSummaryScreen.generalSection.endTime',
+        description: sessionEndTime,
+        shouldHide: !wasLiveSession,
+      },
+      {
+        titleKey: 'common.blackout',
+        description: translate(session.blackout ? 'common.yes' : 'common.no'),
+        shouldHide: !session.blackout,
+      },
+      {
+        titleKey: 'common.timezone',
+        description: session.timezone ?? '',
+      },
+      {
+        titleKey: 'sessionSummaryScreen.generalSection.type',
+        description: translate(
+          wasLiveSession
+            ? 'drinkingSession.type.live'
+            : 'drinkingSession.type.edit',
+        ),
+      },
     ],
+  };
+
+  /** The user's own drink order, the one the live card's quick-add row uses. */
+  const drinkProfile = useMemo(
+    () => buildDrinkProfile(drinkingSessionData),
+    [drinkingSessionData],
   );
 
-  const drinkMenuItemsData: Menu = useMemo(() => {
-    const drinkSums = {
-      small_beer: sumSessionDrinksOfType(session, 'small_beer'),
-      beer: sumSessionDrinksOfType(session, 'beer'),
-      wine: sumSessionDrinksOfType(session, 'wine'),
-      weak_shot: sumSessionDrinksOfType(session, 'weak_shot'),
-      strong_shot: sumSessionDrinksOfType(session, 'strong_shot'),
-      cocktail: sumSessionDrinksOfType(session, 'cocktail'),
-      other: sumSessionDrinksOfType(session, 'other'),
-    };
-    const drinkData: DrinkMenuItem[] = [
-      // {key: 'common.total', val: totalDrinks},
-      {key: 'drinks.smallBeer', val: drinkSums.small_beer},
-      {key: 'drinks.beer', val: drinkSums.beer},
-      {key: 'drinks.wine', val: drinkSums.wine},
-      {key: 'drinks.weakShot', val: drinkSums.weak_shot},
-      {key: 'drinks.strongShot', val: drinkSums.strong_shot},
-      {key: 'drinks.cocktail', val: drinkSums.cocktail},
-      {key: 'drinks.other', val: drinkSums.other},
-    ];
+  /**
+   * The session's drinks, per type, read through the entries adapter in ONE
+   * pass (RFC decision 1). A legacy session's buckets are converted by the
+   * adapter, so this reads the same for both schemas and never touches
+   * `drinks` directly. Only types the session actually contains are kept, in
+   * the user's own order for a session starting at this hour, so the breakdown
+   * leads with what they usually drink rather than with a fixed list.
+   */
+  const drinkBreakdown = useMemo(() => {
+    const countsByKey = new Map<DrinkKey, number>();
+    for (const entry of getSessionEntries(session)) {
+      countsByKey.set(
+        entry.key,
+        (countsByKey.get(entry.key) ?? 0) + entry.count,
+      );
+    }
+    const rankedKeys = rankDrinkKeys(drinkProfile, session);
+    return DrinkData.map(({key, icon}) => ({
+      key,
+      icon,
+      count: countsByKey.get(key) ?? 0,
+    }))
+      .filter(({count}) => count > 0)
+      .sort((a, b) => rankedKeys.indexOf(a.key) - rankedKeys.indexOf(b.key));
+  }, [session, drinkProfile]);
 
-    return {
-      sectionTranslationKey: 'sessionSummaryScreen.drinksSection.title',
-      items: cloneDeep(drinkData)
-        .filter(({val}) => val > 0) // Filter out drinks with 0 count
-        .map(({key, val}: DrinkMenuItem) => ({
-          titleKey: key,
-          description: val.toString(),
-        })),
-    };
-  }, [session]);
-
-  const otherMenuItemsData: Menu = useMemo(
-    () => ({
-      sectionTranslationKey: 'sessionSummaryScreen.otherSection.title',
-      items: [
-        {
-          titleKey: 'common.timezone',
-          description: session.timezone ?? '',
-        },
-        {
-          titleKey: 'sessionSummaryScreen.generalSection.type',
-          description: translate(
-            wasLiveSession
-              ? 'drinkingSession.type.live'
-              : 'drinkingSession.type.edit',
-          ),
-        },
-      ],
-    }),
-    [session.timezone, translate, wasLiveSession],
+  /** Every drink in the session, however it was logged. */
+  const totalDrinks = useMemo(
+    () => sumEntryCounts(getSessionEntries(session)),
+    [session],
   );
 
-  const getSessionSummarySection = useCallback(
-    (menuItemsData: Menu) => (
-      <Section
-        title={translate(menuItemsData.sectionTranslationKey)}
-        titleStyles={styles.sectionTitleSimple}
-        containerStyles={styles.pb0}
-        childrenStyles={styles.pt3}>
-        <View>
-          {menuItemsData.items.map(
-            (detail, index) =>
-              !detail?.shouldHide && (
-                <MenuItem
-                  // eslint-disable-next-line react/no-array-index-key
-                  key={`${detail.titleKey}_${index}`}
-                  title={detail.titleKey && translate(detail.titleKey)}
-                  titleStyle={styles.plainSectionTitle}
-                  description={detail.description}
-                  descriptionTextStyle={[
-                    styles.textNormalThemeText,
-                    styles.mw75,
-                    styles.textAlignRight,
-                  ]}
-                  numberOfLinesDescription={5}
-                  wrapperStyle={styles.sectionMenuItemTopDescription}
-                  style={[
-                    styles.pt0,
-                    index !== menuItemsData.items.length - 1 && styles.pb0,
-                    // Enable the following to add borders in between items
-                    // styles.borderBottomRounded,
-                    // {borderBottomLeftRadius: 35, borderBottomRightRadius: 35},
-                  ]}
-                  disabled={!detail.routeName}
-                  shouldGreyOutWhenDisabled={false}
-                  shouldUseRowFlexDirection
-                  shouldShowRightIcon={!!detail.routeName}
-                  onPress={
-                    detail.routeName
-                      ? () => Navigation.navigate(detail.routeName)
-                      : undefined
-                  }
-                  shouldShowRightComponent={!!detail.rightComponent}
-                  rightComponent={detail.rightComponent}
-                />
-              ),
-          )}
-        </View>
-      </Section>
-    ),
-    [
-      styles.pb0,
-      styles.plainSectionTitle,
-      styles.pt0,
-      styles.pt3,
-      styles.mw75,
-      styles.textAlignRight,
-      styles.sectionMenuItemTopDescription,
-      styles.sectionTitleSimple,
-      styles.textNormalThemeText,
-      translate,
-    ],
-  );
-
-  const generalMenuItems = useMemo(
-    () => getSessionSummarySection(generalMenuItemsData),
-    [generalMenuItemsData, getSessionSummarySection],
-  );
-  const drinkMenuItems = useMemo(
-    () => getSessionSummarySection(drinkMenuItemsData),
-    [drinkMenuItemsData, getSessionSummarySection],
-  );
-  const otherMenuItems = useMemo(
-    () => getSessionSummarySection(otherMenuItemsData),
-    [otherMenuItemsData, getSessionSummarySection],
+  const sessionDuration = formatSessionDuration(
+    DSUtils.calculateSessionLength(session) as number,
   );
 
   useEffect(() => {
@@ -386,21 +287,165 @@ function SessionSummaryScreen({route}: SessionSummaryScreenProps) {
         }
       />
       <ScrollView>
+        {/* Header: what the session was and when. */}
         <View style={[styles.pb4, styles.alignItemsCenter, styles.ph5]}>
-          <Text style={styles.textHeadlineH2} numberOfLines={2}>
+          <Text
+            style={styles.textHeadlineH2}
+            numberOfLines={2}
+            testID="session-detail-name">
             {sessionName}
           </Text>
-          <Text style={[styles.textSupporting, styles.mt1]}>{sessionDay}</Text>
+          <Text style={[styles.textSupporting, styles.mt1]}>
+            {wasLiveSession
+              ? `${sessionDay} · ${sessionStartTime}`
+              : sessionDay}
+          </Text>
         </View>
-        {/* The photos read from the session record itself, so they arrive
-            with the rest of it and the calendar sees the same map. */}
-        <View style={[styles.ph5, styles.pb4]}>
-          <SessionPhotoGallery sessionId={sessionId} photos={session.photos} />
+        {/* The three numbers that describe the session, read at a glance. */}
+        <View
+          style={[
+            styles.flexRow,
+            styles.justifyContentBetween,
+            styles.ph5,
+            styles.pb4,
+          ]}>
+          {[
+            {
+              key: 'duration',
+              label: translate('sessionSummaryScreen.statsSection.duration'),
+              value: sessionDuration,
+              shouldHide: !wasLiveSession,
+            },
+            {
+              key: 'units',
+              label: translate('sessionSummaryScreen.generalSection.units'),
+              value: totalUnits.toString(),
+            },
+            {
+              key: 'drinks',
+              label: translate('sessionSummaryScreen.statsSection.drinks'),
+              value: totalDrinks.toString(),
+            },
+          ]
+            .filter(stat => !stat.shouldHide)
+            .map(stat => (
+              <View
+                key={stat.key}
+                style={[styles.flex1, styles.alignItemsCenter]}>
+                <Text
+                  style={styles.textHeadlineH2}
+                  testID={`session-stat-${stat.key}`}>
+                  {stat.value}
+                </Text>
+                <Text style={[styles.textLabelSupporting, styles.mt1]}>
+                  {stat.label}
+                </Text>
+              </View>
+            ))}
         </View>
+        {/* Below the hero the page reads as a stack of cards, the way the
+            rest of the app groups content: one card per thing the session
+            has, so a long session doesn't scroll as one undivided run. */}
         <MenuItemGroup>
-          {generalMenuItems}
-          {drinkMenuItems}
-          {otherMenuItems}
+          {/* The photos read from the session record itself, so they arrive
+              with the rest of it and the calendar sees the same map. */}
+          <Section
+            title={translate('sessionPhotos.title')}
+            titleStyles={styles.sectionTitleSimple}
+            childrenStyles={styles.pt3}>
+            <SessionPhotoGallery
+              sessionId={sessionId}
+              photos={session.photos}
+            />
+          </Section>
+          {/* What was drunk, per type, straight off the entries. One row per
+              type: the counts line up in a column, so they can be compared,
+              and seven types still read as a list rather than a ragged wrap. */}
+          {drinkBreakdown.length > 0 ? (
+            <Section
+              title={translate('sessionSummaryScreen.drinksSection.title')}
+              titleStyles={styles.sectionTitleSimple}
+              childrenStyles={styles.pt3}>
+              <View>
+                {drinkBreakdown.map(({key, icon, count}, index) => (
+                  <View
+                    key={key}
+                    style={[
+                      styles.flexRow,
+                      styles.alignItemsCenter,
+                      index > 0 && styles.mt3,
+                    ]}
+                    testID={`session-drink-${key}`}>
+                    <Icon
+                      src={icon}
+                      fill={theme.textSupporting}
+                      width={variables.iconSizeNormal}
+                      height={variables.iconSizeNormal}
+                    />
+                    <Text
+                      style={[styles.textNormal, styles.ml3, styles.flex1]}
+                      numberOfLines={1}>
+                      {translate(findDrinkNameTranslationKey(key))}
+                    </Text>
+                    <Text style={[styles.textNormal, styles.textStrong]}>
+                      {count}
+                    </Text>
+                  </View>
+                ))}
+              </View>
+            </Section>
+          ) : null}
+          {/* The note reads as prose, not as a truncated menu row. */}
+          {session.note ? (
+            <Section
+              title={translate('common.note')}
+              titleStyles={styles.sectionTitleSimple}
+              childrenStyles={styles.pt3}>
+              <Text style={styles.textNormal}>{session.note}</Text>
+            </Section>
+          ) : null}
+          <Section
+            title={translate(detailsMenuItemsData.sectionTranslationKey)}
+            titleStyles={styles.sectionTitleSimple}
+            containerStyles={styles.pb0}
+            childrenStyles={styles.pt3}>
+            <View>
+              {detailsMenuItemsData.items.map((detail, index) =>
+                detail?.shouldHide ? null : (
+                  <MenuItem
+                    // eslint-disable-next-line react/no-array-index-key
+                    key={`${detail.titleKey}_${index}`}
+                    title={detail.titleKey && translate(detail.titleKey)}
+                    titleStyle={styles.plainSectionTitle}
+                    description={detail.description}
+                    descriptionTextStyle={[
+                      styles.textNormalThemeText,
+                      styles.mw75,
+                      styles.textAlignRight,
+                    ]}
+                    numberOfLinesDescription={5}
+                    wrapperStyle={styles.sectionMenuItemTopDescription}
+                    style={[
+                      styles.pt0,
+                      index !== detailsMenuItemsData.items.length - 1 &&
+                        styles.pb0,
+                    ]}
+                    disabled={!detail.routeName}
+                    shouldGreyOutWhenDisabled={false}
+                    shouldUseRowFlexDirection
+                    shouldShowRightIcon={!!detail.routeName}
+                    onPress={
+                      detail.routeName
+                        ? () => Navigation.navigate(detail.routeName)
+                        : undefined
+                    }
+                    shouldShowRightComponent={!!detail.rightComponent}
+                    rightComponent={detail.rightComponent}
+                  />
+                ),
+              )}
+            </View>
+          </Section>
         </MenuItemGroup>
       </ScrollView>
       <BottomActionBar>

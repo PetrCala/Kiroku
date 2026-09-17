@@ -114,9 +114,6 @@ function SessionPhotoGallery({
 
   return (
     <View>
-      <Text style={[styles.textLabelSupporting, styles.mb2]}>
-        {translate('sessionPhotos.title')}
-      </Text>
       <View style={[styles.flexRow, styles.flexWrap, styles.gap2]}>
         {orderedPhotos.map(([photoId, photo], index) => (
           <PressableWithFeedback

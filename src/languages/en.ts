@@ -854,11 +854,15 @@ export default {
       lastDrinkAdded: 'Last drink added',
       endTime: 'End time',
     },
+    statsSection: {
+      duration: 'Duration',
+      drinks: 'Drinks',
+    },
     drinksSection: {
       title: 'Drinks consumed',
     },
-    otherSection: {
-      title: 'Other',
+    detailsSection: {
+      title: 'Details',
     },
   },
   appShareScreen: {
