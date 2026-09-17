@@ -85,6 +85,31 @@ Closing a valid checklist promotes `staging -> production`, which triggers the o
 - Cherry-pick to staging: bump `BUILD`.
 - Cherry-pick to production: bump `PATCH`.
 
+#### The marketing version has to move once a version ships
+
+Only the `PATCH` bump changes what Apple sees: `1.0.0-53` builds as
+`CFBundleShortVersionString 1.0.0` with `CFBundleVersion 1.0.0.53`, so an
+entire release cycle of staging deploys shares one marketing version.
+
+Apple closes that version's pre-release train the moment it accepts the
+version, and from then on TestFlight rejects every build still carrying it:
+`Invalid Pre-Release Train ... closed for new build submissions (90186)` and
+`CFBundleShortVersionString ... must contain a higher version than that of the
+previously approved version (90062)`. Neither is retryable.
+
+Closing the `StagingDeployCash` issue is what normally keeps this from
+happening, because `finishReleaseCycle` bumps `PATCH` as part of the
+promotion. If a version reaches the App Store without that cycle being closed
+(submitted by hand, say), `master` stays on the shipped marketing version and
+every iOS deploy fails until someone bumps it:
+
+```bash
+gh workflow run createNewVersion.yml --ref master -f SEMVER_LEVEL=PATCH
+```
+
+`node scripts/asc.mjs status` shows which versions Apple has accepted, if you
+need to confirm which train is closed.
+
 ## Day-To-Day Release Flow
 
 ### I want an internal iOS or closed Android build
