@@ -545,6 +545,18 @@ function modifySessionDrinks(
   return drinksList;
 }
 
+/**
+ * What an ADD may name for itself, beyond the drink type and the amount: the
+ * time it happened (a retro-add) and the serving it was (a preset, or a value
+ * typed into the per-entry edit). Anything omitted falls back to the session's
+ * add time and to `CONST.DRINK_DEFAULTS`.
+ */
+type AddEntryOverrides = {
+  ts?: number;
+  volume_ml?: number;
+  abv?: number;
+};
+
 /** What `modifySessionEntries` changed: the whole map and the changed entries. */
 type SessionEntriesChange = {
   /** The session's entries after the change */
@@ -582,6 +594,7 @@ function modifySessionEntries(
   authorUid: UserID,
   source: SessionEntrySource,
   mintEntryId: () => SessionEntryId,
+  overrides: AddEntryOverrides = {},
 ): SessionEntriesChange {
   const entries: SessionEntries = {...(session.entries ?? {})};
   const unchanged: SessionEntriesChange = {entries, patch: {}};
@@ -603,7 +616,12 @@ function modifySessionEntries(
       );
       return unchanged;
     }
-    const ts = resolveAddTimestamp(getSessionAddDrinksOptions(session), now);
+    // A retro-add names its own time ("this beer was 20 minutes ago");
+    // otherwise the session decides (now while live, its start or end when
+    // editing a past session).
+    const ts =
+      overrides.ts ??
+      resolveAddTimestamp(getSessionAddDrinksOptions(session), now);
     const entry: SessionEntry = {
       ts,
       key: drinkKey,
@@ -613,6 +631,15 @@ function modifySessionEntries(
       target_uid: authorUid,
       created_at: now,
     };
+    // Only a serving the user actually chose is stamped. An entry without
+    // them falls back to `CONST.DRINK_DEFAULTS` at read time (RFC §4.3), so
+    // storing the defaults would add bytes and say nothing.
+    if (overrides.volume_ml !== undefined) {
+      entry.volume_ml = overrides.volume_ml;
+    }
+    if (overrides.abv !== undefined) {
+      entry.abv = overrides.abv;
+    }
     const id = mintEntryId();
     entries[id] = entry;
     return {entries, patch: {[id]: entry}, addedTs: ts};
@@ -672,6 +699,44 @@ function selectEntriesForRemoval(
  * all and always yields an empty map; the caller keeps
  * `modifySessionDrinks` for those.
  */
+/**
+ * Change the fields of ONE named entry: the per-entry edit from the session
+ * timeline. Only the fields the caller names move; `edited_at` is stamped so
+ * a reader can tell an edited entry from an untouched one.
+ *
+ * Returns the changed entry keyed by its id, or an empty map when the session
+ * has no such live entry or the edit would change nothing, so a no-op edit
+ * sends no op.
+ */
+function editSessionEntryById(
+  session: DrinkingSession,
+  entryId: SessionEntryId,
+  fields: AddEntryOverrides & {count?: number; key?: DrinkKey},
+  now: number,
+): SessionEntries {
+  const entry = session.entries?.[entryId];
+  if (!entry || entry.deleted === true) {
+    return {};
+  }
+  const updated: SessionEntry = {...entry};
+  let hasChanged = false;
+  for (const field of ['ts', 'key', 'count', 'volume_ml', 'abv'] as const) {
+    const value = fields[field];
+    if (value !== undefined && value !== entry[field]) {
+      // The union of the five field types is wider than any one of them, so
+      // the assignment needs the cast; the loop's key/value pairing is what
+      // keeps it sound.
+      (updated as Record<string, unknown>)[field] = value;
+      hasChanged = true;
+    }
+  }
+  if (!hasChanged) {
+    return {};
+  }
+  updated.edited_at = now;
+  return {[entryId]: updated};
+}
+
 function removeSessionEntryById(
   session: DrinkingSession,
   entryId: SessionEntryId,
@@ -1087,7 +1152,7 @@ function getSessionTypeDescription(
   }
 }
 
-export type {SessionEntriesChange};
+export type {AddEntryOverrides, SessionEntriesChange};
 export {
   PlaceholderDrinks,
   addDrinksToList,
@@ -1120,6 +1185,7 @@ export {
   modifySessionDrinks,
   modifySessionEntries,
   removeDrinksFromList,
+  editSessionEntryById,
   removeSessionEntryById,
   selectEntriesForRemoval,
   sessionIsExpired,

@@ -107,6 +107,13 @@ zde`, `Přidejte si je zde`, `Zkuste hledat zde`.
 | invite link (friend)           | **odkaz pro přidání do přátel** (short: "odkaz")                                    | pozvánkový odkaz           |
 | QR code                        | **QR kód**                                                                          |                            |
 | reset (an invite link)         | **vytvořit nový odkaz**                                                             | resetovat, obnovit         |
+| timeline (of a session)        | **časová osa**                                                                      | historie, průběh           |
+| entry (one logged drink)       | **drink** (the row itself: "Upravit drink", "Smazat drink")                         | záznam, položka            |
+| serving (volume + ABV)         | **porce**                                                                           | dávka, množství            |
+| undo (a just-added drink)      | **vrátit**                                                                          | zrušit, vzít zpět          |
+| source: watch                  | **hodinky**                                                                         |                            |
+| source: Live Activity          | **uzamčená obrazovka**                                                              | živá aktivita              |
+| source: web                    | **Web** (identical to English; see do-not-translate)                                |                            |
 
 Share-sheet text the user sends to a friend (`inviteCode.shareMessage`) is
 written in the user's voice to that friend, so it uses tykání ("Přidej si mě").
@@ -115,8 +122,8 @@ Everything addressed to the user stays vykání.
 ## Do-not-translate (keep verbatim)
 
 `Kiroku`, `Kiroku Supporter` (tier name), `OK`, `N/A`, `Google`, `Apple`,
-`App Store`, `Google Play`, `TestFlight`, `Discord`, `QR`, `Menu`, version
-prefix `v`, and any dev-only / test-tools
+`App Store`, `Google Play`, `TestFlight`, `Discord`, `QR`, `Menu`, `Web` (as
+the entry-source label), version prefix `v`, and any dev-only / test-tools
 strings that reference English menu paths or feature-flag names.
 
 ## Capitalization
