@@ -44,6 +44,14 @@ type Config = {
 
   /** Remote feature-flag overrides (kill switches) */
   feature_flags?: FeatureFlagOverrides;
+
+  /**
+   * How many hours of inactivity before the server's sweep auto-closes an
+   * ongoing session (kiroku-api `POST /v1/jobs/close-stale-sessions`). Absent
+   * means the sweep is off for this environment, so nothing auto-closes. A
+   * per-user `auto_close_sessions_after_hours` preference overrides it.
+   */
+  auto_close_default_hours?: number;
 };
 
 export default Config;

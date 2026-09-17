@@ -67,6 +67,7 @@ declare module 'react-native' {
     ShortcutManager: ShortcutManagerModule;
     WatchBridge: WatchBridgeModule;
     LiveActivityBridge: LiveActivityModule;
+    LiveSessionNotification: LiveActivityModule;
   }
 
   namespace Animated {

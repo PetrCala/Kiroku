@@ -1140,6 +1140,11 @@ const CONST = {
     },
     // `target_uid` of an entry logged for nobody in particular (RFC §4.3).
     ENTRY_TARGET_UNCLAIMED: 'unclaimed',
+    // The opt-out kiroku-api persists for `auto_close_sessions_after_hours`
+    // (see its src/lib/sessions/constants.ts). Stored as this string rather
+    // than removed, so an explicit "never" is distinguishable from "unset",
+    // which falls back to the global default.
+    AUTO_CLOSE_NEVER: 'never',
     MEMBER_ROLE: {
       ADMIN: 'admin',
       MEMBER: 'member',
