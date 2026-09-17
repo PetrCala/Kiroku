@@ -406,6 +406,102 @@ describe('logging drinks', () => {
   });
 });
 
+describe('deleting a named entry', () => {
+  const twoBeers = () =>
+    liveSession({
+      entries: {
+        older: {
+          ts: START,
+          key: 'beer',
+          count: 3,
+          source: CONST.SESSION.ENTRY_SOURCE.PHONE,
+          author_uid: UID,
+          target_uid: UID,
+          created_at: START,
+        },
+        newer: {
+          ts: START + 60_000,
+          key: 'beer',
+          count: 1,
+          source: CONST.SESSION.ENTRY_SOURCE.PHONE,
+          author_uid: UID,
+          target_uid: UID,
+          created_at: START,
+        },
+      },
+    });
+
+  it('deletes the entry the user pointed at, not the newest one', async () => {
+    await seedLiveSession(twoBeers());
+    DS.removeSessionEntry(SESSION_ID, 'older');
+    await waitFor(() => sentOps().length === 1);
+
+    // "Remove from latest" would have taken `newer`. This names `older`.
+    expect(sentOps().at(0)).toMatchObject({
+      type: CONST.SESSION_OP.TYPE.DELETE_ENTRY,
+      payload: {entryId: 'older'},
+    });
+    const buffer = await readBuffer();
+    expect(buffer?.entries?.older?.deleted).toBe(true);
+    // The key stays, and its neighbour is untouched.
+    expect(buffer?.entries?.older?.count).toBe(3);
+    expect(buffer?.entries?.newer?.deleted).toBeUndefined();
+  });
+
+  it('sends nothing when the entry is already a tombstone', async () => {
+    const session = twoBeers();
+    const entries = session.entries ?? {};
+    await seedLiveSession({
+      ...session,
+      entries: {...entries, older: {...entries.older, deleted: true}},
+    });
+    DS.removeSessionEntry(SESSION_ID, 'older');
+    await settle();
+    expect(sentOps()).toHaveLength(0);
+  });
+
+  it('sends nothing for an id the session does not have', async () => {
+    await seedLiveSession(twoBeers());
+    DS.removeSessionEntry(SESSION_ID, 'nope');
+    await settle();
+    expect(sentOps()).toHaveLength(0);
+  });
+
+  it('refuses a legacy session, which has no entry ids to name', async () => {
+    await seedLiveSession({
+      id: SESSION_ID,
+      start_time: START,
+      end_time: START,
+      blackout: false,
+      note: '',
+      timezone: 'Europe/Prague',
+      type: CONST.SESSION.TYPES.LIVE,
+      ongoing: true,
+      drinks: {[START]: {beer: 1}},
+    });
+    DS.removeSessionEntry(SESSION_ID, 'whatever');
+    await settle();
+    expect(sentOps()).toHaveLength(0);
+    expect(sentSessionUpserts()).toHaveLength(0);
+  });
+
+  it('two devices deleting different drinks cannot touch each other', async () => {
+    // The race the bucket path could not survive: each delete names its own
+    // key, so the two writes are disjoint whichever order the server sees.
+    await seedLiveSession(twoBeers());
+    DS.removeSessionEntry(SESSION_ID, 'older');
+    DS.removeSessionEntry(SESSION_ID, 'newer');
+    await waitFor(() => sentOps().length === 2);
+
+    expect(
+      sentOps().map(op => (op.payload as {entryId: string}).entryId),
+    ).toEqual(['older', 'newer']);
+    const buffer = await readBuffer();
+    expect(buffer?.entries?.older?.deleted).toBe(true);
+    expect(buffer?.entries?.newer?.deleted).toBe(true);
+  });
+});
+
 describe('session meta while live', () => {
   it('sends set_note and set_blackout', async () => {
     await seedLiveSession();
