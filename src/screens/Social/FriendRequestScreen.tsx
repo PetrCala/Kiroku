@@ -295,11 +295,15 @@ function FriendRequestScreen() {
 
   return (
     <View style={styles.flex1}>
-      <ScrollView style={[styles.mw100]}>
+      <ScrollView
+        style={[styles.mw100]}
+        contentContainerStyle={[styles.flexGrow1]}>
         {isLoading || !!loadingText ? (
           <FlexibleLoadingIndicator style={styles.mt5} />
         ) : (
-          <View>
+          // `flexGrow` (not `flex`) so the empty state can fill the viewport
+          // and center itself, while a populated list still sizes to content.
+          <View style={styles.flexGrow1}>
             {!isEmptyObject(friendRequests) ? (
               <View>
                 <GrayHeader
