@@ -29,7 +29,7 @@ function getTierLabel(id: TipProductId): TranslationPaths {
     case 'kiroku.tipjar.small_beer':
       return 'supporter.tipJar.tierSmallBeerShort';
     case 'kiroku.tipjar.pint':
-      return 'supporter.tipJar.tierPintShort';
+      return 'supporter.tipJar.tierBeerShort';
     case 'kiroku.tipjar.round':
       return 'supporter.tipJar.tierRoundShort';
   }
@@ -147,7 +147,7 @@ function TipJar() {
           price: product.price,
         });
       case 'kiroku.tipjar.pint':
-        return translate('supporter.tipJar.ctaPint', {price: product.price});
+        return translate('supporter.tipJar.ctaBeer', {price: product.price});
       case 'kiroku.tipjar.round':
         return translate('supporter.tipJar.ctaRound', {price: product.price});
     }

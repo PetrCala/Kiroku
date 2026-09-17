@@ -919,12 +919,12 @@ export default {
         'Kiroku je zdarma a bez reklam. Pro podpoření aplikace nás můžete pozvat na pivko.',
       heroTitle: 'Pozvi vývojáře na pivko',
       tierSmallBeerShort: 'Malé pivo',
-      tierPintShort: 'Velké pivo',
+      tierBeerShort: 'Velké pivo',
       tierRoundShort: 'Runda',
       mostPopular: 'Oblíbené',
       ctaSmallBeer: ({price}: SupporterPriceParams) =>
         `Koupit malé pivo · ${price}`,
-      ctaPint: ({price}: SupporterPriceParams) =>
+      ctaBeer: ({price}: SupporterPriceParams) =>
         `Koupit velké pivo · ${price}`,
       ctaRound: ({price}: SupporterPriceParams) => `Koupit rundu · ${price}`,
       // Czech has three forms here: 1 pivo, 2-4 piva, 5+ piv.

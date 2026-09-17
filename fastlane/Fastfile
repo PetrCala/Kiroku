@@ -56,7 +56,7 @@ KIROKU_REVIEW_NOTES = <<~NOTES.freeze
   Not applicable. Kiroku doesn't sell, deliver, or advertise alcohol, isn't a medical device, gives no medical advice, and contains no licensed third-party material.
 
   7. IN-APP PURCHASES
-  Three optional consumable tips: "A small beer", "A pint", and "A round for the team" (kiroku.tipjar.small_beer, kiroku.tipjar.pint, kiroku.tipjar.round). To buy one: Settings tab > Support Kiroku > pick a tier > tap the buy button. A tip unlocks nothing: no feature, badge, or limit changes, and every feature stays free. This version has no subscriptions.
+  Three optional consumable tips: "A small beer", "A beer", and "A round for the team" (kiroku.tipjar.small_beer, kiroku.tipjar.pint, kiroku.tipjar.round). To buy one: Settings tab > Support Kiroku > pick a tier > tap the buy button. A tip unlocks nothing: no feature, badge, or limit changes, and every feature stays free. This version has no subscriptions.
 NOTES
 
 def kiroku_review_notes
