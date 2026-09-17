@@ -13,11 +13,17 @@
  * Usage:
  *   node scripts/asc-tips.mjs status
  *   node scripts/asc-tips.mjs setup
+ *   node scripts/asc-tips.mjs copy [--yes]
  *   node scripts/asc-tips.mjs screenshot <path-to-png> [--yes]
  *
  * Every command is idempotent: `setup` skips what already exists, so it is
  * safe to re-run after a failure partway through. Transient 5xx responses are
  * retried.
+ *
+ * `copy` is the one that changes text on products that already exist: it
+ * PATCHes the reference name and the localized name and description to match
+ * the table below. A localization change goes to App Review with the old text
+ * still live, so `copy` is a DRY RUN unless --yes.
  *
  * `screenshot` writes to all three products and deletes whatever is live on
  * them first, so it is a DRY RUN unless --yes.
@@ -26,7 +32,7 @@
  *   --bundle-id <id>   app bundle id (default: com.kiroku.app)
  *   --app-id <id>      ASC app id (skips the bundle-id lookup)
  *   --key <path>       ASC API key JSON (default: <repo>/ios/ios-fastlane-json-key.json)
- *   --yes              screenshot: actually upload (otherwise dry run)
+ *   --yes              copy / screenshot: actually write (otherwise dry run)
  */
 import {execFileSync} from 'node:child_process';
 import crypto from 'node:crypto';
@@ -66,14 +72,18 @@ const TIPS = [
       },
     },
   },
+  // The id says pint and the copy says beer on purpose: ids are burn-once, and
+  // the middle tier was renamed to match the app's own drink vocabulary (a
+  // 500 ml beer is `beer` in CONST.DRINK_DEFAULTS, not a pint). Nothing a user
+  // sees carries the id.
   {
     productId: 'kiroku.tipjar.pint',
-    name: 'Tip: pint',
+    name: 'Tip: beer',
     czk: 99,
     locales: {
       'en-US': {
-        name: 'A pint',
-        description: 'A pint of thanks. Unlocks nothing.',
+        name: 'A beer',
+        description: 'A thank-you beer. Unlocks nothing.',
       },
       cs: {
         name: 'Velké pivo',
@@ -97,6 +107,19 @@ const TIPS = [
     },
   },
 ];
+
+// Apple rejects an over-long name or description with a generic 400, so check
+// the table itself before any command touches the API.
+for (const tip of TIPS) {
+  for (const [locale, copy] of Object.entries(tip.locales)) {
+    if (copy.name.length > 30 || copy.description.length > 45)
+      throw new Error(
+        `${tip.productId} ${locale}: name must be <= 30 chars (is ` +
+          `${copy.name.length}) and description <= 45 (is ` +
+          `${copy.description.length})`,
+      );
+  }
+}
 
 // ---- args -----------------------------------------------------------------
 const argv = process.argv.slice(2);
@@ -231,9 +254,21 @@ async function localize(tip, id) {
     'GET',
     `/v2/inAppPurchases/${id}/inAppPurchaseLocalizations?limit=50`,
   );
-  const have = new Set(current.data.map(l => l.attributes.locale));
+  const have = new Map(current.data.map(l => [l.attributes.locale, l]));
   for (const [locale, copy] of Object.entries(tip.locales)) {
-    if (have.has(locale)) continue;
+    const live = have.get(locale);
+    if (live) {
+      // Creating is all `setup` does: changing live copy is a submission to
+      // App Review, which belongs behind its own command.
+      if (
+        live.attributes.name !== copy.name ||
+        live.attributes.description !== copy.description
+      )
+        L(
+          `  ${locale} differs from the table; run \`asc-tips.mjs copy\` to see it`,
+        );
+      continue;
+    }
     await api('POST', '/v1/inAppPurchaseLocalizations', {
       data: {
         type: 'inAppPurchaseLocalizations',
@@ -365,6 +400,180 @@ async function setup(appId) {
   }
 }
 
+// An in-app purchase's localized copy belongs to a *version*, not to the
+// product: the live version is read-only, so changing the copy of an approved
+// product means a new version that goes through App Review on its own while
+// the live one keeps selling. These are the version states `copy` can edit,
+// and the ones where it has to wait.
+const EDITABLE_VERSION = new Set([
+  'PREPARE_FOR_SUBMISSION',
+  'DEVELOPER_ACTION_NEEDED',
+  'REJECTED',
+]);
+const VERSION_WITH_REVIEW = new Set(['WAITING_FOR_REVIEW', 'IN_REVIEW']);
+
+/** Every version of a product, newest first. */
+async function versionsOf(iapId) {
+  const r = await api('GET', `/v2/inAppPurchases/${iapId}/versions?limit=20`);
+  return r.data.sort((a, b) => b.attributes.version - a.attributes.version);
+}
+
+async function localizationsOf(versionId) {
+  const r = await api(
+    'GET',
+    `/v1/inAppPurchaseVersions/${versionId}/localizations?limit=50`,
+  );
+  return r.data;
+}
+
+async function createLocalization(iapId, locale, copy) {
+  await api('POST', '/v1/inAppPurchaseLocalizations', {
+    data: {
+      type: 'inAppPurchaseLocalizations',
+      attributes: {locale, name: copy.name, description: copy.description},
+      relationships: {
+        inAppPurchaseV2: {data: {type: 'inAppPurchases', id: iapId}},
+      },
+    },
+  });
+}
+
+/** The locales where a version's copy differs from the table. */
+function localeDrift(tip, localizations) {
+  const drift = [];
+  for (const [locale, copy] of Object.entries(tip.locales)) {
+    const live = localizations.find(l => l.attributes.locale === locale);
+    if (
+      !live ||
+      live.attributes.name !== copy.name ||
+      live.attributes.description !== copy.description
+    )
+      drift.push({locale, copy, live});
+  }
+  return drift;
+}
+
+/**
+ * Write one product's drifted locales onto an editable version, opening one
+ * first if the newest version is live, then send it to App Review.
+ */
+async function applyCopy(iap, tip, latest, drift) {
+  let editable = EDITABLE_VERSION.has(latest.attributes.state) ? latest : null;
+  let todo = drift;
+  if (!editable) {
+    // Creating a localization on a product whose newest version is live opens
+    // the next version, and Apple copies the other locales into it as they
+    // stand. So the first locale is a create, and the rest are edits.
+    await createLocalization(iap.id, todo[0].locale, todo[0].copy);
+    L(`  ${todo[0].locale} written`);
+    todo = todo.slice(1);
+    editable = (await versionsOf(iap.id))[0];
+    L(`  version ${editable.attributes.version} opened`);
+  }
+  const localizations = await localizationsOf(editable.id);
+  for (const {locale, copy} of todo) {
+    const live = localizations.find(l => l.attributes.locale === locale);
+    if (live)
+      await api('PATCH', `/v1/inAppPurchaseLocalizations/${live.id}`, {
+        data: {
+          type: 'inAppPurchaseLocalizations',
+          id: live.id,
+          attributes: {name: copy.name, description: copy.description},
+        },
+      });
+    else await createLocalization(iap.id, locale, copy);
+    L(`  ${locale} written`);
+  }
+  await api('POST', '/v1/inAppPurchaseSubmissions', {
+    data: {
+      type: 'inAppPurchaseSubmissions',
+      relationships: {
+        inAppPurchaseV2: {data: {type: 'inAppPurchases', id: iap.id}},
+      },
+    },
+  });
+  L(`  version ${editable.attributes.version} submitted to App Review`);
+}
+
+/**
+ * Bring the store copy of existing products in step with the TIPS table.
+ * `setup` only ever creates, so renaming a tier needs this.
+ *
+ * The reference name is internal to App Store Connect and changes at once.
+ * The localized name and description go to App Review as a new version: the
+ * live text stays up until it is approved, the product stays on sale, and the
+ * version can be deleted while it waits. Because it is a submission, this is
+ * a DRY RUN unless --yes.
+ */
+async function syncCopy(appId) {
+  const existing = await productsById(appId);
+  let changes = 0;
+  for (const tip of TIPS) {
+    L(`\n${tip.productId}`);
+    const iap = existing.get(tip.productId);
+    if (!iap) {
+      L('  NOT CREATED; run setup first');
+      continue;
+    }
+
+    if (iap.attributes.name !== tip.name) {
+      changes++;
+      L(`  reference name: ${iap.attributes.name} -> ${tip.name}`);
+      if (OPTS.yes) {
+        await api('PATCH', `/v2/inAppPurchases/${iap.id}`, {
+          data: {
+            type: 'inAppPurchases',
+            id: iap.id,
+            attributes: {name: tip.name},
+          },
+        });
+        L('  reference name written');
+      }
+    }
+
+    const latest = (await versionsOf(iap.id))[0];
+    const where = `version ${latest.attributes.version} (${latest.attributes.state})`;
+    const drift = localeDrift(tip, await localizationsOf(latest.id));
+    if (!drift.length) {
+      L(`  copy matches the table in ${where}`);
+      continue;
+    }
+    changes += drift.length;
+    for (const {locale, copy, live} of drift) {
+      const from = live
+        ? `${live.attributes.name} / ${live.attributes.description}`
+        : '(not localized)';
+      L(`  ${locale}: ${from}`);
+      L(
+        `  ${' '.repeat(locale.length)}  -> ${copy.name} / ${copy.description}`,
+      );
+    }
+    if (VERSION_WITH_REVIEW.has(latest.attributes.state)) {
+      L(`  ${where} is with App Review; it cannot be changed until that ends`);
+      continue;
+    }
+    if (!OPTS.yes) {
+      L(
+        EDITABLE_VERSION.has(latest.attributes.state)
+          ? `  would write this into ${where} and submit it`
+          : `  would open version ${latest.attributes.version + 1} with this copy and submit it`,
+      );
+      continue;
+    }
+    await applyCopy(iap, tip, latest, drift);
+  }
+  if (!changes) {
+    L('\nStore copy already matches the table in this file.');
+    return;
+  }
+  L(
+    OPTS.yes
+      ? '\nApp Review has to approve a localization change before it goes live. ' +
+          'Play needs the same rename: node scripts/play.mjs tips --yes'
+      : `\nDry run: ${changes} change(s). Re-run with --yes to send them.`,
+  );
+}
+
 async function status(appId) {
   const existing = await productsById(appId);
   for (const tip of TIPS) {
@@ -373,11 +582,11 @@ async function status(appId) {
       L(`${tip.productId}  NOT CREATED`);
       continue;
     }
-    const [locs, manual, availability, shot] = await Promise.all([
-      api(
-        'GET',
-        `/v2/inAppPurchases/${iap.id}/inAppPurchaseLocalizations?limit=10`,
-      ),
+    // Locales come from the newest version, not from the product: the
+    // product-level list flattens every version, so a pending copy change
+    // shows each locale twice.
+    const [latest, manual, availability, shot] = await Promise.all([
+      versionsOf(iap.id).then(v => v[0]),
       api(
         'GET',
         `/v1/inAppPurchasePriceSchedules/${iap.id}/manualPrices?include=inAppPurchasePricePoint&limit=10`,
@@ -386,14 +595,18 @@ async function status(appId) {
       optional(`/v2/inAppPurchases/${iap.id}/appStoreReviewScreenshot`),
     ]);
     const price = manual.included?.[0]?.attributes;
+    const locales = (await localizationsOf(latest.id)).map(
+      l => l.attributes.locale,
+    );
     L(`\n${tip.productId}  [${iap.attributes.state}]`);
     L(`  type        : ${iap.attributes.inAppPurchaseType}`);
     L(
-      `  price       : ${price ? `${price.customerPrice} (CZE base)` : 'NOT SET'}`,
+      `  copy        : version ${latest.attributes.version} (${latest.attributes.state})`,
     );
     L(
-      `  locales     : ${locs.data.map(l => l.attributes.locale).join(', ') || 'NONE'}`,
+      `  price       : ${price ? `${price.customerPrice} (CZE base)` : 'NOT SET'}`,
     );
+    L(`  locales     : ${locales.join(', ') || 'NONE'}`);
     L(`  availability: ${availability ? 'set' : 'NOT SET'}`);
     L(`  review note : ${iap.attributes.reviewNote ? 'set' : 'NOT SET'}`);
     L(
@@ -553,9 +766,10 @@ async function main() {
 
   if (command === 'setup') return setup(appId);
   if (command === 'status') return status(appId);
+  if (command === 'copy') return syncCopy(appId);
   if (command === 'screenshot') return screenshot(appId, arg);
   console.error(
-    'usage: asc-tips.mjs <setup|status|screenshot <png> [--yes]> ' +
+    'usage: asc-tips.mjs <setup|status|copy [--yes]|screenshot <png> [--yes]> ' +
       '[--app-id <id>]',
   );
   process.exitCode = 1;

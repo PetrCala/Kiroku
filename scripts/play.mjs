@@ -70,7 +70,9 @@
  *            it (convertRegionPrices), as Apple derives its territories from
  *            CZE. Each product gets one legacy-compatible buy option, which is
  *            then activated. Idempotent: an existing product is never
- *            repriced, only given missing listings and an activated option.
+ *            repriced, but its listings are brought in step with the table
+ *            (missing languages added, drifted title or description
+ *            rewritten) and its purchase option activated.
  *            Falls back to the legacy in-app products API if the one-time
  *            products API is unavailable. DRY RUN unless --yes. Product ids
  *            are burn-once on Play too, so read the dry run first.
@@ -1105,6 +1107,27 @@ const playListings = tip =>
     description: copy.description,
   }));
 
+/**
+ * The listings that are missing from a live product, and the ones whose text
+ * has drifted from the table (a renamed tier). Play reviews listing changes
+ * the same way it reviews a new listing.
+ */
+function listingDrift(tip, current) {
+  const live = new Map((current?.listings ?? []).map(l => [l.languageCode, l]));
+  const add = [];
+  const update = [];
+  for (const wanted of playListings(tip)) {
+    const have = live.get(wanted.languageCode);
+    if (!have) add.push(wanted);
+    else if (
+      have.title !== wanted.title ||
+      have.description !== wanted.description
+    )
+      update.push(wanted);
+  }
+  return {add, update};
+}
+
 function money(currencyCode, amount) {
   const cents = Math.round(amount * 100);
   return {
@@ -1221,9 +1244,8 @@ function planTip(tip, current, legacy) {
   if (!current) return legacy ? ['create'] : ['create', 'activate'];
   if (legacy) return [];
   const steps = [];
-  const have = new Set((current.listings ?? []).map(l => l.languageCode));
-  if (playListings(tip).some(l => !have.has(l.languageCode)))
-    steps.push('listings');
+  const {add, update} = listingDrift(tip, current);
+  if (add.length || update.length) steps.push('listings');
   const option = current.purchaseOptions?.find(
     o => o.purchaseOptionId === TIP_OPTION,
   );
@@ -1250,9 +1272,15 @@ function printPlan({tip, current, steps, pricing}) {
     }
   }
   if (steps.includes('listings')) {
-    const have = new Set(current.listings.map(l => l.languageCode));
-    const add = playListings(tip).filter(l => !have.has(l.languageCode));
-    L(`  listings  add ${add.map(l => l.languageCode).join(', ')}`);
+    const {add, update} = listingDrift(tip, current);
+    const parts = [];
+    if (add.length)
+      parts.push(`add ${add.map(l => l.languageCode).join(', ')}`);
+    if (update.length)
+      parts.push(
+        `update ${update.map(l => `${l.languageCode} "${l.title}"`).join(', ')}`,
+      );
+    L(`  listings  ${parts.join('; ')}`);
   }
   if (steps.includes('activate'))
     L(`  activate  purchase option "${TIP_OPTION}"`);
@@ -1286,10 +1314,11 @@ async function applyTip({tip, current, steps, pricing}, legacy) {
     L(`  created   ${tip.productId}`);
   }
   if (steps.includes('listings')) {
-    const have = new Set(current.listings.map(l => l.languageCode));
+    const {add, update} = listingDrift(tip, current);
+    const rewritten = new Map(update.map(l => [l.languageCode, l]));
     const listings = [
-      ...current.listings,
-      ...playListings(tip).filter(l => !have.has(l.languageCode)),
+      ...current.listings.map(l => rewritten.get(l.languageCode) ?? l),
+      ...add,
     ];
     const version =
       current.regionsVersion?.version ??

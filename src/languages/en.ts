@@ -911,12 +911,12 @@ export default {
         'Kiroku is free and has no ads. To support the app development, you can buy us a beer.',
       heroTitle: 'Buy us a beer',
       tierSmallBeerShort: 'Small beer',
-      tierPintShort: 'Pint',
+      tierBeerShort: 'Beer',
       tierRoundShort: 'A round',
       mostPopular: 'Popular',
       ctaSmallBeer: ({price}: SupporterPriceParams) =>
         `Buy a small beer · ${price}`,
-      ctaPint: ({price}: SupporterPriceParams) => `Buy a pint · ${price}`,
+      ctaBeer: ({price}: SupporterPriceParams) => `Buy a beer · ${price}`,
       ctaRound: ({price}: SupporterPriceParams) => `Buy a round · ${price}`,
       thanksCount: ({count}: SupporterTipCountParams) =>
         count === 1 ? 'You bought us a beer' : `You bought us ${count} beers`,

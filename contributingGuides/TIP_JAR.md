@@ -1,7 +1,7 @@
 # Tip jar
 
 The Support Kiroku screen carries a tip jar: three consumable in-app purchases
-("A small beer" / "A pint" / "A round", CZK base prices 49/99/249) that let a
+("A small beer" / "A beer" / "A round", CZK base prices 49/99/249) that let a
 user say thanks. The design rules, borrowed from kyuhachi's ADR-011, are what
 keep it a tip and not a paywall:
 
@@ -30,6 +30,13 @@ user reading the app in Czech on a foreign storefront would otherwise get
 English names. The store display names still exist (they appear in the
 purchase sheet) and are kept in step by hand, in `scripts/asc-tips.mjs`, which
 both `asc-tips.mjs setup` and `play.mjs tips` read.
+
+Renaming a tier therefore means both halves, or the buy button and the
+purchase sheet disagree: the `en.ts` strings, and the table in
+`asc-tips.mjs` pushed to both stores (`asc-tips.mjs copy --yes` and
+`play.mjs tips --yes`). The **ids never change**, so `kiroku.tipjar.pint` is
+the middle tier however it is spelled on screen; that drift is deliberate and
+invisible to users.
 
 ## The one ask on Home
 
@@ -131,7 +138,29 @@ note live in `scripts/asc-tips.mjs` and must match `CONST.TIPS.PRODUCT_IDS`
 exactly. Only the CZE price is set by hand: Apple derives every other
 territory from it. Hard-won API facts baked into the script:
 
-- Localization names cap at 30 characters, descriptions at 45.
+- Localization names cap at 30 characters, descriptions at 45. The script
+  checks both before it calls anything, because Apple answers an over-long
+  value with a generic 400.
+- **`setup` only ever creates.** It skips a localization that exists, whatever
+  it says, so it can never rewrite live store copy by accident; it prints a
+  line when one has drifted from the table. Changing the copy of a product
+  that already exists is `asc-tips.mjs copy`, a dry run unless `--yes`.
+- **Localized copy belongs to a version, not to the product.** An approved
+  version's localizations are read-only: a PATCH answers
+  `409 ENTITY_ERROR.ATTRIBUTE.INVALID.UNMODIFIABLE`, "Cannot edit
+  InAppPurchaseLocalization when it is in ACTIVE state". POSTing a
+  localization for a locale that already exists is not an error either: it
+  opens the **next version** of the product, into which Apple copies the other
+  locales as they stand. So `copy` writes the first drifted locale as a
+  create, PATCHes the rest on the version that appears, and then
+  `POST /v1/inAppPurchaseSubmissions` sends that version to App Review. The
+  live version keeps selling its old text throughout, and the pending version
+  can be deleted while it waits. The reference name is internal and changes at
+  once, with no review.
+- `status` reads locales from the newest version for the same reason: the
+  product-level localization list flattens every version, so a pending copy
+  change shows each locale twice. Its `copy` line is where a rename's progress
+  shows (`version 2 (WAITING_FOR_REVIEW)` until App Review takes it).
 - **Product ids are burn-once.** The ids are `kiroku.tipjar.small_beer` /
   `.pint` / `.round`, deliberately not prefixed with the bundle id: ids are
   immutable and bundle ids are not, as the `com.kiroku.app` move proved. They
@@ -288,6 +317,9 @@ What it creates, per tip, through the one-time products API
 
 Hard-won API facts baked into the script:
 
+- Listings are brought in step with the table, not just created: a language
+  missing from a live product is added, and a title or description that has
+  drifted (a renamed tier) is rewritten. Play reviews the change.
 - **Product ids are burn-once on Play too.** A deleted id cannot be reused, so
   read the dry run before `--yes`. The script also refuses to run if the
   `asc-tips.mjs` table and `CONST.TIPS.PRODUCT_IDS` disagree.

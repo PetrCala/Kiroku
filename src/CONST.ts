@@ -176,7 +176,9 @@ const CONST = {
   // display order on the Support screen. Must stay in step with the products
   // created in App Store Connect by `scripts/asc-tips.mjs`, because StoreKit
   // silently omits any id it does not recognize. A tip unlocks nothing; see
-  // contributingGuides/TIP_JAR.md.
+  // contributingGuides/TIP_JAR.md. `kiroku.tipjar.pint` is the middle tier,
+  // shown as "Beer" since the rename: ids are burn-once, so the old spelling
+  // stays in the id forever and no user ever sees it.
   TIPS: {
     PRODUCT_IDS: [
       'kiroku.tipjar.small_beer',
