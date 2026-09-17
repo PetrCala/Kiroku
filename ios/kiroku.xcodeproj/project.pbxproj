@@ -41,9 +41,11 @@
 		83FC8CE3177C39CBDAA6C289AB66D895 /* InitialView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 672DB160CC5BB29428AC67E4E2129203 /* InitialView.swift */; };
 		852ACE5A025BE6AF815FBC9C /* KirokuSessionAttributes.swift in Sources */ = {isa = PBXBuildFile; fileRef = B69A7F23D834640A81A85DF7 /* KirokuSessionAttributes.swift */; };
 		85D3A2428FB7A384E0E90E056C100D01 /* CzechTexts.swift in Sources */ = {isa = PBXBuildFile; fileRef = 36534A287E6B0F7321F76D2E4AE78B47 /* CzechTexts.swift */; };
+		8FAC8A699F10DA3A8459DCFE /* LiveActivityBridge.swift in Sources */ = {isa = PBXBuildFile; fileRef = 70F14979234AC03ECC17D752 /* LiveActivityBridge.swift */; };
 		96AC25BB9F951774C540913B63BFF33E /* SessionTabView.swift in Sources */ = {isa = PBXBuildFile; fileRef = DA84EB4D89EE659667E5AE7A7E79CEDE /* SessionTabView.swift */; };
 		99C0C09ABE98934F6A4CE02AAC233123 /* SessionViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4FB608088F2E6A985BD942B01309E2CA /* SessionViewModel.swift */; };
 		9BD2C165AA19304B36E83BF41E38849D /* Translate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9D2F7B1458F4F39F476FE5D6C1F84D9D /* Translate.swift */; };
+		9C9E033DC8AF516E098C28F2 /* LiveActivityBridge.m in Sources */ = {isa = PBXBuildFile; fileRef = 3BAAE672F172DE4C7AE09717 /* LiveActivityBridge.m */; };
 		A2831D15E1FC7975C5D17616AA4B5B50 /* ImageAssets.swift in Sources */ = {isa = PBXBuildFile; fileRef = DE7215CAB6FE7E391659BEFCCEB6A930 /* ImageAssets.swift */; };
 		ACBE498C432C3C34E13F86BE6E6E3D2E /* ExpensifyNeue-Bold.otf in Resources */ = {isa = PBXBuildFile; fileRef = 1777A343F31D8EAE6EB90ABA5CC06332 /* ExpensifyNeue-Bold.otf */; };
 		BF0639D4F44317C2C6F43E56 /* Kiroku Watch App.app in Embed Watch Content */ = {isa = PBXBuildFile; fileRef = FCC932AE708BEAD1D1F250D3CC3196F3 /* Kiroku Watch App.app */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
@@ -144,6 +146,7 @@
 		2807A7F093875785C9B9FD52DF99D726 /* PrivacyInfo.xcprivacy */ = {isa = PBXFileReference; lastKnownFileType = text.xml; name = PrivacyInfo.xcprivacy; path = kiroku/PrivacyInfo.xcprivacy; sourceTree = "<group>"; };
 		2A12276275D9BE012B773C7E /* Pods-kiroku-kirokuTests.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-kiroku-kirokuTests.release.xcconfig"; path = "Target Support Files/Pods-kiroku-kirokuTests/Pods-kiroku-kirokuTests.release.xcconfig"; sourceTree = "<group>"; };
 		36534A287E6B0F7321F76D2E4AE78B47 /* CzechTexts.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = CzechTexts.swift; sourceTree = "<group>"; };
+		3BAAE672F172DE4C7AE09717 /* LiveActivityBridge.m */ = {isa = PBXFileReference; fileEncoding = 4; includeInIndex = 1; lastKnownFileType = sourcecode.c.objc; name = LiveActivityBridge.m; path = kiroku/LiveActivityBridge.m; sourceTree = "<group>"; };
 		3FC14E075100224A5C18F4B89B5FDAA8 /* RCTBootSplash.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = RCTBootSplash.h; path = kiroku/RCTBootSplash.h; sourceTree = "<group>"; };
 		446D800DA47EC05519C25EBD2C4C1B15 /* SessionControlView.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = SessionControlView.swift; sourceTree = "<group>"; };
 		47B2D168AA0BF104AA56C9784517733C /* ExpoModulesProvider.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = ExpoModulesProvider.swift; path = "Pods/Target Support Files/Pods-kiroku/ExpoModulesProvider.swift"; sourceTree = "<group>"; };
@@ -159,6 +162,7 @@
 		685FF1D72D7A49104164E4BB3E1EE42F /* kirokuTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = kirokuTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		6FC3B8C4CA38E90FD39FE96759DCF07F /* ExpensifyNewKansas-Medium.otf */ = {isa = PBXFileReference; includeInIndex = 1; path = "ExpensifyNewKansas-Medium.otf"; sourceTree = "<group>"; };
 		7024CFE8515996734761447D /* Pods-kiroku.releasedevelopment.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-kiroku.releasedevelopment.xcconfig"; path = "Target Support Files/Pods-kiroku/Pods-kiroku.releasedevelopment.xcconfig"; sourceTree = "<group>"; };
+		70F14979234AC03ECC17D752 /* LiveActivityBridge.swift */ = {isa = PBXFileReference; fileEncoding = 4; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = LiveActivityBridge.swift; path = kiroku/LiveActivityBridge.swift; sourceTree = "<group>"; };
 		713C1A165F6C545FF4D8DBF61DB26122 /* Kiroku_Watch_AppUITestsLaunchTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Kiroku_Watch_AppUITestsLaunchTests.swift; sourceTree = "<group>"; };
 		7287BAF86794A70B82CDC071 /* Pods-kiroku-kirokuTests.debugdevelopment.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-kiroku-kirokuTests.debugdevelopment.xcconfig"; path = "Target Support Files/Pods-kiroku-kirokuTests/Pods-kiroku-kirokuTests.debugdevelopment.xcconfig"; sourceTree = "<group>"; };
 		732611B2ED16C157779228EEB137A4DD /* UnitSelectionView.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = UnitSelectionView.swift; sourceTree = "<group>"; };
@@ -341,6 +345,8 @@
 				FA0000000000000000000001 /* WatchBridge.swift */,
 				FA0000000000000000000002 /* WatchBridge.m */,
 				A19095879D0F5A5F11311FBA6371E13F /* kiroku.entitlements */,
+				70F14979234AC03ECC17D752 /* LiveActivityBridge.swift */,
+				3BAAE672F172DE4C7AE09717 /* LiveActivityBridge.m */,
 			);
 			name = kiroku;
 			sourceTree = "<group>";
@@ -1015,6 +1021,8 @@
 				FB0000000000000000000001 /* WatchBridge.swift in Sources */,
 				FB0000000000000000000002 /* WatchBridge.m in Sources */,
 				018515FFE46E8B40EFB187A0 /* KirokuSessionAttributes.swift in Sources */,
+				8FAC8A699F10DA3A8459DCFE /* LiveActivityBridge.swift in Sources */,
+				9C9E033DC8AF516E098C28F2 /* LiveActivityBridge.m in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

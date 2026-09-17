@@ -120,6 +120,11 @@ const CONST = {
     // logo plays its full assembly + liquid-fill entrance instead of being
     // masked by the flying splash logo.
     LOGO_FLY_IN: false,
+    // The live session on the lock screen (Sessions v2, RFC §8): the iOS Live
+    // Activity and the Android ongoing notification. One flag for both,
+    // because decision 16 ships them together. Off until both have been seen
+    // working on a real device.
+    LIVE_SESSION_LOCK_SCREEN: false,
     // Session writes as small idempotent ops (Sessions v2, RFC §5). Off until
     // the server implements more than the `ping` shell.
     SESSION_OPS: false,

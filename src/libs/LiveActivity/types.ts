@@ -1,0 +1,59 @@
+/**
+ * The payload JS hands to the native live-session surface: the iOS Live
+ * Activity (`ios/kiroku/LiveActivityBridge.swift`) and, from W4 step 3, the
+ * Android ongoing notification. One shape for both, because one hook drives
+ * both.
+ *
+ * Every value must be plist-safe (no null, no undefined properties). Text is
+ * already localized here, because neither native surface can reach
+ * `src/languages`. The elapsed time is deliberately absent: both platforms
+ * render it natively from `startedAt`, so it keeps ticking while the app is
+ * suspended and no JS-driven clock string is ever sent.
+ */
+type LiveSessionActivityPayload = {
+  /** The ongoing session this surface belongs to */
+  sessionId: string;
+
+  /** When the session started, epoch milliseconds; the timer counts from here */
+  startedAt: number;
+
+  /** Where a tap goes (`kiroku://drinking-session/<id>/live`) */
+  deepLink: string;
+
+  /** The session name (W1 `SessionMeta.name`), localized default included */
+  name: string;
+
+  /** The unit total, already formatted, e.g. "4.5 units" */
+  unitsText: string;
+
+  /** How many drinks the session holds */
+  drinkCount: number;
+
+  /** Localized label for that count, e.g. "Drinks" */
+  drinksLabel: string;
+
+  /**
+   * When the session closed, epoch milliseconds. Only set on `end`, where it
+   * freezes the timer so the last frame reads as a summary.
+   */
+  endedAt?: number;
+};
+
+/**
+ * The native module surface. Fire and forget in both directions: nothing
+ * resolves, nothing rejects, and every reason not to show anything (an OS
+ * without ActivityKit, activities turned off, notifications denied) is handled
+ * natively rather than being reported back here.
+ */
+type LiveActivityModule = {
+  /** A session went live */
+  start: (payload: LiveSessionActivityPayload) => void;
+
+  /** Something in the live session changed */
+  update: (payload: LiveSessionActivityPayload) => void;
+
+  /** The session closed, or there is no longer one to show */
+  end: (payload: LiveSessionActivityPayload) => void;
+};
+
+export type {LiveActivityModule, LiveSessionActivityPayload};
