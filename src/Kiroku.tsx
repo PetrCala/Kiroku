@@ -243,11 +243,21 @@ function Kiroku() {
   // straight from `isAuthenticated` here — so when the AuthScreens chunk-load or
   // mount loses the boot race (~1 in 8 under load), the modal shows but the
   // gate's only setter never runs and the splash is pinned forever (web #splash
-  // is z-index 10000 and swallows every click). Tying the backstop to
-  // `isAuthenticated` makes it fire regardless of AuthScreens, so the gate can't
-  // deadlock. The 15s SplashScreenHider net remains as the last resort.
+  // is z-index 10000 and swallows every click). Owning the backstop here makes
+  // it fire regardless of AuthScreens, so the gate can't deadlock. The 15s
+  // SplashScreenHider net remains as the last resort.
+  //
+  // Armed from first render, NOT from `isAuthenticated`. Waiting for auth
+  // restarted the 3s budget after `onAuthStateChanged` resolved, so a degraded
+  // network pushed the real cap out to (auth latency + 3s) and left only the
+  // 15s force-hide in between. Arming at mount caps the splash at a flat 3s.
+  // `isAuthenticated` is deliberately absent from the deps: including it would
+  // tear down and restart the pending timer the moment auth resolved, which is
+  // exactly the delay this removes. Firing early while signed out is inert:
+  // `isAuthScreenReady` above is already true via `!isAuthenticated`, and the
+  // only other reader is the stuck-splash log snapshot below.
   useEffect(() => {
-    if (!isAuthenticated || isAuthDataReady) {
+    if (isAuthDataReady) {
       return undefined;
     }
     const timeoutId = setTimeout(() => {
@@ -274,7 +284,7 @@ function Kiroku() {
       setIsAuthDataReady(true);
     }, CONST.BOOT_SPLASH_AUTH_DATA_TIMEOUT_MS);
     return () => clearTimeout(timeoutId);
-  }, [isAuthenticated, isAuthDataReady, setIsAuthDataReady]);
+  }, [isAuthDataReady, setIsAuthDataReady]);
 
   const shouldHideSplash = !!(
     shouldInit &&

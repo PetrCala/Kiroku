@@ -4,7 +4,17 @@ import InitialUrlContext from '@libs/InitialUrlContext';
 import Navigation from '@navigation/Navigation';
 import lazyRetry from '@src/utils/lazyRetry';
 
-const AuthScreens = lazy(() => lazyRetry(() => import('./AuthScreens')));
+// Start the authenticated chunk's fetch at module evaluation, i.e. at app
+// boot, so it downloads and parses in parallel with Firebase Auth resolving
+// rather than starting only once `authenticated` flips. `lazy` is handed the
+// same promise, so lazyRetry's refresh-once recovery still runs exactly once.
+const authScreensImport = lazyRetry(() => import('./AuthScreens'));
+// The public stack may never render AuthScreens, leaving the preload's
+// rejection unobserved. Attach a no-op handler so a failed warm-up is not
+// reported as an unhandled rejection; React observes the same promise again
+// and surfaces the error where it can actually be handled.
+authScreensImport.catch(() => {});
+const AuthScreens = lazy(() => authScreensImport);
 const PublicScreens = lazy(() => lazyRetry(() => import('./PublicScreens')));
 
 type AppNavigatorProps = {
