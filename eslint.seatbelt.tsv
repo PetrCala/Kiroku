@@ -729,7 +729,6 @@
 "src/components/DatePicker/CalendarPicker/index.tsx"	"rulesdir/no-use-state-initializer-functions"	4
 "src/components/DatePicker/index.tsx"	"react-hooks/set-state-in-effect"	1
 "src/components/DisplayNames/DisplayNamesWithTooltip.tsx"	"react-hooks/refs"	6
-"src/components/DrinkingSessionOverview/index.tsx"	"react/jsx-no-leaked-render"	1
 "src/components/DrinkingSessionWindow/index.tsx"	"react-hooks/set-state-in-render"	2
 "src/components/FlatList/index.tsx"	"react-hooks/refs"	1
 "src/components/FlexibleLoadingIndicator.tsx"	"react/jsx-no-leaked-render"	1

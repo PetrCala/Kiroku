@@ -21,6 +21,10 @@ import ROUTES from '@src/ROUTES';
 import {useCallback, useEffect, useMemo, useState} from 'react';
 import * as DSUtils from '@libs/DrinkingSessionUtils';
 import {getSessionDisplayName} from '@libs/SessionName';
+import {
+  isSessionPrivate,
+  visibilityFromIsPrivate,
+} from '@libs/SessionVisibility';
 import * as DS from '@userActions/DrinkingSession';
 import * as TipJarPromptActions from '@userActions/TipJarPrompt';
 import DateUtils from '@libs/DateUtils';
@@ -37,6 +41,7 @@ import MenuItem from '@components/MenuItem';
 import Section from '@components/Section';
 import type {TranslationPaths} from '@src/languages/types';
 import MenuItemGroup from '@components/MenuItemGroup';
+import Switch from '@components/Switch';
 import cloneDeep from 'lodash/cloneDeep';
 
 type DrinkMenuItem = {
@@ -143,6 +148,26 @@ function SessionSummaryScreen({route}: SessionSummaryScreenProps) {
           shouldHide: session.ongoing,
         },
         {
+          titleKey: 'liveSessionScreen.private',
+          description: translate('liveSessionScreen.privateDescription'),
+          rightComponent: (
+            <Switch
+              accessibilityLabel={translate(
+                'liveSessionScreen.privateSwitchLabel',
+              )}
+              isOn={isSessionPrivate(session)}
+              onToggle={value =>
+                DS.updateSessionVisibility(
+                  sessionId,
+                  session,
+                  visibilityFromIsPrivate(value),
+                )
+              }
+            />
+          ),
+          shouldHide: session.ongoing,
+        },
+        {
           titleKey: 'sessionSummaryScreen.generalSection.sessionColor',
           rightComponent: (
             <View
@@ -191,9 +216,7 @@ function SessionSummaryScreen({route}: SessionSummaryScreenProps) {
     }),
     [
       translate,
-      session.blackout,
-      session.note,
-      session.ongoing,
+      session,
       sessionId,
       sessionName,
       lastDrinkAdded,

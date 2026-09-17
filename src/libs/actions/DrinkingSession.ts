@@ -7,6 +7,7 @@ import type {
   DrinksTimestamp,
   OngoingSessionSync,
   SessionEntrySource,
+  SessionVisibility,
   UnsyncedSessionWriteList,
   UserDataList,
 } from '@src/types/onyx';
@@ -1040,6 +1041,53 @@ function updateSessionName(
   );
 }
 
+/**
+ * Set a session's visibility (RFC §4.2). Same two cases as
+ * {@link updateSessionName}: a session open in a buffer gets the value there
+ * and its own save persists it, an already-stored session goes straight
+ * through the session update path.
+ *
+ * A session with no `visibility` is `friends`, the RFC's default, and the
+ * server reads it that way too, so setting it on a legacy session writes the
+ * field without changing the session's schema.
+ */
+function updateSessionVisibility(
+  sessionId: DrinkingSessionId | undefined,
+  session: DrinkingSession | undefined,
+  visibility: SessionVisibility,
+): void {
+  if (!sessionId || !session) {
+    Log.warn('updateSessionVisibility: no session to update');
+    return;
+  }
+  const onyxKey = DSUtils.getDrinkingSessionOnyxKey(sessionId);
+  if (onyxKey) {
+    const current = DSUtils.getDrinkingSessionData(sessionId) ?? session;
+    Onyx.merge(onyxKey, {visibility});
+    DSUtils.setLocalSessionCache(onyxKey, {...current, visibility});
+    if (onyxKey === ONYXKEYS.ONGOING_SESSION_DATA) {
+      recordLiveSessionEdit(sessionId);
+    }
+    return;
+  }
+
+  const userID = getFirebaseAuth().currentUser?.uid;
+  if (!userID) {
+    Log.warn('updateSessionVisibility: no signed-in user to update it for');
+    return;
+  }
+  const updated: DrinkingSession = {...session, visibility};
+  API.write(
+    WRITE_COMMANDS.UPDATE_SESSION,
+    {
+      sessionId,
+      session: updated,
+      sessionIsLive: false,
+    },
+    {optimisticData: sessionUpsertOptimisticData(userID, sessionId, updated)},
+  );
+}
+
 function updateBlackout(
   session: DrinkingSession | undefined,
   blackout: boolean,
@@ -1267,6 +1315,7 @@ export {
   updateDrinks,
   updateNote,
   updateSessionName,
+  updateSessionVisibility,
   updateLocalData,
   updateLocalSessionDataAndNavigate,
   updateSessionDate,
