@@ -24,6 +24,7 @@
 		31AFD0EDFF8CD003A91C2B77 /* KirokuSessionLiveActivity.swift in Sources */ = {isa = PBXBuildFile; fileRef = DA8E7BAF5FB215313647D6ED /* KirokuSessionLiveActivity.swift */; };
 		35346397021C5BB6272FEF86A02996A7 /* UnitSelectionView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 732611B2ED16C157779228EEB137A4DD /* UnitSelectionView.swift */; };
 		36623FEF1D5A221A557F73AD647500ED /* ExpensifyMono-Bold.otf in Resources */ = {isa = PBXBuildFile; fileRef = 93A69287161165BB233810A4C9B5A2B1 /* ExpensifyMono-Bold.otf */; };
+		3BD88658F60D39CD04148ADB /* SessionHeaderView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 912E78A779C85EF88D3664A8 /* SessionHeaderView.swift */; };
 		413CBD8FE514996619387E2F9C8595F8 /* Kiroku_Watch_AppUITestsLaunchTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 713C1A165F6C545FF4D8DBF61DB26122 /* Kiroku_Watch_AppUITestsLaunchTests.swift */; };
 		43B45031E9C37461A97616988D3E4910 /* SessionControlView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 446D800DA47EC05519C25EBD2C4C1B15 /* SessionControlView.swift */; };
 		5D73DDAAC692EAB1B6F59E686222DD3A /* ExpensifyNeue-BoldItalic.otf in Resources */ = {isa = PBXBuildFile; fileRef = 601DDAA52DC96A11298F6162BBD4AC76 /* ExpensifyNeue-BoldItalic.otf */; };
@@ -172,6 +173,7 @@
 		7F0F9082C37DDC79066DFE0B03E80EE2 /* Info.plist */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.xml; name = Info.plist; path = kiroku/Info.plist; sourceTree = "<group>"; };
 		8557B5A4E0FB12B8FE79BD843EED5B9B /* JavaScriptCore.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = JavaScriptCore.framework; path = System/Library/Frameworks/JavaScriptCore.framework; sourceTree = SDKROOT; };
 		8CF1DA67722E0F45DD9EAC0BBC5B5960 /* UnitModel.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = UnitModel.swift; sourceTree = "<group>"; };
+		912E78A779C85EF88D3664A8 /* SessionHeaderView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SessionHeaderView.swift; sourceTree = "<group>"; };
 		93A69287161165BB233810A4C9B5A2B1 /* ExpensifyMono-Bold.otf */ = {isa = PBXFileReference; includeInIndex = 1; path = "ExpensifyMono-Bold.otf"; sourceTree = "<group>"; };
 		93B257D6B0C1E19861DCDBEDB8A5D721 /* BootSplash.storyboard */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = file.storyboard; name = BootSplash.storyboard; path = kiroku/BootSplash.storyboard; sourceTree = "<group>"; };
 		948CE50BEBF728B21C429B720A5CF721 /* ExpensifyNewKansas-MediumItalic.otf */ = {isa = PBXFileReference; includeInIndex = 1; path = "ExpensifyNewKansas-MediumItalic.otf"; sourceTree = "<group>"; };
@@ -477,6 +479,7 @@
 				67409ABB382975A15E2A13689AEBBF4A /* SettingsView.swift */,
 				94C048D5A45F93365BFB5AB6705DA84E /* StartSessionContent.swift */,
 				732611B2ED16C157779228EEB137A4DD /* UnitSelectionView.swift */,
+				912E78A779C85EF88D3664A8 /* SessionHeaderView.swift */,
 			);
 			path = Views;
 			sourceTree = "<group>";
@@ -1057,6 +1060,7 @@
 				9BD2C165AA19304B36E83BF41E38849D /* Translate.swift in Sources */,
 				6E05CC7FD00177EE114BE7541BE9EF1A /* UnitModel.swift in Sources */,
 				35346397021C5BB6272FEF86A02996A7 /* UnitSelectionView.swift in Sources */,
+				3BD88658F60D39CD04148ADB /* SessionHeaderView.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
