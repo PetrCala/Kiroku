@@ -1,6 +1,7 @@
 import PropTypes from 'prop-types';
 import * as RNLocalize from 'react-native-localize';
 import Onyx from 'react-native-onyx';
+import LocaleUtils from '@libs/LocaleUtils';
 import Log from '@libs/Log';
 import type {
   MessageElementBase,
@@ -40,7 +41,7 @@ function init() {
   CONJUNCTION_LIST_FORMATS_FOR_LOCALES = Object.values(CONST.LOCALES).reduce(
     (memo: Record<string, Intl.ListFormat>, locale) => {
       // eslint-disable-next-line no-param-reassign
-      memo[locale] = new Intl.ListFormat(locale, {
+      memo[locale] = new Intl.ListFormat(LocaleUtils.getIntlLocale(locale), {
         style: 'long',
         type: 'conjunction',
       });
