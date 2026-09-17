@@ -18,6 +18,12 @@
 //    name: String, unitsText: String, drinkCount: Int, drinksLabel: String
 //    endedAt: Double (epoch ms, `end` only)
 //
+//  One thing does travel back to JS: the activity's APNs push token, as the
+//  `liveActivityPushToken` event. ActivityKit mints it per activity and may
+//  rotate it, so it arrives asynchronously rather than as a return value. JS
+//  hands it to kiroku-api's device registry, where W6c will look it up to push
+//  an update for a shared session.
+//
 //  The elapsed time is deliberately NOT in the payload. It is derived from
 //  `startedAt` by `Text(timerInterval:)` in the widget, so the clock keeps
 //  ticking while the app is suspended and JS never sends a formatted string.
@@ -27,7 +33,7 @@ import ActivityKit
 import Foundation
 
 @objc(LiveActivityBridge)
-final class LiveActivityBridge: NSObject {
+final class LiveActivityBridge: RCTEventEmitter {
     /// Serializes state access: RN calls arrive on the module's method queue,
     /// ActivityKit completions on whatever thread the system picks.
     private let queue = DispatchQueue(label: "cz.kiroku.liveactivity")
@@ -36,9 +42,57 @@ final class LiveActivityBridge: NSObject {
     /// this class has to exist on every version the app supports.
     private var storedActivity: Any?
 
-    @objc
+    /// Watches `pushTokenUpdates` for the running activity. Cancelled and
+    /// replaced whenever the activity is.
+    private var tokenObserver: Task<Void, Never>?
+
+    /// The last token seen, held so a token that arrives before JS subscribes
+    /// (or while it is torn down) is delivered rather than lost.
+    private var pendingToken: (sessionId: String, token: String)?
+
+    private var hasListeners = false
+
+    // Not an `override`: RCTEventEmitter leaves this optional
+    // RCTBridgeModule requirement to its subclasses.
     static func requiresMainQueueSetup() -> Bool {
         false
+    }
+
+    override func supportedEvents() -> [String] {
+        [Self.pushTokenEvent]
+    }
+
+    static let pushTokenEvent = "liveActivityPushToken"
+
+    override func startObserving() {
+        queue.async {
+            self.hasListeners = true
+            self.flushPendingToken()
+        }
+    }
+
+    override func stopObserving() {
+        queue.async {
+            self.hasListeners = false
+        }
+    }
+
+    /// Must be called on `queue`.
+    private func flushPendingToken() {
+        guard hasListeners, let pending = pendingToken else {
+            return
+        }
+        pendingToken = nil
+        sendEvent(
+            withName: Self.pushTokenEvent,
+            body: ["sessionId": pending.sessionId, "token": pending.token]
+        )
+    }
+
+    /// Must be called on `queue`. Holds the token until JS is listening.
+    fileprivate func deliver(token: String, for sessionId: String) {
+        pendingToken = (sessionId: sessionId, token: token)
+        flushPendingToken()
     }
 
     /// A session went live. Starts an activity, or retargets an existing one

@@ -1,15 +1,22 @@
 import type {OnyxEntry} from 'react-native-onyx';
 import type {LocaleContextProps} from '@components/LocaleContextProvider';
+import * as API from '@libs/API';
+import {WRITE_COMMANDS} from '@libs/API/types';
 import {getAutoCloseAt} from '@libs/AutoClose';
 import {calculateTotalUnits} from '@libs/DrinkingSessionUtils';
 import LiveActivity from '@libs/LiveActivity';
-import type {LiveSessionActivityPayload} from '@libs/LiveActivity/types';
+import type {
+  LiveActivityPushToken,
+  LiveSessionActivityPayload,
+} from '@libs/LiveActivity/types';
 import {getSessionEntries, sumEntryCounts} from '@libs/SessionEntries';
+import Log from '@libs/Log';
 import {getDefaultSessionName} from '@libs/SessionName';
 import CONST from '@src/CONST';
 import ROUTES from '@src/ROUTES';
 import type {Config, DrinkingSession, Preferences} from '@src/types/onyx';
 import type {DrinksToUnits} from '@src/types/onyx/Preferences';
+import * as Device from './Device';
 
 /**
  * Keeps the lock-screen view of a live session (Sessions v2 RFC §8) in step
@@ -33,6 +40,13 @@ let lastPayload: LiveSessionActivityPayload | undefined;
  * screen from a session that ended while it was dead.
  */
 let hasSynced = false;
+
+/**
+ * Whether this device has told the server about a Live Activity push token.
+ * Only iOS ever does; Android's ongoing notification is local and has nothing
+ * to address, so nothing is registered and nothing has to be cleared.
+ */
+let hasRegisteredPushToken = false;
 
 type LiveActivityState = {
   /** The ongoing session, or nothing when none is live */
@@ -134,6 +148,7 @@ function sync(state: LiveActivityState): void {
       ...(previous ?? emptyPayload()),
       endedAt: Date.now(),
     });
+    unregisterPushToken();
     return;
   }
 
@@ -163,10 +178,67 @@ function emptyPayload(): LiveSessionActivityPayload {
   };
 }
 
+/**
+ * Tell kiroku-api which activity this device is showing, so the server can
+ * push an update to it. Nothing sends those updates yet: a solo session
+ * updates its own activity from the app, and shared sessions are W6c. This
+ * exists so W6c finds the registry already populated.
+ *
+ * Queued like any write, so it survives being offline. The server stores it
+ * under the device's entry in the registry from Kiroku#1640.
+ */
+function registerPushToken({sessionId, token}: LiveActivityPushToken): void {
+  Device.getDeviceID()
+    .then(deviceID => {
+      if (!deviceID) {
+        return;
+      }
+      hasRegisteredPushToken = true;
+      API.write(WRITE_COMMANDS.REGISTER_LIVE_ACTIVITY, {
+        deviceID,
+        sessionId,
+        token,
+      });
+    })
+    .catch(error => {
+      Log.hmmm('[LiveActivity] Could not register the push token', {error});
+    });
+}
+
+/** The activity is gone, so the token that addressed it is dead. */
+function unregisterPushToken(): void {
+  if (!hasRegisteredPushToken) {
+    return;
+  }
+  hasRegisteredPushToken = false;
+  Device.getDeviceID()
+    .then(deviceID => {
+      if (!deviceID) {
+        return;
+      }
+      API.write(WRITE_COMMANDS.UNREGISTER_LIVE_ACTIVITY, {deviceID});
+    })
+    .catch(error => {
+      Log.hmmm('[LiveActivity] Could not unregister the push token', {error});
+    });
+}
+
+/**
+ * Start following the running activity's push token. iOS mints one per
+ * activity and may rotate it while the activity runs, so this listens for as
+ * long as the user is signed in. A no-op on Android and web, where the native
+ * surface has no token to give. Returns an unsubscribe.
+ */
+function watchPushToken(): () => void {
+  const unsubscribe = LiveActivity.subscribeToPushToken?.(registerPushToken);
+  return () => unsubscribe?.();
+}
+
 /** Drop the remembered state, without touching the lock screen. For tests. */
 function reset(): void {
   lastPayload = undefined;
   hasSynced = false;
+  hasRegisteredPushToken = false;
 }
 
 /**
@@ -176,9 +248,15 @@ function reset(): void {
  */
 function stop(): void {
   const previous = lastPayload;
+  const hadPushToken = hasRegisteredPushToken;
   reset();
   LiveActivity.end({...(previous ?? emptyPayload()), endedAt: Date.now()});
+  // Sign-out drops the whole device from the registry anyway, but the server
+  // call that does it needs a Firebase session this one may already have lost.
+  // Asking twice is a no-op; asking once too few leaves a dead token behind.
+  hasRegisteredPushToken = hadPushToken;
+  unregisterPushToken();
 }
 
-export {buildPayload, liveSessionDeepLink, reset, stop, sync};
+export {buildPayload, liveSessionDeepLink, reset, stop, sync, watchPushToken};
 export type {LiveActivityState};

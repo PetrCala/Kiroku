@@ -51,6 +51,11 @@ function useLiveActivity(): void {
     autoCloseDefaultHours,
   ]);
 
+  // iOS hands the running activity's push token back asynchronously and may
+  // rotate it, so follow it for as long as the user is signed in. A no-op
+  // everywhere else.
+  useEffect(() => LiveActivityActions.watchPushToken(), []);
+
   // Sign-out unmounts the authenticated tree; clear the lock screen with it
   // rather than waiting for Onyx to empty.
   useEffect(() => () => LiveActivityActions.stop(), []);

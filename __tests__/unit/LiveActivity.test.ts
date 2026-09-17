@@ -4,6 +4,7 @@
  * payload the native surface is handed. The platform module is mocked, so the
  * real payload assembly and diffing run.
  */
+/* eslint-disable rulesdir/no-api-in-views -- this test asserts on the mocked API.write pipeline; it is not a view */
 import type {DrinkingSession} from '@src/types/onyx';
 import type {DrinkKey} from '@src/types/onyx/Drinks';
 import type {SessionEntry} from '@src/types/onyx/SessionEntries';
@@ -13,7 +14,18 @@ jest.mock('@libs/LiveActivity', () => ({
   __esModule: true,
   // Created inside the factory: it runs while the hoisted imports are still
   // being evaluated, before any const at the top of this file is assigned.
-  default: {start: jest.fn(), update: jest.fn(), end: jest.fn()},
+  default: {
+    start: jest.fn(),
+    update: jest.fn(),
+    end: jest.fn(),
+    subscribeToPushToken: jest.fn(() => jest.fn()),
+  },
+}));
+
+jest.mock('@libs/API', () => ({write: jest.fn()}));
+
+jest.mock('@userActions/Device', () => ({
+  getDeviceID: jest.fn(() => Promise.resolve('device-1')),
 }));
 
 // The default name is localized off the device locale, which is not what this
@@ -23,6 +35,8 @@ jest.mock('@libs/SessionName', () => ({
 }));
 
 // eslint-disable-next-line import/first
+import * as API from '@libs/API';
+// eslint-disable-next-line import/first
 import LiveActivityModule from '@libs/LiveActivity';
 // eslint-disable-next-line import/first
 import * as LiveActivity from '@userActions/LiveActivity';
@@ -30,6 +44,20 @@ import * as LiveActivity from '@userActions/LiveActivity';
 const mockStart = LiveActivityModule.start as jest.Mock;
 const mockUpdate = LiveActivityModule.update as jest.Mock;
 const mockEnd = LiveActivityModule.end as jest.Mock;
+const mockSubscribe = LiveActivityModule.subscribeToPushToken as jest.Mock;
+const mockApiWrite = API.write as jest.Mock;
+
+type PushTokenListener = (pushToken: {
+  sessionId: string;
+  token: string;
+}) => void;
+
+/** Hand the listener the last subscription registered a token. */
+function emitPushToken(sessionId: string, token: string) {
+  const calls = mockSubscribe.mock.calls as PushTokenListener[][];
+  const listener = calls.at(-1)?.[0];
+  listener?.({sessionId, token});
+}
 
 const START = 1_700_000_000_000;
 const HOUR_MS = 60 * 60 * 1000;
@@ -225,5 +253,67 @@ describe('LiveActivity sync', () => {
     jest.clearAllMocks();
     sync(session({a: entry('beer', 1, START)}));
     expect(mockStart).toHaveBeenCalledTimes(1);
+  });
+});
+
+describe('LiveActivity push token', () => {
+  beforeEach(() => {
+    LiveActivity.reset();
+    jest.clearAllMocks();
+  });
+
+  it('registers a token with the device registry when iOS mints one', async () => {
+    LiveActivity.watchPushToken();
+    emitPushToken('session-1', 'abc123');
+    await Promise.resolve();
+    expect(mockApiWrite).toHaveBeenCalledWith('RegisterLiveActivity', {
+      deviceID: 'device-1',
+      sessionId: 'session-1',
+      token: 'abc123',
+    });
+  });
+
+  it('re-registers when iOS rotates the token', async () => {
+    LiveActivity.watchPushToken();
+    emitPushToken('session-1', 'abc123');
+    await Promise.resolve();
+    emitPushToken('session-1', 'def456');
+    await Promise.resolve();
+    expect(mockApiWrite).toHaveBeenCalledTimes(2);
+    expect(mockApiWrite).toHaveBeenLastCalledWith(
+      'RegisterLiveActivity',
+      expect.objectContaining({token: 'def456'}),
+    );
+  });
+
+  it('clears the registration when the session ends', async () => {
+    LiveActivity.watchPushToken();
+    sync(session({a: entry('beer', 1, START)}));
+    emitPushToken('session-1', 'abc123');
+    await Promise.resolve();
+    jest.clearAllMocks();
+
+    sync(undefined);
+    await Promise.resolve();
+    expect(mockApiWrite).toHaveBeenCalledWith('UnregisterLiveActivity', {
+      deviceID: 'device-1',
+    });
+  });
+
+  it('does not clear a registration it never made', async () => {
+    // Android: the ongoing notification is local, so no token is ever minted
+    // and there is nothing on the server to forget.
+    sync(session({a: entry('beer', 1, START)}));
+    sync(undefined);
+    await Promise.resolve();
+    expect(mockApiWrite).not.toHaveBeenCalled();
+  });
+
+  it('stops listening when the subscription is torn down', () => {
+    const nativeUnsubscribe = jest.fn();
+    mockSubscribe.mockReturnValueOnce(nativeUnsubscribe);
+    const unsubscribe = LiveActivity.watchPushToken();
+    unsubscribe();
+    expect(nativeUnsubscribe).toHaveBeenCalledTimes(1);
   });
 });

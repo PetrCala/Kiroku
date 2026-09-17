@@ -159,6 +159,21 @@ const KIROKU_ROUTES: Record<ApiCommand, KirokuRoute> = {
     toPath: data =>
       `/v1/notifications/devices/${encodeURIComponent(String(data.deviceID))}`,
   },
+  // The iOS Live Activity this device is currently showing (Sessions v2 W4).
+  // Keyed by session so the server can target a specific activity; nothing
+  // sends updates to it yet (that is W6c, for shared sessions).
+  [WRITE_COMMANDS.REGISTER_LIVE_ACTIVITY]: {
+    method: 'post',
+    path: '/v1/notifications/devices/:deviceID/live-activity',
+    toPath: data =>
+      `/v1/notifications/devices/${encodeURIComponent(String(data.deviceID))}/live-activity`,
+  },
+  [WRITE_COMMANDS.UNREGISTER_LIVE_ACTIVITY]: {
+    method: 'delete',
+    path: '/v1/notifications/devices/:deviceID/live-activity',
+    toPath: data =>
+      `/v1/notifications/devices/${encodeURIComponent(String(data.deviceID))}/live-activity`,
+  },
   [WRITE_COMMANDS.SEND_FRIEND_REQUEST]: {
     method: 'post',
     path: '/v1/friends/request',

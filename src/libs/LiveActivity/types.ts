@@ -1,3 +1,5 @@
+import type {NativeModule} from 'react-native';
+
 /**
  * The payload JS hands to the native live-session surface: the iOS Live
  * Activity (`ios/kiroku/LiveActivityBridge.swift`) and, from W4 step 3, the
@@ -56,7 +58,20 @@ type LiveSessionActivityPayload = {
 };
 
 /**
- * The native module surface. Fire and forget in both directions: nothing
+ * An ActivityKit push token, as the running Live Activity's APNs address.
+ * iOS mints one per activity and may rotate it while the activity runs, so it
+ * arrives asynchronously rather than as a return value.
+ */
+type LiveActivityPushToken = {
+  /** The session whose activity this token addresses */
+  sessionId: string;
+
+  /** The APNs token, lowercase hex */
+  token: string;
+};
+
+/**
+ * The native module surface. Fire and forget on the way down: nothing
  * resolves, nothing rejects, and every reason not to show anything (an OS
  * without ActivityKit, activities turned off, notifications denied) is handled
  * natively rather than being reported back here.
@@ -70,6 +85,26 @@ type LiveActivityModule = {
 
   /** The session closed, or there is no longer one to show */
   end: (payload: LiveSessionActivityPayload) => void;
+
+  /**
+   * Listen for the running activity's push token. iOS only: Android's ongoing
+   * notification is local and has nothing to address. Returns an unsubscribe.
+   */
+  subscribeToPushToken?: (
+    listener: (pushToken: LiveActivityPushToken) => void,
+  ) => () => void;
 };
 
-export type {LiveActivityModule, LiveSessionActivityPayload};
+/**
+ * The iOS bridge as React Native sees it: the module plus the `addListener` /
+ * `removeListeners` pair every `RCTEventEmitter` exports, which
+ * `NativeEventEmitter` requires.
+ */
+type LiveActivityNativeModule = LiveActivityModule & NativeModule;
+
+export type {
+  LiveActivityModule,
+  LiveActivityNativeModule,
+  LiveActivityPushToken,
+  LiveSessionActivityPayload,
+};
