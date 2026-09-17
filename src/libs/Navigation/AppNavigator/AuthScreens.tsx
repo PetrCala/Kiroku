@@ -31,6 +31,7 @@ import useResponsiveLayout from '@hooks/useResponsiveLayout';
 import useAutoUpdateTimezone from '@hooks/useAutoUpdateTimezone';
 import useCurrentUserData from '@hooks/useCurrentUserData';
 import useCurrentUserPreferences from '@hooks/useCurrentUserPreferences';
+import useLiveActivity from '@hooks/useLiveActivity';
 import useLiveSessionColdStart from '@hooks/useLiveSessionColdStart';
 import {useFirebase} from '@context/global/FirebaseContext';
 import OnboardingGuard from '@libs/Navigation/guards/OnboardingGuard';
@@ -120,6 +121,9 @@ function AuthScreensContent() {
   // On a cold start with a live session, the app opens straight into it. Keep
   // the splash up until that's settled, so Home doesn't flash first.
   const isColdStartRouteResolved = useLiveSessionColdStart();
+  // While a session is live, mirror it onto the lock screen (RFC §8). Mounted
+  // here so it starts on sign-in and clears on sign-out.
+  useLiveActivity();
   useEffect(() => {
     if (
       userData === undefined ||
