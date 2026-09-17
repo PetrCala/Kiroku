@@ -66,7 +66,12 @@ function useLiveSessionColdStart(): boolean {
     Promise.all([
       Linking.getInitialURL(),
       PushNotificationActions.getInitialNotificationRoute(),
-      Navigation.waitForProtectedRoutes(),
+      // `waitForProtectedRoutes` can never resolve here: its predicate
+      // `navContainsProtectedRoutes` is hardcoded to false in this fork, so the
+      // promise never settles and the splash falls through to its 3s backstop.
+      // The protected tree is mounted already (this hook runs inside
+      // AuthScreens), so readiness of the navigator is all we actually need.
+      Navigation.isNavigationReady(),
     ])
       .then(([initialUrl, initialNotificationRoute]) => {
         const route = getColdStartLiveSessionRoute({
