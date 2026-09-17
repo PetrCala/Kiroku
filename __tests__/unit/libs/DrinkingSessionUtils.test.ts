@@ -584,3 +584,123 @@ describe('modifySessionEntries', () => {
     ).toEqual({});
   });
 });
+
+describe('precise entry deletes', () => {
+  const UID = 'uid-owner';
+  const START = 1_700_000_000_000;
+  const NOW = START + 120_000;
+  const entry = (ts: number, key: DrinkKey, count: number) => ({
+    ts,
+    key,
+    count,
+    source: CONST.SESSION.ENTRY_SOURCE.PHONE,
+    author_uid: UID,
+    target_uid: UID,
+    created_at: ts,
+  });
+  const v2 = (entries: Record<string, ReturnType<typeof entry>>) =>
+    ({
+      id: 'v2',
+      schema_version: CONST.SESSION.SCHEMA_VERSION,
+      start_time: START,
+      end_time: START,
+      ongoing: true,
+      type: CONST.SESSION.TYPES.LIVE,
+      entries,
+    }) as DrinkingSession;
+
+  describe('selectEntriesForRemoval', () => {
+    it('names the newest entry of the type and nothing else', () => {
+      const session = v2({
+        older: entry(START, 'beer', 1),
+        newer: entry(START + 60_000, 'beer', 1),
+        wine: entry(START + 90_000, 'wine', 1),
+      });
+      const patch = DSUtils.selectEntriesForRemoval(session, 'beer', 1, NOW);
+
+      expect(Object.keys(patch)).toEqual(['newer']);
+      expect(patch.newer).toMatchObject({deleted: true, edited_at: NOW});
+    });
+
+    it('keeps the id and reduces the count when it only partly eats an entry', () => {
+      const session = v2({e1: entry(START, 'beer', 5)});
+      const patch = DSUtils.selectEntriesForRemoval(session, 'beer', 2, NOW);
+
+      expect(Object.keys(patch)).toEqual(['e1']);
+      expect(patch.e1).toMatchObject({count: 3, edited_at: NOW});
+      expect(patch.e1.deleted).toBeUndefined();
+    });
+
+    it('walks newest first across several entries until the amount is met', () => {
+      const session = v2({
+        a: entry(START, 'beer', 2),
+        b: entry(START + 10_000, 'beer', 2),
+        c: entry(START + 20_000, 'beer', 2),
+      });
+      const patch = DSUtils.selectEntriesForRemoval(session, 'beer', 3, NOW);
+
+      expect(Object.keys(patch).sort()).toEqual(['b', 'c']);
+      expect(patch.c).toMatchObject({deleted: true});
+      expect(patch.b).toMatchObject({count: 1});
+    });
+
+    it('skips tombstones rather than removing them twice', () => {
+      const session = v2({
+        gone: {...entry(START + 60_000, 'beer', 1), deleted: true} as never,
+        live: entry(START, 'beer', 1),
+      });
+      const patch = DSUtils.selectEntriesForRemoval(session, 'beer', 1, NOW);
+      expect(Object.keys(patch)).toEqual(['live']);
+    });
+
+    it('returns nothing when there is no drink of that type left', () => {
+      const session = v2({e1: entry(START, 'wine', 1)});
+      expect(DSUtils.selectEntriesForRemoval(session, 'beer', 1, NOW)).toEqual(
+        {},
+      );
+    });
+
+    it('returns nothing for a non-positive amount', () => {
+      const session = v2({e1: entry(START, 'beer', 1)});
+      expect(DSUtils.selectEntriesForRemoval(session, 'beer', 0, NOW)).toEqual(
+        {},
+      );
+    });
+  });
+
+  describe('removeSessionEntryById', () => {
+    it('tombstones exactly the named entry, leaving its neighbours alone', () => {
+      const session = v2({
+        e1: entry(START, 'beer', 3),
+        e2: entry(START + 60_000, 'beer', 1),
+      });
+      const patch = DSUtils.removeSessionEntryById(session, 'e1', NOW);
+
+      // The OLDER entry goes, which "remove from latest" could never do.
+      expect(Object.keys(patch)).toEqual(['e1']);
+      expect(patch.e1).toMatchObject({deleted: true, edited_at: NOW, count: 3});
+    });
+
+    it('is a no-op on an entry that is already a tombstone', () => {
+      const session = v2({
+        e1: {...entry(START, 'beer', 1), deleted: true} as never,
+      });
+      expect(DSUtils.removeSessionEntryById(session, 'e1', NOW)).toEqual({});
+    });
+
+    it('is a no-op on an id the session does not have', () => {
+      const session = v2({e1: entry(START, 'beer', 1)});
+      expect(DSUtils.removeSessionEntryById(session, 'nope', NOW)).toEqual({});
+    });
+
+    it('is a no-op on a legacy session, which has no entry ids', () => {
+      const legacy = {
+        id: 'legacy',
+        start_time: START,
+        end_time: START,
+        drinks: {[START]: {beer: 1}},
+      } as DrinkingSession;
+      expect(DSUtils.removeSessionEntryById(legacy, 'e1', NOW)).toEqual({});
+    });
+  });
+});
