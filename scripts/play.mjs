@@ -537,6 +537,40 @@ async function printListings(listings, defaultLanguage, readEdit, gaps) {
 }
 
 /** productId -> state, from the one-time products API or the older one. */
+// asc-tips.mjs keys Czech the way App Store Connect does; Play wants a
+// region. Defined here rather than with the other tip helpers because
+// `status` reads listings too.
+const PLAY_LANGUAGE = {cs: 'cs-CZ'};
+
+const playListings = tip =>
+  Object.entries(tip.locales).map(([locale, copy]) => ({
+    languageCode: PLAY_LANGUAGE[locale] ?? locale,
+    title: copy.name,
+    description: copy.description,
+  }));
+
+/**
+ * The listings that are missing from a live product, and the ones whose text
+ * has drifted from the table (a renamed tier). Play reviews listing changes
+ * the same way it reviews a new listing.
+ */
+function listingDrift(tip, current) {
+  const live = new Map((current?.listings ?? []).map(l => [l.languageCode, l]));
+  const add = [];
+  const update = [];
+  for (const wanted of playListings(tip)) {
+    const have = live.get(wanted.languageCode);
+    if (!have) add.push(wanted);
+    else if (
+      have.title !== wanted.title ||
+      have.description !== wanted.description
+    )
+      update.push(wanted);
+  }
+  return {add, update};
+}
+
+/** Every one-time product on Play, as `{state, listings}` keyed by id. */
 async function listOneTimeProducts() {
   const out = new Map();
   try {
@@ -549,7 +583,10 @@ async function listOneTimeProducts() {
         const states = [
           ...new Set((p.purchaseOptions ?? []).map(o => o.state)),
         ];
-        out.set(p.productId, states.join('/') || 'NO_PURCHASE_OPTIONS');
+        out.set(p.productId, {
+          state: states.join('/') || 'NO_PURCHASE_OPTIONS',
+          listings: p.listings ?? [],
+        });
       }
       pageToken = r.nextPageToken;
     } while (pageToken);
@@ -558,7 +595,16 @@ async function listOneTimeProducts() {
     if (err.status !== 400 && err.status !== 404) throw err;
   }
   const r = await api('GET', '/inappproducts');
-  for (const p of r.inappproduct ?? []) out.set(p.sku, p.status ?? '?');
+  for (const p of r.inappproduct ?? [])
+    out.set(p.sku, {
+      state: p.status ?? '?',
+      // The legacy API keys listings by language instead of listing them.
+      listings: Object.entries(p.listings ?? {}).map(([languageCode, l]) => ({
+        languageCode,
+        title: l.title,
+        description: l.description,
+      })),
+    });
   return out;
 }
 
@@ -567,8 +613,25 @@ async function printProducts(gaps) {
   const wanted = tipProductIds();
   try {
     const found = await listOneTimeProducts();
-    for (const id of wanted)
-      L(`  ${id.padEnd(28)} ${found.get(id) ?? 'MISSING'}`);
+    const table = new Map(TIPS.map(t => [t.productId, t]));
+    for (const id of wanted) {
+      const product = found.get(id);
+      L(`  ${id.padEnd(28)} ${product?.state ?? 'MISSING'}`);
+      // The listing title is what a buyer reads in Play's purchase sheet, so
+      // it is worth seeing here: this is where a rename that only landed in
+      // the app shows up as a disagreement with the table.
+      const tip = table.get(id);
+      for (const l of product?.listings ?? []) {
+        const want = tip
+          ? playListings(tip).find(w => w.languageCode === l.languageCode)
+          : null;
+        const drift =
+          want && (want.title !== l.title || want.description !== l.description)
+            ? `  != table ("${want.title}")`
+            : '';
+        L(`    ${l.languageCode.padEnd(8)} "${l.title}"${drift}`);
+      }
+    }
     const missing = wanted.filter(id => !found.has(id));
     if (missing.length)
       gaps.push(
@@ -1074,8 +1137,6 @@ async function cmdPush({listings, shotSets}) {
 }
 
 // ---- tips -------------------------------------------------------------------
-// asc-tips.mjs keys Czech the way App Store Connect does; Play wants a region.
-const PLAY_LANGUAGE = {cs: 'cs-CZ'};
 // The one purchase option each tip has. Immutable once created.
 const TIP_OPTION = 'tip';
 // Where the CZK prices in asc-tips.mjs apply, like Apple's CZE base territory.
@@ -1098,34 +1159,6 @@ function tipDefinitions() {
         `(not in TIPS: ${missing.join(', ') || 'none'}; not in CONST: ${extra.join(', ') || 'none'}). Fix that first.`,
     );
   return ids.map(id => byId.get(id));
-}
-
-const playListings = tip =>
-  Object.entries(tip.locales).map(([locale, copy]) => ({
-    languageCode: PLAY_LANGUAGE[locale] ?? locale,
-    title: copy.name,
-    description: copy.description,
-  }));
-
-/**
- * The listings that are missing from a live product, and the ones whose text
- * has drifted from the table (a renamed tier). Play reviews listing changes
- * the same way it reviews a new listing.
- */
-function listingDrift(tip, current) {
-  const live = new Map((current?.listings ?? []).map(l => [l.languageCode, l]));
-  const add = [];
-  const update = [];
-  for (const wanted of playListings(tip)) {
-    const have = live.get(wanted.languageCode);
-    if (!have) add.push(wanted);
-    else if (
-      have.title !== wanted.title ||
-      have.description !== wanted.description
-    )
-      update.push(wanted);
-  }
-  return {add, update};
 }
 
 function money(currencyCode, amount) {
