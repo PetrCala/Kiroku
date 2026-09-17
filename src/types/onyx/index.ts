@@ -47,6 +47,7 @@ import type {
 
 import type Preferences from './Preferences';
 import type PushNotificationPrompt from './PushNotificationPrompt';
+import type TipJarPrompt from './TipJarPrompt';
 import type {
   PreferencesList,
   UnitsToColors,
@@ -142,6 +143,7 @@ export type {
   Preferences,
   PreferencesList,
   PushNotificationPrompt,
+  TipJarPrompt,
   Profile,
   ProfileList,
   ReasonForLeaving,

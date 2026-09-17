@@ -35,6 +35,8 @@ import type {
   SupporterPurchaseErrorParams,
   SupporterRenewalDateParams,
   SupporterTipCountParams,
+  TipJarPromptTitleParams,
+  TipJarPromptDevStatusParams,
   UnitCountParams,
   UpdateEmailSentEmailParams,
   VerifyEmailScreenEmailParmas,
@@ -946,6 +948,17 @@ export default {
       purchaseError: ({message}: SupporterPurchaseErrorParams) =>
         `Nákup se nezdařil: ${message}. Zkuste to prosím znovu.`,
     },
+    // Playful headline, so tykání (a punchline); the body and buttons stay plain.
+    // The card only appears from 5 sessions up, so the 5+ form "relací" is
+    // always right.
+    tipJarPrompt: {
+      title: ({sessionCount}: TipJarPromptTitleParams) =>
+        `${sessionCount} zaznamenaných relací. Nepozveš vývojáře na pivko?`,
+      body: 'Kiroku je zdarma a bez reklam. Příspěvky nic neodemykají.',
+      accept: 'Pozvat na pivko',
+      notNow: 'Teď ne',
+      never: 'Už se neptat',
+    },
     paywallScreen: {
       title: 'Podpořit Kiroku',
       heroPill: 'Odznak podporovatele',
@@ -1653,6 +1666,21 @@ export default {
       unlocked: 'Odemčeno',
     },
     resetOverrides: 'Resetovat přepsání',
+    tipJarPrompt: {
+      title: 'Karta dýško koutku',
+      description:
+        'Jediná výzva na domovské obrazovce. Běžně vyžaduje 14 dní na tomto zařízení, 5 relací, žádný příspěvek z tohoto zařízení a nejdřív zavření souhrnu relace.',
+      status: ({
+        firstOpen,
+        shownCount,
+        tipsGiven,
+      }: TipJarPromptDevStatusParams) =>
+        `První otevření: ${firstOpen ?? 'zatím ne'} · Zobrazeno: ${shownCount} · Příspěvky z tohoto zařízení: ${tipsGiven}`,
+      dismissedForever: 'Na tomto zařízení trvale zavřeno.',
+      showNow: 'Zobrazit kartu hned',
+      makeEligible: 'Splnit podmínky (pak zavřete souhrn relace)',
+      reset: 'Resetovat stav karty',
+    },
     environmentLabel: 'Prostředí',
     howToOpen:
       'Otevřete přes ⌘D → Open Test Preferences nebo čtyřprstovým ťuknutím kdekoli v aplikaci.',

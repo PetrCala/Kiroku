@@ -19,6 +19,7 @@ import type {DrinkingSessionNavigatorParamList} from '@libs/Navigation/types';
 import {useCallback, useEffect, useMemo, useState} from 'react';
 import * as DSUtils from '@libs/DrinkingSessionUtils';
 import * as DS from '@userActions/DrinkingSession';
+import * as TipJarPromptActions from '@userActions/TipJarPrompt';
 import DateUtils from '@libs/DateUtils';
 import Navigation from '@libs/Navigation/Navigation';
 import ScreenWrapper from '@components/ScreenWrapper';
@@ -95,6 +96,9 @@ function SessionSummaryScreen({route}: SessionSummaryScreenProps) {
     : 'Unknown';
 
   const onBackPress = () => {
+    // Closing a summary is the calm moment Home may use for its one tip-jar
+    // ask; whether it actually shows is decided there.
+    TipJarPromptActions.armMoment();
     const lastScreenName = Navigation.getLastScreenName(true);
     if (lastScreenName === SCREENS.DAY_OVERVIEW.ROOT) {
       Navigation.goBack();

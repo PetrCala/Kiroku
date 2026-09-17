@@ -31,6 +31,54 @@ English names. The store display names still exist (they appear in the
 purchase sheet) and are kept in step by hand, in `scripts/asc-tips.mjs`, which
 both `asc-tips.mjs setup` and `play.mjs tips` read.
 
+## The one ask on Home
+
+Nobody finds a Settings-only tip jar (Overcast's passive jar converted about
+2% of users). The well-liked pattern across apps that ask (Thunderbird for
+Android, KDE Plasma, AntennaPod, Bitwarden) is a single, engagement-gated,
+dismissable ask that never nags; the disliked one (Signal, VLC iOS, Simple
+Mobile Tools) is a recurring prompt with no permanent "no". Kiroku does the
+former: one card on Home, between the session banner and the monthly
+overview, in the `HomeBanner` style. Never a modal, never on launch, never
+inside a live session, no countdown, no pre-selected tier, and nothing tied
+to tipping.
+
+- **Moment.** A session summary closing arms it (`SessionSummaryScreen` calls
+  `TipJarPromptActions.armMoment()`); the next Home focus spends the moment
+  and, if every gate holds, opens the card. An ineligible focus spends it too,
+  so a missed moment never carries over into some unrelated return to Home.
+- **Gates** (`canOpenTipJarPrompt` in `src/libs/TipJarPromptUtils.ts`, numbers
+  in `CONST.TIP_JAR_PROMPT`): 14 days since Home first rendered on this device,
+  5 completed sessions, no tip given (`TIPS_GIVEN` is 0), not an active
+  supporter, no live session, native build, never "Don't ask again", fewer
+  than 3 lifetime impressions, 120 days since the last one.
+- **Answers.** "Buy us a beer" closes the card and opens the Support screen
+  (the cooldown runs whether or not a tip follows). "Not now" closes it for the
+  cooldown. "Don't ask again" ends it for good. An open card also drops out on
+  its own once a tip lands, a subscription starts, or a session goes live.
+- **State** is `ONYXKEYS.TIP_JAR_PROMPT` (`firstOpenAt`, `shownCount`,
+  `lastShownAt`, `isOpen`, `dismissedForever`): device-level, preserved across
+  sign-out like `TIPS_GIVEN`, no server component. Losing it only restarts the
+  clock.
+- **Copy** follows COPY_VOICE: a playful headline anchored on the user's own
+  session count, a plain body ("free, no ads, tips unlock nothing"), plain
+  buttons. Tips are "tips", never donations (App Store guideline 3.2.2).
+
+**Testing it.** The card cannot appear on a fresh install for 14 days, and
+an ad-hoc test build has no Test Tools panel, so it has to be a development
+build: run the `Kiroku (development)` scheme on a simulator or on a phone
+from Xcode (or `npm run ios`), open Test Tools (four-finger tap, or ⌘D →
+Open Test Preferences), and use the "Tip jar card" section. "Show the card
+now" puts it on Home at once; "Make eligible" backdates the clock and arms
+the moment so the real open path runs (still needs 5 sessions); "Reset"
+forgets the state. All three are no-ops in production. The tip, supporter,
+and live-session gates always apply, so a device that tipped in the sandbox
+shows nothing until `TIPS_GIVEN` is cleared.
+
+Not built, on purpose: a thank-you variant a year after a tip (`TIPS_GIVEN`
+is a count, not a date), a yearly December ask (KDE's model; decide after a
+year of data), and any prompt on web.
+
 ## Why RevenueCat
 
 kyuhachi went direct-StoreKit (`expo-iap`) because RevenueCat would have been

@@ -164,6 +164,8 @@ describe('KEYS_TO_PRESERVE allowlist', () => {
         ONYXKEYS.PREFERRED_THEME,
         ONYXKEYS.NVP_PREFERRED_LOCALE,
         ONYXKEYS.IS_BETA,
+        ONYXKEYS.TIPS_GIVEN,
+        ONYXKEYS.TIP_JAR_PROMPT,
       ]),
     );
   });
