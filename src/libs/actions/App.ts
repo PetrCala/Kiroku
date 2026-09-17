@@ -82,6 +82,11 @@ Onyx.connect({
 const KEYS_TO_PRESERVE: OnyxKey[] = [
   // Device identity — documented to survive logout (see Device/generateDeviceID).
   ONYXKEYS.DEVICE_ID,
+  // How far this store has been migrated (`migrateOnyx`). A schema number, not
+  // account data: sign-out wipes the legacy shapes the migrations look for, so
+  // clearing it would only make every post-sign-out launch re-walk the store
+  // for nothing.
+  ONYXKEYS.ONYX_SCHEMA_VERSION,
   // Connectivity drives the offline request queue + OfflineIndicator; its sole
   // writer (UserConnectionProvider) sits above AuthScreens and doesn't re-emit on
   // sign-out, so clearing it could strand the queue mid-transition.

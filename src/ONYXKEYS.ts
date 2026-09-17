@@ -14,6 +14,15 @@ const ONYXKEYS = {
   //   /** A unique ID for the device */
   DEVICE_ID: 'deviceID',
 
+  /**
+   * The Onyx schema version this store has been migrated up to, i.e. how many
+   * entries of `migrateOnyx`'s MIGRATIONS list have already run to completion.
+   * Missing means 0 (a fresh install, or one that predates this key), so the
+   * full list runs once and the store is stamped afterwards. Device-level and
+   * account-independent, hence preserved across sign-out (see KEYS_TO_PRESERVE).
+   */
+  ONYX_SCHEMA_VERSION: 'onyxSchemaVersion',
+
   //   /** Boolean flag set whenever the sidebar has loaded */
   IS_SIDEBAR_LOADED: 'isSidebarLoaded',
 
@@ -329,6 +338,7 @@ type OnyxValuesMapping = {
   [ONYXKEYS.NVP_ONBOARDING]: OnyxTypes.OnboardingData | [];
   [ONYXKEYS.NVP_TERMS_ACCEPTED_VERSION]: number;
   [ONYXKEYS.DEVICE_ID]: string;
+  [ONYXKEYS.ONYX_SCHEMA_VERSION]: number;
   [ONYXKEYS.IS_SIDEBAR_LOADED]: boolean;
   [ONYXKEYS.PERSISTED_REQUESTS]: OnyxTypes.Request[];
   [ONYXKEYS.PERSISTED_ONGOING_REQUESTS]: OnyxTypes.Request;

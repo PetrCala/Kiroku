@@ -314,13 +314,18 @@ function Kiroku() {
   ]);
 
   useEffect(() => {
-    // Run any Onyx schema migrations and then continue loading the main app
-    migrateOnyx().then(() => {
+    // Run any Onyx schema migrations and then continue loading the main app.
+    // `migrateOnyx` already swallows its own failures and caps itself with a
+    // timeout, but this gate holds the whole navigator, so catch here too: a
+    // rejection that somehow escaped must still open the app rather than pin
+    // the splash until SplashScreenHider's force-hide reveals an empty tree.
+    const finishMigration = () => {
       // Delivered push notifications are cleared natively whenever the app
       // comes to the foreground (AppDelegate / MainActivity), signed in or not.
 
       setIsOnyxMigrated(true);
-    });
+    };
+    migrateOnyx().then(finishMigration).catch(finishMigration);
 
     appStateChangeListener.current = AppState.addEventListener(
       'change',

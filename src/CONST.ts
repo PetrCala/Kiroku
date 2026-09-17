@@ -852,6 +852,16 @@ const CONST = {
   // a warm listener (typically <500 ms) and shorter than the safety net.
   BOOT_SPLASH_AUTH_DATA_TIMEOUT_MS: 3 * 1000,
 
+  // Cap how long the boot waits for Onyx schema migrations (`migrateOnyx`).
+  // The migration step gates the navigator, so a migration that hangs on a
+  // slow or corrupt store would otherwise pin the splash until the 15 s
+  // force-hide net dissolves it over an empty tree. Past this point the app
+  // boots anyway: the migrations keep running in the background, and because
+  // the schema version is stamped only on completion, the next launch retries
+  // whatever didn't finish. 8 s is far longer than a real pass (a few hundred
+  // ms even on a large store) and comfortably under the safety net.
+  BOOT_SPLASH_MIGRATION_TIMEOUT_MS: 8 * 1000,
+
   // Last-resort safety net (SplashScreenHider): force-hide the splash if the
   // gates never resolve, so a stuck boot can't pin the (untappable) overlay.
   BOOT_SPLASH_FORCE_HIDE_TIMEOUT_MS: 15 * 1000,
