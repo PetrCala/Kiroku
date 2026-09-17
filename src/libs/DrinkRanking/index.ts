@@ -1,5 +1,4 @@
-import {getDrinkCount} from '@libs/DrinkEntryUtils';
-import {isDrinkTypeKey} from '@libs/DrinkingSessionUtils';
+import {getSessionEntries} from '@libs/SessionEntries';
 import {resolveLocalParts} from '@libs/Statistics/localParts';
 import {isStoredLocalParts} from '@libs/Statistics/sessionTimeParts';
 import CONST from '@src/CONST';
@@ -7,7 +6,6 @@ import type {
   DrinkingSession,
   DrinkingSessionList,
   DrinkKey,
-  DrinksList,
 } from '@src/types/onyx';
 import type {
   DrinkDistribution,
@@ -106,29 +104,22 @@ function getLocalHour(
 }
 
 /**
- * The drinks of a session as ranker entries. Today this reads the legacy
- * `drinks[timestamp][key]` buckets; when Sessions v2 turns drinks into entry
- * rows, only this adapter changes.
+ * The drinks of a session as ranker entries, read through the Sessions v2
+ * adapter so legacy buckets and v2 entries rank the same way.
  */
 function toRankEntries(
   session: DrinkingSession,
   defaultTimezone: string = CONST.DEFAULT_TIME_ZONE.selected,
 ): RankEntry[] {
-  const entries: RankEntry[] = [];
-  for (const [tsKey, drinks] of Object.entries(session.drinks ?? {})) {
-    const ts = Number(tsKey);
-    if (!Number.isFinite(ts) || !drinks) {
-      continue;
+  const hourByTs = new Map<number, number | undefined>();
+  return getSessionEntries(session).map(entry => {
+    let hour = hourByTs.get(entry.ts);
+    if (!hourByTs.has(entry.ts)) {
+      hour = getLocalHour(session, entry.ts, defaultTimezone);
+      hourByTs.set(entry.ts, hour);
     }
-    const hour = getLocalHour(session, ts, defaultTimezone);
-    for (const [key, entry] of Object.entries(drinks)) {
-      const count = getDrinkCount(entry);
-      if (isDrinkTypeKey(key) && count > 0) {
-        entries.push({key, count, ts, hour});
-      }
-    }
-  }
-  return entries;
+    return {key: entry.key, count: entry.count, ts: entry.ts, hour};
+  });
 }
 
 function emptyDistribution(): DrinkDistribution {
@@ -264,31 +255,32 @@ function buildDrinkProfile(
 }
 
 /**
- * The drink logged most recently in a session: in the newest timestamp that
- * still holds any drinks, the key with the most of them (ties keep the drink
- * order). Undefined when the session has no drinks.
+ * The drink logged most recently in a session: at the newest drink time, the
+ * key with the most drinks (ties keep the drink order). Undefined when the
+ * session has no drinks.
  */
 function getLatestDrinkKey(
-  drinks: DrinksList | undefined,
+  session: DrinkingSession | undefined,
 ): DrinkKey | undefined {
-  const timestamps = Object.keys(drinks ?? {})
-    .map(Number)
-    .filter(ts => Number.isFinite(ts))
-    .sort((a, b) => b - a);
-  for (const ts of timestamps) {
-    const bucket = drinks?.[ts];
-    let latest: {key: DrinkKey; count: number} | undefined;
-    for (const key of DRINK_KEY_ORDER) {
-      const count = getDrinkCount(bucket?.[key]);
-      if (count > 0 && (!latest || count > latest.count)) {
-        latest = {key, count};
-      }
-    }
-    if (latest) {
-      return latest.key;
+  const entries = getSessionEntries(session);
+  if (entries.length === 0) {
+    return undefined;
+  }
+  // Entries are sorted by time, so the last one carries the newest time.
+  const latestTs = entries[entries.length - 1].ts;
+  const countByKey = new Map<DrinkKey, number>();
+  for (let i = entries.length - 1; i >= 0 && entries[i].ts === latestTs; i--) {
+    const {key, count} = entries[i];
+    countByKey.set(key, (countByKey.get(key) ?? 0) + count);
+  }
+  let latest: {key: DrinkKey; count: number} | undefined;
+  for (const key of DRINK_KEY_ORDER) {
+    const count = countByKey.get(key) ?? 0;
+    if (count > 0 && (!latest || count > latest.count)) {
+      latest = {key, count};
     }
   }
-  return undefined;
+  return latest?.key;
 }
 
 /**
@@ -316,7 +308,7 @@ function rankQuickAdd(
       distribution[b] - distribution[a] ||
       DRINK_KEY_ORDER.indexOf(a) - DRINK_KEY_ORDER.indexOf(b),
   );
-  const latest = getLatestDrinkKey(session?.drinks);
+  const latest = getLatestDrinkKey(session);
   if (!latest) {
     return ranked;
   }

@@ -2,7 +2,7 @@ import React from 'react';
 import {View} from 'react-native';
 import * as KirokuIcons from '@components/Icon/KirokuIcons';
 import Icon from '@components/Icon';
-import {convertUnitsToColors, sumDrinksOfSingleType} from '@libs/DataHandling';
+import {convertUnitsToColors, sumSessionDrinksOfType} from '@libs/DataHandling';
 import DrinkData from '@libs/DrinkData';
 import {resolvePalette} from '@libs/SessionColorPalettes';
 import Navigation from '@libs/Navigation/Navigation';
@@ -68,7 +68,7 @@ function DrinkingSessionOverview({
 
   // Calculate the session color
   const totalUnits = DSUtils.calculateTotalUnits(
-    session.drinks,
+    session,
     preferences?.drinks_to_units,
     true,
   );
@@ -97,7 +97,7 @@ function DrinkingSessionOverview({
   const drinkBreakdown = DrinkData.map(({key, icon}) => ({
     key,
     icon,
-    count: sumDrinksOfSingleType(session.drinks, key),
+    count: sumSessionDrinksOfType(session, key),
   })).filter(({count}) => count > 0);
 
   const sessionDetails = (

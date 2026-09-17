@@ -164,7 +164,7 @@ function DrinkingSessionWindow({
       return;
     }
     const newTotalUnits = DSUtils.calculateTotalUnits(
-      session?.drinks,
+      session,
       preferences.drinks_to_units,
       true,
     );
@@ -175,7 +175,7 @@ function DrinkingSessionWindow({
     );
     setTotalUnits(newTotalUnits);
     setSessionColor(newSessionColor);
-  }, [session?.drinks, preferences, totalUnits]);
+  }, [session, preferences, totalUnits]);
 
   // Make the system back press toggle the go back handler. BackHandler is a
   // native-only API; on web it warns and no-ops, so skip it (web uses the

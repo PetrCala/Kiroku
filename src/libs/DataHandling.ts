@@ -18,11 +18,15 @@ import type {
 } from '@src/types/onyx';
 import CONST from '@src/CONST';
 import {isEmptyObject} from '@src/types/utils/EmptyObject';
-import isEmpty from 'lodash/isEmpty';
 import maxBy from 'lodash/maxBy';
 import type {TranslationPaths} from '@src/languages/types';
 import * as DSUtils from './DrinkingSessionUtils';
-import {getDrinkCount} from './DrinkEntryUtils';
+import {
+  getSessionEntries,
+  getSessionEntriesOfType,
+  legacyBucketsToEntries,
+  sumEntryCounts,
+} from './SessionEntries';
 import {getRandomInt} from './Choice';
 import {isLightHex, resolvePalette} from './SessionColorPalettes';
 
@@ -238,8 +242,7 @@ function sessionsToDayMarking(
   }
   const totalUnits = sessions.reduce(
     (sum, session) =>
-      sum +
-      DSUtils.calculateTotalUnits(session.drinks, preferences.drinks_to_units),
+      sum + DSUtils.calculateTotalUnits(session, preferences.drinks_to_units),
     0,
   );
 
@@ -280,15 +283,7 @@ function sumAllDrinks(drinks: DrinksList | undefined): number {
   if (isEmptyObject(drinks)) {
     return 0;
   }
-  return Object.values(drinks).reduce(
-    (total, drinkTypes) =>
-      total +
-      Object.values(drinkTypes).reduce<number>(
-        (subTotal, drinkEntry) => subTotal + getDrinkCount(drinkEntry),
-        0,
-      ),
-    0,
-  );
+  return sumEntryCounts(Object.values(legacyBucketsToEntries(drinks, '')));
 }
 
 /** Sum up drinks of a specific type of alcohol across multiple sessions
@@ -303,10 +298,24 @@ function sumDrinksOfSingleType(
   if (!drinksObject) {
     return 0;
   }
-  return Object.values(drinksObject).reduce<number>(
-    (total, session) => total + getDrinkCount(session[drinkType]),
-    0,
+  return sumEntryCounts(
+    Object.values(legacyBucketsToEntries(drinksObject, '')).filter(
+      entry => entry.key === drinkType,
+    ),
   );
+}
+
+/** The number of drinks in a session, every type together. */
+function sumSessionDrinks(session: DrinkingSession | null | undefined): number {
+  return sumEntryCounts(getSessionEntries(session));
+}
+
+/** The number of drinks of one type in a session. */
+function sumSessionDrinksOfType(
+  session: DrinkingSession | null | undefined,
+  drinkType: DrinkKey,
+): number {
+  return sumEntryCounts(getSessionEntriesOfType(session, drinkType));
 }
 
 /** Sum up drinks of a single Drink type object.
@@ -318,9 +327,10 @@ function sumDrinkTypes(drinkTypes: Drinks): number {
   if (!drinkTypes) {
     return 0;
   }
-  return Object.values(drinkTypes).reduce<number>(
-    (total, drinkEntry) => total + getDrinkCount(drinkEntry),
-    0,
+  // One synthetic bucket; the timestamp is irrelevant to a count.
+  const singleBucketTs = 0;
+  return sumEntryCounts(
+    Object.values(legacyBucketsToEntries({[singleBucketTs]: drinkTypes}, '')),
   );
 }
 
@@ -328,21 +338,13 @@ function sumDrinkTypes(drinkTypes: Drinks): number {
 function getUniqueDrinkTypesInSession(
   session: DrinkingSession,
 ): DrinkKey[] | undefined {
-  const sessionDrinks = session?.drinks;
-  if (!sessionDrinks) {
+  if (!session?.drinks && !session?.entries) {
     return undefined;
   }
   const uniqueKeys = new Set<DrinkKey>();
-
-  // Iterate over each Drinks entry in the DrinksList
-  for (const drinks of Object.values(sessionDrinks)) {
-    // Iterate over each DrinkKey in the current Drinks object
-    for (const key of Object.keys(drinks) as DrinkKey[]) {
-      uniqueKeys.add(key);
-    }
+  for (const entry of getSessionEntries(session)) {
+    uniqueKeys.add(entry.key);
   }
-
-  // Convert the Set to an array before returning
   return Array.from(uniqueKeys);
 }
 
@@ -353,12 +355,12 @@ function getUniqueDrinkTypesInSession(
  * @returnsTimestamp of the last drink consumed
  */
 function getLastDrinkAddedTime(session: DrinkingSession): number | null {
-  if (isEmpty(session?.drinks)) {
+  const entries = getSessionEntries(session);
+  if (entries.length === 0) {
     return null;
   }
-  const timestamps = Object.keys(session.drinks).map(Number);
-  // Return the maximum timestamp or null if there aren't any
-  return timestamps.length ? Math.max(...timestamps) : null;
+  // Entries are sorted by time, so the last one is the latest drink.
+  return entries[entries.length - 1].ts;
 }
 
 /** Out of an array of session items, return an a session that is ongoing. If there is no such session, return null
@@ -393,9 +395,9 @@ const calculateThisMonthDrinks = (
     sessions,
     false,
   );
-  // Sum up the units
+  // Sum up the drinks
   return sessionsThisMonth.reduce(
-    (sum, session) => sum + sumAllDrinks(session.drinks),
+    (sum, session) => sum + sumSessionDrinks(session),
     0,
   );
 };
@@ -425,8 +427,7 @@ const calculateThisMonthUnits = (
   );
   // Sum up the drinks
   return sessionsThisMonth.reduce(
-    (sum, session) =>
-      sum + DSUtils.calculateTotalUnits(session.drinks, drinksToUnits),
+    (sum, session) => sum + DSUtils.calculateTotalUnits(session, drinksToUnits),
     0,
   );
 };
@@ -579,6 +580,8 @@ export {
   sumAllDrinks,
   sumDrinksOfSingleType,
   sumDrinkTypes,
+  sumSessionDrinks,
+  sumSessionDrinksOfType,
   getUniqueDrinkTypesInSession,
   getLastDrinkAddedTime,
   findOngoingSession,

@@ -1,4 +1,5 @@
-import type {DrinksList} from '@src/types/onyx/Drinks';
+import {getSessionEntries} from '@libs/SessionEntries';
+import type DrinkingSession from '@src/types/onyx/DrinkingSession';
 import type {
   SessionTimeParts,
   StoredLocalParts,
@@ -28,24 +29,25 @@ function isStoredLocalParts(value: unknown): value is StoredLocalParts {
 
 /**
  * Write path: compute the precomputed local fields for every drink timestamp in
- * a session, in timezone `tz`. One `Intl` call per timestamp — paid while the
- * user is saving, never on the Statistics cold path.
+ * a session (legacy buckets or v2 entries, read through the adapter), in
+ * timezone `tz`. One `Intl` call per distinct timestamp — paid while the user
+ * is saving, never on the Statistics cold path.
  *
  * Returns `undefined` when there is nothing worth storing (no drinks, or no
  * timestamp resolved), so callers can skip writing an empty map.
  */
 function buildSessionTimeParts(
-  drinks: DrinksList | undefined,
+  session: DrinkingSession | undefined,
   tz: string,
 ): SessionTimeParts | undefined {
-  if (!drinks) {
+  if (!session) {
     return undefined;
   }
   const byTs: Record<number, StoredLocalParts> = {};
   let stored = false;
-  for (const tsKey of Object.keys(drinks)) {
-    const ts = Number(tsKey);
-    if (!Number.isFinite(ts)) {
+  for (const entry of getSessionEntries(session)) {
+    const ts = entry.ts;
+    if (byTs[ts]) {
       continue;
     }
     let parts;

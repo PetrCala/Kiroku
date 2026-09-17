@@ -2,7 +2,7 @@ import type {StyleProp, ViewStyle} from 'react-native';
 import {View} from 'react-native';
 import {
   getLastDrinkAddedTime,
-  sumDrinksOfSingleType,
+  sumSessionDrinksOfType,
   convertUnitsToColors,
 } from '@libs/DataHandling';
 import {resolvePalette} from '@libs/SessionColorPalettes';
@@ -70,7 +70,7 @@ function SessionSummaryScreen({route}: SessionSummaryScreenProps) {
   );
   // Drinks info
   const totalUnits = DSUtils.calculateTotalUnits(
-    session.drinks,
+    session,
     preferences?.drinks_to_units,
     true,
   );
@@ -191,13 +191,13 @@ function SessionSummaryScreen({route}: SessionSummaryScreenProps) {
 
   const drinkMenuItemsData: Menu = useMemo(() => {
     const drinkSums = {
-      small_beer: sumDrinksOfSingleType(session.drinks, 'small_beer'),
-      beer: sumDrinksOfSingleType(session.drinks, 'beer'),
-      wine: sumDrinksOfSingleType(session.drinks, 'wine'),
-      weak_shot: sumDrinksOfSingleType(session.drinks, 'weak_shot'),
-      strong_shot: sumDrinksOfSingleType(session.drinks, 'strong_shot'),
-      cocktail: sumDrinksOfSingleType(session.drinks, 'cocktail'),
-      other: sumDrinksOfSingleType(session.drinks, 'other'),
+      small_beer: sumSessionDrinksOfType(session, 'small_beer'),
+      beer: sumSessionDrinksOfType(session, 'beer'),
+      wine: sumSessionDrinksOfType(session, 'wine'),
+      weak_shot: sumSessionDrinksOfType(session, 'weak_shot'),
+      strong_shot: sumSessionDrinksOfType(session, 'strong_shot'),
+      cocktail: sumSessionDrinksOfType(session, 'cocktail'),
+      other: sumSessionDrinksOfType(session, 'other'),
     };
     const drinkData: DrinkMenuItem[] = [
       // {key: 'common.total', val: totalDrinks},
@@ -219,7 +219,7 @@ function SessionSummaryScreen({route}: SessionSummaryScreenProps) {
           description: val.toString(),
         })),
     };
-  }, [session.drinks]);
+  }, [session]);
 
   const otherMenuItemsData: Menu = useMemo(
     () => ({

@@ -24,7 +24,22 @@ jest.mock('react-native-onyx', () => ({connect: jest.fn()}));
 
 jest.mock('@src/CONST', () => ({
   DEFAULT_TIME_ZONE: {automatic: true, selected: 'UTC'},
-  SESSION: {TYPES: {LIVE: 'live', EDIT: 'edit'}},
+  DRINKS: {
+    KEYS: {
+      SMALL_BEER: 'small_beer',
+      BEER: 'beer',
+      COCKTAIL: 'cocktail',
+      OTHER: 'other',
+      STRONG_SHOT: 'strong_shot',
+      WEAK_SHOT: 'weak_shot',
+      WINE: 'wine',
+    },
+  },
+  SESSION: {
+    TYPES: {LIVE: 'live', EDIT: 'edit'},
+    SCHEMA_VERSION: 2,
+    ENTRY_SOURCE: {PHONE: 'phone'},
+  },
 }));
 
 jest.mock('@libs/ApiUtils', () => ({
@@ -122,6 +137,63 @@ describe('WatchBridge', () => {
       const parsed = JSON.parse(
         serializeOngoingSession(session) ?? '',
       ) as Record<string, unknown>;
+      expect(parsed.drinks).toBeUndefined();
+    });
+
+    it('passes a v2 session through with its schema, name, visibility and entries', () => {
+      const entries = {
+        entryA: {
+          ts: DRINK_TS,
+          key: 'beer',
+          count: 2,
+          source: 'phone',
+          author_uid: 'uid-42',
+          target_uid: 'uid-42',
+          created_at: DRINK_TS,
+        },
+        entryB: {
+          ts: DRINK_TS,
+          key: 'wine',
+          count: 1,
+          source: 'phone',
+          author_uid: 'uid-42',
+          target_uid: 'uid-42',
+          created_at: DRINK_TS,
+          deleted: true,
+        },
+      };
+      const v2Session = {
+        id: '-V2abc',
+        schema_version: 2,
+        name: 'Friday evening',
+        visibility: 'friends',
+        start_time: 1700000000000,
+        end_time: 1700000005000,
+        timezone: 'Europe/Prague',
+        type: 'live',
+        ongoing: true,
+        entries,
+        drinksTimeParts: {tz: 'Europe/Prague', byTs: {}},
+      } as unknown as DrinkingSession;
+      const parsed = JSON.parse(
+        serializeOngoingSession(v2Session) ?? '',
+      ) as Record<string, unknown>;
+      expect(parsed).toEqual({
+        id: '-V2abc',
+        start_time: 1700000000000,
+        end_time: 1700000005000,
+        blackout: false,
+        note: '',
+        timezone: 'Europe/Prague',
+        type: 'live',
+        ongoing: true,
+        schema_version: 2,
+        name: 'Friday evening',
+        visibility: 'friends',
+        // Tombstones travel too: the watch writes the whole session back and
+        // an entry key is never removed.
+        entries,
+      });
       expect(parsed.drinks).toBeUndefined();
     });
 
