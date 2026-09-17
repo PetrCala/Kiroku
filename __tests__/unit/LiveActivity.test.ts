@@ -32,6 +32,7 @@ const mockUpdate = LiveActivityModule.update as jest.Mock;
 const mockEnd = LiveActivityModule.end as jest.Mock;
 
 const START = 1_700_000_000_000;
+const HOUR_MS = 60 * 60 * 1000;
 const DRINKS_TO_UNITS = {beer: 1, wine: 2} as never;
 
 /** A translate stand-in: keys through, `units` rendered as the app renders it. */
@@ -41,6 +42,9 @@ const translate = ((key: string, params?: {unitCount?: number}) => {
   }
   if (key === 'common.drinks') {
     return 'Drinks';
+  }
+  if (key === 'homeScreen.liveSessionCard.label') {
+    return 'Live session';
   }
   return key;
 }) as never;
@@ -70,11 +74,16 @@ function session(entries: Record<string, SessionEntry>): DrinkingSession {
   };
 }
 
-function sync(current: DrinkingSession | undefined) {
+function sync(
+  current: DrinkingSession | undefined,
+  autoClose?: {preference?: number | 'never'; defaultHours?: number},
+) {
   LiveActivity.sync({
     session: current,
     drinksToUnits: DRINKS_TO_UNITS,
     translate,
+    autoClosePreference: autoClose?.preference,
+    autoCloseDefaultHours: autoClose?.defaultHours,
   });
 }
 
@@ -108,7 +117,43 @@ describe('LiveActivity sync', () => {
       unitsText: '2 units',
       drinkCount: 2,
       drinksLabel: 'Drinks',
+      channelName: 'Live session',
     });
+  });
+
+  it('carries no auto-close time when the environment has none configured', () => {
+    sync(session({a: entry('beer', 1, START)}));
+    expect(mockStart).toHaveBeenCalledWith(
+      expect.not.objectContaining({autoCloseAt: expect.anything() as unknown}),
+    );
+  });
+
+  it('times the Android notification out from the last drink, not the start', () => {
+    const lastDrink = START + 3 * HOUR_MS;
+    sync(session({a: entry('beer', 1, lastDrink)}), {defaultHours: 24});
+    expect(mockStart).toHaveBeenCalledWith(
+      expect.objectContaining({autoCloseAt: lastDrink + 24 * HOUR_MS}),
+    );
+  });
+
+  it('lets a per-user opt-out drop the auto-close time', () => {
+    sync(session({a: entry('beer', 1, START)}), {
+      preference: 'never',
+      defaultHours: 24,
+    });
+    expect(mockStart).toHaveBeenCalledWith(
+      expect.not.objectContaining({autoCloseAt: expect.anything() as unknown}),
+    );
+  });
+
+  it('lets a per-user threshold win over the global default', () => {
+    sync(session({a: entry('beer', 1, START)}), {
+      preference: 6,
+      defaultHours: 24,
+    });
+    expect(mockStart).toHaveBeenCalledWith(
+      expect.objectContaining({autoCloseAt: START + 6 * HOUR_MS}),
+    );
   });
 
   it('updates on a new drink instead of restarting', () => {

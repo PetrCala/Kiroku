@@ -1,10 +1,15 @@
 import {useEffect} from 'react';
+import type {OnyxEntry} from 'react-native-onyx';
 import {useOnyx} from 'react-native-onyx';
 import * as LiveActivityActions from '@userActions/LiveActivity';
 import ONYXKEYS from '@src/ONYXKEYS';
+import type {Config} from '@src/types/onyx';
 import useCurrentUserPreferences from './useCurrentUserPreferences';
 import useFeatureFlag from './useFeatureFlag';
 import useLocalize from './useLocalize';
+
+const autoCloseDefaultSelector = (config: OnyxEntry<Config>) =>
+  config?.auto_close_default_hours;
 
 /**
  * Mirror the live session onto the lock screen (Sessions v2 RFC §8): the iOS
@@ -22,15 +27,29 @@ function useLiveActivity(): void {
   const [ongoingSession] = useOnyx(ONYXKEYS.ONGOING_SESSION_DATA);
   const preferences = useCurrentUserPreferences();
   const {translate} = useLocalize();
+  const [autoCloseDefaultHours] = useOnyx(ONYXKEYS.CONFIG, {
+    selector: autoCloseDefaultSelector,
+    canBeMissing: true,
+  });
   const drinksToUnits = preferences?.drinks_to_units;
+  const autoClosePreference = preferences?.auto_close_sessions_after_hours;
 
   useEffect(() => {
     LiveActivityActions.sync({
       session: isEnabled ? ongoingSession : undefined,
       drinksToUnits,
       translate,
+      autoClosePreference,
+      autoCloseDefaultHours,
     });
-  }, [isEnabled, ongoingSession, drinksToUnits, translate]);
+  }, [
+    isEnabled,
+    ongoingSession,
+    drinksToUnits,
+    translate,
+    autoClosePreference,
+    autoCloseDefaultHours,
+  ]);
 
   // Sign-out unmounts the authenticated tree; clear the lock screen with it
   // rather than waiting for Onyx to empty.

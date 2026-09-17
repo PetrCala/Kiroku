@@ -33,6 +33,22 @@ type LiveSessionActivityPayload = {
   drinksLabel: string;
 
   /**
+   * Localized name for the Android notification channel, so a user reading
+   * their system notification settings sees it in their own language. Android
+   * only; iOS has no channels and ignores it.
+   */
+  channelName: string;
+
+  /**
+   * When the server's stale-session sweep becomes entitled to close this
+   * session, epoch milliseconds, or absent when nothing will close it. Android
+   * turns it into `setTimeoutAfter`, so an ongoing notification cannot outlive
+   * a session that was auto-closed while the app was not running. iOS ignores
+   * it: an activity there is ended by the app or by the system's own budget.
+   */
+  autoCloseAt?: number;
+
+  /**
    * When the session closed, epoch milliseconds. Only set on `end`, where it
    * freezes the timer so the last frame reads as a summary.
    */

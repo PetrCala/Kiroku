@@ -98,6 +98,12 @@ type Preferences = {
    *  Undefined/true means on. Only applies while push_notifications_enabled
    *  is on. */
   push_friend_requests_enabled?: boolean;
+
+  /** After how many hours of inactivity the server's sweep auto-closes this
+   *  user's ongoing sessions. `'never'` is an explicit opt-out; undefined
+   *  falls back to the global `config.auto_close_default_hours`. Written by
+   *  kiroku-api, read-only here. */
+  auto_close_sessions_after_hours?: number | 'never';
 };
 
 /** A collection of preferences of multiple users */

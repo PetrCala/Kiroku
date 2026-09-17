@@ -1,5 +1,6 @@
 import type {OnyxEntry} from 'react-native-onyx';
 import type {LocaleContextProps} from '@components/LocaleContextProvider';
+import {getAutoCloseAt} from '@libs/AutoClose';
 import {calculateTotalUnits} from '@libs/DrinkingSessionUtils';
 import LiveActivity from '@libs/LiveActivity';
 import type {LiveSessionActivityPayload} from '@libs/LiveActivity/types';
@@ -7,7 +8,7 @@ import {getSessionEntries, sumEntryCounts} from '@libs/SessionEntries';
 import {getDefaultSessionName} from '@libs/SessionName';
 import CONST from '@src/CONST';
 import ROUTES from '@src/ROUTES';
-import type {DrinkingSession} from '@src/types/onyx';
+import type {Config, DrinkingSession, Preferences} from '@src/types/onyx';
 import type {DrinksToUnits} from '@src/types/onyx/Preferences';
 
 /**
@@ -42,6 +43,12 @@ type LiveActivityState = {
 
   /** The current locale's translate, for the text the native side shows */
   translate: LocaleContextProps['translate'];
+
+  /** The user's auto-close preference, for the Android notification timeout */
+  autoClosePreference: Preferences['auto_close_sessions_after_hours'];
+
+  /** The global auto-close default, same purpose */
+  autoCloseDefaultHours: Config['auto_close_default_hours'];
 };
 
 /**
@@ -60,11 +67,18 @@ function buildPayload({
   session,
   drinksToUnits,
   translate,
+  autoClosePreference,
+  autoCloseDefaultHours,
 }: LiveActivityState): LiveSessionActivityPayload | undefined {
   if (!session?.ongoing || !session.id || !session.start_time) {
     return undefined;
   }
   const units = calculateTotalUnits(session, drinksToUnits, true);
+  const autoCloseAt = getAutoCloseAt(
+    session,
+    autoClosePreference,
+    autoCloseDefaultHours,
+  );
   return {
     sessionId: session.id,
     startedAt: session.start_time,
@@ -77,6 +91,8 @@ function buildPayload({
     }),
     drinkCount: sumEntryCounts(getSessionEntries(session)),
     drinksLabel: translate('common.drinks'),
+    channelName: translate('homeScreen.liveSessionCard.label'),
+    ...(autoCloseAt !== undefined ? {autoCloseAt} : {}),
   };
 }
 
@@ -90,6 +106,8 @@ function hasChanged(
     next.unitsText !== previous.unitsText ||
     next.drinkCount !== previous.drinkCount ||
     next.drinksLabel !== previous.drinksLabel ||
+    next.channelName !== previous.channelName ||
+    next.autoCloseAt !== previous.autoCloseAt ||
     next.startedAt !== previous.startedAt
   );
 }
@@ -141,6 +159,7 @@ function emptyPayload(): LiveSessionActivityPayload {
     unitsText: '',
     drinkCount: 0,
     drinksLabel: '',
+    channelName: '',
   };
 }
 

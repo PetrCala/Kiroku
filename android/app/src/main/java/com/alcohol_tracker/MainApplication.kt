@@ -6,6 +6,7 @@ import android.database.CursorWindow
 import android.os.Process
 import androidx.multidex.MultiDexApplication
 import com.alcohol_tracker.bootsplash.BootSplashPackage
+import com.alcohol_tracker.liveactivity.LiveSessionNotificationPackage
 import com.facebook.react.PackageList
 import com.facebook.react.ReactApplication
 import com.facebook.react.ReactHost
@@ -32,6 +33,7 @@ class MainApplication : MultiDexApplication(), ReactApplication {
             add(BootSplashPackage())
             add(AlcoholTrackerPackage())
             add(RNTextInputResetPackage())
+            add(LiveSessionNotificationPackage())
         }
 
         override fun getJSMainModuleName() = ".expo/.virtual-metro-entry"
