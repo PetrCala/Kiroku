@@ -38,6 +38,7 @@
     "ios-signing": "node scripts/ios-signing.mjs",
     "test": "TZ=utc jest",
     "test:debug": "node --inspect-brk ./node_modules/jest/bin/jest.js --runInBand",
+    "test:bun-triage": "node scripts/bun-test-triage.mjs",
     "perf-test": "NODE_OPTIONS=--experimental-vm-modules npx reassure",
     "mergePR": "./scripts/mergePR.sh",
     "openPR": "./scripts/openPR.sh",

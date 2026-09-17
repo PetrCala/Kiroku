@@ -199,6 +199,7 @@ When asked to make a code change, deliver it as an open PR, not staged work. As 
 - **Unit Tests**: Jest with React Native Testing Library
 - **Performance Tests**: Reassure framework
 - **Web E2E (Playwright)**: smoke suite in `e2e/web`; iterate against the live `npm run web` dev server (hot reload, cached sign-in), not the ~30-min `deployWeb.yml` CI loop. See `e2e/web/README.md`.
+- **`bun test` is not usable for this suite.** It was measured, not assumed: 107 of 150 files cannot even load, because bun's transpiler does not strip Flow and `react-native` ships Flow-typed source. Do not "migrate the tests to bun" as a cleanup. Re-check with `npm run test:bun-triage` and read [`contributingGuides/BUN_TEST.md`](contributingGuides/BUN_TEST.md) before spending time on it.
 
 ## Special Considerations
 
