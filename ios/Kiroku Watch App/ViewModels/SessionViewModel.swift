@@ -33,6 +33,15 @@ final class SessionViewModel: ObservableObject {
     /// Whether a live session is in progress (session UI vs. start screen).
     @Published private(set) var isActive = false
 
+    /// The session's name, when it has one. A schema 2 session started on the
+    /// phone carries the localized default (RFC §9); one started here does not,
+    /// and the header then shows only the timer rather than inventing a name
+    /// the watch has no translations for.
+    @Published private(set) var sessionName: String?
+
+    /// When the live session started, for the natively rendered elapsed timer.
+    @Published private(set) var sessionStartedAt: Date?
+
     /// A blocking write (save/discard) is in flight; drives the loading spinner.
     @Published private(set) var isBusy = false
 
@@ -255,6 +264,11 @@ final class SessionViewModel: ObservableObject {
     private func syncPublished() {
         unitCount = controller.unitCount
         isActive = controller.isActive
+        let session = controller.currentSession()
+        sessionName = session?.name
+        sessionStartedAt = session.map {
+            Date(timeIntervalSince1970: Double($0.startTime) / 1000)
+        }
     }
 
     /// A writer for the current credential, or nil when the token is stale or
