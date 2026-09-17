@@ -37,7 +37,7 @@ export default function () {
 
   require('@formatjs/intl-numberformat/polyfill-force');
 
-  // Load en & es Locale data
+  // Load locale data for every language the app ships
   require('@formatjs/intl-numberformat/locale-data/en');
-  require('@formatjs/intl-numberformat/locale-data/es');
+  require('@formatjs/intl-numberformat/locale-data/cs');
 }

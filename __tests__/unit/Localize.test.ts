@@ -1,77 +1,47 @@
 import Onyx from 'react-native-onyx';
-import CONST from '@src/CONST';
 import * as Localize from '@libs/Localize';
+import CONST from '@src/CONST';
 import ONYXKEYS from '@src/ONYXKEYS';
-import waitForBatchedUpdates from '../utils/waitForBatchedUpdates';
 
-// TODO enable this after fixing the localize bugs
-xdescribe('localize', () => {
+// Czech binds the conjunction to the word that follows it with a non-breaking space.
+const NBSP = '\u00a0';
+
+const CASES: Array<[string[], string, string]> = [
+  [[], '', ''],
+  [['rory'], 'rory', 'rory'],
+  [['rory', 'vit'], 'rory and vit', `rory a${NBSP}vit`],
+  [['rory', 'vit', 'jules'], 'rory, vit, and jules', `rory, vit a${NBSP}jules`],
+  [
+    ['rory', 'vit', 'ionatan'],
+    'rory, vit, and ionatan',
+    `rory, vit a${NBSP}ionatan`,
+  ],
+];
+
+/** The locale listener only reacts to truthy Onyx values, so reset it explicitly. */
+function setLocale(locale: 'en' | 'cs_cz') {
+  // eslint-disable-next-line rulesdir/prefer-actions-set-data
+  return Onyx.set(ONYXKEYS.NVP_PREFERRED_LOCALE, locale);
+}
+
+describe('localize', () => {
   beforeAll(() => {
-    Onyx.init({
-      keys: {NVP_PREFERRED_LOCALE: ONYXKEYS.NVP_PREFERRED_LOCALE},
-      initialKeyStates: {
-        [ONYXKEYS.NVP_PREFERRED_LOCALE]: CONST.LOCALES.DEFAULT,
-      },
-    });
-    return waitForBatchedUpdates();
+    Onyx.init({keys: {NVP_PREFERRED_LOCALE: ONYXKEYS.NVP_PREFERRED_LOCALE}});
   });
 
-  afterEach(() => Onyx.clear());
+  afterAll(() => Onyx.clear());
 
   describe('formatList', () => {
-    test.each([
-      [
-        [],
-        {
-          [CONST.LOCALES.DEFAULT]: '',
-          [CONST.LOCALES.CS_CZ]: '',
-        },
-      ],
-      [
-        ['rory'],
-        {
-          [CONST.LOCALES.DEFAULT]: 'rory',
-          [CONST.LOCALES.CS_CZ]: 'rory',
-        },
-      ],
-      [
-        ['rory', 'vit'],
-        {
-          [CONST.LOCALES.DEFAULT]: 'rory and vit',
-          [CONST.LOCALES.CS_CZ]: 'rory and vit',
-        },
-      ],
-      [
-        ['rory', 'vit', 'jules'],
-        {
-          [CONST.LOCALES.DEFAULT]: 'rory, vit, and jules',
-          [CONST.LOCALES.CS_CZ]: 'rory, vit and jules',
-        },
-      ],
-      [
-        ['rory', 'vit', 'ionatan'],
-        {
-          [CONST.LOCALES.DEFAULT]: 'rory, vit, and ionatan',
-          [CONST.LOCALES.CS_CZ]: 'rory, vit and ionatan',
-        },
-      ],
-    ])(
-      'formatList(%s)',
-      (
-        input,
-        {
-          [CONST.LOCALES.DEFAULT]: expectedOutput,
-          [CONST.LOCALES.CS_CZ]: expectedOutputCSCZ,
-        },
-      ) => {
-        expect(Localize.formatList(input)).toBe(expectedOutput);
-        // eslint-disable-next-line rulesdir/prefer-actions-set-data
-        return Onyx.set(
-          ONYXKEYS.NVP_PREFERRED_LOCALE,
-          CONST.LOCALES.CS_CZ,
-        ).then(() =>
-          expect(Localize.formatList(input)).toBe(expectedOutputCSCZ),
-        );
+    it.each(CASES)('formats %j in English', async (input, expected) => {
+      await setLocale(CONST.LOCALES.EN);
+      expect(Localize.formatList(input)).toBe(expected);
+    });
+
+    it.each(CASES)(
+      'formats %j in Czech',
+      async (input, _expectedEN, expectedCSCZ) => {
+        await setLocale(CONST.LOCALES.CS_CZ);
+        expect(Localize.formatList(input)).toBe(expectedCSCZ);
       },
     );
   });
