@@ -120,14 +120,19 @@ const CONST = {
     // logo plays its full assembly + liquid-fill entrance instead of being
     // masked by the flying splash logo.
     LOGO_FLY_IN: false,
-    // Session writes as small idempotent ops (Sessions v2, RFC §5). Off until
-    // the server implements more than the `ping` shell.
-    SESSION_OPS: false,
+    // Session writes as small idempotent ops (Sessions v2, RFC §5). ON since
+    // W2 (#1665): the server applies the solo lifecycle ops, and the client,
+    // the capture UI and the watch all write through them. The remote override
+    // is the kill switch: turning it off puts every write back on the
+    // whole-session path, which is why that path is still in place.
+    SESSION_OPS: true,
     // New sessions are written as Sessions v2 (RFC §4): `schema_version: 2`, a
     // default name, `visibility`, and drinks as `entries` instead of buckets.
-    // Off until the backfill has run and the server accepts schema 2
-    // (Kiroku#1664). Old sessions read through the adapter either way.
-    SESSIONS_V2_SCHEMA: false,
+    // ON since W2. Ops can only name a drink that has an id, so this flag and
+    // `SESSION_OPS` belong on together; a legacy session keeps the
+    // whole-session path until the §11 backfill converts it, and old sessions
+    // read through the adapter either way.
+    SESSIONS_V2_SCHEMA: true,
   },
   // Session op types (Sessions v2 RFC §5.1). Mirrors kiroku-api
   // `lib/sessions/ops.ts`, which rejects anything else.
