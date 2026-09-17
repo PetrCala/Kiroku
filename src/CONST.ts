@@ -122,9 +122,9 @@ const CONST = {
     LOGO_FLY_IN: false,
     // The live session on the lock screen (Sessions v2, RFC §8): the iOS Live
     // Activity and the Android ongoing notification. One flag for both,
-    // because decision 16 ships them together. Off until both have been seen
-    // working on a real device.
-    LIVE_SESSION_LOCK_SCREEN: false,
+    // because decision 16 ships them together, and one remote override is then
+    // a kill switch for both (contributingGuides/FEATURE_FLAGS.md).
+    LIVE_SESSION_LOCK_SCREEN: true,
     // Session writes as small idempotent ops (Sessions v2, RFC §5). Off until
     // the server implements more than the `ping` shell.
     SESSION_OPS: false,
