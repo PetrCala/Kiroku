@@ -5,7 +5,6 @@ export default function () {
 
   require('@formatjs/intl-listformat/polyfill-force');
 
-  // Load en & es Locale data
+  // Load en Locale data
   require('@formatjs/intl-listformat/locale-data/en');
-  require('@formatjs/intl-listformat/locale-data/es');
 }
