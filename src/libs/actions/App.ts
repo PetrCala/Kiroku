@@ -414,9 +414,17 @@ function setUpPoliciesAndNavigate(user: User | null) {
     return;
   }
 
-  const isLoggingInAsNewUser = !!user.email; // && SessionUtils.isLoggingInAsNewUser(currentUrl, user.email);
   const url = new URL(currentUrl);
   const exitTo = url.searchParams.get('exitTo') as Route | null;
+
+  // A transition link carries the account it was minted for alongside the exitTo route. If that
+  // account is not the one we are signed in as, the route belongs to the other user, so we skip it
+  // here: this action runs again once that user is signed in. A link with no email param is for
+  // whoever is signed in, so it goes through.
+  const transitionEmail = url.searchParams.get('email');
+  const isLoggingInAsNewUser =
+    !!transitionEmail &&
+    transitionEmail.toLowerCase() !== (user.email ?? '').toLowerCase();
 
   // Approved Accountants and Guides can enter a flow where they make a workspace for other users,
   // and those are passed as a search parameter when using transition links
