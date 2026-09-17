@@ -12,8 +12,8 @@ const darkTheme = {
   calendarRangeBG: `${colors.yellowStrong}33`,
   darkBG: colors.productLight900,
   appColor: colors.yellowStrong,
-  border: colors.productDark400,
-  borderLighter: colors.productDark400,
+  border: '#FF00FF', // DEBUG magenta: any generic theme.border consumer
+  borderLighter: '#8800FF', // DEBUG purple: theme.borderLighter
   borderFocus: colors.yellow,
   icon: colors.productDark700,
   iconDark: colors.productDark900,

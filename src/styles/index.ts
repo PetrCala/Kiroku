@@ -486,7 +486,7 @@ const styles = (theme: ThemeColors) =>
 
     borderTop: {
       borderTopWidth: variables.borderTopWidth,
-      borderColor: theme.border,
+      borderColor: '#FF8800', // DEBUG orange
     },
 
     borderTopRounded: {
@@ -505,7 +505,7 @@ const styles = (theme: ThemeColors) =>
 
     borderBottom: {
       borderBottomWidth: 1,
-      borderColor: theme.border,
+      borderColor: '#00FFFF', // DEBUG cyan
     },
 
     borderNone: {
@@ -527,7 +527,7 @@ const styles = (theme: ThemeColors) =>
       flexDirection: 'row',
       height: variables.bottomTabHeight,
       borderTopWidth: 1,
-      borderTopColor: theme.border,
+      borderTopColor: '#00FF00', // DEBUG lime: bottomTabBarContainer
       backgroundColor: theme.appBG,
       justifyContent: 'center',
       alignItems: 'center',
@@ -1643,7 +1643,7 @@ const styles = (theme: ThemeColors) =>
     },
 
     sessionsCalendarContainer: {
-      borderColor: theme.border,
+      borderColor: '#FF0000', // DEBUG red
       borderTopWidth: 1,
       borderBottomWidth: 1,
     },
@@ -1758,7 +1758,7 @@ const styles = (theme: ThemeColors) =>
       flexDirection: 'row',
       paddingVertical: 8,
       borderBottomWidth: 1,
-      borderColor: theme.border,
+      borderColor: '#FFFF00', // DEBUG yellow: sessionsCalendarDayNamesRow
       backgroundColor: theme.appBG,
     },
 

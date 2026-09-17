@@ -318,7 +318,11 @@ function ProfileScreen({route}: ProfileScreenProps) {
       {header}
       <ScrollView
         style={[styles.flexGrow1, styles.mnw100]}
-        showsVerticalScrollIndicator={false}>
+        showsVerticalScrollIndicator={false}
+        // DEBUG: the only *removal* in this diagnostic build. If the stray
+        // element vanishes and nothing turned a bright colour, it was the
+        // horizontal scroll indicator, not an app border.
+        showsHorizontalScrollIndicator={false}>
         {user?.uid === userID && (
           <>
             {isBadgesEnabled ? (
