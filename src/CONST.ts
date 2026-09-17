@@ -1113,6 +1113,38 @@ const CONST = {
   SESSION: {
     TYPES: SESSION_TYPES,
     REALTIME: [SESSION_TYPES.LIVE],
+    // Sessions v2 (docs/sessions-v2.md §4). A session carrying this
+    // `schema_version` stores its drinks as `entries`; a session without it is
+    // a legacy `drinks[timestamp][drinkKey]` session read through the adapter.
+    SCHEMA_VERSION: 2,
+    VISIBILITY: {
+      FRIENDS: 'friends',
+      PRIVATE: 'private',
+    },
+    // Where an entry was logged from (RFC §4.3 `source`).
+    ENTRY_SOURCE: {
+      PHONE: 'phone',
+      WATCH: 'watch',
+      LIVE_ACTIVITY: 'live_activity',
+      WEB: 'web',
+    },
+    // `target_uid` of an entry logged for nobody in particular (RFC §4.3).
+    ENTRY_TARGET_UNCLAIMED: 'unclaimed',
+    MEMBER_ROLE: {
+      ADMIN: 'admin',
+      MEMBER: 'member',
+    },
+    MEMBER_STATUS: {
+      INVITED: 'invited',
+      ACTIVE: 'active',
+      LEFT: 'left',
+      REMOVED: 'removed',
+    },
+    JOINED_VIA: {
+      INVITE: 'invite',
+      LINK: 'link',
+      CODE: 'code',
+    },
   },
   SOCIALS: {
     TWITTER: '',
