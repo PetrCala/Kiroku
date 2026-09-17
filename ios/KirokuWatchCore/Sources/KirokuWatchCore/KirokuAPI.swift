@@ -19,6 +19,26 @@ public enum KirokuEnvironment: Sendable {
     }
 }
 
+/// Whether a failure is worth retrying, for the watch's op outbox.
+public extension KirokuAPIError {
+    /// `true` when the server deterministically refused this exact payload, so
+    /// replaying it can never succeed and the op should be dropped rather than
+    /// blocking every op behind it.
+    ///
+    /// Mirrors the app's `isDroppableFailure`: only an actual response with a
+    /// non-retryable 4xx qualifies. A transport failure carries no status at
+    /// all, and 408/425/429 mean "later", not "wrong". A 460 (permission) is a
+    /// deterministic refusal like any other 4xx, so it is dropped too.
+    var isDeterministicRefusal: Bool {
+        guard case let .server(statusCode, _, _) = self else {
+            return false
+        }
+        let retryableClientErrors: Set<Int> = [408, 425, 429]
+        return (400..<500).contains(statusCode)
+            && !retryableClientErrors.contains(statusCode)
+    }
+}
+
 /// A typed outcome of an API call. Mirrors the auth split documented in
 /// `src/libs/HttpUtils.ts`: a `407` means the Firebase ID token is expired (the
 /// app refreshes and replays), a `401` means it is revoked (the app forces
@@ -121,6 +141,23 @@ public final class KirokuAPI: @unchecked Sendable {
         try await postSessionUpdate(session)
     }
 
+    /// Apply one session op (Sessions v2 RFC §5). POSTs the envelope to
+    /// `/v1/sessions/ops` with `opId` repeated as the `Idempotency-Key` header,
+    /// which the server requires: that is what makes a resend answer from its
+    /// record instead of applying the change twice.
+    ///
+    /// This is how the watch writes a `schema_version: 2` session. The
+    /// whole-session PUT (``start(_:)`` / ``update(_:)`` / ``save(_:)``) stays
+    /// for legacy sessions only.
+    @discardableResult
+    public func apply(_ op: SessionOp) async throws -> KirokuAPIResponse {
+        try await post(
+            path: "/v1/sessions/ops",
+            body: op,
+            idempotencyKey: op.opId
+        )
+    }
+
     /// Discard a live session. POSTs to `/v1/sessions/delete` with
     /// `{ sessionId, sessionIsLive: true }`.
     @discardableResult
@@ -136,7 +173,11 @@ public final class KirokuAPI: @unchecked Sendable {
         return try await post(path: "/v1/sessions/update", body: body)
     }
 
-    private func post<Body: Encodable>(path: String, body: Body) async throws -> KirokuAPIResponse {
+    private func post<Body: Encodable>(
+        path: String,
+        body: Body,
+        idempotencyKey: String? = nil
+    ) async throws -> KirokuAPIResponse {
         guard let token = tokenProvider(), !token.isEmpty else {
             throw KirokuAPIError.missingToken
         }
@@ -150,6 +191,9 @@ public final class KirokuAPI: @unchecked Sendable {
         request.httpMethod = "POST"
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
         request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
+        if let idempotencyKey {
+            request.setValue(idempotencyKey, forHTTPHeaderField: "Idempotency-Key")
+        }
         // Envelope keys (`sessionId`, `sessionIsLive`) are camelCase on the wire;
         // the snake_case session fields carry their own CodingKeys, so the
         // encoder must use default key coding (no global snake_case strategy).
