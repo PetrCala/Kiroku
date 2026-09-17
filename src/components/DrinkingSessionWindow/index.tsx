@@ -30,12 +30,16 @@ import ScrollView from '@components/ScrollView';
 import Log from '@libs/Log';
 import DateUtils from '@libs/DateUtils';
 import Navigation from '@libs/Navigation/Navigation';
+import {isSchemaV2Session} from '@libs/SessionEntries';
 import {getSessionDisplayName} from '@libs/SessionName';
 import ROUTES from '@src/ROUTES';
 import variables from '@styles/variables';
 import isEqual from 'lodash/isEqual';
 import type {User} from 'firebase/auth';
 import ERRORS from '@src/ERRORS';
+import SessionTimeline from './SessionTimeline';
+import UndoDrinkBanner from './UndoDrinkBanner';
+import type {UndoTarget} from './UndoDrinkBanner';
 import type DrinkingSessionWindowProps from './types';
 
 function DrinkingSessionWindow({
@@ -62,6 +66,10 @@ function DrinkingSessionWindow({
     useState<boolean>(false);
   const [shouldShowLeaveConfirmation, setShouldShowLeaveConfirmation] =
     useState(false);
+  // The drink just added, while the undo offer is up. Entry ids only exist on
+  // a schema 2 session, so undo and the timeline appear together with them.
+  const [undoTarget, setUndoTarget] = useState<UndoTarget | null>(null);
+  const hasEntries = isSchemaV2Session(session);
   const sessionIsLive = session?.ongoing;
   const deleteSessionWording = session.ongoing
     ? translate('common.discard')
@@ -280,7 +288,18 @@ function DrinkingSessionWindow({
             {totalUnits}
           </Text>
         </View>
-        <DrinkTypesView session={session} />
+        <DrinkTypesView
+          session={session}
+          onDrinkAdded={hasEntries ? setUndoTarget : undefined}
+        />
+        <UndoDrinkBanner
+          target={undoTarget}
+          onUndo={target => {
+            DS.removeSessionEntry(sessionId, target.entryId);
+            setUndoTarget(null);
+          }}
+          onExpire={() => setUndoTarget(null)}
+        />
         {!!sessionIsLive && (
           <Text
             testID="session-autosave-hint"
@@ -293,6 +312,7 @@ function DrinkingSessionWindow({
             {translate('liveSessionScreen.drinksAutoSaved')}
           </Text>
         )}
+        {!!hasEntries && <SessionTimeline session={session} />}
         <SessionDetailsWindow
           sessionId={sessionId}
           session={session}
@@ -300,6 +320,10 @@ function DrinkingSessionWindow({
             DS.updateBlackout(session, value)
           }
           shouldAllowDateChange={type !== CONST.SESSION.TYPES.LIVE}
+          // Editing the time of day needs a place to put it, which only a
+          // schema 2 session has (`set_times`); a legacy session keeps the
+          // whole-day shift it has always had.
+          shouldAllowTimeChange={hasEntries}
           shouldAllowTimezoneChange={
             !session?.ongoing
             // session.type !== CONST.SESSION.TYPES.LIVE // Enable this down the line

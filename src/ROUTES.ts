@@ -84,6 +84,14 @@ const ROUTES = {
     getRoute: (sessionId: DrinkingSessionId) =>
       `drinking-session/${sessionId}/session-note-screen` as const,
   },
+  DRINKING_SESSION_SESSION_TIMES_SCREEN: {
+    route: 'drinking-session/:sessionId/session-times-screen',
+    getRoute: (sessionId: DrinkingSessionId, backTo = '') =>
+      getUrlWithBackToParam(
+        `drinking-session/${sessionId}/session-times-screen` as const,
+        backTo,
+      ),
+  },
   DRINKING_SESSION_SESSION_TIMEZONE_SCREEN: {
     route: 'drinking-session/:sessionId/session-timezone-screen',
     getRoute: (sessionId: DrinkingSessionId) =>

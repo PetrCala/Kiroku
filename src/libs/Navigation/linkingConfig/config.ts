@@ -88,6 +88,9 @@ const config: LinkingOptions<RootStackParamList>['config'] = {
             [SCREENS.DRINKING_SESSION.SESSION_NOTE_SCREEN]: {
               path: ROUTES.DRINKING_SESSION_SESSION_NOTE_SCREEN.route,
             },
+            [SCREENS.DRINKING_SESSION.SESSION_TIMES_SCREEN]: {
+              path: ROUTES.DRINKING_SESSION_SESSION_TIMES_SCREEN.route,
+            },
             [SCREENS.DRINKING_SESSION.SESSION_TIMEZONE_SCREEN]: {
               path: ROUTES.DRINKING_SESSION_SESSION_TIMEZONE_SCREEN.route,
             },
