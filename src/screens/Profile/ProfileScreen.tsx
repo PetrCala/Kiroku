@@ -34,6 +34,7 @@ import HeaderWithBackButton from '@components/HeaderWithBackButton';
 import useLocalize from '@hooks/useLocalize';
 import useReadyAfterScreenTransition from '@hooks/useReadyAfterScreenTransition';
 import FlexibleLoadingIndicator from '@components/FlexibleLoadingIndicator';
+import useTheme from '@hooks/useTheme';
 import useThemeStyles from '@hooks/useThemeStyles';
 import Button from '@components/Button';
 import ManageFriendPopover from '@components/ManageFriendPopover';
@@ -58,6 +59,7 @@ function ProfileScreen({route}: ProfileScreenProps) {
   // preferences via `useFriendPreferences`, and the windowed sessions via
   // `useDrinkingSessionsFetch`.
   const {translate} = useLocalize();
+  const theme = useTheme();
   const styles = useThemeStyles();
   const StyleUtils = useStyleUtils();
   const {isOffline} = useNetwork();
@@ -342,7 +344,23 @@ function ProfileScreen({route}: ProfileScreenProps) {
           userID={userID}
           profileData={profileData} // For live propagation of current user
         />
-        <View style={[styles.profileFriendsInfoContainer, styles.borderBottom]}>
+        {/* The rule is held back until the entry slide ends. During the push a
+            second copy of this row paints near the bottom of the card, shifted
+            left of the card's edge, and slides away to the left as the slide
+            settles: the stray element on profile entry, identified by tinting
+            this exact rule and watching the colour turn up down there. Why a
+            second copy renders at all is still open (PR #1410 fixed a sibling
+            artifact over the avatar and left this one). Suppressing the colour
+            rather than the row, or the border width, keeps the layout and the
+            row's text identical, so nothing shifts when the rule appears. */}
+        <View
+          style={[
+            styles.profileFriendsInfoContainer,
+            styles.borderBottom,
+            didScreenTransitionEnd
+              ? undefined
+              : {borderBottomColor: theme.transparent},
+          ]}>
           <View style={[styles.flexGrow1, styles.flexRow]}>
             <Text>{friendCountLabel}</Text>
             <Text style={styles.ml2}>{friendCountText}</Text>
