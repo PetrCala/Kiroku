@@ -137,7 +137,8 @@ critical path is **0 → 1 → 2 → 3**; Phases 5–7 overlap once the bridge w
 - [ ] **2.2** PushID generator — port `generatePushID()` to Swift.
 - [ ] **2.3** `KirokuAPI` client: `URLSession` JSON POST, `Bearer` header,
       dev/prod base URL, map 407/401/network to typed results.
-- [ ] **2.4** Operations: `start`, `update` (whole-session PUT), `save`,
+- [ ] **2.4** Operations: `apply` (one session op, the v2 path), `start`,
+      `update` (whole-session PUT, legacy), `save`,
       `discard`, hitting the two endpoints.
   - **Accept:** a unit test round-trips a session against `api-dev` with a pasted
     token.
@@ -227,6 +228,44 @@ critical path is **0 → 1 → 2 → 3**; Phases 5–7 overlap once the bridge w
     `ios/KirokuWatchCore` and a watchOS-SDK typecheck of the whole watch target;
     the watch is de-embedded from the archive so CI does not compile it. A paired
     device/sim run is the remaining manual check, alongside Phase 4.2's.)_
+
+### Phase 5b — Ops instead of whole sessions (Sessions v2 W2, #1665) ← done
+
+Phase 5 made the whole-session PUTs orderly. It could not make them safe: the
+endpoint is last-writer-wins on the **entire** session, so a watch write and a
+phone write during the same night still discard each other's drinks. That is
+the race Sessions v2 closes, and for a `schema_version: 2` session the watch
+now writes ops.
+
+- [x] **5b.1** `POST /v1/sessions/ops` in
+      [`KirokuAPI`](../ios/KirokuWatchCore/Sources/KirokuWatchCore/KirokuAPI.swift)
+      (`apply(_:)`), with `opId` repeated as the `Idempotency-Key` header, plus
+      [`SessionOp`](../ios/KirokuWatchCore/Sources/KirokuWatchCore/SessionOp.swift)
+      and its builders for `start`, `end`, `add_entry`, `edit_entry` and
+      `delete_entry`. Every op is absolute, so a resend cannot double-apply.
+- [x] **5b.2** `LiveSessionController` records the ops its own mutations imply
+      (`takePendingOps()`), and `makeEndOp()` closes a v2 session with one small
+      op instead of a whole-session finalize. The **timestamp-bucket workaround
+      is retired for v2**: a v2 session claims no bucket at all
+      (`unitBucketMillis` stays `nil`), because every drink is an entry with an
+      id the watch owns. A legacy session keeps the bucket, since buckets have
+      no ids to name.
+- [x] **5b.3** [`SessionOpOutbox`](../ios/KirokuWatchCore/Sources/KirokuWatchCore/SessionOpOutbox.swift):
+      in order, single-flight, retried with backoff, and persisted through
+      `SessionOpStore`. This is new work the whole-session path did not need: an
+      op is a delta, so a dropped `add_entry` is a lost drink, whereas the old
+      save re-sent everything. A deterministic 4xx is dropped (replaying it can
+      never succeed) rather than blocking every drink behind it.
+- [x] **5b.4** The debounce is gone for v2. There is nothing to coalesce,
+      because every tap is a different entry;
+      [`LiveUpdateCoalescer`](../ios/KirokuWatchCore/Sources/KirokuWatchCore/LiveUpdateCoalescer.swift)
+      stays for legacy sessions only.
+  - **Accept:** a phone and a watch logging into one session concurrently keep
+    every drink. _(Covered by `WatchSessionOpsTests` in `ios/KirokuWatchCore`,
+    which applies the watch's ops to a server copy that already holds a phone
+    entry and asserts all three drinks survive, plus the view-model tests in
+    `Kiroku Watch AppTests`. The paired device/sim run remains the manual
+    check, and is written up in the PR.)_
 
 ### Phase 6 — Signing, CI, store plumbing (1–2 days)
 
