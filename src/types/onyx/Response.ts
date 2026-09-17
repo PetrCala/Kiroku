@@ -1,5 +1,6 @@
 import type {OnyxUpdate} from 'react-native-onyx';
 import type InvitePreview from './InvitePreview';
+import type {SessionPhotoId, SignedSessionPhoto} from './DrinkingSession';
 import type NicknameToId from './NicknameToId';
 import type {UserID} from './OnyxCommon';
 
@@ -95,6 +96,16 @@ type Response = {
 
   /** Deterministic storage object path paired with `uploadUrl`, echoed to `finalize`. */
   objectPath?: string;
+
+  /** The id `POST /v1/images/finalize` stored a session photo under. */
+  photoId?: string;
+
+  /**
+   * Signed read urls for a session's photos (`GET /v1/images/session-photos`),
+   * keyed by photo id. Short-lived, so these are held in component state rather
+   * than persisted with the session.
+   */
+  photos?: Record<SessionPhotoId, SignedSessionPhoto>;
 
   /** Who an invite link belongs to (`GET /v1/friends/invite/:code`). */
   invitePreview?: InvitePreview;

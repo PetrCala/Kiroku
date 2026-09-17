@@ -13,8 +13,18 @@ type FinalizeImageParams = {
   /** Object path returned by `POST /v1/images/upload-url`. */
   objectPath: string;
 
-  /** Target session for `kind: 'session'` uploads (future); unused for avatars. */
+  /** Target session for `kind: 'session'` uploads; unused for avatars. */
   sessionId?: string;
+
+  /**
+   * Pixel width of the uploaded image. Required for `kind: 'session'`: the
+   * bytes go straight to the bucket, so the server never sees them, and the
+   * gallery lays out against these numbers (RFC §4.2).
+   */
+  w?: number;
+
+  /** Pixel height. Required for `kind: 'session'`. */
+  h?: number;
 };
 
 export default FinalizeImageParams;

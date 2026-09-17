@@ -962,6 +962,9 @@ const CONST = {
       INAPPROPRIATE_NAME: 'inappropriate_name',
       INAPPROPRIATE_PHOTO: 'inappropriate_photo',
       HARASSMENT: 'harassment',
+      // One session photo, named by its object path. Offered only when a
+      // report is filed about a specific photo (RFC §9).
+      PHOTO: 'photo',
       OTHER: 'other',
     },
   },
@@ -975,11 +978,35 @@ const CONST = {
     INFO: 'info',
   },
   // Image kinds for the kiroku-api image pipeline (`/v1/images/*`, Kiroku #1059).
-  // `avatar` is public-read; `session` (future) stays private.
+  // `avatar` is public-read; `session` stays private and is read through
+  // short-lived signed urls.
   IMAGE_UPLOAD_KIND: {
     AVATAR: 'avatar',
     SESSION: 'session',
   },
+  // How each image kind is prepared before upload. An avatar is a small square
+  // thumbnail shown at one size; a session photo is looked at, so it keeps the
+  // frame it was shot in (no forced crop) and is resized to a width a phone
+  // screen can actually use. Both stay well inside the pipeline's 5 MB cap.
+  IMAGE_UPLOAD_PROFILE: {
+    avatar: {
+      // Square, cropped to fit.
+      ASPECT_RATIO: [1, 1],
+      OUTPUT_WIDTH: 300,
+      QUALITY: 0.8,
+    },
+    session: {
+      // `null` means "keep the source framing": a photo of the night is not a
+      // thumbnail, and cropping it to a fixed ratio throws away what it shows.
+      ASPECT_RATIO: null,
+      OUTPUT_WIDTH: 1080,
+      QUALITY: 0.7,
+    },
+  },
+  // Max photos on one session (RFC §9), mirrored by `MAX_SESSION_PHOTOS` in
+  // kiroku-api, which is the enforcing side. Held here so the UI can hide the
+  // add action instead of letting an upload fail at finalize.
+  SESSION_PHOTO_LIMIT: 20,
   ONYX_UPDATE_TYPES: {
     HTTPS: 'https',
     PUSHER: 'pusher',

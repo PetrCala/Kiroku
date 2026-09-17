@@ -26,6 +26,8 @@ import type {
   RelativeTimeAgoParams,
   SessionConfirmTimezoneChangeParams,
   SessionDefaultNameParams,
+  SessionPhotoLimitParams,
+  SessionPhotoParams,
   SessionStartTimeParams,
   SessionWindowIdParams,
   StatsDrillDownTitleParams,
@@ -418,6 +420,21 @@ export default {
     uploadingImage: 'Uploading image...',
     uploadFinished: 'Upload finished!',
     pleaseReload: 'Please reload the app to see changes.',
+    chooseProfilePicture: 'Choose a profile picture',
+  },
+  sessionPhotos: {
+    title: 'Photos',
+    addPhoto: 'Add a photo',
+    uploading: 'Adding your photo...',
+    photo: ({index, count}: SessionPhotoParams) => `Photo ${index} of ${count}`,
+    limitReached: ({limit}: SessionPhotoLimitParams) =>
+      `A session can hold ${limit} photos.`,
+    remove: 'Remove this photo',
+    removePrompt: 'Remove this photo from the session? This cannot be undone.',
+    report: 'Report this photo',
+    error: {
+      load: 'We could not load the photos for this session.',
+    },
   },
   storage: {
     permissionDenied: 'Storage Permission Required',
@@ -1168,9 +1185,12 @@ export default {
     title: 'Report',
     prompt:
       'Why are you reporting this user? Your report is private and goes to our moderation team.',
+    photoPrompt:
+      'Why are you reporting this photo? Your report is private and goes to our moderation team.',
     reasons: {
       inappropriateName: 'Inappropriate name',
       inappropriatePhoto: 'Inappropriate profile photo',
+      sessionPhoto: 'Inappropriate session photo',
       harassment: 'Harassment or bullying',
       other: 'Something else',
     },
