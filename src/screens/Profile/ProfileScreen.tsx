@@ -346,7 +346,12 @@ function ProfileScreen({route}: ProfileScreenProps) {
           userID={userID}
           profileData={profileData} // For live propagation of current user
         />
-        <View style={[styles.profileFriendsInfoContainer, styles.borderBottom]}>
+        <View
+          style={[
+            styles.profileFriendsInfoContainer,
+            // DEBUG green: ProfileScreen common-friends row
+            {borderBottomWidth: 1, borderColor: '#00FF66'},
+          ]}>
           <View style={[styles.flexGrow1, styles.flexRow]}>
             <Text>{friendCountLabel}</Text>
             <Text style={styles.ml2}>{friendCountText}</Text>

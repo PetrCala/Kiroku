@@ -317,7 +317,13 @@ function HomeScreen({route}: HomeScreenProps) {
         includeSafeAreaPaddingBottom={false}>
         {/* // TODO rewrite this into the HeaderWithBackButton component */}
         {isUserDataReady ? (
-          <View style={[styles.headerBar, styles.borderBottom, styles.ph2]}>
+          <View
+            style={[
+              styles.headerBar,
+              // DEBUG blue: HomeScreen headerBar
+              {borderBottomWidth: 1, borderColor: '#0066FF'},
+              styles.ph2,
+            ]}>
             <View
               style={[
                 styles.flexRow,
