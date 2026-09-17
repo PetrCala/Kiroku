@@ -26,6 +26,7 @@ import type {Route} from './ROUTES';
 import {updateLastRoute} from './libs/actions/App';
 import * as Subscriptions from './libs/actions/Subscriptions';
 import setCrashlyticsUserId from './libs/setCrashlyticsUserId';
+import FirebaseCrashlytics from './libs/Firebase/FirebaseCrashlytics';
 import {checkIfUnderMaintenance} from './libs/Maintenance';
 import {validateAppVersion} from './libs/Validation';
 import UnderMaintenanceModal from './components/Modals/UnderMaintenanceModal';
@@ -185,6 +186,55 @@ function Kiroku() {
   // ready as soon as nav + theme are ready.
   const isAuthScreenReady = !isAuthenticated || isAuthDataReady;
 
+  // Snapshot of every splash gate, shared by the 3s backstop and the 14s stuck
+  // log below so the two are directly comparable in a report. Built lazily: it
+  // only allocates when one of them actually fires, never on a healthy boot.
+  const getSplashGateSnapshot = useCallback(
+    () => ({
+      appState: AppState.currentState,
+      shouldInit,
+      isNavigationReady,
+      hasCheckedAutoLogin,
+      authenticationChecked,
+      isThemeReady,
+      preferredThemeStatus: preferredThemeMetadata.status,
+      isAuthenticated,
+      isAuthDataReady,
+      isAuthScreenReady,
+      shouldShowVerifyEmailModal,
+      isOnyxMigrated,
+      updateRequired,
+      updateAvailable,
+      preferredTheme,
+      lastVisitedPath,
+    }),
+    [
+      shouldInit,
+      isNavigationReady,
+      hasCheckedAutoLogin,
+      authenticationChecked,
+      isThemeReady,
+      preferredThemeMetadata.status,
+      isAuthenticated,
+      isAuthDataReady,
+      isAuthScreenReady,
+      shouldShowVerifyEmailModal,
+      isOnyxMigrated,
+      updateRequired,
+      updateAvailable,
+      preferredTheme,
+      lastVisitedPath,
+    ],
+  );
+
+  // Read the snapshot through a ref rather than closing over it directly: the
+  // backstop timer below must NOT re-arm every time a gate changes, or the 3s
+  // window would keep resetting and the timeout would never fire.
+  const getSplashGateSnapshotRef = useRef(getSplashGateSnapshot);
+  useEffect(() => {
+    getSplashGateSnapshotRef.current = getSplashGateSnapshot;
+  }, [getSplashGateSnapshot]);
+
   // Backstop for the authenticated splash gate, owned HERE rather than in
   // AuthScreens. `isAuthDataReady` was previously settable only from inside
   // AuthScreensContent (the data-arrival effect and its own timeout). But
@@ -201,6 +251,26 @@ function Kiroku() {
       return undefined;
     }
     const timeoutId = setTimeout(() => {
+      // Reaching the backstop means the fast path (AuthScreens setting
+      // `isAuthDataReady` once RTDB data lands) lost the race, so the home
+      // screen paints without its data. That's the failure that actually shows
+      // up in the field, and it was previously silent. Log it with the same
+      // shape as the 14s stuck log so a slow boot and a pinned boot can be
+      // told apart, and mirror it into Crashlytics, which is the only sink
+      // that survives a release build.
+      const propsToLog = getSplashGateSnapshotRef.current();
+      Log.alert(
+        '[BootSplash] auth data gate timed out, releasing splash',
+        {propsToLog},
+        false,
+      );
+      FirebaseCrashlytics.recordNonFatal(
+        '[BootSplash] auth data gate timed out, releasing splash',
+        {
+          ...propsToLog,
+          timeoutMs: CONST.BOOT_SPLASH_AUTH_DATA_TIMEOUT_MS,
+        },
+      );
       setIsAuthDataReady(true);
     }, CONST.BOOT_SPLASH_AUTH_DATA_TIMEOUT_MS);
     return () => clearTimeout(timeoutId);
@@ -268,50 +338,19 @@ function Kiroku() {
       return undefined;
     }
     const timer = setTimeout(() => {
+      const propsToLog = getSplashGateSnapshot();
       Log.alert(
         '[BootSplash] splash screen is still visible',
-        {
-          propsToLog: {
-            appState: AppState.currentState,
-            shouldInit,
-            isNavigationReady,
-            hasCheckedAutoLogin,
-            authenticationChecked,
-            isThemeReady,
-            preferredThemeStatus: preferredThemeMetadata.status,
-            isAuthenticated,
-            isAuthDataReady,
-            isAuthScreenReady,
-            shouldShowVerifyEmailModal,
-            isOnyxMigrated,
-            updateRequired,
-            updateAvailable,
-            preferredTheme,
-            lastVisitedPath,
-          },
-        },
+        {propsToLog},
         false,
+      );
+      FirebaseCrashlytics.recordNonFatal(
+        '[BootSplash] splash screen is still visible',
+        {...propsToLog, timeoutMs: CONST.BOOT_SPLASH_STUCK_LOG_TIMEOUT_MS},
       );
     }, CONST.BOOT_SPLASH_STUCK_LOG_TIMEOUT_MS);
     return () => clearTimeout(timer);
-  }, [
-    splashScreenState,
-    shouldInit,
-    isNavigationReady,
-    hasCheckedAutoLogin,
-    authenticationChecked,
-    isThemeReady,
-    preferredThemeMetadata.status,
-    isAuthenticated,
-    isAuthDataReady,
-    isAuthScreenReady,
-    shouldShowVerifyEmailModal,
-    isOnyxMigrated,
-    updateRequired,
-    updateAvailable,
-    preferredTheme,
-    lastVisitedPath,
-  ]);
+  }, [splashScreenState, getSplashGateSnapshot]);
 
   useEffect(() => {
     // Run any Onyx schema migrations and then continue loading the main app.
