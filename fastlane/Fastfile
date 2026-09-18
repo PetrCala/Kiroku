@@ -312,6 +312,13 @@ platform :ios do
           path: "./ios/KirokuWatch_AdHoc.mobileprovision"
       )
 
+      # The Live Activity widget extension, same arrangement
+      # (.adhoc.LiveActivity App ID); minted by
+      # scripts/ios-signing.mjs liveactivity-setup.
+      install_provisioning_profile(
+          path: "./ios/KirokuLiveActivity_AdHoc.mobileprovision"
+      )
+
       build_app(
           workspace: "./ios/kiroku.xcworkspace",
           skip_profile_detection: true,
@@ -327,6 +334,8 @@ platform :ios do
                 "com.kiroku.app.adhoc" => "Kiroku_AdHoc",
                 # Embedded Apple Watch app (ad-hoc).
                 "com.kiroku.app.adhoc.watchkitapp" => "KirokuWatch_AdHoc",
+                # Live Activity widget extension (ad-hoc).
+                "com.kiroku.app.adhoc.LiveActivity" => "KirokuLiveActivity_AdHoc",
               },
               manageAppVersionAndBuildNumber: false
           }
@@ -379,6 +388,12 @@ platform :ios do
         path: "./ios/KirokuWatch.mobileprovision"
     )
 
+    # The Live Activity widget extension, same arrangement (.LiveActivity App
+    # ID); minted by scripts/ios-signing.mjs liveactivity-setup.
+    install_provisioning_profile(
+        path: "./ios/KirokuLiveActivity.mobileprovision"
+    )
+
     # Xcode will handle JS bundling via bundle-react-native-code-and-images.sh (uses rock bundler)
     build_app(
         workspace: "./ios/kiroku.xcworkspace",
@@ -389,6 +404,8 @@ platform :ios do
               "com.kiroku.app" => "Kiroku",
               # Embedded Apple Watch app (App Store).
               "com.kiroku.app.watchkitapp" => "KirokuWatch",
+              # Live Activity widget extension (App Store).
+              "com.kiroku.app.LiveActivity" => "KirokuLiveActivity",
             },
             manageAppVersionAndBuildNumber: false
         }

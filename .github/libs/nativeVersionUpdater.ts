@@ -20,6 +20,10 @@ const PLIST_PATH_TEST = './ios/kirokuTests/Info.plist';
 // and CFBundleVersion as its containing iOS app, or App Store Connect rejects the
 // upload with a "CFBundleVersion Mismatch" (409) validation error.
 const PLIST_PATH_WATCH = './ios/Kiroku Watch App/Kiroku-Watch-App-Info.plist';
+// Same rule for the Live Activity widget extension (Sessions v2 W4): an
+// embedded extension whose version does not match the containing app is
+// rejected on upload.
+const PLIST_PATH_LIVE_ACTIVITY = './ios/KirokuLiveActivity/Info.plist';
 
 /**
  * Pad a number to be two digits (with leading zeros if necessary).
@@ -103,6 +107,12 @@ function updateiOSVersion(version: string): string {
   execSync(
     `/usr/libexec/PlistBuddy -c "Set :CFBundleVersion ${cfVersion}" '${PLIST_PATH_WATCH}'`,
   );
+  execSync(
+    `/usr/libexec/PlistBuddy -c "Set :CFBundleShortVersionString ${shortVersion}" ${PLIST_PATH_LIVE_ACTIVITY}`,
+  );
+  execSync(
+    `/usr/libexec/PlistBuddy -c "Set :CFBundleVersion ${cfVersion}" ${PLIST_PATH_LIVE_ACTIVITY}`,
+  );
 
   // Return the cfVersion so we can set the NEW_IOS_VERSION in ios.yml
   return cfVersion;
@@ -116,4 +126,5 @@ export {
   PLIST_PATH,
   PLIST_PATH_TEST,
   PLIST_PATH_WATCH,
+  PLIST_PATH_LIVE_ACTIVITY,
 };
