@@ -14,11 +14,19 @@
 //    - wires start / +1 / -1 / save / discard,
 //    - exposes loading / disconnected / error state for the UI.
 //
-//  Phase 5 adds debounced live-update posting: +/- stay instant locally and, via
-//  the pure `LiveUpdateCoalescer`, coalesce into a single `/v1/sessions/update`
-//  PUT once tapping pauses (~500ms), single-flight so writes never race. The
-//  authoritative persistence stays start + save; the debounced update is a quiet
-//  best-effort sync (errors are silent except auth, which routes to reconnect).
+//  Phase 5 added debounced live-update posting for a LEGACY session: +/- stay
+//  instant locally and, via the pure `LiveUpdateCoalescer`, coalesce into a
+//  single `/v1/sessions/update` PUT once tapping pauses (~500ms), single-flight
+//  so writes never race.
+//
+//  Sessions v2 W2 replaces that for a `schema_version: 2` session. Each +/- is
+//  one op naming only the entry it changes, sent through `SessionOpOutbox`
+//  (in order, retried, persisted). That is what closes the watch/phone
+//  overwrite race: the whole-session PUT is last-writer-wins on the entire
+//  session, so a watch write and a phone write during the same night threw away
+//  each other's drinks. Ops touch disjoint keys, so neither device can lose one.
+//  The debounce is gone with it: there is nothing to coalesce, because every tap
+//  is a different entry.
 //
 
 import Combine
@@ -46,9 +54,16 @@ final class SessionViewModel: ObservableObject {
     /// Inline error for the last failed write; nil after a success.
     @Published var lastError: String?
 
+    /// How many ops are still waiting to reach the server. Drives the "not
+    /// synced yet" hint, so a user who logged drinks offline can see that the
+    /// watch is still holding them.
+    @Published private(set) var pendingOpCount = 0
+
     private let connectivity: SessionConnectivity
     private let controller: LiveSessionController
     private let coalescer: LiveUpdateCoalescer
+    private let outbox: SessionOpOutbox
+    private let opStore: SessionOpStoring
     private let haptics: WatchHaptics
     private let makeWriter: (KirokuEnvironment, @escaping @Sendable () -> String?) -> SessionWriting
 
@@ -57,11 +72,17 @@ final class SessionViewModel: ObservableObject {
     /// The in-flight live-update PUT, if any. Save/discard awaits it so a
     /// finalizing write is ordered after any update already on the wire.
     private var flushTask: Task<Void, Never>?
+    /// The armed op retry timer, if any.
+    private var opRetryTask: Task<Void, Never>?
+    /// The op currently on the wire, if any.
+    private var opSendTask: Task<Void, Never>?
 
     init(
         connectivity: SessionConnectivity = .shared,
         controller: LiveSessionController = LiveSessionController(),
         coalescer: LiveUpdateCoalescer = LiveUpdateCoalescer(),
+        outbox: SessionOpOutbox = SessionOpOutbox(),
+        opStore: SessionOpStoring = SessionOpStore(),
         haptics: WatchHaptics = SystemWatchHaptics(),
         makeWriter: @escaping (KirokuEnvironment, @escaping @Sendable () -> String?) -> SessionWriting = {
             KirokuAPI(environment: $0, tokenProvider: $1)
@@ -70,6 +91,8 @@ final class SessionViewModel: ObservableObject {
         self.connectivity = connectivity
         self.controller = controller
         self.coalescer = coalescer
+        self.outbox = outbox
+        self.opStore = opStore
         self.haptics = haptics
         self.makeWriter = makeWriter
 
@@ -78,7 +101,11 @@ final class SessionViewModel: ObservableObject {
         controller.reflectOngoing(connectivity.ongoingSession)
         needsReconnect = connectivity.needsPhoneReconnect
         isConnecting = !connectivity.isActivated
+        // Ops queued before the app was killed are still owed to the server;
+        // pick them up and keep draining.
+        outbox.restore(opStore.load())
         syncPublished()
+        driveOutbox(outbox.resume())
     }
 
     // MARK: - Connectivity glue (driven by the view's `.onReceive`)
@@ -114,10 +141,14 @@ final class SessionViewModel: ObservableObject {
         syncPublished()
         haptics.play(.start)
         lastError = nil
-        // Optimistic: the session is live locally now; the POST runs in the
-        // background. A hard failure surfaces inline but keeps the session so
-        // the user can keep logging and save later (save re-posts the whole
-        // session). An auth failure routes to the reconnect state.
+        // A Sessions v2 session starts with a `start` op, which the outbox
+        // delivers and retries; there is nothing to surface inline, because a
+        // failure is not the user's to fix. A legacy session keeps the
+        // optimistic whole-session POST: it is live locally now, a hard failure
+        // surfaces inline but keeps the session, and the save re-posts it.
+        if drainControllerOps() {
+            return
+        }
         perform { try await writer.start(session) }
     }
 
@@ -127,25 +158,47 @@ final class SessionViewModel: ObservableObject {
         guard controller.addUnit(authorUid: CredentialStore.load()?.uid) else { return }
         haptics.play(.click)
         syncPublished()
-        scheduleLivePersist()
+        persistChange()
     }
 
     func subtractUnit() {
         guard controller.subtractUnit() else { return }
         haptics.play(.click)
         syncPublished()
-        scheduleLivePersist()
+        persistChange()
     }
 
     func saveSession() {
-        guard let finalized = controller.makeFinalized() else { return }
-        guard let writer = currentWriter() else {
+        guard controller.currentSession() != nil else { return }
+        guard currentWriter() != nil else {
             haptics.play(.failure)
             return
         }
-        // Stop new debounced updates; the in-flight one (if any) is awaited in
-        // `runBlocking` so this save is ordered last (last-writer-wins).
         cancelLivePersist()
+
+        // A Sessions v2 session ends with one `end` op. The drinks are already
+        // queued or delivered as their own ops, so ending is instant and
+        // offline-safe: the session closes locally and the outbox owes the
+        // server the close. Nothing here can fail in a way the user must fix,
+        // which is why there is no spinner and no inline error.
+        if let endOp = controller.makeEndOp() {
+            _ = outbox.enqueue(endOp)
+            _ = controller.takePendingOps()
+            controller.markFinished()
+            syncPublished()
+            haptics.play(.success)
+            lastError = nil
+            persistOutbox()
+            driveOutbox(outbox.resume())
+            return
+        }
+
+        // Legacy: the whole session is the write, so it blocks and reports.
+        // The in-flight debounced update (if any) is awaited in `runBlocking`
+        // so this save is ordered last (last-writer-wins).
+        guard let finalized = controller.makeFinalized(), let writer = currentWriter() else {
+            return
+        }
         runBlocking(
             work: { try await writer.save(finalized) },
             onSuccess: { self.controller.markFinished() }
@@ -159,16 +212,124 @@ final class SessionViewModel: ObservableObject {
             return
         }
         cancelLivePersist()
+        // The session is about to be deleted, so its queued ops have nowhere to
+        // land. Drop them before the delete rather than after: a `delete`
+        // landing first would leave the ops piling up refusals against a
+        // session id that no longer exists.
+        outbox.dropOps(forSessionId: session.id)
+        persistOutbox()
         runBlocking(
             work: { try await writer.discard(sessionId: session.id) },
             onSuccess: { self.controller.markFinished() }
         )
     }
 
-    // MARK: - Live-update coalescing (Phase 5)
+    /// Resume delivering queued ops. Called when the watch app becomes active,
+    /// because an op left over from a previous run (or from an offline stretch)
+    /// is a drink the server does not have yet.
+    func resumeOutbox() {
+        driveOutbox(outbox.resume())
+    }
 
-    /// Feed a +/- edit to the coalescer and act on its command. The whole session
-    /// is read at flush time, so the newest drinks are always sent.
+    // MARK: - Op outbox (Sessions v2 W2)
+
+    /// Persist a local change: ops for a Sessions v2 session, the debounced
+    /// whole-session update for a legacy one.
+    private func persistChange() {
+        if drainControllerOps() {
+            return
+        }
+        scheduleLivePersist()
+    }
+
+    /// Move whatever ops the controller recorded into the outbox and start
+    /// delivering. Returns whether there were any, which is also the answer to
+    /// "is this session on the op path?" for the caller.
+    @discardableResult
+    private func drainControllerOps() -> Bool {
+        let ops = controller.takePendingOps()
+        guard !ops.isEmpty else {
+            return false
+        }
+        var command = SessionOpOutbox.Command.none
+        for op in ops {
+            let next = outbox.enqueue(op)
+            // Only one of the enqueues can start a send (the outbox is
+            // single-flight); keep whichever command is not `.none`.
+            if next != .none {
+                command = next
+            }
+        }
+        persistOutbox()
+        driveOutbox(command)
+        return true
+    }
+
+    /// Act on an outbox command, and keep `pendingOpCount` in step.
+    private func driveOutbox(_ command: SessionOpOutbox.Command) {
+        pendingOpCount = outbox.pendingCount
+        switch command {
+        case .none:
+            break
+        case let .send(op):
+            sendOp(op)
+        case let .scheduleRetry(generation, delayMillis):
+            armOpRetry(generation: generation, delayMillis: delayMillis)
+        }
+    }
+
+    /// Send one op and report its outcome back to the outbox.
+    ///
+    /// A missing or stale credential is treated as TRANSIENT, not as a refusal:
+    /// the drink is real and the phone's next credential push makes the send
+    /// possible, so dropping it would lose a drink over a recoverable problem.
+    private func sendOp(_ op: SessionOp) {
+        guard let writer = currentWriter() else {
+            driveOutbox(outbox.sendCompleted(.transient))
+            return
+        }
+        opSendTask = Task { [weak self] in
+            guard let self else { return }
+            var outcome = SessionOpOutbox.Outcome.success
+            do {
+                try await writer.apply(op)
+            } catch let error as KirokuAPIError {
+                self.handleBackgroundSyncError(error)
+                outcome = error.isDeterministicRefusal ? .refused : .transient
+            } catch {
+                outcome = .transient
+            }
+            self.opSendTask = nil
+            self.persistOutbox()
+            self.driveOutbox(self.outbox.sendCompleted(outcome))
+        }
+    }
+
+    /// Arm the retry timer the outbox asked for. A stale fire is a no-op inside
+    /// the outbox (generation), same as the debounce timer.
+    private func armOpRetry(generation: Int, delayMillis: Int) {
+        opRetryTask?.cancel()
+        opRetryTask = Task { [weak self] in
+            try? await Task.sleep(nanoseconds: UInt64(delayMillis) * 1_000_000)
+            guard let self, !Task.isCancelled else { return }
+            self.opRetryTask = nil
+            self.driveOutbox(self.outbox.retryTimerFired(generation: generation))
+        }
+    }
+
+    /// Write the queue to disk. Called after every change, because the drinks
+    /// in it exist nowhere else.
+    private func persistOutbox() {
+        opStore.save(outbox.snapshot())
+        pendingOpCount = outbox.pendingCount
+    }
+
+    // MARK: - Live-update coalescing (Phase 5, legacy sessions)
+
+    /// Feed a +/- edit to the coalescer and act on its command. LEGACY ONLY: a
+    /// Sessions v2 session sends ops instead (see ``persistChange()``). The
+    /// whole session is read at flush time, so the newest drinks are always
+    /// sent.
     private func scheduleLivePersist() {
         apply(coalescer.schedule())
     }
@@ -343,6 +504,7 @@ protocol SessionWriting {
     @discardableResult func update(_ session: DrinkingSession) async throws -> KirokuAPIResponse
     @discardableResult func save(_ session: DrinkingSession) async throws -> KirokuAPIResponse
     @discardableResult func discard(sessionId: String) async throws -> KirokuAPIResponse
+    @discardableResult func apply(_ op: SessionOp) async throws -> KirokuAPIResponse
 }
 
 extension KirokuAPI: SessionWriting {}
