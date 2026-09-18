@@ -12,6 +12,7 @@ import useLocalize from '@hooks/useLocalize';
 import useStatsContext from '@hooks/useStatsContext';
 import useDrinkEvents from '@hooks/useStatistics/useDrinkEvents';
 import useTheme from '@hooks/useTheme';
+import useDrinkProfile from '@hooks/useDrinkProfile';
 import useThemeStyles from '@hooks/useThemeStyles';
 import {
   composeFilters,
@@ -84,6 +85,7 @@ function groupEventsIntoSessions(
 
 function StatsDrillDownSheet() {
   const styles = useThemeStyles();
+  const drinkProfile = useDrinkProfile();
   const theme = useTheme();
   const {translate} = useLocalize();
   const {activeBucket, closeDrillDown} = useStatsDrillDown();
@@ -181,6 +183,7 @@ function StatsDrillDownSheet() {
                 session={item.session}
                 isEditModeOn={false}
                 readOnly
+                drinkProfile={drinkProfile}
               />
             )}
           />

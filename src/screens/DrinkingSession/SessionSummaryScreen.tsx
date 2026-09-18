@@ -6,7 +6,7 @@ import {
   findDrinkNameTranslationKey,
 } from '@libs/DataHandling';
 import DrinkData from '@libs/DrinkData';
-import {buildDrinkProfile, rankDrinkKeys} from '@libs/DrinkRanking';
+import {rankDrinkKeys} from '@libs/DrinkRanking';
 import formatSessionDuration from '@libs/formatSessionDuration';
 import {getSessionEntries, sumEntryCounts} from '@libs/SessionEntries';
 import Icon from '@components/Icon';
@@ -16,6 +16,7 @@ import * as KirokuIcons from '@components/Icon/KirokuIcons';
 import type {DrinkingSession, DrinkKey} from '@src/types/onyx';
 import useCurrentUserPreferences from '@hooks/useCurrentUserPreferences';
 import useCurrentUserDrinkingSessions from '@hooks/useCurrentUserDrinkingSessions';
+import useDrinkProfile from '@hooks/useDrinkProfile';
 import type {StackScreenProps} from '@react-navigation/stack';
 import CONST from '@src/CONST';
 import SCREENS from '@src/SCREENS';
@@ -74,6 +75,8 @@ function SessionSummaryScreen({route}: SessionSummaryScreenProps) {
   const {sessionId} = route.params;
   const preferences = useCurrentUserPreferences();
   const drinkingSessionData = useCurrentUserDrinkingSessions();
+  /** The user's own drink order, the one the live card's quick-add row uses. */
+  const drinkProfile = useDrinkProfile();
   const {translate} = useLocalize();
   const styles = useThemeStyles();
   const theme = useTheme();
@@ -218,12 +221,6 @@ function SessionSummaryScreen({route}: SessionSummaryScreenProps) {
       },
     ],
   };
-
-  /** The user's own drink order, the one the live card's quick-add row uses. */
-  const drinkProfile = useMemo(
-    () => buildDrinkProfile(drinkingSessionData),
-    [drinkingSessionData],
-  );
 
   /**
    * The session's drinks, per type, read through the entries adapter in ONE

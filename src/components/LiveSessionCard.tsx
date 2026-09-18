@@ -1,10 +1,10 @@
-import {useCallback, useEffect, useMemo, useRef, useState} from 'react';
+import {useCallback, useEffect, useRef, useState} from 'react';
 import {View} from 'react-native';
 import {useOnyx} from 'react-native-onyx';
 import {useFocusEffect} from '@react-navigation/native';
 import useAddDrinks from '@hooks/useAddDrinks';
 import useAppFocusEvent from '@hooks/useAppFocusEvent';
-import useCurrentUserDrinkingSessions from '@hooks/useCurrentUserDrinkingSessions';
+import useDrinkProfile from '@hooks/useDrinkProfile';
 import useCurrentUserPreferences from '@hooks/useCurrentUserPreferences';
 import useLocalize from '@hooks/useLocalize';
 import useTheme from '@hooks/useTheme';
@@ -13,7 +13,7 @@ import {findDrinkNameTranslationKey} from '@libs/DataHandling';
 import DrinkData from '@libs/DrinkData';
 import * as DSUtils from '@libs/DrinkingSessionUtils';
 import {getSessionDisplayName} from '@libs/SessionName';
-import {buildDrinkProfile, rankQuickAdd} from '@libs/DrinkRanking';
+import {rankQuickAdd} from '@libs/DrinkRanking';
 import * as DS from '@userActions/DrinkingSession';
 import CONST from '@src/CONST';
 import ONYXKEYS from '@src/ONYXKEYS';
@@ -57,12 +57,8 @@ function LiveSessionCard() {
   const {translate} = useLocalize();
   const [session] = useOnyx(ONYXKEYS.ONGOING_SESSION_DATA);
   const preferences = useCurrentUserPreferences();
-  const drinkingSessions = useCurrentUserDrinkingSessions();
   const addDrinks = useAddDrinks(session);
-  const drinkProfile = useMemo(
-    () => buildDrinkProfile(drinkingSessions),
-    [drinkingSessions],
-  );
+  const drinkProfile = useDrinkProfile();
 
   // The re-rank triggers read the latest inputs through a ref, so they don't
   // re-run on every tap (each tap changes `session`).

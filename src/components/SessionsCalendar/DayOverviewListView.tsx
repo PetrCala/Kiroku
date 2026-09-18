@@ -9,6 +9,7 @@ import DrinkingSessionOverview from '@components/DrinkingSessionOverview';
 import SwipeBackGestureDetector from '@components/SwipeBackGestureDetector';
 import useLocalize from '@hooks/useLocalize';
 import useTheme from '@hooks/useTheme';
+import useDrinkProfile from '@hooks/useDrinkProfile';
 import useThemeStyles from '@hooks/useThemeStyles';
 import useWindowDimensions from '@hooks/useWindowDimensions';
 import {dateStringToDate} from '@libs/DataHandling';
@@ -124,6 +125,7 @@ function DayOverviewListView({
   onSwipeBack,
 }: DayOverviewListViewProps) {
   const styles = useThemeStyles();
+  const drinkProfile = useDrinkProfile();
   const theme = useTheme();
   const {translate, preferredLocale} = useLocalize();
   // Explicit date-fns locale for the day-header labels (date-fns ignores the
@@ -401,11 +403,13 @@ function DayOverviewListView({
           readOnly={isReadOnly}
           enableLongPressToEdit
           preferences={preferences}
+          drinkProfile={drinkProfile}
         />
       );
     },
     [
       preferences,
+      drinkProfile,
       isReadOnly,
       isEditModeOn,
       translate,

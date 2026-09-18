@@ -11,6 +11,7 @@ import {PressableWithFeedback} from '@components/Pressable';
 import Text from '@components/Text';
 import useLocalize from '@hooks/useLocalize';
 import useTheme from '@hooks/useTheme';
+import useDrinkProfile from '@hooks/useDrinkProfile';
 import useThemeStyles from '@hooks/useThemeStyles';
 import {dateStringToDate} from '@libs/DataHandling';
 import DateUtils from '@libs/DateUtils';
@@ -50,6 +51,7 @@ function DayDrillDownSheet({
   canEdit,
 }: DayDrillDownSheetProps) {
   const styles = useThemeStyles();
+  const drinkProfile = useDrinkProfile();
   const theme = useTheme();
   const {translate, preferredLocale} = useLocalize();
 
@@ -136,6 +138,7 @@ function DayDrillDownSheet({
                 isEditModeOn={canEdit}
                 readOnly={!canEdit}
                 preferences={preferences}
+                drinkProfile={drinkProfile}
               />
             )}
           />

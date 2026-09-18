@@ -4,6 +4,7 @@ import * as KirokuIcons from '@components/Icon/KirokuIcons';
 import Icon from '@components/Icon';
 import {convertUnitsToColors, sumSessionDrinksOfType} from '@libs/DataHandling';
 import DrinkData from '@libs/DrinkData';
+import {rankDrinkKeys} from '@libs/DrinkRanking';
 import {resolvePalette} from '@libs/SessionColorPalettes';
 import Navigation from '@libs/Navigation/Navigation';
 import ROUTES from '@src/ROUTES';
@@ -31,6 +32,7 @@ function DrinkingSessionOverview({
   readOnly = false,
   enableLongPressToEdit = false,
   preferences: preferencesProp,
+  drinkProfile,
 }: DrinkingSessionOverviewProps) {
   const ownPreferences = useCurrentUserPreferences();
   const preferences = preferencesProp ?? ownPreferences;
@@ -94,12 +96,17 @@ function DrinkingSessionOverview({
   ];
 
   // Per-drink-type counts (non-zero only), shown as a compact icon + count row
-  // so the tile surfaces what the session actually contained at a glance.
+  // so the tile surfaces what the session actually contained at a glance. The
+  // types run in the viewer's own order for a session starting at this hour,
+  // the same order the live card's quick-add row and the detail page use.
+  const rankedKeys = rankDrinkKeys(drinkProfile, session);
   const drinkBreakdown = DrinkData.map(({key, icon}) => ({
     key,
     icon,
     count: sumSessionDrinksOfType(session, key),
-  })).filter(({count}) => count > 0);
+  }))
+    .filter(({count}) => count > 0)
+    .sort((a, b) => rankedKeys.indexOf(a.key) - rankedKeys.indexOf(b.key));
 
   const sessionDetails = (
     <View
