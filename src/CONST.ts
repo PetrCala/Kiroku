@@ -136,6 +136,11 @@ const CONST = {
       PING: 'ping',
       START: 'start',
       END: 'end',
+      // Not in the RFC's §5.1 op table (see its §15 deviations): W2 needs a
+      // way to express editing a session's start, end and timezone as an op,
+      // and folding that into `start`/`end` would blur two lifecycle ops into
+      // a setter.
+      SET_TIMES: 'set_times',
       ADD_ENTRY: 'add_entry',
       EDIT_ENTRY: 'edit_entry',
       DELETE_ENTRY: 'delete_entry',
@@ -465,6 +470,14 @@ const CONST = {
     TOO_EARLY: 425,
     // When Cloudflare throttles
     TOO_MANY_REQUESTS: 429,
+    // kiroku-api's permission refusal, upstream Expensify's `jsonCode` 460: the
+    // caller may not make this change (a session op against someone else's
+    // entry, a whole-session write against a shared session). Deliberately not
+    // 403, so that a permission failure is distinguishable from a network
+    // failure AND from a neutral block refusal (Sessions v2 RFC §5.3): the
+    // request is dropped from the queue and rolled back through its failure
+    // data rather than retried forever.
+    PERMISSION_DENIED: 460,
     INTERNAL_SERVER_ERROR: 500,
     BAD_GATEWAY: 502,
     GATEWAY_TIMEOUT: 504,
