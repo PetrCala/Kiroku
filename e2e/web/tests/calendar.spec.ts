@@ -1,6 +1,7 @@
 import {test, expect} from '../fixtures/auth';
 import {HomePage} from '../pages/HomePage';
 import {DayOverviewPage, localDateString} from '../pages/DayOverviewPage';
+import {SessionPage} from '../pages/SessionPage';
 import {trackErrors} from '../fixtures/consoleErrors';
 
 /**
@@ -34,5 +35,48 @@ test.describe('calendar navigation', () => {
     expect(errors, `Unexpected console errors:\n${errors.join('\n')}`).toEqual(
       [],
     );
+  });
+
+  test("opens a session's detail page from the day overview and backs out to it", async ({
+    authedPage,
+  }) => {
+    const homePage = new HomePage(authedPage);
+    const dayOverview = new DayOverviewPage(authedPage);
+    const session = new SessionPage(authedPage);
+
+    await homePage.goto();
+    await expect(homePage.screen()).toBeVisible();
+
+    // A session to open: start, log a drink and save one on today's date.
+    await session.startLiveSession();
+    const sessionId = session.currentSessionId();
+    await session.logOneDrink();
+    await session.save();
+    await authedPage.goBack();
+    await expect(homePage.screen()).toBeVisible();
+
+    // Open it through today's day overview instead of the Home banner. The day
+    // list is virtualized, so the tile is scrolled into the DOM first.
+    const today = localDateString();
+    await dayOverview.openDay(today);
+    const tile = await dayOverview.revealSessionTile(sessionId);
+    await tile.click();
+    await expect(session.summaryScreen()).toBeVisible();
+
+    // Backing out of the detail page returns to the day overview it was opened
+    // from, not to Home: the session modal closes onto whatever is beneath it.
+    await session.detailBackButton().click();
+    await expect(dayOverview.screen()).toBeVisible();
+    await expect(session.summaryScreen()).toBeHidden();
+
+    // Clean up the session this spec created. It is the most recent one, so
+    // Home's "Last session" banner opens exactly it.
+    await authedPage.goBack();
+    await expect(homePage.screen()).toBeVisible();
+    await homePage.openLastSession();
+    expect(session.currentSessionId()).toBe(sessionId);
+    await session.openEditFromSummary();
+    await session.discardAndConfirm();
+    await expect(homePage.screen()).toBeVisible();
   });
 });
