@@ -155,7 +155,12 @@ const ROUTES = {
   },
   PROFILE_REPORT_USER: {
     route: 'profile/:userID/report',
-    getRoute: (userID: UserID) => `profile/${userID}/report` as const,
+    // `objectPath` names one of the user's session photos when the report is
+    // about that photo rather than the user in general (RFC §9).
+    getRoute: (userID: UserID, objectPath?: string) =>
+      objectPath
+        ? (`profile/${userID}/report?objectPath=${encodeURIComponent(objectPath)}` as const)
+        : (`profile/${userID}/report` as const),
   },
 
   SESSIONS_CALENDAR_FULLSCREEN: {

@@ -39,6 +39,7 @@ import variables from '@styles/variables';
 import ScrollView from '@components/ScrollView';
 import MenuItem from '@components/MenuItem';
 import Section from '@components/Section';
+import SessionPhotoGallery from '@components/SessionPhotoGallery';
 import type {TranslationPaths} from '@src/languages/types';
 import MenuItemGroup from '@components/MenuItemGroup';
 import Switch from '@components/Switch';
@@ -390,6 +391,11 @@ function SessionSummaryScreen({route}: SessionSummaryScreenProps) {
             {sessionName}
           </Text>
           <Text style={[styles.textSupporting, styles.mt1]}>{sessionDay}</Text>
+        </View>
+        {/* The photos read from the session record itself, so they arrive
+            with the rest of it and the calendar sees the same map. */}
+        <View style={[styles.ph5, styles.pb4]}>
+          <SessionPhotoGallery sessionId={sessionId} photos={session.photos} />
         </View>
         <MenuItemGroup>
           {generalMenuItems}

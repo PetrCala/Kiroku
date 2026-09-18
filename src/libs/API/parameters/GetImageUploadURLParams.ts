@@ -9,7 +9,7 @@ type ImageUploadKind = ValueOf<typeof CONST.IMAGE_UPLOAD_KIND>;
  * a direct-to-storage image upload.
  */
 type GetImageUploadURLParams = {
-  /** Image kind: `avatar` (public-read) or `session` (private; future). */
+  /** Image kind: `avatar` (public-read) or `session` (private, signed reads). */
   kind: ImageUploadKind;
 
   /**
@@ -18,7 +18,7 @@ type GetImageUploadURLParams = {
    */
   contentType: string;
 
-  /** Target session for `kind: 'session'` uploads (future); unused for avatars. */
+  /** Target session for `kind: 'session'` uploads; unused for avatars. */
   sessionId?: string;
 };
 

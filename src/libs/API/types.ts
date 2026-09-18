@@ -45,6 +45,7 @@ const WRITE_COMMANDS = {
   REMOVE_FEEDBACK: 'RemoveFeedback',
   REMOVE_BUG: 'RemoveBug',
   FINALIZE_IMAGE: 'FinalizeImage',
+  DELETE_SESSION_PHOTO: 'DeleteSessionPhoto',
   SYNC_USER_STATUS: 'SyncUserStatus',
   ACCEPT_TERMS: 'AcceptTerms',
   COMPLETE_ONBOARDING: 'CompleteOnboarding',
@@ -94,6 +95,7 @@ type WriteCommandParameters = {
   [WRITE_COMMANDS.REMOVE_FEEDBACK]: Parameters.RemoveFeedbackParams;
   [WRITE_COMMANDS.REMOVE_BUG]: Parameters.RemoveBugParams;
   [WRITE_COMMANDS.FINALIZE_IMAGE]: Parameters.FinalizeImageParams;
+  [WRITE_COMMANDS.DELETE_SESSION_PHOTO]: Parameters.DeleteSessionPhotoParams;
   [WRITE_COMMANDS.SYNC_USER_STATUS]: Parameters.SyncUserStatusParams;
   [WRITE_COMMANDS.ACCEPT_TERMS]: Parameters.AcceptTermsParams;
   [WRITE_COMMANDS.COMPLETE_ONBOARDING]: EmptyObject;
@@ -113,6 +115,7 @@ const READ_COMMANDS = {
   GET_USERS_BATCH: 'GetUsersBatch',
   OPEN_FRIEND_LIST: 'OpenFriendList',
   GET_IMAGE_UPLOAD_URL: 'GetImageUploadURL',
+  GET_SESSION_PHOTOS: 'GetSessionPhotos',
   //   OPEN_PLAID_BANK_LOGIN: 'OpenPlaidBankLogin',
   //   OPEN_PLAID_BANK_ACCOUNT_SELECTOR: 'OpenPlaidBankAccountSelector',
   //   GET_ROUTE: 'GetRoute',
@@ -138,6 +141,7 @@ type ReadCommandParameters = {
   [READ_COMMANDS.GET_USERS_BATCH]: Parameters.GetUsersBatchParams;
   [READ_COMMANDS.OPEN_FRIEND_LIST]: Parameters.OpenFriendListParams;
   [READ_COMMANDS.GET_IMAGE_UPLOAD_URL]: Parameters.GetImageUploadURLParams;
+  [READ_COMMANDS.GET_SESSION_PHOTOS]: Parameters.GetSessionPhotosParams;
   //    ...
 };
 

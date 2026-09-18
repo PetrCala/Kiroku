@@ -30,6 +30,11 @@ type ReportUserScreenProps = StackScreenProps<
   typeof SCREENS.PROFILE.REPORT_USER
 >;
 
+type ReasonOption = {
+  reason: ReportReason;
+  translationKey: TranslationPaths;
+};
+
 // Pair each wire-contract reason (CONST.REPORT.REASON, shared with kiroku-api)
 // with its English label key. The order here is the order shown to the user.
 const REASONS = [
@@ -49,13 +54,18 @@ const REASONS = [
     reason: CONST.REPORT.REASON.OTHER,
     translationKey: 'reportUserScreen.reasons.other',
   },
-] as const satisfies ReadonlyArray<{
-  reason: ReportReason;
-  translationKey: TranslationPaths;
-}>;
+] as const satisfies readonly ReasonOption[];
+
+// Reported about one session photo instead. Offered only when the screen was
+// opened from a photo, since it is the only reason that needs a path to mean
+// anything, and it replaces the profile-photo reason, which is about the avatar.
+const PHOTO_REASON = {
+  reason: CONST.REPORT.REASON.PHOTO,
+  translationKey: 'reportUserScreen.reasons.sessionPhoto',
+} as const satisfies ReasonOption;
 
 function ReportUserScreen({route}: ReportUserScreenProps) {
-  const {userID} = route.params;
+  const {userID, objectPath} = route.params;
   const styles = useThemeStyles();
   const {translate} = useLocalize();
   // Mimic FormWrapper (the FeedbackScreen/ReportBugScreen footer): the screen
@@ -66,8 +76,18 @@ function ReportUserScreen({route}: ReportUserScreenProps) {
   const footerPaddingStyle = safeAreaPaddingBottomStyle.paddingBottom
     ? safeAreaPaddingBottomStyle
     : styles.pb5;
+  // A report opened from a photo starts on the photo reason: it is what the
+  // user tapped, and the other reasons are about the user in general.
+  const reasons: readonly ReasonOption[] = objectPath
+    ? [
+        PHOTO_REASON,
+        ...REASONS.filter(
+          ({reason}) => reason !== CONST.REPORT.REASON.INAPPROPRIATE_PHOTO,
+        ),
+      ]
+    : REASONS;
   const [selectedReason, setSelectedReason] = useState<ReportReason | null>(
-    null,
+    objectPath ? PHOTO_REASON.reason : null,
   );
   const [description, setDescription] = useState('');
   const [alsoBlock, setAlsoBlock] = useState(false);
@@ -82,10 +102,20 @@ function ReportUserScreen({route}: ReportUserScreenProps) {
     const trimmedDescription = description.trim();
     const reportDescription =
       trimmedDescription.length > 0 ? trimmedDescription : undefined;
+    // Only the photo reason is about a specific object; sending the path with
+    // any other reason would file a report the server rejects. Computed here
+    // for the same reason as the description above.
+    const reportObjectPath =
+      selectedReason === CONST.REPORT.REASON.PHOTO ? objectPath : undefined;
     try {
       // Fire-and-forget like feedback: the report is server-only/admin-reviewed,
       // so there is no optimistic Onyx state and no confirmation to wait on.
-      Report.reportUser(userID, selectedReason, reportDescription);
+      Report.reportUser(
+        userID,
+        selectedReason,
+        reportDescription,
+        reportObjectPath,
+      );
       // Opt-in graft: block only after the report when the user asked for it.
       if (alsoBlock) {
         Block.blockUser(userID);
@@ -119,9 +149,13 @@ function ReportUserScreen({route}: ReportUserScreenProps) {
         ]}>
         <View style={styles.flexGrow1}>
           <Text style={[styles.mb3]}>
-            {translate('reportUserScreen.prompt')}
+            {translate(
+              objectPath
+                ? 'reportUserScreen.photoPrompt'
+                : 'reportUserScreen.prompt',
+            )}
           </Text>
-          {REASONS.map(({reason, translationKey}) => (
+          {reasons.map(({reason, translationKey}) => (
             <MenuItem
               key={reason}
               title={translate(translationKey)}

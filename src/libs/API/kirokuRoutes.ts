@@ -310,11 +310,34 @@ const KIROKU_ROUTES: Record<ApiCommand, KirokuRoute> = {
   },
   // Validate + moderate the uploaded object, then apply its access policy and
   // persist it. For `kind: 'avatar'`: public-read + a `profile.photo_url` merge
-  // in the response's onyxData. Supersedes the old client-trusted
-  // `UPDATE_PROFILE_PHOTO` (`/v1/profile/photo`), closing that integrity gap.
+  // in the response's onyxData. For `kind: 'session'`: the object stays private
+  // and the photo is persisted onto the session, whose merge rides back in the
+  // response. Supersedes the old client-trusted `UPDATE_PROFILE_PHOTO`
+  // (`/v1/profile/photo`), closing that integrity gap.
   [WRITE_COMMANDS.FINALIZE_IMAGE]: {
     method: 'post',
     path: '/v1/images/finalize',
+  },
+  // Remove one session photo: the stored object and its record. Owner only.
+  [WRITE_COMMANDS.DELETE_SESSION_PHOTO]: {
+    method: 'post',
+    path: '/v1/images/session-photo/delete',
+  },
+  // Short-lived signed READ urls for a session's photos. Session images are
+  // private objects (unlike avatars, which are public-read), so this is the
+  // only way to display one. `userID` is omitted for the user's own session.
+  [READ_COMMANDS.GET_SESSION_PHOTOS]: {
+    method: 'get',
+    path: '/v1/images/session-photos',
+    toQuery: data => {
+      const query: Record<string, string> = {
+        sessionId: String(data.sessionId),
+      };
+      if (typeof data.userID === 'string' && data.userID !== '') {
+        query.uid = data.userID;
+      }
+      return query;
+    },
   },
   [WRITE_COMMANDS.SYNC_USER_STATUS]: {
     method: 'post',

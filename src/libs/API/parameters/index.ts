@@ -41,6 +41,8 @@ export type {
   ImageUploadKind,
 } from './GetImageUploadURLParams';
 export type {default as FinalizeImageParams} from './FinalizeImageParams';
+export type {default as DeleteSessionPhotoParams} from './DeleteSessionPhotoParams';
+export type {default as GetSessionPhotosParams} from './GetSessionPhotosParams';
 export type {default as SyncUserStatusParams} from './SyncUserStatusParams';
 export type {default as AcceptTermsParams} from './AcceptTermsParams';
 export type {default as SetOnboardingLastVisitedPathParams} from './SetOnboardingLastVisitedPathParams';

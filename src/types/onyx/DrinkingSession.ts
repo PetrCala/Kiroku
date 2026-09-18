@@ -101,6 +101,24 @@ type SessionPhoto = {
 type SessionPhotos = Record<SessionPhotoId, SessionPhoto>;
 
 /**
+ * A session photo plus the short-lived signed read url the server mints for it
+ * (`GET /v1/images/session-photos`). Session images are private objects, so a
+ * url is the only way to display one, and it expires: these are held in
+ * component state for as long as a gallery is open, never persisted with the
+ * session.
+ */
+type SignedSessionPhoto = SessionPhoto & {
+  /** Signed read url, valid until `expires_at` */
+  url: string;
+
+  /** When `url` stops working (ms) */
+  expires_at: Timestamp;
+};
+
+/** Signed session photos, keyed by photo id */
+type SignedSessionPhotos = Record<SessionPhotoId, SignedSessionPhoto>;
+
+/**
  * Session meta (RFC §4.2): the fields a solo session and a shared session have
  * in common. `note` and `blackout` are deliberately absent; they stay private
  * per member and live only in each member's own record.
@@ -320,6 +338,8 @@ export type {
   SessionPhotoId,
   SessionPhotos,
   SessionSchemaVersion,
+  SignedSessionPhoto,
+  SignedSessionPhotos,
   SessionTimeParts,
   SessionVisibility,
   SharedSession,

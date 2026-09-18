@@ -4,6 +4,7 @@ import {useFirebase} from '@src/context/global/FirebaseContext';
 import ProfileImage from '@components/ProfileImage';
 import {SupporterBadgeForUser} from '@components/SupporterBadge';
 import UploadImageComponent from '@components/UploadImage';
+import CONST from '@src/CONST';
 import type {Profile} from '@src/types/onyx';
 import useThemeStyles from '@hooks/useThemeStyles';
 import useWindowDimensions from '@hooks/useWindowDimensions';
@@ -31,7 +32,7 @@ function ProfileOverview({userID, profileData}: ProfileOverviewProps) {
       {user?.uid === userID && (
         <UploadImageComponent
           src={KirokuIcons.Camera}
-          isProfilePicture
+          kind={CONST.IMAGE_UPLOAD_KIND.AVATAR}
           containerStyles={styles.editProfileImageContainer(windowWidth)}
         />
       )}

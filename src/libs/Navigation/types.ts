@@ -155,6 +155,9 @@ type ProfileNavigatorParamList = {
   };
   [SCREENS.PROFILE.REPORT_USER]: {
     userID: string;
+
+    /** A session photo's storage path, when the report is about that photo. */
+    objectPath?: string;
   };
 };
 

@@ -20,6 +20,12 @@ import type CONST from '@src/CONST';
  * can currently navigate to belongs to a friend (so the entry point lives in the
  * friend-management popover beside Block). Part of the moderation epic (#757)
  * required for App Store Guideline 1.2.
+ *
+ * `objectPath` narrows a report to one of the user's session photos (RFC §9).
+ * Blocking already hides a whole user, so naming a single photo is the finer
+ * tool: it tells a moderator exactly which image to look at. The server
+ * validates the path belongs to the reported user, so a bogus one is rejected
+ * rather than filed.
  */
 
 type ReportReason = ValueOf<typeof CONST.REPORT.REASON>;
@@ -28,8 +34,14 @@ function reportUser(
   otherUserId: string,
   reason: ReportReason,
   description?: string,
+  objectPath?: string,
 ) {
-  API.write(WRITE_COMMANDS.REPORT_USER, {otherUserId, reason, description});
+  API.write(WRITE_COMMANDS.REPORT_USER, {
+    otherUserId,
+    reason,
+    description,
+    objectPath,
+  });
 }
 
 export {reportUser};

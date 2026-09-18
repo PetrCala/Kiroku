@@ -26,6 +26,8 @@ import type {
   RelativeTimeAgoParams,
   SessionConfirmTimezoneChangeParams,
   SessionDefaultNameParams,
+  SessionPhotoLimitParams,
+  SessionPhotoParams,
   SessionStartTimeParams,
   SessionWindowIdParams,
   StatsDrillDownTitleParams,
@@ -419,6 +421,23 @@ export default {
     uploadingImage: 'Nahrávání obrázku…',
     uploadFinished: 'Nahrávání dokončeno!',
     pleaseReload: 'Znovu načtěte aplikaci, abyste viděli změny.',
+    chooseProfilePicture: 'Vyberte profilovou fotografii',
+  },
+  sessionPhotos: {
+    title: 'Fotografie',
+    addPhoto: 'Přidat fotografii',
+    uploading: 'Přidávám vaši fotografii…',
+    photo: ({index, count}: SessionPhotoParams) =>
+      `Fotografie ${index} z ${count}`,
+    limitReached: ({limit}: SessionPhotoLimitParams) =>
+      `Relace může obsahovat ${limit} fotografií.`,
+    remove: 'Odebrat tuto fotografii',
+    removePrompt:
+      'Odebrat tuto fotografii z relace? Tuto akci nelze vzít zpět.',
+    report: 'Nahlásit tuto fotografii',
+    error: {
+      load: 'Fotografie této relace se nepodařilo načíst.',
+    },
   },
   storage: {
     permissionDenied: 'Je vyžadováno oprávnění k úložišti',
@@ -1200,9 +1219,12 @@ export default {
     title: 'Nahlásit',
     prompt:
       'Proč tohoto uživatele nahlašujete? Vaše hlášení je soukromé a bude předáno našemu moderátorskému týmu.',
+    photoPrompt:
+      'Proč tuto fotografii nahlašujete? Vaše hlášení je soukromé a bude předáno našemu moderátorskému týmu.',
     reasons: {
       inappropriateName: 'Nevhodné jméno',
       inappropriatePhoto: 'Nevhodná profilová fotografie',
+      sessionPhoto: 'Nevhodná fotografie z relace',
       harassment: 'Obtěžování nebo šikana',
       other: 'Něco jiného',
     },

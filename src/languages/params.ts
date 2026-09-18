@@ -62,6 +62,21 @@ type SessionConfirmTimezoneChangeParams = {
   newTimezone: string;
 };
 
+/** Which photo of how many, for a gallery tile's spoken label. */
+type SessionPhotoParams = {
+  /** 1-based position in the gallery */
+  index: number;
+
+  /** How many photos the session has */
+  count: number;
+};
+
+/** The per-session photo cap (RFC §9). */
+type SessionPhotoLimitParams = {
+  /** Max photos on one session */
+  limit: number;
+};
+
 type SessionDefaultNameParams = {
   /** The localized weekday name, e.g. "Friday" */
   weekday: string;
@@ -182,6 +197,8 @@ export type {
   RelativeTimeAgoParams,
   SessionConfirmTimezoneChangeParams,
   SessionDefaultNameParams,
+  SessionPhotoLimitParams,
+  SessionPhotoParams,
   SessionStartTimeParams,
   SessionWindowIdParams,
   StatsDrillDownTitleParams,

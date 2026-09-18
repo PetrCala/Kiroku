@@ -6,8 +6,17 @@ import type Response from '@src/types/onyx/Response';
 
 /** Extra context for an image upload (e.g. which session a session-image belongs to). */
 type UploadImageMeta = {
-  /** Target drinking-session id for `kind: 'session'` uploads (future). */
+  /** Target drinking-session id for `kind: 'session'` uploads. */
   sessionId?: string;
+
+  /**
+   * Pixel dimensions of the prepared image, required for `kind: 'session'`.
+   * The bytes go straight to the bucket, so the server never sees them and
+   * cannot measure them itself; the gallery lays out against these numbers
+   * (RFC §4.2). The picker components report what they actually produced.
+   */
+  width?: number;
+  height?: number;
 };
 
 /**
@@ -92,7 +101,9 @@ function putBlobToBucket(
  *   3. `POST /v1/images/finalize` → server validates/moderates the object,
  *      applies its access policy and persists it. For `kind: 'avatar'` the
  *      response's onyxData merges the new public `profile.photo_url`, so the
- *      client never derives or sends the URL itself.
+ *      client never derives or sends the URL itself. For `kind: 'session'` it
+ *      merges the photo onto the session, so the gallery and the calendar read
+ *      it from the same place as the rest of the session.
  *
  * This is a foreground, online-only flow: the upload-url / finalize calls go
  * through `makeRequestWithSideEffects` (NOT the offline `API.write` queue) so we
@@ -100,10 +111,11 @@ function putBlobToBucket(
  * is handled by the Reauthentication middleware, which refreshes the token and
  * replays the request, returning the fresh response.
  *
- * @param kind Image kind (`avatar` now; `session` is scaffolded for later).
+ * @param kind Image kind (`avatar` or `session`).
  * @param uri Local URI of the image to upload.
  * @param onProgress Receives a verbose percentage string as the PUT progresses.
- * @param meta Extra context (e.g. `sessionId` for session images).
+ * @param meta Extra context: `sessionId` plus the prepared image's dimensions
+ *   for session photos.
  */
 async function uploadImage(
   kind: ImageUploadKind,
@@ -146,6 +158,8 @@ async function uploadImage(
     kind,
     objectPath,
     sessionId: meta?.sessionId,
+    w: meta?.width,
+    h: meta?.height,
   });
 }
 
