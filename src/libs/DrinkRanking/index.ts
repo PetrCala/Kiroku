@@ -284,14 +284,14 @@ function getLatestDrinkKey(
 }
 
 /**
- * The drink types in the order the quick-add row shows them: the profile's
- * order for the part of the day the session started in, with the drink logged
- * most recently in this session moved to the front. The base order follows the
- * session's start rather than the current time, so it holds for the whole
- * session; only the front chip changes, and only when the user logs a
- * different drink.
+ * Every drink type in the user's own order for a session: most likely first,
+ * from the profile's distribution for the part of the day the session started
+ * in. The order follows the session's start rather than the current time, so a
+ * session reads the same whenever it is opened, and ties keep the app's drink
+ * order. Used wherever drink types are listed for a session, so the quick-add
+ * row and a finished session's breakdown agree on what comes first.
  */
-function rankQuickAdd(
+function rankDrinkKeys(
   profile: DrinkProfile,
   session?: DrinkingSession,
   defaultTimezone: string = CONST.DEFAULT_TIME_ZONE.selected,
@@ -303,11 +303,26 @@ function rankQuickAdd(
     startHour === undefined
       ? profile.overall
       : profile.by_bucket[getTimeBucket(startHour)];
-  const ranked = [...DRINK_KEY_ORDER].sort(
+  return [...DRINK_KEY_ORDER].sort(
     (a, b) =>
       distribution[b] - distribution[a] ||
       DRINK_KEY_ORDER.indexOf(a) - DRINK_KEY_ORDER.indexOf(b),
   );
+}
+
+/**
+ * The drink types in the order the quick-add row shows them: `rankDrinkKeys`
+ * with the drink logged most recently in this session moved to the front, so
+ * the chip the user is most likely to tap again is the one under their thumb.
+ * Only that front chip changes as a session runs, and only when they log a
+ * different drink.
+ */
+function rankQuickAdd(
+  profile: DrinkProfile,
+  session?: DrinkingSession,
+  defaultTimezone: string = CONST.DEFAULT_TIME_ZONE.selected,
+): DrinkKey[] {
+  const ranked = rankDrinkKeys(profile, session, defaultTimezone);
   const latest = getLatestDrinkKey(session);
   if (!latest) {
     return ranked;
@@ -325,6 +340,7 @@ export {
   buildDrinkProfile,
   getLatestDrinkKey,
   getTimeBucket,
+  rankDrinkKeys,
   rankQuickAdd,
   toRankEntries,
 };

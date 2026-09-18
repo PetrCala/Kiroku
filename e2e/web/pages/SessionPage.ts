@@ -48,6 +48,33 @@ export class SessionPage {
     return this.page.getByTestId('session-total-units');
   }
 
+  // --- Session detail page (the evolved summary, RFC §9) -------------------
+
+  // The session's name in the detail page header.
+  detailName(): Locator {
+    return this.page.getByTestId('session-detail-name');
+  }
+
+  // One of the three stats in the detail page's hero strip.
+  detailStat(stat: 'duration' | 'units' | 'drinks'): Locator {
+    return this.page.getByTestId(`session-stat-${stat}`);
+  }
+
+  // A row of the drink breakdown, one per drink type the session contains.
+  detailDrinkRow(drinkKey: string): Locator {
+    return this.page.getByTestId(`session-drink-${drinkKey}`);
+  }
+
+  // Any row of the breakdown, for counting how many types are shown.
+  detailDrinkRows(): Locator {
+    return this.page.getByTestId(/^session-drink-/);
+  }
+
+  // The photo gallery's add action (`UploadImage` with the session kind).
+  addPhotoButton(): Locator {
+    return this.page.getByTestId('session-add-photo');
+  }
+
   // The per-drink-type "+"/"-" steppers carry `add-drink-<key>` /
   // `remove-drink-<key>` testIDs (one row per drink type). Any "+" adds units,
   // so the smoke flow targets the first.

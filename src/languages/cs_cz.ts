@@ -865,11 +865,15 @@ export default {
       lastDrinkAdded: 'Poslední přidaný drink',
       endTime: 'Čas ukončení',
     },
+    statsSection: {
+      duration: 'Délka',
+      drinks: 'Drinky',
+    },
     drinksSection: {
       title: 'Zkonzumované drinky',
     },
-    otherSection: {
-      title: 'Ostatní',
+    detailsSection: {
+      title: 'Podrobnosti',
     },
   },
   appShareScreen: {

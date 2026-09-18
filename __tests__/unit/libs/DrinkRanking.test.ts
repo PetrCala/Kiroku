@@ -3,6 +3,7 @@ import {
   buildDrinkProfile,
   getLatestDrinkKey,
   getTimeBucket,
+  rankDrinkKeys,
   rankQuickAdd,
   SESSION_WINDOW,
 } from '@libs/DrinkRanking';
@@ -303,6 +304,41 @@ describe('getLatestDrinkKey', () => {
         },
       }),
     ).toBe(KEYS.COCKTAIL);
+  });
+});
+
+describe('rankDrinkKeys', () => {
+  const prior = buildDrinkProfile(undefined, {now: NOW});
+
+  test('lists every drink type once', () => {
+    const ranked = rankDrinkKeys(prior, {start_time: at(19), timezone: UTC});
+    expect([...ranked].sort()).toEqual(Object.values(KEYS).sort());
+  });
+
+  test('leaves the drink logged most recently where the profile puts it', () => {
+    // The same session `rankQuickAdd` pins the cocktail for. A finished
+    // session is being read, not added to, so nothing jumps to the front.
+    const live = sessionWith(
+      at(19),
+      {[at(19)]: {[KEYS.BEER]: 1}, [at(20)]: {[KEYS.COCKTAIL]: 1}},
+      {ongoing: true},
+    );
+    expect(rankDrinkKeys(prior, live)).toEqual(PRIOR_ORDER);
+  });
+
+  test('follows the part of the day the session started in', () => {
+    const profile = build(
+      sessionWith(at(19), {
+        [at(19)]: {[KEYS.WINE]: 1},
+        [at(23)]: {[KEYS.STRONG_SHOT]: 2},
+      }),
+    );
+    expect(
+      rankDrinkKeys(profile, {start_time: at(19, 6), timezone: UTC}).at(0),
+    ).toBe(KEYS.WINE);
+    expect(
+      rankDrinkKeys(profile, {start_time: at(23, 6), timezone: UTC}).at(0),
+    ).toBe(KEYS.STRONG_SHOT);
   });
 });
 
