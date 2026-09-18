@@ -1,0 +1,31 @@
+diff --git a/node_modules/react-native/React/Fabric/Mounting/ComponentViews/View/RCTViewComponentView.mm b/node_modules/react-native/React/Fabric/Mounting/ComponentViews/View/RCTViewComponentView.mm
+index 894e200..ce6c71e 100644
+--- a/node_modules/react-native/React/Fabric/Mounting/ComponentViews/View/RCTViewComponentView.mm
++++ b/node_modules/react-native/React/Fabric/Mounting/ComponentViews/View/RCTViewComponentView.mm
+@@ -612,6 +612,26 @@ - (void)prepareForRecycle
+     self.layer.opacity = (float)props.opacity;
+   }
+ 
++  // Clean up box shadow layers to prevent cross-component contamination
++  if (_boxShadowLayers != nullptr) {
++    for (CALayer *boxShadowLayer = nullptr in _boxShadowLayers) {
++      [boxShadowLayer removeFromSuperlayer];
++    }
++    [_boxShadowLayers removeAllObjects];
++    _boxShadowLayers = nil;
++  }
++
++  // Clean up other visual layers
++  [_backgroundColorLayer removeFromSuperlayer];
++  _backgroundColorLayer = nil;
++  [_borderLayer removeFromSuperlayer];
++  _borderLayer = nil;
++  [_outlineLayer removeFromSuperlayer];
++  _outlineLayer = nil;
++  [_filterLayer removeFromSuperlayer];
++  _filterLayer = nil;
++  [self clearExistingBackgroundImageLayers];
++
+   self.autoresizingMask = UIViewAutoresizingNone;
+ 
+   _propKeysManagedByAnimated_DO_NOT_USE_THIS_IS_BROKEN = nil;
