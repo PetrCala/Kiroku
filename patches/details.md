@@ -1,6 +1,6 @@
 # Patches
 
-This directory contains patches applied to `node_modules/` by [`patch-package`](https://github.com/ds300/patch-package) during `postinstall`. Each patch monkey-patches a third-party dependency to fix a bug or work around behavior we can't change upstream. **Always document a new patch here when adding one** — including why it exists, what upstream issue/PR (if any) tracks it, and when it can be removed.
+This directory contains patches applied to `node_modules/` by [`patch-package`](https://github.com/ds300/patch-package) during `postinstall`. Each patch monkey-patches a third-party dependency to fix a bug or work around behavior we can't change upstream. **Always document a new patch here when adding one**, including why it exists, what upstream issue/PR (if any) tracks it, and when it can be removed.
 
 Patches are named `<package>+<version>+<NNN>+<short-description>.patch` so `patch-package` knows which version they apply to.
 
@@ -35,11 +35,17 @@ Patches are named `<package>+<version>+<NNN>+<short-description>.patch` so `patc
 - **Upstream PR/issue**: 🛑
 - **Removable when**: each contained workaround is fixed upstream or moved to a more targeted patch.
 
+### `react-native+0.81.4+001+clean-visual-layers-on-recycle.patch`
+
+- **Reason**: Backport of upstream's Fabric view-recycling fix (iOS only, Objective-C++). `RCTViewComponentView.prepareForRecycle` left a recycled view's visual sublayers attached (`_borderLayer`, `_backgroundColorLayer`, `_outlineLayer`, `_filterLayer`, box-shadow and background-image layers). A reused view normally replaces them in `invalidateLayer`, but that method returns early for a zero-size view, so the stale layer stays, and the unguarded `_borderLayer.frame = self.layer.bounds` in `updateLayoutMetrics` makes Core Animation shrink it to nothing with its default implicit animation (0.25 s). In Kiroku this was the hairline that flew off the bottom-left of the screen on every friend-profile open: the previous visit's common-friends row border (`styles.borderBottom`), reused by one of the childless `collapsable={false}` modal wrapper views that `ManageFriendPopover` mounts below the scroll view. It applies after `react-native+0.81.4.patch` (patch-package orders an unsequenced patch first) and edits the same function. Adding it changes the React Native patches hash, so the Android artifact note above applies even though no Android code changes.
+- **Upstream PR/issue**: [facebook/react-native#54484](https://github.com/facebook/react-native/pull/54484) (fixes [facebook/react-native#54204](https://github.com/facebook/react-native/issues/54204)), first released in React Native 0.84.
+- **Removable when**: React Native is upgraded to 0.84 or later.
+
 ## `react-native-calendars`
 
 ### `react-native-calendars+1.1304.1.patch`
 
-- **Reason**: The library's `Calendar` component snapshots its derived stylesheet into a `useRef(styleConstructor(theme))` at first mount (`src/calendar/index.js:26`). The ref initializer runs exactly once, so subsequent `theme` prop changes are ignored — the cached `style.current` keeps the original colors forever. In Kiroku this surfaces as the sessions calendar frame (background, month text, arrows) staying in light mode after a theme transition (e.g. cold launch with empty Onyx → Firebase preferences hydrate to "dark"); the day cells we render via the custom `dayComponent` slot follow theme correctly because they consume `useThemeStyles` / `useStyleUtils` from React context, so the calendar ends up partially themed. The patch replaces `useRef` with `useMemo(() => styleConstructor(theme), [theme])` and rewrites the six `style.current.X` reads to plain `style.X`.
+- **Reason**: The library's `Calendar` component snapshots its derived stylesheet into a `useRef(styleConstructor(theme))` at first mount (`src/calendar/index.js:26`). The ref initializer runs exactly once, so subsequent `theme` prop changes are ignored: the cached `style.current` keeps the original colors forever. In Kiroku this surfaces as the sessions calendar frame (background, month text, arrows) staying in light mode after a theme transition (e.g. cold launch with empty Onyx → Firebase preferences hydrate to "dark"); the day cells we render via the custom `dayComponent` slot follow theme correctly because they consume `useThemeStyles` / `useStyleUtils` from React context, so the calendar ends up partially themed. The patch replaces `useRef` with `useMemo(() => styleConstructor(theme), [theme])` and rewrites the six `style.current.X` reads to plain `style.X`.
 - **Upstream PR/issue**: 🛑 (no tracking issue filed; behavior reproduces against `react-native-calendars` 1.1304.1).
 - **Removable when**: upstream switches the cached stylesheet to recompute on theme change, or we migrate off this calendar library.
 
@@ -57,7 +63,7 @@ Patches are named `<package>+<version>+<NNN>+<short-description>.patch` so `patc
 
 - **Reason**: Reanimated's `LayoutAnimationsProxy_Legacy::transferConfigFromNativeID` parses a `nativeID` string via `std::stoi`. The original code caught only `std::invalid_argument` and `std::out_of_range`, but the implementation can throw other exception types (e.g. `std::bad_alloc`) which propagate up and crash the app. This patch broadens the `catch` clause to catch-all (`...`) so layout-animation registration never aborts the process due to a malformed nativeID.
 - **Upstream PR/issue**: 🛑
-- **Cherry-picked from**: [Expensify/App `patches/react-native-reanimated/`](https://github.com/Expensify/App/tree/main/patches/react-native-reanimated) — introduced in their [RN 0.76 upgrade PR](https://github.com/Expensify/App/pull/51475).
+- **Cherry-picked from**: [Expensify/App `patches/react-native-reanimated/`](https://github.com/Expensify/App/tree/main/patches/react-native-reanimated), introduced in their [RN 0.76 upgrade PR](https://github.com/Expensify/App/pull/51475).
 - **Removable when**: Reanimated upstream broadens or removes the `stoi` call in a future release.
 
 ## `react-native-worklets`
@@ -65,8 +71,8 @@ Patches are named `<package>+<version>+<NNN>+<short-description>.patch` so `patc
 ### `react-native-worklets+0.7.2+001+fix-app-crash-SerializableRemoteFunction.patch`
 
 - **Reason**: Fixes a SIGSEGV crash in the `SerializableRemoteFunction` destructor caused by a data race on `globalMarkdownWorkletRuntime`. The fix replaces the stored `jsi::Value` function reference with an ID-based lookup via a `__remoteFunctionCache` map, avoiding the unsafe cross-thread `~jsi::Value()` call during runtime teardown.
-- **Upstream PR/issue**: N/A — patch authored by the `react-native-worklets` maintainer in [Expensify/react-native-live-markdown#752 (comment)](https://github.com/Expensify/react-native-live-markdown/pull/752#issuecomment-3953415007).
-- **Cherry-picked from**: [Expensify/App `patches/react-native-worklets/`](https://github.com/Expensify/App/tree/main/patches/react-native-worklets) — they introduced it in [#83792](https://github.com/Expensify/App/pull/83792) for [issue #82146](https://github.com/Expensify/App/issues/82146).
+- **Upstream PR/issue**: N/A (patch authored by the `react-native-worklets` maintainer in [Expensify/react-native-live-markdown#752 (comment)](https://github.com/Expensify/react-native-live-markdown/pull/752#issuecomment-3953415007)).
+- **Cherry-picked from**: [Expensify/App `patches/react-native-worklets/`](https://github.com/Expensify/App/tree/main/patches/react-native-worklets). They introduced it in [#83792](https://github.com/Expensify/App/pull/83792) for [issue #82146](https://github.com/Expensify/App/issues/82146).
 - **Removable when**: a `react-native-worklets` release lands containing the equivalent fix (any version > 0.7.2 that resolves the upstream `__remoteFunctionCache` race).
 
-> **Note**: the separate cold-start watchdog deadlock (the reason we're pinned to 0.7.2 in the first place) is _not_ fixed by this patch. It's fixed by being on 0.7.x at all — the `Shareable.cpp` lock-order inversion was introduced in 0.8.x. See the version pins in `package.json`.
+> **Note**: the separate cold-start watchdog deadlock (the reason we're pinned to 0.7.2 in the first place) is _not_ fixed by this patch. It's fixed by being on 0.7.x at all: the `Shareable.cpp` lock-order inversion was introduced in 0.8.x. See the version pins in `package.json`.
