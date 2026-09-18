@@ -1601,6 +1601,10 @@ export default {
       'This indicates whether your session ended in a blackout.',
     note: 'Note',
     name: 'Name',
+    private: 'Private',
+    privateDescription: 'Only you can see this session.',
+    privateSwitchLabel:
+      'When this is on, the session stays hidden from your friends.',
     discardSessionWarning: (discardWord: string) =>
       `Do you really want to ${discardWord} this session?`,
     unsavedChangesWarning:

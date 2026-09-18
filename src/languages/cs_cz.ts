@@ -1629,6 +1629,9 @@ export default {
     blackoutSwitchLabel: 'Označuje, zda vaše relace skončila blackoutem.',
     note: 'Poznámka',
     name: 'Název',
+    private: 'Soukromá',
+    privateDescription: 'Tuto relaci vidíte jen vy.',
+    privateSwitchLabel: 'Když je zapnuto, relace zůstane skrytá před přáteli.',
     discardSessionWarning: (discardWord: string) =>
       `Opravdu chcete tuto relaci ${discardWord}?`,
     unsavedChangesWarning: 'Máte neuložené změny. Opravdu chcete jít zpět?',

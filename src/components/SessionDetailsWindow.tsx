@@ -14,6 +14,11 @@ import useWaitForNavigation from '@hooks/useWaitForNavigation';
 import useActiveCentralPaneRoute from '@hooks/useActiveCentralPaneRoute';
 import type {DrinkingSession, DrinkingSessionId} from '@src/types/onyx';
 import DateUtils from '@libs/DateUtils';
+import {
+  isSessionPrivate,
+  visibilityFromIsPrivate,
+} from '@libs/SessionVisibility';
+import * as DS from '@userActions/DrinkingSession';
 import Text from './Text';
 import MenuItem from './MenuItem';
 import Switch from './Switch';
@@ -63,6 +68,25 @@ function SessionDetailsWindow({
     />
   );
 
+  // Visibility is one bit in the UI: private or not (RFC §4.2). Off is
+  // `friends`, which is also what a session with no visibility means. This row
+  // writes the change itself rather than taking a callback: the action needs
+  // only the session this component already has, so there is nothing for the
+  // parent to decide.
+  const privateSwitch: ReactNode = (
+    <Switch
+      accessibilityLabel={translate('liveSessionScreen.privateSwitchLabel')}
+      isOn={isSessionPrivate(session)}
+      onToggle={value =>
+        DS.updateSessionVisibility(
+          sessionId,
+          session,
+          visibilityFromIsPrivate(value),
+        )
+      }
+    />
+  );
+
   const getRouteBackToThisScreen = (): Route => {
     const ongoing = !!session?.ongoing;
 
@@ -72,6 +96,13 @@ function SessionDetailsWindow({
   };
 
   const sliderData: MenuData[] = [
+    {
+      translationKey: 'liveSessionScreen.private',
+      description: translate('liveSessionScreen.privateDescription'),
+      shouldShowRightComponent: true,
+      rightComponent: privateSwitch,
+      disabled: true,
+    },
     {
       translationKey: 'liveSessionScreen.blackout',
       shouldShowRightComponent: true,
