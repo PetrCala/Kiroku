@@ -186,8 +186,9 @@ ios/kiroku/Images.xcassets/AppIcon.appiconset/AppIcon~ios-marketing.png`
    confirmation. If the new art looks compressed or stretched, the source SVG
    likely lacks the right `viewBox` — flag this rather than continuing.
 
-5. **Stage and commit (with user confirmation).** Stage explicitly — do not
-   `git add -A` because that picks up `tsconfig.tsbuildinfo`:
+5. **Stage and commit (with user confirmation).** Stage explicitly with
+   `git add <paths>` rather than `git add -A`, so unrelated dirty files stay
+   out of the icon commit:
    ```bash
    git add assets/design/mascot/ \
            assets/images/app-logo.svg \
@@ -265,8 +266,6 @@ generator after editing; you may also need to `git rm` the orphaned files.
 
 ## Pitfalls and things to know
 
-- **`tsconfig.tsbuildinfo` is gitignored but already-tracked**, so it shows up
-  as modified after typecheck runs. Do not include it in icon commits.
 - **The PNG inside `AppIconAdHoc.appiconset/` is named `AppIconAdHoc-*.png`,
   not `AppIconAdhoc-*.png`.** The script uses the `IOS_VARIANT_ASSET` mapping
   to keep filename casing consistent with the asset-catalog directory name.
