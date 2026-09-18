@@ -52,27 +52,26 @@ function EditSessionScreen({route}: EditSessionScreenProps) {
       return;
     }
 
-    // BACK — return to wherever we came from (the summary when the edit was
-    // opened through it, the day overview otherwise).
-    if (action === CONST.NAVIGATION.SESSION_ACTION.BACK) {
-      Navigation.goBack();
-      return;
-    }
-
-    // SAVE or DISCARD — land on the originating day overview. When the edit was
-    // opened through the session's summary, that summary is now stale (it shows
-    // a just-edited or just-deleted session), so pop the whole DrinkingSession
-    // modal (summary + edit) to reveal the day overview beneath it — a single
-    // goBack would only return to the stale summary. Otherwise (e.g. a session
-    // created from the day-overview FAB) the edit screen is the modal's root, so
-    // a single goBack already bubbles back to the origin.
+    // DISCARD: the session is gone. When the edit was opened through the
+    // session's summary, that summary now describes a deleted session, so pop
+    // the whole DrinkingSession modal (summary + edit) to reveal the origin
+    // beneath it: a single goBack would only return to the stale summary.
     if (
+      action === CONST.NAVIGATION.SESSION_ACTION.DISCARD &&
       Navigation.getPreviousScreenName() === SCREENS.DRINKING_SESSION.SUMMARY
     ) {
       Navigation.popModalFlow();
-    } else {
-      Navigation.goBack();
+      return;
     }
+
+    // BACK and SAVE: go back one step, which is the origin this screen was
+    // opened from. Opened through a summary, that is the summary itself: the
+    // edit screen is a drill-down of the detail page, and the page re-reads the
+    // session from the cache the save has just updated, so it comes back
+    // showing the edit rather than stale values. Otherwise (e.g. a session
+    // created from the day-overview picker) the edit screen is the modal's
+    // root, so a single goBack bubbles out to the day overview.
+    Navigation.goBack();
   };
 
   if (!displaySession) {

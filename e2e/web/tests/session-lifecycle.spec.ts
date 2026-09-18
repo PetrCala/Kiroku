@@ -55,8 +55,19 @@ test.describe('drinking session lifecycle', () => {
     await session.openEditFromSummary();
     await expect(session.totalUnits()).toHaveText(loggedUnits);
 
-    // Delete it and confirm. The edit screen pops back out of the session modal
-    // flow, landing on Home.
+    // Saving an edit lands back on the session's detail page, refreshed: the
+    // edit screen is a drill-down of that page, not a step past it.
+    await session.logOneDrink();
+    const editedUnits = await session.totalUnits().innerText();
+    await session.save();
+    await expect(authedPage).toHaveURL(
+      new RegExp(`drinking-session/${sessionId}/summary`),
+    );
+    await expect(session.detailStat('units')).toHaveText(editedUnits);
+
+    // Delete it and confirm. Deleting from a summary pops the whole session
+    // modal flow, since that summary now describes a session that is gone.
+    await session.openEditFromSummary();
     await session.discardAndConfirm();
     await expect(homePage.screen()).toBeVisible();
     await expect(session.editScreen()).toBeHidden();
@@ -64,6 +75,39 @@ test.describe('drinking session lifecycle', () => {
     expect(errors, `Unexpected console errors:\n${errors.join('\n')}`).toEqual(
       [],
     );
+  });
+
+  test('back out of a just-ended session lands on Home, not on the dead live screen', async ({
+    authedPage,
+  }) => {
+    const homePage = new HomePage(authedPage);
+    const session = new SessionPage(authedPage);
+
+    await homePage.goto();
+    await expect(homePage.screen()).toBeVisible();
+
+    await session.startLiveSession();
+    const sessionId = session.currentSessionId();
+    await session.logOneDrink();
+    await expect(session.saveButton()).toBeEnabled();
+    await session.save();
+
+    // Ending the session REPLACES the live screen with the summary, so the live
+    // route is no longer in the history: going back leaves the session flow
+    // entirely. Pushing it instead left a live screen whose buffer had already
+    // been cleared, and back landed on a permanent loading indicator.
+    await authedPage.goBack();
+    await expect(homePage.screen()).toBeVisible();
+    await expect(session.liveScreen()).toBeHidden();
+    await expect(authedPage).not.toHaveURL(/drinking-session/);
+
+    // Clean up: reopen the saved session from Home and delete it, so the shared
+    // dev account does not accumulate sessions across runs.
+    await homePage.openLastSession();
+    expect(session.currentSessionId()).toBe(sessionId);
+    await session.openEditFromSummary();
+    await session.discardAndConfirm();
+    await expect(homePage.screen()).toBeVisible();
   });
 
   test('discards an in-progress session without persisting it', async ({

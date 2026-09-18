@@ -112,17 +112,20 @@ function SessionSummaryScreen({route}: SessionSummaryScreenProps) {
     ? DateUtils.getLocalizedTime(lastDrinkEditTimestamp, session?.timezone)
     : 'Unknown';
 
+  // Closing a summary is the calm moment Home may use for its one tip-jar ask;
+  // whether it actually shows is decided there. Arming on unmount rather than in
+  // the back handler covers every way out of this screen: the Confirm button,
+  // the header arrow, Android back, the iOS swipe and browser back.
+  useEffect(() => () => TipJarPromptActions.armMoment(), []);
+
   const onBackPress = () => {
-    // Closing a summary is the calm moment Home may use for its one tip-jar
-    // ask; whether it actually shows is decided there.
-    TipJarPromptActions.armMoment();
-    const lastScreenName = Navigation.getLastScreenName(true);
-    if (lastScreenName === SCREENS.DAY_OVERVIEW.ROOT) {
-      Navigation.goBack();
-    } else {
-      // Use dismissModal instead of navigate(HOME) to avoid double animation
-      Navigation.dismissModal();
-    }
+    // The summary is the flow's leaf: every route into it opens the
+    // DrinkingSession modal over its origin (Home, or the day overview), and
+    // ending a live session replaces the live screen rather than stacking on
+    // it. So leaving is always "close the modal" and the origin is already
+    // underneath -- dismissModal instead of navigate(HOME), which would animate
+    // twice.
+    Navigation.dismissModal();
   };
 
   const onEditSessionPress = () => {
