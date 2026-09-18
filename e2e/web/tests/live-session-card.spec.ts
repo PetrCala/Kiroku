@@ -3,6 +3,7 @@ import {test, expect} from '../fixtures/auth';
 import {HomePage} from '../pages/HomePage';
 import {SessionPage} from '../pages/SessionPage';
 import {trackErrors} from '../fixtures/consoleErrors';
+import {isSessionOpRequest, isStartOp} from '../fixtures/e2eHooks';
 
 /**
  * The Home live card (Sessions v2 W0): while a session is live it sits at the
@@ -48,10 +49,15 @@ test.describe('home live session card', () => {
     await expect(homePage.screen()).toBeVisible();
 
     // Wait for the start to reach the server: the reload below would otherwise
-    // race the queued create.
+    // race the queued create. Which endpoint carries it depends on
+    // `SESSION_OPS`: a schema 2 session starts with a `start` op, a legacy one
+    // (or a switched-off flag) with a whole-session write.
     const created = authedPage.waitForResponse(
       response =>
-        response.url().includes('/v1/sessions/update') && response.ok(),
+        response.ok() &&
+        (response.url().includes('/v1/sessions/update') ||
+          (isSessionOpRequest(response.request()) &&
+            isStartOp(response.request().postData()))),
     );
     await session.startLiveSession();
     await created;

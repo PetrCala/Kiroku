@@ -1,4 +1,5 @@
 import type {Locator, Page} from '@playwright/test';
+import {isEndOp} from '../fixtures/e2eHooks';
 
 /**
  * Page Object for the drinking-session lifecycle: the Home start-session FAB,
@@ -116,12 +117,32 @@ export class SessionPage {
    * browser context's IndexedDB; Playwright closes that context as soon as a
    * test ends, so a write still sitting in the queue is lost with it. Awaiting
    * the response makes sure the write reached the dev backend.
+   *
+   * Saving takes one of two endpoints depending on `SESSION_OPS`: a legacy
+   * session (or a switched-off flag) finalizes with a whole-session
+   * `POST /v1/sessions/update`, while a schema 2 session closes with an `end`
+   * op on `POST /v1/sessions/ops`. Either one means the save landed, so this
+   * accepts both rather than the caller having to know which path the app took.
+   *
+   * The op case matches on the body naming `end`, not on the endpoint alone: a
+   * session's drinks were already sent as their own ops while it ran, and any
+   * of those still in flight would otherwise resolve this early and let the
+   * test move on before the save itself reached the server.
    */
   private waitForSessionWrite(endpoint: 'update' | 'delete'): Promise<unknown> {
-    return this.page.waitForResponse(
-      response =>
-        response.url().includes(`/v1/sessions/${endpoint}`) && response.ok(),
-    );
+    return this.page.waitForResponse(response => {
+      if (!response.ok()) {
+        return false;
+      }
+      const url = response.url();
+      if (url.includes(`/v1/sessions/${endpoint}`)) {
+        return true;
+      }
+      if (endpoint !== 'update' || !url.includes('/v1/sessions/ops')) {
+        return false;
+      }
+      return isEndOp(response.request().postData());
+    });
   }
 
   /**

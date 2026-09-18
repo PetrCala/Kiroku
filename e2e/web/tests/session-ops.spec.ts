@@ -17,6 +17,7 @@ import {
   recordSessionOpRequests,
   sendSessionOp,
   setForceOffline,
+  isEndOp,
   setSessionOpsEnabled,
   setTimeSkew,
 } from '../fixtures/e2eHooks';
@@ -28,10 +29,12 @@ import {SessionPage} from '../pages/SessionPage';
  * the server-time offset, the `POST /v1/sessions/ops` round trip with its
  * idempotency key, and the client's op coalescing.
  *
- * Nothing in the UI sends ops yet and `SESSION_OPS` ships off, so the specs
- * reach `sendSessionOp` through the dev-only page hooks and switch the flag on
- * for the page load only. They need a dev build (`npm run web` or a preview
- * channel) and a kiroku-api that has the ops endpoint, and skip otherwise.
+ * `SESSION_OPS` ships ON since W2 (#1665), but these specs still set the flag
+ * explicitly for the page load: the environment they run against may carry a
+ * remote override, and a spec about ops must not silently pass because ops
+ * were switched off. They reach `sendSessionOp` through the dev-only page
+ * hooks, so they need a dev build (`npm run web` or a preview channel) and a
+ * kiroku-api that has the ops endpoint, and skip otherwise.
  *
  * Self-cleaning: the one test that creates a real session deletes it, ops sent
  * to the server are no-ops (`ping`) or rejected, and anything still queued
@@ -156,9 +159,13 @@ test.describe('session ops: server time', () => {
 });
 
 test.describe('session ops: the ops endpoint', () => {
-  test('stays off unless SESSION_OPS is on', async ({authedPage: page}) => {
+  test('sends nothing when SESSION_OPS is switched off', async ({
+    authedPage: page,
+  }) => {
+    // The kill switch: an override of `false` beats the compile-time default,
+    // which is `true` since W2. This is the path a production incident takes.
     await bootWithSessionOps(page);
-    await setSessionOpsEnabled(page, undefined);
+    await setSessionOpsEnabled(page, false);
     const sent = recordSessionOpRequests(page);
 
     const opId = await sendSessionOp(page, {
@@ -264,7 +271,7 @@ test.describe('session ops: the ops endpoint', () => {
     await expect.poll(() => getQueuedSessionOps(page)).toEqual([]);
   });
 
-  test('drops a rejected op with its failure data, and a session save queued behind it still goes through', async ({
+  test('drops a rejected op with its failure data, and the save queued behind it still goes through', async ({
     authedPage: page,
   }) => {
     test.setTimeout(180_000);
@@ -295,21 +302,46 @@ test.describe('session ops: the ops endpoint', () => {
       });
       await session.saveButton().click();
       await session.summaryScreen().waitFor({state: 'visible'});
+      // The refused `claim_entry` first, then the save behind it, which is
+      // itself ops now: before W2 it was a whole-session `UpdateSession`.
+      //
+      // Asserted by shape rather than by an exact list. How many ops a save
+      // sends depends on what its meta diff finds: a session whose end time
+      // has moved since it started also sends `set_times`, and one saved
+      // within the same instant does not. What matters here is that the save
+      // is queued behind the refusal and that nothing in the queue is a
+      // whole-session write.
       await expect
-        .poll(async () =>
-          (await getQueuedRequests(page)).map(request => request.command),
-        )
-        .toEqual([SESSION_OP_COMMAND, 'UpdateSession']);
+        .poll(async () => {
+          const queued = await getQueuedRequests(page);
+          return {
+            allOps: queued.every(
+              request => request.command === SESSION_OP_COMMAND,
+            ),
+            first: (queued.at(0)?.data as {type?: string} | undefined)?.type,
+            last: (queued.at(-1)?.data as {type?: string} | undefined)?.type,
+          };
+        })
+        .toEqual({allOps: true, first: 'claim_entry', last: 'end'});
 
+      // Keyed by `opId`, because the save's own `end` op answers on this
+      // endpoint too and answers 200: a blanket collector would mix the two
+      // and the "every answer is a 422" assertion below would be meaningless.
       const opAnswers: Response[] = [];
       page.on('response', response => {
-        if (isSessionOpRequest(response.request())) {
+        const request = response.request();
+        if (
+          isSessionOpRequest(request) &&
+          request.headers()['idempotency-key'] === opId
+        ) {
           opAnswers.push(response);
         }
       });
       const saved = page.waitForResponse(
         response =>
-          response.url().includes('/v1/sessions/update') && response.ok(),
+          isSessionOpRequest(response.request()) &&
+          response.ok() &&
+          isEndOp(response.request().postData()),
         {timeout: 30_000},
       );
       const reconnectedAt = Date.now();
