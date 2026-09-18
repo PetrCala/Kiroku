@@ -8,6 +8,9 @@ import type {DrinkingSession} from '@src/types/onyx';
 import DrinkTypesView from '@components/DrinkTypesView';
 import ElapsedTime from '@components/ElapsedTime';
 import SessionDetailsWindow from '@components/SessionDetailsWindow';
+import Icon from '@components/Icon';
+import * as KirokuIcons from '@components/Icon/KirokuIcons';
+import {PressableWithFeedback} from '@components/Pressable';
 import FillerView from '@components/FillerView';
 import getPlatform from '@libs/getPlatform';
 import CONST from '@src/CONST';
@@ -15,6 +18,7 @@ import useCurrentUserPreferences from '@hooks/useCurrentUserPreferences';
 import useLocalize from '@hooks/useLocalize';
 import HeaderWithBackButton from '@components/HeaderWithBackButton';
 import useThemeStyles from '@hooks/useThemeStyles';
+import useTheme from '@hooks/useTheme';
 import BottomActionBar from '@components/BottomActionBar';
 import Button from '@components/Button';
 import ConfirmModal from '@components/ConfirmModal';
@@ -25,6 +29,10 @@ import {resolvePalette} from '@libs/SessionColorPalettes';
 import ScrollView from '@components/ScrollView';
 import Log from '@libs/Log';
 import DateUtils from '@libs/DateUtils';
+import Navigation from '@libs/Navigation/Navigation';
+import {getSessionDisplayName} from '@libs/SessionName';
+import ROUTES from '@src/ROUTES';
+import variables from '@styles/variables';
 import isEqual from 'lodash/isEqual';
 import type {User} from 'firebase/auth';
 import ERRORS from '@src/ERRORS';
@@ -40,6 +48,7 @@ function DrinkingSessionWindow({
   const {auth} = useFirebase();
   const user = auth.currentUser;
   const styles = useThemeStyles();
+  const theme = useTheme();
   const {translate} = useLocalize();
   const preferences = useCurrentUserPreferences();
   const sessionRef = useRef<DrinkingSession | undefined>(session);
@@ -205,18 +214,54 @@ function DrinkingSessionWindow({
       <HeaderWithBackButton onBackButtonPress={handleBackPress} />
       <ScrollView contentContainerStyle={[styles.w100]}>
         <View style={styles.pt2}>
-          <View style={styles.alignItemsCenter}>
-            <Text style={styles.textHeadlineH2}>
-              {session?.ongoing
-                ? `${translate('liveSessionScreen.sessionFrom')} ${DateUtils.getLocalizedTime(session.start_time, session.timezone)}`
-                : `${translate('liveSessionScreen.sessionOn')} ${DateUtils.getLocalizedDay(session.start_time, session.timezone, CONST.DATE.MONTH_DAY_YEAR_ABBR_FORMAT)}`}
-            </Text>
-            {!!session?.ongoing && (
-              <ElapsedTime
-                startTime={session.start_time}
-                style={[styles.textLabelSupporting, styles.mt1]}
-                testID="session-elapsed-time"
+          <View style={[styles.alignItemsCenter, styles.ph5]}>
+            {/* The name leads, the way it does on the detail page and in every
+                list a session appears in, and the pencil next to it renames
+                without a trip through the details below. What the heading used
+                to say, the time the session runs from or the day it happened
+                on, moves to the supporting line. */}
+            <PressableWithFeedback
+              accessibilityLabel={translate('sessionNameScreen.title')}
+              accessibilityRole={CONST.ROLE.BUTTON}
+              onPress={() =>
+                Navigation.navigate(
+                  ROUTES.DRINKING_SESSION_SESSION_NAME_SCREEN.getRoute(
+                    sessionId,
+                    session?.ongoing
+                      ? ROUTES.DRINKING_SESSION_LIVE.getRoute(sessionId)
+                      : ROUTES.DRINKING_SESSION_EDIT.getRoute(sessionId),
+                  ),
+                )
+              }
+              style={[styles.flexRow, styles.alignItemsCenter]}
+              testID="session-name-heading">
+              <Text style={styles.textHeadlineH2} numberOfLines={1}>
+                {getSessionDisplayName(session)}
+              </Text>
+              <Icon
+                src={KirokuIcons.Edit}
+                fill={theme.icon}
+                width={variables.iconSizeSmall}
+                height={variables.iconSizeSmall}
+                additionalStyles={[styles.ml2]}
               />
+            </PressableWithFeedback>
+            {session?.ongoing ? (
+              <View
+                style={[styles.flexRow, styles.alignItemsCenter, styles.mt1]}>
+                <Text style={styles.textLabelSupporting}>
+                  {`${translate('liveSessionScreen.sessionFrom')} ${DateUtils.getLocalizedTime(session.start_time, session.timezone)} · `}
+                </Text>
+                <ElapsedTime
+                  startTime={session.start_time}
+                  style={styles.textLabelSupporting}
+                  testID="session-elapsed-time"
+                />
+              </View>
+            ) : (
+              <Text style={[styles.textLabelSupporting, styles.mt1]}>
+                {`${translate('liveSessionScreen.sessionOn')} ${DateUtils.getLocalizedDay(session.start_time, session.timezone, CONST.DATE.MONTH_DAY_YEAR_ABBR_FORMAT)}`}
+              </Text>
             )}
           </View>
         </View>

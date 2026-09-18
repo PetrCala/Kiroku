@@ -829,6 +829,7 @@ export default {
     generalSection: {
       title: 'General',
       sessionColor: 'Session color',
+      name: 'Name',
       units: 'Units',
       date: 'Date',
       type: 'Session type',
@@ -1599,6 +1600,7 @@ export default {
     blackoutSwitchLabel:
       'This indicates whether your session ended in a blackout.',
     note: 'Note',
+    name: 'Name',
     discardSessionWarning: (discardWord: string) =>
       `Do you really want to ${discardWord} this session?`,
     unsavedChangesWarning:
@@ -1620,6 +1622,14 @@ export default {
     error: {
       load: 'Failed to fetch details of this session.',
       generic: 'Failed to modify the session date.',
+    },
+  },
+  sessionNameScreen: {
+    title: 'Session name',
+    nameDescription:
+      'Name this session so you can tell it apart later. Friends who can see the session see the name too.',
+    error: {
+      nameRequired: 'Please give the session a name.',
     },
   },
   sessionNoteScreen: {

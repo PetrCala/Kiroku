@@ -46,6 +46,7 @@ const SCREENS = {
     LIVE: 'DrinkingSession_Live',
     EDIT: 'DrinkingSession_Edit',
     SESSION_DATE_SCREEN: 'DrinkingSession_SessionDateScreen',
+    SESSION_NAME_SCREEN: 'DrinkingSession_SessionNameScreen',
     SESSION_NOTE_SCREEN: 'DrinkingSession_SessionNoteScreen',
     SESSION_TIMEZONE_SCREEN: 'DrinkingSession_SessionTimezoneScreen',
     SUMMARY: 'DrinkingSession_Summary',

@@ -1,4 +1,9 @@
-import {getDefaultSessionName, getPartOfDay} from '@libs/SessionName';
+import {
+  getDefaultSessionName,
+  getSessionDisplayName,
+  getPartOfDay,
+} from '@libs/SessionName';
+import type {DrinkingSession} from '@src/types/onyx';
 import CONST from '@src/CONST';
 import type {SelectedTimezone} from '@src/types/onyx/UserData';
 
@@ -55,5 +60,45 @@ describe('getDefaultSessionName', () => {
     expect(getDefaultSessionName(fridayEvening, undefined, 'en')).toMatch(
       /^Friday (evening|night)$/,
     );
+  });
+});
+
+describe('getSessionDisplayName', () => {
+  // 2026-09-18 is a Friday. 19:00 UTC is 21:00 in Prague (CEST).
+  const fridayEvening = Date.UTC(2026, 8, 18, 19, 0);
+  const session = (extra: Partial<DrinkingSession> = {}): DrinkingSession => ({
+    start_time: fridayEvening,
+    timezone: PRAGUE,
+    ...extra,
+  });
+
+  it('prefers the stored name', () => {
+    expect(getSessionDisplayName(session({name: 'Bar crawl'}), 'en')).toBe(
+      'Bar crawl',
+    );
+  });
+
+  it('falls back to the generated default without a name', () => {
+    expect(getSessionDisplayName(session(), 'en')).toBe('Friday evening');
+    expect(getSessionDisplayName(session(), 'cs_cz')).toBe('Páteční večer');
+  });
+
+  it('falls back for a blank or whitespace-only name', () => {
+    expect(getSessionDisplayName(session({name: ''}), 'en')).toBe(
+      'Friday evening',
+    );
+    expect(getSessionDisplayName(session({name: '   '}), 'en')).toBe(
+      'Friday evening',
+    );
+  });
+
+  it('trims a stored name', () => {
+    expect(getSessionDisplayName(session({name: '  Bar crawl  '}), 'en')).toBe(
+      'Bar crawl',
+    );
+  });
+
+  it('is empty without a session', () => {
+    expect(getSessionDisplayName(undefined, 'en')).toBe('');
   });
 });

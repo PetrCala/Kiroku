@@ -16,8 +16,11 @@ import CONST from '@src/CONST';
 import SCREENS from '@src/SCREENS';
 import Text from '@components/Text';
 import type {DrinkingSessionNavigatorParamList} from '@libs/Navigation/types';
+import type {Route} from '@src/ROUTES';
+import ROUTES from '@src/ROUTES';
 import {useCallback, useEffect, useMemo, useState} from 'react';
 import * as DSUtils from '@libs/DrinkingSessionUtils';
+import {getSessionDisplayName} from '@libs/SessionName';
 import * as DS from '@userActions/DrinkingSession';
 import * as TipJarPromptActions from '@userActions/TipJarPrompt';
 import DateUtils from '@libs/DateUtils';
@@ -47,6 +50,9 @@ type MenuData = {
   shouldHide?: boolean;
   rightComponent?: React.ReactNode;
   additionalStyles?: StyleProp<ViewStyle>;
+
+  /** Where tapping the row goes. A row without one is read-only. */
+  routeName?: Route;
 };
 
 type Menu = {
@@ -89,6 +95,7 @@ function SessionSummaryScreen({route}: SessionSummaryScreenProps) {
     session?.timezone,
   );
   const wasLiveSession = session?.type === CONST.SESSION.TYPES.LIVE;
+  const sessionName = getSessionDisplayName(session);
   // Figure out last drink added
   const lastDrinkEditTimestamp = getLastDrinkAddedTime(session);
   const lastDrinkAdded = lastDrinkEditTimestamp
@@ -126,6 +133,15 @@ function SessionSummaryScreen({route}: SessionSummaryScreenProps) {
     () => ({
       sectionTranslationKey: 'sessionSummaryScreen.generalSection.title',
       items: [
+        {
+          titleKey: 'sessionSummaryScreen.generalSection.name',
+          description: sessionName,
+          routeName: ROUTES.DRINKING_SESSION_SESSION_NAME_SCREEN.getRoute(
+            sessionId,
+            ROUTES.DRINKING_SESSION_SUMMARY.getRoute(sessionId),
+          ),
+          shouldHide: session.ongoing,
+        },
         {
           titleKey: 'sessionSummaryScreen.generalSection.sessionColor',
           rightComponent: (
@@ -177,6 +193,9 @@ function SessionSummaryScreen({route}: SessionSummaryScreenProps) {
       translate,
       session.blackout,
       session.note,
+      session.ongoing,
+      sessionId,
+      sessionName,
       lastDrinkAdded,
       sessionColor,
       sessionDay,
@@ -273,9 +292,15 @@ function SessionSummaryScreen({route}: SessionSummaryScreenProps) {
                     // styles.borderBottomRounded,
                     // {borderBottomLeftRadius: 35, borderBottomRightRadius: 35},
                   ]}
-                  disabled
+                  disabled={!detail.routeName}
                   shouldGreyOutWhenDisabled={false}
                   shouldUseRowFlexDirection
+                  shouldShowRightIcon={!!detail.routeName}
+                  onPress={
+                    detail.routeName
+                      ? () => Navigation.navigate(detail.routeName)
+                      : undefined
+                  }
                   shouldShowRightComponent={!!detail.rightComponent}
                   rightComponent={detail.rightComponent}
                 />
@@ -337,10 +362,11 @@ function SessionSummaryScreen({route}: SessionSummaryScreenProps) {
         }
       />
       <ScrollView>
-        <View style={[styles.pb4, styles.alignItemsCenter]}>
-          <Text style={styles.textHeadlineH2}>
-            {translate('sessionSummaryScreen.title')}
+        <View style={[styles.pb4, styles.alignItemsCenter, styles.ph5]}>
+          <Text style={styles.textHeadlineH2} numberOfLines={2}>
+            {sessionName}
           </Text>
+          <Text style={[styles.textSupporting, styles.mt1]}>{sessionDay}</Text>
         </View>
         <MenuItemGroup>
           {generalMenuItems}

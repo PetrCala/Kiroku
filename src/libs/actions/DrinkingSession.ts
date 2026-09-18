@@ -990,6 +990,56 @@ function updateNote(
   }
 }
 
+/**
+ * Rename a session (RFC §9).
+ *
+ * A session the user is currently in (live or being edited) lives in an Onyx
+ * buffer, so the new name goes there and the session's own save persists it,
+ * exactly like the note. A session that is already stored (renamed from its
+ * summary, where there is no buffer) has nothing left to save it, so the new
+ * name goes straight through the session update path.
+ *
+ * Renaming a legacy session writes `name` and nothing else: the session keeps
+ * its schema, and only the backfill promotes it (RFC §11).
+ */
+function updateSessionName(
+  sessionId: DrinkingSessionId | undefined,
+  session: DrinkingSession | undefined,
+  newName: string,
+): void {
+  if (!sessionId || !session) {
+    Log.warn('updateSessionName: no session to rename');
+    return;
+  }
+  const name = newName.trim();
+  const onyxKey = DSUtils.getDrinkingSessionOnyxKey(sessionId);
+  if (onyxKey) {
+    const current = DSUtils.getDrinkingSessionData(sessionId) ?? session;
+    Onyx.merge(onyxKey, {name});
+    DSUtils.setLocalSessionCache(onyxKey, {...current, name});
+    if (onyxKey === ONYXKEYS.ONGOING_SESSION_DATA) {
+      recordLiveSessionEdit(sessionId);
+    }
+    return;
+  }
+
+  const userID = getFirebaseAuth().currentUser?.uid;
+  if (!userID) {
+    Log.warn('updateSessionName: no signed-in user to rename the session for');
+    return;
+  }
+  const renamed: DrinkingSession = {...session, name};
+  API.write(
+    WRITE_COMMANDS.UPDATE_SESSION,
+    {
+      sessionId,
+      session: renamed,
+      sessionIsLive: false,
+    },
+    {optimisticData: sessionUpsertOptimisticData(userID, sessionId, renamed)},
+  );
+}
+
 function updateBlackout(
   session: DrinkingSession | undefined,
   blackout: boolean,
@@ -1216,6 +1266,7 @@ export {
   updateBlackout,
   updateDrinks,
   updateNote,
+  updateSessionName,
   updateLocalData,
   updateLocalSessionDataAndNavigate,
   updateSessionDate,

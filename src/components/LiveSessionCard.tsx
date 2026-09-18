@@ -12,6 +12,7 @@ import useThemeStyles from '@hooks/useThemeStyles';
 import {findDrinkNameTranslationKey} from '@libs/DataHandling';
 import DrinkData from '@libs/DrinkData';
 import * as DSUtils from '@libs/DrinkingSessionUtils';
+import {getSessionDisplayName} from '@libs/SessionName';
 import {buildDrinkProfile, rankQuickAdd} from '@libs/DrinkRanking';
 import * as DS from '@userActions/DrinkingSession';
 import CONST from '@src/CONST';
@@ -133,6 +134,17 @@ function LiveSessionCard() {
               ]}
               numberOfLines={1}>
               {translate('homeScreen.liveSessionCard.label')}
+            </Text>
+            {/* The session's name (RFC §9), after the live badge. */}
+            <Text
+              style={[
+                styles.textLabelSupporting,
+                styles.ml2,
+                styles.flexShrink1,
+              ]}
+              numberOfLines={1}
+              testID="live-session-card-name">
+              {getSessionDisplayName(session)}
             </Text>
           </View>
           <View style={[styles.flexRow, styles.alignItemsBaseline]}>

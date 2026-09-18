@@ -838,6 +838,7 @@ export default {
     generalSection: {
       title: 'Obecné',
       sessionColor: 'Barva relace',
+      name: 'Název',
       units: 'Jednotky',
       date: 'Datum',
       type: 'Typ relace',
@@ -1627,6 +1628,7 @@ export default {
     blackout: 'Blackout',
     blackoutSwitchLabel: 'Označuje, zda vaše relace skončila blackoutem.',
     note: 'Poznámka',
+    name: 'Název',
     discardSessionWarning: (discardWord: string) =>
       `Opravdu chcete tuto relaci ${discardWord}?`,
     unsavedChangesWarning: 'Máte neuložené změny. Opravdu chcete jít zpět?',
@@ -1645,6 +1647,14 @@ export default {
     error: {
       load: 'Nepodařilo se načíst podrobnosti této relace.',
       generic: 'Nepodařilo se upravit datum relace.',
+    },
+  },
+  sessionNameScreen: {
+    title: 'Název relace',
+    nameDescription:
+      'Pojmenujte relaci, abyste ji později poznali. Přátelé, kteří na relaci vidí, uvidí i její název.',
+    error: {
+      nameRequired: 'Zadejte prosím název relace.',
     },
   },
   sessionNoteScreen: {

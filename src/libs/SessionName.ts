@@ -3,6 +3,7 @@ import DateUtils from '@libs/DateUtils';
 import * as Localize from '@libs/Localize';
 import BaseLocaleListener from '@libs/Localize/LocaleListener/BaseLocaleListener';
 import CONST from '@src/CONST';
+import type {DrinkingSession} from '@src/types/onyx';
 import type Locale from '@src/types/onyx/Locale';
 import type {SelectedTimezone} from '@src/types/onyx/UserData';
 
@@ -55,5 +56,26 @@ function getDefaultSessionName(
   return name.charAt(0).toUpperCase() + name.slice(1);
 }
 
-export {getDefaultSessionName, getPartOfDay};
+/**
+ * The name to show for a session. A session started since Sessions v2 carries
+ * its own `name`; a legacy one (and a v2 session the backfill or the watch
+ * created without a name, RFC §15) falls back to the generated default for its
+ * start time and timezone, so every session reads as named everywhere it is
+ * listed. A name the user blanked out falls back too.
+ */
+function getSessionDisplayName(
+  session: DrinkingSession | undefined,
+  locale: Locale = BaseLocaleListener.getPreferredLocale(),
+): string {
+  const stored = session?.name?.trim();
+  if (stored) {
+    return stored;
+  }
+  if (!session) {
+    return '';
+  }
+  return getDefaultSessionName(session.start_time, session.timezone, locale);
+}
+
+export {getDefaultSessionName, getSessionDisplayName, getPartOfDay};
 export type {PartOfDay};
