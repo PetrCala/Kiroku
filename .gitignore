@@ -98,7 +98,6 @@ bun.lockb
 
 # Bundle artifact
 *.jsbundle
-tsconfig.tsbuildinfo
 
 # Ruby / CocoaPods
 **/Pods/
@@ -142,5 +141,4 @@ web-build/
 .claude/worktrees/
 
 # Typescript
-tsconfig.tsbuildinfo
-tsconfig.tsgo.tsbuildinfo
+*.tsbuildinfo
