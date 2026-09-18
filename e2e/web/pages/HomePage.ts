@@ -33,6 +33,19 @@ export class HomePage {
     return this.screen().getByRole('button').first();
   }
 
+  // The "Last session" banner (`HomeBanner`, neutral tone), shown once the user
+  // has a completed session and no live one. Its accessible name is the
+  // `homeScreen.banners.lastSession.a11y` string.
+  lastSessionBanner(): Locator {
+    return this.page.getByRole('button', {name: /^View your last session/});
+  }
+
+  /** Open the most recent session's detail page from the Home banner. */
+  async openLastSession(): Promise<void> {
+    await this.lastSessionBanner().click();
+    await this.page.waitForURL(/drinking-session\/[^/]+\/summary/);
+  }
+
   /** Open the signed-in user's own Profile from the Home header. */
   async openOwnProfile(): Promise<void> {
     await this.profileEntry().click();

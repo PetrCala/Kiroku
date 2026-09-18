@@ -49,6 +49,13 @@ export class DayOverviewPage {
     });
   }
 
+  // The first session tile the virtualized day list has rendered, for specs
+  // that need "a session" rather than one particular id (a specific tile may
+  // sit outside the list's render window on a day with many sessions).
+  anySessionTile(): Locator {
+    return this.page.getByRole('button', {name: /^Drinking session: /}).first();
+  }
+
   // The empty-day message (`dayOverviewScreen.noDrinkingSessions`).
   emptyState(): Locator {
     return this.page.getByText('No drinking sessions', {exact: true});
