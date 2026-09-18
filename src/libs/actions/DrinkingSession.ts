@@ -22,9 +22,11 @@ import getPlatform from '@libs/getPlatform';
 import {isSchemaV2Session} from '@libs/SessionEntries';
 import {
   buildEntryPatchOps,
+  buildRenameOp,
   buildSessionDiffOps,
   buildSetBlackoutOp,
   buildSetNoteOp,
+  buildSetVisibilityOp,
 } from '@libs/SessionOpBuilders';
 import type {
   PendingSessionOp,
@@ -1468,6 +1470,29 @@ function updateNote(
 }
 
 /**
+ * Send one meta op for a session that is NOT open in a buffer: renamed or made
+ * private from its summary, where there is nothing left to save it. Returns
+ * whether it did, so the caller falls through to the whole-session write for a
+ * legacy session or a switched-off flag.
+ *
+ * The optimistic patch lands on the stored copy
+ * (`cachedSessionApplier`) rather than on a buffer, because that stored copy is
+ * what the summary is rendering.
+ */
+function sendStoredMetaOp(
+  sessionId: DrinkingSessionId,
+  session: DrinkingSession,
+  op: PendingSessionOp,
+): boolean {
+  const userID = getFirebaseAuth().currentUser?.uid;
+  if (!userID || !shouldUseSessionOps(session)) {
+    return false;
+  }
+  sendSessionOps([op], sessionId, cachedSessionApplier(userID, sessionId));
+  return true;
+}
+
+/**
  * Rename a session (RFC §9).
  *
  * A session the user is currently in (live or being edited) lives in an Onyx
@@ -1492,11 +1517,23 @@ function updateSessionName(
   const onyxKey = DSUtils.getDrinkingSessionOnyxKey(sessionId);
   if (onyxKey) {
     const current = DSUtils.getDrinkingSessionData(sessionId) ?? session;
-    Onyx.merge(onyxKey, {name});
     DSUtils.setLocalSessionCache(onyxKey, {...current, name});
+    // A LIVE session sends the op now; an EDIT buffer keeps it local and the
+    // save diffs it out, which is how every other edited field behaves.
+    if (
+      onyxKey === ONYXKEYS.ONGOING_SESSION_DATA &&
+      sendLiveMetaOp(current, buildRenameOp(current.name, name))
+    ) {
+      return;
+    }
+    Onyx.merge(onyxKey, {name});
     if (onyxKey === ONYXKEYS.ONGOING_SESSION_DATA) {
       recordLiveSessionEdit(sessionId);
     }
+    return;
+  }
+
+  if (sendStoredMetaOp(sessionId, session, buildRenameOp(session.name, name))) {
     return;
   }
 
@@ -1539,11 +1576,30 @@ function updateSessionVisibility(
   const onyxKey = DSUtils.getDrinkingSessionOnyxKey(sessionId);
   if (onyxKey) {
     const current = DSUtils.getDrinkingSessionData(sessionId) ?? session;
-    Onyx.merge(onyxKey, {visibility});
     DSUtils.setLocalSessionCache(onyxKey, {...current, visibility});
+    if (
+      onyxKey === ONYXKEYS.ONGOING_SESSION_DATA &&
+      sendLiveMetaOp(
+        current,
+        buildSetVisibilityOp(current.visibility, visibility),
+      )
+    ) {
+      return;
+    }
+    Onyx.merge(onyxKey, {visibility});
     if (onyxKey === ONYXKEYS.ONGOING_SESSION_DATA) {
       recordLiveSessionEdit(sessionId);
     }
+    return;
+  }
+
+  if (
+    sendStoredMetaOp(
+      sessionId,
+      session,
+      buildSetVisibilityOp(session.visibility, visibility),
+    )
+  ) {
     return;
   }
 

@@ -202,6 +202,33 @@ async function seedLiveSession(
   await settle();
 }
 
+/** A stored, closed schema 2 session: what the summary screen renders. */
+function storedSession(
+  overrides: Partial<DrinkingSession> = {},
+): DrinkingSession {
+  return liveSession({
+    ongoing: false,
+    type: CONST.SESSION.TYPES.EDIT,
+    ...overrides,
+  });
+}
+
+/**
+ * Seed a session that is NOT open in any buffer, the way the summary screen
+ * sees one: only the cached snapshot, and no ongoing/edit buffer, so
+ * `getDrinkingSessionOnyxKey` answers null and the stored path is the one under
+ * test. `clearOngoingSessionCache` in `beforeEach` already leaves the buffers
+ * empty; this only fills the snapshot.
+ */
+async function seedStoredSession(
+  session: DrinkingSession = storedSession(),
+): Promise<void> {
+  await Onyx.multiSet({
+    [ONYXKEYS.CACHED_DRINKING_SESSIONS]: {[UID]: {[SESSION_ID]: session}},
+  });
+  await settle();
+}
+
 /**
  * The live session as the app reads it: `DSUtils.getDrinkingSessionData` is
  * the accessor every session screen goes through, and it is fed by Onyx, so
@@ -728,6 +755,118 @@ describe('session meta while live', () => {
     const edit = sentOps().at(1)?.payload as {entryId: string; ts: number};
     expect(edit).toMatchObject({entryId: 'e1', ts: START - 86_400_000});
   });
+});
+
+/**
+ * Renaming a session and flipping its visibility arrived with W3 (#1666),
+ * which shipped them on the whole-session write path because the ops did not
+ * exist on the server yet. They do now, and the W2 done-criterion is that no
+ * whole-session upsert is left in the write path, so these two moved onto ops
+ * here. The screens calling them did not change: both functions pick the path,
+ * so `SessionNameScreen`, `SessionSummaryScreen` and `SessionDetailsWindow`
+ * call exactly what they called before.
+ */
+describe('renaming and visibility (the W3 call sites)', () => {
+  it('renames a live session with a rename op and no whole-session write', async () => {
+    await seedLiveSession();
+    DS.updateSessionName(SESSION_ID, liveSession(), '  Saturday brunch  ');
+    await waitFor(() => sentOps().length === 1);
+
+    expect(sentOps().at(0)).toMatchObject({
+      type: CONST.SESSION_OP.TYPE.RENAME,
+      // Trimmed, as the screen's own validation expects.
+      payload: {name: 'Saturday brunch'},
+    });
+    expect(sentSessionUpserts()).toHaveLength(0);
+    expect((await readBuffer())?.name).toBe('Saturday brunch');
+  });
+
+  it('renames a STORED session through an op, not an upsert', async () => {
+    await seedStoredSession();
+    DS.updateSessionName(SESSION_ID, storedSession(), 'Sunday roast');
+    await waitFor(() => sentOps().length === 1);
+
+    expect(sentOps().at(0)).toMatchObject({
+      type: CONST.SESSION_OP.TYPE.RENAME,
+      payload: {name: 'Sunday roast'},
+    });
+    // The path this PR exists to remove.
+    expect(sentSessionUpserts()).toHaveLength(0);
+  });
+
+  it('sets visibility on a live session with a set_visibility op', async () => {
+    await seedLiveSession();
+    DS.updateSessionVisibility(
+      SESSION_ID,
+      liveSession(),
+      CONST.SESSION.VISIBILITY.PRIVATE,
+    );
+    await waitFor(() => sentOps().length === 1);
+
+    expect(sentOps().at(0)).toMatchObject({
+      type: CONST.SESSION_OP.TYPE.SET_VISIBILITY,
+      payload: {visibility: CONST.SESSION.VISIBILITY.PRIVATE},
+    });
+    expect(sentSessionUpserts()).toHaveLength(0);
+    expect((await readBuffer())?.visibility).toBe(
+      CONST.SESSION.VISIBILITY.PRIVATE,
+    );
+  });
+
+  it('sets visibility on a STORED session through an op', async () => {
+    await seedStoredSession();
+    DS.updateSessionVisibility(
+      SESSION_ID,
+      storedSession(),
+      CONST.SESSION.VISIBILITY.PRIVATE,
+    );
+    await waitFor(() => sentOps().length === 1);
+
+    expect(sentOps().at(0)).toMatchObject({
+      type: CONST.SESSION_OP.TYPE.SET_VISIBILITY,
+      payload: {visibility: CONST.SESSION.VISIBILITY.PRIVATE},
+    });
+    expect(sentSessionUpserts()).toHaveLength(0);
+  });
+
+  it('keeps a LEGACY session on the whole-session write', async () => {
+    // No entries and no schema 2 marker: there is no entry model for an op to
+    // name, so renaming one stays an upsert until the backfill promotes it.
+    const legacy = storedSession({
+      schema_version: undefined,
+      drinks: {[String(START)]: {beer: 1}},
+    });
+    await seedStoredSession(legacy);
+    DS.updateSessionName(SESSION_ID, legacy, 'Old night');
+    await waitFor(() => sentSessionUpserts().length === 1);
+
+    expect(sentOps()).toHaveLength(0);
+    expect(sentSessionUpserts().at(0)).toMatchObject({
+      sessionId: SESSION_ID,
+      session: {name: 'Old night'},
+    });
+  });
+
+  it('keeps a stored session on the whole-session write when SESSION_OPS is off', async () => {
+    mockFlags = {SESSION_OPS: false, SESSIONS_V2_SCHEMA: true};
+    await seedStoredSession();
+    DS.updateSessionVisibility(
+      SESSION_ID,
+      storedSession(),
+      CONST.SESSION.VISIBILITY.PRIVATE,
+    );
+    await waitFor(() => sentSessionUpserts().length === 1);
+
+    expect(sentOps()).toHaveLength(0);
+  });
+
+  // Not covered here: that a refused stored rename rolls the name back on the
+  // stored copy. The rollback goes through the same `sendSessionOps` failure
+  // data as every other op (covered under "failure paths"), and
+  // `buildRenameOp`'s undo patch is covered in `SessionOpBuilders.test.ts`.
+  // The stored copy itself is only readable through Onyx, and the app has no
+  // promise-based Onyx read (`Onyx.connect` in a test is a lint error), so
+  // asserting it would mean reaching around the rules rather than testing.
 });
 
 describe('saving a session', () => {
