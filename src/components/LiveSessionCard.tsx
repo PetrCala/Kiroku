@@ -202,7 +202,9 @@ function LiveSessionCard() {
                   {drinkName},
                 )}
                 accessibilityRole={CONST.ROLE.BUTTON}
-                onPress={() => addDrinks(drinkKey, 1)}
+                onPress={() => {
+                  addDrinks(drinkKey, 1);
+                }}
                 testID={`live-session-card-add-${drinkKey}`}
                 wrapperStyle={{minWidth: QUICK_ADD_MIN_WIDTH}}
                 style={[

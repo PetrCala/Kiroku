@@ -25,6 +25,7 @@ import {WRITE_COMMANDS} from '@libs/API/types';
 import * as PersistedRequests from '@userActions/PersistedRequests';
 import * as DS from '@userActions/DrinkingSession';
 import * as DSUtils from '@libs/DrinkingSessionUtils';
+import DateUtils from '@libs/DateUtils';
 import CONST from '@src/CONST';
 import ONYXKEYS from '@src/ONYXKEYS';
 import type {DrinkingSession} from '@src/types/onyx';
@@ -403,6 +404,167 @@ describe('logging drinks', () => {
     );
     await waitFor(() => sentSessionUpserts().length === 1);
     expect(sentOps()).toHaveLength(0);
+  });
+});
+
+describe('the capture UI actions', () => {
+  it('stamps the serving on a preset add, and only when it is not the default', async () => {
+    await seedLiveSession();
+    // A serving the user picked: it goes on the entry, because the SDU math
+    // cannot otherwise tell a 0.5 l 7% IPA from a 0.5 l 5% lager.
+    DS.addSessionEntry(SESSION_ID, {
+      drinkKey: 'beer',
+      drinksToUnits: DRINKS_TO_UNITS,
+      volume_ml: 400,
+      abv: 0.07,
+    });
+    await waitFor(() => sentOps().length === 1);
+    expect(sentOps().at(0)).toMatchObject({
+      type: CONST.SESSION_OP.TYPE.ADD_ENTRY,
+      payload: {key: 'beer', count: 1, volume_ml: 400, abv: 0.07},
+    });
+
+    // No serving named: the entry stays quiet and a reader falls back to
+    // CONST.DRINK_DEFAULTS, so storing the default would say nothing.
+    DS.addSessionEntry(SESSION_ID, {
+      drinkKey: 'beer',
+      drinksToUnits: DRINKS_TO_UNITS,
+    });
+    await waitFor(() => sentOps().length === 2);
+    const plain = sentOps().at(1)?.payload as Record<string, unknown>;
+    expect(plain).not.toHaveProperty('volume_ml');
+    expect(plain).not.toHaveProperty('abv');
+  });
+
+  it('retro-adds a drink at the time it actually happened', async () => {
+    await seedLiveSession();
+    const twentyMinutesAgo = DateUtils.getServerTime() - 20 * 60_000;
+    DS.addSessionEntry(SESSION_ID, {
+      drinkKey: 'beer',
+      drinksToUnits: DRINKS_TO_UNITS,
+      ts: twentyMinutesAgo,
+    });
+    await waitFor(() => sentOps().length === 1);
+
+    // The drink's own `ts`, not the moment it was logged: that is why a
+    // retro-add needs no server concession (RFC §4.3).
+    expect(sentOps().at(0)?.payload).toMatchObject({ts: twentyMinutesAgo});
+    const buffer = await readBuffer();
+    const [entry] = Object.values(buffer?.entries ?? {});
+    expect(entry?.ts).toBe(twentyMinutesAgo);
+  });
+
+  it('adds several drinks at once when the amount says so', async () => {
+    await seedLiveSession();
+    DS.addSessionEntry(SESSION_ID, {
+      drinkKey: 'wine',
+      amount: 3,
+      drinksToUnits: DRINKS_TO_UNITS,
+    });
+    await waitFor(() => sentOps().length === 1);
+    expect(sentOps().at(0)?.payload).toMatchObject({key: 'wine', count: 3});
+  });
+
+  it('edits one entry absolutely, naming every field it changed', async () => {
+    await seedLiveSession(
+      liveSession({
+        entries: {
+          e1: {
+            ts: START,
+            key: 'beer',
+            count: 1,
+            source: CONST.SESSION.ENTRY_SOURCE.PHONE,
+            author_uid: UID,
+            target_uid: UID,
+            created_at: START,
+          },
+        },
+      }),
+    );
+    DS.editSessionEntry(SESSION_ID, 'e1', {
+      count: 2,
+      volume_ml: 400,
+      abv: 0.07,
+      ts: START + 300_000,
+    });
+    await waitFor(() => sentOps().length === 1);
+
+    expect(sentOps().at(0)).toMatchObject({
+      type: CONST.SESSION_OP.TYPE.EDIT_ENTRY,
+      payload: {
+        entryId: 'e1',
+        count: 2,
+        volume_ml: 400,
+        abv: 0.07,
+        ts: START + 300_000,
+      },
+    });
+  });
+
+  it('sends nothing for an edit that changes nothing', async () => {
+    await seedLiveSession(
+      liveSession({
+        entries: {
+          e1: {
+            ts: START,
+            key: 'beer',
+            count: 2,
+            source: CONST.SESSION.ENTRY_SOURCE.PHONE,
+            author_uid: UID,
+            target_uid: UID,
+            created_at: START,
+          },
+        },
+      }),
+    );
+    DS.editSessionEntry(SESSION_ID, 'e1', {count: 2, ts: START});
+    await settle();
+    expect(sentOps()).toHaveLength(0);
+  });
+
+  it('sets the start and end time of day as absolute times', async () => {
+    await seedLiveSession();
+    DS.setSessionTimes(SESSION_ID, START - 1_800_000, START + 1_800_000);
+    await waitFor(() => sentOps().length === 1);
+
+    expect(sentOps().at(0)).toMatchObject({
+      type: CONST.SESSION_OP.TYPE.SET_TIMES,
+      payload: {
+        start_time: START - 1_800_000,
+        end_time: START + 1_800_000,
+      },
+    });
+  });
+
+  it('sends nothing when the times did not move', async () => {
+    await seedLiveSession();
+    DS.setSessionTimes(SESSION_ID, START, START);
+    await settle();
+    expect(sentOps()).toHaveLength(0);
+  });
+
+  it('refuses an entry-targeted write on a legacy session', async () => {
+    await seedLiveSession({
+      id: SESSION_ID,
+      start_time: START,
+      end_time: START,
+      blackout: false,
+      note: '',
+      timezone: 'Europe/Prague',
+      type: CONST.SESSION.TYPES.LIVE,
+      ongoing: true,
+      drinks: {[START]: {beer: 1}},
+    });
+    expect(
+      DS.addSessionEntry(SESSION_ID, {
+        drinkKey: 'beer',
+        drinksToUnits: DRINKS_TO_UNITS,
+      }),
+    ).toBeUndefined();
+    DS.editSessionEntry(SESSION_ID, 'whatever', {count: 2});
+    await settle();
+    expect(sentOps()).toHaveLength(0);
+    expect(sentSessionUpserts()).toHaveLength(0);
   });
 });
 

@@ -131,6 +131,9 @@ const UNTRANSLATED_ALLOWLIST = new Set<string>([
   'common.blackout',
   'liveSessionScreen.blackout',
   'colorPaletteScreen.bands.black',
+  // The entry-source label for a drink logged on the web. "Web" is the Czech
+  // word too; see the do-not-translate list in src/languages/context/cs_cz.md.
+  'liveSessionScreen.source.web',
 ]);
 
 describe('Translation Keys', () => {

@@ -43,6 +43,7 @@ type SessionSliderProps = {
   session: DrinkingSession;
   onBlackoutChange: (value: boolean) => void;
   shouldAllowDateChange?: boolean;
+  shouldAllowTimeChange?: boolean;
   shouldAllowTimezoneChange?: boolean;
 };
 
@@ -51,6 +52,7 @@ function SessionDetailsWindow({
   session,
   onBlackoutChange,
   shouldAllowDateChange,
+  shouldAllowTimeChange,
   shouldAllowTimezoneChange,
 }: SessionSliderProps) {
   const {translate} = useLocalize();
@@ -127,6 +129,21 @@ function SessionDetailsWindow({
         session.timezone,
       ),
       routeName: ROUTES.DRINKING_SESSION_SESSION_DATE_SCREEN.getRoute(
+        sessionId,
+        getRouteBackToThisScreen(),
+      ),
+    });
+  }
+
+  if (shouldAllowTimeChange) {
+    sliderData.push({
+      translationKey: 'liveSessionScreen.sessionTimes',
+      shouldShowRightIcon: true,
+      description: `${DateUtils.getLocalizedTime(
+        session.start_time,
+        session.timezone,
+      )} - ${DateUtils.getLocalizedTime(session.end_time, session.timezone)}`,
+      routeName: ROUTES.DRINKING_SESSION_SESSION_TIMES_SCREEN.getRoute(
         sessionId,
         getRouteBackToThisScreen(),
       ),

@@ -769,6 +769,8 @@ describe('Sessions v2 schema flag', () => {
       'uid-me',
       'phone',
       expect.any(Function),
+      // No retro-add and no serving override for a plain tap.
+      {},
     );
     expect(mockedDSUtils.modifySessionDrinks).not.toHaveBeenCalled();
     expect(mockedDSUtils.setLocalSessionCache).toHaveBeenCalledWith(
