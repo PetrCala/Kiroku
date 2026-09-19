@@ -4,6 +4,7 @@
 /* eslint-disable rulesdir/no-api-in-views */
 import Onyx from 'react-native-onyx';
 import type {Merge} from 'type-fest';
+import CONFIG from '@src/CONFIG';
 import CONST from '@src/CONST';
 import ONYXKEYS from '@src/ONYXKEYS';
 import Logger from './common/Logger';
@@ -14,6 +15,36 @@ import getPlatform from './getPlatform';
 
 let timeout: ReturnType<typeof setTimeout>;
 let shouldCollectLogs = false;
+
+// Levels that are worth waking someone up for. `Logger.add` prefixes every line
+// it hands to the client callback, so the prefix is the only severity signal
+// this callback gets.
+const SURFACED_LEVEL_PREFIXES = ['[alrt]', '[warn]'];
+
+// `babel-plugin-transform-remove-console` deletes every `console.debug` from a
+// release bundle (see `babel.config.js`), and this callback is the only client
+// sink there is: `LogCommand` below is a stub that never posts. So on an ad-hoc
+// test build `Log.alert` has been writing into nothing, and the only way to read
+// a startup alert was Crashlytics or a locally patched build.
+//
+// Ad-hoc builds exist to be debugged, so let the two loud levels through there on
+// `console.warn`, which the babel plugin keeps. Everything quieter stays on
+// `console.debug`, so a test build's log volume, and its performance, still
+// resemble production. `CONFIG.IS_IN_ADHOC` is read from the bundled env file, so
+// this costs one boolean and pulls nothing new onto the launch path; deciding it
+// from `getEnvironment()` instead would drag `betaChecker` (and, on Android,
+// Onyx and `actions/AppUpdate`) into Log's import graph.
+function writeToConsole(message: string, extraData: unknown): void {
+  if (
+    CONFIG.IS_IN_ADHOC &&
+    SURFACED_LEVEL_PREFIXES.some(prefix => message.startsWith(prefix))
+  ) {
+    // eslint-disable-next-line no-console
+    console.warn(message, extraData);
+    return;
+  }
+  console.debug(message, extraData);
+}
 
 Onyx.connect({
   key: ONYXKEYS.SHOULD_STORE_LOGS,
@@ -108,7 +139,7 @@ const Log = new Logger({
     }
 
     flushAllLogsOnAppLaunch().then(() => {
-      console.debug(message, extraData);
+      writeToConsole(message, extraData);
       if (shouldCollectLogs) {
         addLog({
           time: new Date(),
