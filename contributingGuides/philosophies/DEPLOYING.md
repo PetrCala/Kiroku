@@ -110,6 +110,42 @@ gh workflow run createNewVersion.yml --ref master -f SEMVER_LEVEL=PATCH
 `node scripts/asc.mjs status` shows which versions Apple has accepted, if you
 need to confirm which train is closed.
 
+#### A redundant-binary rejection means the upload worked
+
+The opposite case, and the one the retry loop in `fastlane/Fastfile` handles
+without failing the deploy. altool can deliver the whole IPA and then lose the
+connection before it reads Apple's answer, so it reports a failure for an
+upload that succeeded:
+
+```
+ERROR: [ContentDelivery.Uploader...] WILL RETRY PART 6. Failed with error:
+  Error Domain=NSURLErrorDomain Code=-1005 "The network connection was lost."
+TestFlight upload attempt 1/3 failed: Error uploading ipa file
+```
+
+The retry then hits the build Apple already has, and Apple says so with error
+**90189**:
+
+```
+Redundant Binary Upload. You've already uploaded a build with build number
+'1.0.1.20' for version number '1.0.1'.
+```
+
+That is a success: the binary is on App Store Connect. The lane confirms it
+with `node scripts/asc.mjs build-status --build <CFBundleVersion> --wait`
+rather than believing the error text, because the same wording is also what a
+forgotten build-string bump produces. The check doubles as the processing wait
+`upload_to_testflight` performs for itself and skips when it raises, which the
+beta-group assignment right after it needs: App Store Connect refuses to assign
+a still-`PROCESSING` build, with `422 Build is not in an internally testable
+state`.
+
+Run the same command by hand to see where a build stands:
+
+```bash
+node scripts/asc.mjs build-status --build 1.0.1.20
+```
+
 ## Day-To-Day Release Flow
 
 ### I want an internal iOS or closed Android build
