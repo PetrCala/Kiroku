@@ -162,6 +162,15 @@ export class SessionPage {
     await saved;
   }
 
+  // The detail page's header back arrow (`HeaderWithBackButton`, labelled
+  // `common.back`). Distinct from browser back: this is the in-app handler.
+  detailBackButton(): Locator {
+    return this.summaryScreen().getByRole('button', {
+      name: 'Back',
+      exact: true,
+    });
+  }
+
   /** From the summary, open the edit screen for the saved session. */
   async openEditFromSummary(): Promise<void> {
     await this.summaryEditButton().click();
