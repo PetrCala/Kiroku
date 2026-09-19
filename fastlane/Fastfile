@@ -83,16 +83,32 @@ SUBMIT_GATE_SKIP = 2
 # flake. Each one needs a human (a version bump, a new build, a signing fix).
 PERMANENT_UPLOAD_REJECTIONS = /Invalid Pre-Release Train|closed for new build submissions|This bundle is invalid|must contain a higher version|\(90186\)|\(90062\)/i
 
+# The opposite verdict: Apple already has this exact binary. 90189 (Redundant
+# Binary Upload) is what a *re*-upload gets after a first attempt delivered the
+# IPA and then lost the connection before altool could read the answer, which is
+# precisely the flake the retry below exists for. It proves the upload worked,
+# so it belongs on the success side. The same wording also comes back when
+# someone genuinely forgot to bump the build string, though, so the message's
+# word is never enough on its own: kiroku_testflight_build_ready? asks App Store
+# Connect. That check is also why the code alternative here is a bare 90189
+# rather than the parenthesised form the constant above uses (altool prints it
+# as "code = 90189;"). A stray match costs one read-only API call, not a wrong
+# verdict.
+REDUNDANT_BINARY_UPLOAD = /Redundant Binary Upload|already been used|already exists|already been uploaded|redundant binary|\b90189\b/i
+
+# Lanes run with cwd = ./fastlane; scripts/ and the ASC API key live one up.
+def kiroku_repo_root
+  File.basename(Dir.pwd) == "fastlane" ? File.expand_path("..") : Dir.pwd
+end
+
 # Asks App Store Connect (read-only) whether the production lane may submit
 # app_version for review. Returns true to submit, false to skip. Raises when
 # the check itself fails: submitting blind is what the gate exists to prevent.
 def kiroku_submit_gate(app_version, build_number)
-  # Lanes run with cwd = ./fastlane; asc.mjs resolves the API key from the root.
-  repo_root = File.basename(Dir.pwd) == "fastlane" ? File.expand_path("..") : Dir.pwd
   output, status = Open3.capture2e(
     "node", "scripts/asc.mjs", "submit-gate",
     "--version", app_version, "--build", build_number,
-    chdir: repo_root
+    chdir: kiroku_repo_root
   )
   output.each_line { |line| UI.message(line.rstrip) }
 
@@ -103,6 +119,60 @@ def kiroku_submit_gate(app_version, build_number)
   end
 rescue Errno::ENOENT
   UI.user_error!("node not found; the App Store submit gate needs it (scripts/asc.mjs submit-gate)")
+end
+
+# CFBundleVersion of the IPA the iOS lanes build, e.g. "1.0.1.20". CI passes it
+# as VERSION (see .github/workflows/platformDeploy.yml); a local run reads it
+# back out of the Info.plist the version bump wrote.
+def kiroku_ios_build_number
+  from_env = ENV["VERSION"].to_s.strip
+  return from_env unless from_env.empty?
+
+  plist = File.join(kiroku_repo_root, "ios", "Kiroku", "Info.plist")
+  value, status = Open3.capture2e(
+    "/usr/libexec/PlistBuddy", "-c", "Print :CFBundleVersion", plist
+  )
+  status.success? ? value.strip : nil
+rescue Errno::ENOENT
+  nil
+end
+
+# Does App Store Connect actually hold build_number, processed and ready to
+# hand to testers? Two jobs in one, both of which the TestFlight upload action
+# does for us when it returns cleanly and neither of which it does when it
+# raises:
+#
+#   1. Proves the binary is there. A rescued upload has only altool's wording
+#      to go on, and "you've already uploaded this build" is equally what a
+#      redelivered flake and a forgotten build-string bump look like.
+#   2. Waits out TestFlight processing. The next step assigns the build to a
+#      beta group, and App Store Connect refuses that for a still-PROCESSING
+#      build with 422 "Build is not in an internally testable state".
+#
+# The wait is capped well under the deploy step's own 60-minute budget, most of
+# which the iOS archive has already spent by the time we get here: processing
+# has been running ~3 minutes, and a build that is not ready inside 15 is one to
+# report, not to keep the runner sitting on. build-status gives up sooner still
+# when the build never shows up at all.
+TESTFLIGHT_PROCESSING_TIMEOUT_S = "900"
+
+def kiroku_testflight_build_ready?(build_number)
+  if build_number.to_s.strip.empty?
+    UI.error("Cannot tell which build this lane produced (no VERSION, no CFBundleVersion), so cannot confirm the upload landed.")
+    return false
+  end
+
+  output, status = Open3.capture2e(
+    "node", "scripts/asc.mjs", "build-status",
+    "--build", build_number, "--wait",
+    "--timeout", TESTFLIGHT_PROCESSING_TIMEOUT_S,
+    chdir: kiroku_repo_root
+  )
+  output.each_line { |line| UI.message(line.rstrip) }
+  status.success?
+rescue Errno::ENOENT
+  UI.error("node not found; cannot confirm the TestFlight upload (scripts/asc.mjs build-status)")
+  false
 end
 
 # The App Store "What's New", one file per locale under
@@ -122,9 +192,7 @@ def kiroku_appstore_release_notes(app_version)
   fallback = ENV.fetch("TESTFLIGHT_CHANGELOG", "Improvements and bug fixes")
   notes = { "default" => fallback, "en-US" => fallback }
 
-  # Lanes run with cwd = ./fastlane; resolve the notes against the repo root.
-  repo_root = File.basename(Dir.pwd) == "fastlane" ? File.expand_path("..") : Dir.pwd
-  dir = File.join(repo_root, "fastlane", "appstore-release-notes", app_version)
+  dir = File.join(kiroku_repo_root, "fastlane", "appstore-release-notes", app_version)
 
   files = Dir.glob(File.join(dir, "*.txt")).sort
   if files.empty?
@@ -454,8 +522,18 @@ platform :ios do
     rescue => e
       message = e.message.to_s
 
-      if message.match?(/already been used|already exists|already been uploaded|redundant binary/i)
-        UI.important("Build already present on App Store Connect; treating the TestFlight upload as successful (#{message.strip})")
+      if message.match?(REDUNDANT_BINARY_UPLOAD)
+        # Apple already has the binary, so the delivery worked whatever altool
+        # made of the answer. Confirm that against App Store Connect instead of
+        # trusting the wording, and let the check wait out processing: skipping
+        # the wait the upload action does for itself is what left the following
+        # beta-group assignment racing a PROCESSING build.
+        build_number = kiroku_ios_build_number
+        unless kiroku_testflight_build_ready?(build_number)
+          UI.error("App Store Connect called this a redundant upload, but #{build_number || 'the build'} is not there and ready. Not calling the deploy successful.")
+          raise
+        end
+        UI.important("Build #{build_number} is on App Store Connect; treating the TestFlight upload as successful (#{message.strip})")
       elsif message.match?(PERMANENT_UPLOAD_REJECTIONS)
         # Apple has judged the binary; the delivery itself worked. Retrying
         # re-uploads the same rejected IPA and loses another two minutes per

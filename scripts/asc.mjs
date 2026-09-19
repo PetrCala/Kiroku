@@ -23,6 +23,7 @@
  *   node scripts/asc.mjs clone-testflight --from <appId> --to <appId> [--groups a,b] [--with-testers] [--yes]
  *   node scripts/asc.mjs age-rating --app-id <appId> [--set field=value,...] [--yes]
  *   node scripts/asc.mjs distribute --app-id <appId> [--build 1.0.0.1] --groups a,b [--yes]
+ *   node scripts/asc.mjs build-status --build 1.0.0.1 [--wait] [--timeout 900]
  *
  * Commands:
  *   status   App, versions + states, the editable version's build,
@@ -84,6 +85,14 @@
  *            forces external-testing semantics even with
  *            distribute_external: false and then demands a Beta App
  *            Description. Idempotent; DRY RUN unless --yes.
+ *   build-status
+ *            Read-only: is --build on App Store Connect, and has it finished
+ *            processing? Exit 0 only when the build is there and VALID; exit 1
+ *            when it is missing, expired, failed processing, or --wait ran out
+ *            of time. --wait polls (30s) until the build appears and leaves
+ *            PROCESSING, which is what the fastlane `ios beta` lane needs after
+ *            an upload that reported a failure Apple had in fact accepted.
+ *            Writes nothing.
  *   clone-testflight
  *            Recreate the source record's TestFlight beta groups on the
  *            destination (a fresh record starts with none, so the group the
@@ -120,6 +129,11 @@
  *   --groups <csv>     clone-testflight / distribute: beta group names
  *   --build <str>      distribute: CFBundleVersion to assign (default: newest build)
  *                      submit-gate: the build this deploy would submit (log only)
+ *   --wait             build-status: poll until the build appears and finishes
+ *                      processing, instead of reporting the state right now
+ *   --timeout <s>      build-status: seconds --wait may spend on PROCESSING
+ *                      (default 900); a build that never shows up at all is
+ *                      given 120s before --wait gives up on it
  *   --with-testers     clone-testflight: also add the source groups' testers,
  *                      which sends them an invitation email
  *   --platform <p>     default IOS
@@ -183,6 +197,8 @@ const OPTS = {
   iaps: flag('iaps'),
   groups: flag('groups'),
   build: flag('build'),
+  wait: argv.includes('--wait'),
+  timeout: flag('timeout'),
   withTesters: argv.includes('--with-testers'),
   yes: argv.includes('--yes'),
   help: argv.includes('--help') || argv.includes('-h'),
@@ -225,8 +241,29 @@ function mintToken(k) {
   return `${header}.${payload}.${b64url(sig)}`;
 }
 
+const TOKEN_TTL_MS = 1200 * 1000;
 let TOKEN;
+let TOKEN_KEY;
+let TOKEN_MINTED_AT = 0;
+
+function useKey(k) {
+  TOKEN_KEY = k;
+  TOKEN = mintToken(k);
+  TOKEN_MINTED_AT = Date.now();
+}
+
+// mintToken stamps a 20-minute expiry, which every other command finishes well
+// inside. `build-status --wait` polls for as long as its --timeout allows, so
+// re-mint a minute before App Store Connect would start refusing the token.
+function freshToken() {
+  if (!TOKEN_KEY) return;
+  if (Date.now() - TOKEN_MINTED_AT < TOKEN_TTL_MS - 60_000) return;
+  TOKEN = mintToken(TOKEN_KEY);
+  TOKEN_MINTED_AT = Date.now();
+}
+
 async function api(method, p, body) {
+  freshToken();
   const url = p.startsWith('http') ? p : BASE + p;
   const res = await fetch(url, {
     method,
@@ -1992,6 +2029,107 @@ async function cmdDistribute(appId) {
   }
 }
 
+// ---- build-status ---------------------------------------------------------
+// Read-only: is this CFBundleVersion on App Store Connect, and has it finished
+// processing?
+//
+// The fastlane `ios beta` lane asks after an upload altool reported as failed,
+// to tell a binary that never landed from one that landed and lost the
+// connection on the way back. Apple rejects the retry of the latter with 90189
+// (Redundant Binary Upload), which proves the delivery worked, but the error
+// text alone cannot be trusted for that: the same wording reads like a
+// version-numbering mistake. Asking the API settles it.
+//
+// --wait then polls until the build leaves PROCESSING. That is the wait pilot
+// performs itself after a clean upload and skips when it raises, and the lane's
+// next step needs it: App Store Connect refuses the beta-group assignment of a
+// still-processing build with 422 "Build is not in an internally testable
+// state".
+const BUILD_POLL_INTERVAL_MS = 30_000;
+const DEFAULT_BUILD_TIMEOUT_S = 900;
+// A build takes a moment to become visible after its upload ("It might take a
+// few minutes until it's visible online"), so --wait tolerates a short absence.
+// Past that, a build that is still nowhere is not a slow one: 90189 came back
+// for a build string Apple holds from some earlier upload, or from nothing at
+// all. Fail there rather than spending the whole --timeout on it, because the
+// deploy job's own clock is already most of the way through an iOS archive.
+const BUILD_APPEARANCE_GRACE_MS = 120_000;
+const sleep = ms =>
+  new Promise(resolve => {
+    setTimeout(resolve, ms);
+  });
+
+async function findBuild(appId, version) {
+  const res = await api(
+    'GET',
+    `/v1/builds?filter[app]=${encodeURIComponent(appId)}` +
+      `&filter[version]=${encodeURIComponent(version)}&limit=200`,
+  );
+  return (res.data || []).find(b => b.attributes.version === version) || null;
+}
+
+async function cmdBuildStatus(appId) {
+  const version = typeof OPTS.build === 'string' ? OPTS.build.trim() : '';
+  if (!version)
+    throw new Error(
+      'build-status needs --build <CFBundleVersion>, e.g. 1.0.1.20',
+    );
+
+  const timeoutS = Number(OPTS.timeout) || DEFAULT_BUILD_TIMEOUT_S;
+  const startedAt = Date.now();
+  const deadline = startedAt + timeoutS * 1000;
+
+  for (;;) {
+    const attrs = (await findBuild(appId, version))?.attributes;
+    L(
+      `BUILD ${version}: ${
+        attrs
+          ? `processing=${attrs.processingState} expired=${attrs.expired === true}`
+          : 'not on App Store Connect'
+      }`,
+    );
+
+    if (attrs?.expired === true) {
+      L(`Build ${version} has expired; it cannot be distributed.`);
+      return 1;
+    }
+    if (attrs?.processingState === 'VALID') {
+      L(`Build ${version} is on App Store Connect and ready ✓`);
+      return 0;
+    }
+    // INVALID / FAILED: the binary was delivered, and Apple then threw it out.
+    // Waiting cannot turn that around.
+    if (attrs && attrs.processingState !== 'PROCESSING') {
+      L(`Build ${version} finished processing as ${attrs.processingState}.`);
+      return 1;
+    }
+    if (!OPTS.wait) {
+      L(
+        attrs
+          ? `Build ${version} is still processing; pass --wait to wait it out.`
+          : `No build ${version} on this app.`,
+      );
+      return 1;
+    }
+    const waitedMs = Date.now() - startedAt;
+    if (!attrs && waitedMs >= BUILD_APPEARANCE_GRACE_MS) {
+      L(
+        `Build ${version} never appeared on App Store Connect (${Math.round(waitedMs / 1000)}s).`,
+      );
+      return 1;
+    }
+    if (Date.now() + BUILD_POLL_INTERVAL_MS >= deadline) {
+      L(
+        `Gave up after ${timeoutS}s; build ${version} is ${
+          attrs ? 'still processing' : 'still not on App Store Connect'
+        }.`,
+      );
+      return 1;
+    }
+    await sleep(BUILD_POLL_INTERVAL_MS);
+  }
+}
+
 // ---- clone-testflight -----------------------------------------------------
 
 /**
@@ -2602,7 +2740,7 @@ async function cmdPreflight(appId) {
   const k = JSON.parse(fs.readFileSync(OPTS.keyPath, 'utf8'));
   if (!k.key_id || !k.issuer_id || !k.key)
     throw new Error(`Key JSON missing key_id/issuer_id/key: ${OPTS.keyPath}`);
-  TOKEN = mintToken(k);
+  useKey(k);
 
   // The clone-* commands address two records explicitly, so they skip the
   // bundle-id -> app-id lookup every other command starts from.
@@ -2630,6 +2768,10 @@ async function cmdPreflight(appId) {
   if (cmd === 'rename') return cmdRename(appId);
   if (cmd === 'age-rating') return cmdAgeRating(appId);
   if (cmd === 'distribute') return cmdDistribute(appId);
+  if (cmd === 'build-status') {
+    process.exitCode = await cmdBuildStatus(appId);
+    return;
+  }
   usage();
   process.exitCode = 1;
 })().catch(e => {
