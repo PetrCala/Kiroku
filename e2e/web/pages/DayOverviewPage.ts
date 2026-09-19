@@ -49,6 +49,35 @@ export class DayOverviewPage {
     });
   }
 
+  /**
+   * Scroll a session's tile into the DOM and return it.
+   *
+   * The screen is one continuous, virtualized (`FlashList`) scroll across every
+   * day the app has loaded, and it lands centered on the day it was opened at.
+   * Only the rows around that landing point are rendered, so a tile further
+   * down is not in the DOM at all and waiting on the locator alone waits
+   * forever (`locator.click()` has no action timeout of its own, so it burns
+   * the whole test budget). Days run oldest to newest, so a tile that isn't up
+   * yet is below: wheel down over the list until it renders.
+   *
+   * Bounded, and it asserts on the tile at the end, so a tile that never shows
+   * up fails in seconds with the locator in the message.
+   */
+  async revealSessionTile(sessionId: string): Promise<Locator> {
+    const tile = this.sessionTile(sessionId);
+    await this.screen().hover();
+    for (let attempt = 0; attempt < 20; attempt += 1) {
+      if (await tile.isVisible().catch(() => false)) {
+        return tile;
+      }
+      await this.page.mouse.wheel(0, 600);
+      // Let the list render the rows the scroll brought into range.
+      await this.page.waitForTimeout(200);
+    }
+    await tile.waitFor({state: 'visible', timeout: 5_000});
+    return tile;
+  }
+
   // The empty-day message (`dayOverviewScreen.noDrinkingSessions`).
   emptyState(): Locator {
     return this.page.getByText('No drinking sessions', {exact: true});
