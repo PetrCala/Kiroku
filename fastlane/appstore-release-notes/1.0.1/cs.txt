@@ -1,0 +1,12 @@
+Fotografie v relacích a stránka relace, kterou se vyplatí otevřít.
+
+- Přidejte k relaci fotografie, prohlížejte je v galerii, jednu odeberte nebo nahlaste tu, která tam nepatří
+- Relaci můžete pojmenovat a název se objeví všude, kde je relace vypsaná
+- Kteroukoli relaci můžete nechat soukromou a přátelé ji neuvidí
+- Stránka relace je teď plnohodnotná stránka s detailem aktivity
+- Živá karta na domovské obrazovce sleduje vaši aktuální relaci, ukazuje uplynulý čas a řadí rychlé přidání podle toho, co opravdu pijete
+- Nový kalendář: přehlednější dlaždice, série dnů bez alkoholu a výraznější prstenec kolem dneška
+- Rychlejší start a plynulejší posouvání kalendáře
+- Kiroku po obnovení připojení dohraje, co mu uteklo, a drinky zaznamenané offline přežijí restart
+- Opravené formátování čísel a kalendářních dat v češtině
+- Čtečky obrazovky nyní oznamují dlaždice relací jako tlačítka
