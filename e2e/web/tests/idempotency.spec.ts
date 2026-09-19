@@ -263,9 +263,13 @@ test.describe('idempotency keys', () => {
       await expectSavedOnce(page, api, sessionId, lost[0].payload);
 
       // Reopen the session from today's calendar and delete it through the UI,
-      // which also shows the queue moves on after the replay.
+      // which also shows the queue moves on after the replay. The day list is
+      // virtualized and the session just saved is the newest one there, so it
+      // has to be scrolled into the DOM: on the shared dev account a day that
+      // already holds a run's worth of sessions leaves it well below the rows
+      // the list lands on.
       await dayOverview.openDay(localDateString());
-      await dayOverview.sessionTile(sessionId).click();
+      await (await dayOverview.revealSessionTile(sessionId)).click();
       await session.summaryScreen().waitFor({state: 'visible'});
       await session.openEditFromSummary();
       await session.discardAndConfirm();
