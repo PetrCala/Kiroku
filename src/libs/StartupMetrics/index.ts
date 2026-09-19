@@ -4,6 +4,7 @@ import type StartupMetrics from './types';
 
 const startupMetrics: StartupMetrics = {
   init: () => {},
+  mark: () => {},
 };
 
 export default startupMetrics;

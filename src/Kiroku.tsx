@@ -16,6 +16,7 @@ import Navigation from './libs/Navigation/Navigation';
 import NavigationRoot from './libs/Navigation/NavigationRoot';
 import SplashScreenHider from './components/SplashScreenHider';
 import Log from './libs/Log';
+import StartupMetrics from './libs/StartupMetrics';
 import migrateOnyx from './libs/migrateOnyx';
 import BootSplash from './libs/BootSplash';
 import * as ActiveClientManager from './libs/ActiveClientManager';
@@ -316,6 +317,8 @@ function Kiroku() {
   // The overlay owns the 15s force-hide safety timeout so a stuck gating
   // condition can't pin the splash forever.
   const onSplashHide = useCallback(() => {
+    // The splash is off the screen now, which closes the cold-start window.
+    StartupMetrics.mark('splashHidden');
     setSplashScreenState(CONST.BOOT_SPLASH_STATE.HIDDEN);
     // The logo handoff (if any) is finished once the splash is hidden. Clear
     // the flag so a later logout remount of InitialScreen plays its assembly
