@@ -19,7 +19,7 @@ import useCurrentUserDrinkingSessions from '@hooks/useCurrentUserDrinkingSession
 import useDrinkProfile from '@hooks/useDrinkProfile';
 import type {StackScreenProps} from '@react-navigation/stack';
 import CONST from '@src/CONST';
-import SCREENS from '@src/SCREENS';
+import type SCREENS from '@src/SCREENS';
 import Text from '@components/Text';
 import type {DrinkingSessionNavigatorParamList} from '@libs/Navigation/types';
 import type {Route} from '@src/ROUTES';
