@@ -71,7 +71,8 @@ test.describe('session detail page', () => {
     const session = new SessionPage(authedPage);
 
     // The session id is only known once the session starts, so the fixture
-    // reads it lazily.
+    // reads it lazily: it attaches the photo record to the session the SAVE
+    // echoes back, by which point the id below is set.
     let sessionId: string | undefined;
     await serveOneSessionPhoto(authedPage, () => sessionId);
 
@@ -84,11 +85,22 @@ test.describe('session detail page', () => {
     await session.save();
     await expect(session.summaryScreen()).toBeVisible();
 
-    // The gallery reads the photo record off the session and the url from
-    // `GET /v1/images/session-photos`, so a rendered image proves both halves
-    // are wired: the record, and the signed read.
+    // A tile only exists for a photo that has BOTH halves: the record, read off
+    // the session, and the signed url, fetched from
+    // `GET /v1/images/session-photos`. So the tile being there is the proof the
+    // gallery is wired end to end, and its label says it is the only one.
     const gallery = authedPage.getByTestId('Session Summary Screen');
-    await expect(gallery.locator('img').first()).toBeVisible();
+    const photoTile = gallery.getByRole('button', {name: 'Photo 1 of 1'});
+    await expect(photoTile).toBeVisible();
+
+    // And it paints the bytes that were served. react-native-web draws a loaded
+    // `Image` as a background-image and emits an `<img>` alongside it for the
+    // browser's own image affordances, so that element existing INSIDE the tile
+    // means the served PNG decoded rather than the tile merely being laid out.
+    await expect(photoTile.locator('img')).toHaveAttribute(
+      'src',
+      /^data:image\/png/,
+    );
 
     await session.openEditFromSummary();
     await session.discardAndConfirm();
