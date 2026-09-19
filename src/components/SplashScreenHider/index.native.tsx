@@ -15,6 +15,7 @@ import useThemeStyles from '@hooks/useThemeStyles';
 import BootSplash from '@libs/BootSplash';
 import * as FeatureFlags from '@libs/FeatureFlags';
 import Log from '@libs/Log';
+import StartupMetrics from '@libs/StartupMetrics';
 import CONST from '@src/CONST';
 import type {
   SplashScreenHiderProps,
@@ -96,6 +97,9 @@ function SplashScreenHider({
     }
 
     hideHasBeenCalled.current = true;
+    // The gate is open: everything after this point is the hide itself, so this
+    // is the boundary between "waiting for data" and "playing an animation".
+    StartupMetrics.mark('splashHideStart');
 
     // The unchanged shrink-out: logo scales to nothing while the overlay fades.
     // Every non-handoff path lands here, and it never depends on the logo slot,
