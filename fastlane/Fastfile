@@ -105,6 +105,47 @@ rescue Errno::ENOENT
   UI.user_error!("node not found; the App Store submit gate needs it (scripts/asc.mjs submit-gate)")
 end
 
+# The App Store "What's New", one file per locale under
+# `fastlane/appstore-release-notes/<app_version>/<locale>.txt`, mirroring the Play
+# notes under `fastlane/play-release-notes/`. Keeping the copy in the repo means it
+# is reviewed with the release instead of being written at deploy time by
+# scripts/generateReleaseNotes.sh: that script summarises commits since the last
+# tag, and because every staging build cuts a tag, its diff is nearly empty by the
+# time production deploys, so it produced little more than "Improvements and bug
+# fixes" for a release worth describing.
+#
+# `default` and `en-US` are always set, so deliver never submits an empty What's
+# New. A locale with no file here is left out and picked up from
+# fastlane/metadata/<locale>/release_notes.txt by deliver's own filesystem load,
+# which merges with `||=` and therefore never overwrites what we set.
+def kiroku_appstore_release_notes(app_version)
+  fallback = ENV.fetch("TESTFLIGHT_CHANGELOG", "Improvements and bug fixes")
+  notes = { "default" => fallback, "en-US" => fallback }
+
+  # Lanes run with cwd = ./fastlane; resolve the notes against the repo root.
+  repo_root = File.basename(Dir.pwd) == "fastlane" ? File.expand_path("..") : Dir.pwd
+  dir = File.join(repo_root, "fastlane", "appstore-release-notes", app_version)
+
+  files = Dir.glob(File.join(dir, "*.txt")).sort
+  if files.empty?
+    UI.important("No App Store release notes in fastlane/appstore-release-notes/#{app_version}; falling back to the generated changelog")
+    puts("::warning title=App Store release notes missing::Add fastlane/appstore-release-notes/#{app_version}/<locale>.txt; submitting the generated changelog instead.")
+    return notes
+  end
+
+  files.each do |path|
+    locale = File.basename(path, ".txt")
+    text = File.read(path).strip
+    next if text.empty?
+
+    notes[locale] = text
+    notes["default"] = text if locale == "en-US"
+    UI.message("App Store release notes: loaded #{locale} (#{text.length} chars)")
+  end
+
+  notes
+end
+
 def kiroku_review_information
   demo_user = ENV["APPLE_DEMO_EMAIL"]
   demo_password = ENV["APPLE_DEMO_PASSWORD"]
@@ -585,10 +626,8 @@ platform :ios do
         # Indicate that our key has admin permissions
         content_rights_has_rights: true
       },
-      release_notes: {
-        'default' => ENV.fetch("TESTFLIGHT_CHANGELOG", "Improvements and bug fixes"),
-        'en-US'   => ENV.fetch("TESTFLIGHT_CHANGELOG", "Improvements and bug fixes")
-      }
+      # The What's New text, read from fastlane/appstore-release-notes/<version>/.
+      release_notes: kiroku_appstore_release_notes(app_version)
     )
 
   end

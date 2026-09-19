@@ -1,0 +1,13 @@
+Photos on your sessions, and a session page worth opening.
+
+- Add photos to a session, browse them in a gallery, remove one, or report one that shouldn't be there
+- Give your sessions a name, and it shows up everywhere they're listed
+- Keep any session private and your friends won't see it
+- The session page is now a full activity detail page
+- A live card on Home follows the session you're in, with an elapsed timer and a quick-add row ordered by what you actually drink
+- Redesigned calendar: clearer tiles, a streak ramp for your alcohol-free days, and a sharper ring on today
+- Faster startup and smoother calendar scrolling
+- Kiroku catches up on anything it missed once you reconnect, and drinks logged offline survive a restart
+- Fixed number and date formatting in Czech
+- Session tiles are announced as buttons by screen readers
+- The middle tip jar tier is a Beer now

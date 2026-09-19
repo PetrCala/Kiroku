@@ -1,8 +1,8 @@
 Vaše relace je teď na domovské obrazovce.
 
 - Spusťte relaci a sledujte, jak běží, s rychlým přidáním drinků
-- Ukončete ji ze stejné karty, poznámky i drinky se ukládají průběžně
+- Přidejte k relaci fotografie a prohlížejte je v galerii
+- Relace lze pojmenovat a kteroukoli nechat soukromou
 - Pozvěte přátele odkazem nebo QR kódem a dozvíte se, když si vás někdo přidá
-- Nový vzhled kalendáře, čitelnější dny bez alkoholu
+- Nový vzhled kalendáře a přestavěná stránka relace
 - Relace se synchronizují i po výpadku připojení
-- Podpořte Kiroku a Sdílet aplikaci najdete nahoře v Nastavení
