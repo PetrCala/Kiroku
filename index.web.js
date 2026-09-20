@@ -10,7 +10,7 @@
  * instant.
  *
  * CanvasKit is loaded in the background (fire-and-forget) and the app boots
- * immediately — no longer gated on the ~8 MB WASM download. The background
+ * immediately — no longer gated on the ~7 MB WASM download. The background
  * promise is stored on `window.canvasKitReady`; chart code reads it via
  * `waitForCanvasKit()` (src/libs/skiaWeb.web.ts) and defers its Skia imports
  * until the WASM is ready, so `Skia.web.ts` is never evaluated before
@@ -97,7 +97,7 @@ window.canvasKitReady = LoadSkiaWeb({
   locateFile: () => '/canvaskit.wasm',
 }).catch(() => undefined);
 
-// Boot the app immediately — not gated on the 8 MB WASM download.
+// Boot the app immediately — not gated on the 7 MB WASM download.
 // The explicit `.js` extension is required so this doesn't resolve back to
 // `index.web.js` (this file) and recurse.
 // eslint-disable-next-line import/extensions
