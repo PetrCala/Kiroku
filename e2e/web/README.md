@@ -29,7 +29,7 @@ flows the web surface can exercise:
   launch, pinned as a known gap.
 - **Desktop phone frame** (`desktop-frame.spec.ts`) — the wide-window centered
   phone-frame layout (#1219 / #1224).
-- **Lazy CanvasKit** (`canvaskit-lazy.spec.ts`) — the ~8 MB Skia WASM stays off
+- **Lazy CanvasKit** (`canvaskit-lazy.spec.ts`) — the ~6.8 MB Skia WASM stays off
   the boot path: it is never requested on the sign-in screen or on Home, and is
   fetched exactly once, on the first open of the Statistics tab, with no refetch
   when the tab is revisited.

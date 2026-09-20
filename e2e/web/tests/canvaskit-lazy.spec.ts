@@ -29,7 +29,7 @@ function isCanvasKitInitialized(page: Page): Promise<boolean> {
 }
 
 /**
- * The CanvasKit WASM is ~8 MB raw (~2.4 MB over the wire) and only the
+ * The CanvasKit WASM is ~6.8 MB raw (~2.5 MB over the wire) and only the
  * Statistics charts need it, so it must stay off the boot path: nothing
  * downloads it until chart code calls `waitForCanvasKit()`
  * (src/libs/skiaWeb.web.ts), which starts the load and memoizes it.

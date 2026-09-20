@@ -9,7 +9,7 @@
  * resulting `Skia` object captures whatever `global.CanvasKit` is at that
  * instant.
  *
- * Nothing here loads CanvasKit. The ~8 MB WASM (~2.4 MB over the wire) is
+ * Nothing here loads CanvasKit. The ~6.8 MB WASM (~2.5 MB over the wire) is
  * fetched lazily by `waitForCanvasKit()` (src/libs/skiaWeb.web.ts) the first
  * time chart code asks for it, so a sign-in or home-screen load never pays for
  * it. Chart code awaits that gate before importing any Skia module, so

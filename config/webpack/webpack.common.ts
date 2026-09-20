@@ -95,7 +95,16 @@ const getCommonConfiguration = ({
       main: './index.web.js',
     },
     output: {
-      // Use simple filenames in development to prevent memory leaks from contenthash changes
+      // Use simple filenames in development to prevent memory leaks from contenthash changes.
+      //
+      // The production shape `<name>-<20 hex chars>.bundle.js` is load-bearing beyond webpack:
+      // `firebase.json` serves exactly that shape with `Cache-Control: immutable, max-age=1y`
+      // (regex `^/[^/]+-[0-9a-f]{20}\.bundle\.js(\.map)?$`), and `.github/scripts/verifyWebDeploy.sh`
+      // greps `main-[0-9a-f]+\.bundle\.js` out of the deployed index.html. The dev shape is
+      // deliberately excluded from that regex, because dev chunk names are module paths
+      // (`vendors-node_modules_victory-native_src_index_ts.bundle.js`) that are NOT content-hashed
+      // and must not be cached forever on the PR preview channels. Update firebase.json if this
+      // template or the contenthash length changes.
       filename: isDevelopment
         ? '[name].bundle.js'
         : '[name]-[contenthash].bundle.js',
@@ -137,8 +146,10 @@ const getCommonConfiguration = ({
           {from: 'assets/css', to: 'css'},
           {from: 'assets/fonts/web', to: 'fonts'},
 
-          // CanvasKit WASM file for @shopify/react-native-skia web support (used by the stats charts)
-          {from: 'node_modules/canvaskit-wasm/bin/full/canvaskit.wasm'},
+          // CanvasKit WASM file for @shopify/react-native-skia web support (used by the stats charts).
+          // The *standard* build, not `bin/full/`. See the `canvaskit-wasm/bin/full/canvaskit`
+          // alias below for why, and for the constraint that keeps the two in sync.
+          {from: 'node_modules/canvaskit-wasm/bin/canvaskit.wasm'},
         ],
       }),
       new webpack.EnvironmentPlugin({JEST_WORKER_ID: ''}),
@@ -261,6 +272,26 @@ const getCommonConfiguration = ({
         ),
         // Required for @shopify/react-native-skia web support
         'react-native/Libraries/Image/AssetRegistry': false,
+        // Ship the standard CanvasKit build instead of `bin/full/` (6.82 MB raw /
+        // 2.53 MB brotli vs 7.70 MB / 2.84 MB, so ~11% off every web page load
+        // that pulls it). The only thing `full` adds over standard is Skottie
+        // (Lottie playback, `CanvasKit.MakeManagedAnimation`), which
+        // react-native-skia only touches from `Skia.Skottie.Make()` / `<Skottie>`.
+        // Kiroku renders no Lottie animations, and everything the charts need
+        // (`Typeface`/`Font`/`TextBlob`/`drawText` for the victory-native axis
+        // labels, paths, dash effects, the Paragraph API) is in the standard
+        // build, which produces byte-identical output for that content.
+        //
+        // The alias is what makes the CopyPlugin swap above safe: `LoadSkiaWeb`
+        // hardcodes `import CanvasKitInit from "canvaskit-wasm/bin/full/canvaskit"`,
+        // and the Emscripten glue is *paired* with its own `.wasm`. The full glue
+        // against the standard binary fails to instantiate, so both must move
+        // together: if a react-native-skia upgrade changes that import path, this
+        // alias must change with it or the app boots without CanvasKit.
+        'canvaskit-wasm/bin/full/canvaskit$': path.resolve(
+          __dirname,
+          '../../node_modules/canvaskit-wasm/bin/canvaskit.js',
+        ),
         // Module aliases for web (mirrors tsconfig.json `paths` and babel module-resolver)
         '@assets': path.resolve(__dirname, '../../assets'),
         '@auth': path.resolve(__dirname, '../../src/libs/auth/'),

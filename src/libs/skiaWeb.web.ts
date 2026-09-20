@@ -1,7 +1,7 @@
 /**
  * CanvasKit readiness gate — web implementation.
  *
- * The CanvasKit WASM is ~8 MB raw (~2.4 MB brotli) and only the Statistics
+ * The CanvasKit WASM is ~6.8 MB raw (~2.5 MB brotli) and only the Statistics
  * charts need it, so it is loaded lazily: the first call here *starts* the
  * download and memoizes the promise, so concurrent and repeat callers share a
  * single load. Nothing touches it at boot, so a logged-out visitor or a user

@@ -41,7 +41,7 @@ export default defineConfig({
   forbidOnly: !!process.env.CI,
   retries: process.env.CI ? 1 : 0,
   // The dev server serves an unminified development bundle and the Statistics
-  // tab pulls ~8MB of CanvasKit WASM on first open (Skia charts), so some
+  // tab pulls ~7MB of CanvasKit WASM on first open (Skia charts), so some
   // navigations are slow. Budget generously.
   timeout: 90_000,
   expect: {timeout: 15_000},
