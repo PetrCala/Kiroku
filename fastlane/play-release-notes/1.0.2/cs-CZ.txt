@@ -1,8 +1,7 @@
-Vaše relace je teď na domovské obrazovce.
+Vyfoťte se na tahu a fotka zůstane u relace.
 
-- Spusťte relaci a sledujte, jak běží, s rychlým přidáním drinků
-- Přidejte k relaci fotografie a prohlížejte je v galerii
-- Relace lze pojmenovat a kteroukoli nechat soukromou
-- Pozvěte přátele odkazem nebo QR kódem a dozvíte se, když si vás někdo přidá
-- Nový vzhled kalendáře a přestavěná stránka relace
-- Relace se synchronizují i po výpadku připojení
+- Přidejte k relaci fotky a projděte si je v galerii
+- Relaci pojmenujte, nebo si ji nechte jen pro sebe
+- Stránka relace teď ukazuje celý večer na jednom místě
+- Drinky, které si dáváte nejčastěji, jsou při přidávání rundy první
+- Kalendář je přehlednější a aplikace startuje rychleji

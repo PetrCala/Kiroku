@@ -1,13 +1,10 @@
-Photos on your sessions, and a session page worth opening.
+Take a photo on the night out, and it stays with the session.
 
-- Add photos to a session, browse them in a gallery, remove one, or report one that shouldn't be there
-- Give your sessions a name, and it shows up everywhere they're listed
-- Keep any session private and your friends won't see it
-- The session page is now a full activity detail page
-- A live card on Home follows the session you're in, with an elapsed timer and a quick-add row ordered by what you actually drink
-- Redesigned calendar: clearer tiles, a streak ramp for your alcohol-free days, and a sharper ring on today
-- Faster startup and smoother calendar scrolling
-- Kiroku catches up on anything it missed once you reconnect, and drinks logged offline survive a restart
-- Fixed number and date formatting in Czech
-- Session tiles are announced as buttons by screen readers
+- Add photos to a session and look back through them in a gallery
+- Remove a photo whenever you want, or report one that shouldn't be there
+- Give a session a name, and the name follows it everywhere it's listed
+- Keep a session to yourself, and only you can see it
+- The session page now shows the whole night in one place
+- The drinks you order most come first when you add a round, so it's one tap
+- The calendar is easier to read, it scrolls better, and the app starts faster
 - The middle tip jar tier is a Beer now
