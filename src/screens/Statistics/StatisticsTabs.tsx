@@ -40,7 +40,11 @@ import OverviewTab from './tabs/OverviewTab';
 //
 // On web, each loader waits for CanvasKit before importing — Skia.web.ts runs
 // JsiSkApi(global.CanvasKit) at import time, so the chunk must not be
-// evaluated before the WASM is ready. waitForCanvasKit() is a no-op on native.
+// evaluated before the WASM is ready. The first waitForCanvasKit() call is
+// also what *starts* the ~8 MB WASM download (it is no longer fetched at boot),
+// so the background warm-up below doubles as its prefetch: by the time a chart
+// tab is tapped the WASM is usually already in flight or done. It is a no-op
+// on native, where CanvasKit is linked into the binary.
 const loadTrendsTab = () =>
   waitForCanvasKit().then(() => import('./tabs/TrendsTab'));
 const loadPatternsTab = () =>

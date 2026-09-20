@@ -40,8 +40,9 @@ export default defineConfig({
   fullyParallel: false,
   forbidOnly: !!process.env.CI,
   retries: process.env.CI ? 1 : 0,
-  // The web app loads ~8MB of CanvasKit WASM before boot (Skia charts), so the
-  // first authenticated navigation is slow. Budget generously.
+  // The dev server serves an unminified development bundle and the Statistics
+  // tab pulls ~8MB of CanvasKit WASM on first open (Skia charts), so some
+  // navigations are slow. Budget generously.
   timeout: 90_000,
   expect: {timeout: 15_000},
   reporter: process.env.CI

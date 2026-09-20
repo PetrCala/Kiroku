@@ -9,18 +9,14 @@
  * resulting `Skia` object captures whatever `global.CanvasKit` is at that
  * instant.
  *
- * CanvasKit is loaded in the background (fire-and-forget) and the app boots
- * immediately — no longer gated on the ~8 MB WASM download. The background
- * promise is stored on `window.canvasKitReady`; chart code reads it via
- * `waitForCanvasKit()` (src/libs/skiaWeb.web.ts) and defers its Skia imports
- * until the WASM is ready, so `Skia.web.ts` is never evaluated before
- * `global.CanvasKit` is set. Importing the dedicated `LoadSkiaWeb` module (not
- * the `web` barrel) keeps `Skia.web.ts` out of the main bundle. Native links
- * CanvasKit into the binary and uses `index.js` directly.
+ * Nothing here loads CanvasKit. The ~8 MB WASM (~2.4 MB over the wire) is
+ * fetched lazily by `waitForCanvasKit()` (src/libs/skiaWeb.web.ts) the first
+ * time chart code asks for it, so a sign-in or home-screen load never pays for
+ * it. Chart code awaits that gate before importing any Skia module, so
+ * `Skia.web.ts` is never evaluated before `global.CanvasKit` is set. Native
+ * links CanvasKit into the binary and uses `index.js` directly.
  */
 import {Dimensions} from 'react-native';
-// eslint-disable-next-line import/extensions
-import {LoadSkiaWeb} from '@shopify/react-native-skia/lib/module/web/LoadSkiaWeb';
 
 /*
  * Desktop "phone frame" (issue #1219).
@@ -87,18 +83,7 @@ if (typeof Dimensions.removeEventListener === 'function') {
   };
 }
 
-// Start loading the CanvasKit WASM in the background — do NOT await it here.
-// Chart code (StatisticsTabs) reads this promise via waitForCanvasKit()
-// (src/libs/skiaWeb.web.ts) and defers its Skia imports until it resolves.
-// The .catch() converts a load failure into a resolved promise so chart code
-// can still proceed (charts will fail gracefully if CanvasKit is unavailable).
-// The WASM file is emitted at the web root by the webpack CopyPlugin.
-window.canvasKitReady = LoadSkiaWeb({
-  locateFile: () => '/canvaskit.wasm',
-}).catch(() => undefined);
-
-// Boot the app immediately — not gated on the 8 MB WASM download.
-// The explicit `.js` extension is required so this doesn't resolve back to
-// `index.web.js` (this file) and recurse.
+// Boot the app. The explicit `.js` extension is required so this doesn't
+// resolve back to `index.web.js` (this file) and recurse.
 // eslint-disable-next-line import/extensions
 require('./index.js');
