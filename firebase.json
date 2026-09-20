@@ -14,7 +14,7 @@
           "headers": [{"key": "Content-Type", "value": "application/json"}]
         },
         {
-          "regex": "^/[^/]+-[0-9a-f]{20}\\.bundle\\.js(\\.map)?$",
+          "regex": "^/[^/]+-[0-9a-f]{20}[.]bundle[.]js([.]map)?$",
           "headers": [
             {
               "key": "Cache-Control",
@@ -23,7 +23,7 @@
           ]
         },
         {
-          "regex": "^/[0-9a-f]{20}\\.(png|jpe?g|gif|svg|otf|ttf|woff2?)$",
+          "regex": "^/[0-9a-f]{20}[.](png|jpe?g|gif|svg|otf|ttf|woff2?)$",
           "headers": [
             {
               "key": "Cache-Control",
@@ -38,13 +38,13 @@
           ]
         },
         {
-          "regex": "^/canvaskit\\.wasm$",
+          "regex": "^/canvaskit[.]wasm$",
           "headers": [
             {"key": "Cache-Control", "value": "public, max-age=604800"}
           ]
         },
         {
-          "regex": "^/(index\\.html|[^/.]+(/[^/.]+)*)?/?$",
+          "regex": "^/(index[.]html|[^/.]+(/[^/.]+)*)?/?$",
           "headers": [{"key": "Cache-Control", "value": "no-cache"}]
         }
       ],
