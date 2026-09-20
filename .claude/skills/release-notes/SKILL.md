@@ -16,6 +16,8 @@ You need, per requested platform, the last **publicly available** version:
 - **iOS**: if the user doesn't supply it, read it live: `node scripts/asc.mjs status` and take the version in `READY_FOR_SALE` state.
 - **Android**: if the user doesn't supply it, read it live: `node scripts/play.mjs status` and take the production track's `completed` release (each version code is printed with the internal version it decodes to). It decrypts the service-account key and prompts for `LARGE_SECRET_PASSPHRASE`, so let the user run it when that isn't at hand. If they only know the minor (for example "0.3.10-something"), pass the bare minor to the script. It resolves to that minor's last build, and you must state that assumption next to the output so the user can correct it.
 
+> **The version string is not the baseline.** A version ships from one specific build, and work keeps landing on that version afterwards. `status` also prints the review submissions with their `submittedDate`: the shipped build is the one attached to the `COMPLETE`/approved submission, so the baseline commit is the last release bump before that date. This bit us on 1.0.2: `collect_changes.sh 1.0.0` resolved to 1.0.0-53 (2026-09-17) while the App Store was actually serving 1.0.0-28 (2026-09-14), and three days of finished features (the live Home card, friend invite links, offline catch-up) got announced as new in notes for a release that already contained them. When the resolved build and the shipped build can differ, say so under the platform heading and let the user correct it.
+
 Version format mapping: the App Store displays `0.3.13.1`, which is internal version `0.3.13-1` (the deploy converts dashes to dots for iOS). The script accepts either form.
 
 The "to" side defaults to `master`. Run `git fetch origin master:master` first if the local ref may be stale (or pass `origin/master` explicitly).
@@ -36,8 +38,13 @@ Work from the subject list, but write for a store visitor, not a developer:
 
 - **User-visible changes only.** Skip refactors, tooling, and internal fixes that survived the filter. A fix earns a mention only if a user could have hit the bug.
 - **Group thematically.** A multi-minor span (typical for Android) can contain hundreds of commits; collapse them into roughly 4 to 7 themes ("Redesigned navigation", "Faster startup", "Live session improvements"), each one short line. Lead with the change a user would notice first.
+- **Cap the bullets:** 8 for the App Store, 6 for Google Play. Hitting the cap means merging themes, not writing tighter.
+- **No bullet may be a commit subject in a costume.** "Session tiles are announced as buttons by screen readers" is a changelog line: true, shipped, and useless to someone deciding whether to update. Ask what the reader would notice on their next night out. If the answer is nothing, cut it.
 - **Plain language.** No commit references, no PR numbers, no library names, no jargon. "Fixed a crash when editing a session" beats "fix(session): guard undefined drinks".
-- **Voice.** Friendly and concise, per `contributingGuides/COPY_VOICE.md` (release notes are a playful moment, but stay factual about what changed). No em-dashes anywhere, in any locale (repo copy rule). Bullets start with a dash and a capital letter.
+- **Voice.** Read `contributingGuides/COPY_VOICE.md` before drafting, its "The sound of it" and "Shapes we don't write" sections in particular. Release notes are a playful moment, but playful means a line that earns itself, not a pleasing rhythm. Concretely:
+  - **The opener is a sentence with a verb,** in second person, naming what the reader does or sees. Not a noun phrase, not two phrases balanced on a comma, and never a claim that the release is good. "Photos on your sessions, and a session page worth opening" is the failure mode; "Take a photo on the night out, and it stays with the session" is the fix.
+  - **No UI vocabulary.** Write "when you add a round", not "the quick-add row". The guide has the full table.
+  - **No em-dashes** anywhere, in any locale (repo copy rule). Bullets start with a dash and a capital letter.
 - **Don't leak unreleased plans.** Only describe what is actually in the target ref.
 
 Produce every set of notes in **both locales: `en-US` and `cs`**. Write the Czech yourself following the voice and glossary in `src/languages/context/cs_cz.md`. These are marketing copy, not UI strings, so the `translate` skill machinery (en.ts keys) does not apply.

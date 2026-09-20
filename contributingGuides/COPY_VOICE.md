@@ -22,6 +22,23 @@ One of the group: the friend who knows what everyone's having, says things
 straight, and keeps it short. Not a company, a coach, or a doctor. What people
 drink is their business. The app records it and never comments on how much.
 
+## The sound of it
+
+The store description is the reference recording. Before writing anything a
+user reads, read these lines and match their cadence:
+
+> Keep track of your alcohol adventures together. Log your drinks and share
+> them with your friends.
+
+> Start a session when you head out, add drinks as the rounds come, and look
+> back at the night in your calendar.
+
+> Want to keep it to yourself? Hide your sessions in Settings.
+
+Verbs, second person, a scene the reader recognizes, and no opinion about how
+good the app is. Every rule below is trying to produce that sound. When a rule
+and this section disagree, this section wins.
+
 ## Plain by default, playful on purpose
 
 Most copy is utility, and utility copy is plain, short, and literal. Personality
@@ -80,6 +97,49 @@ tab are playful; the buy button, the fine print, and the errors stay plain.
 - **Don't overpromise.** A tip unlocks nothing, so no playful line may suggest
   it does. Features are for everyone.
 
+## Shapes we don't write
+
+Word lists don't catch bad copy. Shapes do. Every line in this section passed a
+vocabulary check and still read as machine-written.
+
+### The opener is a sentence
+
+A headline has a finite verb and a subject the reader recognizes. It says what
+someone does or sees, never how good the result is.
+
+| Don't                                                        | Why                                                                      | Do                                                               |
+| ------------------------------------------------------------ | ------------------------------------------------------------------------ | ---------------------------------------------------------------- |
+| "Photos on your sessions, and a session page worth opening." | No verb, two noun phrases balanced for rhythm, and it rates our own work | "Take a photo on the night out, and it stays with the session."  |
+| "Your session now lives on the Home screen."                 | Describes the screen instead of the evening                              | "Start a session when you head out, and watch the night add up." |
+
+### The shapes
+
+- **No verbless balanced fragments.** "X, and Y worth Z-ing" is the same rhythm
+  trick as "not just X, it's Y". If the line has no finite verb, rewrite it.
+- **No colon followed by three items.** "Redesigned calendar: clearer tiles, a
+  streak ramp, and a sharper ring on today." Three is a rhythm, not a fact.
+  Write the two that matter, as a sentence.
+- **No "now" plus a noun phrase as a whole line.** "The session page is now a
+  full activity detail page" gives the reader nothing to picture.
+- **No intensifier carrying the argument.** "What you actually drink",
+  "finally", "properly", "truly". Delete the word and see whether the line still
+  claims anything.
+- **No rating our own work.** "Worth opening", "the session page you deserve",
+  "finally usable". Say what it does and let the reader decide.
+
+### Name the night, not the screen
+
+Write what the reader does, not the control they touch. These names are ours.
+They belong in the code, not in copy people read.
+
+| Ours                 | Theirs                  |
+| -------------------- | ----------------------- |
+| quick-add row        | adding a round          |
+| activity detail page | the session             |
+| session tile         | a night in the calendar |
+| live card, Home      | the session you're in   |
+| streak ramp          | your alcohol-free days  |
+
 ## Store listings
 
 - **Order:** the social pitch first, then what you can do, then privacy in one
@@ -98,6 +158,8 @@ tab are playful; the buy button, the fine print, and the errors stay plain.
 - Tell people how sincere or fair we are: "genuinely", "truly", "honestly",
   "really", "honest", "nobody judges", "no judgement", "judgment-free". Warmth
   comes from what the line says, not from vouching for ourselves.
+- Tell people how good the feature is: "worth opening", "finally usable", "the
+  session page you deserve". Describe what it does; the reader judges it.
 - Moralizing about drinking, or praise and blame for how much someone drank.
 - Em dashes and en dashes in running copy. Use two short sentences, a comma, or
   parentheses.
@@ -122,5 +184,9 @@ tab are playful; the buy button, the fine print, and the errors stay plain.
 3. Can a word go? Can a whole clause go?
 4. Any euphemism, sincerity word, guilt, volume contest, or promise we can't
    keep?
-5. For translations: adapted (playful) or kept close (utility)? Is the feature's
+5. Does the opening line have a verb? Read it aloud. If it sounds like a product
+   page, it is one.
+6. Any name in it that only exists in our code ("quick-add row", "activity
+   detail page")?
+7. For translations: adapted (playful) or kept close (utility)? Is the feature's
    name the same everywhere?
