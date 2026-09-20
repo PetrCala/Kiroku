@@ -47,6 +47,13 @@ the alternative, so the choice is explicit and reviewable.
 - Full-sentence CTA / link style.
 - Overall voice (friendly, neutral, …) and anything to avoid.
 - Gendered-agreement convention when the subject's gender is unknown.
+- **Don't mirror an English shape the language wouldn't use.** Translate what
+  the line does, not how it is built. A verbless English headline ("Photos on
+  your sessions, and a session page worth opening") becomes a proper sentence
+  here, not a local fragment; a colon followed by three items becomes whatever
+  this language does instead. Copying the English construction faithfully is how
+  an English tell gets imported into a locale that has no reason to carry it.
+  See "Shapes we don't write" in `contributingGuides/COPY_VOICE.md`.
 
 ## Glossary (canonical terms)
 

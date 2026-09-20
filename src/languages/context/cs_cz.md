@@ -47,6 +47,13 @@ the product voice should differ.
 zde`, `Přidejte si je zde`, `Zkuste hledat zde`.
 - Tone is friendly but not flippant. Avoid archaic interjections ("Ejhle…");
   prefer a consistent casual "Ups" for error/oops copy.
+- **Don't mirror an English shape the language wouldn't use.** Translate what
+  the line does, not how it is built. A verbless English headline ("Photos on
+  your sessions, and a session page worth opening") becomes a proper sentence
+  here, not a local fragment; a colon followed by three items becomes whatever
+  this language does instead. Copying the English construction faithfully is how
+  an English tell gets imported into a locale that has no reason to carry it.
+  See "Shapes we don't write" in `contributingGuides/COPY_VOICE.md`.
 - **Past-tense gender agreement**: when the subject is the user and gender is
   unknown, use the slashed form: `pil/a`, `zaměřil/a`. Use this consistently.
 
