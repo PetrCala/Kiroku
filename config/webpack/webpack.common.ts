@@ -95,7 +95,16 @@ const getCommonConfiguration = ({
       main: './index.web.js',
     },
     output: {
-      // Use simple filenames in development to prevent memory leaks from contenthash changes
+      // Use simple filenames in development to prevent memory leaks from contenthash changes.
+      //
+      // The production shape `<name>-<20 hex chars>.bundle.js` is load-bearing beyond webpack:
+      // `firebase.json` serves exactly that shape with `Cache-Control: immutable, max-age=1y`
+      // (regex `^/[^/]+-[0-9a-f]{20}\.bundle\.js(\.map)?$`), and `.github/scripts/verifyWebDeploy.sh`
+      // greps `main-[0-9a-f]+\.bundle\.js` out of the deployed index.html. The dev shape is
+      // deliberately excluded from that regex, because dev chunk names are module paths
+      // (`vendors-node_modules_victory-native_src_index_ts.bundle.js`) that are NOT content-hashed
+      // and must not be cached forever on the PR preview channels. Update firebase.json if this
+      // template or the contenthash length changes.
       filename: isDevelopment
         ? '[name].bundle.js'
         : '[name]-[contenthash].bundle.js',
