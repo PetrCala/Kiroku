@@ -1,8 +1,7 @@
-Your session now lives on the Home screen.
+Take a photo on the night out, and it stays with the session.
 
-- Start a session and watch it run, with one-tap adding for the drinks you order most
-- Put photos on a session and browse them in a gallery
-- Give your sessions a name, and keep any of them private
-- Invite friends with your own link or QR code, and hear about it when someone adds you
-- Fresh calendar look and a rebuilt session page
-- Sessions keep syncing after you go offline
+- Add photos to a session and look back through them in a gallery
+- Give a session a name, or keep it to yourself so only you can see it
+- The session page now shows the whole night in one place
+- The drinks you order most come first when you add a round
+- The calendar is easier to read and the app starts faster
