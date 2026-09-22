@@ -1,0 +1,36 @@
+name: Android Rollout Bumper
+
+# Kiroku's copy of Expensify's Android Rollout Bumper. A production deploy
+# starts the Play production release as a 1% staged rollout; this workflow
+# moves it one step up Apple's phased-release curve (1, 2, 5, 10, 20, 50,
+# 100%) every night, so both stores reach every user about a week after
+# release without anyone ramping by hand. A halted rollout is left alone, and
+# a night with no rollout in progress is a no-op. See "Ramping a staged
+# rollout" in contributingGuides/philosophies/DEPLOYING.md.
+
+on:
+  workflow_dispatch:
+  schedule:
+    # Midnight UTC every day
+    - cron: '0 0 * * *'
+
+jobs:
+  ramp:
+    name: Ramp the Play production rollout
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+
+      # play.mjs has no npm dependencies and decrypts the service-account key in
+      # memory from its .gpg copy, so no install or decrypt step is needed.
+      - name: Ramp the staged rollout one step
+        run: node scripts/play.mjs ramp --yes
+        env:
+          LARGE_SECRET_PASSPHRASE: ${{ secrets.LARGE_SECRET_PASSPHRASE }}
+
+      - name: Announce failed workflow in Discord
+        if: ${{ failure() }}
+        uses: ./.github/actions/composite/announceFailedWorkflowInDiscord
+        with:
+          DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_URL }}

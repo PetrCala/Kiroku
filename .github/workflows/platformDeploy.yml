@@ -132,6 +132,14 @@ jobs:
           # builds here, not in the upload step below.
           GITHUB_TOKEN: ${{ github.token }}
 
+      # Like Expensify's deploy: finish the staged rollout still in progress on
+      # Play production before the lane below starts the next one at 1%, so no
+      # release is left serving only a slice of users. Uses the key decrypted
+      # above; a halted rollout is left alone and none in progress is a no-op.
+      - name: Complete the previous Play production rollout
+        if: ${{ inputs.SHOULD_DEPLOY_PRODUCTION }}
+        run: node scripts/play.mjs ramp --complete --yes
+
       - name: Upload Android build to Google Play
         uses: nick-fields/retry@3f757583fb1b1f940bc8ef4bf4734c8dc02a5847
         with:
@@ -430,11 +438,11 @@ jobs:
           DESCRIPTION="Successfully deployed Kiroku [${{ inputs.RELEASE_TAG }}](https://github.com/PetrCala/Kiroku/releases/tag/${{ inputs.RELEASE_TAG }}) to ${{ inputs.DEPLOY_ENVIRONMENT }}"
           # Production builds are deployed but not public yet: iOS is submitted to
           # App Store review and held as Pending Developer Release (automatic_release:
-          # false); Android is promoted to Play production as a 20% staged rollout
-          # (held by Managed publishing). Remind a human of the manual steps to go
-          # fully public.
+          # false); Android is promoted to Play production as a 1% staged rollout
+          # that the nightly androidRolloutBumper workflow ramps to 100% over a
+          # week. Remind a human of the manual steps to go fully public.
           if [[ "${{ inputs.SHOULD_DEPLOY_PRODUCTION }}" == "true" ]]; then
-            DESCRIPTION="${DESCRIPTION}\n\n📌 v${CLI_VERSION} is deployed but not public yet. Manual steps to go live:\n• App Store: release it from 'Pending Developer Release' once Apple approves\n• Google Play: publish the 20% production rollout (Managed publishing), attach release notes and ramp it with \`node scripts/play.mjs promote --version-code ${APP_VERSION} --rollout <fraction> --yes\`, then complete it by dropping --rollout\n\nOnce v${CLI_VERSION} is public on both, bump the in-app update prompt:\n\`kiroku-cli app-version set --latest ${CLI_VERSION}\`"
+            DESCRIPTION="${DESCRIPTION}\n\n📌 v${CLI_VERSION} is deployed but not public yet. Manual steps to go live:\n• App Store: release it from 'Pending Developer Release' once Apple approves\n• Google Play: the 1% production rollout ramps itself nightly (1, 2, 5, 10, 20, 50, 100%). To attach release notes or move faster: \`node scripts/play.mjs promote --version-code ${APP_VERSION} --rollout <fraction> --yes\`, or \`node scripts/play.mjs ramp --complete --yes\` to finish now\n\nOnce v${CLI_VERSION} is public on both, bump the in-app update prompt:\n\`kiroku-cli app-version set --latest ${CLI_VERSION}\`"
           fi
           curl -s -X POST "$DISCORD_WEBHOOK_URL" \
             -H "Content-Type: application/json" \
