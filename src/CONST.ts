@@ -1025,6 +1025,16 @@ const CONST = {
     PUSHER: 'pusher',
     AIRSHIP: 'airship',
   },
+  /**
+   * Placeholders a request's `successData` may carry for values that are only
+   * known once the response arrives. `OnyxUpdates.applyHTTPSOnyxUpdates`
+   * substitutes them before the data is applied. Requests are persisted as
+   * JSON, so a placeholder has to be a plain string, never a function.
+   */
+  ONYX_UPDATE_TEMPLATE: {
+    /** The response's `lastUpdateID`: the server update that acknowledged the write. */
+    LAST_UPDATE_ID: '__response.lastUpdateID__',
+  },
   OPTION_MODE: {
     COMPACT: 'compact',
     DEFAULT: 'default',

@@ -207,22 +207,38 @@ function isDrinkTypeKey(key: string): key is keyof Drinks {
   return includes(Object.values(CONST.DRINKS.KEYS), key);
 }
 
-/** From a list of drinking sessions, returns an ID of an ongoing session. If there is none, returns null. */
+/**
+ * From a list of drinking sessions, the id of the ongoing session, or null.
+ *
+ * Nothing stops the server from holding more than one session flagged
+ * ongoing (a live session orphaned by a stale snapshot, a second one started
+ * over it). `preferredId` wins when it is one of them, so a caller that
+ * already holds a live session is never switched to another; otherwise the
+ * newest by start time is the one the user most likely means, and not the
+ * first key, which is the oldest.
+ */
 function getOngoingSessionId(
   drinkingSessions: DrinkingSessionList | null | undefined,
+  preferredId?: DrinkingSessionId,
 ): DrinkingSessionId | null {
   if (isEmptyObject(drinkingSessions)) {
     return null;
   }
+  if (preferredId && drinkingSessions[preferredId]?.ongoing === true) {
+    return preferredId;
+  }
 
-  const ongoingSessions = Object.entries(drinkingSessions).find(
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    ([_item, value]) => value?.ongoing === true,
-  );
-
-  // if (ongoingSessions.length > 1) {...} // Possibly handle this
-
-  return ongoingSessions ? ongoingSessions[0] : null;
+  let newest: {id: DrinkingSessionId; startTime: number} | undefined;
+  for (const [id, session] of Object.entries(drinkingSessions)) {
+    if (session?.ongoing !== true) {
+      continue;
+    }
+    const startTime = session.start_time ?? 0;
+    if (!newest || startTime > newest.startTime) {
+      newest = {id, startTime};
+    }
+  }
+  return newest?.id ?? null;
 }
 
 /**

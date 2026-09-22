@@ -1,5 +1,6 @@
 /* eslint-disable @typescript-eslint/naming-convention -- jest mock factory keys (__esModule) are dictated by Node module shape */
 /* eslint-disable rulesdir/prefer-actions-set-data -- this test seeds/asserts Onyx directly to model the queue and the local buffers */
+/* eslint-disable rulesdir/no-api-in-views -- this integration test queues an app-open ahead of the session's ops through the real API.write pipeline; it is not a view */
 
 /**
  * The solo session write path on ops (Sessions v2 RFC §5.6), end to end
@@ -20,6 +21,7 @@
  *    session write path is unchanged.
  */
 import Onyx from 'react-native-onyx';
+import * as API from '@libs/API';
 import * as SequentialQueue from '@libs/Network/SequentialQueue';
 import {WRITE_COMMANDS} from '@libs/API/types';
 import * as PersistedRequests from '@userActions/PersistedRequests';
@@ -30,6 +32,7 @@ import CONST from '@src/CONST';
 import ONYXKEYS from '@src/ONYXKEYS';
 import type {DrinkingSession} from '@src/types/onyx';
 import type OnyxRequest from '@src/types/onyx/Request';
+import type {User} from 'firebase/auth';
 
 jest.mock('react-native-onyx/dist/batch', () => ({
   __esModule: true,
@@ -1032,5 +1035,107 @@ describe('failure paths', () => {
     // write may still land.
     expect(Object.keys((await readBuffer())?.entries ?? {})).toHaveLength(1);
     expect(queuedOps()).toHaveLength(1);
+  });
+});
+
+/**
+ * The op-path version of the 22 Sep 2026 incident: an `app/open` queued while
+ * offline, ahead of the session's `start` and entry ops. Its snapshot predates
+ * the session. Here the ops are answered without their echoes, which is what
+ * the client sees when it already received them over Pusher (the HTTP echo is
+ * then skipped as old) and the queued open, applied last, replaced the whole
+ * snapshot: by the time Home reconciles, the queue is empty and the snapshot
+ * lacks the session.
+ */
+describe('a full snapshot queued ahead of the session', () => {
+  const STALE_SNAPSHOT_UPDATE_ID = 100;
+
+  function readOnyx<T>(key: string): Promise<T | undefined> {
+    return new Promise<T | undefined>(resolve => {
+      // eslint-disable-next-line rulesdir/no-onyx-connect, rulesdir/prefer-onyx-connect-in-libs -- test-only Onyx read; useOnyx() requires a React render this node test doesn't have
+      const connection = Onyx.connect({
+        key: key as never,
+        callback: (value: unknown) => {
+          Onyx.disconnect(connection);
+          resolve(value as T | undefined);
+        },
+      });
+    });
+  }
+
+  it('cannot clear the live buffer once the ops it lacks are acknowledged', async () => {
+    await setNetwork(true);
+    API.write(WRITE_COMMANDS.OPEN_APP, {enablePriorityModeFilter: true});
+    await DS.startLiveDrinkingSession({uid: UID} as User, 'Europe/Prague');
+    const started = DSUtils.getDrinkingSessionData('-Nid1');
+    if (!started?.id) {
+      throw new Error('the session should be in the live buffer');
+    }
+    const sessionId = started.id;
+    DS.updateDrinks(
+      sessionId,
+      'beer',
+      1,
+      CONST.DRINKS.ACTIONS.ADD,
+      DRINKS_TO_UNITS,
+    );
+    await settle();
+    expect(PersistedRequests.getAll().map(request => request.command)).toEqual([
+      WRITE_COMMANDS.OPEN_APP,
+      WRITE_COMMANDS.SESSION_OP,
+      WRITE_COMMANDS.SESSION_OP,
+    ]);
+
+    let lastUpdateID = STALE_SNAPSHOT_UPDATE_ID;
+    mockXhr.mockImplementation((command: string) => {
+      if (command === WRITE_COMMANDS.OPEN_APP) {
+        return Promise.resolve({
+          jsonCode: 200,
+          lastUpdateID: STALE_SNAPSHOT_UPDATE_ID,
+          onyxData: [
+            {
+              onyxMethod: Onyx.METHOD.MERGE,
+              key: ONYXKEYS.CACHED_DRINKING_SESSIONS,
+              value: {[UID]: null},
+            },
+            {
+              onyxMethod: Onyx.METHOD.MERGE,
+              key: ONYXKEYS.CACHED_DRINKING_SESSIONS,
+              value: {[UID]: {}},
+            },
+          ],
+        });
+      }
+      lastUpdateID += 1;
+      return Promise.resolve({jsonCode: 200, onyxData: [], lastUpdateID});
+    });
+    await setNetwork(false);
+    await waitFor(() => PersistedRequests.getAll().length === 0);
+    await settle();
+
+    const snapshot = await readOnyx<Record<string, Record<string, unknown>>>(
+      ONYXKEYS.CACHED_DRINKING_SESSIONS,
+    );
+    expect(snapshot?.[UID]?.[sessionId]).toBeUndefined();
+    const snapshotUpdateID = await readOnyx<number>(
+      ONYXKEYS.SESSIONS_SNAPSHOT_UPDATE_ID,
+    );
+    expect(snapshotUpdateID).toBe(STALE_SNAPSHOT_UPDATE_ID);
+    expect(
+      (await readOnyx<Record<string, number>>(ONYXKEYS.SESSION_WRITE_ACKS))?.[
+        sessionId
+      ],
+    ).toBe(STALE_SNAPSHOT_UPDATE_ID + 2);
+
+    // What Home does when the snapshot changes.
+    await DS.syncLocalLiveSessionData(
+      snapshot?.[UID] as never,
+      snapshotUpdateID,
+    );
+    await settle();
+
+    const buffer = DSUtils.getDrinkingSessionData(sessionId);
+    expect(buffer?.ongoing).toBe(true);
+    expect(Object.keys(buffer?.entries ?? {})).toHaveLength(1);
   });
 });
