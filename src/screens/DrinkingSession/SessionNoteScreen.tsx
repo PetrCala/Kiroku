@@ -71,7 +71,8 @@ function SesssionNoteScreen({route}: SessionNoteScreenProps) {
         formID={ONYXKEYS.FORMS.SESSION_NOTE_FORM}
         validate={validate}
         onSubmit={onSubmit}
-        submitButtonText={translate('common.save')}>
+        submitButtonText={translate('common.save')}
+        enabledWhenOffline>
         <Text style={[styles.mb6]}>
           {translate('sessionNoteScreen.noteDescription')}
         </Text>
