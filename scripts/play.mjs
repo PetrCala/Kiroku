@@ -25,6 +25,7 @@
  *   node scripts/play.mjs status
  *   node scripts/play.mjs promote --version-code <code> [--track production]
  *        [--rollout <fraction>] [--notes-dir <dir>] [--yes]
+ *   node scripts/play.mjs ramp [--track production] [--complete] [--yes]
  *   node scripts/play.mjs listing [--screenshots] [--lang <code>] [--yes]
  *   node scripts/play.mjs screenshots [--lang <code>] [--keep-tablet] [--yes]
  *   node scripts/play.mjs tips [--yes]
@@ -50,6 +51,15 @@
  *            edit is thrown away; with --yes it is committed. This is how
  *            Android ships to production without `:shipit:` (see
  *            contributingGuides/philosophies/DEPLOYING.md).
+ *   ramp     Move the staged rollout in progress on --track (production by
+ *            default) one step up the 1, 2, 5, 10, 20, 50, 100 percent curve
+ *            (Apple's phased-release schedule), or straight to 100% with
+ *            --complete. The nightly androidRolloutBumper workflow runs this,
+ *            so a `:shipit:` release started at 1% reaches everyone in a
+ *            week; the production deploy runs it with --complete first, so no
+ *            release is left serving only a slice of users. A halted rollout
+ *            is left alone, and no rollout in progress is not an error. Same
+ *            edit, validation and dry-run rules as promote.
  *   listing  Push title, short and full description for every language in
  *            fastlane/metadata/android/<lang>/ (title.txt,
  *            short_description.txt, full_description.txt, supply's layout).
@@ -100,13 +110,14 @@
  *   --version-code <code> promote: the build to ship (on internal, or already
  *                         rolling out on --track); the code (1001000008) or
  *                         the version (1.0.0-8)
- *   --track <name>        promote: target track (default: production)
+ *   --track <name>        promote / ramp: target track (default: production)
  *   --rollout <fraction>  promote: staged rollout share, e.g. 0.2
+ *   --complete            ramp: finish the rollout (100%) instead of stepping
  *   --notes-dir <dir>     promote: release notes directory (see above)
  *   --lang <code>         listing / screenshots: only this Play language
  *   --screenshots         listing: also replace the screenshots, same edit
  *   --keep-tablet         screenshots: keep the existing tablet screenshots
- *   --yes                 promote / listing / screenshots: commit the edit
+ *   --yes                 promote / ramp / listing / screenshots: commit the edit
  *                         instead of a dry run; tips: actually write
  *   --help, -h            show this help
  */
@@ -884,6 +895,67 @@ async function cmdPromote({versionCode, track, userFraction, dir, notes}) {
   );
 }
 
+// ---- ramp -------------------------------------------------------------------
+// Apple's phased-release curve (1% on day one, everyone on day seven), which
+// Expensify's Android Rollout Bumper copies so both stores reach every user
+// on the same day. One step per nightly run.
+const RAMP_STEPS = [0.01, 0.02, 0.05, 0.1, 0.2, 0.5, 1];
+
+function rampArgs() {
+  const track = valueFlag('track') ?? 'production';
+  if (track === 'internal')
+    throw new Error('internal has no staged rollouts; pick another --track');
+  return {track, complete: argv.includes('--complete')};
+}
+
+/** The one release on a track that is (or was) rolling out to a share of users. */
+async function findStagedRelease(track) {
+  const edit = await api('POST', '/edits');
+  try {
+    const {releases = []} = await api(
+      'GET',
+      `/edits/${edit.id}/tracks/${encodeURIComponent(track)}`,
+    );
+    return releases.find(
+      r => r.status === 'inProgress' || r.status === 'halted',
+    );
+  } finally {
+    await api('DELETE', `/edits/${edit.id}`).catch(err =>
+      console.error(
+        `WARN could not delete edit ${edit.id} (it expires on its own): ${err.message}`,
+      ),
+    );
+  }
+}
+
+async function cmdRamp({track, complete}) {
+  const staged = await findStagedRelease(track);
+  if (!staged) {
+    L(`No staged rollout in progress on ${track}; nothing to do.`);
+    return;
+  }
+  const versionCode = staged.versionCodes?.[0];
+  const now = staged.userFraction ?? 0;
+  const pct = Math.round(now * 100);
+  if (staged.status === 'halted') {
+    L(
+      `${showCode(versionCode)} is halted on ${track} at ${pct}%; leaving it alone (resume or replace it in Play Console).`,
+    );
+    return;
+  }
+  const next = complete ? 1 : RAMP_STEPS.find(s => s > now + 1e-9) ?? 1;
+  L(
+    `${showCode(versionCode)} is at ${pct}% on ${track}; ${next === 1 ? 'completing the rollout' : `stepping to ${Math.round(next * 100)}%`}`,
+  );
+  L();
+  await cmdPromote({
+    versionCode,
+    track,
+    userFraction: next === 1 ? undefined : next,
+    ...readReleaseNotes(versionCode),
+  });
+}
+
 // ---- listing / screenshots --------------------------------------------------
 const METADATA_DIR = path.join(ROOT, 'fastlane', 'metadata', 'android');
 // supply's file names, so fastlane and this script read the same layout.
@@ -1434,6 +1506,7 @@ async function cmdTips() {
 const COMMANDS = {
   status: [() => undefined, cmdStatus],
   promote: [promoteArgs, cmdPromote],
+  ramp: [rampArgs, cmdRamp],
   listing: [
     () => pushArgs({text: true, images: argv.includes('--screenshots')}),
     cmdPush,

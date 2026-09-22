@@ -358,12 +358,13 @@ platform :android do
       track: 'internal',
       track_promote_to: 'production',
       # A fraction below 1 makes supply create an inProgress staged rollout:
-      # the new build reaches 20% of users and the previous production release
-      # keeps serving the rest. Ramp or complete it with
-      # `node scripts/play.mjs promote --version-code <code> [--rollout <f>] --yes`.
-      # The release still goes to Google review, and Play Console "Managed
-      # publishing" holds the go-live until it's published by hand.
-      rollout: '0.2',
+      # the new build reaches 1% of users and the previous production release
+      # keeps serving the rest. The nightly androidRolloutBumper workflow then
+      # steps it up Apple's phased-release curve (2, 5, 10, 20, 50, 100%), so
+      # it reaches everyone in a week without anyone touching it; the deploy
+      # completes the previous rollout before this lane starts a new one. To
+      # move faster or halt, use `node scripts/play.mjs ramp` or Play Console.
+      rollout: '0.01',
       skip_upload_apk: true,
       skip_upload_aab: true,
       skip_upload_metadata: true,
