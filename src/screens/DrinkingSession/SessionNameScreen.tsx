@@ -31,6 +31,10 @@ type SessionNameScreenProps = StackScreenProps<
  * Rename a session (RFC §9). Reached from the session's summary and from the
  * session details of a live or edited session, so it resolves the session from
  * the live/edit buffer first and falls back to the user's stored sessions.
+ *
+ * The rename works offline: a buffered session is renamed locally and saved
+ * with the session, and a stored one goes through the persisted write queue
+ * with optimistic data. The form therefore submits offline too.
  */
 function SessionNameScreen({route}: SessionNameScreenProps) {
   const {sessionId, backTo} = route.params;
@@ -93,7 +97,8 @@ function SessionNameScreen({route}: SessionNameScreenProps) {
         formID={ONYXKEYS.FORMS.SESSION_NAME_FORM}
         validate={validate}
         onSubmit={onSubmit}
-        submitButtonText={translate('common.save')}>
+        submitButtonText={translate('common.save')}
+        enabledWhenOffline>
         <Text style={[styles.mb6]}>
           {translate('sessionNameScreen.nameDescription')}
         </Text>
