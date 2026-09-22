@@ -24,6 +24,7 @@
  *   node scripts/ios-signing.mjs finalize [--yes]
  *   node scripts/ios-signing.mjs adhoc-setup [--yes]
  *   node scripts/ios-signing.mjs watch-setup [--yes]
+ *   node scripts/ios-signing.mjs liveactivity-setup [--yes]
  *
  * Commands:
  *   check    Report expiry + state for the Distribution cert and the Kiroku /
@@ -66,6 +67,15 @@
  *            touch the P12 / phone profiles, or git-commit — review + commit the
  *            .gpg yourself. After this, `renew` covers the two distribution watch
  *            profiles automatically. Idempotent.
+ *   liveactivity-setup DRY RUN unless --yes. ONE-TIME Live Activity setup
+ *            (Sessions v2 W4): registers the two widget-extension App IDs
+ *            (.LiveActivity + .adhoc.LiveActivity, no capabilities), mints
+ *            KirokuLiveActivity (App Store) + KirokuLiveActivity_AdHoc (ad-hoc)
+ *            against the existing valid Distribution cert, and re-encrypts the
+ *            ios/KirokuLiveActivity*.mobileprovision.gpg. No development profile:
+ *            local Debug builds of the extension auto-provision. Does NOT mint a
+ *            cert, touch the P12 / phone / watch profiles, or git-commit. After
+ *            this, `renew` covers both profiles automatically. Idempotent.
  *
  * Flags:
  *   --yes               actually execute (renew/finalize are dry-run otherwise)
@@ -83,6 +93,8 @@
  *   --adhoc-bundle-id <id> ad-hoc App ID the Kiroku_AdHoc profile binds to (default: <bundle-id>.adhoc)
  *   --watch-bundle-id <id> watch App ID for KirokuWatch / _Development (default: <bundle-id>.watchkitapp)
  *   --watch-adhoc-bundle-id <id> watch ad-hoc App ID for KirokuWatch_AdHoc (default: <adhoc-bundle-id>.watchkitapp)
+ *   --live-activity-bundle-id <id> widget App ID for KirokuLiveActivity (default: <bundle-id>.LiveActivity)
+ *   --live-activity-adhoc-bundle-id <id> widget ad-hoc App ID for KirokuLiveActivity_AdHoc (default: <adhoc-bundle-id>.LiveActivity)
  *   --repo <owner/repo> GitHub repo for the PR + secret (default: PetrCala/Kiroku)
  *   --help, -h          show this help
  */
@@ -106,6 +118,11 @@ const DEFAULT_ADHOC_BUNDLE_ID = `${DEFAULT_BUNDLE_ID}.adhoc`;
 // ".watchkitapp"). The KirokuWatch / KirokuWatch_AdHoc profiles bind to these.
 const DEFAULT_WATCH_BUNDLE_ID = `${DEFAULT_BUNDLE_ID}.watchkitapp`;
 const DEFAULT_WATCH_ADHOC_BUNDLE_ID = `${DEFAULT_ADHOC_BUNDLE_ID}.watchkitapp`;
+// The Live Activity widget extension (Sessions v2 W4). An app extension's
+// bundle id must be prefixed by its container's, so the ad-hoc widget hangs off
+// the ad-hoc phone id. The KirokuLiveActivity* profiles bind to these.
+const DEFAULT_LIVE_ACTIVITY_BUNDLE_ID = `${DEFAULT_BUNDLE_ID}.LiveActivity`;
+const DEFAULT_LIVE_ACTIVITY_ADHOC_BUNDLE_ID = `${DEFAULT_ADHOC_BUNDLE_ID}.LiveActivity`;
 const STATE_FILE = path.join(IOS_DIR, '.signing-renew-state.json');
 const KEY_PLAIN = path.join(IOS_DIR, 'ios-fastlane-json-key.json');
 const KEY_GPG = path.join(IOS_DIR, 'ios-fastlane-json-key.json.gpg');
@@ -138,6 +155,15 @@ const OPTS = {
     'watch-adhoc-bundle-id',
     process.env.ASC_WATCH_ADHOC_BUNDLE_ID || DEFAULT_WATCH_ADHOC_BUNDLE_ID,
   ),
+  liveActivityBundleId: flag(
+    'live-activity-bundle-id',
+    process.env.ASC_LIVE_ACTIVITY_BUNDLE_ID || DEFAULT_LIVE_ACTIVITY_BUNDLE_ID,
+  ),
+  liveActivityAdhocBundleId: flag(
+    'live-activity-adhoc-bundle-id',
+    process.env.ASC_LIVE_ACTIVITY_ADHOC_BUNDLE_ID ||
+      DEFAULT_LIVE_ACTIVITY_ADHOC_BUNDLE_ID,
+  ),
   keyPath: flag('key', process.env.ASC_KEY_JSON),
   passphrase: flag('passphrase', process.env.LARGE_SECRET_PASSPHRASE),
   days: Number(flag('days', 21)),
@@ -166,6 +192,12 @@ const OPTS = {
 // KirokuWatch_Development profile is NOT here (it needs a separate Apple
 // Development cert); `watch-setup` mints it best-effort.
 //
+// The two KirokuLiveActivity* profiles sign the embedded WidgetKit extension
+// that renders the Live Activity, on the same lanes and the same cert. Same
+// `optional` treatment, registered by the one-time `liveactivity-setup`. There
+// is no development counterpart: the extension's Debug configurations sign
+// automatically, so only CI needs a committed profile.
+//
 // `bundle` returns the App ID each profile binds to. Kiroku → the App Store
 // bundle id; *_AdHoc → the distinct ".adhoc" id (side-by-side install); the
 // watch ids append ".watchkitapp". Resolving per-profile (not one global bundle
@@ -192,6 +224,7 @@ const PROFILES = [
     devices: false,
     bundle: () => OPTS.watchBundleId,
     optional: true,
+    setupCmd: 'watch-setup',
   },
   {
     name: 'KirokuWatch_AdHoc',
@@ -200,6 +233,25 @@ const PROFILES = [
     devices: true,
     bundle: () => OPTS.watchAdhocBundleId,
     optional: true,
+    setupCmd: 'watch-setup',
+  },
+  {
+    name: 'KirokuLiveActivity',
+    file: 'KirokuLiveActivity.mobileprovision',
+    type: 'IOS_APP_STORE',
+    devices: false,
+    bundle: () => OPTS.liveActivityBundleId,
+    optional: true,
+    setupCmd: 'liveactivity-setup',
+  },
+  {
+    name: 'KirokuLiveActivity_AdHoc',
+    file: 'KirokuLiveActivity_AdHoc.mobileprovision',
+    type: 'IOS_APP_ADHOC',
+    devices: true,
+    bundle: () => OPTS.liveActivityAdhocBundleId,
+    optional: true,
+    setupCmd: 'liveactivity-setup',
   },
 ];
 // The watch development profile is minted by `watch-setup` (best-effort, needs
@@ -629,18 +681,19 @@ async function cmdCheck() {
   for (const want of PROFILES) {
     const name = want.name + OPTS.profileSuffix;
     const p = profiles.find(x => x.attributes.name === name);
-    // An optional (watch) profile only counts once its .gpg is committed (i.e.
-    // adopted into CI). Until then it's purely informational — `check` must not
-    // cry wolf before watch-setup runs, even if a stale portal profile lingers.
+    // An optional profile (watch, Live Activity) only counts once its .gpg is
+    // committed (i.e. adopted into CI). Until then it's purely informational:
+    // `check` must not cry wolf before its one-time setup runs, even if a stale
+    // portal profile lingers.
     const adopted =
       !want.optional || fs.existsSync(path.join(IOS_DIR, `${want.file}.gpg`));
     if (!adopted) {
       if (!p) {
-        L(`  Profile ${name}: – not set up (run watch-setup)`);
+        L(`  Profile ${name}: – not set up (run ${want.setupCmd})`);
       } else {
         const d = daysUntil(p.attributes.expirationDate);
         L(
-          `  Profile ${name}: – not set up (portal has a ${d < 0 ? 'stale expired' : 'pre-existing'} profile; watch-setup will replace it)`,
+          `  Profile ${name}: – not set up (portal has a ${d < 0 ? 'stale expired' : 'pre-existing'} profile; ${want.setupCmd} will replace it)`,
         );
       }
       continue;
@@ -899,7 +952,7 @@ async function ensureProfiles(ctx) {
       const res = await findBundleResource(want.bundle());
       if (!res) {
         L(
-          `  ${fullName}: App ID ${want.bundle()} not registered — skipping (run \`watch-setup\`).`,
+          `  ${fullName}: App ID ${want.bundle()} not registered — skipping (run \`${want.setupCmd}\`).`,
         );
         continue;
       }
@@ -995,7 +1048,7 @@ async function cmdRenew() {
     // Optional (watch) profiles only mint once their App ID is registered.
     if (want.optional && !(await findBundleResource(want.bundle()))) {
       L(
-        `  profile ${fullName} (${want.type}, bundle ${want.bundle()}): SKIP — App ID not registered (run \`watch-setup\`)`,
+        `  profile ${fullName} (${want.type}, bundle ${want.bundle()}): SKIP — App ID not registered (run \`${want.setupCmd}\`)`,
       );
       continue;
     }
@@ -1569,6 +1622,111 @@ async function cmdWatchSetup() {
   );
 }
 
+/**
+ * One-time setup for the Live Activity widget extension (Sessions v2 W4).
+ * Mirrors `watch-setup`: register the two App IDs, mint the two distribution
+ * profiles CI consumes, re-encrypt them, leave git alone. No development
+ * profile, because the extension's Debug configurations sign automatically.
+ */
+async function cmdLiveActivitySetup() {
+  const store = PROFILES.find(p => p.name === 'KirokuLiveActivity');
+  const adhoc = PROFILES.find(p => p.name === 'KirokuLiveActivity_AdHoc');
+  const storeBundle = store.bundle();
+  const adhocBundle = adhoc.bundle();
+  const newest = list =>
+    list
+      .filter(c => daysUntil(c.attributes.expirationDate) >= 0)
+      .sort(
+        (a, b) =>
+          new Date(b.attributes.expirationDate) -
+          new Date(a.attributes.expirationDate),
+      )[0];
+
+  L(
+    OPTS.yes
+      ? 'EXECUTING liveactivity-setup (--yes).\n'
+      : 'DRY RUN — no changes will be made (pass --yes to execute).\n',
+  );
+
+  const deviceIds = await listEnabledDeviceIds();
+  const validCert = newest(await listDistributionCerts());
+  const existingStoreBundle = await findBundleResource(storeBundle);
+  const existingAdhocBundle = await findBundleResource(adhocBundle);
+  const managed = await listManagedProfiles();
+  const prof = n =>
+    managed.find(p => p.attributes.name === n + OPTS.profileSuffix);
+
+  L('Plan:');
+  L(
+    `  widget App ID:        ${storeBundle} ${existingStoreBundle ? `(exists ${existingStoreBundle.id})` : '→ CREATE'}`,
+  );
+  L(
+    `  widget ad-hoc App ID: ${adhocBundle} ${existingAdhocBundle ? `(exists ${existingAdhocBundle.id})` : '→ CREATE'}`,
+  );
+  L(
+    '  capabilities:         none (a WidgetKit extension needs no entitlements; the app keeps the APNs one)',
+  );
+  L(`  enabled devices:      ${deviceIds.length}`);
+  L(
+    `  distribution cert:    ${validCert ? `${validCert.id} (${validCert.attributes.certificateType}, ${daysUntil(validCert.attributes.expirationDate)}d left)` : '✗ NONE valid'}`,
+  );
+  L(
+    `  KirokuLiveActivity:   ${prof('KirokuLiveActivity') ? `replace ${prof('KirokuLiveActivity').id}` : 'create'} → ios/${store.file}`,
+  );
+  L(
+    `  ..._AdHoc:            ${prof('KirokuLiveActivity_AdHoc') ? `replace ${prof('KirokuLiveActivity_AdHoc').id}` : 'create'} → ios/${adhoc.file}`,
+  );
+  L(
+    '  re-encrypt:           the minted ios/KirokuLiveActivity*.mobileprovision.gpg (review + commit yourself — no git here)',
+  );
+
+  if (!validCert)
+    throw new Error(
+      'No valid Apple Distribution certificate on the account — run `renew --yes` first, then re-run liveactivity-setup.',
+    );
+
+  if (!OPTS.yes) {
+    L(
+      '\nNext (with --yes): create the 2 widget App IDs → mint KirokuLiveActivity + KirokuLiveActivity_AdHoc → re-encrypt the two .gpg files.',
+    );
+    L(
+      'Then commit the new ios/KirokuLiveActivity*.mobileprovision.gpg. Future `renew` runs keep both fresh automatically.',
+    );
+    return;
+  }
+
+  const storeResId = await ensureBundleId(storeBundle, 'Kiroku Live Activity');
+  const adhocResId = await ensureBundleId(
+    adhocBundle,
+    'Kiroku Live Activity AdHoc',
+  );
+  bundleResCache.set(storeBundle, storeResId);
+  bundleResCache.set(adhocBundle, adhocResId);
+
+  loadState();
+  await ensureProfiles({
+    certId: validCert.id,
+    deviceIds,
+    only: new Set(['KirokuLiveActivity', 'KirokuLiveActivity_AdHoc']),
+  });
+  clearState();
+
+  L('');
+  for (const file of [store.file, adhoc.file]) {
+    const plain = path.join(IOS_DIR, file);
+    if (!fs.existsSync(plain))
+      throw new Error(
+        `Expected a freshly minted ${plain}, but it is missing — profile creation failed.`,
+      );
+    gpgEncryptOverwrite(plain);
+    fs.rmSync(plain, {force: true});
+    L(`Re-encrypted ios/${file}.gpg ✓`);
+  }
+  L(
+    '\nReview `git diff --stat` and commit the new ios/KirokuLiveActivity*.mobileprovision.gpg.\nFuture `renew` runs now cover both Live Activity profiles automatically.',
+  );
+}
+
 // ---- main -----------------------------------------------------------------
 (async () => {
   if (OPTS.help || !cmd) return usage();
@@ -1580,6 +1738,7 @@ async function cmdWatchSetup() {
   if (cmd === 'app-setup') return cmdAppSetup();
   if (cmd === 'adhoc-setup') return cmdAdhocSetup();
   if (cmd === 'watch-setup') return cmdWatchSetup();
+  if (cmd === 'liveactivity-setup') return cmdLiveActivitySetup();
   usage();
   process.exitCode = 1;
 })()

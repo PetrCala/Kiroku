@@ -27775,7 +27775,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", ({ value: true }));
-exports.PLIST_PATH_WATCH = exports.PLIST_PATH_TEST = exports.PLIST_PATH = exports.BUILD_GRADLE_PATH = void 0;
+exports.PLIST_PATH_LIVE_ACTIVITY = exports.PLIST_PATH_WATCH = exports.PLIST_PATH_TEST = exports.PLIST_PATH = exports.BUILD_GRADLE_PATH = void 0;
 exports.updateiOSVersion = updateiOSVersion;
 exports.updateAndroidVersion = updateAndroidVersion;
 exports.generateAndroidVersionCode = generateAndroidVersionCode;
@@ -27797,6 +27797,11 @@ exports.PLIST_PATH_TEST = PLIST_PATH_TEST;
 // upload with a "CFBundleVersion Mismatch" (409) validation error.
 const PLIST_PATH_WATCH = './ios/Kiroku Watch App/Kiroku-Watch-App-Info.plist';
 exports.PLIST_PATH_WATCH = PLIST_PATH_WATCH;
+// Same rule for the Live Activity widget extension (Sessions v2 W4): an
+// embedded extension whose version does not match the containing app is
+// rejected on upload.
+const PLIST_PATH_LIVE_ACTIVITY = './ios/KirokuLiveActivity/Info.plist';
+exports.PLIST_PATH_LIVE_ACTIVITY = PLIST_PATH_LIVE_ACTIVITY;
 /**
  * Pad a number to be two digits (with leading zeros if necessary).
  */
@@ -27850,6 +27855,8 @@ function updateiOSVersion(version) {
     // Single-quote the watch plist path because it contains spaces.
     (0, child_process_1.execSync)(`/usr/libexec/PlistBuddy -c "Set :CFBundleShortVersionString ${shortVersion}" '${PLIST_PATH_WATCH}'`);
     (0, child_process_1.execSync)(`/usr/libexec/PlistBuddy -c "Set :CFBundleVersion ${cfVersion}" '${PLIST_PATH_WATCH}'`);
+    (0, child_process_1.execSync)(`/usr/libexec/PlistBuddy -c "Set :CFBundleShortVersionString ${shortVersion}" ${PLIST_PATH_LIVE_ACTIVITY}`);
+    (0, child_process_1.execSync)(`/usr/libexec/PlistBuddy -c "Set :CFBundleVersion ${cfVersion}" ${PLIST_PATH_LIVE_ACTIVITY}`);
     // Return the cfVersion so we can set the NEW_IOS_VERSION in ios.yml
     return cfVersion;
 }
