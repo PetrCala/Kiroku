@@ -24,7 +24,6 @@ import TipJarPromptCard from '@components/TipJarPromptCard';
 import useThemeStyles from '@hooks/useThemeStyles';
 import * as FeatureFlags from '@libs/FeatureFlags';
 import FullScreenLoadingIndicator from '@components/FullscreenLoadingIndicator';
-import * as DSUtils from '@libs/DrinkingSessionUtils';
 import * as DS from '@userActions/DrinkingSession';
 import * as App from '@userActions/App';
 import * as Session from '@userActions/Session';
@@ -86,6 +85,7 @@ function HomeScreen({route}: HomeScreenProps) {
     selector: isSessionOngoingSelector,
   });
   const [lastViewedByUser] = useOnyx(ONYXKEYS.NVP_LAST_VIEWED_CALENDAR_DATE);
+  const [snapshotUpdateID] = useOnyx(ONYXKEYS.SESSIONS_SNAPSHOT_UPDATE_ID);
   // The signed-in user's OWN last-viewed day (the home calendar is always self).
   const lastViewedForUser = uid ? lastViewedByUser?.[uid] : undefined;
   // `useCurrentUserData` returns {} (truthy) while loading; the readiness gates
@@ -153,10 +153,11 @@ function HomeScreen({route}: HomeScreenProps) {
   const monthlyStats = useHomeStats(calendarVisibleDate);
 
   useEffect(() => {
-    // Update the ongoing session local data
-    const ongoingSessionId = DSUtils.getOngoingSessionId(drinkingSessionData);
-    DS.syncLocalLiveSessionData(ongoingSessionId, drinkingSessionData);
-  }, [drinkingSessionData]);
+    // Reconcile the live buffer with the snapshot. The snapshot's update id
+    // travels with it (written in the same batch), so the sync can tell a
+    // snapshot older than the buffer's acknowledged writes from a newer one.
+    DS.syncLocalLiveSessionData(drinkingSessionData, snapshotUpdateID);
+  }, [drinkingSessionData, snapshotUpdateID]);
 
   useFocusEffect(
     React.useCallback(() => {

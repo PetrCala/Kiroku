@@ -1,5 +1,6 @@
 import React from 'react';
 import {View} from 'react-native';
+import {useOnyx} from 'react-native-onyx';
 import * as KirokuIcons from '@components/Icon/KirokuIcons';
 import Icon from '@components/Icon';
 import {convertUnitsToColors, sumSessionDrinksOfType} from '@libs/DataHandling';
@@ -40,6 +41,7 @@ function DrinkingSessionOverview({
   const theme = useTheme();
   const styles = useThemeStyles();
   const StyleUtils = useStyleUtils();
+  const [ongoingSession] = useOnyx(ONYXKEYS.ONGOING_SESSION_DATA);
   // Convert the timestamp to a Date object
   const timeString = nonMidnightString(
     DateUtils.getLocalizedTime(session.start_time, session.timezone),
@@ -54,11 +56,30 @@ function DrinkingSessionOverview({
         );
         return;
       }
-      await DS.updateLocalData(
-        ONYXKEYS.ONGOING_SESSION_DATA,
-        session,
-        sessionId,
-      );
+      const liveSessionId = ongoingSession?.ongoing
+        ? ongoingSession.id
+        : undefined;
+      if (liveSessionId && liveSessionId !== sessionId) {
+        // Another session is live on this device, so this one is a session the
+        // server still flags ongoing that nobody is logging into (orphaned by
+        // an earlier bug, or started elsewhere). Open it in the edit flow,
+        // whose save closes it, instead of swapping it into the live buffer
+        // over the session the user is actually in.
+        await DS.navigateToEditSessionScreen(sessionId, {
+          ...session,
+          ongoing: false,
+        });
+        return;
+      }
+      if (!liveSessionId) {
+        await DS.updateLocalData(
+          ONYXKEYS.ONGOING_SESSION_DATA,
+          session,
+          sessionId,
+        );
+      }
+      // The live buffer already holds this session: it is at least as fresh
+      // as the snapshot copy, so navigate without overwriting it.
       DS.navigateToOngoingSessionScreen();
     })();
   };

@@ -30,6 +30,112 @@ let pusherEventsPromise = Promise.resolve();
 
 let airshipEventsPromise = Promise.resolve();
 
+/** The response's `lastUpdateID` as a number, or `undefined` when it has none. */
+function getResponseUpdateID(response: Response): number | undefined {
+  if (response.lastUpdateID === undefined || response.lastUpdateID === null) {
+    return undefined;
+  }
+  const lastUpdateID = Number(response.lastUpdateID);
+  return Number.isFinite(lastUpdateID) ? lastUpdateID : undefined;
+}
+
+/**
+ * Fill in the placeholders a request's success data may carry for values only
+ * known once the response arrives (`CONST.ONYX_UPDATE_TEMPLATE`). Requests are
+ * persisted as JSON, so a placeholder is a plain string; this walks the update
+ * values and swaps it for the response's `lastUpdateID`. A response without a
+ * usable id resolves the placeholder to `null`, which a merge treats as
+ * "remove the field", so a stamp is never written from a made-up value.
+ */
+function resolveResponseTemplates(
+  updates: OnyxUpdate[],
+  response: Response,
+): OnyxUpdate[] {
+  const lastUpdateID = getResponseUpdateID(response);
+  const resolved =
+    lastUpdateID !== undefined && lastUpdateID > 0 ? lastUpdateID : null;
+  const resolveValue = (value: unknown): unknown => {
+    if (value === CONST.ONYX_UPDATE_TEMPLATE.LAST_UPDATE_ID) {
+      return resolved;
+    }
+    if (Array.isArray(value)) {
+      return value.map(resolveValue);
+    }
+    if (value && typeof value === 'object') {
+      return Object.fromEntries(
+        Object.entries(value as Record<string, unknown>).map(([key, entry]) => [
+          key,
+          resolveValue(entry),
+        ]),
+      );
+    }
+    return value;
+  };
+  return updates.map(
+    update => ({...update, value: resolveValue(update.value)}) as OnyxUpdate,
+  );
+}
+
+/**
+ * Whether a response's onyxData replaces a user's whole sessions snapshot.
+ * kiroku-api's `app/open` (and a full reconnect) clean-replace the caller's
+ * entry in `cachedDrinkingSessions` with a merge of `null` followed by a merge
+ * of the sessions, so the tell is one uid that is set to `null` by one update
+ * and to an object by another. A friend's eviction sets a uid to `null` alone,
+ * and a session echo nests its `null` one level deeper, so neither matches.
+ */
+function isFullSessionsSnapshot(onyxData: OnyxUpdate[]): boolean {
+  const cleared = new Set<string>();
+  const filled = new Set<string>();
+  onyxData.forEach(update => {
+    if (
+      update.key !== ONYXKEYS.CACHED_DRINKING_SESSIONS ||
+      update.onyxMethod !== Onyx.METHOD.MERGE ||
+      !update.value ||
+      typeof update.value !== 'object'
+    ) {
+      return;
+    }
+    Object.entries(update.value as Record<string, unknown>).forEach(
+      ([uid, entry]) => {
+        if (entry === null) {
+          cleared.add(uid);
+        } else if (entry && typeof entry === 'object') {
+          filled.add(uid);
+        }
+      },
+    );
+  });
+  return [...cleared].some(uid => filled.has(uid));
+}
+
+/**
+ * The response's onyxData, plus a stamp of the server update a full sessions
+ * snapshot was taken at (`SESSIONS_SNAPSHOT_UPDATE_ID`), in the same batch as
+ * the snapshot itself. `DrinkingSession.syncLocalLiveSessionData` compares the
+ * stamp with the update that acknowledged its own writes, so a snapshot that
+ * predates them (one queued ahead of them while offline) cannot roll a live
+ * session back or clear it.
+ */
+function withSnapshotStamp(response: Response): OnyxUpdate[] | undefined {
+  const onyxData = response.onyxData;
+  if (!onyxData || !isFullSessionsSnapshot(onyxData)) {
+    return onyxData;
+  }
+  const lastUpdateID = getResponseUpdateID(response);
+  if (lastUpdateID === undefined) {
+    return onyxData;
+  }
+  return [
+    ...onyxData,
+    {
+      onyxMethod: Onyx.METHOD.MERGE,
+      key: ONYXKEYS.SESSIONS_SNAPSHOT_UPDATE_ID,
+      value: lastUpdateID,
+    },
+  ];
+}
+
 function applyHTTPSOnyxUpdates(request: Request, response: Response) {
   console.debug('[OnyxUpdateManager] Applying https update');
   // For most requests we can immediately update Onyx. For write requests we queue the updates and apply them after the sequential queue has flushed to prevent a replay effect in
@@ -39,17 +145,22 @@ function applyHTTPSOnyxUpdates(request: Request, response: Response) {
       ? QueuedOnyxUpdates.queueOnyxUpdates
       : Onyx.update;
 
+  const onyxData = withSnapshotStamp(response);
+  const successData = request.successData
+    ? resolveResponseTemplates(request.successData, response)
+    : undefined;
+
   // First apply any onyx data updates that are being sent back from the API. We wait for this to complete and then
   // apply successData or failureData. This ensures that we do not update any pending, loading, or other UI states contained
   // in successData/failureData until after the component has received and API data.
-  const onyxDataUpdatePromise = response.onyxData
-    ? updateHandler(response.onyxData)
+  const onyxDataUpdatePromise = onyxData
+    ? updateHandler(onyxData)
     : Promise.resolve();
   return onyxDataUpdatePromise
     .then(() => {
       // Handle the request's success/failure data (client-side data)
-      if (response.jsonCode === 200 && request.successData) {
-        return updateHandler(request.successData);
+      if (response.jsonCode === 200 && successData) {
+        return updateHandler(successData);
       }
       if (response.jsonCode !== 200 && request.failureData) {
         return updateHandler(request.failureData);

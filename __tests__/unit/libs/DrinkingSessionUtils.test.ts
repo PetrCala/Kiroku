@@ -189,6 +189,32 @@ describe('getOngoingSessionId', () => {
     };
     expect(DSUtils.getOngoingSessionId(list)).toBeNull();
   });
+
+  it('picks the newest ongoing session by start time, not the first key', () => {
+    // Push ids sort chronologically, so the first key is the oldest session:
+    // an orphaned live session left behind by an earlier bug.
+    const list: DrinkingSessionList = {
+      older: {...base, start_time: 1_000, ongoing: true},
+      newer: {...base, start_time: 2_000, ongoing: true},
+    };
+    expect(DSUtils.getOngoingSessionId(list)).toBe('newer');
+  });
+
+  it('prefers the given session when it is ongoing, whatever its age', () => {
+    const list: DrinkingSessionList = {
+      older: {...base, start_time: 1_000, ongoing: true},
+      newer: {...base, start_time: 2_000, ongoing: true},
+    };
+    expect(DSUtils.getOngoingSessionId(list, 'older')).toBe('older');
+    // A preferred session that is not ongoing (or not listed) does not win.
+    expect(
+      DSUtils.getOngoingSessionId(
+        {...list, older: {...base, start_time: 1_000, ongoing: false}},
+        'older',
+      ),
+    ).toBe('newer');
+    expect(DSUtils.getOngoingSessionId(list, 'missing')).toBe('newer');
+  });
 });
 
 describe('setLocalSessionCache / compose-on-latest', () => {
