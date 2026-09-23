@@ -4,7 +4,7 @@ import useCurrentUserPreferences from '@hooks/useCurrentUserPreferences';
 import useLocalize from '@hooks/useLocalize';
 import {timestampToDateString} from '@libs/DataHandling';
 import * as DSUtils from '@libs/DrinkingSessionUtils';
-import getRelativeDayTier from '@libs/getRelativeDayTier';
+import {formatRelativeDay} from '@libs/formatRelativeDay';
 import type {DrinkingSessionId} from '@src/types/onyx/DrinkingSession';
 import type {DateString} from '@src/types/onyx/OnyxCommon';
 
@@ -46,33 +46,7 @@ function useLastSession(): LastSessionView | null {
     }
     const {sessionId, session} = lastSession;
 
-    const date = new Date(session.start_time);
-    const tier = getRelativeDayTier(date, new Date());
-
-    let when: string;
-    switch (tier.unit) {
-      case 'years':
-        when = translate('homeScreen.banners.lastSession.yearsAgo', {
-          count: tier.count,
-        });
-        break;
-      case 'months':
-        when = translate('homeScreen.banners.lastSession.monthsAgo', {
-          count: tier.count,
-        });
-        break;
-      case 'days':
-        when = translate('homeScreen.banners.lastSession.daysAgo', {
-          count: tier.count,
-        });
-        break;
-      case 'yesterday':
-        when = translate('homeScreen.banners.lastSession.yesterday');
-        break;
-      case 'today':
-      default:
-        when = translate('homeScreen.banners.lastSession.today');
-    }
+    const when = formatRelativeDay(session.start_time, new Date(), translate);
 
     return {
       sessionId,

@@ -133,6 +133,11 @@ const CONST = {
     // whole-session path until the §11 backfill converts it, and old sessions
     // read through the adapter either way.
     SESSIONS_V2_SCHEMA: true,
+    // The session feed below the calendar on Home (Sessions v2 RFC §10): the
+    // cards, the friends drinking now, and the paged loading of older
+    // sessions. Off until the feed has been seen on a device; the paged read
+    // and the windowed app open it rides on ship regardless.
+    SESSION_FEED: false,
   },
   // Session op types (Sessions v2 RFC §5.1). Mirrors kiroku-api
   // `lib/sessions/ops.ts`, which rejects anything else.
@@ -437,6 +442,12 @@ const CONST = {
   // sessions. The home calendar starts by streaming only the last N months
   // and extends the window when the user scrolls back past the loaded edge.
   SESSIONS_INITIAL_FETCH_MONTHS: 3,
+  /**
+   * How many sessions one page of the Home feed asks the server for
+   * (`GET /v1/users/:uid/sessions?limit=`). A screenful and a bit, so the
+   * first page fills the feed and each scroll to the end fetches once.
+   */
+  SESSION_FEED_PAGE_SIZE: 20,
 
   // Debounce window (ms) for persisting the calendar's scroll depth. Coalesces
   // rapid left-arrow scrolls into a single Firebase listener resubscribe /

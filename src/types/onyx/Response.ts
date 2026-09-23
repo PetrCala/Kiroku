@@ -3,6 +3,7 @@ import type InvitePreview from './InvitePreview';
 import type {SessionPhotoId, SignedSessionPhoto} from './DrinkingSession';
 import type NicknameToId from './NicknameToId';
 import type {UserID} from './OnyxCommon';
+import type SessionsPage from './SessionsPage';
 
 /** Model of commands data */
 type Data = {
@@ -106,6 +107,9 @@ type Response = {
    * than persisted with the session.
    */
   photos?: Record<SessionPhotoId, SignedSessionPhoto>;
+
+  /** Where the next page of a paged sessions read starts (`GET /v1/users/:uid/sessions?limit=`). */
+  sessionsPage?: SessionsPage;
 
   /** Who an invite link belongs to (`GET /v1/friends/invite/:code`). */
   invitePreview?: InvitePreview;
