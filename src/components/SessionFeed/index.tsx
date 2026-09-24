@@ -1,4 +1,4 @@
-import React, {useCallback, useMemo, useState} from 'react';
+import React, {useCallback, useEffect, useMemo, useRef, useState} from 'react';
 import {useFocusEffect} from '@react-navigation/native';
 import type {ReactElement} from 'react';
 import type {StyleProp, ViewStyle} from 'react-native';
@@ -145,6 +145,30 @@ function SessionFeed({
     theme.spinner,
     translate,
   ]);
+
+  // An empty list never reaches its end: `onEndReached` fires on scrolling past
+  // content, so a snapshot holding no session (every session older than the
+  // boot window, or an account with none yet) would leave the feed blank. Ask
+  // for the first page once the feed is ready with nothing to show. Once per
+  // empty state, so a page discarded offline does not loop; the next scroll or
+  // a session arriving resets it.
+  const hasRequestedInitialFillRef = useRef(false);
+  useEffect(() => {
+    if (items.length > 0) {
+      hasRequestedInitialFillRef.current = false;
+      return;
+    }
+    if (
+      !isReady ||
+      !hasMore ||
+      isLoadingMore ||
+      hasRequestedInitialFillRef.current
+    ) {
+      return;
+    }
+    hasRequestedInitialFillRef.current = true;
+    loadMore();
+  }, [isReady, items.length, hasMore, isLoadingMore, loadMore]);
 
   const onEndReached = useCallback(() => {
     if (!isReady) {

@@ -5,6 +5,9 @@ import {SessionPage} from '../pages/SessionPage';
 import {trackErrors} from '../fixtures/consoleErrors';
 import {overrideRemoteFeatureFlags} from '../fixtures/featureFlags';
 
+/** An Onyx update instruction as kiroku-api sends it (`src/lib/onyx.ts`). */
+type OnyxUpdate = {onyxMethod: string; key: string; value: unknown};
+
 /**
  * The Home session feed (Sessions v2 W5, RFC §10): with the `SESSION_FEED`
  * flag on, Home lists the user's sessions below the calendar, newest first,
@@ -23,6 +26,27 @@ function isSessionsPageRequest(request: Request): boolean {
     /\/v1\/users\/[^/]+\/sessions$/.test(url.pathname) &&
     url.searchParams.has('limit')
   );
+}
+
+/**
+ * Boot with no sessions in the snapshot, whatever the account holds and
+ * whatever the API windows to: the feed then has nothing loaded and asks for
+ * its first page at once, the same as a windowed boot on a long history.
+ * Against an API that pages, the page comes back paged; against an older one
+ * the same request answers with everything, which the feed shows just as well.
+ */
+function withoutSnapshotSessions(updates: OnyxUpdate[]): OnyxUpdate[] {
+  return updates.map(update => {
+    if (update.key !== 'cachedDrinkingSessions' || !update.value) {
+      return update;
+    }
+    const byUser = update.value as Record<string, unknown>;
+    const emptied: Record<string, unknown> = {};
+    for (const [uid, sessions] of Object.entries(byUser)) {
+      emptied[uid] = sessions === null ? null : {};
+    }
+    return {...update, value: emptied};
+  });
 }
 
 function recordSessionsPageRequests(page: Page): Request[] {
@@ -57,15 +81,19 @@ test.describe('home session feed', () => {
     const homePage = new HomePage(authedPage);
     const session = new SessionPage(authedPage);
     const pageRequests = recordSessionsPageRequests(authedPage);
-    await overrideRemoteFeatureFlags(authedPage, {SESSION_FEED: true});
+    await overrideRemoteFeatureFlags(
+      authedPage,
+      {SESSION_FEED: true},
+      {transformOnyxData: withoutSnapshotSessions},
+    );
 
     await homePage.goto();
     await expect(homePage.screen()).toBeVisible();
     await expect(homePage.feed()).toBeVisible();
 
-    // Whatever the account's history, the feed asks the server for the page
-    // below what it holds as soon as the end of the list is in view, and the
-    // request carries the feed's page size.
+    // With nothing in the snapshot the feed asks the server for its first
+    // page as soon as the end of the (empty) list is in view, and the request
+    // carries the feed's page size.
     await expect.poll(() => pageRequests.length).toBeGreaterThan(0);
     const firstPage = new URL(pageRequests[0].url());
     expect(firstPage.searchParams.get('limit')).toBe('20');
