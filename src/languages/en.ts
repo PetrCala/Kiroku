@@ -29,6 +29,9 @@ import type {
   OnboardingStepCounterParams,
   QuickAddDrinkParams,
   RelativeTimeAgoParams,
+  FeedCardA11yParams,
+  SduParams,
+  DrinkingNowCountParams,
   SessionConfirmTimezoneChangeParams,
   SessionDefaultNameParams,
   SessionPhotoLimitParams,
@@ -1581,6 +1584,20 @@ export default {
       a11y: ({unitCount}: UnitCountParams) =>
         `Open your live session, ${unitCount} ${unitCount === 1 ? 'unit' : 'units'} so far`,
       addDrink: ({drinkName}: QuickAddDrinkParams) => `Add one: ${drinkName}`,
+    },
+    feed: {
+      title: 'Sessions',
+      live: 'Live',
+      empty: 'Your sessions will show up here.',
+      sdu: ({sdu}: SduParams) => `${sdu} SDU`,
+      friendsDrinkingNow: ({count}: DrinkingNowCountParams) =>
+        count === 1
+          ? '1 friend is drinking now'
+          : `${count} friends are drinking now`,
+      friendA11y: ({displayName}: InviteDisplayNameParams) =>
+        `${displayName} is drinking now, open their profile`,
+      cardA11y: ({name, when, units}: FeedCardA11yParams) =>
+        `${name}, ${when}, ${units} ${units === 1 ? 'unit' : 'units'}`,
     },
     banners: {
       lastSession: {

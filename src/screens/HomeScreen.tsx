@@ -53,6 +53,8 @@ import SessionsCalendarCompactSkeleton from '@components/SessionsCalendar/Sessio
 import NoSessionsInfo from '@components/NoSessionsInfo';
 import useNetwork from '@hooks/useNetwork';
 import useBottomTabBarHeight from '@hooks/useBottomTabBarHeight';
+import SessionFeed from '@components/SessionFeed';
+import useFeatureFlag from '@hooks/useFeatureFlag';
 import HomeHeaderSkeleton from './HomeScreenSkeleton';
 import getHomeContentState from './getHomeContentState';
 
@@ -107,6 +109,9 @@ function HomeScreen({route}: HomeScreenProps) {
   // Most recent completed session, for the "last session" banner (null when
   // there's no history — a brand-new user shows no banner).
   const lastSession = useLastSession();
+  // The session feed below the calendar (RFC §10). Read as a hook so the
+  // remote kill switch takes Home back to the plain scroll without a restart.
+  const isFeedEnabled = useFeatureFlag('SESSION_FEED');
 
   // The calendar's visible month: the last-viewed day from an enlarged calendar
   // / day-overview scroll when present, otherwise the locally-navigated month.
@@ -359,14 +364,34 @@ function HomeScreen({route}: HomeScreenProps) {
         ) : (
           <HomeHeaderSkeleton />
         )}
-        <ScrollView
-          contentContainerStyle={[
-            styles.ph4,
-            {paddingBottom: bottomTabBarHeight + 16},
-          ]}>
-          {renderBanner()}
-          {renderMainContent()}
-        </ScrollView>
+        {isFeedEnabled ? (
+          // Decision 15: the live card, then the calendar, then the feed. The
+          // feed is the scroll container and everything above it is its
+          // header, so a long history virtualises instead of stacking views.
+          <SessionFeed
+            userID={user.uid}
+            header={
+              <>
+                {renderBanner()}
+                {renderMainContent()}
+              </>
+            }
+            isReady={contentState === 'data' || contentState === 'empty'}
+            contentContainerStyle={[
+              styles.ph4,
+              {paddingBottom: bottomTabBarHeight + 16},
+            ]}
+          />
+        ) : (
+          <ScrollView
+            contentContainerStyle={[
+              styles.ph4,
+              {paddingBottom: bottomTabBarHeight + 16},
+            ]}>
+            {renderBanner()}
+            {renderMainContent()}
+          </ScrollView>
+        )}
         <OfflineIndicator style={{marginBottom: bottomTabBarHeight}} />
         {/* Start-session FAB, floating bottom-right above the bottom tab bar.
             Home-only so the session modal's back-nav assumption (Home sits

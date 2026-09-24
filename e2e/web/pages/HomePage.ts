@@ -52,6 +52,33 @@ export class HomePage {
     await this.page.waitForURL(/\/profile\//);
   }
 
+  // --- Session feed (Sessions v2 W5, behind `SESSION_FEED`) ----------------
+
+  /** The feed section below the calendar: its heading and the cards. */
+  feed(): Locator {
+    return this.page.getByTestId('session-feed');
+  }
+
+  /** Every card in the feed, newest first. */
+  feedCards(): Locator {
+    return this.page.getByTestId(/^session-feed-card-/);
+  }
+
+  /** The card of one session. */
+  feedCard(sessionId: string): Locator {
+    return this.page.getByTestId(`session-feed-card-${sessionId}`);
+  }
+
+  /** The live badge on a session's card. */
+  feedLiveBadge(sessionId: string): Locator {
+    return this.page.getByTestId(`session-feed-live-${sessionId}`);
+  }
+
+  /** The "drinking now" row of friends, shown only when one is. */
+  friendsDrinkingNow(): Locator {
+    return this.page.getByTestId('friends-drinking-now');
+  }
+
   /** Clear any dev gates and wait until the Home screen is mounted. */
   async waitUntilVisible(): Promise<void> {
     await reachAuthenticatedApp(this.page);

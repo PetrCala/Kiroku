@@ -27,6 +27,11 @@ flows the web surface can exercise:
   Profile badges button (read via `useFeatureFlag`) switch in the running
   session; the Home header badges button (still `isEnabled`) only from the next
   launch, pinned as a known gap.
+- **Home session feed** (`session-feed.spec.ts`): with the `SESSION_FEED`
+  override on (injected into the app-open response), Home lists the user's
+  sessions below the calendar, asks the server for a page of older ones
+  (`GET /v1/users/:uid/sessions?limit=20`), leads with a freshly started live
+  session badged live, and opens it from its card. Absent with the flag off.
 - **Desktop phone frame** (`desktop-frame.spec.ts`) — the wide-window centered
   phone-frame layout (#1219 / #1224).
 - **Lazy CanvasKit** (`canvaskit-lazy.spec.ts`) — the ~6.8 MB Skia WASM stays off
