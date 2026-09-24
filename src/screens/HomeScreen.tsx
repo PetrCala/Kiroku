@@ -33,6 +33,7 @@ import ScrollView from '@components/ScrollView';
 import useLocalize from '@hooks/useLocalize';
 import useCurrentUserData from '@hooks/useCurrentUserData';
 import useCurrentUserDrinkingSessions from '@hooks/useCurrentUserDrinkingSessions';
+import useDrinkingSessionsFetch from '@hooks/useDrinkingSessionsFetch';
 import useCurrentUserPreferences from '@hooks/useCurrentUserPreferences';
 import useHomeStats from '@hooks/useHomeStats';
 import useLastSession from '@hooks/useLastSession';
@@ -96,6 +97,10 @@ function HomeScreen({route}: HomeScreenProps) {
   const userData = isEmptyObject(currentUserData) ? undefined : currentUserData;
   const preferences = useCurrentUserPreferences();
   const drinkingSessionData = useCurrentUserDrinkingSessions();
+  // The snapshot is windowed (see `SessionWindow`); paging the compact
+  // calendar past it widens the own-session map through the same month-window
+  // fetch a friend's calendar uses. The spinner rides on the month header.
+  const {isFetchingOlderMonths} = useDrinkingSessionsFetch(uid ?? '');
   const {isOffline} = useNetwork();
   // Whether Home is the focused screen. Used to stop the (heavy, colored)
   // compact calendar from PAINTING while Home sits blurred underneath an RHP
@@ -277,6 +282,7 @@ function HomeScreen({route}: HomeScreenProps) {
             onDateChange={onDateChange}
             drinkingSessionData={drinkingSessionData}
             preferences={preferences}
+            isFetchingOlderMonths={isFetchingOlderMonths}
           />
         </View>
       </>

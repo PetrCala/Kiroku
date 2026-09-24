@@ -1,6 +1,7 @@
 import {useCallback, useMemo, useRef, useState} from 'react';
 import {useOnyx} from 'react-native-onyx';
 import {getOldestStartTime, sortSessionsNewestFirst} from '@libs/SessionFeed';
+import * as SessionWindow from '@libs/SessionWindow';
 import fetchSessionsPage from '@userActions/SessionFeed';
 import ONYXKEYS from '@src/ONYXKEYS';
 import type {UserID} from '@src/types/onyx/OnyxCommon';
@@ -85,9 +86,18 @@ function useSessionFeed(userID: UserID | undefined): SessionFeedState {
     setLoading({userID});
     fetchSessionsPage(userID, cursor)
       .then(page => {
-        if (page && page.nextCursor === null) {
+        if (!page) {
+          return;
+        }
+        if (page.nextCursor === null) {
           setEndedAt({userID, cursor});
         }
+        // The map now reaches down to the page's oldest session, or to the
+        // start of the history: a re-baseline must not drop that again.
+        SessionWindow.noteLoadedBackTo(
+          userID,
+          page.nextCursor ?? earliestSessionAt ?? 0,
+        );
       })
       .catch(() => undefined)
       .finally(() => {
@@ -95,7 +105,7 @@ function useSessionFeed(userID: UserID | undefined): SessionFeedState {
           setLoading(null);
         }
       });
-  }, [userID, hasMore, isLoadingMore, oldestLoaded]);
+  }, [userID, hasMore, isLoadingMore, oldestLoaded, earliestSessionAt]);
 
   return {items, hasMore, isLoadingMore, loadMore};
 }

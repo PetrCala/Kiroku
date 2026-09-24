@@ -40,10 +40,26 @@ type KirokuRoute = {
 
 type ApiCommand = WriteCommand | ReadCommand | SideEffectRequestCommand;
 
+/**
+ * The sessions snapshot floor both bootstrap routes carry: the server windows
+ * `cachedDrinkingSessions[uid]` to sessions started at or after it (plus the
+ * live one). Absent or non-positive means the whole history, which is what a
+ * client before the feed asked for.
+ */
+function sessionsFromQuery(
+  data: Record<string, unknown>,
+): Record<string, number> {
+  if (typeof data.sessionsFrom === 'number' && data.sessionsFrom > 0) {
+    return {sessionsFrom: Math.floor(data.sessionsFrom)};
+  }
+  return {};
+}
+
 const KIROKU_ROUTES: Record<ApiCommand, KirokuRoute> = {
   [WRITE_COMMANDS.OPEN_APP]: {
     method: 'get',
     path: '/v1/app/open',
+    toQuery: sessionsFromQuery,
   },
   // Public signup gate: queried BEFORE a Firebase account/ID token exists, so it
   // must run without authentication. See `actions/User.signUp`.
@@ -60,7 +76,7 @@ const KIROKU_ROUTES: Record<ApiCommand, KirokuRoute> = {
     method: 'get',
     path: '/v1/app/open',
     toQuery: data => {
-      const query: Record<string, number> = {};
+      const query: Record<string, number> = sessionsFromQuery(data);
       if (typeof data.updateIDFrom === 'number' && data.updateIDFrom > 0) {
         query.updateIDFrom = data.updateIDFrom;
       }

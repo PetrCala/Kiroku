@@ -1,5 +1,7 @@
+import {differenceInCalendarMonths} from 'date-fns';
 import {formatInTimeZone} from 'date-fns-tz';
-import React, {useMemo} from 'react';
+import React, {useEffect, useMemo} from 'react';
+import {useOnyx} from 'react-native-onyx';
 import {View} from 'react-native';
 import {KpiCard, KpiCardGroup} from '@components/Charts/KpiCard';
 import type {KpiCardProps} from '@components/Charts/KpiCard';
@@ -7,14 +9,18 @@ import Icon from '@components/Icon';
 import * as KirokuIcons from '@components/Icon/KirokuIcons';
 import ScrollView from '@components/ScrollView';
 import Text from '@components/Text';
+import {useFirebase} from '@context/global/FirebaseContext';
 import useCurrentUserData from '@hooks/useCurrentUserData';
+import useDrinkingSessionsFetch from '@hooks/useDrinkingSessionsFetch';
 import useLocalize from '@hooks/useLocalize';
 import useDrinkEvents from '@hooks/useStatistics/useDrinkEvents';
 import useTheme from '@hooks/useTheme';
 import useThemeStyles from '@hooks/useThemeStyles';
 import {computeBadges, summarizeBadges} from '@libs/BadgesUtils';
 import type {BadgeStatus} from '@libs/BadgesUtils';
+import {setSessionsCalendarMonthsLoadedForUser} from '@userActions/Calendar';
 import CONST from '@src/CONST';
+import ONYXKEYS from '@src/ONYXKEYS';
 
 /**
  * Heavy body of the Badges screen: subscribes to the drink-event stream (the
@@ -28,8 +34,37 @@ function BadgesContent() {
   const {translate} = useLocalize();
   const styles = useThemeStyles();
   const theme = useTheme();
-  const {events, isLoading} = useDrinkEvents();
+  const {events, isLoading: isCompiling} = useDrinkEvents();
   const userData = useCurrentUserData();
+
+  // Streaks and lifetime totals need the whole history, and the own-session
+  // map is windowed at app open (see `SessionWindow`). Widen the shared
+  // calendar-depth lever to the user's first session, the same way Statistics
+  // does for its range, and let the month-window fetch fill it in; the KPI
+  // skeletons stay up until that lands. An account without the persisted
+  // `earliest_session_at` (before the one-time backfill) keeps whatever is
+  // loaded.
+  const {auth} = useFirebase();
+  const uid = auth?.currentUser?.uid ?? '';
+  const earliestSessionAt = userData?.earliest_session_at;
+  const [monthsLoaded] = useOnyx(
+    `${ONYXKEYS.COLLECTION.SESSIONS_CALENDAR_MONTHS_BY_USER_ID}${uid}`,
+    {canBeMissing: true},
+  );
+  useEffect(() => {
+    if (!uid || earliestSessionAt === undefined) {
+      return;
+    }
+    const required = Math.max(
+      0,
+      differenceInCalendarMonths(new Date(), new Date(earliestSessionAt)),
+    );
+    if (required > (monthsLoaded ?? 0)) {
+      setSessionsCalendarMonthsLoadedForUser(uid, required);
+    }
+  }, [uid, earliestSessionAt, monthsLoaded]);
+  const {isFetchingOlderMonths} = useDrinkingSessionsFetch(uid);
+  const isLoading = isCompiling || isFetchingOlderMonths;
 
   const timezone =
     userData?.timezone?.selected ?? CONST.DEFAULT_TIME_ZONE.selected;

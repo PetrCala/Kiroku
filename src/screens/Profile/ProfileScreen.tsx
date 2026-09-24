@@ -63,22 +63,19 @@ function ProfileScreen({route}: ProfileScreenProps) {
   const {isOffline} = useNetwork();
   const {userData, isLoading: isProfileFetchLoading} = useFriendProfile(userID);
   const {preferences, isLoading: isPrefsLoading} = useFriendPreferences(userID);
-  // Own sessions come straight off the app/open snapshot in Onyx; the windowed
-  // friend fetch runs only for other users' profiles (an empty userID is a
-  // no-op, matching SessionsCalendarScreen / DayOverviewScreen).
+  // Own sessions come off the app/open snapshot in Onyx, which is windowed
+  // (see `SessionWindow`); the same month-window fetch that serves a friend's
+  // profile widens them on demand, skipping windows the snapshot covered.
   const currentUserSessions = useCurrentUserDrinkingSessions();
   const {
     data: friendSessionData,
     isLoading: isFriendSessionsLoading,
-    isFetchingOlderMonths: isFetchingFriendOlderMonths,
-  } = useDrinkingSessionsFetch(isSelf ? '' : userID);
+    isFetchingOlderMonths,
+  } = useDrinkingSessionsFetch(userID);
   const drinkingSessionData = isSelf ? currentUserSessions : friendSessionData;
   const isSessionsLoading = isSelf
     ? currentUserSessions === undefined
     : isFriendSessionsLoading;
-  // Self widening needs no fetch — the full own-session snapshot is already
-  // cached, so older months are indexed locally.
-  const isFetchingOlderMonths = isSelf ? false : isFetchingFriendOlderMonths;
   const isLoading =
     isProfileFetchLoading || isPrefsLoading || isSessionsLoading;
   // Defer the (heavy) calendar mount until after the navigation slide. The

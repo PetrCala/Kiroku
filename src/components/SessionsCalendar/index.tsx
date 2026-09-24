@@ -338,11 +338,15 @@ function SessionsCalendar({
       return;
     }
     // Fullscreen + canonical floor (self): the full tracked range is derived
-    // up front (`deriveFullRangeToFloor`), so there is nothing to prefetch and
-    // no reason to bump the persisted depth lever. The day-list keeps the
-    // prefetch — it still loads lazily. If the floor hydrates late, one
-    // friend-style prefetch may fire first; harmless and parity with before.
+    // up front (`deriveFullRangeToFloor`), so widen the depth lever straight
+    // to the floor: the own-session map is windowed at app open (see
+    // `SessionWindow`) and the month-window fetch keyed on this lever is what
+    // fills the months the derivation is about to render. The day-list keeps
+    // the buffered prefetch below — it still loads lazily. If the floor
+    // hydrates late, one friend-style prefetch may fire first; harmless.
     if (mode === 'fullscreen' && hasPersistedFloor) {
+      hasPrefetchedRef.current = true;
+      loadUpTo(minDateFloor);
       return;
     }
     hasPrefetchedRef.current = true;
@@ -360,7 +364,14 @@ function SessionsCalendar({
         loadUpTo(targetFloor);
       }
     }
-  }, [mode, loadUpTo, initialMonthYear, initialDay, hasPersistedFloor]);
+  }, [
+    mode,
+    loadUpTo,
+    initialMonthYear,
+    initialDay,
+    hasPersistedFloor,
+    minDateFloor,
+  ]);
 
   // Compact calendar: keep the loaded window covering whatever month is
   // currently visible, plus the same look-ahead buffer the page-back handler
