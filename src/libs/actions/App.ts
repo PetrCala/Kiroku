@@ -16,7 +16,9 @@ import {SIDE_EFFECT_REQUEST_COMMANDS, WRITE_COMMANDS} from '@libs/API/types';
 // import * as Browser from '@libs/Browser';
 // import DateUtils from '@libs/DateUtils';
 // import Log from '@libs/Log';
+import {getFirebaseAuth} from '@libs/Firebase/FirebaseApp';
 import getCurrentUrl from '@libs/Navigation/currentUrl';
+import * as SessionWindow from '@libs/SessionWindow';
 import Navigation from '@libs/Navigation/Navigation';
 import setCalendarLocale from '@libs/setCalendarLocale';
 // import Performance from '@libs/Performance';
@@ -249,8 +251,18 @@ function resetBootstrapStateForColdLaunch(): void {
 function openApp() {
   // getPolicyParamsForOpenOrReconnect().then(
   // (policyParams: PolicyParamsForOpenOrReconnect) => {
+  // Window the sessions snapshot (RFC §10): the calendar and the feed widen
+  // on demand from there, so app open stops shipping the whole history. The
+  // floor is noted before the request so a screen mounting meanwhile does not
+  // fetch the same window a second time.
+  const uid = getFirebaseAuth().currentUser?.uid;
+  const sessionsFrom = SessionWindow.getSnapshotSessionsFrom(uid);
+  if (uid) {
+    SessionWindow.noteSnapshotWindow(uid, sessionsFrom);
+  }
   const params: OpenAppParams = {
     enablePriorityModeFilter: true,
+    sessionsFrom,
     // ...policyParams,
   };
   API.write(
@@ -272,7 +284,15 @@ function reconnectApp(updateIDFrom: OnyxEntry<number> = 0) {
   );
   // getPolicyParamsForOpenOrReconnect().then(policyParams => {
   //   const params: ReconnectAppParams = policyParams;
-  const params: ReconnectAppParams = {};
+  // A full re-baseline replaces the sessions snapshot, so ask for at least
+  // what this device already holds (never shallower than the boot window).
+  // Ignored by the server on an incremental catch-up.
+  const uid = getFirebaseAuth().currentUser?.uid;
+  const sessionsFrom = SessionWindow.getSnapshotSessionsFrom(uid);
+  if (uid) {
+    SessionWindow.noteSnapshotWindow(uid, sessionsFrom);
+  }
+  const params: ReconnectAppParams = {sessionsFrom};
 
   //   // When the app reconnects we do a fast "sync" of the LHN and only return chats that have new messages. We achieve this by sending the most recent reportActionID.
   //   // we have locally. And then only update the user about chats with messages that have occurred after that reportActionID.
@@ -319,7 +339,12 @@ function finalReconnectAppAfterActivatingReliableUpdates(): Promise<void | OnyxT
 
   // return getPolicyParamsForOpenOrReconnect().then(policyParams => {
   // const params: ReconnectAppParams = {...policyParams};
-  const params: ReconnectAppParams = {};
+  const uid = getFirebaseAuth().currentUser?.uid;
+  const sessionsFrom = SessionWindow.getSnapshotSessionsFrom(uid);
+  if (uid) {
+    SessionWindow.noteSnapshotWindow(uid, sessionsFrom);
+  }
+  const params: ReconnectAppParams = {sessionsFrom};
 
   // When the app reconnects we do a fast "sync" of the LHN and only return chats that have new messages. We achieve this by sending the most recent reportActionID.
   // we have locally. And then only update the user about chats with messages that have occurred after that reportActionID.

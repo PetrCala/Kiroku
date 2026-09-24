@@ -85,10 +85,10 @@ function DayOverviewScreen({route}: DayOverviewScreenProps) {
   );
   const maxDate = useMemo(() => endOfDay(todayInTz), [todayInTz]);
 
-  // Self reads the current user's sessions from the dedicated hook; a friend's
-  // data is fetched on demand (same self/other gating as
-  // `SessionsCalendarScreen`). The non-needed hook is invoked with an empty
-  // `userID`, which both hooks treat as a no-op.
+  // Self reads the current user's sessions from the dedicated hook, widened
+  // on demand by the same month-window fetch a friend's data comes through
+  // (own sessions are windowed at app open, see `SessionWindow`). The
+  // preferences hook is invoked with an empty `userID` for self, a no-op.
   const ownPreferences = useCurrentUserPreferences();
   const currentUserSessions = useCurrentUserDrinkingSessions();
   const {preferences: friendPreferences, isLoading: isFriendFetchLoading} =
@@ -96,12 +96,11 @@ function DayOverviewScreen({route}: DayOverviewScreenProps) {
   const {
     data: friendSessionData,
     isLoading: isFriendSessionsLoading,
-    isFetchingOlderMonths: friendFetchingOlder,
-  } = useDrinkingSessionsFetch(isSelf ? '' : userID);
+    isFetchingOlderMonths,
+  } = useDrinkingSessionsFetch(userID);
 
   const drinkingSessionData = isSelf ? currentUserSessions : friendSessionData;
   const preferences = isSelf ? ownPreferences : friendPreferences;
-  const isFetchingOlderMonths = isSelf ? false : friendFetchingOlder;
   // Hold the list invisible (skeleton on top) until it has scrolled to the
   // focused day. With no `date` (shouldn't happen via the calendar) we never
   // wait.

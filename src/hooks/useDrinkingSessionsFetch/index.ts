@@ -7,6 +7,8 @@ import {startOfMonth, subMonths} from 'date-fns';
 import {useEffect, useRef, useState} from 'react';
 import {useOnyx} from 'react-native-onyx';
 import useNetwork from '@hooks/useNetwork';
+import {useFirebase} from '@context/global/FirebaseContext';
+import * as SessionWindow from '@libs/SessionWindow';
 
 type UseDrinkingSessionsFetchReturn = {
   /** Last-good snapshot of the windowed session list. Stays populated across
@@ -60,6 +62,13 @@ function useDrinkingSessionsFetch(
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [isFetchingOlderMonths, setIsFetchingOlderMonths] =
     useState<boolean>(false);
+  // The signed-in user's own sessions arrive windowed with app open and are
+  // widened through this same hook; `SessionWindow` remembers how far back the
+  // map already reaches, so a window the snapshot (or an earlier widen)
+  // covered is not fetched again. A friend's window is always re-read: it is
+  // not replaced at boot and a revisit should refresh it.
+  const {auth} = useFirebase();
+  const isSelf = !!userID && auth?.currentUser?.uid === userID;
   const prevSessionsMonthsBackRef = useRef<number | null>(null);
 
   // Latest-wins request token. Bumped before each fetch; on resolve we ignore
@@ -108,15 +117,26 @@ function useDrinkingSessionsFetch(
       setIsFetchingOlderMonths(false);
     };
 
+    if (isSelf && SessionWindow.isLoadedFrom(userID, from)) {
+      // Already on the device (the app-open snapshot or an earlier widen).
+      finalize();
+      return;
+    }
+
     // A block-gated / privacy-denied read rejects with a non-2xx (it bypasses
     // SaveResponseInOnyx, so failureData never runs). Swallow it: the calendar
     // should resolve to a clean empty state (the server evicts the cached key on
     // deny — #786), never throw an unhandled rejection. `finalize` still clears
     // the loading flags either way.
     DrinkingSession.openFriendDrinkingSessions(userID, from)
+      .then(() => {
+        if (isSelf && token === currentTokenRef.current) {
+          SessionWindow.noteLoadedBackTo(userID, from);
+        }
+      })
       .catch(() => undefined)
       .finally(finalize);
-  }, [userID, sessionsMonthsBack, monthsLoadedMeta.status]);
+  }, [userID, isSelf, sessionsMonthsBack, monthsLoadedMeta.status]);
 
   // Re-issue the windowed read when connectivity resumes.
   // `openFriendDrinkingSessions` goes through `makeRequestWithSideEffects`,

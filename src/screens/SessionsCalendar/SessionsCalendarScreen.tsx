@@ -57,11 +57,13 @@ function SessionsCalendarScreen({route}: SessionsCalendarScreenProps) {
   const currentUserSessions = useCurrentUserDrinkingSessions();
   const {preferences: friendPreferences, isLoading: isFriendFetchLoading} =
     useFriendPreferences(isSelf ? '' : userID);
+  // Runs for self too: own sessions are windowed at app open and widened on
+  // demand through the same month-window fetch (see `SessionWindow`).
   const {
     data: friendSessionData,
     isLoading: isFriendSessionsLoading,
-    isFetchingOlderMonths: friendFetchingOlder,
-  } = useDrinkingSessionsFetch(isSelf ? '' : userID);
+    isFetchingOlderMonths,
+  } = useDrinkingSessionsFetch(userID);
 
   const drinkingSessionData: DrinkingSessionList | null | undefined = isSelf
     ? currentUserSessions
@@ -69,7 +71,6 @@ function SessionsCalendarScreen({route}: SessionsCalendarScreenProps) {
   const preferences: Preferences | undefined = isSelf
     ? ownPreferences
     : friendPreferences;
-  const isFetchingOlderMonths = isSelf ? false : friendFetchingOlder;
   const isLoading = isSelf
     ? !preferences || drinkingSessionData === undefined
     : isFriendFetchLoading || isFriendSessionsLoading;

@@ -32,6 +32,9 @@ flows the web surface can exercise:
   sessions below the calendar, asks the server for a page of older ones
   (`GET /v1/users/:uid/sessions?limit=20`), leads with a freshly started live
   session badged live, and opens it from its card. Absent with the flag off.
+- **Windowed app open** (`session-window.spec.ts`): the bootstrap
+  `GET /v1/app/open` carries a `sessionsFrom` floor at the start of the month
+  three months back, so app open no longer ships the whole session history.
 - **Desktop phone frame** (`desktop-frame.spec.ts`) — the wide-window centered
   phone-frame layout (#1219 / #1224).
 - **Lazy CanvasKit** (`canvaskit-lazy.spec.ts`) — the ~6.8 MB Skia WASM stays off
