@@ -29,6 +29,9 @@ import type {
   OnboardingStepCounterParams,
   QuickAddDrinkParams,
   RelativeTimeAgoParams,
+  FeedCardA11yParams,
+  SduParams,
+  DrinkingNowCountParams,
   SessionConfirmTimezoneChangeParams,
   SessionDefaultNameParams,
   SessionPhotoLimitParams,
@@ -1615,6 +1618,24 @@ export default {
         `Otevřít živou relaci, zatím ${unitCount} ${unitCount === 1 ? 'jednotka' : 'jednotek'}`,
       addDrink: ({drinkName}: QuickAddDrinkParams) =>
         `Přidat jeden: ${drinkName}`,
+    },
+    feed: {
+      title: 'Relace',
+      live: 'Živě',
+      empty: 'Vaše relace se zobrazí tady.',
+      sdu: ({sdu}: SduParams) => `${sdu} SDU`,
+      friendsDrinkingNow: ({count}: DrinkingNowCountParams) => {
+        if (count === 1) {
+          return 'Právě pije 1 přítel';
+        }
+        return count < 5
+          ? `Právě pijí ${count} přátelé`
+          : `Právě pije ${count} přátel`;
+      },
+      friendA11y: ({displayName}: InviteDisplayNameParams) =>
+        `${displayName} právě pije, otevřít profil`,
+      cardA11y: ({name, when, units}: FeedCardA11yParams) =>
+        `${name}, ${when}, ${units} ${units === 1 ? 'jednotka' : 'jednotek'}`,
     },
     banners: {
       lastSession: {

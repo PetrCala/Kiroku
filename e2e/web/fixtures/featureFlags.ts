@@ -37,9 +37,19 @@ function isAppOpen(request: Request): boolean {
  * is deterministic: pass `{}` to get the compile-time defaults from
  * `CONST.FEATURES`. Attach before the first navigation.
  */
+type OverrideOptions = {
+  /**
+   * Rewrite the rest of the app-open `onyxData` in the same interception, for
+   * a spec that also needs to shape what the app boots with (two `page.route`
+   * handlers cannot compose: each fetches and fulfils on its own).
+   */
+  transformOnyxData?: (updates: OnyxUpdate[]) => OnyxUpdate[];
+};
+
 export async function overrideRemoteFeatureFlags(
   page: Page,
   flags: Record<string, unknown>,
+  options: OverrideOptions = {},
 ): Promise<RemoteFeatureFlags> {
   let currentFlags = flags;
   let servedConfig: AppConfig | undefined;
@@ -58,7 +68,9 @@ export async function overrideRemoteFeatureFlags(
         return;
       }
       const body = (await response.json()) as AppOpenResponse;
-      const updates = body.onyxData ?? [];
+      const updates = options.transformOnyxData
+        ? options.transformOnyxData(body.onyxData ?? [])
+        : body.onyxData ?? [];
       const configUpdate = updates.find(update => update.key === 'config');
       const config: AppConfig = {
         ...((configUpdate?.value as AppConfig | null) ?? {}),

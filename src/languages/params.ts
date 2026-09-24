@@ -85,6 +85,23 @@ type RelativeTimeAgoParams = {
   count: number;
 };
 
+/** A feed card's spoken summary. */
+type FeedCardA11yParams = {
+  name: string;
+  when: string;
+  units: number;
+};
+
+/** Standard drink units on a feed card. */
+type SduParams = {
+  sdu: number;
+};
+
+/** How many friends are drinking now. */
+type DrinkingNowCountParams = {
+  count: number;
+};
+
 type SessionConfirmTimezoneChangeParams = {
   newTimezone: string;
 };
@@ -227,6 +244,9 @@ export type {
   OnboardingStepCounterParams,
   QuickAddDrinkParams,
   RelativeTimeAgoParams,
+  FeedCardA11yParams,
+  SduParams,
+  DrinkingNowCountParams,
   SessionConfirmTimezoneChangeParams,
   SessionDefaultNameParams,
   SessionPhotoLimitParams,
