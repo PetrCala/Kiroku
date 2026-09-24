@@ -16,6 +16,7 @@ export type {default as OpenAppParams} from './OpenAppParams';
 export type {default as OpenPublicProfilePageParams} from './OpenPublicProfilePageParams';
 export type {default as SearchUsersParams} from './SearchUsersParams';
 export type {default as OpenFriendDrinkingSessionsParams} from './OpenFriendDrinkingSessionsParams';
+export type {default as OpenSessionsPageParams} from './OpenSessionsPageParams';
 export type {default as OpenFriendPreferencesParams} from './OpenFriendPreferencesParams';
 export type {default as OpenFriendStatusParams} from './OpenFriendStatusParams';
 export type {default as GetUsersBatchParams} from './GetUsersBatchParams';
