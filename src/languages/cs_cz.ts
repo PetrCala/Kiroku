@@ -1173,6 +1173,8 @@ export default {
     title: 'Ověřte svůj e-mail',
     body: ({email}: VerifyEmailScreenEmailParmas) =>
       `Poslali jsme ověřovací odkaz na adresu ${email ?? 'vaši adresu'}. Otevřete jej pro potvrzení a vraťte se zpět. Nevidíte ho? Podívejte se do složky spamu.`,
+    sendFailed: ({email}: VerifyEmailScreenEmailParmas) =>
+      `Ověřovací e-mail se nám nepodařilo odeslat na adresu ${email ?? 'vaši adresu'}. Klepněte na 'Znovu odeslat e-mail' a zkuste to ještě jednou.`,
     resendEmail: 'Znovu odeslat e-mail',
     emailSent: 'Ověřovací e-mail byl odeslán.',
     emailVerified: 'E-mail byl ověřen!',
@@ -2067,6 +2069,16 @@ export default {
         title: 'Příliš mnoho požadavků',
         message:
           'Odeslali jste příliš mnoho požadavků. Počkejte chvíli a zkuste to znovu.',
+      },
+      quotaExceeded: {
+        title: 'Limit vyčerpán',
+        message:
+          'Na naší straně jsme narazili na limit. Zkuste to prosím později.',
+      },
+      internalError: {
+        title: 'Chyba serveru',
+        message:
+          'Na naší straně se něco pokazilo. Zkuste to prosím za chvíli znovu.',
       },
       accountCreationLimitExceeded: {
         title: 'Překročen limit pro vytváření účtů',

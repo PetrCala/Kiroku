@@ -27,7 +27,6 @@ import type {Route} from './ROUTES';
 import {updateLastRoute} from './libs/actions/App';
 import * as Subscriptions from './libs/actions/Subscriptions';
 import setCrashlyticsUserId from './libs/setCrashlyticsUserId';
-import FirebaseCrashlytics from './libs/Firebase/FirebaseCrashlytics';
 import {checkIfUnderMaintenance} from './libs/Maintenance';
 import {validateAppVersion} from './libs/Validation';
 import UnderMaintenanceModal from './components/Modals/UnderMaintenanceModal';
@@ -267,20 +266,16 @@ function Kiroku() {
       // screen paints without its data. That's the failure that actually shows
       // up in the field, and it was previously silent. Log it with the same
       // shape as the 14s stuck log so a slow boot and a pinned boot can be
-      // told apart, and mirror it into Crashlytics, which is the only sink
-      // that survives a release build.
-      const propsToLog = getSplashGateSnapshotRef.current();
+      // told apart. The snapshot is passed flat because `Log.alert` mirrors
+      // flat parameters into Crashlytics, which is the only sink that survives
+      // a release build.
       Log.alert(
         '[BootSplash] auth data gate timed out, releasing splash',
-        {propsToLog},
-        false,
-      );
-      FirebaseCrashlytics.recordNonFatal(
-        '[BootSplash] auth data gate timed out, releasing splash',
         {
-          ...propsToLog,
+          ...getSplashGateSnapshotRef.current(),
           timeoutMs: CONST.BOOT_SPLASH_AUTH_DATA_TIMEOUT_MS,
         },
+        false,
       );
       setIsAuthDataReady(true);
     }, CONST.BOOT_SPLASH_AUTH_DATA_TIMEOUT_MS);
@@ -351,15 +346,13 @@ function Kiroku() {
       return undefined;
     }
     const timer = setTimeout(() => {
-      const propsToLog = getSplashGateSnapshot();
       Log.alert(
         '[BootSplash] splash screen is still visible',
-        {propsToLog},
+        {
+          ...getSplashGateSnapshot(),
+          timeoutMs: CONST.BOOT_SPLASH_STUCK_LOG_TIMEOUT_MS,
+        },
         false,
-      );
-      FirebaseCrashlytics.recordNonFatal(
-        '[BootSplash] splash screen is still visible',
-        {...propsToLog, timeoutMs: CONST.BOOT_SPLASH_STUCK_LOG_TIMEOUT_MS},
       );
     }, CONST.BOOT_SPLASH_STUCK_LOG_TIMEOUT_MS);
     return () => clearTimeout(timer);

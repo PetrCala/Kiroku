@@ -28,6 +28,8 @@ const ERROR_MAPPING: ErrorMapping = {
   [ERRORS.AUTH.REQUIRES_RECENT_LOGIN]: 'errors.auth.requiresRecentLogin',
   [ERRORS.AUTH.API_KEY_NOT_VALID]: 'errors.auth.apiKeyNotValid',
   [ERRORS.AUTH.TOO_MANY_REQUESTS]: 'errors.auth.tooManyRequests',
+  [ERRORS.AUTH.QUOTA_EXCEEDED]: 'errors.auth.quotaExceeded',
+  [ERRORS.AUTH.INTERNAL_ERROR]: 'errors.auth.internalError',
   [ERRORS.AUTH.SIGN_OUT_FAILED]: 'errors.auth.signOutFailed',
   [ERRORS.AUTH.USER_IS_NULL]: 'errors.auth.userIsNull',
   [ERRORS.AUTH.CREDENTIAL_ALREADY_IN_USE]: 'errors.auth.credentialAlreadyInUse',

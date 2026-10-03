@@ -61,6 +61,15 @@ Onyx.connect({
   },
 });
 
+/** Firebase errors carry their identifier (e.g. `auth/quota-exceeded`) on `code`. */
+function getAuthErrorCode(error: unknown): string | undefined {
+  if (typeof error !== 'object' || error === null || !('code' in error)) {
+    return undefined;
+  }
+  const {code} = error as {code?: unknown};
+  return typeof code === 'string' ? code : undefined;
+}
+
 const getDefaultPreferences = (): Preferences => ({
   first_day_of_week: 'Monday',
   units_to_colors: {
@@ -282,6 +291,9 @@ async function sendUpdateEmailLink(
   }
 
   await verifyBeforeUpdateEmail(user, newEmail);
+  // A link is now on its way to the new address, so "no mail went out" no
+  // longer holds.
+  await Onyx.set(ONYXKEYS.VERIFY_EMAIL_SEND_FAILED, null);
 }
 
 async function updatePassword(
@@ -335,8 +347,20 @@ async function sendVerifyEmailLink(
       );
     }
   }
-  await sendEmailVerification(user);
+  try {
+    await sendEmailVerification(user);
+  } catch (error) {
+    // Firebase sends this mail through our own sender domain and relay, so a
+    // relay or quota problem rejects here. `Log.alert` reaches Crashlytics,
+    // which is the only way a send that fails in the field gets noticed.
+    Log.alert('[sendVerifyEmailLink] failed to send verification email', {
+      code: getAuthErrorCode(error) ?? ERRORS.UNKNOWN,
+      message: error instanceof Error ? error.message : String(error),
+    });
+    throw error;
+  }
   await Onyx.set(ONYXKEYS.VERIFY_EMAIL_SENT, new Date().getTime());
+  await Onyx.set(ONYXKEYS.VERIFY_EMAIL_SEND_FAILED, null);
 }
 
 /**
@@ -782,11 +806,7 @@ async function signUp(
       password,
     );
   } catch (error) {
-    const code =
-      typeof error === 'object' && error !== null && 'code' in error
-        ? (error as {code?: unknown}).code
-        : undefined;
-    if (code === ERRORS.AUTH.TOO_MANY_REQUESTS) {
+    if (getAuthErrorCode(error) === ERRORS.AUTH.TOO_MANY_REQUESTS) {
       throw new Error(ERRORS.AUTH.ACCOUNT_CREATION_LIMIT_EXCEEDED);
     }
     throw error;
@@ -809,10 +829,18 @@ async function signUp(
   // recently sent on this device. Routing through the wrapper (instead of
   // the bare Firebase call) ensures `VERIFY_EMAIL_SENT` is written so the
   // VerifyEmailModal opens in the truthful "Check your inbox" state.
+  //
+  // A rejected send must be just as truthful. The wrapper raises the alert;
+  // here we record that no mail went out, so the modal offers a resend instead
+  // of sending the user to an inbox with nothing in it. The marker is reset
+  // first because an earlier attempt that was rolled back below can leave one
+  // behind, and it would show while this send is still in flight.
+  Onyx.set(ONYXKEYS.VERIFY_EMAIL_SEND_FAILED, null);
   sendVerifyEmailLink(newUser, {bypassCooldown: true}).catch(error => {
-    Log.alert('[signUp] failed to send verification email', {
-      error,
-    });
+    Onyx.set(
+      ONYXKEYS.VERIFY_EMAIL_SEND_FAILED,
+      getAuthErrorCode(error) ?? ERRORS.UNKNOWN,
+    );
   });
 
   try {
