@@ -1,0 +1,70 @@
+name: Mail delivery canary
+
+# Daily end-to-end check that Firebase Authentication mail still reaches a real
+# inbox. Every Kiroku mail (email verification, password reset, email-change
+# confirmation) is sent by Firebase Auth from the client, through the custom
+# sender domain and whatever relay the Firebase console is configured with. The
+# client never learns whether the mail was delivered, so a dead relay or a
+# spam-folder regression stays invisible until users complain.
+#
+# scripts/mail-canary.mjs asks Identity Toolkit to send a password-reset mail to
+# a dedicated canary account, waits for it over IMAP, and checks that it reached
+# INBOX (not Spam), came from noreply@mail.kiroku.cz, passed DKIM and DMARC, and
+# carries a valid oobCode. One mail a day is nothing against the sending quotas.
+#
+# Setup (the canary account, the Gmail app password, the three secrets) and the
+# meaning of each failing stage: contributingGuides/MAIL_CANARY.md.
+#
+# The script has no npm dependencies and reads only API_KEY from the staged
+# .env.production, so there is no install step.
+
+on:
+  workflow_dispatch:
+    inputs:
+      timeout:
+        description: 'Seconds to wait for the mail after the send'
+        required: false
+        default: '900'
+  schedule:
+    # 06:23 UTC every day, off the hour so it does not queue behind the :00 crowd.
+    - cron: '23 6 * * *'
+
+permissions:
+  contents: read
+
+# A manual run while the scheduled one is still waiting for its mail would race
+# it for the same inbox; let the first finish.
+concurrency:
+  group: mail-canary
+  cancel-in-progress: false
+
+jobs:
+  canary:
+    name: Password-reset mail reaches the canary inbox
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+
+      - uses: actions/setup-node@v5
+        with:
+          node-version-file: '.nvmrc'
+
+      # Only the API_KEY line is read; the Firebase web API key identifies the
+      # production project to Identity Toolkit, exactly as the app does.
+      - name: Stage .env.production from secret
+        run: echo "${{ secrets.PRODUCTION_ENV_FILE }}" > .env.production
+
+      - name: Send a password-reset mail and wait for it in the canary inbox
+        run: node scripts/mail-canary.mjs run --env-file .env.production --timeout "${{ inputs.timeout || '900' }}"
+        env:
+          CANARY_EMAIL: ${{ secrets.MAIL_CANARY_EMAIL }}
+          CANARY_IMAP_USER: ${{ secrets.MAIL_CANARY_IMAP_USER }}
+          CANARY_IMAP_PASSWORD: ${{ secrets.MAIL_CANARY_IMAP_PASSWORD }}
+
+      - name: Announce failed workflow in Discord
+        if: ${{ failure() }}
+        uses: ./.github/actions/composite/announceFailedWorkflowInDiscord
+        with:
+          DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_URL }}

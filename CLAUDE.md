@@ -126,6 +126,7 @@ Key GitHub Actions workflows:
 - `test.yml`: Unit tests
 - `typecheck.yml`: TypeScript validation
 - `lint.yml`: Code quality checks
+- `mailCanary.yml`: Daily end-to-end check that Firebase Auth mail (password reset, by proxy for all transactional mail) still reaches a real inbox; see [`contributingGuides/MAIL_CANARY.md`](contributingGuides/MAIL_CANARY.md)
 - `claude-review.yml`: Automated PR review, **intentionally disabled** (manual `workflow_dispatch` only; do not switch to `pull_request`)
 - `translation-review.yml`: AI review of translation quality, manual `workflow_dispatch` only (the always-on translation gate is the `TranslationContext` unit test)
 
