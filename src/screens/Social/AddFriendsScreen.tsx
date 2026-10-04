@@ -15,6 +15,7 @@ import type {TopTabRoute} from '@components/TopTabBar';
 import useCurrentUserData from '@hooks/useCurrentUserData';
 import useLocalize from '@hooks/useLocalize';
 import useNetwork from '@hooks/useNetwork';
+import useReadyAfterScreenTransition from '@hooks/useReadyAfterScreenTransition';
 import useSafeAreaInsets from '@hooks/useSafeAreaInsets';
 import useThemeStyles from '@hooks/useThemeStyles';
 import useWindowDimensions from '@hooks/useWindowDimensions';
@@ -59,6 +60,16 @@ function AddFriendsScreen({route}: AddFriendsScreenProps) {
   const userData = useCurrentUserData();
   const hasInviteLink = !!userData?.invite_code;
 
+  // The three-dots menu is held back until the entry slide finishes. Its
+  // `PopoverMenu` renders the menu once, invisibly, just to measure it, and
+  // parks that pass at `left: -9999` (see `styles.invisiblePopover`). Mounted
+  // during the push, that off-screen parking paints for a few frames and reads
+  // as a stray element sliding away to the left, the same artifact fixed on
+  // `ProfileScreen`. The menu is only reachable by tapping the button, which
+  // cannot happen until the screen has landed.
+  const {isReady: didScreenTransitionEnd, onEntryTransitionEnd} =
+    useReadyAfterScreenTransition();
+
   const [index, setIndex] = useState(
     route.params?.tab === CONST.ADD_FRIENDS_TAB.SEARCH ? 1 : 0,
   );
@@ -80,6 +91,7 @@ function AddFriendsScreen({route}: AddFriendsScreenProps) {
     [translate],
   );
   const isCodeTab = routes[index]?.key === CONST.ADD_FRIENDS_TAB.CODE;
+  const shouldShowThreeDotsButton = isCodeTab && didScreenTransitionEnd;
 
   const resetLink = useCallback(() => {
     setIsResetModalVisible(false);
@@ -123,12 +135,13 @@ function AddFriendsScreen({route}: AddFriendsScreenProps) {
   return (
     <ScreenWrapper
       testID={AddFriendsScreen.displayName}
-      shouldShowOfflineIndicator={false}>
+      shouldShowOfflineIndicator={false}
+      onEntryTransitionEnd={onEntryTransitionEnd}>
       <HeaderWithBackButton
         title={translate('addFriendsScreen.title')}
         onBackButtonPress={Navigation.goBack}
         shouldAlignTitleStart
-        shouldShowThreeDotsButton={isCodeTab}
+        shouldShowThreeDotsButton={shouldShowThreeDotsButton}
         threeDotsAnchorPosition={threeDotsAnchorPosition}
         threeDotsMenuItems={[
           {

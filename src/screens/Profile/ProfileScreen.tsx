@@ -424,11 +424,21 @@ function ProfileScreen({route}: ProfileScreenProps) {
           )}
         </View>
       </ScrollView>
-      <ManageFriendPopover
-        isVisible={manageFriendModalVisible}
-        onClose={() => setManageFriendModalVisible(false)}
-        friendId={userID}
-      />
+      {/* Held back until the entry slide finishes. `PopoverWithMeasuredContent`
+          renders the menu once, invisibly, just to measure it, and parks that
+          pass at `left: -9999` (see `styles.invisiblePopover`). Mounted during
+          the push, that off-screen parking paints for a few frames at the
+          bottom of the card and reads as a stray hairline sliding away to the
+          left. Nothing here is reachable until the screen has landed (the
+          "Manage" button is the only way in), so deferring costs no
+          interactivity and keeps the measure pass off the transition. */}
+      {didScreenTransitionEnd ? (
+        <ManageFriendPopover
+          isVisible={manageFriendModalVisible}
+          onClose={() => setManageFriendModalVisible(false)}
+          friendId={userID}
+        />
+      ) : null}
     </ScreenWrapper>
   );
 }
