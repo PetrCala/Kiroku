@@ -4,9 +4,9 @@ Every mail Kiroku sends (email verification, password reset, email-change
 confirmation) is sent by **Firebase Authentication** on the app's behalf. The
 client calls the Firebase SDK (`sendEmailVerification`, `sendPasswordResetEmail`,
 `verifyBeforeUpdateEmail`), Identity Toolkit accepts the request, and Firebase
-delivers the mail from the custom sender domain (`noreply@mail.kiroku.cz` in
-production, `noreply@mail.dev.kiroku.cz` elsewhere; see the top of
-`src/CONST.ts`) through whatever relay the Firebase console is configured with
+delivers the mail from the custom sender domain (`mail.kiroku.cz` in
+production, `mail.dev.kiroku.cz` elsewhere, with one local part per template
+such as `password.reset@`; see the top of `src/CONST.ts`) through whatever relay the Firebase console is configured with
 (Authentication → Templates → SMTP settings). There is no SMTP code in this
 repo.
 

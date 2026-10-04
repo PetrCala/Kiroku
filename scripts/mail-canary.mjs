@@ -13,7 +13,7 @@
  * watches that account's Gmail inbox over IMAP until the mail lands, and checks
  *
  *   1. it reached INBOX, not Spam
- *   2. the From address is the configured sender (noreply@mail.kiroku.cz)
+ *   2. the From address is the configured sender (password.reset@mail.kiroku.cz)
  *   3. Gmail's Authentication-Results say dkim=pass and dmarc=pass (spf is a warning)
  *   4. the action link carries a valid, unexpired oobCode, verified against
  *      Identity Toolkit without consuming it
@@ -45,7 +45,7 @@
  *   CANARY_EMAIL                  Firebase account that receives the reset mail
  *   CANARY_IMAP_USER              Mailbox login (the Gmail address)
  *   CANARY_IMAP_PASSWORD          Gmail app password (spaces are ignored)
- *   CANARY_EXPECTED_FROM          Expected From address (default noreply@mail.kiroku.cz)
+ *   CANARY_EXPECTED_FROM          Expected From address (default password.reset@mail.kiroku.cz)
  *   CANARY_IMAP_HOST / _PORT      IMAP server (default imap.gmail.com / 993)
  *   CANARY_IMAP_TLS               'off' to use plaintext (local test servers only)
  *   CANARY_IDENTITY_TOOLKIT_URL   Identity Toolkit base (default the Google endpoint;
@@ -60,7 +60,7 @@ import net from 'node:net';
 import tls from 'node:tls';
 
 const IDENTITY_TOOLKIT_URL = 'https://identitytoolkit.googleapis.com/v1';
-const DEFAULT_EXPECTED_FROM = 'noreply@mail.kiroku.cz';
+const DEFAULT_EXPECTED_FROM = 'password.reset@mail.kiroku.cz';
 const DEFAULT_TIMEOUT_SECONDS = 900;
 const DEFAULT_POLL_SECONDS = 30;
 // A mail stamped slightly before our send is still ours: the IMAP server's
