@@ -30,21 +30,21 @@ const IMAP_USER = 'kiroku.alcohol.tracker@gmail.com';
 const IMAP_PASSWORD = 'abcdefghijklmnop';
 // Google shows app passwords in groups of four; the script must strip the spaces.
 const IMAP_PASSWORD_AS_PASTED = 'abcd efgh ijkl mnop';
-const EXPECTED_FROM = 'noreply@mail.kiroku.cz';
+const EXPECTED_FROM = 'password.reset@mail.kiroku.cz';
 const OOB_CODE = 'CODE123abc_-XYZ';
 const ACTION_LINK = `https://alcohol-tracker-db.firebaseapp.com/__/auth/action?mode=resetPassword&oobCode=${OOB_CODE}&apiKey=AIzaFake&lang=en`;
 
 const PASSING_AUTH_RESULTS = [
   'Authentication-Results: mx.google.com;',
   '       dkim=pass header.i=@mail.kiroku.cz header.s=firebase1 header.b=AbCdEf12;',
-  '       spf=pass (google.com: domain of noreply@mail.kiroku.cz designates 209.85.220.69 as permitted sender) smtp.mailfrom=noreply@mail.kiroku.cz;',
+  '       spf=pass (google.com: domain of password.reset@mail.kiroku.cz designates 209.85.220.69 as permitted sender) smtp.mailfrom=password.reset@mail.kiroku.cz;',
   '       dmarc=pass (p=QUARANTINE sp=QUARANTINE dis=NONE) header.from=mail.kiroku.cz',
 ];
 
 const FAILING_AUTH_RESULTS = [
   'Authentication-Results: mx.google.com;',
   '       dkim=fail header.i=@mail.kiroku.cz header.s=firebase1 header.b=AbCdEf12;',
-  '       spf=softfail (google.com: domain of transitioning noreply@mail.kiroku.cz does not designate 1.2.3.4 as permitted sender) smtp.mailfrom=noreply@mail.kiroku.cz;',
+  '       spf=softfail (google.com: domain of transitioning password.reset@mail.kiroku.cz does not designate 1.2.3.4 as permitted sender) smtp.mailfrom=password.reset@mail.kiroku.cz;',
   '       dmarc=fail (p=QUARANTINE sp=QUARANTINE dis=QUARANTINE) header.from=mail.kiroku.cz',
 ];
 

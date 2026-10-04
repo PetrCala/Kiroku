@@ -9,7 +9,7 @@ name: Mail delivery canary
 #
 # scripts/mail-canary.mjs asks Identity Toolkit to send a password-reset mail to
 # a dedicated canary account, waits for it over IMAP, and checks that it reached
-# INBOX (not Spam), came from noreply@mail.kiroku.cz, passed DKIM and DMARC, and
+# INBOX (not Spam), came from password.reset@mail.kiroku.cz, passed DKIM and DMARC, and
 # carries a valid oobCode. One mail a day is nothing against the sending quotas.
 #
 # Setup (the canary account, the Gmail app password, the three secrets) and the
