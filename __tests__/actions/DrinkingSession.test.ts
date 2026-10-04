@@ -169,6 +169,7 @@ beforeEach(() => {
   // Reset the DrinkingSession.ts module caches the flush and sync guards read.
   driveOnyx(ONYXKEYS.ONGOING_SESSION_DATA, null);
   driveOnyx(ONYXKEYS.ONGOING_SESSION_SYNC, null);
+  driveOnyx(ONYXKEYS.SESSION_WRITE_ACKS, null);
   mockedDSUtils.clearOngoingSessionCache.mockReset();
 });
 
@@ -194,14 +195,15 @@ describe('live-session persistence', () => {
       sessionIsLive: true,
     });
     // No optimistic cachedDrinkingSessions merge; the flush only carries
-    // successData (the sync acknowledgement stamp), which applies off the
-    // touch frame when the response lands.
+    // successData (the sync acknowledgement stamp and the write ack), which
+    // applies off the touch frame when the response lands.
     const onyxData = call[2] as
       | {optimisticData?: unknown; successData?: Array<{key: string}>}
       | undefined;
     expect(onyxData?.optimisticData).toBeUndefined();
     expect(onyxData?.successData).toEqual([
       expect.objectContaining({key: ONYXKEYS.ONGOING_SESSION_SYNC}),
+      expect.objectContaining({key: ONYXKEYS.SESSION_WRITE_ACKS}),
     ]);
   });
 
@@ -436,6 +438,12 @@ describe('offline live-session persistence across restarts', () => {
           key: ONYXKEYS.ONGOING_SESSION_SYNC,
           value: {syncedAt: editedAt},
         }),
+        // The write ack: the placeholder is swapped for the response's
+        // lastUpdateID when the success data is applied.
+        expect.objectContaining({
+          key: ONYXKEYS.SESSION_WRITE_ACKS,
+          value: {s1: CONST.ONYX_UPDATE_TEMPLATE.LAST_UPDATE_ID},
+        }),
       ],
       failureData: [
         expect.objectContaining({
@@ -452,7 +460,7 @@ describe('offline live-session persistence across restarts', () => {
 
     // Cold start: the cached snapshot has not loaded yet (undefined). This used
     // to Onyx.set(ONGOING_SESSION_DATA, null) and destroy the persisted buffer.
-    await DS.syncLocalLiveSessionData(null, undefined);
+    await DS.syncLocalLiveSessionData(undefined);
 
     expect(mockedOnyx.set).not.toHaveBeenCalledWith(
       ONYXKEYS.ONGOING_SESSION_DATA,
@@ -474,7 +482,7 @@ describe('offline live-session persistence across restarts', () => {
 
     // The snapshot only has the optimistic (empty) session from session start.
     const stale = makeOngoing('s1');
-    await DS.syncLocalLiveSessionData('s1', {s1: stale});
+    await DS.syncLocalLiveSessionData({s1: stale});
 
     expect(mockedOnyx.set).not.toHaveBeenCalledWith(
       ONYXKEYS.ONGOING_SESSION_DATA,
@@ -494,7 +502,7 @@ describe('offline live-session persistence across restarts', () => {
     });
 
     const serverSession = {...makeOngoing('s1'), drinks: {2_000: {beer: 3}}};
-    await DS.syncLocalLiveSessionData('s1', {s1: serverSession});
+    await DS.syncLocalLiveSessionData({s1: serverSession});
 
     expect(mockedOnyx.set).toHaveBeenCalledWith(
       ONYXKEYS.ONGOING_SESSION_DATA,
@@ -502,13 +510,18 @@ describe('offline live-session persistence across restarts', () => {
     );
   });
 
-  it('clears the buffer when the loaded snapshot has no ongoing session and nothing is un-synced', async () => {
-    driveOnyx(ONYXKEYS.ONGOING_SESSION_DATA, {
-      ...makeOngoing('s1'),
-      ongoing: false,
+  it('clears the buffer when a fresh snapshot no longer holds the session and nothing is un-synced', async () => {
+    // Finished or discarded on another device: every local edit was
+    // acknowledged, and the snapshot is not older than that acknowledgement.
+    driveOnyx(ONYXKEYS.ONGOING_SESSION_DATA, makeOngoing('s1'));
+    driveOnyx(ONYXKEYS.ONGOING_SESSION_SYNC, {
+      sessionId: 's1',
+      editedAt: 100,
+      enqueuedAt: 100,
+      syncedAt: 100,
     });
 
-    await DS.syncLocalLiveSessionData(null, {});
+    await DS.syncLocalLiveSessionData({});
 
     expect(mockedOnyx.set).toHaveBeenCalledWith(
       ONYXKEYS.ONGOING_SESSION_DATA,
@@ -521,7 +534,7 @@ describe('offline live-session persistence across restarts', () => {
     driveOnyx(ONYXKEYS.ONGOING_SESSION_DATA, buffered);
     driveOnyx(ONYXKEYS.ONGOING_SESSION_SYNC, {sessionId: 's1', editedAt: 100});
 
-    await DS.syncLocalLiveSessionData(null, {});
+    await DS.syncLocalLiveSessionData({});
 
     expect(mockedOnyx.set).not.toHaveBeenCalledWith(
       ONYXKEYS.ONGOING_SESSION_DATA,
@@ -579,6 +592,151 @@ describe('offline live-session persistence across restarts', () => {
       ONYXKEYS.ONGOING_SESSION_SYNC,
       null,
     );
+  });
+});
+
+describe('the live buffer is the source of truth for its own session', () => {
+  // Push ids sort chronologically, so the older session sorts first.
+  const OLD = '-Nold00000000000000';
+  const NEW = '-Nnew00000000000000';
+  const ACKS = ONYXKEYS.SESSION_WRITE_ACKS;
+  const {getOngoingSessionId} = jest.requireActual<typeof DSUtils>(
+    '@libs/DrinkingSessionUtils',
+  );
+  const mockedOnyx = {
+    set: Onyx.set as unknown as jest.Mock<Promise<void>, [OnyxKey, unknown]>,
+    merge: Onyx.merge as unknown as jest.Mock<
+      Promise<void>,
+      [OnyxKey, unknown]
+    >,
+  };
+
+  function bufferWrites() {
+    return mockedOnyx.set.mock.calls.filter(
+      call => call[0] === ONYXKEYS.ONGOING_SESSION_DATA,
+    );
+  }
+
+  beforeEach(() => {
+    mockedDSUtils.getOngoingSessionId.mockImplementation(getOngoingSessionId);
+  });
+
+  afterEach(() => {
+    mockedDSUtils.getOngoingSessionId.mockReset();
+  });
+
+  it('never switches to another ongoing session the snapshot lists', async () => {
+    const buffered = {
+      ...makeOngoing(NEW),
+      start_time: 2_000,
+      drinks: {2_000: {beer: 3}},
+    };
+    driveOnyx(ONYXKEYS.ONGOING_SESSION_DATA, buffered);
+    driveOnyx(ONYXKEYS.ONGOING_SESSION_SYNC, {
+      sessionId: NEW,
+      editedAt: 100,
+      enqueuedAt: 100,
+      syncedAt: 100,
+    });
+    // Two sessions flagged ongoing on the server: the buffered one and an
+    // older one it orphaned. The old code picked the first key, the older
+    // session, and adopted its copy over the buffer.
+    const snapshot = {
+      [OLD]: {...makeOngoing(OLD), start_time: 1_000},
+      [NEW]: {...makeOngoing(NEW), start_time: 2_000, drinks: buffered.drinks},
+    };
+
+    await DS.syncLocalLiveSessionData(snapshot, 5);
+
+    // Nothing un-synced and a fresh snapshot: the buffer adopts its OWN server
+    // copy, and only that.
+    expect(bufferWrites()).toEqual([
+      [ONYXKEYS.ONGOING_SESSION_DATA, expect.objectContaining({id: NEW})],
+    ]);
+  });
+
+  it('resumes the newest ongoing session when the buffer is empty', async () => {
+    const snapshot = {
+      [OLD]: {...makeOngoing(OLD), start_time: 1_000},
+      [NEW]: {...makeOngoing(NEW), start_time: 2_000},
+    };
+
+    await DS.syncLocalLiveSessionData(snapshot, 5);
+
+    expect(bufferWrites()).toEqual([
+      [ONYXKEYS.ONGOING_SESSION_DATA, expect.objectContaining({id: NEW})],
+    ]);
+  });
+
+  it('ignores a snapshot older than the acknowledged writes: no clear, no rollback', async () => {
+    const buffered = {...makeOngoing('s1'), drinks: {1_000: {beer: 2}}};
+    driveOnyx(ONYXKEYS.ONGOING_SESSION_DATA, buffered);
+    driveOnyx(ONYXKEYS.ONGOING_SESSION_SYNC, {
+      sessionId: 's1',
+      editedAt: 100,
+      enqueuedAt: 100,
+      syncedAt: 100,
+    });
+    // The flush was acknowledged by server update 12. The snapshot in hand
+    // was taken at update 10, before the session's writes landed (an
+    // `app/open` queued ahead of them while offline), so it does not list
+    // the session at all.
+    driveOnyx(ACKS, {s1: 12});
+
+    await DS.syncLocalLiveSessionData({}, 10);
+    // The same snapshot holding only the empty optimistic copy must not roll
+    // the drinks back either.
+    await DS.syncLocalLiveSessionData({s1: makeOngoing('s1')}, 10);
+    // A snapshot of unknown age counts as older.
+    await DS.syncLocalLiveSessionData({}, undefined);
+
+    expect(bufferWrites()).toEqual([]);
+  });
+
+  it('honours a snapshot at or past the acknowledged write', async () => {
+    driveOnyx(ONYXKEYS.ONGOING_SESSION_DATA, makeOngoing('s1'));
+    driveOnyx(ONYXKEYS.ONGOING_SESSION_SYNC, {
+      sessionId: 's1',
+      editedAt: 100,
+      enqueuedAt: 100,
+      syncedAt: 100,
+    });
+    driveOnyx(ACKS, {s1: 12});
+
+    await DS.syncLocalLiveSessionData({}, 12);
+
+    expect(bufferWrites()).toEqual([[ONYXKEYS.ONGOING_SESSION_DATA, null]]);
+  });
+
+  it('does not resurrect a session this device finished from a snapshot older than the finalize', async () => {
+    // The save cleared the buffer, and the finalize was acknowledged by
+    // update 20. A snapshot from update 15 still lists the session as ongoing.
+    driveOnyx(ACKS, {s1: 20});
+
+    await DS.syncLocalLiveSessionData({s1: makeOngoing('s1')}, 15);
+    expect(bufferWrites()).toEqual([]);
+
+    // A snapshot past the finalize that still lists it as ongoing is the
+    // server's word (it was re-opened elsewhere), so it is resumed.
+    await DS.syncLocalLiveSessionData({s1: makeOngoing('s1')}, 21);
+    expect(bufferWrites()).toEqual([
+      [ONYXKEYS.ONGOING_SESSION_DATA, expect.objectContaining({id: 's1'})],
+    ]);
+  });
+
+  it('prunes the acks a fresh snapshot has caught up with, keeping the live session', async () => {
+    driveOnyx(ONYXKEYS.ONGOING_SESSION_DATA, makeOngoing('s1'));
+    driveOnyx(ONYXKEYS.ONGOING_SESSION_SYNC, {
+      sessionId: 's1',
+      editedAt: 100,
+      enqueuedAt: 100,
+      syncedAt: 100,
+    });
+    driveOnyx(ACKS, {s1: 12, done: 9, later: 30});
+
+    await DS.syncLocalLiveSessionData({s1: makeOngoing('s1')}, 12);
+
+    expect(mockedOnyx.merge).toHaveBeenCalledWith(ACKS, {done: null});
   });
 });
 

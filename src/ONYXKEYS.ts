@@ -130,6 +130,14 @@ const ONYXKEYS = {
    */
   UNSYNCED_SESSION_WRITES: 'unsyncedSessionWrites',
 
+  /**
+   * Per session, the server update (`lastUpdateID`) that acknowledged this
+   * device's newest write to it. Compared with `SESSIONS_SNAPSHOT_UPDATE_ID`:
+   * a full snapshot older than a session's acknowledged write predates that
+   * write, so it may neither roll the session back nor clear it.
+   */
+  SESSION_WRITE_ACKS: 'sessionWriteAcks',
+
   /** Edit session data */
   EDIT_SESSION_DATA: 'editSessionData',
 
@@ -146,6 +154,13 @@ const ONYXKEYS = {
    * source of truth; this is a render-time accelerator only.
    */
   CACHED_DRINKING_SESSIONS: 'cachedDrinkingSessions',
+
+  /**
+   * The server update (`lastUpdateID`) the current full sessions snapshot in
+   * `CACHED_DRINKING_SESSIONS` was taken at: an `app/open` or a full reconnect.
+   * Written in the same batch as the snapshot it describes.
+   */
+  SESSIONS_SNAPSHOT_UPDATE_ID: 'sessionsSnapshotUpdateID',
 
   /** Is the app loading? */
   IS_LOADING_APP: 'isLoadingApp',
@@ -368,10 +383,12 @@ type OnyxValuesMapping = {
   [ONYXKEYS.ONGOING_SESSION_DATA]: OnyxTypes.DrinkingSession;
   [ONYXKEYS.ONGOING_SESSION_SYNC]: OnyxTypes.OngoingSessionSync;
   [ONYXKEYS.UNSYNCED_SESSION_WRITES]: OnyxTypes.UnsyncedSessionWriteList;
+  [ONYXKEYS.SESSION_WRITE_ACKS]: OnyxTypes.SessionWriteAckList;
   [ONYXKEYS.EDIT_SESSION_DATA]: OnyxTypes.DrinkingSession;
   [ONYXKEYS.IS_CREATING_NEW_SESSION]: boolean;
   [ONYXKEYS.SESSIONS_CALENDAR_MONTHS_LOADED]: number;
   [ONYXKEYS.CACHED_DRINKING_SESSIONS]: OnyxTypes.UserDrinkingSessionsList;
+  [ONYXKEYS.SESSIONS_SNAPSHOT_UPDATE_ID]: number;
   [ONYXKEYS.APP_LOADING_TEXT]: string;
   [ONYXKEYS.IS_LOADING_APP]: boolean;
   [ONYXKEYS.USER_DATA_HYDRATED]: boolean;

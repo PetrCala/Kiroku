@@ -39,8 +39,11 @@ import type {
   DrinksToUnits,
   OngoingSessionSync,
   Request,
+  SessionWriteAckList,
   UnsyncedSessionWriteList,
+  UserDrinkingSessionsList,
 } from '@src/types/onyx';
+import type {User} from 'firebase/auth';
 
 // Onyx batches updates through react-dom's unstable_batchedUpdates, which is
 // undefined in this RN test environment; run the callback synchronously.
@@ -905,5 +908,134 @@ describe('Offline write durability (real write pipeline)', () => {
       ONYXKEYS.ONGOING_SESSION_SYNC,
     );
     expect(sync).toBeUndefined();
+  });
+});
+
+/**
+ * The 22 Sep 2026 incident. The app was launched offline, so `app/open` sat in
+ * the persisted queue ahead of the live session's create and flushes. On
+ * reconnection it was sent first, its snapshot lacked the session, and it was
+ * applied in the same drain as the flushes' acknowledgements: the buffer read
+ * as synced, the snapshot as authoritative, and the live session was cleared
+ * while the server still held it as ongoing.
+ */
+describe('a full snapshot queued ahead of an offline live session', () => {
+  const SESSION_ID = 'generated-session-id';
+  const STALE_SNAPSHOT_UPDATE_ID = 100;
+
+  /** The open answers with the world as it stood before the session's writes. */
+  function serverWithStaleOpen(): void {
+    let lastUpdateID = STALE_SNAPSHOT_UPDATE_ID;
+    mockXhr.mockImplementation((command: string) => {
+      if (command === WRITE_COMMANDS.OPEN_APP) {
+        return Promise.resolve({
+          jsonCode: 200,
+          lastUpdateID: STALE_SNAPSHOT_UPDATE_ID,
+          onyxData: [
+            {
+              onyxMethod: Onyx.METHOD.MERGE,
+              key: ONYXKEYS.CACHED_DRINKING_SESSIONS,
+              value: {[ME]: null},
+            },
+            {
+              onyxMethod: Onyx.METHOD.MERGE,
+              key: ONYXKEYS.CACHED_DRINKING_SESSIONS,
+              value: {[ME]: {}},
+            },
+          ],
+        });
+      }
+      lastUpdateID += 1;
+      return Promise.resolve({jsonCode: 200, onyxData: [], lastUpdateID});
+    });
+  }
+
+  async function startOfflineSessionBehindAnOpen(): Promise<void> {
+    await setNetwork(true);
+    // Launched offline: the open is queued before the session exists.
+    API.write(WRITE_COMMANDS.OPEN_APP, {enablePriorityModeFilter: true});
+    await DS.startLiveDrinkingSession({uid: ME} as User, 'Europe/Prague');
+    DS.updateDrinks(
+      SESSION_ID,
+      CONST.DRINKS.KEYS.BEER,
+      1,
+      CONST.DRINKS.ACTIONS.ADD,
+      DRINKS_TO_UNITS,
+    );
+    await waitFor(() => PersistedRequests.getAll().length === 3, 5000);
+    expect(queuedCommands()).toEqual([
+      WRITE_COMMANDS.OPEN_APP,
+      WRITE_COMMANDS.UPDATE_SESSION,
+      WRITE_COMMANDS.UPDATE_SESSION,
+    ]);
+  }
+
+  /** What Home does when the snapshot changes. */
+  async function syncFromSnapshot(): Promise<void> {
+    const snapshot = await readOnyx<UserDrinkingSessionsList>(
+      ONYXKEYS.CACHED_DRINKING_SESSIONS,
+    );
+    const snapshotUpdateID = await readOnyx<number>(
+      ONYXKEYS.SESSIONS_SNAPSHOT_UPDATE_ID,
+    );
+    await DS.syncLocalLiveSessionData(snapshot?.[ME], snapshotUpdateID);
+    await settle();
+  }
+
+  it('cannot clear the live buffer: the snapshot predates the writes it lacks', async () => {
+    await startOfflineSessionBehindAnOpen();
+    serverWithStaleOpen();
+
+    await setNetwork(false);
+    await waitFor(
+      () =>
+        mockXhr.mock.calls.length === 3 &&
+        PersistedRequests.getAll().length === 0,
+    );
+    await settle();
+
+    // The stale open replaced the snapshot (the session is gone from it) and
+    // was stamped with its age; the create and the flush were acknowledged
+    // by later updates.
+    const snapshot = await readOnyx<UserDrinkingSessionsList>(
+      ONYXKEYS.CACHED_DRINKING_SESSIONS,
+    );
+    expect(snapshot?.[ME]?.[SESSION_ID]).toBeUndefined();
+    expect(await readOnyx<number>(ONYXKEYS.SESSIONS_SNAPSHOT_UPDATE_ID)).toBe(
+      STALE_SNAPSHOT_UPDATE_ID,
+    );
+    expect(
+      (await readOnyx<SessionWriteAckList>(ONYXKEYS.SESSION_WRITE_ACKS))?.[
+        SESSION_ID
+      ],
+    ).toBe(STALE_SNAPSHOT_UPDATE_ID + 2);
+
+    await syncFromSnapshot();
+
+    const buffer = await readOnyx<DrinkingSession>(
+      ONYXKEYS.ONGOING_SESSION_DATA,
+    );
+    expect(buffer?.id).toBe(SESSION_ID);
+    expect(buffer?.ongoing).toBe(true);
+    expect(Object.keys(buffer?.drinks ?? {})).toHaveLength(1);
+  });
+
+  it('still clears the buffer for a snapshot taken after the writes that no longer lists the session', async () => {
+    await startOfflineSessionBehindAnOpen();
+    serverWithStaleOpen();
+    await setNetwork(false);
+    await waitFor(() => PersistedRequests.getAll().length === 0);
+    await settle();
+
+    // A later full snapshot (finished or discarded on another device).
+    await Onyx.multiSet({
+      [ONYXKEYS.CACHED_DRINKING_SESSIONS]: {[ME]: {}},
+      [ONYXKEYS.SESSIONS_SNAPSHOT_UPDATE_ID]: STALE_SNAPSHOT_UPDATE_ID + 5,
+    });
+    await syncFromSnapshot();
+
+    expect(
+      await readOnyx<DrinkingSession>(ONYXKEYS.ONGOING_SESSION_DATA),
+    ).toBeUndefined();
   });
 });

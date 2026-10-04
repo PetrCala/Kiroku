@@ -8,6 +8,7 @@ import type {
   OngoingSessionSync,
   SessionEntrySource,
   SessionVisibility,
+  SessionWriteAckList,
   UnsyncedSessionWriteList,
   UserDataList,
   UserDrinkingSessionsList,
@@ -128,6 +129,39 @@ Onyx.connect({
     }
   },
 });
+
+// Per session, the server update that acknowledged this device's newest write
+// to it (`SESSION_WRITE_ACKS`). Every session write stamps it through the
+// `ONYX_UPDATE_TEMPLATE.LAST_UPDATE_ID` placeholder in its success data (see
+// `OnyxUpdates.applyHTTPSOnyxUpdates`). `syncLocalLiveSessionData` compares it
+// with the update the current full snapshot was taken at, to tell a snapshot
+// older than a session's acknowledged state from a genuinely newer one.
+let sessionWriteAcks: SessionWriteAckList | undefined;
+let sessionWriteAcksLoaded = false;
+// eslint-disable-next-line rulesdir/no-onyx-connect -- module-scope action-layer wiring with no React context to hang a useOnyx on, same as the connections above
+Onyx.connect({
+  key: ONYXKEYS.SESSION_WRITE_ACKS,
+  callback: value => {
+    sessionWriteAcksLoaded = true;
+    sessionWriteAcks = value ?? undefined;
+  },
+});
+
+/**
+ * Success data stamping the server update that acknowledges a write to
+ * `sessionId`. The placeholder is resolved from the response when the success
+ * data is applied; the cast covers the string standing in for the number
+ * until then.
+ */
+function sessionWriteAckData(sessionId: DrinkingSessionId): OnyxUpdate {
+  return {
+    onyxMethod: Onyx.METHOD.MERGE,
+    key: ONYXKEYS.SESSION_WRITE_ACKS,
+    value: {
+      [sessionId]: CONST.ONYX_UPDATE_TEMPLATE.LAST_UPDATE_ID,
+    } as unknown as SessionWriteAckList,
+  };
+}
 
 /**
  * Re-enqueue every parked session write (a finalize the request queue
@@ -515,7 +549,7 @@ function flushLiveSessionPersist(): void {
       sessionIsLive: true,
     },
     coversEditedAt === undefined
-      ? {}
+      ? {successData: [sessionWriteAckData(session.id)]}
       : {
           successData: [
             {
@@ -523,6 +557,7 @@ function flushLiveSessionPersist(): void {
               key: ONYXKEYS.ONGOING_SESSION_SYNC,
               value: {syncedAt: coversEditedAt},
             },
+            sessionWriteAckData(session.id),
           ],
           // Applied only if the request queue permanently drops this request
           // (a deterministic server rejection; transient
@@ -591,92 +626,146 @@ function scheduleLiveSessionPersist(): void {
 }
 
 /**
- * Check if the current live session data is the same as the one in the database. If not, update the local data.
+ * Whether the buffered live session holds edits the server has not
+ * acknowledged, which make the buffer newer than any snapshot. On the op path
+ * the exact answer is in the queue itself: ops waiting or in flight. On the
+ * snapshot path it is the pending debounced persist (in memory) or the
+ * persisted sync stamps (across restarts, e.g. everything queued offline).
+ */
+function hasUnacknowledgedLocalEdits(session: DrinkingSession): boolean {
+  if (!session.id) {
+    return false;
+  }
+  if (shouldUseSessionOps(session)) {
+    return hasQueuedSessionOps(session.id);
+  }
+  return (
+    hasPendingLiveSessionPersist() || hasUnsyncedLiveSessionEdits(session.id)
+  );
+}
+
+/**
+ * Whether the current full snapshot predates this device's newest
+ * acknowledged write to `sessionId`. Such a snapshot was queued or persisted
+ * before that write landed (an `app/open` that sat in the offline queue ahead
+ * of the session's writes, a copy hydrated from disk), so what it says about
+ * the session is older than what the server already holds. A snapshot whose
+ * age is unknown counts as older, until the next full snapshot stamps one.
+ */
+function isSnapshotOlderThanAck(
+  sessionId: DrinkingSessionId,
+  snapshotUpdateID: number | undefined,
+): boolean {
+  const acked = sessionWriteAcks?.[sessionId];
+  if (typeof acked !== 'number') {
+    return false;
+  }
+  return snapshotUpdateID === undefined || snapshotUpdateID < acked;
+}
+
+/**
+ * Drop the acks a fresh full snapshot has caught up with: once the snapshot is
+ * at or past a session's acknowledged write, the ack has nothing left to
+ * protect. The buffered session keeps its ack until it ends, since its next
+ * write is always ahead of the snapshot in hand.
+ */
+function pruneSessionWriteAcks(snapshotUpdateID: number | undefined): void {
+  if (snapshotUpdateID === undefined || !sessionWriteAcks) {
+    return;
+  }
+  const stale: Record<DrinkingSessionId, null> = {};
+  Object.entries(sessionWriteAcks).forEach(([sessionId, acked]) => {
+    if (sessionId !== ongoingSessionData?.id && acked <= snapshotUpdateID) {
+      stale[sessionId] = null;
+    }
+  });
+  if (Object.keys(stale).length === 0) {
+    return;
+  }
+  Onyx.merge(ONYXKEYS.SESSION_WRITE_ACKS, stale);
+}
+
+/**
+ * Reconcile the live editing buffer (`ONGOING_SESSION_DATA`) with the cached
+ * snapshot, after the snapshot changed.
  *
- * @param ongoingSessionId  The ID of the ongoing session.
- * @param drinkingSessionData  The drinking session data.
+ * The buffer is the source of truth for its own session. A snapshot may only
+ * override it when it is provably at least as new as the last write the
+ * server acknowledged for that session: `snapshotUpdateID`, the server update
+ * the current full snapshot was taken at, against the session's entry in
+ * `SESSION_WRITE_ACKS`. Both are server-issued and monotonic, so the check is
+ * exact, and both are persisted, so it holds across restarts. When the
+ * snapshot passes it:
+ *
+ * - the buffered session is still ongoing on the server: adopt the server
+ *   copy (cross-device drinks; the buffer holds nothing the server lacks),
+ * - it is finished or gone on the server: clear the buffer,
+ * - there is no buffered session: resume the newest ongoing session the
+ *   server lists, unless the snapshot predates this device's own finalize or
+ *   discard of it.
+ *
+ * The buffer never switches to a different session while it holds one. A
+ * second session the server still flags ongoing stays in the snapshot for the
+ * calendar to show and is finished from there (`DrinkingSessionOverview`).
+ * Before this rule the first ongoing key in the snapshot, the older session,
+ * was adopted over whatever the buffer held, and a stale copy of a live
+ * session could replace the buffer's drinks or clear it while the server
+ * still held it as ongoing.
  */
 async function syncLocalLiveSessionData(
-  ongoingSessionId: DrinkingSessionId | undefined | null,
   drinkingSessionData: DrinkingSessionList | undefined | null,
-) {
+  snapshotUpdateID?: number,
+): Promise<void> {
   // No snapshot at all means it simply has not hydrated/loaded yet (cold start,
   // or offline before `app/open` ever ran). That transient must never touch the
   // buffer: clearing it here used to wipe an offline live session's persisted
   // drinks on every cold boot, before the real snapshot arrived. The same goes
-  // for the sync stamps: until they hydrate we can't tell whether the buffer
-  // holds un-acknowledged offline edits, so no adopt/wipe decision is safe.
-  if (!drinkingSessionData || !ongoingSessionSyncLoaded) {
+  // for the sync stamps and the write acks: until they hydrate we can't tell
+  // whether the buffer holds un-acknowledged edits, so no decision is safe.
+  if (
+    !drinkingSessionData ||
+    !ongoingSessionSyncLoaded ||
+    !sessionWriteAcksLoaded
+  ) {
     return;
   }
-  if (ongoingSessionId) {
-    const newData = drinkingSessionData[ongoingSessionId];
-    if (!newData) {
+  pruneSessionWriteAcks(snapshotUpdateID);
+
+  const buffered =
+    ongoingSessionData?.ongoing && ongoingSessionData.id
+      ? ongoingSessionData
+      : undefined;
+  if (buffered?.id) {
+    const bufferedId = buffered.id;
+    if (hasUnacknowledgedLocalEdits(buffered)) {
       return;
     }
-    // `ONGOING_SESSION_DATA` is the authoritative live-editing buffer on the
-    // device that owns the session: its drink taps race ahead of the debounced
-    // server echo. While a persist is still pending the buffer is newer than the
-    // snapshot we'd adopt here, so overwriting it would roll back just-tapped
-    // drinks (and clobber crash-recovered local state). Adopt the snapshot only
-    // once this device has nothing un-persisted — that covers cross-device drink
-    // updates, cold-start resume and crash recovery without the rollback.
-    // On the op path the exact answer is in the queue itself: while this
-    // device has ops for the session waiting there, the local buffer is ahead
-    // of the snapshot and adopting the snapshot would roll just-tapped drinks
-    // back. That covers the restart case too, because the queue is persisted,
-    // which is why the op path needs no sync stamps at all.
-    if (
-      shouldUseSessionOps(ongoingSessionData) &&
-      ongoingSessionData?.id === ongoingSessionId
-    ) {
-      if (hasQueuedSessionOps(ongoingSessionId)) {
-        return;
-      }
-      await updateLocalData(
-        ONYXKEYS.ONGOING_SESSION_DATA,
-        newData,
-        ongoingSessionId,
-      );
+    if (isSnapshotOlderThanAck(bufferedId, snapshotUpdateID)) {
       return;
     }
-    if (
-      hasPendingLiveSessionPersist() &&
-      ongoingSessionData?.id === ongoingSessionId &&
-      ongoingSessionData?.ongoing
-    ) {
-      return;
-    }
-    // Same rule across restarts: the in-memory pending flag dies with the app,
-    // but the persisted stamps know the buffer still holds edits no successful
-    // request has acknowledged (e.g. everything queued offline). The snapshot
-    // can only be older than the buffer then, so adopting it would roll the
-    // offline edits back. Once the queued request succeeds, `syncedAt` catches
-    // up and the next sync adopts server truth again.
-    if (hasUnsyncedLiveSessionEdits(ongoingSessionId)) {
+    const serverCopy = drinkingSessionData[bufferedId];
+    if (!serverCopy || serverCopy.ongoing !== true) {
+      // Finished or deleted elsewhere: another device, the auto-close sweep.
+      Onyx.set(ONYXKEYS.ONGOING_SESSION_DATA, null);
       return;
     }
     await updateLocalData(
       ONYXKEYS.ONGOING_SESSION_DATA,
-      newData,
-      ongoingSessionId,
+      serverCopy,
+      bufferedId,
     );
-  } else {
-    // The loaded snapshot shows no ongoing session. Keep the buffer anyway if
-    // it holds un-acknowledged local edits (the snapshot may predate an
-    // offline-started session whose create is still queued); otherwise clear
-    // it, e.g. after the session was finalized on another device.
-    if (
-      ongoingSessionData?.ongoing &&
-      ongoingSessionData.id &&
-      (shouldUseSessionOps(ongoingSessionData)
-        ? hasQueuedSessionOps(ongoingSessionData.id)
-        : hasUnsyncedLiveSessionEdits(ongoingSessionData.id))
-    ) {
-      return;
-    }
-    Onyx.set(ONYXKEYS.ONGOING_SESSION_DATA, null);
+    return;
   }
+
+  const candidateId = DSUtils.getOngoingSessionId(drinkingSessionData);
+  if (!candidateId || isSnapshotOlderThanAck(candidateId, snapshotUpdateID)) {
+    return;
+  }
+  const candidate = drinkingSessionData[candidateId];
+  if (!candidate) {
+    return;
+  }
+  await updateLocalData(ONYXKEYS.ONGOING_SESSION_DATA, candidate, candidateId);
 }
 
 /**
@@ -782,7 +871,12 @@ function sendSessionOps(
   apply: PatchApplier,
 ): void {
   ops.forEach(op => {
-    const onyxData: OnyxData = {};
+    // Every op's acknowledgement stamps the session's write ack (see
+    // `sessionWriteAckData`), so a snapshot older than this op can be told
+    // apart from one that already reflects it.
+    const onyxData: OnyxData = {
+      successData: [sessionWriteAckData(sessionId)],
+    };
     if (Object.keys(op.patch).length > 0) {
       onyxData.optimisticData = [apply(op.patch)];
     }
@@ -837,7 +931,13 @@ function sendLiveSessionDiff(
  * persisted, so it survives a restart.
  */
 function hasQueuedSessionOps(sessionId: DrinkingSessionId): boolean {
-  return PersistedRequests.getAll().some(
+  // The request being sent right now has left the queue but is not
+  // acknowledged either, so it counts.
+  const inFlight = PersistedRequests.getOngoingRequest();
+  const requests = inFlight
+    ? [inFlight, ...PersistedRequests.getAll()]
+    : PersistedRequests.getAll();
+  return requests.some(
     request =>
       request.command === WRITE_COMMANDS.SESSION_OP &&
       (request.data as {sessionId?: string} | undefined)?.sessionId ===
@@ -872,6 +972,11 @@ async function startLiveDrinkingSession(
     }),
   );
 
+  // Fresh session, fresh sync stamps: any leftover marker from a previous
+  // (crashed/stale) session must not shadow this one's edits. Harmless on the
+  // op path, which keeps no stamps, and required when the flag is off.
+  clearLiveSessionSyncState();
+
   if (shouldUseSessionOps(newSessionData)) {
     // One `start` op carries the whole of a new session's meta, and the server
     // creates it, claims the live `user_status` slot and lowers the
@@ -888,9 +993,21 @@ async function startLiveDrinkingSession(
       sessionUpsertOptimisticData(user.uid, newSessionId, newSessionData),
     );
   } else {
+    // The create is this session's first write, so it is stamped like a flush:
+    // enqueued now, synced once the server answers. Until the answer arrives
+    // the session reads as un-synced, so a full snapshot that predates the
+    // create (one queued ahead of it while offline) cannot clear the session
+    // before its first drink, which used to leave no marker at all.
+    const startedAt = Date.now();
+    ongoingSessionSync = {
+      sessionId: newSessionId,
+      editedAt: startedAt,
+      enqueuedAt: startedAt,
+    };
+    Onyx.set(ONYXKEYS.ONGOING_SESSION_SYNC, ongoingSessionSync);
     // The server upserts the session and, because `sessionIsLive`, mirrors it into
     // the user's live status (`user_status`). Live sessions start at "now", so the
-    // strict-improvement floor only moves when the user has no earlier session —
+    // strict-improvement floor only moves when the user has no earlier session;
     // `sessionUpsertOptimisticData` handles that optimistically.
     API.write(
       WRITE_COMMANDS.UPDATE_SESSION,
@@ -901,14 +1018,27 @@ async function startLiveDrinkingSession(
           newSessionId,
           newSessionData,
         ),
+        successData: [
+          {
+            onyxMethod: Onyx.METHOD.MERGE,
+            key: ONYXKEYS.ONGOING_SESSION_SYNC,
+            value: {syncedAt: startedAt},
+          },
+          sessionWriteAckData(newSessionId),
+        ],
+        // A dropped create (a deterministic rejection) re-opens the "never
+        // reached the queue" state, so the resume logic re-sends the session
+        // as a full live flush, on the same drop cooldown as any other flush.
+        failureData: [
+          {
+            onyxMethod: Onyx.METHOD.MERGE,
+            key: ONYXKEYS.ONGOING_SESSION_SYNC,
+            value: {enqueuedAt: null, flushDropCount: 1},
+          },
+        ],
       },
     );
   }
-
-  // Fresh session, fresh sync stamps: any leftover marker from a previous
-  // (crashed/stale) session must not shadow this one's edits. Harmless on the
-  // op path, which keeps no stamps, and required when the flag is off.
-  clearLiveSessionSyncState();
 
   // Seed the synchronous cache so a tap fired before the Onyx.connect callback
   // lands still composes on the new session instead of an empty base.
@@ -1037,6 +1167,9 @@ async function saveDrinkingSessionData(
         sessionKey,
         sessionToPersist,
       ),
+      // The ack lets a later snapshot that still shows this session as
+      // ongoing be recognised as older than the finalize.
+      successData: [sessionWriteAckData(sessionKey)],
       // Applied only if the request queue permanently drops this request (a
       // deterministic server rejection; transient failures are
       // never dropped). Nothing later re-sends a finalize, so park the full
@@ -1093,7 +1226,12 @@ async function removeDrinkingSessionData(
   API.write(
     WRITE_COMMANDS.DELETE_SESSION,
     {sessionId: sessionKey, sessionIsLive: !!sessionIsLive},
-    {optimisticData: [cachedSessionPatch(userID, sessionKey, null)]},
+    {
+      optimisticData: [cachedSessionPatch(userID, sessionKey, null)],
+      // A later snapshot that still lists the session is older than this
+      // delete and must not resurrect it as live.
+      successData: [sessionWriteAckData(sessionKey)],
+    },
   );
 
   await Onyx.set(onyxKey, null);

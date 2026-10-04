@@ -253,10 +253,20 @@ function openApp() {
     enablePriorityModeFilter: true,
     // ...policyParams,
   };
+  // One open at a time in the queue. An app launched offline queues its open
+  // and cannot send it; without this, every further offline launch stacked
+  // another, and the whole stack replayed on reconnection.
   API.write(
     WRITE_COMMANDS.OPEN_APP,
     params,
     getOnyxDataForOpenOrReconnect(true),
+    {
+      checkAndFixConflictingRequest: persistedRequests =>
+        resolveDuplicationConflictAction(
+          persistedRequests,
+          request => request.command === WRITE_COMMANDS.OPEN_APP,
+        ),
+    },
   );
   // },
   // );
