@@ -10,11 +10,12 @@ import type {CrashlyticsAttributes} from './FirebaseCrashlyticsTypes';
 /**
  * Record a non-fatal event named `name`, with `attributes` attached as custom keys.
  *
- * `Log.alert` has no production sink in this fork: `LogCommand` in `libs/Log.ts` is
- * a stub that resolves without posting, and the client callback only reaches
- * `console.debug` plus opt-in Onyx log collection. Crashlytics is the one sink that
- * works in a release build, so anything that must be visible in the field goes
- * through here in addition to `Log.alert`.
+ * `Log.alert` has no other production sink in this fork: `LogCommand` in
+ * `libs/Log.ts` is a stub that resolves without posting, and the client callback
+ * only reaches `console.debug` plus opt-in Onyx log collection. Crashlytics is the
+ * one sink that works in a release build, so `Log.alert` mirrors every alert
+ * through here. Call it directly only for something that is not also an alert,
+ * or the event is recorded twice.
  *
  * Collection is gated twice: by the `SEND_CRASH_REPORTS` build flag below, and by
  * the user's own preference inside the SDK (see `setCrashReportingCollectionEnabled`),

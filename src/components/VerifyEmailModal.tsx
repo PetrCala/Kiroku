@@ -1,9 +1,11 @@
 import {useEffect, useState} from 'react';
 import {View} from 'react-native';
+import {useOnyx} from 'react-native-onyx';
 import {useFirebase} from '@context/global/FirebaseContext';
 import useLocalize from '@hooks/useLocalize';
 import useTheme from '@hooks/useTheme';
 import useThemeStyles from '@hooks/useThemeStyles';
+import * as ErrorUtils from '@libs/ErrorUtils';
 import Log from '@libs/Log';
 import * as Session from '@libs/actions/Session';
 import {sleep} from '@libs/TimeUtils';
@@ -12,6 +14,8 @@ import * as ValidationUtils from '@libs/ValidationUtils';
 import * as User from '@userActions/User';
 import CONFIG from '@src/CONFIG';
 import CONST from '@src/CONST';
+import ERRORS from '@src/ERRORS';
+import ONYXKEYS from '@src/ONYXKEYS';
 import Button from './Button';
 import DotIndicatorMessage from './DotIndicatorMessage';
 import Icon from './Icon';
@@ -46,6 +50,10 @@ function VerifyEmailModal() {
   const [isLoading, setIsLoading] = useState(false);
   const [resendStatus, setResendStatus] = useState<ResendStatus>('idle');
   const [errorText, setErrorText] = useState('');
+  // Set when the send fired by sign-up was rejected: no mail has gone out, so
+  // the inbox copy would be a lie. Cleared by the next send that succeeds.
+  const [sendFailedCode] = useOnyx(ONYXKEYS.VERIFY_EMAIL_SEND_FAILED);
+  const hasSendFailed = !!sendFailedCode;
 
   // changeEmail sub-view state
   const [view, setView] = useState<ModalView>('verify');
@@ -104,9 +112,15 @@ function VerifyEmailModal() {
         await User.sendVerifyEmailLink(user);
         setResendStatus('success');
       } catch (error) {
+        // A Firebase rejection reads "Firebase: Error (auth/quota-exceeded).",
+        // so show the mapped copy when the code is one we know. Anything else
+        // (the cooldown error is already translated) keeps its own message.
+        const appError = ErrorUtils.getAppError(undefined, error);
         const errorMessage = error instanceof Error ? error.message : '';
         setErrorText(
-          errorMessage || translate('verifyEmailScreen.error.sending'),
+          appError.code === ERRORS.UNKNOWN
+            ? errorMessage || translate('verifyEmailScreen.error.sending')
+            : appError.message,
         );
         setResendStatus('error');
       }
@@ -288,7 +302,9 @@ function VerifyEmailModal() {
             {translate('verifyEmailScreen.title')}
           </Text>
           <Text textAlign="center" style={styles.mt3}>
-            {translate('verifyEmailScreen.body', {email: displayEmail})}
+            {hasSendFailed
+              ? translate('verifyEmailScreen.sendFailed', {email: displayEmail})
+              : translate('verifyEmailScreen.body', {email: displayEmail})}
           </Text>
         </View>
         <View style={styles.pb1}>
@@ -322,8 +338,10 @@ function VerifyEmailModal() {
               messages={{0: errorText}}
             />
           )}
+          {/* With no mail out there is nothing to have verified yet, so the
+              resend takes the primary slot's emphasis. */}
           <Button
-            success
+            success={!hasSendFailed}
             large
             isLoading={isLoading}
             style={styles.mt1}
@@ -331,6 +349,7 @@ function VerifyEmailModal() {
             onPress={onVerifyButtonPress}
           />
           <Button
+            success={hasSendFailed}
             large
             style={styles.mt1}
             text={translate('verifyEmailScreen.resendEmail')}

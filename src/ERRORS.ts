@@ -32,6 +32,8 @@ const ERRORS = {
     REQUIRES_RECENT_LOGIN: 'auth/requires-recent-login',
     API_KEY_NOT_VALID: 'auth/api-key-not-valid',
     TOO_MANY_REQUESTS: 'auth/too-many-requests',
+    QUOTA_EXCEEDED: 'auth/quota-exceeded',
+    INTERNAL_ERROR: 'auth/internal-error',
     SIGN_OUT_FAILED: 'auth/sign-out-failed',
     USER_IS_NULL: 'auth/user-is-null',
     CREDENTIAL_ALREADY_IN_USE: 'auth/credential-already-in-use',

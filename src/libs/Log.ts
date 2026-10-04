@@ -11,6 +11,8 @@ import Logger from './common/Logger';
 import pkg from '../../package.json';
 import {addLog, flushAllLogsOnAppLaunch} from './actions/Console';
 import {shouldAttachLog} from './Console';
+import FirebaseCrashlytics from './Firebase/FirebaseCrashlytics';
+import type {CrashlyticsAttributes} from './Firebase/FirebaseCrashlyticsTypes';
 import getPlatform from './getPlatform';
 
 let timeout: ReturnType<typeof setTimeout>;
@@ -44,6 +46,74 @@ function writeToConsole(message: string, extraData: unknown): void {
     return;
   }
   console.debug(message, extraData);
+}
+
+type AlertParameters = Parameters<Logger['alert']>[1];
+
+// An alert's context is a code or a one-line message. A longer string is a
+// payload, and only its head is worth a custom key.
+const MAX_ATTRIBUTE_LENGTH = 200;
+
+/**
+ * The part of an alert's parameters that may leave the device as Crashlytics
+ * custom keys. Alert parameters often hold whole payloads (an Apple sign-in
+ * response, the request behind a failed API call), so only flat values cross
+ * over, with strings and Errors cut short. Objects and arrays stay local, and
+ * so does the call-site stack `Logger.alert` adds, which would only bury the
+ * keys worth reading.
+ */
+function toCrashlyticsAttributes(
+  parameters: AlertParameters,
+): CrashlyticsAttributes {
+  if (parameters instanceof Error) {
+    return {error: String(parameters).slice(0, MAX_ATTRIBUTE_LENGTH)};
+  }
+  if (typeof parameters !== 'object' || Array.isArray(parameters)) {
+    return {};
+  }
+  const attributes: CrashlyticsAttributes = {};
+  Object.entries(parameters).forEach(([key, value]) => {
+    if (key === 'stack') {
+      return;
+    }
+    if (
+      typeof value === 'number' ||
+      typeof value === 'boolean' ||
+      value === null ||
+      value === undefined
+    ) {
+      attributes[key] = value;
+    } else if (typeof value === 'string' || value instanceof Error) {
+      attributes[key] = String(value).slice(0, MAX_ATTRIBUTE_LENGTH);
+    }
+  });
+  return attributes;
+}
+
+// Crashlytics keeps only the last eight non-fatals of a session. An alert on a
+// hot path (a missing translation in a list row) would push every other report
+// out, at one native call per render, so an identical alert is reported once
+// per launch.
+const reportedAlerts = new Set<string>();
+
+/**
+ * Mirror an alert into Crashlytics as a non-fatal named after its message.
+ * Nothing else carries an alert out of a release build: the console line is
+ * stripped and `LogCommand` below never posts. `recordNonFatal` applies the
+ * `SEND_CRASH_REPORTS` build flag and the user's crash-reporting preference,
+ * and is a no-op on web.
+ */
+function reportAlertToCrashlytics(
+  message: string,
+  parameters: AlertParameters,
+): void {
+  const attributes = toCrashlyticsAttributes(parameters);
+  const signature = `${message} ${JSON.stringify(attributes)}`;
+  if (reportedAlerts.has(signature)) {
+    return;
+  }
+  reportedAlerts.add(signature);
+  FirebaseCrashlytics.recordNonFatal(message, attributes);
 }
 
 Onyx.connect({
@@ -152,6 +222,15 @@ const Log = new Logger({
   },
   isDebug: true,
 });
+
+// The client callback above only sees the formatted line (`[alrt] message -
+// {json}`), which is no use as an issue name. Wrapping `alert` hands Crashlytics
+// the bare message and the parameters while both are still separate.
+const logAlert = Log.alert.bind(Log);
+Log.alert = (message, parameters = {}, includeStackTrace = true) => {
+  logAlert(message, parameters, includeStackTrace);
+  reportAlertToCrashlytics(message, parameters);
+};
 scheduleLogFlush(Log);
 
 export default Log;

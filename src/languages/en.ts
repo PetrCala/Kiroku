@@ -1139,6 +1139,8 @@ export default {
     title: 'Verify your email',
     body: ({email}: VerifyEmailScreenEmailParmas) =>
       `We sent a verification link to ${email ?? 'your email'}. Open it to confirm your address, then come back here. Don't see it? Check your spam folder.`,
+    sendFailed: ({email}: VerifyEmailScreenEmailParmas) =>
+      `We couldn't send the verification email to ${email ?? 'your email'}. Tap Resend email to try again.`,
     resendEmail: 'Resend email',
     emailSent: 'Verification email sent.',
     emailVerified: 'Email verified!',
@@ -2050,6 +2052,15 @@ export default {
         title: 'Too Many Requests',
         message:
           'You have made too many requests. Please wait a while before trying again.',
+      },
+      quotaExceeded: {
+        title: 'Limit Reached',
+        message: "We've hit a limit on our side. Please try again later.",
+      },
+      internalError: {
+        title: 'Server Error',
+        message:
+          'Something went wrong on our side. Please try again in a moment.',
       },
       accountCreationLimitExceeded: {
         title: 'Rate Limit Exceeded',

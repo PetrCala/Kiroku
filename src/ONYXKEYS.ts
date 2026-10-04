@@ -190,6 +190,12 @@ const ONYXKEYS = {
   /** The last time a user has sent a verification email */
   VERIFY_EMAIL_SENT: 'verifyEmailSent',
 
+  /** Set to the Firebase error code when the verification email fired on
+   *  sign-up is rejected. While it is set no mail has gone out for the account,
+   *  so VerifyEmailModal says so instead of pointing at the inbox. The next send
+   *  that succeeds clears it. */
+  VERIFY_EMAIL_SEND_FAILED: 'verifyEmailSendFailed',
+
   /** Is app in beta version */
   IS_BETA: 'isBeta',
 
@@ -382,6 +388,7 @@ type OnyxValuesMapping = {
   [ONYXKEYS.TIPS_GIVEN]: number;
   [ONYXKEYS.TIP_JAR_PROMPT]: OnyxTypes.TipJarPrompt;
   [ONYXKEYS.VERIFY_EMAIL_SENT]: Timestamp;
+  [ONYXKEYS.VERIFY_EMAIL_SEND_FAILED]: string;
   [ONYXKEYS.IS_BETA]: boolean;
   [ONYXKEYS.HAS_CHECKED_AUTO_LOGIN]: boolean;
   [ONYXKEYS.PREFERRED_THEME]: ValueOf<typeof CONST.THEME>;
