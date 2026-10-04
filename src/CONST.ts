@@ -17,6 +17,8 @@ const KIROKU_URL = 'https://kiroku.cz';
 // (email verification, password reset, email-change confirmation). Configured
 // in the Firebase Console per project with matching DNS records (DKIM/SPF).
 // Subdomain isolates transactional mail reputation from the apex domain.
+// Each template sends from its own address on that domain
+// (email.verification@, password.reset@, email.change@); there is no noreply@.
 const TRANSACTIONAL_MAIL_DOMAINS = {
   DEV: 'mail.dev.kiroku.cz',
   PROD: 'mail.kiroku.cz',
@@ -171,7 +173,7 @@ const CONST = {
   },
   // Registry of features gated behind a subscription tier. Read via the pure
   // `getFeatureAccess` resolver (`@libs/Entitlements`) and the `useFeatureAccess`
-  // hook — never branch on this object directly at call sites.
+  // hook. Never branch on this object directly at call sites.
   //
   // - `tier`: `'free'` is always unlocked; `'plus'` is locked only when the
   //   premium gates are active (dev/staging today, production at v1.1) AND the
@@ -388,7 +390,6 @@ const CONST = {
     KIROKU_EMAIL_DOMAIN: '@kiroku.cz',
     TRANSACTIONAL_MAIL_DOMAIN,
     TRANSACTIONAL_MAIL_DOMAINS,
-    TRANSACTIONAL_NOREPLY_ADDRESS: `noreply@${TRANSACTIONAL_MAIL_DOMAIN}`,
   },
   EMPTY_ARRAY,
   EMPTY_OBJECT,
@@ -452,7 +453,7 @@ const CONST = {
     UNDEFINED: 'undefined',
   },
   HTTP_STATUS: {
-    // The Firebase ID token was revoked/disabled/invalid (NOT merely expired —
+    // The Firebase ID token was revoked/disabled/invalid (NOT merely expired;
     // that is `JSON_CODE.NOT_AUTHENTICATED` 407, which the Reauthentication
     // middleware refreshes and replays). A 401 means a token refresh cannot
     // recover the session, so the client force-signs-out (see HttpUtils).
@@ -465,7 +466,7 @@ const CONST = {
     // retired legacy `{root}api/{Command}` host answered, so HttpUtils reuses it
     // for an unrouted command (droppable).
     NOT_FOUND: 404,
-    // The resource already exists — e.g. provisioning an already-provisioned
+    // The resource already exists, e.g. provisioning an already-provisioned
     // user. Expected/benign for idempotent retries, not a service failure.
     CONFLICT: 409,
     // The request took too long (a proxy or load balancer gave up on it).
