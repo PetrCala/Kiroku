@@ -77,6 +77,23 @@ const KIROKU_ROUTES: Record<ApiCommand, KirokuRoute> = {
       `/v1/users/${encodeURIComponent(String(data.userID))}/sessions`,
     toQuery: data => ({from: Number(data.from ?? 0)}),
   },
+  // One page of the session feed: the same privacy-enforced route in its paged
+  // shape. `limit` switches the server to newest-first paging and the response
+  // carries a `sessionsPage {nextCursor, count}` sidecar (read straight off the
+  // response, like `searchResults`); `before` is the previous page's cursor.
+  [READ_COMMANDS.OPEN_SESSIONS_PAGE]: {
+    method: 'get',
+    path: '/v1/users/:uid/sessions',
+    toPath: data =>
+      `/v1/users/${encodeURIComponent(String(data.userID))}/sessions`,
+    toQuery: data => {
+      const query: Record<string, number> = {limit: Number(data.limit)};
+      if (typeof data.before === 'number' && data.before > 0) {
+        query.before = data.before;
+      }
+      return query;
+    },
+  },
   // Public profile read (profile + public_data + public is_supporter flag). Any
   // authenticated user may read it (mirrors the rules' `users/$uid/profile`).
   [READ_COMMANDS.OPEN_PUBLIC_PROFILE_PAGE]: {

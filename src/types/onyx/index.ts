@@ -106,6 +106,7 @@ import type {
   UserPrivateData,
   UserPublicData,
 } from './UserData';
+import type SessionsPage from './SessionsPage';
 import type UserStatus from './UserStatus';
 import type {UserStatusList} from './UserStatus';
 
@@ -212,6 +213,7 @@ export type {
   UserDrinkingSessionsList,
   UserIsTyping,
   UserLocation,
+  SessionsPage,
   UserStatus,
   UserStatusList,
 };
