@@ -167,6 +167,15 @@ class FakeImapServer {
 
   port = 0;
 
+  /**
+   * Called with the 1-based count of SELECTs across all connections; true
+   * makes the server answer that SELECT with `* BYE` and hang up, the way
+   * Gmail ends a session it no longer wants.
+   */
+  shouldDropSelect: (ordinal: number) => boolean = () => false;
+
+  private selects = 0;
+
   private readonly server: net.Server;
 
   private readonly sockets = new Set<net.Socket>();
@@ -239,6 +248,12 @@ class FakeImapServer {
         return selected;
       }
       case 'SELECT': {
+        this.selects++;
+        if (this.shouldDropSelect(this.selects)) {
+          reply('* BYE Temporary System Error');
+          socket.end();
+          return selected;
+        }
         const name = unquote(rest.join(' '));
         if (!this.mailboxes.has(name)) {
           reply(`${tag} NO [NONEXISTENT] Unknown Mailbox: ${name} (Failure)`);
@@ -527,6 +542,37 @@ describe('mail-canary run', () => {
 
     expect(output).toContain('nothing yet');
     expect(status).toBe(0);
+  });
+
+  it('signs in again and keeps waiting when the server drops the connection', async () => {
+    await startServers();
+    // SELECTs 1 and 2 are the first poll (INBOX, Spam); the second poll's
+    // INBOX is where the server hangs up.
+    imap.shouldDropSelect = ordinal => ordinal === 3;
+    setTimeout(() => {
+      inbox({uid: 7, internalDate: imapDate(new Date()), raw: resetMail()});
+    }, 2500);
+
+    const {status, output} = await runCanary(['run', '--timeout', '15']);
+
+    expect(output).toContain('server said "Temporary System Error"');
+    expect(output).toContain('signing in again (1/3)');
+    expect(status).toBe(0);
+    expect(imap.commands.filter(line => / LOGIN /.test(line))).toHaveLength(2);
+    // Trashed over the new connection; the dropped one could not have.
+    expect(imap.moves).toEqual([{uid: 7, to: '[Gmail]/Trash'}]);
+  });
+
+  it('fails at the mailbox stage when the server keeps dropping the connection', async () => {
+    await startServers();
+    imap.shouldDropSelect = () => true;
+
+    const {status, output} = await runCanary(['run', '--timeout', '15']);
+
+    expect(status).toBe(1);
+    expect(output).toContain('[mailbox]');
+    expect(output).toContain('dropped the connection 4 times');
+    expect(imap.commands.filter(line => / LOGIN /.test(line))).toHaveLength(4);
   });
 
   it('fails when the mail lands in Spam, and still trashes it', async () => {
