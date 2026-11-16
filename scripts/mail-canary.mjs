@@ -67,6 +67,9 @@ const DEFAULT_POLL_SECONDS = 30;
 // clock and this machine's rarely agree to the second.
 const CLOCK_SKEW_MS = 2 * 60 * 1000;
 const IMAP_IDLE_TIMEOUT_MS = 60 * 1000;
+// Gmail drops a long IMAP session now and then; a slow mail must not turn that
+// into a failure. Each drop costs a fresh sign-in, so keep the allowance small.
+const MAX_IMAP_RECONNECTS = 3;
 // Tracked links (a relay's click tracking) hide the target behind a redirect.
 const MAX_LINKS_TO_FOLLOW = 5;
 const MAX_REDIRECT_HOPS = 3;
@@ -386,8 +389,16 @@ class ImapClient {
 
   #closed = false;
 
+  /** The text of the server's `* BYE`, kept to explain a dropped connection. */
+  #bye = null;
+
   constructor(options) {
     this.#options = options;
+  }
+
+  /** True once the socket has died; a closed client cannot be reused. */
+  get closed() {
+    return this.#closed;
   }
 
   connect() {
@@ -408,16 +419,31 @@ class ImapClient {
         (this.#options.pollMs ?? 0) * 2,
       );
       this.#socket.setTimeout(idleTimeoutMs, () => {
-        this.#fail(new Error('the IMAP connection went quiet for too long'));
+        this.#lost(new Error('the IMAP connection went quiet for too long'));
         this.#socket.destroy();
       });
       this.#socket.on('data', chunk => this.#onData(chunk));
-      this.#socket.on('error', error => this.#fail(error));
+      this.#socket.on('error', error => this.#lost(error));
       this.#socket.on('close', () => {
-        this.#closed = true;
-        this.#fail(new Error('the IMAP connection closed unexpectedly'));
+        this.#lost(
+          new Error(this.#explain('the IMAP connection closed unexpectedly')),
+        );
       });
     });
+  }
+
+  /**
+   * The socket is gone. Mark the client closed before rejecting, so whoever
+   * catches the rejection already sees `closed` (Node emits 'close' only
+   * after 'error', a tick later).
+   */
+  #lost(error) {
+    this.#closed = true;
+    this.#fail(error);
+  }
+
+  #explain(message) {
+    return this.#bye ? `${message} (server said "${this.#bye}")` : message;
   }
 
   #fail(error) {
@@ -477,6 +503,9 @@ class ImapClient {
         }
         return;
       }
+      if (text.startsWith('* BYE')) {
+        this.#bye = text.slice('* BYE'.length).trim() || 'BYE';
+      }
       this.#pending?.untagged.push(response);
       return;
     }
@@ -502,7 +531,7 @@ class ImapClient {
       throw new Error('IMAP command already in flight');
     }
     if (!this.#socket || this.#closed) {
-      throw new Error('IMAP connection is not open');
+      throw new Error(this.#explain('the IMAP connection is not open'));
     }
     const tag = `A${++this.#tagCounter}`;
     const shown = display ?? line;
@@ -817,56 +846,95 @@ function parseAuthenticationResults(headers) {
 // ─── The canary ──────────────────────────────────────────────────────────────
 
 /**
- * Poll INBOX and the Junk folder for a mail to the canary address that
- * arrived after `sentAt`. Searching by recipient rather than sender means a
- * mail from the wrong sender (the custom domain fell back to firebaseapp.com)
- * is found and reported as such instead of "never arrived".
+ * One look through INBOX and the Junk folder for a mail to the canary address
+ * that arrived after `sentAt`; null when there is none yet. Searching by
+ * recipient rather than sender means a mail from the wrong sender (the custom
+ * domain fell back to firebaseapp.com) is found and reported as such instead
+ * of "never arrived".
  */
-async function waitForMail(imap, config, sentAt, junkMailbox) {
-  const deadline = sentAt.getTime() + config.timeoutMs;
+async function findCanaryMail(imap, {config, sentAt, junkMailbox, seen}) {
   const since = formatImapDate(
     new Date(sentAt.getTime() - 24 * 60 * 60 * 1000),
   );
   const criteria = `SINCE ${since} TO ${quote(config.canaryEmail)}`;
-  const seen = new Set();
-  for (;;) {
-    for (const mailbox of ['INBOX', junkMailbox]) {
-      await imap.select(mailbox);
-      const uids = (await imap.uidSearch(criteria)).sort((a, b) => b - a);
-      for (const uid of uids) {
-        const key = `${mailbox}:${uid}`;
-        if (seen.has(key)) {
-          continue;
-        }
-        const message = await imap.fetchMessage(uid);
-        if (
-          message.internalDate &&
-          message.internalDate.getTime() < sentAt.getTime() - CLOCK_SKEW_MS
-        ) {
-          seen.add(key);
-          continue;
-        }
-        const {headers, body} = splitMessage(message.raw);
-        const parts = decodedParts(headers, body);
-        const fromAddress = extractAddress(headerValue(headers, 'from'));
-        const isOurs =
-          fromAddress === config.expectedFrom ||
-          parts.some(part => /oobCode=/i.test(part));
-        if (!isOurs) {
-          // Something else landed in the window (a DMARC report, an alert);
-          // remember it so it is not re-fetched on every poll.
-          seen.add(key);
-          continue;
-        }
-        return {
-          mailbox,
-          isSpam: mailbox === junkMailbox,
-          message,
-          headers,
-          parts,
-          fromAddress,
-        };
+  for (const mailbox of ['INBOX', junkMailbox]) {
+    await imap.select(mailbox);
+    const uids = (await imap.uidSearch(criteria)).sort((a, b) => b - a);
+    for (const uid of uids) {
+      const key = `${mailbox}:${uid}`;
+      if (seen.has(key)) {
+        continue;
       }
+      const message = await imap.fetchMessage(uid);
+      if (
+        message.internalDate &&
+        message.internalDate.getTime() < sentAt.getTime() - CLOCK_SKEW_MS
+      ) {
+        seen.add(key);
+        continue;
+      }
+      const {headers, body} = splitMessage(message.raw);
+      const parts = decodedParts(headers, body);
+      const fromAddress = extractAddress(headerValue(headers, 'from'));
+      const isOurs =
+        fromAddress === config.expectedFrom ||
+        parts.some(part => /oobCode=/i.test(part));
+      if (!isOurs) {
+        // Something else landed in the window (a DMARC report, an alert);
+        // remember it so it is not re-fetched on every poll.
+        seen.add(key);
+        continue;
+      }
+      return {
+        mailbox,
+        isSpam: mailbox === junkMailbox,
+        message,
+        headers,
+        parts,
+        fromAddress,
+      };
+    }
+  }
+  return null;
+}
+
+/**
+ * Poll until the canary mail turns up or the timeout runs out. If Gmail drops
+ * the IMAP connection mid-wait, sign in again through `reconnect` (at most
+ * MAX_IMAP_RECONNECTS times) and keep waiting against the same deadline. The
+ * caller's `reconnect` also hands it the new connection, so it trashes the
+ * mail and logs out on the live one.
+ */
+async function waitForMail(imap, reconnect, config, sentAt, junkMailbox) {
+  const deadline = sentAt.getTime() + config.timeoutMs;
+  // UIDs stay valid across connections (Gmail keeps UIDVALIDITY), so what was
+  // ruled out before a drop stays ruled out after it.
+  const search = {config, sentAt, junkMailbox, seen: new Set()};
+  let connection = imap;
+  let reconnects = 0;
+  for (;;) {
+    let found;
+    try {
+      found = await findCanaryMail(connection, search);
+    } catch (error) {
+      if (!connection.closed) {
+        throw error;
+      }
+      if (reconnects >= MAX_IMAP_RECONNECTS) {
+        throw canaryError(
+          'mailbox',
+          `The IMAP server dropped the connection ${reconnects + 1} times while the canary waited for the mail; last: ${error.message}`,
+        );
+      }
+      reconnects++;
+      log(
+        `  ${error.message}; signing in again (${reconnects}/${MAX_IMAP_RECONNECTS})`,
+      );
+      connection = await reconnect();
+      continue;
+    }
+    if (found) {
+      return found;
     }
     const remaining = deadline - Date.now();
     if (remaining <= 0) {
@@ -909,7 +977,13 @@ async function run(config, results) {
   };
 
   log('Signing in to the canary mailbox');
-  const imap = await connectMailbox(config);
+  let imap = await connectMailbox(config);
+  // waitForMail calls this when the server drops the connection; everything
+  // after the wait (trashing the mail, LOGOUT) then runs on the new one.
+  const reconnect = async () => {
+    imap = await connectMailbox(config);
+    return imap;
+  };
   let found = null;
   try {
     const mailboxes = await imap.listMailboxes();
@@ -925,7 +999,7 @@ async function run(config, results) {
     record('send', 'ok', 'Identity Toolkit accepted the send');
     log('Send accepted; waiting for the mail');
 
-    found = await waitForMail(imap, config, sentAt, junkMailbox);
+    found = await waitForMail(imap, reconnect, config, sentAt, junkMailbox);
     const {mailbox, isSpam, message, headers, parts, fromAddress} = found;
     const arrived = message.internalDate
       ? message.internalDate.toISOString()
